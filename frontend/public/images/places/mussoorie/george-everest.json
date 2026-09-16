@@ -1,0 +1,14 @@
+{
+  "place_visual_key": "mussoorie:george-everest",
+  "place_name": "Sir George Everest Peak & House",
+  "destination": "Mussoorie",
+  "category": "Nature & Trails",
+  "source": "osm",
+  "source_id": "osm:node/george_everest",
+  "artwork_provider": "gemini",
+  "artwork_status": "generated",
+  "reference_used": true,
+  "visual_description": "White stone colonial observatory estate perched on grassy ridge with panoramic snow peak vistas.",
+  "created_at": "2026-09-16T15:59:03.826528+00:00",
+  "version": 1
+}

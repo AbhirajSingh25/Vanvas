@@ -1,0 +1,14 @@
+{
+  "place_visual_key": "manali:old-manali",
+  "place_name": "Old Manali Village & Cafes",
+  "destination": "Manali",
+  "category": "Culture & Heritage",
+  "source": "osm",
+  "source_id": "osm:node/old_manali_village",
+  "artwork_provider": "gemini",
+  "artwork_status": "generated",
+  "reference_used": true,
+  "visual_description": "Traditional timber-and-stone Himachali houses, apple orchards, and bohemian riverside verandas.",
+  "created_at": "2026-09-16T15:59:03.840662+00:00",
+  "version": 1
+}

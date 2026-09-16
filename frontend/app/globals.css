@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --forest: #173B32;
+    --jungle: #0F2924;
+    --moss: #536B52;
+    --mist: #D8DED5;
+    --parchment: #EFE5D2;
+    --old-paper: #E5D5BA;
+    --terracotta: #B65E3C;
+    --terracotta-hover: #9E4D2E;
+    --burnt-earth: #7B4D36;
+    --mustard: #B49252;
+    --indigo: #273D52;
+    --charcoal: #20211D;
+  }
+
+  body {
+    background-color: var(--parchment);
+    color: var(--charcoal);
+    font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    background-image: 
+      radial-gradient(rgba(23, 59, 50, 0.035) 1px, transparent 0),
+      linear-gradient(to bottom, rgba(239, 229, 210, 0.8), rgba(229, 213, 186, 0.9));
+    background-size: 24px 24px, 100% 100%;
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: var(--font-serif, Georgia, serif);
+  }
+
+  .font-devanagari {
+    font-family: var(--font-devanagari, serif);
+  }
+}
+
+/* Atmospheric Mist & Route Animations */
+@keyframes mist-drift {
+  0% {
+    transform: translateX(-4%) translateY(0%) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(4%) translateY(-3%) scale(1.04);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(-4%) translateY(0%) scale(1);
+    opacity: 0.3;
+  }
+}
+
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: 200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(0.5deg); }
+}
+
+.animate-mist {
+  animation: mist-drift 26s ease-in-out infinite;
+}
+
+.animate-route {
+  stroke-dasharray: 8 6;
+  animation: route-draw 15s linear infinite;
+}
+
+.animate-float {
+  animation: float-gentle 6s ease-in-out infinite;
+}
+
+/* Travel Journal Texture & Card Elements */
+.journal-card {
+  background-color: #FAF4E8;
+  border: 1px solid #D8CBB2;
+  box-shadow: 0 4px 16px -2px rgba(23, 59, 50, 0.06), 0 1px 4px 0 rgba(23, 59, 50, 0.04);
+  position: relative;
+}
+
+.journal-card-dark {
+  background-color: #173B32;
+  border: 1px solid rgba(216, 222, 213, 0.2);
+  box-shadow: 0 10px 30px -5px rgba(15, 41, 36, 0.3);
+}
+
+/* Authentic Travel Stamp Styling */
+.travel-stamp {
+  border: 1.5px dashed #7B4D36;
+  background-color: rgba(229, 213, 186, 0.4);
+  color: #7B4D36;
+  font-family: var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Postage stamp serrated edge illusion */
+.postage-edge {
+  background: radial-gradient(circle, transparent 70%, #FAF4E8 75%) 0 0/14px 14px;
+}
+
+/* Custom Journal Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #E5D5BA;
+}
+::-webkit-scrollbar-thumb {
+  background: #173B32;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B65E3C;
+}
+
+/* ===================================================
+   VANVAS Editorial Print Styles
+   =================================================== */
+@page {
+  margin: 12mm 14mm;
+  size: A4 portrait;
+}
+
+@media print {
+  html, body {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #173B32 !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide interactive non-print elements */
+  nav,
+  header,
+  footer,
+  aside,
+  .print-hide,
+  .no-print,
+  button:not(.print-allow),
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Prevent awkward page break splits */
+  .page-break-avoid,
+  .journal-item,
+  .itinerary-day-section,
+  .budget-table,
+  .fellowship-roster,
+  .stay-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .page-break-before {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  /* Paper texture & background replacements for ink efficiency */
+  .journal-card,
+  .journal-doc-container {
+    background-color: #FFFFFF !important;
+    border: 1px solid #C8BC9D !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Remove backdrop blur / dark gradients for ink conservation */
+  .print-clean-bg {
+    background: #FFFFFF !important;
+    color: #173B32 !important;
+  }
+
+  /* Images sizing within printable margins */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Links styling in print */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+}

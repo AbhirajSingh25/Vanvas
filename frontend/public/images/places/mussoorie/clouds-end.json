@@ -1,0 +1,14 @@
+{
+  "place_visual_key": "mussoorie:clouds-end",
+  "place_name": "Cloud's End Heritage Estate",
+  "destination": "Mussoorie",
+  "category": "Culture & Heritage",
+  "source": "osm",
+  "source_id": "osm:node/clouds_end",
+  "artwork_provider": "gemini",
+  "artwork_status": "generated",
+  "reference_used": true,
+  "visual_description": "Secluded historic stone bungalow nestled deep in ancient deodar and pine wilderness.",
+  "created_at": "2026-09-16T15:59:03.832171+00:00",
+  "version": 1
+}

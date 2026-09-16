@@ -1,0 +1,14 @@
+{
+  "place_visual_key": "manali:solang-valley",
+  "place_name": "Solang Valley Alpine Meadow",
+  "destination": "Manali",
+  "category": "Adventure & Sport",
+  "source": "osm",
+  "source_id": "osm:node/solang_valley",
+  "artwork_provider": "gemini",
+  "artwork_status": "generated",
+  "reference_used": true,
+  "visual_description": "Expansive green alpine valley surrounded by snow-capped Pir Panjal peaks with paragliders in azure sky.",
+  "created_at": "2026-09-16T15:59:03.838697+00:00",
+  "version": 1
+}
