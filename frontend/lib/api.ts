@@ -170,7 +170,7 @@ export const api = {
     });
   },
 
-  async getQuickPlan(tripId: string, hours: number, lat?: number, lng?: number): Promise<{
+  async getQuickPlan(tripId: string, hours: number, lat?: number, lng?: number, variation?: number): Promise<{
     headline: string;
     summary: string;
     duration_hours: number;
@@ -182,6 +182,7 @@ export const api = {
         hours_available: hours,
         current_lat: lat,
         current_lng: lng,
+        variation: variation ?? 0,
       }),
     });
   },

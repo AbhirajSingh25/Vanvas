@@ -1098,7 +1098,7 @@ def seed_database():
                     "amenities": "High-Speed WiFi,Valley Balcony,Wood Stoves,Bonfire,Café",
                     "check_in_time": "11:00 AM",
                     "check_out_time": "10:00 AM",
-                    "image_url": "/images/destinations/manali/hero.jpg",
+                    "image_url": "/images/places/manali/categories/stay.webp",
                     "booking_url": "https://booking.vanvas.com/himalayan-woods",
                     "badge": "Best for your trip"
                 }
@@ -1115,7 +1115,7 @@ def seed_database():
                     "amenities": "Stone Fireplaces,Tea Garden,Spa,Himalayan Balconies,Library",
                     "check_in_time": "02:00 PM",
                     "check_out_time": "11:00 AM",
-                    "image_url": "/images/destinations/mussoorie/hero.jpg",
+                    "image_url": "/images/places/mussoorie/categories/stay.webp",
                     "booking_url": "https://rokebymanor.com",
                     "badge": "Heritage Sanctuary"
                 }
@@ -1132,7 +1132,7 @@ def seed_database():
                     "amenities": "Jharokha Lake Seating,Rooftop Dining,Heritage Courtyard,Boating",
                     "check_in_time": "01:00 PM",
                     "check_out_time": "11:00 AM",
-                    "image_url": "/images/destinations/udaipur/hero.jpg",
+                    "image_url": "/images/places/udaipur/categories/stay.webp",
                     "booking_url": "https://jagatniwaspalace.com",
                     "badge": "Best Lake Views"
                 }
@@ -1149,7 +1149,7 @@ def seed_database():
                     "amenities": "River Terrace,Classical Sitar Evenings,Private Boat,Fine Dining",
                     "check_in_time": "02:00 PM",
                     "check_out_time": "12:00 PM",
-                    "image_url": "/images/destinations/varanasi/hero.jpg",
+                    "image_url": "/images/places/varanasi/categories/stay.webp",
                     "booking_url": "https://brijrama.com",
                     "badge": "Iconic Riverfront Sanctuary"
                 }
@@ -1166,7 +1166,7 @@ def seed_database():
                     "amenities": "Central Heating,Oxygen Supply,Stok Kangri Balcony,Ladakhi Dining",
                     "check_in_time": "12:00 PM",
                     "check_out_time": "10:00 AM",
-                    "image_url": "/images/destinations/leh/hero.jpg",
+                    "image_url": "/images/places/leh/categories/stay.webp",
                     "booking_url": "https://thegranddragonladakh.com",
                     "badge": "Luxury Alpine Sanctuary"
                 }
@@ -1183,7 +1183,7 @@ def seed_database():
                     "amenities": "Traditional Tandoor Room,Himalayan Herbal Tea,Mountain Views",
                     "check_in_time": "12:00 PM",
                     "check_out_time": "10:00 AM",
-                    "image_url": "/images/destinations/spiti-valley/hero.jpg",
+                    "image_url": "/images/places/spiti/categories/stay.webp",
                     "booking_url": "https://booking.vanvas.com/spiti-homestay",
                     "badge": "Authentic Mudhouse"
                 }
@@ -1198,7 +1198,9 @@ def seed_database():
                     if not existing_h:
                         h = Hotel(destination_id=dest_obj.id, **h_data)
                         db.add(h)
-        db.flush()
+                    else:
+                        existing_h.image_url = h_data.get("image_url", existing_h.image_url)
+                db.flush()
 
         # 6. Seed Curated Rentals for all destinations
         curated_rentals_by_dest = {

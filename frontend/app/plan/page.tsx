@@ -540,12 +540,22 @@ function PlanTripContent() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                  <span className="text-[#7B4D36] block font-semibold">Destination</span>
-                  <span className="font-serif font-bold text-base text-[#173B32] uppercase">
-                    {destHindiMap[selectedDestId] || selectedDestId} ({selectedDestId})
-                  </span>
-                </div>
+                {(() => {
+                  const selectedDest = destinations.find(
+                    (d) => d.id === selectedDestId || d.slug === selectedDestId
+                  );
+                  const destName = selectedDest ? selectedDest.name : (destHindiMap[selectedDestId] || selectedDestId);
+                  const destHindi = selectedDest ? (destHindiMap[selectedDest.slug] || selectedDest.name) : "यात्रा";
+
+                  return (
+                    <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA]">
+                      <span className="text-[#7B4D36] block font-semibold">Destination</span>
+                      <span className="font-serif font-bold text-base text-[#173B32]">
+                        {destName} <span className="text-xs font-serif text-[#B65E3C] font-normal">({destHindi})</span>
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA]">
                   <span className="text-[#7B4D36] block font-semibold">Duration</span>
                   <span className="font-serif font-bold text-base text-[#173B32]">{numDays} Days</span>

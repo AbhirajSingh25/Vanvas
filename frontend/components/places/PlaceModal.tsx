@@ -55,7 +55,7 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
         <div className="relative h-64 w-full bg-[#173B32] overflow-hidden">
           <VanvasImage
             src={visualRes.imageUrl}
-            alt={place.name}
+            alt={destinationName ? `${place.name} in ${destinationName}` : place.name}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924] via-[#0F2924]/40 to-black/30 pointer-events-none" />

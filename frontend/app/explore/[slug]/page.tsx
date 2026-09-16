@@ -266,7 +266,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   return (
     <div className="min-h-screen bg-[#EFE5D2] pb-28">
       {/* Hero Banner */}
-      <section className="relative h-[68vh] min-h-[460px] bg-[#0F2924] text-[#EFE5D2] flex items-end px-4 sm:px-6 lg:px-8 pb-14 overflow-hidden">
+      <section className="relative h-[52vh] min-h-[380px] max-h-[460px] bg-[#0F2924] text-[#EFE5D2] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <VanvasImage
             src={destination.hero_image || profile.heroPath || profile.illustrationPath}
@@ -641,11 +641,12 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                   <div className="space-y-3">
                     <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
                       <VanvasImage
-                        src={h.image_url}
-                        alt={h.name}
+                        src={h.image_url || `/images/places/${destination.slug || "mussoorie"}/categories/stay.webp`}
+                        fallbackSrc={`/images/places/${destination.slug || "mussoorie"}/categories/stay.webp`}
+                        alt={`${h.name} in ${destination.name}`}
                         className="w-full h-full object-cover"
                       />
-                      <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] text-[10px] font-bold uppercase tracking-wider">
+                      <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] text-[10px] font-bold uppercase tracking-wider shadow-xs">
                         {h.badge || "Handpicked"}
                       </span>
                     </div>

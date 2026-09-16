@@ -477,9 +477,17 @@ def quick_plan(
 
     # Query nearest places
     places = db.query(Place).filter(Place.destination_id == trip.destination_id).all()
+    if not places:
+        places = db.query(Place).all()
     
     # Sort by distance
     places.sort(key=lambda p: haversine_distance_km(lat, lng, p.latitude, p.longitude))
+    
+    # If variation > 0, rotate places list so user gets alternate curated stops
+    variation_count = int(getattr(req, "variation", 0) or 0)
+    if variation_count > 0 and len(places) > 2:
+        offset = (variation_count * 2) % len(places)
+        places = places[offset:] + places[:offset]
     
     now_hour = datetime.now(timezone.utc).hour + 5 # IST offset approx
     now_min = datetime.now(timezone.utc).minute + 30
@@ -499,7 +507,7 @@ def quick_plan(
         end_str = f"{(end_mins // 60) % 24:02d}:{end_mins % 60:02d}"
 
         items.append(ItineraryItemResponse(
-            id=f"quick-{i}",
+            id=f"quick-{variation_count}-{i}",
             itinerary_id="quick-plan",
             place_id=p.id,
             title=p.name,
@@ -510,8 +518,8 @@ def quick_plan(
             estimated_cost=p.approx_cost,
             travel_time_from_prev_mins=10,
             distance_from_prev_km=1.2,
-            notes=p.description[:120],
-            reason_for_recommendation=f"High proximity match ({req.hours_available}h window).",
+            notes=p.description[:120] if p.description else "",
+            reason_for_recommendation=f"High proximity match ({req.hours_available}h window - Option #{variation_count + 1}).",
             map_lat=p.latitude,
             map_lng=p.longitude,
             booking_url=p.booking_url,

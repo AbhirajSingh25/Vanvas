@@ -285,6 +285,7 @@ class QuickPlanRequest(BaseModel):
     current_lat: Optional[float] = None
     current_lng: Optional[float] = None
     current_location_name: Optional[str] = None
+    variation: Optional[int] = 0
 
 class QuickPlanResponse(BaseModel):
     headline: str

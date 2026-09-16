@@ -56,7 +56,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
       <div className="relative h-52 w-full overflow-hidden bg-[#E5D5BA]">
         <VanvasImage
           src={visualRes.imageUrl}
-          alt={`${place.name || "Sanctuary Landmark"} - ${visualRes.badgeLabel}`}
+          alt={destinationName ? `${place.name} in ${destinationName}` : place.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
 

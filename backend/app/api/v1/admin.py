@@ -1,5 +1,6 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.models import User, Trip, Destination, Place, Hotel, RentalOption
@@ -9,8 +10,14 @@ from app.schemas.schemas import (
 )
 from app.api.deps import get_current_admin
 from app.providers.provider_factory import ProviderFactory
+from app.providers.ai.factory import AIFactory
+from app.core.config import settings
 
 router = APIRouter()
+
+class AITestRequest(BaseModel):
+    prompt: str = "Suggest a 1-day slow travel walking trail in Mussoorie."
+    system_instruction: Optional[str] = "You are VANVAS Copilot, a calm Himalayan travel guide."
 
 @router.get("/health")
 def get_system_health():
@@ -21,6 +28,37 @@ def get_system_health():
         "status": "healthy",
         "providers": ProviderFactory.get_provider_health()
     }
+
+@router.get("/ai/health")
+async def get_ai_provider_health():
+    """
+    Diagnostic endpoint to check the health and configuration of the AI provider (Gemini / Disabled).
+    """
+    ai_provider = AIFactory.get_provider()
+    health = await ai_provider.health_check()
+    return {
+        "status": health.get("status", "unknown"),
+        "active_provider": ai_provider.name,
+        "model": ai_provider.model,
+        "is_enabled": ai_provider.is_enabled,
+        "configured_ai_provider_setting": settings.AI_PROVIDER,
+        "details": health
+    }
+
+@router.post("/ai/test")
+async def test_ai_provider(
+    req: AITestRequest,
+    current_admin: User = Depends(get_current_admin)
+):
+    """
+    Admin-only diagnostic endpoint to test generation with the configured AI provider.
+    """
+    ai_provider = AIFactory.get_provider()
+    res = await ai_provider.generate_response(
+        prompt=req.prompt,
+        system_instruction=req.system_instruction
+    )
+    return res
 
 @router.get("/stats", response_model=AdminDashboardStats)
 def get_admin_stats(
