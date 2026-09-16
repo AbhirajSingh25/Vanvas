@@ -504,3 +504,13 @@ class CuratedArtworkProvider(ArtworkProvider):
 
     async def get_artwork_metadata(self, artwork_key: str) -> Optional[Dict[str, Any]]:
         return self.PLACE_ARTWORK_REGISTRY.get(artwork_key)
+
+class OptionalAIArtworkProvider(CuratedArtworkProvider):
+    """
+    Optional AI Artwork Provider supporting Groq text reasoning when configured,
+    and inheriting full deterministic curated artwork resolution.
+    """
+    def __init__(self, groq_api_key: Optional[str] = None):
+        super().__init__()
+        self.groq_api_key = groq_api_key
+

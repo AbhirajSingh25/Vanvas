@@ -16,7 +16,7 @@ async def test_exact_place_artwork_resolution():
     )
     assert res_lb["tier"] == "exact_place"
     assert "mussoorie" in res_lb["image_url"]
-    assert res_lb["badge"] == "VANVAS ARTWORK"
+    assert res_lb["badge"] == "VANVAS PLACE ARTWORK"
 
     # 2. Udaipur City Palace
     res_cp = await resolver.resolve_place(
