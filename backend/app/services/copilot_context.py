@@ -173,11 +173,11 @@ def extract_session_decisions(message_text: str) -> Dict[str, Any]:
     decisions: Dict[str, Any] = {}
 
     # Pace decisions
-    if re.search(r"\b(keep (it|things|day \d+|trip)? ?(relaxed|slow|easy|chill)|relaxed pace|slow pace|chill pace)\b", text):
+    if re.search(r"\b((keep|make|give me a)? ?(it|things|day \d+|trip|plan|itinerary)? ?(relaxed|slow|easy|chill)|relaxed (pace|plan|trip|schedule|itinerary)|slow pace|chill pace)\b", text):
         decisions["pace"] = "relaxed"
-    elif re.search(r"\b(make (it|things)? ?(energetic|packed|fast|action-packed)|energetic pace|packed itinerary|fast pace|high energy|more activities)\b", text):
+    elif re.search(r"\b((keep|make|give me a)? ?(it|things|day \d+|trip|plan|itinerary)? ?(energetic|packed|fast|action-packed)|(energetic|packed|fast|high energy) (pace|plan|itinerary|schedule)|more activities)\b", text):
         decisions["pace"] = "packed"
-    elif re.search(r"\b(keep (it|things)? ?(moderate|balanced)|moderate pace|balanced pace|normal pace)\b", text):
+    elif re.search(r"\b((keep|make|give me a)? ?(it|things|day \d+|trip|plan|itinerary)? ?(moderate|balanced)|(moderate|balanced|normal) (pace|plan|itinerary|schedule))\b", text):
         decisions["pace"] = "balanced"
 
     # Budget mode decisions
