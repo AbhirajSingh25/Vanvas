@@ -15,6 +15,7 @@
 export interface PlaceArtworkResult {
   artworkKey: string;
   imageUrl: string;
+  fallbackUrl?: string;
   tier: "exact_place" | "generated_artwork" | "destination_category" | "destination" | "regional_fallback" | "universal";
   placeName: string;
   destinationName: string;
@@ -23,6 +24,16 @@ export interface PlaceArtworkResult {
   isRealPhoto: boolean;
   badgeLabel: "LIVE PLACE" | "VANVAS PLACE ARTWORK" | "DESTINATION CATEGORY ART" | "DESTINATION ART" | "REGIONAL ART" | "FALLBACK";
   visualDescription?: string;
+}
+
+function normalizeKey(str: string): string {
+  return (str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 // Registry of verified landmark artwork mappings
@@ -100,7 +111,7 @@ export const EXACT_PLACE_REGISTRY: Record<string, {
     category: "Cafés & Bakery",
   },
   "manali:jogini-waterfall": {
-    imageUrl: "/images/destinations/manali/hero.jpg",
+    imageUrl: "/images/destinations/manali/illustration.jpg",
     visualDescription: "Gentle cascading multi-tier waterfall surrounded by apple orchards and pine groves.",
     category: "Nature & Trails",
   },
@@ -223,11 +234,11 @@ const DESTINATION_ASSET_MAP: Record<string, { hero: string; illustration: string
   manali: { hero: "/images/destinations/manali/hero.jpg", illustration: "/images/destinations/manali/illustration.jpg", fallback: "/images/destinations/fallbacks/himalayan.jpg" },
   mussoorie: { hero: "/images/destinations/mussoorie/hero.jpg", illustration: "/images/destinations/mussoorie/illustration.jpg", fallback: "/images/destinations/fallbacks/himalayan.jpg" },
   udaipur: { hero: "/images/destinations/udaipur/hero.jpg", illustration: "/images/destinations/udaipur/illustration.jpg", fallback: "/images/destinations/fallbacks/desert.jpg" },
-  varanasi: { hero: "/images/destinations/varanasi/hero.jpg", illustration: "/images/destinations/varanasi/illustration.jpg", fallback: "/images/destinations/fallbacks/river_ghat.jpg" },
+  varanasi: { hero: "/images/destinations/varanasi/hero.jpg", illustration: "/images/destinations/varanasi/illustration.jpg", fallback: "/images/destinations/fallbacks/valley.jpg" },
   jaipur: { hero: "/images/destinations/jaipur/hero.jpg", illustration: "/images/destinations/jaipur/illustration.jpg", fallback: "/images/destinations/fallbacks/desert.jpg" },
   goa: { hero: "/images/destinations/goa/hero.jpg", illustration: "/images/destinations/goa/illustration.jpg", fallback: "/images/destinations/fallbacks/coastal.jpg" },
-  leh: { hero: "/images/destinations/leh/hero.jpg", illustration: "/images/destinations/leh/illustration.jpg", fallback: "/images/destinations/fallbacks/high_desert.jpg" },
-  spiti: { hero: "/images/destinations/spiti-valley/hero.jpg", illustration: "/images/destinations/spiti-valley/illustration.jpg", fallback: "/images/destinations/fallbacks/high_desert.jpg" },
+  leh: { hero: "/images/destinations/leh/hero.jpg", illustration: "/images/destinations/leh/illustration.jpg", fallback: "/images/destinations/fallbacks/desert.jpg" },
+  spiti: { hero: "/images/destinations/spiti-valley/hero.jpg", illustration: "/images/destinations/spiti-valley/illustration.jpg", fallback: "/images/destinations/fallbacks/desert.jpg" },
   rishikesh: { hero: "/images/destinations/rishikesh/hero.jpg", illustration: "/images/destinations/rishikesh/illustration.jpg", fallback: "/images/destinations/fallbacks/valley.jpg" },
   kasol: { hero: "/images/destinations/kasol/hero.jpg", illustration: "/images/destinations/kasol/illustration.jpg", fallback: "/images/destinations/fallbacks/himalayan.jpg" },
   dharamshala: { hero: "/images/destinations/dharamshala/hero.jpg", illustration: "/images/destinations/dharamshala/illustration.jpg", fallback: "/images/destinations/fallbacks/himalayan.jpg" },
@@ -245,14 +256,28 @@ export function resolvePlaceArtwork(
   isLive?: boolean,
   source?: string
 ): PlaceArtworkResult {
-  const destNorm = (destinationName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const placeNorm = (placeName || "").toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-");
+  const destNorm = normalizeKey(destinationName);
+  const placeNorm = normalizeKey(placeName);
+
+  // Match destination config
+  let matchedDestKey: string | null = null;
+  for (const k of Object.keys(DESTINATION_ASSET_MAP)) {
+    if (destNorm.includes(k) || k.includes(destNorm)) {
+      matchedDestKey = k;
+      break;
+    }
+  }
+
+  const destFallback = matchedDestKey
+    ? (DESTINATION_ASSET_MAP[matchedDestKey].illustration || DESTINATION_ASSET_MAP[matchedDestKey].hero)
+    : "/images/destinations/fallbacks/himalayan.jpg";
 
   // If live provider provided a verified real photo URL
   if (isLive && existingImageUrl && (existingImageUrl.startsWith("https://") || existingImageUrl.startsWith("http://")) && !existingImageUrl.includes("unsplash.com")) {
     return {
       artworkKey: `live:${placeNorm}`,
       imageUrl: existingImageUrl,
+      fallbackUrl: destFallback,
       tier: "exact_place",
       placeName,
       destinationName,
@@ -291,7 +316,7 @@ export function resolvePlaceArtwork(
         const distinctive = overlap.filter(t => !genericTokens.has(t));
         if (distinctive.length > 0) {
           score = 40 + distinctive.reduce((acc, t) => acc + t.length, 0);
-        } else if (overlap.length >= 3) {
+        } else if (overlap.length >= 2) {
           score = 25 + overlap.length;
         }
       }
@@ -307,6 +332,7 @@ export function resolvePlaceArtwork(
     return {
       artworkKey: bestExactMatch.regKey,
       imageUrl: bestExactMatch.item.imageUrl,
+      fallbackUrl: destFallback,
       tier: "exact_place",
       placeName,
       destinationName,
@@ -319,21 +345,13 @@ export function resolvePlaceArtwork(
   }
 
   // 2. Destination + Category Artwork Fallback
-  let matchedDestKey: string | null = null;
-  for (const k of Object.keys(DESTINATION_ASSET_MAP)) {
-    if (destNorm.includes(k) || k.includes(destNorm)) {
-      matchedDestKey = k;
-      break;
-    }
-  }
-
   const catLower = (category || "").toLowerCase();
   let catFile = "viewpoint";
   if (catLower.includes("cafe") || catLower.includes("bakery") || catLower.includes("dining") || catLower.includes("food") || catLower.includes("restaurant") || catLower.includes("dhaba")) {
     catFile = "cafe";
   } else if (catLower.includes("temple") || catLower.includes("spiritual") || catLower.includes("shrine") || catLower.includes("ashram") || catLower.includes("monastery") || catLower.includes("ghat") || catLower.includes("culture") || catLower.includes("heritage")) {
     catFile = "spiritual";
-  } else if (catLower.includes("waterfall") || catLower.includes("trail") || catLower.includes("nature") || catLower.includes("forest") || catLower.includes("lake") || catLower.includes("river")) {
+  } else if (catLower.includes("waterfall") || catLower.includes("trail") || catLower.includes("nature") || catLower.includes("forest") || catLower.includes("lake") || catLower.includes("river") || placeNorm.includes("waterfall") || placeNorm.includes("trail")) {
     catFile = "nature";
   } else if (catLower.includes("hotel") || catLower.includes("stay") || catLower.includes("resort") || catLower.includes("homestay") || catLower.includes("hostel") || catLower.includes("cottage")) {
     catFile = "stay";
@@ -345,6 +363,7 @@ export function resolvePlaceArtwork(
     return {
       artworkKey: `${matchedDestKey}:category-${catFile}`,
       imageUrl: categoryImg,
+      fallbackUrl: destFallback,
       tier: "destination_category",
       placeName,
       destinationName,
@@ -362,7 +381,7 @@ export function resolvePlaceArtwork(
   } else if (destNorm.includes("desert") || destNorm.includes("jaipur") || destNorm.includes("udaipur") || destNorm.includes("jodhpur")) {
     regionalImg = "/images/destinations/fallbacks/desert.jpg";
   } else if (destNorm.includes("varanasi") || destNorm.includes("ganga") || catLower.includes("ghat")) {
-    regionalImg = "/images/destinations/fallbacks/river_ghat.jpg";
+    regionalImg = "/images/destinations/fallbacks/valley.jpg";
   } else if (destNorm.includes("munnar") || catLower.includes("tea") || catLower.includes("valley")) {
     regionalImg = "/images/destinations/fallbacks/valley.jpg";
   }
@@ -370,6 +389,7 @@ export function resolvePlaceArtwork(
   return {
     artworkKey: `fallback:${destNorm}`,
     imageUrl: regionalImg,
+    fallbackUrl: "/images/destinations/fallbacks/himalayan.jpg",
     tier: "regional_fallback",
     placeName,
     destinationName,

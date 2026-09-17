@@ -24,8 +24,14 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
         onClose();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen || !place) return null;
@@ -44,21 +50,22 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-fadeIn"
       onClick={onClose}
     >
       <div 
-        className="bg-[#EFE5D2] border-2 border-[#E5D5BA] rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-scaleUp flex flex-col max-h-[92vh] relative"
+        className="bg-[#EFE5D2] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-scaleUp flex flex-col max-h-[90vh] sm:max-h-[88vh] relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Artwork */}
-        <div className="relative h-64 w-full bg-[#173B32] overflow-hidden">
+        <div className="relative h-60 sm:h-64 w-full bg-[#173B32] overflow-hidden">
           <VanvasImage
             src={visualRes.imageUrl}
+            fallbackSrc={visualRes.fallbackUrl}
             alt={destinationName ? `${place.name} in ${destinationName}` : place.name}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924] via-[#0F2924]/40 to-black/30 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924]/90 via-[#0F2924]/30 to-transparent pointer-events-none" />
 
           {/* Close button */}
           <button

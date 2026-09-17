@@ -285,6 +285,10 @@ export const api = {
     return fetchApi(`/places/nearby?${params.toString()}`);
   },
 
+  async getPlaceDetail(placeId: string): Promise<Place> {
+    return fetchApi(`/places/${placeId}`);
+  },
+
   async getSavedPlaces(): Promise<Place[]> {
     return fetchApi("/places/saved");
   },

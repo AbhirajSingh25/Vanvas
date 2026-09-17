@@ -23,7 +23,9 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",
-        "http://127.0.0.1:8000"
+        "http://127.0.0.1:8000",
+        "https://vanvasai.vercel.app",
+        "https://vanvas.vercel.app"
     ]
 
     @property
@@ -43,7 +45,14 @@ class Settings(BaseSettings):
             return [i.strip() for i in v.split(",") if i.strip()]
         elif isinstance(v, list):
             return v
-        return ["http://localhost:3000", "http://127.0.0.1:3000"]
+        return [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "https://vanvasai.vercel.app",
+            "https://vanvas.vercel.app"
+        ]
 
     @model_validator(mode="after")
     def validate_production_security(self):

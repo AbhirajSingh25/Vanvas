@@ -49,19 +49,28 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect && onSelect(place)}
-      className="group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/50 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col relative"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (onSelect) onSelect(place);
+        }
+      }}
+      className="group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/50 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30"
     >
       {/* Image Container */}
       <div className="relative h-52 w-full overflow-hidden bg-[#E5D5BA]">
         <VanvasImage
           src={visualRes.imageUrl}
+          fallbackSrc={visualRes.fallbackUrl}
           alt={destinationName ? `${place.name} in ${destinationName}` : place.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
 
-        {/* Cinematic Vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924]/85 via-transparent to-black/25" />
+        {/* Crisp Bottom Vignette for Text Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924]/80 via-transparent to-black/15 pointer-events-none" />
 
         {/* Category Stamp & Source Badge */}
         <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
