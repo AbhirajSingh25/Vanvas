@@ -126,29 +126,33 @@ class DestinationIntelligenceService:
         if snapshots:
             return
 
-        weather_provider = ProviderFactory.get_weather_provider()
-        forecasts = await weather_provider.get_forecast(dest.latitude, dest.longitude, days=5)
+        try:
+            weather_provider = ProviderFactory.get_weather_provider()
+            forecasts = await weather_provider.get_forecast(dest.latitude, dest.longitude, days=5)
 
-        for fc in forecasts:
-            try:
-                if isinstance(fc["date"], str):
-                    f_date = datetime.strptime(fc["date"], "%Y-%m-%d").date()
-                else:
-                    f_date = fc["date"]
-            except Exception:
-                f_date = date.today()
+            for fc in forecasts:
+                try:
+                    if isinstance(fc["date"], str):
+                        f_date = datetime.strptime(fc["date"], "%Y-%m-%d").date()
+                    else:
+                        f_date = fc["date"]
+                except Exception:
+                    f_date = date.today()
 
-            ws = WeatherSnapshot(
-                id=f"ws-{uuid.uuid4().hex[:8]}",
-                destination_id=dest.id,
-                forecast_date=f_date,
-                temp_c=fc["temp_c"],
-                condition=fc["condition"],
-                is_rain=fc["is_rain"],
-                humidity=fc.get("humidity", 50),
-                wind_kph=fc.get("wind_kph", 10.0),
-                advisory=fc.get("advisory", "Live mountain weather forecast from Open-Meteo."),
-                icon=fc.get("icon", "sun")
-            )
-            db.add(ws)
-        db.commit()
+                ws = WeatherSnapshot(
+                    id=f"ws-{uuid.uuid4().hex[:8]}",
+                    destination_id=dest.id,
+                    forecast_date=f_date,
+                    temp_c=fc["temp_c"],
+                    condition=fc["condition"],
+                    is_rain=fc["is_rain"],
+                    humidity=fc.get("humidity", 50),
+                    wind_kph=fc.get("wind_kph", 10.0),
+                    advisory=fc.get("advisory", "Live mountain weather forecast from Open-Meteo."),
+                    icon=fc.get("icon", "sun")
+                )
+                db.add(ws)
+            db.commit()
+        except Exception as e:
+            logger.warning(f"Could not ensure weather for {dest.name}: {e}")
+            db.rollback()

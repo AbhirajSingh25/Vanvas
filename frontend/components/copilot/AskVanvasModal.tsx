@@ -26,6 +26,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   defaultDestination,
 }) => {
   const [selectedDest, setSelectedDest] = useState<string>(defaultDestination || "Mussoorie");
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([
     {
       role: "assistant",
@@ -43,6 +44,19 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const destinations = ["Mussoorie", "Manali", "Rishikesh", "Dharamshala", "Leh Ladakh", "Spiti Valley"];
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,8 +90,13 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
     try {
       const res: CopilotChatResponse = await api.copilotChat({
         message: textToSend,
+        conversation_id: conversationId || undefined,
         destination_slug: selectedDest.toLowerCase().replace(/\s+/g, "-"),
       });
+
+      if (res.conversation_id) {
+        setConversationId(res.conversation_id);
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -111,15 +130,19 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const handleActionClick = (action: string, label: string, payload?: any) => {
     if (action === "explore_mussoorie") {
       setSelectedDest("Mussoorie");
+      setConversationId(null);
       handleSend("What are the best cafes and heritage viewpoints in Mussoorie?");
     } else if (action === "plan_manali") {
       setSelectedDest("Manali");
+      setConversationId(null);
       handleSend("Give me a curated plan for 3 days in Manali with verified spots");
     } else if (action === "weather_leh") {
       setSelectedDest("Leh Ladakh");
+      setConversationId(null);
       handleSend("What is the current weather forecast and acclimatization advice for Leh?");
     } else if (action === "stays_rishikesh") {
       setSelectedDest("Rishikesh");
+      setConversationId(null);
       handleSend("Recommend quiet scenic riverside spots in Rishikesh");
     } else {
       handleSend(label);
@@ -128,16 +151,21 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0F2924]/80 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center p-0 md:p-4 bg-[#0F2924]/80 backdrop-blur-md animate-fadeIn"
       onClick={onClose}
     >
       <div 
-        className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl w-full max-w-2xl shadow-2xl flex flex-col h-[680px] max-h-[92vh] overflow-hidden"
+        className="bg-[#FAF7F0] border-t-2 md:border-2 border-[#E5D5BA] rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl shadow-2xl flex flex-col h-[90vh] md:h-[680px] max-h-[95vh] overflow-hidden transition-all"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Handle Pill */}
+        <div className="md:hidden w-full flex justify-center pt-2.5 pb-1 bg-[#0F2924] shrink-0">
+          <div className="w-10 h-1 rounded-full bg-[#E5D5BA]/40" />
+        </div>
+
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36]">
-          <div className="flex items-center gap-3">
+        <div className="p-3.5 sm:p-5 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36] shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <div className="w-11 h-11 rounded-2xl bg-[#B65E3C] text-[#FAF7F0] flex items-center justify-center shadow-md border border-[#D8CBB2]/20">
               <Sparkles className="w-5 h-5 text-[#B49252]" />
             </div>
@@ -309,7 +337,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         </div>
 
         {/* Footer Input */}
-        <div className="p-3.5 sm:p-4 border-t border-[#E5D5BA] bg-[#EFE5D2]">
+        <div className="p-3.5 sm:p-4 pb-6 sm:pb-4 border-t border-[#E5D5BA] bg-[#EFE5D2] safe-area-bottom shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();

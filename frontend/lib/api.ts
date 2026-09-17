@@ -5,7 +5,15 @@ import {
   AdminStats, User, UserPreferences, TripInvitePreview, TripMemberItem
 } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+function getApiBaseUrl(): string {
+  let base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").trim().replace(/\/+$/, "");
+  if (!base.endsWith("/api/v1")) {
+    base = `${base}/api/v1`;
+  }
+  return base;
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Helper for authenticated requests
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -303,6 +311,7 @@ export const api = {
   // AI Copilot
   async copilotChat(params: {
     message: string;
+    conversation_id?: string;
     trip_id?: string;
     destination_slug?: string;
     action_type?: string;
@@ -314,11 +323,12 @@ export const api = {
     });
   },
 
-  async askCopilot(tripId: string, message: string, locName?: string): Promise<CopilotChatResponse & CopilotResponse> {
+  async askCopilot(tripId: string, message: string, locName?: string, conversationId?: string): Promise<CopilotChatResponse & CopilotResponse> {
     const res = await fetchApi<CopilotChatResponse>("/copilot/chat", {
       method: "POST",
       body: JSON.stringify({
         message,
+        conversation_id: conversationId,
         trip_id: tripId,
         current_location_name: locName,
       }),

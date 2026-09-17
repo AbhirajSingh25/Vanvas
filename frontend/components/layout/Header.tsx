@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Compass, Calendar, MapPin, Sparkles, Menu, X, SlidersHorizontal, User as UserIcon } from "lucide-react";
 import { ProfilePreferencesModal } from "@/components/profile/ProfilePreferencesModal";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
+import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -170,6 +171,12 @@ export const Header: React.FC = () => {
           </div>
         )}
       </header>
+
+      {/* Mobile Floating AI Copilot Trigger */}
+      <FloatingCopilotTrigger
+        isOpen={askVanvasOpen}
+        onClick={() => setAskVanvasOpen(true)}
+      />
 
       {/* Global Profile Preferences Modal */}
       <ProfilePreferencesModal

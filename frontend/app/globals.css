@@ -37,6 +37,14 @@
   }
 }
 
+/* iOS Safe Area Inset Utilities */
+.safe-area-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.safe-area-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
 /* Atmospheric Mist & Route Animations */
 @keyframes mist-drift {
   0% {

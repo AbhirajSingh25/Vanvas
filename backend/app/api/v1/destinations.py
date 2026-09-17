@@ -137,8 +137,11 @@ async def get_destination_detail(
         weather_snapshots = db.query(WeatherSnapshot).filter(WeatherSnapshot.destination_id == dest.id).all()
         
         if not weather_snapshots:
-            await DestinationIntelligenceService._ensure_weather(dest, db)
-            weather_snapshots = db.query(WeatherSnapshot).filter(WeatherSnapshot.destination_id == dest.id).all()
+            try:
+                await DestinationIntelligenceService._ensure_weather(dest, db)
+                weather_snapshots = db.query(WeatherSnapshot).filter(WeatherSnapshot.destination_id == dest.id).all()
+            except Exception:
+                weather_snapshots = []
         
         return {
             "destination": dest,

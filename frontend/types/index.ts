@@ -388,6 +388,7 @@ export interface CopilotAction {
 }
 
 export interface CopilotChatResponse {
+  conversation_id?: string;
   message: string;
   actions: CopilotAction[];
   places: Place[];

@@ -37,6 +37,7 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
   const resolvedDest = trip?.destination?.name || destinationName;
   const resolvedSlug = trip?.destination?.slug || destinationSlug || "";
 
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([
     {
       role: "assistant",
@@ -52,6 +53,19 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -85,12 +99,17 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
     try {
       let res: CopilotChatResponse;
       if (resolvedTripId) {
-        res = await api.askCopilot(resolvedTripId, textToSend);
+        res = await api.askCopilot(resolvedTripId, textToSend, undefined, conversationId || undefined);
       } else {
         res = await api.copilotChat({
           message: textToSend,
+          conversation_id: conversationId || undefined,
           destination_slug: resolvedSlug,
         });
+      }
+
+      if (res.conversation_id) {
+        setConversationId(res.conversation_id);
       }
 
       setMessages((prev) => [
@@ -144,16 +163,21 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center p-0 md:p-4 bg-[#0F2924]/80 backdrop-blur-md animate-fadeIn"
       onClick={onClose}
     >
       <div 
-        className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl w-full max-w-xl shadow-2xl flex flex-col h-[640px] max-h-[90vh] overflow-hidden"
+        className="bg-[#FAF7F0] border-t-2 md:border-2 border-[#E5D5BA] rounded-t-3xl md:rounded-3xl w-full md:max-w-xl shadow-2xl flex flex-col h-[90vh] md:h-[640px] max-h-[95vh] overflow-hidden transition-all"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Handle Pill */}
+        <div className="md:hidden w-full flex justify-center pt-2.5 pb-1 bg-[#0F2924] shrink-0">
+          <div className="w-10 h-1 rounded-full bg-[#E5D5BA]/40" />
+        </div>
+
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36]">
-          <div className="flex items-center gap-3">
+        <div className="p-3.5 sm:p-5 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36] shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-inner border border-[#D8CBB2]/20">
               <Bot className="w-5 h-5 text-[#FAF7F0]" />
             </div>
@@ -306,7 +330,7 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
         </div>
 
         {/* Footer Input */}
-        <div className="p-3.5 sm:p-4 border-t border-[#E5D5BA] bg-[#EFE5D2]">
+        <div className="p-3.5 sm:p-4 pb-6 sm:pb-4 border-t border-[#E5D5BA] bg-[#EFE5D2] safe-area-bottom shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();

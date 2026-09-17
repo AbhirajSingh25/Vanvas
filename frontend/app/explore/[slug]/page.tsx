@@ -232,26 +232,41 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   }
 
   if (loadError || !destination) {
+    const isNetworkError = loadError && (
+      loadError.toLowerCase().includes("fetch") ||
+      loadError.toLowerCase().includes("network") ||
+      loadError.toLowerCase().includes("500") ||
+      loadError.toLowerCase().includes("failed") ||
+      loadError.toLowerCase().includes("connect")
+    );
+
     return (
       <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-4 px-4 text-center">
         <AlertCircle className="w-12 h-12 text-[#B65E3C]" />
-        <h2 className="text-2xl font-serif font-black text-[#173B32]">
-          Destination Not Found
-        </h2>
-        <p className="text-xs text-[#7B4D36] max-w-md">
-          {loadError || "Could not resolve live information for this location. Please try searching another sanctuary."}
+        <div className="space-y-1">
+          <span className="text-xs font-mono uppercase tracking-wider text-[#B65E3C] font-semibold">
+            {isNetworkError ? "कनेक्शन त्रुटि • Network Status" : "अभयारण्य नहीं मिला • Destination Index"}
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
+            {isNetworkError ? "Unable to Connect to VANVAS" : "Destination Not Found"}
+          </h2>
+        </div>
+        <p className="text-xs text-[#7B4D36] max-w-md leading-relaxed">
+          {isNetworkError
+            ? "Couldn't reach VANVAS servers right now. Please check your network connection or tap retry below."
+            : (loadError || "Could not resolve live information for this location. Please try exploring another sanctuary.")}
         </p>
         <div className="flex gap-3 pt-2">
           <button
             onClick={fetchDestination}
-            className="px-5 py-2.5 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Try Again</span>
           </button>
           <Link
             href="/explore"
-            className="px-5 py-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] text-xs font-bold"
+            className="px-5 py-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] hover:bg-[#E5D5BA] text-[#173B32] text-xs font-bold transition-all"
           >
             Back to Explore
           </Link>

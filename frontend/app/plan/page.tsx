@@ -73,15 +73,41 @@ function PlanTripContent() {
     mussoorie: "मसूरी",
   };
 
+  const fallbackDestinations: Destination[] = [
+    { id: "dest-manali", name: "Manali", slug: "manali", state: "Himachal Pradesh", region: "Himalayan", tagline: "Pine forests & high passes", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 32.2432, longitude: 77.1892, altitude_meters: 2050, weather_type: "Alpine Mist", is_featured: true, is_curated: true },
+    { id: "dest-mussoorie", name: "Mussoorie", slug: "mussoorie", state: "Uttarakhand", region: "Garhwal", tagline: "Queen of the Hills", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 30.4598, longitude: 78.0644, altitude_meters: 2005, weather_type: "Cool Mountain", is_featured: true, is_curated: true },
+    { id: "dest-rishikesh", name: "Rishikesh", slug: "rishikesh", state: "Uttarakhand", region: "Garhwal", tagline: "Ganga currents & ghats", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 30.0869, longitude: 78.2676, altitude_meters: 372, weather_type: "Temperate", is_featured: true, is_curated: true },
+    { id: "dest-kasol", name: "Kasol", slug: "kasol", state: "Himachal Pradesh", region: "Parvati Valley", tagline: "Emerald streams & deodar trails", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 32.0100, longitude: 77.3150, altitude_meters: 1580, weather_type: "Crisp Alpine", is_featured: true, is_curated: true },
+    { id: "dest-dharamshala", name: "Dharamshala", slug: "dharamshala", state: "Himachal Pradesh", region: "Kangra Valley", tagline: "Tibetan monasteries & mist", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 32.2190, longitude: 76.3234, altitude_meters: 1457, weather_type: "Mountain Spring", is_featured: true, is_curated: true },
+    { id: "dest-jaipur", name: "Jaipur", slug: "jaipur", state: "Rajasthan", region: "Mewar & Desert", tagline: "Pink havelis & royal forts", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 26.9124, longitude: 75.7873, altitude_meters: 431, weather_type: "Semi-Arid", is_featured: true, is_curated: true },
+    { id: "dest-goa", name: "Goa", slug: "goa", state: "Goa", region: "West Coast", tagline: "Golden palm trails & spice air", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 15.2993, longitude: 74.1240, altitude_meters: 10, weather_type: "Tropical Breeze", is_featured: true, is_curated: true },
+    { id: "dest-udaipur", name: "Udaipur", slug: "udaipur", state: "Rajasthan", region: "Mewar", tagline: "City of lakes & palaces", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 24.5854, longitude: 73.7125, altitude_meters: 598, weather_type: "Warm Lake", is_featured: true, is_curated: true },
+  ];
+
   useEffect(() => {
     api.getDestinations(false)
       .then((data) => {
-        setDestinations(data);
-        if (data.length > 0 && !selectedDestId) setSelectedDestId(data[0].id);
+        const loaded = (data && data.length > 0) ? data : fallbackDestinations;
+        setDestinations(loaded);
+        const match = loaded.find(
+          (d) => d.id === initialDest || d.slug.toLowerCase() === initialDest.toLowerCase()
+        );
+        if (match) {
+          setSelectedDestId(match.id);
+        } else if (loaded.length > 0) {
+          setSelectedDestId(loaded[0].id);
+        }
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error("Could not fetch destinations for plan wizard:", err);
+        setDestinations(fallbackDestinations);
+        const match = fallbackDestinations.find(
+          (d) => d.id === initialDest || d.slug.toLowerCase() === initialDest.toLowerCase()
+        );
+        if (match) setSelectedDestId(match.id);
+      })
       .finally(() => setLoadingDestinations(false));
-  }, []);
+  }, [initialDest]);
 
   // Pre-fill user saved preferences if available
   useEffect(() => {
@@ -156,8 +182,8 @@ function PlanTripContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#EFE5D2] py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
-      <div className="max-w-3xl mx-auto w-full space-y-8">
+    <div className="min-h-[calc(100vh-5rem)] bg-[#EFE5D2] pt-6 pb-32 sm:py-12 px-3 sm:px-6 lg:px-8 flex flex-col justify-center">
+      <div className="max-w-3xl mx-auto w-full space-y-6 sm:space-y-8">
         {/* Header Passport Stamp Progress */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -179,52 +205,73 @@ function PlanTripContent() {
         </div>
 
         {/* Wizard Journal Page */}
-        <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden min-h-[500px] flex flex-col justify-between">
+        <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 sm:p-10 shadow-xl relative overflow-hidden min-h-[440px] sm:min-h-[500px] flex flex-col justify-between">
           {/* Subtle paper background grid */}
           <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#173B32_1px,transparent_1px)] [background-size:20px_20px]" />
 
           {/* STEP 1: DESTINATION (कहाँ चलें?) */}
           {step === 1 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+            <div className="space-y-5 sm:space-y-6 relative z-10 animate-fadeIn">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">कहाँ चलें?</span>
+                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">कहाँ चलें?</span>
                   <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 1</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
+                <h2 className="text-xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
                   Where is the road taking you?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">Select your mountain sanctuary or heritage trail.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5 sm:mt-1">Select your mountain sanctuary or heritage trail.</p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-h-[320px] overflow-y-auto pr-1">
-                {destinations.map((d) => (
-                  <button
-                    key={d.id}
-                    onClick={() => setSelectedDestId(d.id)}
-                    className={`p-3.5 rounded-2xl border-2 text-left transition-all flex flex-col justify-between h-36 relative overflow-hidden group ${
-                      selectedDestId === d.id
-                        ? "border-[#173B32] bg-[#173B32] text-[#EFE5D2] shadow-lg scale-102"
-                        : "border-[#E5D5BA] bg-[#FAF7F0] text-[#20211D] hover:border-[#173B32]/50 hover:bg-[#EFE5D2]"
-                    }`}
-                  >
-                    <div className="relative z-10 flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                        {d.region.split(" ")[0]}
-                      </span>
-                      {selectedDestId === d.id && <Check className="w-4 h-4 text-[#B49252]" />}
+              {loadingDestinations ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                    <div
+                      key={n}
+                      className="p-3 sm:p-3.5 rounded-2xl border-2 border-[#E5D5BA] bg-[#FAF7F0] min-h-[110px] sm:min-h-[135px] animate-pulse flex flex-col justify-between"
+                    >
+                      <div className="w-12 h-3 bg-[#E5D5BA] rounded-md" />
+                      <div className="space-y-1.5">
+                        <div className="w-16 h-2.5 bg-[#E5D5BA] rounded-md" />
+                        <div className="w-24 h-4 bg-[#E5D5BA] rounded-md" />
+                        <div className="w-10 h-2 bg-[#E5D5BA] rounded-md" />
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 max-h-[360px] sm:max-h-[340px] overflow-y-auto pr-1">
+                  {destinations.map((d) => {
+                    const isSelected = selectedDestId === d.id || selectedDestId === d.slug;
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => setSelectedDestId(d.id)}
+                        className={`p-3 sm:p-3.5 rounded-2xl border-2 text-left transition-all flex flex-col justify-between min-h-[110px] sm:min-h-[135px] relative overflow-hidden group cursor-pointer active:scale-95 ${
+                          isSelected
+                            ? "border-[#173B32] bg-[#173B32] text-[#EFE5D2] shadow-lg scale-102"
+                            : "border-[#E5D5BA] bg-[#FAF7F0] text-[#20211D] hover:border-[#173B32]/50 hover:bg-[#EFE5D2]"
+                        }`}
+                      >
+                        <div className="relative z-10 flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
+                            {d.region ? d.region.split(" ")[0] : "VALLEY"}
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B49252]" />}
+                        </div>
 
-                    <div className="relative z-10">
-                      <span className="text-xs font-serif opacity-80 block">
-                        {destHindiMap[d.slug] || "यात्रा"}
-                      </span>
-                      <div className="font-serif font-black text-lg leading-tight">{d.name}</div>
-                      <div className="text-[11px] opacity-75">{d.altitude_meters ? `${d.altitude_meters}m` : d.state}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+                        <div className="relative z-10">
+                          <span className="text-[11px] font-serif opacity-80 block leading-tight">
+                            {destHindiMap[d.slug] || "यात्रा"}
+                          </span>
+                          <div className="font-serif font-black text-base sm:text-lg leading-tight mt-0.5">{d.name}</div>
+                          <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">{d.altitude_meters ? `${d.altitude_meters}m` : d.state}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
