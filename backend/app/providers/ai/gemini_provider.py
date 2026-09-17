@@ -5,6 +5,7 @@ Leverages Google Gemini Free Tier (gemini-1.5-flash / gemini-2.0-flash) with zer
 import time
 import json
 import logging
+import asyncio
 import httpx
 from typing import Dict, Any, List, Optional
 from app.providers.ai.base import AIProvider
@@ -87,7 +88,7 @@ class GeminiProvider(AIProvider):
 
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 
-    def __init__(self, api_key: str = "", model: str = "gemini-1.5-flash"):
+    def __init__(self, api_key: str = "", model: str = "gemini-3.5-flash-lite"):
         clean_key = (api_key or "").strip()
         is_enabled = bool(clean_key)
         super().__init__(name="gemini", model=model, is_enabled=is_enabled)
@@ -183,7 +184,7 @@ class GeminiProvider(AIProvider):
             }
 
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
+            async with httpx.AsyncClient(timeout=35.0) as client:
                 res = await client.post(url, json=payload)
                 latency = round((time.time() - start_time) * 1000, 2)
 
@@ -379,7 +380,7 @@ class GeminiProvider(AIProvider):
         total_prompt_tokens = 0
         total_completion_tokens = 0
 
-        async with httpx.AsyncClient(timeout=25.0) as client:
+        async with httpx.AsyncClient(timeout=35.0) as client:
             for turn in range(max_turns):
                 payload: Dict[str, Any] = {
                     "contents": contents,
@@ -392,6 +393,11 @@ class GeminiProvider(AIProvider):
 
                 try:
                     res = await client.post(url, json=payload)
+                    if res.status_code in [503, 429]:
+                        logger.warning(f"Gemini API returned status {res.status_code}. Retrying once after backoff...")
+                        await asyncio.sleep(2.0)
+                        res = await client.post(url, json=payload)
+
                     if res.status_code == 429:
                         return {
                             "text": "Gemini API rate limit or quota reached. Please try again in a moment.",
@@ -471,7 +477,7 @@ class GeminiProvider(AIProvider):
                         response_parts.append({
                             "functionResponse": {
                                 "name": func_name,
-                                "response": {"result": tool_result}
+                                "response": {"name": func_name, "content": tool_result}
                             }
                         })
 

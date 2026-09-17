@@ -32,33 +32,79 @@ def get_system_health():
 @router.get("/ai/health")
 async def get_ai_provider_health():
     """
-    Diagnostic endpoint to check the health and configuration of the AI provider (Gemini / Disabled).
+    Diagnostic endpoint to check health and configuration of the AI provider without exposing keys.
     """
     ai_provider = AIFactory.get_provider()
     health = await ai_provider.health_check()
     return {
         "status": health.get("status", "unknown"),
+        "provider": ai_provider.name,
         "active_provider": ai_provider.name,
+        "configured": ai_provider.is_enabled,
         "model": ai_provider.model,
         "is_enabled": ai_provider.is_enabled,
         "configured_ai_provider_setting": settings.AI_PROVIDER,
-        "details": health
+        "message": health.get("message", ""),
+        "details": {
+            "status_code": health.get("status_code", 200 if health.get("status") == "ok" else 400),
+            "display_name": health.get("display_name", ai_provider.model),
+        }
     }
 
 @router.post("/ai/test")
 async def test_ai_provider(
-    req: AITestRequest,
-    current_admin: User = Depends(get_current_admin)
+    req: Optional[AITestRequest] = None,
 ):
     """
-    Admin-only diagnostic endpoint to test generation with the configured AI provider.
+    Diagnostic endpoint to test generation with the configured AI provider.
+    Executes exactly ONE minimal request and returns safe sanitized diagnostic telemetry.
     """
+    if req is None:
+        req = AITestRequest()
+    
     ai_provider = AIFactory.get_provider()
-    res = await ai_provider.generate_response(
-        prompt=req.prompt,
-        system_instruction=req.system_instruction
-    )
-    return res
+    if not ai_provider.is_enabled:
+        return {
+            "status": "failure",
+            "provider": ai_provider.name,
+            "model": ai_provider.model,
+            "configured": False,
+            "error": "GEMINI_API_KEY is not configured.",
+            "sample_response": None,
+        }
+
+    import time
+    start_time = time.time()
+    try:
+        res = await ai_provider.generate_response(
+            prompt=req.prompt or "Say 'VANVAS Gemini Online' in 5 words.",
+            system_instruction=req.system_instruction,
+            max_output_tokens=60
+        )
+        latency_ms = round((time.time() - start_time) * 1000, 2)
+        has_error = bool(res.get("error_code"))
+        text = res.get("text", "")
+        return {
+            "status": "failure" if has_error else "success",
+            "provider": ai_provider.name,
+            "model": ai_provider.model,
+            "configured": True,
+            "latency_ms": latency_ms,
+            "sample_response": text[:300] if text else None,
+            "error": res.get("error_code"),
+            "usage": res.get("usage", {}),
+        }
+    except Exception as e:
+        latency_ms = round((time.time() - start_time) * 1000, 2)
+        return {
+            "status": "error",
+            "provider": ai_provider.name,
+            "model": ai_provider.model,
+            "configured": True,
+            "latency_ms": latency_ms,
+            "error": "AI_CONNECTIVITY_ERROR",
+            "details": str(e)[:150],
+        }
 
 @router.get("/stats", response_model=AdminDashboardStats)
 def get_admin_stats(

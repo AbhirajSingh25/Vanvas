@@ -315,10 +315,11 @@ export const api = {
   },
 
   async askCopilot(tripId: string, message: string, locName?: string): Promise<CopilotChatResponse & CopilotResponse> {
-    const res = await fetchApi<CopilotChatResponse>(`/trips/${tripId}/assistant`, {
+    const res = await fetchApi<CopilotChatResponse>("/copilot/chat", {
       method: "POST",
       body: JSON.stringify({
         message,
+        trip_id: tripId,
         current_location_name: locName,
       }),
     });

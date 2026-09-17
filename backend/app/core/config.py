@@ -88,9 +88,9 @@ class Settings(BaseSettings):
     PLACE_ARTWORK_PROVIDER: str = os.getenv("PLACE_ARTWORK_PROVIDER", "disabled")  # "gemini" or "disabled"
 
     # AI LLM Provider (Free-first Gemini Architecture)
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "disabled")  # "disabled" or "gemini"
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "gemini")  # "disabled" or "gemini"
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
     GEMINI_IMAGE_MODEL: str = os.getenv("GEMINI_IMAGE_MODEL", "imagen-3.0-generate-002")
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     
