@@ -17,6 +17,8 @@ from app.models.models import (
     SavedPlace,
     ChecklistItem,
     WeatherSnapshot,
+    Conversation,
+    ConversationMessage,
 )
 
 __all__ = [
@@ -38,4 +40,6 @@ __all__ = [
     "SavedPlace",
     "ChecklistItem",
     "WeatherSnapshot",
+    "Conversation",
+    "ConversationMessage",
 ]

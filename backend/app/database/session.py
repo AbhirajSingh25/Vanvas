@@ -42,6 +42,35 @@ def ensure_sqlite_schema(eng=engine):
                     FOREIGN KEY(trip_id) REFERENCES trips(id)
                 )
             """))
+            # Ensure conversations and conversation_messages tables exist if missing in persistent SQLite
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id VARCHAR(36) PRIMARY KEY,
+                    user_id VARCHAR(36) NOT NULL,
+                    trip_id VARCHAR(36),
+                    destination_slug VARCHAR(100),
+                    title VARCHAR(255) DEFAULT 'Mountain Expedition Session',
+                    summary TEXT,
+                    context_state TEXT,
+                    created_at DATETIME,
+                    updated_at DATETIME,
+                    FOREIGN KEY(user_id) REFERENCES users(id),
+                    FOREIGN KEY(trip_id) REFERENCES trips(id)
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS conversation_messages (
+                    id VARCHAR(36) PRIMARY KEY,
+                    conversation_id VARCHAR(36) NOT NULL,
+                    role VARCHAR(20) NOT NULL,
+                    content TEXT NOT NULL,
+                    tool_calls TEXT,
+                    tool_results TEXT,
+                    metadata_json TEXT,
+                    created_at DATETIME,
+                    FOREIGN KEY(conversation_id) REFERENCES conversations(id)
+                )
+            """))
             conn.commit()
     except Exception:
         pass

@@ -27,6 +27,7 @@ class User(Base):
     votes = relationship("Vote", back_populates="user", cascade="all, delete-orphan")
     expenses = relationship("Expense", back_populates="user")
     saved_places = relationship("SavedPlace", back_populates="user", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
 
 class UserPreference(Base):
     __tablename__ = "user_preferences"
@@ -209,6 +210,7 @@ class Trip(Base):
     votes = relationship("Vote", back_populates="trip", cascade="all, delete-orphan")
     expenses = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
     checklist_items = relationship("ChecklistItem", back_populates="trip", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="trip")
 
 class TripMember(Base):
     __tablename__ = "trip_members"
@@ -344,3 +346,41 @@ class WeatherSnapshot(Base):
     wind_kph = Column(Float, default=8.0)
     advisory = Column(String(500), default="Ideal morning trekking conditions. Light mist expected by evening.")
     icon = Column(String(50), default="cloud-sun")
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=True, index=True)
+    destination_slug = Column(String(100), nullable=True)
+    title = Column(String(255), default="Mountain Expedition Session")
+    summary = Column(Text, nullable=True)
+    context_state = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="conversations")
+    trip = relationship("Trip", back_populates="conversations")
+    messages = relationship(
+        "ConversationMessage",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="ConversationMessage.created_at"
+    )
+
+class ConversationMessage(Base):
+    __tablename__ = "conversation_messages"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    conversation_id = Column(String(36), ForeignKey("conversations.id"), nullable=False, index=True)
+    role = Column(String(20), nullable=False)  # 'user', 'assistant', 'system', 'tool'
+    content = Column(Text, nullable=False)
+    tool_calls = Column(Text, nullable=True)
+    tool_results = Column(Text, nullable=True)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    conversation = relationship("Conversation", back_populates="messages")

@@ -507,3 +507,31 @@ class CreativeArtGenerateResponse(BaseModel):
     is_curated: bool
     aspect_ratio: Optional[str] = None
     error: Optional[str] = None
+
+# ----------------- Conversation Persistence Schemas -----------------
+class ConversationMessageSchema(BaseModel):
+    id: str
+    conversation_id: str
+    role: str
+    content: str
+    tool_calls: Optional[str] = None
+    tool_results: Optional[str] = None
+    metadata_json: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ConversationSchema(BaseModel):
+    id: str
+    user_id: str
+    trip_id: Optional[str] = None
+    destination_slug: Optional[str] = None
+    title: str
+    summary: Optional[str] = None
+    context_state: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
