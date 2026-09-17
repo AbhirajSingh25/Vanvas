@@ -1,7 +1,7 @@
 import {
   Trip, TripSummary, Destination, Place, Hotel, RentalOption,
   BudgetSummary, Expense, GroupSummary, ChecklistItem,
-  ImHereResponse, ArrivalOptimizerResponse, CopilotResponse,
+  ImHereResponse, ArrivalOptimizerResponse, CopilotResponse, CopilotChatResponse,
   AdminStats, User, UserPreferences, TripInvitePreview, TripMemberItem
 } from "@/types";
 
@@ -301,14 +301,34 @@ export const api = {
   },
 
   // AI Copilot
-  async askCopilot(tripId: string, message: string, locName?: string): Promise<CopilotResponse> {
-    return fetchApi(`/trips/${tripId}/assistant`, {
+  async copilotChat(params: {
+    message: string;
+    trip_id?: string;
+    destination_slug?: string;
+    action_type?: string;
+    current_time?: string;
+  }): Promise<CopilotChatResponse> {
+    return fetchApi("/copilot/chat", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  },
+
+  async askCopilot(tripId: string, message: string, locName?: string): Promise<CopilotChatResponse & CopilotResponse> {
+    const res = await fetchApi<CopilotChatResponse>(`/trips/${tripId}/assistant`, {
       method: "POST",
       body: JSON.stringify({
         message,
         current_location_name: locName,
       }),
     });
+    // Ensure compatibility with older callers expecting reply and relevant_places
+    return {
+      ...res,
+      reply: res.message,
+      suggested_actions: res.actions?.map((a) => ({ label: a.title, action: a.action_type })) || [],
+      relevant_places: res.places || [],
+    };
   },
 
   // Checklist

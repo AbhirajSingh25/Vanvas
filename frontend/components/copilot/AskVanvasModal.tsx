@@ -1,18 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, Sparkles, X, Compass, ArrowRight, Bot, MapPin, Clock, Coins, Calendar, Navigation, ShieldCheck } from "lucide-react";
+import { Send, Sparkles, X, Compass, ArrowRight, Bot, MapPin, Clock, Coins, Calendar, Navigation, ShieldCheck, Mountain } from "lucide-react";
 import { api } from "@/lib/api";
 import { CopilotChatResponse } from "@/types";
 
-interface TripAssistantModalProps {
-  tripId?: string;
-  destinationName?: string;
-  destinationSlug?: string;
+interface AskVanvasModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTriggerAction?: (actionType: string, payload?: any) => void;
-  trip?: any;
+  defaultDestination?: string;
 }
 
 interface MessageItem {
@@ -24,34 +20,29 @@ interface MessageItem {
   metadata?: any;
 }
 
-export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
-  tripId,
-  destinationName = "Manali",
-  destinationSlug,
+export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   isOpen,
   onClose,
-  onTriggerAction,
-  trip,
+  defaultDestination,
 }) => {
-  const resolvedTripId = trip?.id || tripId || "";
-  const resolvedDest = trip?.destination?.name || destinationName;
-  const resolvedSlug = trip?.destination?.slug || destinationSlug || "";
-
+  const [selectedDest, setSelectedDest] = useState<string>(defaultDestination || "Mussoorie");
   const [messages, setMessages] = useState<MessageItem[]>([
     {
       role: "assistant",
-      text: `नमस्ते! I'm your VANVAS expedition copilot for ${resolvedDest}. How can I assist your mountain journey today?`,
+      text: `नमस्ते! I am VANVAS Intelligence, powered by Google Gemini reasoning over verified Himalayan travel knowledge. Where would you like to explore?`,
       actions: [
-        { label: "कहाँ खाएं? • Where to eat?", action: "find_food" },
-        { label: "3-Hour Micro Plan", action: "quick_plan" },
-        { label: "Trail Weather", action: "check_weather" },
-        { label: "Quiet Cafes Nearby", action: "quiet_cafes" },
+        { label: "Top Cafes in Mussoorie", action: "explore_mussoorie" },
+        { label: "Manali 3-Day Itinerary", action: "plan_manali" },
+        { label: "Leh Altitude & Weather", action: "weather_leh" },
+        { label: "Rishikesh Quiet Stays", action: "stays_rishikesh" },
       ],
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const destinations = ["Mussoorie", "Manali", "Rishikesh", "Dharamshala", "Leh Ladakh", "Spiti Valley"];
 
   useEffect(() => {
     if (isOpen) {
@@ -83,21 +74,16 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
     setLoading(true);
 
     try {
-      let res: CopilotChatResponse;
-      if (resolvedTripId) {
-        res = await api.askCopilot(resolvedTripId, textToSend);
-      } else {
-        res = await api.copilotChat({
-          message: textToSend,
-          destination_slug: resolvedSlug,
-        });
-      }
+      const res: CopilotChatResponse = await api.copilotChat({
+        message: textToSend,
+        destination_slug: selectedDest.toLowerCase().replace(/\s+/g, "-"),
+      });
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          text: res.message || "I have gathered your mountain details.",
+          text: res.message || "I have analyzed your expedition query.",
           actions: res.actions?.map((a: any) => ({
             label: a.title || a.label,
             action: a.action_type || a.action,
@@ -114,7 +100,7 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
         ...prev,
         {
           role: "assistant",
-          text: "I encountered a minor trail disruption. Your saved places and offline maps remain fully available.",
+          text: "I encountered a minor network disruption. Your verified destination guides remain fully available.",
         },
       ]);
     } finally {
@@ -123,20 +109,18 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
   };
 
   const handleActionClick = (action: string, label: string, payload?: any) => {
-    if (action === "view_quick_plan" && payload && onTriggerAction) {
-      onTriggerAction("view_quick_plan", payload);
-      onClose();
-    } else if (action === "quick_plan") {
-      handleSend("Generate a 3-hour quick plan for me");
-    } else if (action === "find_food") {
-      handleSend("Recommend top local cafes and food places nearby");
-    } else if (action === "check_weather") {
-      handleSend("What is the current mountain weather and forecast?");
-    } else if (action === "quiet_cafes") {
-      handleSend("Find quiet scenic spots or cafes to relax");
-    } else if (onTriggerAction) {
-      onTriggerAction(action, payload);
-      onClose();
+    if (action === "explore_mussoorie") {
+      setSelectedDest("Mussoorie");
+      handleSend("What are the best cafes and heritage viewpoints in Mussoorie?");
+    } else if (action === "plan_manali") {
+      setSelectedDest("Manali");
+      handleSend("Give me a curated plan for 3 days in Manali with verified spots");
+    } else if (action === "weather_leh") {
+      setSelectedDest("Leh Ladakh");
+      handleSend("What is the current weather forecast and acclimatization advice for Leh?");
+    } else if (action === "stays_rishikesh") {
+      setSelectedDest("Rishikesh");
+      handleSend("Recommend quiet scenic riverside spots in Rishikesh");
     } else {
       handleSend(label);
     }
@@ -144,48 +128,67 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0F2924]/80 backdrop-blur-md animate-fadeIn"
       onClick={onClose}
     >
       <div 
-        className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl w-full max-w-xl shadow-2xl flex flex-col h-[640px] max-h-[90vh] overflow-hidden"
+        className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl w-full max-w-2xl shadow-2xl flex flex-col h-[680px] max-h-[92vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-4 sm:p-5 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-inner border border-[#D8CBB2]/20">
-              <Bot className="w-5 h-5 text-[#FAF7F0]" />
+            <div className="w-11 h-11 rounded-2xl bg-[#B65E3C] text-[#FAF7F0] flex items-center justify-center shadow-md border border-[#D8CBB2]/20">
+              <Sparkles className="w-5 h-5 text-[#B49252]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-serif font-bold text-base text-[#FAF7F0]">VANVAS Trail Copilot</h3>
-                <span className="text-[9px] font-mono tracking-wider px-2 py-0.5 rounded-full bg-[#173B32] border border-[#B49252]/40 text-[#B49252]">
-                  GEMINI AI
+                <h3 className="font-serif font-bold text-lg text-[#FAF7F0]">Ask VANVAS</h3>
+                <span className="text-[10px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#173B32] border border-[#B49252]/40 text-[#B49252] font-semibold">
+                  GEMINI INTELLIGENCE
                 </span>
               </div>
-              <p className="text-[11px] text-[#D8DED5]/80 font-mono flex items-center gap-1.5 mt-0.5">
-                <Compass className="w-3 h-3 text-[#B49252]" />
-                {resolvedDest} Valley • Verified Local Knowledge
+              <p className="text-xs text-[#D8DED5]/80 font-mono mt-0.5">
+                Zero Hallucinations • Real-Time Himalayan Mountain Reasoning
               </p>
             </div>
           </div>
           <button 
             onClick={onClose} 
             aria-label="Close" 
-            className="p-2 rounded-xl text-[#D8DED5] hover:bg-[#173B32] hover:text-white transition-colors"
+            className="p-2 rounded-xl text-[#D8DED5] hover:bg-[#173B32] hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Destination Switcher Bar */}
+        <div className="px-4 py-2 bg-[#EFE5D2] border-b border-[#E5D5BA] flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <span className="text-[11px] font-mono text-[#7B4D36] font-bold flex items-center gap-1 shrink-0">
+            <Mountain className="w-3 h-3 text-[#B65E3C]" /> Valley:
+          </span>
+          {destinations.map((dest) => (
+            <button
+              key={dest}
+              onClick={() => setSelectedDest(dest)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                selectedDest === dest
+                  ? "bg-[#173B32] text-[#FAF7F0] shadow-2xs"
+                  : "bg-[#FAF7F0] text-[#20211D]/80 hover:bg-[#D8CBB2] border border-[#E5D5BA]"
+              }`}
+            >
+              {dest}
+            </button>
+          ))}
+        </div>
+
         {/* Message Thread */}
-        <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 text-sm bg-radial-gradient">
+        <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 text-sm bg-[#FAF7F0]">
           {messages.map((m, idx) => (
             <div key={idx} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
               {/* Message Bubble */}
               <div
-                className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-sm leading-relaxed ${
+                className={`max-w-[88%] rounded-2xl px-4.5 py-3.5 shadow-sm leading-relaxed ${
                   m.role === "user"
                     ? "bg-[#173B32] text-[#FAF7F0] rounded-br-xs font-medium"
                     : "bg-[#EFE5D2] text-[#20211D] rounded-bl-xs border border-[#E5D5BA] font-normal"
@@ -195,9 +198,9 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
 
                 {/* Referenced Places Cards */}
                 {m.places && m.places.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-[#D8CBB2]/60 space-y-2">
+                  <div className="mt-3.5 pt-3 border-t border-[#D8CBB2]/60 space-y-2">
                     <p className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">
-                      Referenced Verified Spots ({m.places.length})
+                      Verified Destination Spots ({m.places.length})
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {m.places.map((place: any, pIdx: number) => (
@@ -220,7 +223,7 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-serif font-bold text-[#173B32] truncate">{place.name}</p>
                             <div className="flex items-center gap-2 text-[10px] text-[#7B4D36] font-mono mt-0.5">
-                              <span className="capitalize">{place.category || "Sight"}</span>
+                              <span className="capitalize">{place.category || "Spot"}</span>
                               {place.distance_km !== undefined && (
                                 <span>• {place.distance_km} km</span>
                               )}
@@ -239,20 +242,20 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
                 {m.plan && (
                   <div className="mt-3 p-3 rounded-2xl bg-[#FAF7F0] border border-[#B49252]/50 shadow-xs">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[11px] font-bold font-serif text-[#173B32] flex items-center gap-1.5">
+                      <span className="text-xs font-bold font-serif text-[#173B32] flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-[#B65E3C]" />
-                        {m.plan.headline || "Generated Micro-Plan"}
+                        {m.plan.headline || "Himalayan Itinerary"}
                       </span>
                       <span className="text-[10px] font-mono text-[#7B4D36] px-2 py-0.5 rounded-full bg-[#EFE5D2]">
                         {m.plan.duration_hours || 3} Hours
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#20211D]/80 mb-2 leading-tight">{m.plan.summary}</p>
+                    <p className="text-xs text-[#20211D]/80 mb-2 leading-tight">{m.plan.summary}</p>
                     {m.plan.items && m.plan.items.length > 0 && (
                       <div className="space-y-1">
                         {m.plan.items.map((item: any, iIdx: number) => (
-                          <div key={iIdx} className="flex items-center gap-2 text-[11px] text-[#173B32] font-mono">
-                            <span className="w-4 h-4 rounded-full bg-[#EFE5D2] text-[9px] flex items-center justify-center font-bold">
+                          <div key={iIdx} className="flex items-center gap-2 text-xs text-[#173B32] font-mono">
+                            <span className="w-4 h-4 rounded-full bg-[#EFE5D2] text-[10px] flex items-center justify-center font-bold">
                               {iIdx + 1}
                             </span>
                             <span className="font-semibold truncate">{item.title || item.name}</span>
@@ -269,7 +272,7 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
                   <div className="mt-2.5 flex items-center justify-between text-[9px] font-mono text-[#7B4D36]/80 pt-1.5 border-t border-[#D8CBB2]/40">
                     <span className="flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3 text-[#173B32]" />
-                      Data Source: VANVAS Verified DB
+                      Source of Truth: VANVAS Database
                     </span>
                     <span>
                       {m.metadata.model || "Gemini"} • {m.metadata.latency_ms ? `${m.metadata.latency_ms}ms` : "Live"}
@@ -318,7 +321,7 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask anything about ${resolvedDest}... (e.g. Scenic sunset trek? Best cafe?)`}
+              placeholder={`Ask anything about ${selectedDest}... (e.g. Best chai spot with sunset view?)`}
               className="flex-1 bg-white border border-[#E5D5BA] rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-[#20211D] placeholder:text-[#20211D]/45 focus:outline-none focus:border-[#173B32] focus:ring-1 focus:ring-[#173B32] transition-all"
             />
             <button
@@ -335,4 +338,3 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
     </div>
   );
 };
-

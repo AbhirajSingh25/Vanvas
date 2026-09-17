@@ -4,6 +4,44 @@ Defines the contract for LLM providers (Gemini Free-First, Disabled fallback).
 """
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
+from pydantic import BaseModel, Field
+
+
+class AIUsage(BaseModel):
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    latency_ms: float = 0.0
+
+
+class AIToolCall(BaseModel):
+    name: str
+    arguments: Dict[str, Any]
+    result: Optional[Dict[str, Any]] = None
+
+
+class AITextResponse(BaseModel):
+    text: str
+    provider: str
+    model: str
+    is_enabled: bool = True
+    tool_calls: Optional[List[AIToolCall]] = None
+    usage: AIUsage = Field(default_factory=AIUsage)
+
+
+class AIStructuredResponse(BaseModel):
+    data: Dict[str, Any]
+    provider: str
+    model: str
+    is_enabled: bool = True
+    usage: AIUsage = Field(default_factory=AIUsage)
+
+
+class AIError(BaseModel):
+    error_code: str  # "AI_DISABLED", "AI_UNCONFIGURED", "AI_QUOTA_EXCEEDED", "AI_TIMEOUT", "AI_INVALID_RESPONSE"
+    message: str
+    provider: str = "none"
+    model: str = "none"
 
 
 class AIProvider(ABC):
@@ -43,6 +81,36 @@ class AIProvider(ABC):
         - provider: str
         - model: str
         - usage: Dict[str, Any]
+        """
+        pass
+
+    @abstractmethod
+    async def generate_structured(
+        self,
+        prompt: str,
+        response_schema: Dict[str, Any],
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.2,
+    ) -> Dict[str, Any]:
+        """
+        Generate a strictly validated JSON structure conforming to response_schema.
+        """
+        pass
+
+    @abstractmethod
+    async def chat_with_tools(
+        self,
+        messages: List[Dict[str, Any]],
+        tools: List[Dict[str, Any]],
+        tool_dispatcher: Any,
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.7,
+        max_turns: int = 3,
+    ) -> Dict[str, Any]:
+        """
+        Conduct a multi-turn conversation with tool dispatching.
+        Executes returned tool calls via tool_dispatcher, passes outputs back to the model,
+        and returns the final reasoned response.
         """
         pass
 

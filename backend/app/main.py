@@ -62,6 +62,7 @@ app.include_router(budget.router, prefix=f"{settings.API_V1_STR}/trips", tags=["
 app.include_router(group.router, prefix=f"{settings.API_V1_STR}/trips", tags=["Group Travel & Voting"])
 app.include_router(places.router, prefix=f"{settings.API_V1_STR}/places", tags=["Places & Nearby"])
 app.include_router(transport_hotels_rentals.router, prefix=f"{settings.API_V1_STR}", tags=["Transport, Hotels & Rentals"])
+app.include_router(copilot.router, prefix=f"{settings.API_V1_STR}/copilot", tags=["AI Copilot"])
 app.include_router(copilot.router, prefix=f"{settings.API_V1_STR}/trips", tags=["AI Copilot"])
 app.include_router(checklist.router, prefix=f"{settings.API_V1_STR}/trips", tags=["Checklist"])
 app.include_router(search.router, prefix=f"{settings.API_V1_STR}/search", tags=["Search & Intent"])

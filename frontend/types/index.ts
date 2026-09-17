@@ -377,8 +377,34 @@ export interface ArrivalOptimizerResponse {
 
 export interface CopilotResponse {
   reply: string;
-  suggested_actions: Array<{ label: string; action: string }>;
-  relevant_places: Place[];
+  suggested_actions?: Array<{ label: string; action: string }>;
+  relevant_places?: Place[];
+}
+
+export interface CopilotAction {
+  action_type: string;
+  title: string;
+  payload?: any;
+}
+
+export interface CopilotChatResponse {
+  message: string;
+  actions: CopilotAction[];
+  places: Place[];
+  plan?: {
+    headline: string;
+    summary: string;
+    duration_hours: number;
+    items: any[];
+  } | null;
+  metadata?: {
+    provider: string;
+    model: string;
+    is_enabled: boolean;
+    tools_executed_count: number;
+    latency_ms: number;
+  };
+  error?: string | null;
 }
 
 export interface AdminStats {

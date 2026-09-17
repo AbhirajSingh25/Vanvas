@@ -7,12 +7,14 @@ import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { Compass, Calendar, MapPin, Sparkles, Menu, X, SlidersHorizontal, User as UserIcon } from "lucide-react";
 import { ProfilePreferencesModal } from "@/components/profile/ProfilePreferencesModal";
+import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [askVanvasOpen, setAskVanvasOpen] = useState(false);
 
   const navLinks = [
     { name: "Explore", devanagari: "खोज", href: "/explore", icon: Compass },
@@ -53,6 +55,18 @@ export const Header: React.FC = () => {
 
           {/* Header Right Actions */}
           <div className="hidden md:flex items-center gap-3">
+            {/* Ask VANVAS AI Copilot Button */}
+            <button
+              type="button"
+              onClick={() => setAskVanvasOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#B49252]/60 bg-[#173B32] text-xs font-semibold text-[#FAF7F0] hover:bg-[#20453B] hover:shadow-md transition-all group cursor-pointer shadow-xs"
+              title="Ask VANVAS Gemini Copilot"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#B49252] group-hover:rotate-12 transition-transform" />
+              <span>Ask VANVAS</span>
+              <span className="font-devanagari text-[10px] text-[#B49252] font-normal">पूछें</span>
+            </button>
+
             {/* User Profile Pill - Opens Preferences Editor */}
             <button
               type="button"
@@ -90,6 +104,22 @@ export const Header: React.FC = () => {
         {/* Mobile Drawer */}
         {mobileMenuOpen && (
           <div className="md:hidden border-b border-[#D8CBB2] bg-[#FAF4E8] px-4 pt-3 pb-6 space-y-2 animate-fadeIn">
+            {/* Ask VANVAS in Mobile Drawer */}
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setAskVanvasOpen(true);
+              }}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#173B32] text-[#FAF7F0] font-semibold text-sm shadow-sm"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#B49252]" />
+                <span>Ask VANVAS Copilot</span>
+              </div>
+              <span className="font-devanagari text-xs text-[#B49252]">पूछें</span>
+            </button>
+
             {/* User Profile Pill in Mobile Drawer */}
             <button
               type="button"
@@ -145,6 +175,12 @@ export const Header: React.FC = () => {
       <ProfilePreferencesModal
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
+      />
+
+      {/* Global Ask VANVAS AI Copilot Modal */}
+      <AskVanvasModal
+        isOpen={askVanvasOpen}
+        onClose={() => setAskVanvasOpen(false)}
       />
     </>
   );
