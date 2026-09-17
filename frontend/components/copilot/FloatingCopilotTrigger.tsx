@@ -19,7 +19,7 @@ export const FloatingCopilotTrigger: React.FC<FloatingCopilotTriggerProps> = ({
       type="button"
       onClick={onClick}
       aria-label="Ask VANVAS AI Companion"
-      className="md:hidden fixed bottom-20 right-4 z-40 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#B49252] focus:ring-offset-2 focus:ring-offset-[#EFE5D2] transition-all duration-300 transform active:scale-90"
+      className="md:hidden fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] right-4 z-50 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#B49252] focus:ring-offset-2 focus:ring-offset-[#EFE5D2] transition-all duration-300 transform active:scale-90"
     >
       {/* Outer Antiqued Travel Seal */}
       <div className="relative flex items-center gap-2 pl-3.5 pr-4 py-2.5 rounded-full bg-[#173B32] text-[#FAF7F0] border-2 border-[#B49252]/70 shadow-2xl backdrop-blur-md transition-all duration-300 group-hover:bg-[#20453B] group-hover:border-[#B49252] group-hover:shadow-[0_8px_25px_rgba(23,59,50,0.4)]">

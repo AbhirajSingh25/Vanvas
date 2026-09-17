@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Compass, MapPin, ArrowRight, Sparkles, Mountain, Search, Trees, Waves, Castle } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
+import { MistOverlay } from "@/components/mist/MistOverlay";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 import { DestinationSearchBar } from "@/components/search/DestinationSearchBar";
 import { TravelStamp } from "@/components/ui/TravelStamp";
@@ -110,33 +111,113 @@ export default function ExploreIndexPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#EFE5D2] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-12">
-        {/* Editorial Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-[#E5D5BA]">
-          <div className="space-y-3 max-w-2xl">
-            <div className="flex items-center gap-2">
-              <TravelStamp label="SANCTUARY CATALOGUE" sub="2026 EDITION" variant="terracotta" />
-              <TravelStamp label="VANVAS JOURNAL" variant="forest" />
-            </div>
+    <div className="relative overflow-hidden bg-[#EFE5D2]">
+      {/* SECTION 1: LAYERED HERO WITH HIMALAYAN ARTWORK & DEVANAGARI STORYTELLING */}
+      <section className="relative min-h-[85vh] flex items-center justify-center bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 py-16 sm:py-20 overflow-hidden">
+        {/* Layer 1: Illustrated Mountain Artwork Canvas */}
+        <div className="absolute inset-0 opacity-60 scale-105 transform pointer-events-none">
+          <DestinationArtwork destination="manali" className="w-full h-full object-cover" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#173B32]/85 via-[#173B32]/70 to-[#173B32]" />
 
-            <DevanagariHeading
-              hindi="कहाँ चलें?"
-              english="Where the road takes you."
-              subtitle="Illustrated destination artwork for discovery. Switch to authentic photography when you step inside each sanctuary."
-              size="lg"
+        {/* Ambient Mist Drift Animation */}
+        <MistOverlay />
+
+        {/* Layer 2: Hero Editorial Content Panel */}
+        <div className="relative z-20 max-w-5xl mx-auto text-center space-y-8">
+          {/* Expedition Stamp & Route Header */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <TravelStamp label="VANVAS EXPEDITION" sublabel="DELHI → MANALI" elevation="2050M" variant="mustard" />
+            <div className="hidden sm:flex items-center gap-2 text-xs font-mono tracking-widest text-[#D8DED5]/80 uppercase">
+              <span>[ 32°14&apos;N, 77°11&apos;E ]</span>
+              <span>•</span>
+              <span>EST. 2026</span>
+            </div>
+          </div>
+
+          {/* Hindi Devanagari Lead + English Headline */}
+          <div className="space-y-2">
+            <span className="font-devanagari text-2xl sm:text-4xl text-[#B49252] font-bold tracking-widest block animate-float">
+              चलो निकलते हैं।
+            </span>
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight leading-[1.08] text-[#FAF4E8]">
+              Travel should feel <span className="text-[#B49252] italic font-normal">spontaneous</span>.
+              <br />
+              The planning shouldn’t.
+            </h1>
+          </div>
+
+          {/* Supporting Copy */}
+          <p className="max-w-2xl mx-auto text-sm sm:text-lg text-[#D8DED5]/90 leading-relaxed font-light">
+            An expedition journal and travel operating layer for people who plan badly, arrive at weird hours,
+            and want to experience the mountains freely.
+          </p>
+
+          {/* Live Global & Indian Sanctuary Search Bar */}
+          <div className="max-w-2xl mx-auto pt-2">
+            <DestinationSearchBar
+              placeholder="Search any destination: Spiti Valley, Leh, Rishikesh, Goa, Bali..."
+              className="shadow-2xl"
             />
           </div>
 
-          <div className="w-full md:w-96 space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#7B4D36] block">
-              खोजो • Live Destination Search
+          {/* Action CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <Link
+              href="/plan"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-sm font-bold tracking-wider uppercase shadow-xl hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-2.5 border border-[#7B4D36]/30"
+            >
+              <Sparkles className="w-4 h-4 text-[#B49252]" />
+              <span>PLAN MY TRIP</span>
+              <span className="font-devanagari text-xs opacity-75 lowercase">(योजना बनाएं)</span>
+            </Link>
+
+            <a
+              href="#sanctuaries"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#EFE5D2]/15 hover:bg-[#EFE5D2]/25 backdrop-blur-md border border-[#D8DED5]/30 text-[#EFE5D2] text-sm font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+            >
+              <Compass className="w-4 h-4" />
+              <span>EXPLORE SANCTUARIES</span>
+            </a>
+          </div>
+
+          {/* Editorial Route Annotation Pin */}
+          <div className="pt-6">
+            <span className="text-[11px] font-mono tracking-widest text-[#B49252] uppercase bg-[#0F2924]/60 px-4 py-1.5 rounded-full border border-[#B49252]/30">
+              Leave Delhi at night. Wake up somewhere in the pines.
             </span>
-            <DestinationSearchBar
-              placeholder="Search any destination, valley or trail..."
-            />
           </div>
         </div>
+      </section>
+
+      {/* SECTION 2: SANCTUARY CATALOGUE & DISCOVERY GRID */}
+      <section id="sanctuaries" className="min-h-screen bg-[#EFE5D2] py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-12">
+          {/* Editorial Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-[#E5D5BA]">
+            <div className="space-y-3 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <TravelStamp label="SANCTUARY CATALOGUE" sub="2026 EDITION" variant="terracotta" />
+                <TravelStamp label="VANVAS JOURNAL" variant="forest" />
+              </div>
+
+              <DevanagariHeading
+                hindi="कहाँ चलें?"
+                english="Where the road takes you."
+                subtitle="Illustrated destination artwork for discovery. Switch to authentic photography when you step inside each sanctuary."
+                size="lg"
+              />
+            </div>
+
+            <div className="w-full md:w-96 space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#7B4D36] block">
+                खोजो • Live Destination Search
+              </span>
+              <DestinationSearchBar
+                placeholder="Search any destination, valley or trail..."
+              />
+            </div>
+          </div>
 
         {/* Curated Journey Route Pills */}
         <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
@@ -322,6 +403,7 @@ export default function ExploreIndexPage() {
           </div>
         )}
       </div>
+      </section>
     </div>
   );
 }

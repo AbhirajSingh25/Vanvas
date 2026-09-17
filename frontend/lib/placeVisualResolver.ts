@@ -53,7 +53,17 @@ export const EXACT_PLACE_REGISTRY: Record<string, {
     visualDescription: "Highest mountain ridge viewpoint in Landour with telescope overlooking distant Garhwal snow peaks.",
     category: "Nature & Trails",
   },
+  "mussoorie:lal-tibba-scenic-viewpoint": {
+    imageUrl: "/images/places/mussoorie/lal-tibba.webp",
+    visualDescription: "Highest mountain ridge viewpoint in Landour with telescope overlooking distant Garhwal snow peaks.",
+    category: "Nature & Trails",
+  },
   "mussoorie:kempty-falls": {
+    imageUrl: "/images/places/mussoorie/kempty-falls.webp",
+    visualDescription: "Steep rocky mountain waterfall cascade plunging into jade mountain pools.",
+    category: "Nature & Trails",
+  },
+  "mussoorie:kempty-falls-mountain-cascade": {
     imageUrl: "/images/places/mussoorie/kempty-falls.webp",
     visualDescription: "Steep rocky mountain waterfall cascade plunging into jade mountain pools.",
     category: "Nature & Trails",
@@ -63,7 +73,17 @@ export const EXACT_PLACE_REGISTRY: Record<string, {
     visualDescription: "Elevated colonial peak with ropeway cable car overlooking the vast Doon Valley.",
     category: "Culture & Heritage",
   },
+  "mussoorie:gun-hill-historic-viewpoint": {
+    imageUrl: "/images/places/mussoorie/gun-hill.webp",
+    visualDescription: "Elevated colonial peak with ropeway cable car overlooking the vast Doon Valley.",
+    category: "Culture & Heritage",
+  },
   "mussoorie:camel-back-road": {
+    imageUrl: "/images/places/mussoorie/camel-back-road.webp",
+    visualDescription: "Tranquil oak-shaded walking promenade framing natural camel rock outcrop and winterline sunsets.",
+    category: "Nature & Trails",
+  },
+  "mussoorie:camel-s-back-road-winterline-trail": {
     imageUrl: "/images/places/mussoorie/camel-back-road.webp",
     visualDescription: "Tranquil oak-shaded walking promenade framing natural camel rock outcrop and winterline sunsets.",
     category: "Nature & Trails",
@@ -95,7 +115,17 @@ export const EXACT_PLACE_REGISTRY: Record<string, {
     visualDescription: "Four-tiered wooden pagoda temple set inside Dhungri towering deodar pine forest.",
     category: "Culture & Heritage",
   },
+  "manali:hadimba-devi-cedar-forest-temple": {
+    imageUrl: "/images/places/manali/hadimba-temple.webp",
+    visualDescription: "Four-tiered wooden pagoda temple set inside Dhungri towering deodar pine forest.",
+    category: "Culture & Heritage",
+  },
   "manali:solang-valley": {
+    imageUrl: "/images/places/manali/solang-valley.webp",
+    visualDescription: "Expansive green alpine valley surrounded by snow-capped Pir Panjal peaks with paragliders in azure sky.",
+    category: "Adventure & Sport",
+  },
+  "manali:solang-valley-ridge-paragliding": {
     imageUrl: "/images/places/manali/solang-valley.webp",
     visualDescription: "Expansive green alpine valley surrounded by snow-capped Pir Panjal peaks with paragliders in azure sky.",
     category: "Adventure & Sport",
@@ -105,7 +135,17 @@ export const EXACT_PLACE_REGISTRY: Record<string, {
     visualDescription: "Traditional timber-and-stone Himachali houses, apple orchards, and bohemian riverside verandas.",
     category: "Culture & Heritage",
   },
+  "manali:old-manali-village-manu-temple": {
+    imageUrl: "/images/places/manali/old-manali.webp",
+    visualDescription: "Traditional timber-and-stone Himachali houses, apple orchards, and bohemian riverside verandas.",
+    category: "Culture & Heritage",
+  },
   "manali:cafe-1947": {
+    imageUrl: "/images/places/manali/old-manali.webp",
+    visualDescription: "Rustic stone mountain cafe with wooden deck sitting directly over the rushing Manalsu river.",
+    category: "Cafés & Bakery",
+  },
+  "manali:cafe-1947-riverside-stone-cafe": {
     imageUrl: "/images/places/manali/old-manali.webp",
     visualDescription: "Rustic stone mountain cafe with wooden deck sitting directly over the rushing Manalsu river.",
     category: "Cafés & Bakery",
@@ -114,6 +154,36 @@ export const EXACT_PLACE_REGISTRY: Record<string, {
     imageUrl: "/images/destinations/manali/illustration.jpg",
     visualDescription: "Gentle cascading multi-tier waterfall surrounded by apple orchards and pine groves.",
     category: "Nature & Trails",
+  },
+  "manali:jogini-waterfall-pine-trail": {
+    imageUrl: "/images/destinations/manali/illustration.jpg",
+    visualDescription: "Gentle cascading multi-tier waterfall surrounded by apple orchards and pine groves.",
+    category: "Nature & Trails",
+  },
+  "manali:lazy-dog-lounge-patio": {
+    imageUrl: "/images/destinations/manali/hero.jpg",
+    visualDescription: "Riverside garden lounge with wooden deck, acoustic tunes, and mountain views.",
+    category: "Cafés & Bakery",
+  },
+  "manali:chhotu-dhaba-traditional-himachali-siddu": {
+    imageUrl: "/images/destinations/manali/illustration.jpg",
+    visualDescription: "Rustic stone dhaba serving authentic freshly steamed walnut and ghee siddu.",
+    category: "Local Food",
+  },
+  "manali:sajla-waterfall-wood-carving-village": {
+    imageUrl: "/images/destinations/manali/illustration.jpg",
+    visualDescription: "Hidden forest waterfall beside traditional woodcraft artisan homes.",
+    category: "Nature & Trails",
+  },
+  "manali:drifters-cafe-acoustic-inn": {
+    imageUrl: "/images/places/manali/old-manali.webp",
+    visualDescription: "Cozy traveler cafe with warm fireplace, board games, and live mountain jams.",
+    category: "Cafés & Bakery",
+  },
+  "manali:civil-hospital-24-7-mountain-emergency": {
+    imageUrl: "/images/destinations/manali/hero.jpg",
+    visualDescription: "High-altitude medical facility in Manali valley.",
+    category: "Essentials & Medical",
   },
 
   // Udaipur
@@ -199,7 +269,17 @@ export const EXACT_PLACE_REGISTRY: Record<string, {
     visualDescription: "Dalai Lama monastery complex surrounded by cedar woods and prayer wheels.",
     category: "Culture & Heritage",
   },
+  "dharamshala:namgyal-monastery-tsuglagkhang-complex": {
+    imageUrl: "/images/destinations/dharamshala/hero.jpg",
+    visualDescription: "Dalai Lama monastery complex surrounded by cedar woods and prayer wheels.",
+    category: "Culture & Heritage",
+  },
   "dharamshala:bhagsunag-waterfall": {
+    imageUrl: "/images/destinations/dharamshala/illustration.jpg",
+    visualDescription: "Mountain waterfall with bohemian cliffside cafe above Bhagsu village.",
+    category: "Nature & Trails",
+  },
+  "dharamshala:bhagsunag-waterfall-shiva-cafe": {
     imageUrl: "/images/destinations/dharamshala/illustration.jpg",
     visualDescription: "Mountain waterfall with bohemian cliffside cafe above Bhagsu village.",
     category: "Nature & Trails",
@@ -268,9 +348,9 @@ export function resolvePlaceArtwork(
     }
   }
 
-  const destFallback = matchedDestKey
-    ? (DESTINATION_ASSET_MAP[matchedDestKey].illustration || DESTINATION_ASSET_MAP[matchedDestKey].hero)
-    : "/images/destinations/fallbacks/himalayan.jpg";
+  const destIllustration = matchedDestKey ? DESTINATION_ASSET_MAP[matchedDestKey].illustration : null;
+  const destHero = matchedDestKey ? DESTINATION_ASSET_MAP[matchedDestKey].hero : null;
+  const destFallback = destIllustration || destHero || "/images/destinations/fallbacks/himalayan.jpg";
 
   // If live provider provided a verified real photo URL
   if (isLive && existingImageUrl && (existingImageUrl.startsWith("https://") || existingImageUrl.startsWith("http://")) && !existingImageUrl.includes("unsplash.com")) {
@@ -344,37 +424,26 @@ export function resolvePlaceArtwork(
     };
   }
 
-  // 2. Destination + Category Artwork Fallback
-  const catLower = (category || "").toLowerCase();
-  let catFile = "viewpoint";
-  if (catLower.includes("cafe") || catLower.includes("bakery") || catLower.includes("dining") || catLower.includes("food") || catLower.includes("restaurant") || catLower.includes("dhaba")) {
-    catFile = "cafe";
-  } else if (catLower.includes("temple") || catLower.includes("spiritual") || catLower.includes("shrine") || catLower.includes("ashram") || catLower.includes("monastery") || catLower.includes("ghat") || catLower.includes("culture") || catLower.includes("heritage")) {
-    catFile = "spiritual";
-  } else if (catLower.includes("waterfall") || catLower.includes("trail") || catLower.includes("nature") || catLower.includes("forest") || catLower.includes("lake") || catLower.includes("river") || placeNorm.includes("waterfall") || placeNorm.includes("trail")) {
-    catFile = "nature";
-  } else if (catLower.includes("hotel") || catLower.includes("stay") || catLower.includes("resort") || catLower.includes("homestay") || catLower.includes("hostel") || catLower.includes("cottage")) {
-    catFile = "stay";
-  }
-
+  // 2. Destination Artwork (Authentic, bright high-resolution illustration/hero)
   if (matchedDestKey) {
-    const categoryImg = `/images/places/${matchedDestKey}/categories/${catFile}.webp`;
+    const chosenArtwork = destIllustration || destHero || "/images/destinations/fallbacks/himalayan.jpg";
 
     return {
-      artworkKey: `${matchedDestKey}:category-${catFile}`,
-      imageUrl: categoryImg,
+      artworkKey: `${matchedDestKey}:destination-artwork`,
+      imageUrl: chosenArtwork,
       fallbackUrl: destFallback,
-      tier: "destination_category",
+      tier: "destination",
       placeName,
       destinationName,
       category,
-      source: "generated_artwork",
+      source: "curated_artwork",
       isRealPhoto: false,
-      badgeLabel: isLive ? "LIVE PLACE" : "DESTINATION CATEGORY ART",
+      badgeLabel: isLive ? "LIVE PLACE" : "DESTINATION ART",
     };
   }
 
-  // 3. Regional Fallback
+  // 3. Regional Fallback for unseeded destinations
+  const catLower = (category || "").toLowerCase();
   let regionalImg = "/images/destinations/fallbacks/himalayan.jpg";
   if (catLower.includes("beach") || destNorm.includes("goa") || destNorm.includes("kerala") || destNorm.includes("coast")) {
     regionalImg = "/images/destinations/fallbacks/coastal.jpg";
