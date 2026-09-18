@@ -19,6 +19,8 @@ from app.models.models import (
     WeatherSnapshot,
     Conversation,
     ConversationMessage,
+    Review,
+    ReviewReport,
 )
 
 __all__ = [
@@ -42,4 +44,6 @@ __all__ = [
     "WeatherSnapshot",
     "Conversation",
     "ConversationMessage",
+    "Review",
+    "ReviewReport",
 ]

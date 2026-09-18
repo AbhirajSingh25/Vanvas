@@ -440,10 +440,17 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  LIVE OPEN-METEO WEATHER
-                </span>
+                {weather[0]?.data_state === "STALE" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-mono font-bold uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    STALE WEATHER SNAPSHOT
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    LIVE OPEN-METEO WEATHER
+                  </span>
+                )}
                 <span className="text-[11px] font-mono text-[#B49252]">
                   {destination.latitude.toFixed(2)}°N, {destination.longitude.toFixed(2)}°E
                 </span>

@@ -370,11 +370,18 @@ class GeminiProvider(AIProvider):
         # Convert tool schemas to Gemini function declarations
         gemini_tools = [{"functionDeclarations": tools}] if tools else []
 
-        # Convert messages to Gemini contents format
+        # Convert messages to Gemini contents format.
+        # System messages are handled via systemInstruction — skip them here.
+        # Gemini requires strictly alternating user/model turns with non-empty parts.
         contents = []
         for msg in messages:
-            role = "user" if msg.get("role") in ["user", "system"] else "model"
-            contents.append({"role": role, "parts": [{"text": msg.get("content", "")}]})
+            role = msg.get("role", "user")
+            if role == "system":
+                continue  # Supplied via systemInstruction field instead
+            gemini_role = "model" if role == "assistant" else "user"
+            content_text = (msg.get("content") or "").strip()
+            if content_text:  # Skip empty messages — Gemini rejects empty parts
+                contents.append({"role": gemini_role, "parts": [{"text": content_text}]})
 
         executed_tool_calls = []
         total_prompt_tokens = 0
@@ -421,14 +428,42 @@ class GeminiProvider(AIProvider):
                     data = res.json()
                     candidates = data.get("candidates", [])
                     if not candidates:
-                        break
+                        # No candidates — safety block or empty model response
+                        logger.warning(f"Gemini returned no candidates on turn {turn}. Returning graceful fallback.")
+                        fallback = (
+                            "I've gathered your travel details. Let me know if you need anything else!"
+                            if executed_tool_calls
+                            else "I wasn't able to produce a response. Please rephrase your question."
+                        )
+                        return {
+                            "text": fallback,
+                            "error_code": "GEMINI_EMPTY_CANDIDATES",
+                            "provider": self.name,
+                            "model": self.model,
+                            "tool_calls": executed_tool_calls,
+                            "usage": {"latency_ms": round((time.time() - start_time) * 1000, 2)},
+                        }
 
                     usage_meta = data.get("usageMetadata", {})
                     total_prompt_tokens += usage_meta.get("promptTokenCount", 0)
                     total_completion_tokens += usage_meta.get("candidatesTokenCount", 0)
 
-                    content_obj = candidates[0].get("content", {})
+                    first_candidate = candidates[0]
+                    finish_reason = first_candidate.get("finishReason", "STOP")
+                    content_obj = first_candidate.get("content", {})
                     parts = content_obj.get("parts", [])
+
+                    # Handle non-STOP finish reasons that produce no usable content
+                    if finish_reason in ("SAFETY", "RECITATION", "OTHER"):
+                        logger.warning(f"Gemini finish_reason={finish_reason} on turn {turn}")
+                        return {
+                            "text": "I was unable to generate a response for that request. Please try rephrasing.",
+                            "error_code": f"GEMINI_{finish_reason}",
+                            "provider": self.name,
+                            "model": self.model,
+                            "tool_calls": executed_tool_calls,
+                            "usage": {"latency_ms": round((time.time() - start_time) * 1000, 2)},
+                        }
 
                     # Check for function calls
                     function_calls = [p.get("functionCall") for p in parts if "functionCall" in p]
@@ -437,6 +472,20 @@ class GeminiProvider(AIProvider):
                         # Model produced final text response
                         text_parts = [p.get("text", "") for p in parts if "text" in p]
                         final_text = "".join(text_parts).strip()
+
+                        # Guard against empty text — known Gemini edge case after multi-turn tool use
+                        if not final_text:
+                            logger.warning(
+                                f"Gemini returned empty text on turn {turn} "
+                                f"(finish_reason={finish_reason}). Using contextual fallback."
+                            )
+                            final_text = (
+                                "I've gathered the travel information you requested. "
+                                "Let me know if you need anything else!"
+                                if executed_tool_calls
+                                else "I didn't find anything specific. Try asking about a destination, place, or travel plan!"
+                            )
+
                         return {
                             "text": final_text,
                             "provider": self.name,
@@ -507,8 +556,14 @@ class GeminiProvider(AIProvider):
                         "usage": {},
                     }
 
+        # Exhausted max_turns — return graceful fallback
+        fallback_msg = (
+            "Here is what I gathered for your journey. Let me know if you need more details!"
+            if executed_tool_calls
+            else "I wasn't able to find a specific answer. Could you rephrase your question?"
+        )
         return {
-            "text": "Here is what I gathered for your journey.",
+            "text": fallback_msg,
             "provider": self.name,
             "model": self.model,
             "is_enabled": True,

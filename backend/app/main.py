@@ -8,7 +8,7 @@ from app.database.session import engine, Base, get_db
 from app.seed.seed_data import seed_database
 from app.api.v1 import (
     auth, destinations, trips, budget, group, places,
-    transport_hotels_rentals, copilot, checklist, admin, search, artwork
+    transport_hotels_rentals, copilot, checklist, admin, search, artwork, reviews
 )
 
 def _ensure_sqlite_schema():
@@ -68,6 +68,7 @@ app.include_router(copilot.router, prefix=f"{settings.API_V1_STR}/trips", tags=[
 app.include_router(checklist.router, prefix=f"{settings.API_V1_STR}/trips", tags=["Checklist"])
 app.include_router(search.router, prefix=f"{settings.API_V1_STR}/search", tags=["Search & Intent"])
 app.include_router(artwork.router, prefix=f"{settings.API_V1_STR}/artwork", tags=["Artwork & Visual Intelligence"])
+app.include_router(reviews.router, prefix=f"{settings.API_V1_STR}", tags=["Community Reviews & Moderation"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Admin & System Health"])
 
 @app.get("/")

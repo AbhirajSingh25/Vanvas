@@ -10,11 +10,12 @@ from app.recommendation.scorer import RecommendationScorer
 from app.providers.provider_factory import ProviderFactory
 from app.services.operating_hours_engine import OperatingHoursEngine
 from app.services.action_link_generator import ActionLinkGenerator
+from app.core.rate_limiter import rate_limit
 
 router = APIRouter()
 scorer = RecommendationScorer()
 
-@router.get("/nearby", response_model=List[PlaceResponse])
+@router.get("/nearby", response_model=List[PlaceResponse], dependencies=[Depends(rate_limit(max_requests=60, window_seconds=60))])
 async def get_nearby_places(
     lat: float = Query(32.2396, description="Current latitude"),
     lng: float = Query(77.1887, description="Current longitude"),

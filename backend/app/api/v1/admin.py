@@ -12,6 +12,7 @@ from app.api.deps import get_current_admin
 from app.providers.provider_factory import ProviderFactory
 from app.providers.ai.factory import AIFactory
 from app.core.config import settings
+from app.core.rate_limiter import rate_limit
 
 router = APIRouter()
 
@@ -51,7 +52,7 @@ async def get_ai_provider_health():
         }
     }
 
-@router.post("/ai/test")
+@router.post("/ai/test", dependencies=[Depends(rate_limit(max_requests=15, window_seconds=60))])
 async def test_ai_provider(
     req: Optional[AITestRequest] = None,
 ):

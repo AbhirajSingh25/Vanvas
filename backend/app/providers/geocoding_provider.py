@@ -399,7 +399,10 @@ SEED_DESTINATIONS: List[Dict[str, Any]] = [
     }
 ]
 
+import time
 from app.core.cache import geo_cache
+from app.services.cache_service import cache_service
+from app.services.provider_health_tracker import health_tracker
 
 class LiveGeocodingProvider(GeocodingProvider):
     def __init__(self):
@@ -620,6 +623,7 @@ class LiveGeocodingProvider(GeocodingProvider):
             logger.warning(f"Live geocoding autocomplete error: {e}")
 
         result = matched[:limit]
+        health_tracker.record_success("geocoding", 1.0)
         geo_cache.set(cache_key, result, ttl_seconds=600)
         return result
 
@@ -761,9 +765,11 @@ class LiveGeocodingProvider(GeocodingProvider):
                             altitude = 550
 
                         best["altitude_meters"] = altitude
+                        health_tracker.record_success("geocoding", 2.0)
                         geo_cache.set(cache_key, best, ttl_seconds=600)
                         return best
         except Exception as e:
+            health_tracker.record_failure("geocoding", str(e))
             logger.error(f"Live geocode failed for '{query}': {e}")
 
         return None

@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from app.models.models import (
     Destination, Place, Trip, TripMember, User, UserPreference, Expense, Itinerary, ItineraryItem,
-    Hotel, RentalOption, TransportOption
+    Hotel, RentalOption, TransportOption, Review
 )
 from app.services.copilot_actions import CopilotActionService
 from app.providers.provider_factory import ProviderFactory
@@ -44,6 +44,7 @@ class AIToolDispatcher:
             "search_stays": self._search_stays,
             "search_transport": self._search_transport,
             "search_rentals": self._search_rentals,
+            "get_place_reviews": self._get_place_reviews,
         }
 
 
@@ -879,5 +880,59 @@ class AIToolDispatcher:
             "destination": dest.name if dest else dest_input.title(),
             "total_matches": len(rentals_list),
             "disclaimer": "Rental options reflect verified valley mobility fleets. Daily availability and security deposit are confirmed upon vehicle pickup."
+        }
+
+    async def _get_place_reviews(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetches authentic published community reviews for a place from VANVAS database."""
+        place_id = (args.get("place_id") or "").strip()
+        if not place_id:
+            return {"error": "Missing required argument 'place_id'"}
+
+        # Find place to get its name
+        place = self.db.query(Place).filter(
+            (Place.id == place_id) | (Place.slug == place_id)
+        ).first()
+        place_name = place.name if place else place_id
+
+        # Query published reviews
+        reviews = self.db.query(Review).filter(
+            Review.place_id == place_id,
+            Review.status == "published"
+        ).order_by(Review.created_at.desc()).all()
+
+        total = len(reviews)
+        if total == 0:
+            return {
+                "place_id": place_id,
+                "place_name": place_name,
+                "total_community_reviews": 0,
+                "average_rating": None,
+                "reviews": [],
+                "trust_source": "VANVAS_COMMUNITY",
+                "message": f"No community reviews published yet for {place_name} by VANVAS travellers."
+            }
+
+        avg_rating = round(sum(r.rating for r in reviews) / total, 2)
+        recent_list = []
+        for r in reviews[:5]:
+            author_name = r.user.full_name if r.user else "Anonymous Explorer"
+            recent_list.append({
+                "review_id": r.id,
+                "author": author_name,
+                "rating": r.rating,
+                "title": r.title,
+                "comment": r.comment,
+                "travel_date": r.travel_date,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            })
+
+        return {
+            "place_id": place_id,
+            "place_name": place_name,
+            "total_community_reviews": total,
+            "average_rating": avg_rating,
+            "reviews": recent_list,
+            "trust_source": "VANVAS_COMMUNITY",
+            "message": f"Verified {total} community review(s) with an average rating of {avg_rating}/5.0."
         }
 

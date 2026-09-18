@@ -278,6 +278,20 @@ VANVAS_COPILOT_TOOLS: List[Dict[str, Any]] = [
             },
             "required": ["destination"]
         }
+    },
+    {
+        "name": "get_place_reviews",
+        "description": "Retrieve authentic published community reviews and rating aggregates written by real VANVAS travellers for a place.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "place_id": {
+                    "type": "string",
+                    "description": "Canonical place ID (e.g. 'manali_hadimba_temple', 'mussoorie_landour_bakehouse', or 'osm-12345')."
+                }
+            },
+            "required": ["place_id"]
+        }
     }
 ]
 

@@ -2,7 +2,8 @@ import {
   Trip, TripSummary, Destination, Place, Hotel, RentalOption, TransportOption,
   BudgetSummary, Expense, GroupSummary, ChecklistItem,
   ImHereResponse, ArrivalOptimizerResponse, CopilotResponse, CopilotChatResponse,
-  AdminStats, User, UserPreferences, TripInvitePreview, TripMemberItem
+  AdminStats, User, UserPreferences, TripInvitePreview, TripMemberItem,
+  Review, ReviewAggregate, ReviewCreateInput, ReviewReportInput
 } from "@/types";
 
 function getApiBaseUrl(): string {
@@ -425,5 +426,41 @@ export const api = {
     if (lat !== undefined) params.append("lat", String(lat));
     if (lng !== undefined) params.append("lng", String(lng));
     return fetchApi(`/search/unified?${params.toString()}`);
+  },
+
+  // Authentic VANVAS Community Reviews
+  async getPlaceReviews(placeId: string): Promise<Review[]> {
+    return fetchApi(`/reviews/place/${encodeURIComponent(placeId)}`);
+  },
+
+  async getPlaceReviewAggregate(placeId: string): Promise<ReviewAggregate> {
+    return fetchApi(`/reviews/place/${encodeURIComponent(placeId)}/aggregate`);
+  },
+
+  async createReview(data: ReviewCreateInput): Promise<Review> {
+    return fetchApi("/reviews", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateReview(reviewId: string, data: Partial<ReviewCreateInput>): Promise<Review> {
+    return fetchApi(`/reviews/${encodeURIComponent(reviewId)}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteReview(reviewId: string): Promise<{ message: string; review_id: string }> {
+    return fetchApi(`/reviews/${encodeURIComponent(reviewId)}`, {
+      method: "DELETE",
+    });
+  },
+
+  async reportReview(data: ReviewReportInput): Promise<{ message: string; report_id: string }> {
+    return fetchApi("/reviews/reports", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 };

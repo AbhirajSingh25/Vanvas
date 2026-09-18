@@ -22,6 +22,7 @@ from app.services.copilot_context import (
     CopilotContextEngine,
     extract_session_decisions,
 )
+from app.core.rate_limiter import rate_limit
 
 logger = logging.getLogger("vanvas.api.copilot")
 router = APIRouter()
@@ -45,7 +46,7 @@ class CopilotChatResponse(BaseModel):
     error: Optional[str] = None
 
 
-@router.post("/chat", response_model=CopilotChatResponse)
+@router.post("/chat", response_model=CopilotChatResponse, dependencies=[Depends(rate_limit(max_requests=30, window_seconds=60))])
 async def copilot_chat(
     req: CopilotChatRequest,
     db: Session = Depends(get_db),

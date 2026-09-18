@@ -463,3 +463,40 @@ export interface AdminStats {
     message: string;
   }>;
 }
+
+export interface Review {
+  id: string;
+  place_id: string;
+  user_id: string;
+  user_name: string;
+  rating: number;
+  title?: string | null;
+  comment: string;
+  travel_date?: string | null;
+  status: "published" | "pending" | "hidden" | "reported" | "removed";
+  created_at: string;
+  updated_at: string;
+  trust_source: "VANVAS_COMMUNITY";
+}
+
+export interface ReviewAggregate {
+  place_id: string;
+  total_reviews: number;
+  average_rating: number | null;
+  rating_distribution: Record<string, number>;
+  trust_source: "VANVAS_COMMUNITY";
+}
+
+export interface ReviewCreateInput {
+  place_id: string;
+  rating: number;
+  title?: string;
+  comment: string;
+  travel_date?: string;
+}
+
+export interface ReviewReportInput {
+  review_id: string;
+  reason: "inappropriate" | "spam" | "incorrect_info" | "other";
+  details?: string;
+}

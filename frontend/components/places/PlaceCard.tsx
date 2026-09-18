@@ -79,7 +79,9 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           </span>
           <span
             className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider ${
-              isLive
+              place.data_state === "STALE"
+                ? "bg-amber-800/90 text-amber-100 border border-amber-500/40"
+                : isLive
                 ? "bg-emerald-600/90 text-white border border-emerald-400/40"
                 : visualRes.tier === "exact_place"
                 ? "bg-[#B49252]/90 text-[#0F2924] border border-[#B49252]"
@@ -88,7 +90,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
                 : "bg-[#7B4D36]/90 text-[#FAF4E8] border border-[#7B4D36]"
             }`}
           >
-            {visualRes.badgeLabel}
+            {place.data_state === "STALE" ? "STALE" : visualRes.badgeLabel}
           </span>
           {place.is_hidden_gem && (
             <span className="px-2 py-0.5 rounded-md bg-[#B49252] text-[#0F2924] text-[10px] font-black uppercase tracking-wider shadow-sm">

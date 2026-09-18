@@ -28,6 +28,7 @@ class User(Base):
     expenses = relationship("Expense", back_populates="user")
     saved_places = relationship("SavedPlace", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
 
 class UserPreference(Base):
     __tablename__ = "user_preferences"
@@ -384,3 +385,38 @@ class ConversationMessage(Base):
 
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    place_id = Column(String(255), nullable=False, index=True)
+    rating = Column(Float, nullable=False)  # 1.0 to 5.0
+    title = Column(String(255), nullable=True)
+    body = Column(Text, nullable=False)
+    status = Column(String(50), default="published", index=True)  # 'published', 'pending', 'hidden', 'reported', 'removed'
+    moderation_note = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="reviews")
+    reports = relationship("ReviewReport", back_populates="review", cascade="all, delete-orphan")
+
+
+class ReviewReport(Base):
+    __tablename__ = "review_reports"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    review_id = Column(String(36), ForeignKey("reviews.id"), nullable=False, index=True)
+    reporter_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    reason = Column(String(500), nullable=False)
+    status = Column(String(50), default="pending", index=True)  # 'pending', 'reviewed', 'dismissed'
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    review = relationship("Review", back_populates="reports")
+    reporter = relationship("User")
+

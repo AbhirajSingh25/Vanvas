@@ -576,3 +576,57 @@ class ConversationSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ----------------- Community Review & Moderation Schemas -----------------
+class ReviewCreate(BaseModel):
+    rating: float  # 1.0 to 5.0
+    title: Optional[str] = None
+    body: str
+
+class ReviewUpdate(BaseModel):
+    rating: Optional[float] = None
+    title: Optional[str] = None
+    body: Optional[str] = None
+
+class ReviewResponse(BaseModel):
+    id: str
+    place_id: str
+    user_id: str
+    user_name: str
+    user_avatar: Optional[str] = None
+    rating: float
+    title: Optional[str] = None
+    body: str
+    status: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    trust_source: str = "VANVAS_COMMUNITY"
+
+    class Config:
+        from_attributes = True
+
+class ReviewAggregateResponse(BaseModel):
+    place_id: str
+    average_rating: Optional[float] = None
+    total_reviews: int = 0
+    reviews: List[ReviewResponse] = []
+    trust_source: str = "VANVAS_COMMUNITY"
+
+class ReviewReportCreate(BaseModel):
+    reason: str
+
+class ReviewReportResponse(BaseModel):
+    id: str
+    review_id: str
+    reporter_user_id: str
+    reason: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ReviewModerateRequest(BaseModel):
+    status: str  # published, hidden, removed
+    moderation_note: Optional[str] = None
+

@@ -1,6 +1,7 @@
 import httpx
 import math
 import logging
+import time
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
 from app.providers.base import (
@@ -13,12 +14,14 @@ from app.providers.demo_providers import (
 )
 from app.services.operating_hours_engine import OperatingHoursEngine
 from app.services.action_link_generator import ActionLinkGenerator
+from app.services.cache_service import cache_service
+from app.services.provider_health_tracker import health_tracker
 
 logger = logging.getLogger("vanvas.providers")
 
 class LiveWeatherProvider(WeatherProvider):
     """
-    Open-Meteo Live Weather Provider
+    Open-Meteo Live Weather Provider with Safe Caching & Stale-Data Fallback.
     Free, highly accurate real-time & 7-day forecast API supporting any coordinate globally and in Indian mountain ranges.
     """
     def __init__(self, api_key: str = ""):
@@ -26,6 +29,12 @@ class LiveWeatherProvider(WeatherProvider):
         self.demo_fallback = DemoWeatherProvider()
 
     async def get_forecast(self, lat: float, lng: float, days: int = 5) -> List[Dict[str, Any]]:
+        cache_key = cache_service.make_weather_key(lat, lng, days)
+        cached_val, is_stale = cache_service.get(cache_key)
+        if cached_val is not None and not is_stale:
+            return cached_val
+
+        start_time = time.time()
         try:
             url = (
                 f"https://api.open-meteo.com/v1/forecast?"
@@ -73,14 +82,35 @@ class LiveWeatherProvider(WeatherProvider):
                             "wind_kph": round(wind[i], 1) if i < len(wind) and wind[i] is not None else 8.0,
                             "advisory": "Live mountain weather from Open-Meteo." if not is_rain else "Rain advisory: carry rain gear, outdoor treks may shift.",
                             "icon": "cloud-rain" if is_rain else ("cloud-fog" if "Fog" in condition else "sun"),
-                            "source": "live_open_meteo"
+                            "source": "live_open_meteo",
+                            "data_state": "LIVE",
+                            "trust_source": "OPEN_METEO",
                         })
                     if forecasts:
+                        latency_ms = (time.time() - start_time) * 1000
+                        health_tracker.record_success("weather", latency_ms)
+                        cache_service.set(cache_key, forecasts, ttl_seconds=900)
                         return forecasts
         except Exception as e:
-            logger.warning(f"Open-Meteo live forecast request failed: {e}. Using verified seed fallback.")
+            health_tracker.record_failure("weather", str(e))
+            logger.warning(f"Open-Meteo live forecast request failed: {e}. Checking stale cache or verified fallback.")
+
+        # Check stale cache first
+        stale_data = cache_service.get_stale(cache_key)
+        if stale_data:
+            stale_results = []
+            for item in stale_data:
+                stale_item = dict(item)
+                stale_item["data_state"] = "STALE"
+                stale_item["advisory"] = f"(Stale weather snapshot) {stale_item.get('advisory', '')}"
+                stale_results.append(stale_item)
+            return stale_results
             
-        return await self.demo_fallback.get_forecast(lat, lng, days)
+        demo_forecasts = await self.demo_fallback.get_forecast(lat, lng, days)
+        for d in demo_forecasts:
+            d["data_state"] = "ESTIMATED"
+            d["trust_source"] = "VANVAS_CLIMATE_INDEX"
+        return demo_forecasts
 
 
 import re
@@ -323,18 +353,21 @@ class LivePlacesProvider(PlacesProvider):
 
     async def search_places(self, query: str, destination_name: str = "", category: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Discovers real-world places for a query and destination using live providers with curated fallback.
+        Discovers real-world places for a query and destination using live providers with curated fallback and safe caching.
         """
         cache_key = f"search:{query.lower().strip()}:{destination_name.lower().strip()}:{category or 'all'}"
-        cached = places_cache.get(cache_key)
-        if cached is not None:
-            return cached
+        cached_val, is_stale = cache_service.get(cache_key)
+        if cached_val is not None and not is_stale:
+            return cached_val
 
+        start_time = time.time()
         # 1. Fetch curated matches first
         curated_matches = await self.demo_fallback.search_places(query, destination_name, category)
         for p in curated_matches:
             p["source"] = "vanvas_curated"
             p["is_live"] = False
+            p["data_state"] = "VERIFIED"
+            p["trust_source"] = "VANVAS_CURATED"
 
         # 2. Resolve destination coordinates
         target_location = destination_name.strip()
@@ -461,17 +494,30 @@ class LivePlacesProvider(PlacesProvider):
         combined = curated_matches + gathered_live
         if combined:
             deduped = self._deduplicate_places(combined)
-            places_cache.set(cache_key, deduped, ttl_seconds=300)
+            latency_ms = (time.time() - start_time) * 1000
+            health_tracker.record_success("places", latency_ms)
+            cache_service.set(cache_key, deduped, ttl_seconds=300)
             return deduped
+
+        # Check stale cache fallback if live lookup failed or returned nothing
+        stale_data = cache_service.get_stale(cache_key)
+        if stale_data:
+            stale_results = []
+            for item in stale_data:
+                stale_item = dict(item)
+                stale_item["data_state"] = "STALE"
+                stale_results.append(stale_item)
+            return stale_results
 
         return []
 
     async def get_nearby_places(self, lat: float, lng: float, radius_km: float = 5.0, category: Optional[str] = None) -> List[Dict[str, Any]]:
-        cache_key = f"{round(lat, 3)}:{round(lng, 3)}:{radius_km}:{category or 'all'}"
-        cached = places_cache.get(cache_key)
-        if cached is not None:
-            return cached
+        cache_key = cache_service.make_places_key(lat, lng, radius_km, category)
+        cached_val, is_stale = cache_service.get(cache_key)
+        if cached_val is not None and not is_stale:
+            return cached_val
 
+        start_time = time.time()
         radius_m = min(int(radius_km * 1000), 25000)
         gathered_places: List[Dict[str, Any]] = []
 
@@ -565,39 +611,59 @@ class LivePlacesProvider(PlacesProvider):
                 logger.warning(f"Google Places live discovery failed: {e}")
 
         # 2. Try OpenStreetMap Overpass Live Query (Free, Open, Global & Indian mountain coverage)
-        query_str = f"""
-        [out:json][timeout:3];
-        (
-          node["tourism"~"attraction|viewpoint|museum|gallery|theme_park|zoo|artwork|camp_site|wilderness_hut"](around:{radius_m},{lat},{lng});
-          node["amenity"~"cafe|restaurant|fast_food|food_court|pub|bar|marketplace|pharmacy|hospital|clinic|doctors|atm|bank|police|fuel|bicycle_rental|car_rental|parking|place_of_worship"](around:{radius_m},{lat},{lng});
-          node["historic"~"monument|memorial|castle|ruins|archaeological_site|fort|palace|city_gate|church|cathedral|chapel"](around:{radius_m},{lat},{lng});
-          node["shop"~"bakery|pastry|supermarket|convenience|department_store|clothes|craft|gift|mall|general|motorcycle|bicycle"](around:{radius_m},{lat},{lng});
-          node["leisure"~"park|nature_reserve|track|sports_centre"](around:{radius_m},{lat},{lng});
-        );
-        out body 25;
-        """
-        elements = await self._execute_overpass_query(query_str)
-        for el in elements:
-            parsed = self._parse_osm_element(el, lat, lng, category)
-            if parsed:
-                gathered_places.append(parsed)
+        try:
+            query_str = f"""
+            [out:json][timeout:3];
+            (
+              node["tourism"~"attraction|viewpoint|museum|gallery|theme_park|zoo|artwork|camp_site|wilderness_hut"](around:{radius_m},{lat},{lng});
+              node["amenity"~"cafe|restaurant|fast_food|food_court|pub|bar|marketplace|pharmacy|hospital|clinic|doctors|atm|bank|police|fuel|bicycle_rental|car_rental|parking|place_of_worship"](around:{radius_m},{lat},{lng});
+              node["historic"~"monument|memorial|castle|ruins|archaeological_site|fort|palace|city_gate|church|cathedral|chapel"](around:{radius_m},{lat},{lng});
+              node["shop"~"bakery|pastry|supermarket|convenience|department_store|clothes|craft|gift|mall|general|motorcycle|bicycle"](around:{radius_m},{lat},{lng});
+              node["leisure"~"park|nature_reserve|track|sports_centre"](around:{radius_m},{lat},{lng});
+            );
+            out body 25;
+            """
+            elements = await self._execute_overpass_query(query_str)
+            for el in elements:
+                parsed = self._parse_osm_element(el, lat, lng, category)
+                if parsed:
+                    gathered_places.append(parsed)
+        except Exception as e:
+            logger.warning(f"Overpass live query failed: {e}")
 
         # 3. Deduplicate across Google Places and OSM
         if gathered_places:
             deduped = self._deduplicate_places(gathered_places)
             deduped.sort(key=lambda x: x.get("distance_km", 999))
-            places_cache.set(cache_key, deduped, ttl_seconds=300)
+            latency_ms = (time.time() - start_time) * 1000
+            health_tracker.record_success("places", latency_ms)
+            cache_service.set(cache_key, deduped, ttl_seconds=300)
             return deduped
+
+        # Check stale cache fallback before curated
+        stale_data = cache_service.get_stale(cache_key)
+        if stale_data:
+            stale_results = []
+            for item in stale_data:
+                stale_item = dict(item)
+                stale_item["data_state"] = "STALE"
+                stale_results.append(stale_item)
+            return stale_results
 
         # 4. Transparent Fallback: Return Curated Places marked clearly as Curated
         curated_fallback = await self.demo_fallback.get_nearby_places(lat, lng, radius_km, category)
         for p in curated_fallback:
             p["source"] = "vanvas_curated"
             p["is_live"] = False
+            p["data_state"] = "VERIFIED"
+            p["trust_source"] = "VANVAS_CURATED"
             p["distance_km"] = self._haversine(lat, lng, p.get("latitude", lat), p.get("longitude", lng))
         
-        places_cache.set(cache_key, curated_fallback, ttl_seconds=120)
-        return curated_fallback
+        if curated_fallback:
+            cache_service.set(cache_key, curated_fallback, ttl_seconds=120)
+            return curated_fallback
+
+        return []
 
 
 class LiveImageProvider(ImageProvider):
@@ -701,6 +767,7 @@ class HaversineRoutingProvider(RoutingProvider):
         """
         matrix = self.calculate_distance_matrix([{"lat": lat1, "lng": lng1}, {"lat": lat2, "lng": lng2}])
         res = matrix[0][1]
+        health_tracker.record_success("routing", 0.5)
         return {
             "distance_km": res["distance_km"],
             "duration_mins": res["duration_mins"],
@@ -875,6 +942,12 @@ class LiveHotelsProvider(HotelsProvider):
         if target_lat is None or target_lng is None:
             return []
 
+        cache_key = f"hotels:{destination.lower().strip()}:{round(target_lat, 3)}:{round(target_lng, 3)}:{radius_km}:{budget_tier or 'all'}"
+        cached_val, is_stale = cache_service.get(cache_key)
+        if cached_val is not None and not is_stale:
+            return cached_val
+
+        start_time = time.time()
         radius_m = min(int(radius_km * 1000), 20000)
         query_str = f"""
         [out:json][timeout:3];
@@ -884,20 +957,40 @@ class LiveHotelsProvider(HotelsProvider):
         );
         out center 25;
         """
-        elements = await self._execute_overpass_query(query_str)
-        results = []
-        seen_names = set()
+        try:
+            elements = await self._execute_overpass_query(query_str)
+            results = []
+            seen_names = set()
 
-        for el in elements:
-            parsed = self._parse_osm_hotel(el, target_lat, target_lng)
-            if parsed:
-                norm_name = parsed["name"].lower().strip()
-                if norm_name not in seen_names:
-                    seen_names.add(norm_name)
-                    results.append(parsed)
+            for el in elements:
+                parsed = self._parse_osm_hotel(el, target_lat, target_lng)
+                if parsed:
+                    norm_name = parsed["name"].lower().strip()
+                    if norm_name not in seen_names:
+                        seen_names.add(norm_name)
+                        results.append(parsed)
 
-        results.sort(key=lambda x: x.get("distance_km", 999))
-        return results
+            results.sort(key=lambda x: x.get("distance_km", 999))
+            if results:
+                latency_ms = (time.time() - start_time) * 1000
+                health_tracker.record_success("hotels", latency_ms)
+                cache_service.set(cache_key, results, ttl_seconds=300)
+                return results
+        except Exception as e:
+            health_tracker.record_failure("hotels", str(e))
+            logger.warning(f"Overpass hotels discovery failed: {e}")
+
+        # Check stale cache fallback
+        stale_data = cache_service.get_stale(cache_key)
+        if stale_data:
+            stale_results = []
+            for item in stale_data:
+                stale_item = dict(item)
+                stale_item["data_state"] = "STALE"
+                stale_results.append(stale_item)
+            return stale_results
+
+        return []
 
 
 class LiveRentalsProvider(RentalsProvider):
@@ -968,6 +1061,12 @@ class LiveRentalsProvider(RentalsProvider):
         if target_lat is None or target_lng is None:
             return []
 
+        cache_key = f"rentals:{destination.lower().strip()}:{round(target_lat, 3)}:{round(target_lng, 3)}:{radius_km}:{vehicle_type or 'all'}"
+        cached_val, is_stale = cache_service.get(cache_key)
+        if cached_val is not None and not is_stale:
+            return cached_val
+
+        start_time = time.time()
         radius_m = min(int(radius_km * 1000), 20000)
         query_str = f"""
         [out:json][timeout:3];
@@ -977,77 +1076,97 @@ class LiveRentalsProvider(RentalsProvider):
         );
         out body 20;
         """
-        elements = await self._execute_overpass_query(query_str)
-        results = []
-        seen_names = set()
+        try:
+            elements = await self._execute_overpass_query(query_str)
+            results = []
+            seen_names = set()
 
-        for el in elements:
-            tags = el.get("tags", {})
-            r_name = tags.get("name") or tags.get("name:en")
-            if not r_name:
-                continue
+            for el in elements:
+                tags = el.get("tags", {})
+                r_name = tags.get("name") or tags.get("name:en")
+                if not r_name:
+                    continue
 
-            norm_name = r_name.lower().strip()
-            if norm_name in seen_names:
-                continue
-            seen_names.add(norm_name)
+                norm_name = r_name.lower().strip()
+                if norm_name in seen_names:
+                    continue
+                seen_names.add(norm_name)
 
-            r_lat = el.get("lat") or el.get("center", {}).get("lat", target_lat)
-            r_lng = el.get("lon") or el.get("center", {}).get("lon", target_lng)
-            if r_lat is None or r_lng is None:
-                continue
+                r_lat = el.get("lat") or el.get("center", {}).get("lat", target_lat)
+                r_lng = el.get("lon") or el.get("center", {}).get("lon", target_lng)
+                if r_lat is None or r_lng is None:
+                    continue
 
-            dist = self._haversine(target_lat, target_lng, r_lat, r_lng)
-            addr_parts = [tags.get("addr:housenumber"), tags.get("addr:street"), tags.get("addr:suburb"), tags.get("addr:city")]
-            addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from center"
+                dist = self._haversine(target_lat, target_lng, r_lat, r_lng)
+                addr_parts = [tags.get("addr:housenumber"), tags.get("addr:street"), tags.get("addr:suburb"), tags.get("addr:city")]
+                addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from center"
 
-            op_hours = tags.get("opening_hours")
-            r_hours_eval = OperatingHoursEngine.evaluate_osm_hours(op_hours, r_lat, r_lng)
-            phone = tags.get("phone") or tags.get("contact:phone")
-            website = tags.get("website") or tags.get("url")
+                op_hours = tags.get("opening_hours")
+                r_hours_eval = OperatingHoursEngine.evaluate_osm_hours(op_hours, r_lat, r_lng)
+                phone = tags.get("phone") or tags.get("contact:phone")
+                website = tags.get("website") or tags.get("url")
 
-            v_type = "Scooter / Motorcycle"
-            if tags.get("amenity") == "bicycle_rental" or tags.get("shop") == "bicycle":
-                v_type = "Bicycle"
-            elif tags.get("amenity") == "car_rental":
-                v_type = "Car"
+                v_type = "Scooter / Motorcycle"
+                if tags.get("amenity") == "bicycle_rental" or tags.get("shop") == "bicycle":
+                    v_type = "Bicycle"
+                elif tags.get("amenity") == "car_rental":
+                    v_type = "Car"
 
-            rental_action_links = ActionLinkGenerator.generate_rental_action_links(
-                provider_name=r_name,
-                latitude=r_lat,
-                longitude=r_lng,
-                website=website,
-                phone=phone,
-            )
+                rental_action_links = ActionLinkGenerator.generate_rental_action_links(
+                    provider_name=r_name,
+                    latitude=r_lat,
+                    longitude=r_lng,
+                    website=website,
+                    phone=phone,
+                )
 
-            results.append({
-                "id": f"osm-rent-{el.get('id')}",
-                "destination_id": "live",
-                "provider_name": r_name,
-                "vehicle_type": v_type,
-                "vehicle_name": f"{r_name} Fleet",
-                "price_per_day": None,
-                "deposit_amount": None,
-                "location": addr,
-                "latitude": r_lat,
-                "longitude": r_lng,
-                "opening_hours": op_hours or "Hours not listed",
-                "hours_available": r_hours_eval.hours_available,
-                "is_open_now": r_hours_eval.is_open_now,
-                "rating": None,
-                "image_url": "/images/vehicles/automatic_scooter.svg",
-                "phone": phone,
-                "website": website,
-                "source": "openstreetmap",
-                "source_id": str(el.get("id")),
-                "is_live": True,
-                "inventory_verified": False,
-                "distance_km": dist,
-                "action_links": rental_action_links,
-                "data_state": "LIVE",
-                "trust_source": "OPENSTREETMAP",
-            })
+                results.append({
+                    "id": f"osm-rent-{el.get('id')}",
+                    "destination_id": "live",
+                    "provider_name": r_name,
+                    "vehicle_type": v_type,
+                    "vehicle_name": f"{r_name} Fleet",
+                    "price_per_day": None,
+                    "deposit_amount": None,
+                    "location": addr,
+                    "latitude": r_lat,
+                    "longitude": r_lng,
+                    "opening_hours": op_hours or "Hours not listed",
+                    "hours_available": r_hours_eval.hours_available,
+                    "is_open_now": r_hours_eval.is_open_now,
+                    "rating": None,
+                    "image_url": "/images/vehicles/automatic_scooter.svg",
+                    "phone": phone,
+                    "website": website,
+                    "source": "openstreetmap",
+                    "source_id": str(el.get("id")),
+                    "is_live": True,
+                    "inventory_verified": False,
+                    "distance_km": dist,
+                    "action_links": rental_action_links,
+                    "data_state": "LIVE",
+                    "trust_source": "OPENSTREETMAP",
+                })
 
-        results.sort(key=lambda x: x.get("distance_km", 999))
-        return results
+            results.sort(key=lambda x: x.get("distance_km", 999))
+            if results:
+                latency_ms = (time.time() - start_time) * 1000
+                health_tracker.record_success("rentals", latency_ms)
+                cache_service.set(cache_key, results, ttl_seconds=300)
+                return results
+        except Exception as e:
+            health_tracker.record_failure("rentals", str(e))
+            logger.warning(f"Overpass rentals discovery failed: {e}")
+
+        # Check stale cache fallback
+        stale_data = cache_service.get_stale(cache_key)
+        if stale_data:
+            stale_results = []
+            for item in stale_data:
+                stale_item = dict(item)
+                stale_item["data_state"] = "STALE"
+                stale_results.append(stale_item)
+            return stale_results
+
+        return []
 
