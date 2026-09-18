@@ -167,18 +167,18 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
       onClick={onClose}
     >
       <div 
-        className="bg-[#FAF7F0] border-t-2 md:border-2 border-[#E5D5BA] rounded-t-3xl md:rounded-3xl w-full md:max-w-xl shadow-2xl flex flex-col h-[90vh] md:h-[640px] max-h-[95vh] overflow-hidden transition-all"
+        className="bg-[#FAF7F0] border-t-2 md:border-2 border-[#E5D5BA] rounded-t-3xl md:rounded-3xl w-full max-w-full md:max-w-xl shadow-2xl flex flex-col h-[100dvh] md:h-[640px] max-h-[100dvh] md:max-h-[90vh] overflow-hidden transition-all"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile Handle Pill */}
-        <div className="md:hidden w-full flex justify-center pt-2.5 pb-1 bg-[#0F2924] shrink-0">
+        <div className="md:hidden w-full flex justify-center pt-2 pb-1 bg-[#0F2924] shrink-0">
           <div className="w-10 h-1 rounded-full bg-[#E5D5BA]/40" />
         </div>
 
         {/* Header */}
         <div className="p-3.5 sm:p-5 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36] shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-inner border border-[#D8CBB2]/20">
+            <div className="w-10 h-10 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-inner border border-[#D8CBB2]/20 shrink-0">
               <Bot className="w-5 h-5 text-[#FAF7F0]" />
             </div>
             <div>
@@ -197,25 +197,25 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
           <button 
             onClick={onClose} 
             aria-label="Close" 
-            className="p-2 rounded-xl text-[#D8DED5] hover:bg-[#173B32] hover:text-white transition-colors"
+            className="p-2 rounded-xl text-[#D8DED5] hover:bg-[#173B32] hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Message Thread */}
-        <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 text-sm bg-radial-gradient">
+        {/* Message Thread (Independently Scrollable with min-h-0) */}
+        <div className="flex-1 min-h-0 p-3.5 sm:p-5 overflow-y-auto space-y-3.5 sm:space-y-4 text-sm bg-radial-gradient overscroll-contain">
           {messages.map((m, idx) => (
             <div key={idx} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
               {/* Message Bubble */}
               <div
-                className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-sm leading-relaxed ${
+                className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-3 shadow-sm leading-relaxed ${
                   m.role === "user"
                     ? "bg-[#173B32] text-[#FAF7F0] rounded-br-xs font-medium"
                     : "bg-[#EFE5D2] text-[#20211D] rounded-bl-xs border border-[#E5D5BA] font-normal"
                 }`}
               >
-                <p className="whitespace-pre-line text-[13px]">{m.text}</p>
+                <p className="whitespace-pre-line text-[13px] leading-relaxed">{m.text}</p>
 
                 {/* Referenced Places Cards */}
                 {m.places && m.places.length > 0 && (
@@ -304,7 +304,7 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
 
               {/* Action Chips */}
               {m.actions && m.actions.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2.5 max-w-[90%]">
+                <div className="flex flex-wrap gap-1.5 mt-2.5 max-w-[95%]">
                   {m.actions.map((act, aIdx) => (
                     <button
                       key={aIdx}
@@ -329,8 +329,8 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Footer Input */}
-        <div className="p-3.5 sm:p-4 pb-6 sm:pb-4 border-t border-[#E5D5BA] bg-[#EFE5D2] safe-area-bottom shrink-0">
+        {/* Footer Composer (Fixed at Bottom, Above Mobile Safe Area) */}
+        <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] border-t border-[#E5D5BA] bg-[#EFE5D2] shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -343,12 +343,12 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={`Ask anything about ${resolvedDest}... (e.g. Scenic sunset trek? Best cafe?)`}
-              className="flex-1 bg-white border border-[#E5D5BA] rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-[#20211D] placeholder:text-[#20211D]/45 focus:outline-none focus:border-[#173B32] focus:ring-1 focus:ring-[#173B32] transition-all"
+              className="flex-1 bg-white border border-[#E5D5BA] rounded-2xl px-4 py-2.5 text-base sm:text-sm text-[#20211D] placeholder:text-[#20211D]/45 focus:outline-none focus:border-[#173B32] focus:ring-1 focus:ring-[#173B32] transition-all"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="p-3 rounded-2xl bg-[#173B32] hover:bg-[#B65E3C] text-[#FAF7F0] disabled:opacity-40 transition-all shadow-sm cursor-pointer active:scale-95 flex items-center justify-center"
+              className="p-3 rounded-2xl bg-[#173B32] hover:bg-[#B65E3C] text-[#FAF7F0] disabled:opacity-40 transition-all shadow-sm cursor-pointer active:scale-95 flex items-center justify-center shrink-0"
               aria-label="Send Message"
             >
               <Send className="w-4 h-4 text-[#B49252]" />

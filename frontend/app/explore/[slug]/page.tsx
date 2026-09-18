@@ -19,10 +19,11 @@ import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 
 const DISCOVERY_MESSAGES = [
   "VANVAS is gathering live travel information...",
-  "Resolving live coordinates...",
+  "Connecting to Himalayan operating layer...",
+  "Resolving verified coordinates & topography...",
   "Checking live meteorological forecast...",
   "Gathering verified points of interest...",
-  "Reading local topography..."
+  "Reading local trails & sanctuaries..."
 ];
 
 export default function DestinationDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -40,6 +41,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+  const [loadingSeconds, setLoadingSeconds] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -68,11 +70,20 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   };
 
   useEffect(() => {
-    if (!loading) return;
-    const timer = setInterval(() => {
+    if (!loading) {
+      setLoadingSeconds(0);
+      return;
+    }
+    const msgTimer = setInterval(() => {
       setLoadingMsgIdx((prev) => (prev + 1) % DISCOVERY_MESSAGES.length);
-    }, 700);
-    return () => clearInterval(timer);
+    }, 1200);
+    const secTimer = setInterval(() => {
+      setLoadingSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => {
+      clearInterval(msgTimer);
+      clearInterval(secTimer);
+    };
   }, [loading]);
 
   const destMetadata: Record<string, { hindi: string; alt: string; quote: string; province: string }> = {
@@ -155,6 +166,9 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     setLoadError(null);
     api.getDestinationDetail(slug)
       .then((data) => {
+        if (!data || !data.destination) {
+          throw new Error("404: Sanctuary not found in index");
+        }
         setDestination(data.destination);
         setPlaces(data.places || []);
         setHotels(data.hotels || []);
@@ -219,12 +233,14 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     return (
       <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-4 px-4 text-center">
         <div className="w-12 h-12 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-        <div className="space-y-1 max-w-md">
+        <div className="space-y-1.5 max-w-md">
           <p className="font-serif text-lg font-bold text-[#173B32]">
             {mounted ? DISCOVERY_MESSAGES[loadingMsgIdx] : "VANVAS is gathering live travel information..."}
           </p>
-          <p className="text-xs font-mono text-[#7B4D36] opacity-75">
-            VANVAS Live Intelligence Pipeline
+          <p className="text-xs font-mono text-[#7B4D36] opacity-80">
+            {loadingSeconds > 4
+              ? "Waking up Himalayan intelligence servers (first connection)..."
+              : "VANVAS Live Intelligence Pipeline"}
           </p>
         </div>
       </div>
@@ -232,37 +248,35 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   }
 
   if (loadError || !destination) {
-    const isNetworkError = loadError && (
-      loadError.toLowerCase().includes("fetch") ||
-      loadError.toLowerCase().includes("network") ||
-      loadError.toLowerCase().includes("500") ||
-      loadError.toLowerCase().includes("failed") ||
-      loadError.toLowerCase().includes("connect")
+    const is404 = loadError && (
+      loadError.includes("404") ||
+      loadError.toLowerCase().includes("not found")
     );
+    const isNetworkError = !is404;
 
     return (
       <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-4 px-4 text-center">
         <AlertCircle className="w-12 h-12 text-[#B65E3C]" />
         <div className="space-y-1">
           <span className="text-xs font-mono uppercase tracking-wider text-[#B65E3C] font-semibold">
-            {isNetworkError ? "कनेक्शन त्रुटि • Network Status" : "अभयारण्य नहीं मिला • Destination Index"}
+            {isNetworkError ? "कनेक्शन स्थिति • Server Connection" : "अभयारण्य नहीं मिला • Destination Index"}
           </span>
           <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-            {isNetworkError ? "Unable to Connect to VANVAS" : "Destination Not Found"}
+            {isNetworkError ? "Himalayan Operating Layer Connecting..." : "Destination Not Found"}
           </h2>
         </div>
         <p className="text-xs text-[#7B4D36] max-w-md leading-relaxed">
           {isNetworkError
-            ? "Couldn't reach VANVAS servers right now. Please check your network connection or tap retry below."
+            ? "VANVAS backend was temporarily dormant or warming up. Tap retry below to establish the connection."
             : (loadError || "Could not resolve live information for this location. Please try exploring another sanctuary.")}
         </p>
         <div className="flex gap-3 pt-2">
           <button
             onClick={fetchDestination}
-            className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+            className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Try Again</span>
+            <span>Retry Connection</span>
           </button>
           <Link
             href="/explore"

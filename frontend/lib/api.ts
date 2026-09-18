@@ -15,8 +15,8 @@ function getApiBaseUrl(): string {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Helper for authenticated requests
-async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+// Helper for authenticated requests with timeout
+async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("vanvas_token") : null;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -27,23 +27,38 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const timeoutMs = options.timeoutMs ?? 25000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!res.ok) {
-    let errorDetail = "API Error";
-    try {
-      const errJson = await res.json();
-      errorDetail = errJson.detail || JSON.stringify(errJson);
-    } catch {
-      errorDetail = `${res.status} ${res.statusText}`;
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+      signal: options.signal || controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      let errorDetail = "API Error";
+      try {
+        const errJson = await res.json();
+        errorDetail = errJson.detail || JSON.stringify(errJson);
+      } catch {
+        errorDetail = `${res.status} ${res.statusText}`;
+      }
+      throw new Error(errorDetail);
     }
-    throw new Error(errorDetail);
-  }
 
-  return res.json();
+    return res.json();
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error("Request timed out while connecting to VANVAS servers. Please check your network or try again.");
+    }
+    throw err;
+  }
 }
 
 export const api = {
