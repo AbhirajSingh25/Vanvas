@@ -215,6 +215,69 @@ VANVAS_COPILOT_TOOLS: List[Dict[str, Any]] = [
             },
             "required": ["trip_id", "place_id", "day"]
         }
+    },
+    {
+        "name": "search_stays",
+        "description": "Search verified curated and live accommodations in a destination with truthful pricing and provenance status.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "type": "string",
+                    "description": "Destination name or slug (e.g. 'manali', 'landour', 'dharamshala', 'goa')."
+                },
+                "max_price": {
+                    "type": "number",
+                    "description": "Optional maximum budget per night in INR."
+                },
+                "style": {
+                    "type": "string",
+                    "description": "Optional accommodation style ('Hostel', 'Homestay', 'Boutique', 'Heritage', 'Luxury', 'Camp')."
+                }
+            },
+            "required": ["destination"]
+        }
+    },
+    {
+        "name": "search_transport",
+        "description": "Retrieve verified curated mountain transit routes and bus/train schedules for an origin and destination.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "type": "string",
+                    "description": "Destination name or slug (e.g. 'manali', 'rishikesh', 'kasol')."
+                },
+                "origin_city": {
+                    "type": "string",
+                    "description": "Origin departure city (e.g. 'Delhi', 'Chandigarh').",
+                    "default": "Delhi"
+                },
+                "transport_type": {
+                    "type": "string",
+                    "description": "Optional transport filter ('Bus', 'Volvo', 'Train', 'Taxi')."
+                }
+            },
+            "required": ["destination"]
+        }
+    },
+    {
+        "name": "search_rentals",
+        "description": "Search verified valley mobility, scooter, motorcycle, and bicycle rental options for a destination.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "type": "string",
+                    "description": "Destination name or slug (e.g. 'manali', 'leh', 'udaipur', 'goa')."
+                },
+                "vehicle_type": {
+                    "type": "string",
+                    "description": "Optional vehicle type ('Scooter', 'Royal Enfield', 'Himalayan Bike', 'Bicycle', 'Car')."
+                }
+            },
+            "required": ["destination"]
+        }
     }
 ]
 

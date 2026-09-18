@@ -136,10 +136,19 @@ class DemoWeatherProvider(WeatherProvider):
         return forecasts
 
 class DemoTransportProvider(TransportProvider):
-    async def search_routes(self, origin: str, destination: str, travel_date: str) -> List[Dict[str, Any]]:
-        # Seeded transport routes
-        return [
+    async def search_routes(
+        self,
+        origin: str,
+        destination: str,
+        travel_date: Optional[str] = None,
+        transport_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        # Seeded authentic transport routes with explicit curated schedule provenance
+        routes = [
             {
+                "id": f"curated-transit-hptdc-{origin.lower()}-{destination.lower()}",
+                "origin_city": origin,
+                "destination_id": destination,
                 "transport_type": "Volvo AC Sleeper Bus",
                 "operator_name": "HPTDC HimSutra Volvo",
                 "departure_time": "20:00",
@@ -149,9 +158,16 @@ class DemoTransportProvider(TransportProvider):
                 "departure_location": f"{origin} ISBT Kashmiri Gate",
                 "arrival_location": f"{destination} Private Bus Stand",
                 "booking_url": "https://online.hptdc.in",
-                "recommendation_badge": "Best Arrival Time"
+                "recommendation_badge": "Best Arrival Time",
+                "source": "vanvas_curated",
+                "source_id": "hptdc-schedule",
+                "is_live": False,
+                "schedule_type": "curated_schedule"
             },
             {
+                "id": f"curated-transit-zingbus-{origin.lower()}-{destination.lower()}",
+                "origin_city": origin,
+                "destination_id": destination,
                 "transport_type": "Luxury Multi-Axle Bus",
                 "operator_name": "Zingbus Electric Lounge",
                 "departure_time": "19:15",
@@ -161,9 +177,16 @@ class DemoTransportProvider(TransportProvider):
                 "departure_location": f"{origin} Majnu Ka Tilla",
                 "arrival_location": f"{destination} Mall Road Drop Point",
                 "booking_url": "https://www.zingbus.com",
-                "recommendation_badge": "Cheapest Option"
+                "recommendation_badge": "Cheapest Option",
+                "source": "vanvas_curated",
+                "source_id": "zingbus-schedule",
+                "is_live": False,
+                "schedule_type": "curated_schedule"
             },
             {
+                "id": f"curated-transit-intrcity-{origin.lower()}-{destination.lower()}",
+                "origin_city": origin,
+                "destination_id": destination,
                 "transport_type": "Overnight Sleeper",
                 "operator_name": "IntrCity SmartBus",
                 "departure_time": "21:30",
@@ -173,16 +196,39 @@ class DemoTransportProvider(TransportProvider):
                 "departure_location": f"{origin} RK Ashram Metro",
                 "arrival_location": f"{destination} Volvo Stand",
                 "booking_url": "https://www.intrcity.com",
-                "recommendation_badge": "Direct Check-In Fit"
+                "recommendation_badge": "Direct Check-In Fit",
+                "source": "vanvas_curated",
+                "source_id": "intrcity-schedule",
+                "is_live": False,
+                "schedule_type": "curated_schedule"
             }
         ]
+        if transport_type and transport_type.lower() != "all":
+            return [r for r in routes if transport_type.lower() in r["transport_type"].lower()]
+        return routes
 
 class DemoHotelsProvider(HotelsProvider):
-    async def search_hotels(self, destination: str, check_in: str, check_out: str, budget_tier: str) -> List[Dict[str, Any]]:
+    async def search_hotels(
+        self,
+        destination: str,
+        check_in: Optional[str] = None,
+        check_out: Optional[str] = None,
+        budget_tier: Optional[str] = None,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None,
+        radius_km: float = 15.0
+    ) -> List[Dict[str, Any]]:
         return []
 
 class DemoRentalsProvider(RentalsProvider):
-    async def search_rentals(self, destination: str, vehicle_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def search_rentals(
+        self,
+        destination: str,
+        vehicle_type: Optional[str] = None,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None,
+        radius_km: float = 15.0
+    ) -> List[Dict[str, Any]]:
         return []
 
 class DemoRoutingProvider(RoutingProvider):

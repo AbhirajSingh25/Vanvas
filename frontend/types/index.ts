@@ -73,6 +73,7 @@ export interface Place {
   source_id?: string;
   is_live?: boolean;
   distance_km?: number;
+  hours_available?: boolean;
 }
 
 export interface DestinationSearchResult {
@@ -121,15 +122,23 @@ export interface Hotel {
   address: string;
   latitude: number;
   longitude: number;
-  price_per_night: number;
-  rating: number;
-  hotel_style: string;
-  amenities: string;
-  check_in_time: string;
-  check_out_time: string;
+  price_per_night?: number | null;
+  rating?: number | null;
+  review_count?: number | null;
+  hotel_style?: string;
+  amenities?: string;
+  check_in_time?: string;
+  check_out_time?: string;
   image_url?: string;
   booking_url?: string;
-  badge: string;
+  badge?: string;
+  phone?: string;
+  website?: string;
+  source?: "vanvas_curated" | "openstreetmap" | "google_places" | string;
+  source_id?: string;
+  is_live?: boolean;
+  price_verified?: boolean;
+  distance_km?: number;
 }
 
 export interface RentalOption {
@@ -138,14 +147,22 @@ export interface RentalOption {
   provider_name: string;
   vehicle_type: string;
   vehicle_name: string;
-  price_per_day: number;
-  deposit_amount: number;
+  price_per_day?: number | null;
+  deposit_amount?: number | null;
   location: string;
   latitude: number;
   longitude: number;
-  opening_hours: string;
-  rating: number;
+  opening_hours?: string;
+  hours_available?: boolean;
+  rating?: number | null;
   image_url?: string;
+  phone?: string;
+  website?: string;
+  source?: "vanvas_curated" | "openstreetmap" | "google_places" | string;
+  source_id?: string;
+  is_live?: boolean;
+  inventory_verified?: boolean;
+  distance_km?: number;
 }
 
 export interface TransportOption {
@@ -161,7 +178,11 @@ export interface TransportOption {
   departure_location: string;
   arrival_location: string;
   booking_url?: string;
-  recommendation_badge: string;
+  recommendation_badge?: string;
+  source?: "vanvas_curated" | "openstreetmap" | string;
+  source_id?: string;
+  is_live?: boolean;
+  schedule_type?: "curated_schedule" | "live_realtime" | string;
 }
 
 export interface ItineraryItem {

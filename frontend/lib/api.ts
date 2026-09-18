@@ -1,5 +1,5 @@
 import {
-  Trip, TripSummary, Destination, Place, Hotel, RentalOption,
+  Trip, TripSummary, Destination, Place, Hotel, RentalOption, TransportOption,
   BudgetSummary, Expense, GroupSummary, ChecklistItem,
   ImHereResponse, ArrivalOptimizerResponse, CopilotResponse, CopilotChatResponse,
   AdminStats, User, UserPreferences, TripInvitePreview, TripMemberItem
@@ -314,7 +314,26 @@ export const api = {
     });
   },
 
-  // Transport & Arrival Optimizer
+  // Transport, Hotels & Rentals
+  async getHotels(destId: string, style?: string, maxPrice?: number): Promise<Hotel[]> {
+    const params = new URLSearchParams({ destination_id: destId });
+    if (style && style !== "All") params.append("style", style);
+    if (maxPrice) params.append("max_price", String(maxPrice));
+    return fetchApi(`/hotels?${params.toString()}`);
+  },
+
+  async getRentals(destId: string, vehicleType?: string): Promise<RentalOption[]> {
+    const params = new URLSearchParams({ destination_id: destId });
+    if (vehicleType && vehicleType !== "All") params.append("vehicle_type", vehicleType);
+    return fetchApi(`/rentals?${params.toString()}`);
+  },
+
+  async getTransport(destId: string, originCity = "Delhi", transportType?: string): Promise<TransportOption[]> {
+    const params = new URLSearchParams({ destination_id: destId, origin_city: originCity });
+    if (transportType && transportType !== "All") params.append("transport_type", transportType);
+    return fetchApi(`/transport?${params.toString()}`);
+  },
+
   async optimizeArrival(destId: string, originCity: string, dateStr: string, preferredMode = "All"): Promise<ArrivalOptimizerResponse> {
     return fetchApi("/arrival-optimizer", {
       method: "POST",

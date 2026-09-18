@@ -7,7 +7,8 @@ import logging
 from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from app.models.models import (
-    Destination, Place, Trip, TripMember, User, UserPreference, Expense, Itinerary, ItineraryItem
+    Destination, Place, Trip, TripMember, User, UserPreference, Expense, Itinerary, ItineraryItem,
+    Hotel, RentalOption, TransportOption
 )
 from app.services.copilot_actions import CopilotActionService
 from app.providers.provider_factory import ProviderFactory
@@ -38,6 +39,9 @@ class AIToolDispatcher:
             "get_budget_summary": self._get_budget_summary,
             "save_place": self._save_place,
             "add_place_to_itinerary": self._add_place_to_itinerary,
+            "search_stays": self._search_stays,
+            "search_transport": self._search_transport,
+            "search_rentals": self._search_rentals,
         }
 
 
@@ -507,4 +511,266 @@ class AIToolDispatcher:
             action_name="add_place_to_itinerary",
             payload=args,
         )
+
+    async def _search_stays(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        dest_input = (args.get("destination") or "").strip().lower()
+        if not dest_input:
+            return {"error": "Missing required argument 'destination'"}
+
+        max_price = args.get("max_price")
+        style = (args.get("style") or "").strip()
+
+        dest = self.db.query(Destination).filter(
+            (Destination.slug == dest_input) | (Destination.name.ilike(dest_input))
+        ).first()
+        dest_id = dest.id if dest else dest_input
+
+        # 1. Fetch curated DB stays
+        db_query = self.db.query(Hotel).filter(Hotel.destination_id == dest_id)
+        if style and style.lower() != "all":
+            db_query = db_query.filter(Hotel.hotel_style.ilike(f"%{style}%"))
+        if max_price is not None:
+            try:
+                db_query = db_query.filter(Hotel.price_per_night <= float(max_price))
+            except Exception:
+                pass
+
+        curated = db_query.all()
+        stays_list = []
+        seen_names = set()
+
+        for h in curated:
+            seen_names.add(h.name.lower().strip())
+            stays_list.append({
+                "stay_id": h.id,
+                "name": h.name,
+                "address": h.address,
+                "price_per_night": h.price_per_night,
+                "price_verified": True,
+                "rating": h.rating,
+                "style": h.hotel_style,
+                "amenities": h.amenities,
+                "check_in": h.check_in_time,
+                "check_out": h.check_out_time,
+                "badge": h.badge,
+                "booking_url": h.booking_url,
+                "source": "vanvas_curated",
+                "is_live": False,
+                "price_note": "Verified curated rate"
+            })
+
+        # 2. Fetch live accommodation from LiveHotelsProvider
+        try:
+            hotels_provider = ProviderFactory.get_hotels_provider()
+            target_name = dest.name if dest else dest_input
+            target_lat = dest.latitude if dest else None
+            target_lng = dest.longitude if dest else None
+            live_stays = await hotels_provider.search_hotels(
+                destination=target_name,
+                lat=target_lat,
+                lng=target_lng,
+                radius_km=15.0
+            )
+            for ls in live_stays:
+                norm = ls.get("name", "").lower().strip()
+                if any(norm in s or s in norm for s in seen_names):
+                    continue
+                if style and style.lower() != "all" and style.lower() not in ls.get("hotel_style", "").lower():
+                    continue
+                seen_names.add(norm)
+                stays_list.append({
+                    "stay_id": ls.get("id"),
+                    "name": ls["name"],
+                    "address": ls.get("address"),
+                    "price_per_night": None,
+                    "price_verified": False,
+                    "rating": ls.get("rating"),
+                    "style": ls.get("hotel_style"),
+                    "amenities": ls.get("amenities"),
+                    "booking_url": ls.get("booking_url"),
+                    "phone": ls.get("phone"),
+                    "source": ls.get("source", "openstreetmap"),
+                    "is_live": True,
+                    "price_note": "Live POI: pricing/availability not verified online"
+                })
+                if len(stays_list) >= 8:
+                    break
+        except Exception as e:
+            logger.warning(f"Error querying live hotels in dispatcher: {e}")
+
+        if not stays_list:
+            return {
+                "stays": [],
+                "destination": dest_input,
+                "message": f"No verified accommodations found matching '{dest_input}'." + (f" with max price ₹{max_price}" if max_price else "")
+            }
+
+        return {
+            "stays": stays_list[:8],
+            "destination": dest.name if dest else dest_input.title(),
+            "total_matches": len(stays_list),
+            "disclaimer": "Curated stay rates reflect verified baseline pricing. Real-time availability should be confirmed on booking portals."
+        }
+
+    async def _search_transport(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        dest_input = (args.get("destination") or "").strip().lower()
+        if not dest_input:
+            return {"error": "Missing required argument 'destination'"}
+
+        origin_city = (args.get("origin_city") or "Delhi").strip()
+        transport_type = (args.get("transport_type") or "").strip()
+
+        dest = self.db.query(Destination).filter(
+            (Destination.slug == dest_input) | (Destination.name.ilike(dest_input))
+        ).first()
+        dest_id = dest.id if dest else dest_input
+
+        # 1. Fetch curated DB transport
+        query = self.db.query(TransportOption).filter(
+            TransportOption.destination_id == dest_id,
+            TransportOption.origin_city.ilike(f"%{origin_city}%")
+        )
+        if transport_type and transport_type.lower() != "all":
+            query = query.filter(TransportOption.transport_type.ilike(f"%{transport_type}%"))
+
+        db_options = query.all()
+        routes = []
+
+        for opt in db_options:
+            routes.append({
+                "route_id": opt.id,
+                "origin_city": opt.origin_city,
+                "destination": dest.name if dest else dest_input.title(),
+                "transport_type": opt.transport_type,
+                "operator_name": opt.operator_name,
+                "departure_time": opt.departure_time,
+                "arrival_time": opt.arrival_time,
+                "duration_hours": opt.duration_hours,
+                "price": opt.price,
+                "departure_location": opt.departure_location,
+                "arrival_location": opt.arrival_location,
+                "booking_url": opt.booking_url,
+                "recommendation_badge": opt.recommendation_badge,
+                "source": "vanvas_curated",
+                "is_live": False,
+                "schedule_type": "curated_schedule"
+            })
+
+        if not routes:
+            # Fallback to provider search
+            transport_provider = ProviderFactory.get_transport_provider()
+            live_routes = await transport_provider.search_routes(
+                origin=origin_city,
+                destination=dest.name if dest else dest_input.title(),
+                transport_type=transport_type
+            )
+            for r in live_routes:
+                routes.append({
+                    "route_id": r.get("id"),
+                    "origin_city": r.get("origin_city", origin_city),
+                    "destination": dest.name if dest else dest_input.title(),
+                    "transport_type": r["transport_type"],
+                    "operator_name": r["operator_name"],
+                    "departure_time": r["departure_time"],
+                    "arrival_time": r["arrival_time"],
+                    "duration_hours": r["duration_hours"],
+                    "price": r["price"],
+                    "departure_location": r["departure_location"],
+                    "arrival_location": r["arrival_location"],
+                    "booking_url": r.get("booking_url"),
+                    "recommendation_badge": r.get("recommendation_badge"),
+                    "source": r.get("source", "vanvas_curated"),
+                    "is_live": False,
+                    "schedule_type": "curated_schedule"
+                })
+
+        return {
+            "routes": routes,
+            "origin_city": origin_city,
+            "destination": dest.name if dest else dest_input.title(),
+            "total_routes": len(routes),
+            "disclaimer": "Transit schedules reflect authentic mountain bus & train timetables. Live real-time GPS tracking is confirmed directly through the operator."
+        }
+
+    async def _search_rentals(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        dest_input = (args.get("destination") or "").strip().lower()
+        if not dest_input:
+            return {"error": "Missing required argument 'destination'"}
+
+        vehicle_type = (args.get("vehicle_type") or "").strip()
+
+        dest = self.db.query(Destination).filter(
+            (Destination.slug == dest_input) | (Destination.name.ilike(dest_input))
+        ).first()
+        dest_id = dest.id if dest else dest_input
+
+        # 1. Fetch curated DB rentals
+        query = self.db.query(RentalOption).filter(RentalOption.destination_id == dest_id)
+        if vehicle_type and vehicle_type.lower() != "all":
+            query = query.filter(RentalOption.vehicle_type.ilike(f"%{vehicle_type}%"))
+
+        db_rentals = query.all()
+        rentals_list = []
+        seen_names = set()
+
+        for r in db_rentals:
+            seen_names.add(r.vehicle_name.lower().strip())
+            rentals_list.append({
+                "rental_id": r.id,
+                "provider_name": r.provider_name,
+                "vehicle_type": r.vehicle_type,
+                "vehicle_name": r.vehicle_name,
+                "price_per_day": r.price_per_day,
+                "deposit_amount": r.deposit_amount,
+                "location": r.location,
+                "opening_hours": r.opening_hours,
+                "rating": r.rating,
+                "source": "vanvas_curated",
+                "is_live": False,
+                "inventory_verified": True
+            })
+
+        # 2. Query Live Rentals Provider
+        try:
+            rentals_provider = ProviderFactory.get_rentals_provider()
+            target_name = dest.name if dest else dest_input
+            target_lat = dest.latitude if dest else None
+            target_lng = dest.longitude if dest else None
+            live_rentals = await rentals_provider.search_rentals(
+                destination=target_name,
+                vehicle_type=vehicle_type,
+                lat=target_lat,
+                lng=target_lng,
+                radius_km=15.0
+            )
+            for lr in live_rentals:
+                norm = lr.get("vehicle_name", "").lower().strip()
+                if any(norm in s or s in norm for s in seen_names):
+                    continue
+                seen_names.add(norm)
+                rentals_list.append({
+                    "rental_id": lr.get("id"),
+                    "provider_name": lr["provider_name"],
+                    "vehicle_type": lr.get("vehicle_type"),
+                    "vehicle_name": lr["vehicle_name"],
+                    "price_per_day": None,
+                    "deposit_amount": None,
+                    "location": lr.get("location"),
+                    "opening_hours": lr.get("opening_hours"),
+                    "phone": lr.get("phone"),
+                    "source": lr.get("source", "openstreetmap"),
+                    "is_live": True,
+                    "inventory_verified": False
+                })
+                if len(rentals_list) >= 8:
+                    break
+        except Exception as e:
+            logger.warning(f"Error querying live rentals in dispatcher: {e}")
+
+        return {
+            "rentals": rentals_list[:8],
+            "destination": dest.name if dest else dest_input.title(),
+            "total_matches": len(rentals_list),
+            "disclaimer": "Rental options reflect verified valley mobility fleets. Daily availability and security deposit are confirmed upon vehicle pickup."
+        }
 

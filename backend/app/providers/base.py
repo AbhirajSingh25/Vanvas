@@ -26,17 +26,39 @@ class WeatherProvider(ABC):
 
 class TransportProvider(ABC):
     @abstractmethod
-    async def search_routes(self, origin: str, destination: str, travel_date: str) -> List[Dict[str, Any]]:
+    async def search_routes(
+        self,
+        origin: str,
+        destination: str,
+        travel_date: Optional[str] = None,
+        transport_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         pass
 
 class HotelsProvider(ABC):
     @abstractmethod
-    async def search_hotels(self, destination: str, check_in: str, check_out: str, budget_tier: str) -> List[Dict[str, Any]]:
+    async def search_hotels(
+        self,
+        destination: str,
+        check_in: Optional[str] = None,
+        check_out: Optional[str] = None,
+        budget_tier: Optional[str] = None,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None,
+        radius_km: float = 15.0
+    ) -> List[Dict[str, Any]]:
         pass
 
 class RentalsProvider(ABC):
     @abstractmethod
-    async def search_rentals(self, destination: str, vehicle_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def search_rentals(
+        self,
+        destination: str,
+        vehicle_type: Optional[str] = None,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None,
+        radius_km: float = 15.0
+    ) -> List[Dict[str, Any]]:
         pass
 
 class RoutingProvider(ABC):

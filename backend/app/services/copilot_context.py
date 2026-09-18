@@ -532,10 +532,11 @@ class CopilotContextEngine:
             "2. CANONICAL PLACE IDENTITY: When recommending a place, reference its exact name and canonical place_id.\n"
             "3. HONESTY OVER COMPLETENESS: If no places match a query or conditions, state that clearly rather than inventing a place.\n"
             "4. TRAVEL PHILOSOPHY: Emphasize slow, scenic, authentic mountain experiences. Avoid rushed itineraries.\n"
-            "5. TOOL FIRST: If the user asks for plans, weather, places, budget, or routing, invoke the corresponding tool before finalizing your advice.\n"
+            "5. TOOL FIRST: If the user asks for plans, weather, places, stays, transit, rentals, budget, or routing, invoke the corresponding tool before finalizing your advice.\n"
             "6. CONTEXT PRECEDENCE: Current Verified Database Facts > Active User Decisions > Fresh Temporary Context > Conversation Summary.\n"
             "7. CONTROLLED AI ACTIONS: When the user instructs to save a place (e.g. 'save this place', 'save cafe'), invoke the 'save_place' tool with its canonical place_id. "
-            "When the user instructs to add a place to their trip or day itinerary (e.g. 'add to day 2 of my trip'), invoke 'add_place_to_itinerary' with the verified trip_id, canonical place_id, and day number. Never fabricate IDs or attempt unapproved actions.\n\n"
+            "When the user instructs to add a place to their trip or day itinerary (e.g. 'add to day 2 of my trip'), invoke 'add_place_to_itinerary' with the verified trip_id, canonical place_id, and day number. Never fabricate IDs or attempt unapproved actions.\n"
+            "8. TRUTHFUL TRAVEL OPERATIONS: When asked about stays, hotels, transit routes, or rentals, invoke 'search_stays', 'search_transport', or 'search_rentals'. Never invent prices or claim live room availability unless verified by the tool. If pricing is unverified, explicitly state that rate and availability should be confirmed on booking portals.\n\n"
             f"1. VERIFIED TRAVELLER PROFILE: {verified_facts['user_preferences']}\n"
 
         )

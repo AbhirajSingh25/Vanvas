@@ -95,6 +95,7 @@ class PlaceBase(BaseModel):
     review_count: Optional[int] = None
     opening_time: Optional[str] = None
     closing_time: Optional[str] = None
+    hours_available: Optional[bool] = None
     phone: Optional[str] = None
     website: Optional[str] = None
     recommended_duration_mins: Optional[int] = 60
@@ -126,15 +127,23 @@ class HotelResponse(BaseModel):
     address: str
     latitude: float
     longitude: float
-    price_per_night: float
-    rating: float
-    hotel_style: str
-    amenities: str
-    check_in_time: str
-    check_out_time: str
+    price_per_night: Optional[float] = None
+    rating: Optional[float] = None
+    review_count: Optional[int] = None
+    hotel_style: Optional[str] = "Boutique / Mountain Stay"
+    amenities: Optional[str] = "WiFi,Hot Water"
+    check_in_time: Optional[str] = "11:00 AM"
+    check_out_time: Optional[str] = "10:00 AM"
     image_url: Optional[str] = None
     booking_url: Optional[str] = None
-    badge: str
+    badge: Optional[str] = "Verified Sanctuary"
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    source: Optional[str] = "vanvas_curated"
+    source_id: Optional[str] = None
+    is_live: Optional[bool] = False
+    price_verified: Optional[bool] = True
+    distance_km: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -145,14 +154,22 @@ class RentalOptionResponse(BaseModel):
     provider_name: str
     vehicle_type: str
     vehicle_name: str
-    price_per_day: float
-    deposit_amount: float
+    price_per_day: Optional[float] = None
+    deposit_amount: Optional[float] = 1000.0
     location: str
     latitude: float
     longitude: float
-    opening_hours: str
-    rating: float
+    opening_hours: Optional[str] = "08:00 AM - 08:00 PM"
+    hours_available: Optional[bool] = True
+    rating: Optional[float] = None
     image_url: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    source: Optional[str] = "vanvas_curated"
+    source_id: Optional[str] = None
+    is_live: Optional[bool] = False
+    inventory_verified: Optional[bool] = False
+    distance_km: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -170,7 +187,11 @@ class TransportOptionResponse(BaseModel):
     departure_location: str
     arrival_location: str
     booking_url: Optional[str] = None
-    recommendation_badge: str
+    recommendation_badge: Optional[str] = "Best Arrival Time"
+    source: Optional[str] = "vanvas_curated"
+    source_id: Optional[str] = None
+    is_live: Optional[bool] = False
+    schedule_type: Optional[str] = "curated_schedule"
 
     class Config:
         from_attributes = True

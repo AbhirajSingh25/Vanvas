@@ -165,14 +165,36 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     setLoading(true);
     setLoadError(null);
     api.getDestinationDetail(slug)
-      .then((data) => {
+      .then(async (data) => {
         if (!data || !data.destination) {
           throw new Error("404: Sanctuary not found in index");
         }
         setDestination(data.destination);
         setPlaces(data.places || []);
-        setHotels(data.hotels || []);
-        setRentals(data.rentals || []);
+        
+        let loadedHotels = data.hotels || [];
+        let loadedRentals = data.rentals || [];
+
+        // If no curated stays/rentals, fetch live options from providers
+        if (loadedHotels.length === 0) {
+          try {
+            const liveStays = await api.getHotels(data.destination.id || slug);
+            if (liveStays && liveStays.length > 0) loadedHotels = liveStays;
+          } catch (e) {
+            // keep empty
+          }
+        }
+        if (loadedRentals.length === 0) {
+          try {
+            const liveR = await api.getRentals(data.destination.id || slug);
+            if (liveR && liveR.length > 0) loadedRentals = liveR;
+          } catch (e) {
+            // keep empty
+          }
+        }
+
+        setHotels(loadedHotels);
+        setRentals(loadedRentals);
         setWeather(data.weather || []);
       })
       .catch((err) => {
@@ -646,9 +668,9 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           )}
         </div>
 
-        {/* CURATED STAYS (Curated Destinations Only) */}
-        {isCurated && hotels.length > 0 && (
-          <div className="space-y-6 pt-6">
+        {/* STAYS & SANCTUARIES */}
+        {hotels.length > 0 && (
+          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
             <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
@@ -656,59 +678,80 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 </span>
                 <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
                   <BedDouble className="w-6 h-6 text-[#B65E3C]" />
-                  <span>Handpicked Stays &amp; Sanctuaries</span>
+                  <span>Stays &amp; Sanctuaries ({hotels.length})</span>
                 </h3>
               </div>
-              <span className="px-2.5 py-1 rounded-md bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono font-bold text-[#7B4D36] uppercase">
-                Curated Sanctuaries
+              <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${
+                isCurated
+                  ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
+                  : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
+              }`}>
+                {isCurated ? "Curated Sanctuaries" : "Live Accommodation"}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {hotels.map((h) => (
-                <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xs space-y-3.5 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
-                      <VanvasImage
-                        src={h.image_url || `/images/places/${destination.slug || "mussoorie"}/categories/stay.webp`}
-                        fallbackSrc={`/images/places/${destination.slug || "mussoorie"}/categories/stay.webp`}
-                        alt={`${h.name} in ${destination.name}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] text-[10px] font-bold uppercase tracking-wider shadow-xs">
-                        {h.badge || "Handpicked"}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-serif font-bold text-base text-[#173B32]">{h.name}</h4>
-                        <span className="font-bold text-xs text-[#B65E3C]">₹{h.price_per_night}/n</span>
-                      </div>
-                      <p className="text-[11px] text-[#7B4D36] mt-1">{h.address}</p>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {hotels.map((h) => {
+                const isLiveStay = h.is_live || h.source === "openstreetmap" || h.source === "google_places";
+                const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
 
-                  <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52]">
-                    <span>Amenities: {h.amenities?.split(",")[0] || "Scenic Views"}</span>
-                    <a
-                      href={h.booking_url || "https://booking.com"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#B65E3C] font-bold hover:underline flex items-center gap-1"
-                    >
-                      <span>View details</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                return (
+                  <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3.5 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                        <VanvasImage
+                          src={h.image_url || `/images/places/${destination.slug || "manali"}/categories/stay.webp`}
+                          fallbackSrc={`/images/places/${destination.slug || "manali"}/categories/stay.webp`}
+                          alt={`${h.name} in ${destination.name}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
+                            isLiveStay
+                              ? "bg-emerald-600 text-white"
+                              : "bg-[#173B32] text-[#EFE5D2]"
+                          }`}>
+                            {isLiveStay ? "LIVE STAY" : (h.badge || "Handpicked")}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{h.name}</h4>
+                          <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/70 text-[11px]"}`}>
+                            {isPriceVerified ? `₹${h.price_per_night}/n` : "Rate on booking"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">{h.address}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52]">
+                      <span className="line-clamp-1">Amenities: {h.amenities?.split(",")[0] || "Scenic Stay"}</span>
+                      {h.booking_url ? (
+                        <a
+                          href={h.booking_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#B65E3C] font-bold hover:underline flex items-center gap-1 shrink-0"
+                        >
+                          <span>View details</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-[#7B4D36] italic">Contact on arrival</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* CURATED RENTALS (Curated Destinations Only) */}
-        {isCurated && rentals.length > 0 && (
-          <div className="space-y-6 pt-6">
+        {/* VALLEY MOBILITY & RENTALS */}
+        {rentals.length > 0 && (
+          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
             <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
@@ -716,41 +759,63 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 </span>
                 <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
                   <Bike className="w-6 h-6 text-[#B65E3C]" />
-                  <span>Scooter &amp; Motorcycle Rentals</span>
+                  <span>Scooter &amp; Motorcycle Rentals ({rentals.length})</span>
                 </h3>
               </div>
-              <span className="px-2.5 py-1 rounded-md bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono font-bold text-[#7B4D36] uppercase">
-                Curated Rentals
+              <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${
+                isCurated
+                  ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
+                  : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
+              }`}>
+                {isCurated ? "Curated Mobility" : "Live Rental Hubs"}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {rentals.map((r) => (
-                <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xs space-y-3 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
-                      <VehicleArtwork
-                        type={r.vehicle_type}
-                        name={r.vehicle_name}
-                        alt={r.vehicle_name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-serif font-bold text-base text-[#173B32]">{r.vehicle_name}</h4>
-                        <span className="font-bold text-xs text-[#173B32]">₹{r.price_per_day}/day</span>
-                      </div>
-                      <p className="text-[11px] text-[#7B4D36] mt-0.5">Provider: {r.provider_name} • Deposit: ₹{r.deposit_amount}</p>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rentals.map((r) => {
+                const isLiveRent = r.is_live || r.source === "openstreetmap";
+                const isPriceVerified = r.inventory_verified !== false && typeof r.price_per_day === "number" && r.price_per_day > 0;
 
-                  <div className="p-2.5 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between">
-                    <span>{r.location}</span>
-                    <span className="text-[11px] text-[#7B4D36]">{r.opening_hours}</span>
+                return (
+                  <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                        <VehicleArtwork
+                          type={r.vehicle_type}
+                          name={r.vehicle_name}
+                          alt={r.vehicle_name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2.5 left-2.5">
+                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
+                            isLiveRent
+                              ? "bg-emerald-600 text-white"
+                              : "bg-[#173B32] text-[#EFE5D2]"
+                          }`}>
+                            {isLiveRent ? "LIVE MOBILITY" : "CURATED"}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{r.vehicle_name}</h4>
+                          <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#173B32]" : "text-[#7B4D36]/70 text-[11px]"}`}>
+                            {isPriceVerified ? `₹${r.price_per_day}/day` : "Rate upon pickup"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#7B4D36] mt-0.5">
+                          Provider: {r.provider_name} {r.deposit_amount ? `• Deposit: ₹${r.deposit_amount}` : ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between">
+                      <span className="line-clamp-1">{r.location}</span>
+                      <span className="text-[11px] text-[#7B4D36] shrink-0">{r.opening_hours || "Hours not listed"}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
