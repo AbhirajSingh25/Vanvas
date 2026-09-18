@@ -95,6 +95,20 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
               >
                 {visualRes.badgeLabel}
               </span>
+              {place.is_open_now === true ? (
+                <span className="px-2.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  Open Now
+                </span>
+              ) : place.is_open_now === false ? (
+                <span className="px-2.5 py-0.5 rounded-md bg-[#7B4D36] text-[#FAF4E8] text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                  Closed Now
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-md bg-[#173B32]/70 text-[#D8DED5] text-[10px] font-mono tracking-wider">
+                  Hours Unverified
+                </span>
+              )}
               {place.is_must_visit && (
                 <span className="px-2.5 py-0.5 rounded-md bg-[#B65E3C] text-[#EFE5D2] text-[10px] font-black uppercase tracking-wider">
                   Must Visit
@@ -128,12 +142,16 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
               </div>
             )}
 
-            {place.opening_time && (
-              <div className="flex items-center gap-1 text-[#7B4D36]">
-                <Clock className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span>{place.opening_time} {place.closing_time ? `- ${place.closing_time}` : ""}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-1 text-[#7B4D36]">
+              <Clock className="w-3.5 h-3.5 text-[#B65E3C]" />
+              {place.is_open_now === true ? (
+                <span className="font-bold text-emerald-700">Open Now {place.opening_time ? `(${place.opening_time} - ${place.closing_time || "Close"})` : ""}</span>
+              ) : place.is_open_now === false ? (
+                <span className="font-bold text-[#7B4D36]">Closed Now {place.opening_time ? `(Opens ${place.opening_time})` : ""}</span>
+              ) : (
+                <span>{place.opening_time ? `${place.opening_time} - ${place.closing_time || "Close"}` : "Hours not listed"}</span>
+              )}
+            </div>
 
             {typeof place.distance_km === "number" && (
               <div className="flex items-center gap-1 text-[#173B32] font-mono">
@@ -177,35 +195,63 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
             </div>
           )}
 
-          {/* Address, Phone, Website & Tags */}
+          {/* Verified Outbound Actions Row */}
+          <div className="p-3.5 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-[#7B4D36]">
+                Verified Outbound Actions
+              </span>
+              <span className="text-[9px] font-mono text-[#536B52]">
+                {isLive ? "Live Provider Coordinates" : "VANVAS Ground Truth"}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Directions Button */}
+              {place.latitude && place.longitude ? (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>Get Directions</span>
+                </a>
+              ) : null}
+
+              {/* Website Button */}
+              {place.website ? (
+                <a
+                  href={place.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-[#FAF7F0] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA] text-xs font-semibold flex items-center gap-1.5 transition-all"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-[#B65E3C]" />
+                  <span>Official Website</span>
+                </a>
+              ) : null}
+
+              {/* Call Button */}
+              {place.phone ? (
+                <a
+                  href={`tel:${place.phone.replace(/[^0-9+]/g, "")}`}
+                  className="px-3 py-1.5 rounded-xl bg-[#FAF7F0] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA] text-xs font-semibold flex items-center gap-1.5 transition-all"
+                >
+                  <Phone className="w-3.5 h-3.5 text-[#B65E3C]" />
+                  <span>Call {place.phone}</span>
+                </a>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Address, Details & Tags */}
           <div className="space-y-2.5 pt-2 border-t border-[#E5D5BA] text-xs text-[#536B52]">
             {place.address && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-[#B65E3C] shrink-0 mt-0.5" />
                 <span className="text-[#20211D]/80">{place.address}</span>
-              </div>
-            )}
-            {place.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span className="font-bold text-[#7B4D36]">Phone:</span>
-                <a href={`tel:${place.phone}`} className="text-[#173B32] underline hover:text-[#B65E3C]">
-                  {place.phone}
-                </a>
-              </div>
-            )}
-            {place.website && (
-              <div className="flex items-center gap-2">
-                <ExternalLink className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span className="font-bold text-[#7B4D36]">Website:</span>
-                <a
-                  href={place.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#173B32] underline hover:text-[#B65E3C] flex items-center gap-1"
-                >
-                  <span>Visit Official Website</span>
-                </a>
               </div>
             )}
             <div className="flex flex-wrap gap-1.5 pt-1">
@@ -222,7 +268,7 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
         <div className="p-4 border-t border-[#E5D5BA] bg-[#E5D5BA]/40 flex items-center justify-between gap-3">
           <button
             onClick={onClose}
-            className="text-xs font-bold text-[#7B4D36] hover:text-[#173B32] uppercase tracking-wider px-2"
+            className="text-xs font-bold text-[#7B4D36] hover:text-[#173B32] uppercase tracking-wider px-2 cursor-pointer"
           >
             Close
           </button>
@@ -233,7 +279,7 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
                   onAddToTrip(place);
                   onClose();
                 }}
-                className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all"
+                className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
               >
                 <PlusCircle className="w-3.5 h-3.5 text-[#B49252]" />
                 <span>Add to Journey</span>

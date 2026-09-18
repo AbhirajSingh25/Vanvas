@@ -234,7 +234,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
                       {m.places.map((place: any, pIdx: number) => (
                         <div 
                           key={pIdx} 
-                          className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] shadow-2xs hover:border-[#173B32] transition-colors"
+                          className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] shadow-2xs hover:border-[#173B32] transition-colors relative"
                         >
                           {place.image_url ? (
                             <img 
@@ -249,8 +249,15 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-serif font-bold text-[#173B32] truncate">{place.name}</p>
-                            <div className="flex items-center gap-2 text-[10px] text-[#7B4D36] font-mono mt-0.5">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className="text-xs font-serif font-bold text-[#173B32] truncate">{place.name}</p>
+                              {place.is_open_now === true ? (
+                                <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded shrink-0">Open</span>
+                              ) : place.is_open_now === false ? (
+                                <span className="text-[9px] font-mono font-bold text-[#7B4D36] bg-[#EFE5D2] px-1.5 py-0.2 rounded shrink-0">Closed</span>
+                              ) : null}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-[#7B4D36] font-mono mt-0.5">
                               <span className="capitalize">{place.category || "Spot"}</span>
                               {place.distance_km !== undefined && (
                                 <span>• {place.distance_km} km</span>
@@ -260,6 +267,17 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
                               ) : null}
                             </div>
                           </div>
+                          {place.latitude && place.longitude && (
+                            <a
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#173B32] hover:text-[#B65E3C] p-1 shrink-0"
+                              title="Directions"
+                            >
+                              <Navigation className="w-3.5 h-3.5" />
+                            </a>
+                          )}
                         </div>
                       ))}
                     </div>

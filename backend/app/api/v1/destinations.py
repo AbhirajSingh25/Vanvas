@@ -174,6 +174,9 @@ async def get_destination_detail(
         "rentals_count": 0
     }
 
+from app.services.operating_hours_engine import OperatingHoursEngine
+from app.services.action_link_generator import ActionLinkGenerator
+
 @router.get("/{destination_id}/places", response_model=List[PlaceResponse])
 def get_destination_places(
     destination_id: str,
@@ -208,4 +211,51 @@ def get_destination_places(
             (Place.description.ilike(f"%{search}%")) |
             (Place.tags.ilike(f"%{search}%"))
         )
-    return query.all()
+    places = query.all()
+    results = []
+    for p in places:
+        hours_eval = OperatingHoursEngine.evaluate_simple_hours(p.opening_time, p.closing_time, p.latitude, p.longitude)
+        action_links = ActionLinkGenerator.generate_place_action_links(
+            name=p.name,
+            latitude=p.latitude,
+            longitude=p.longitude,
+            website=p.booking_url,
+            phone=None,
+            booking_url=p.booking_url,
+            source="vanvas_curated",
+            source_id=p.id,
+        )
+        results.append(PlaceResponse(
+            id=p.id,
+            destination_id=p.destination_id,
+            category=p.category,
+            name=p.name,
+            slug=p.slug,
+            description=p.description,
+            address=p.address,
+            latitude=p.latitude,
+            longitude=p.longitude,
+            price_level=p.price_level,
+            approx_cost=p.approx_cost,
+            rating=p.rating,
+            review_count=p.review_count,
+            opening_time=p.opening_time,
+            closing_time=p.closing_time,
+            hours_available=hours_eval.hours_available,
+            is_open_now=hours_eval.is_open_now,
+            phone=None,
+            website=p.booking_url,
+            recommended_duration_mins=p.recommended_duration_mins,
+            tags=p.tags,
+            image_url=p.image_url,
+            why_vanvas_recommends=p.why_vanvas_recommends,
+            booking_url=p.booking_url,
+            is_must_visit=p.is_must_visit,
+            is_hidden_gem=p.is_hidden_gem,
+            is_indoor=p.is_indoor,
+            is_saved=False,
+            action_links=action_links,
+            data_state="VERIFIED",
+            trust_source="VANVAS_CURATED",
+        ))
+    return results

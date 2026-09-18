@@ -13,6 +13,9 @@ from app.itinerary.arrival_optimizer import ArrivalOptimizer
 from app.providers.provider_factory import ProviderFactory
 from app.itinerary.clustering import haversine_distance_km
 
+from app.services.action_link_generator import ActionLinkGenerator
+from app.services.operating_hours_engine import OperatingHoursEngine
+
 router = APIRouter()
 arrival_optimizer = ArrivalOptimizer()
 
@@ -39,6 +42,10 @@ async def get_transport_options(
     results: List[TransportOptionResponse] = []
 
     for opt in db_options:
+        action_links = ActionLinkGenerator.generate_transport_action_links(
+            operator_name=opt.operator_name,
+            booking_url=opt.booking_url,
+        )
         results.append(TransportOptionResponse(
             id=opt.id,
             origin_city=opt.origin_city,
@@ -56,7 +63,10 @@ async def get_transport_options(
             source="vanvas_curated",
             source_id=opt.id,
             is_live=False,
-            schedule_type="curated_schedule"
+            schedule_type="curated_schedule",
+            action_links=action_links,
+            data_state="VERIFIED",
+            trust_source="VANVAS_CURATED",
         ))
 
     if not results:
@@ -75,6 +85,10 @@ async def get_transport_options(
         except Exception:
             live_routes = []
         for r in live_routes:
+            action_links = ActionLinkGenerator.generate_transport_action_links(
+                operator_name=r["operator_name"],
+                booking_url=r.get("booking_url"),
+            )
             results.append(TransportOptionResponse(
                 id=r.get("id", f"curated-{r['operator_name'].lower().replace(' ', '-')[:12]}"),
                 origin_city=r.get("origin_city", origin_city or "Delhi"),
@@ -92,7 +106,10 @@ async def get_transport_options(
                 source=r.get("source", "vanvas_curated"),
                 source_id=r.get("source_id", "curated-schedule"),
                 is_live=r.get("is_live", False),
-                schedule_type=r.get("schedule_type", "curated_schedule")
+                schedule_type=r.get("schedule_type", "curated_schedule"),
+                action_links=action_links,
+                data_state=r.get("data_state", "VERIFIED"),
+                trust_source=r.get("trust_source", "VANVAS_CURATED"),
             ))
 
     return results
@@ -151,6 +168,16 @@ async def get_hotels(
 
     for h in curated_hotels:
         seen_names.add(h.name.lower().strip())
+        action_links = ActionLinkGenerator.generate_hotel_action_links(
+            name=h.name,
+            latitude=h.latitude,
+            longitude=h.longitude,
+            website=h.booking_url,
+            phone=None,
+            booking_url=h.booking_url,
+            source="vanvas_curated",
+            source_id=h.id,
+        )
         results.append(HotelResponse(
             id=h.id,
             destination_id=h.destination_id,
@@ -174,7 +201,10 @@ async def get_hotels(
             source_id=h.id,
             is_live=False,
             price_verified=True,
-            distance_km=None
+            distance_km=None,
+            action_links=action_links,
+            data_state="VERIFIED",
+            trust_source="VANVAS_CURATED",
         ))
 
     # 2. Query Live Accommodation Provider (OSM Overpass / Google Places)
@@ -222,7 +252,10 @@ async def get_hotels(
                 source_id=ls.get("source_id"),
                 is_live=ls.get("is_live", True),
                 price_verified=ls.get("price_verified", False),
-                distance_km=ls.get("distance_km")
+                distance_km=ls.get("distance_km"),
+                action_links=ls.get("action_links", []),
+                data_state=ls.get("data_state", "LIVE"),
+                trust_source=ls.get("trust_source", "OPENSTREETMAP"),
             ))
     except Exception:
         pass
@@ -251,6 +284,14 @@ async def get_rentals(
 
     for r in curated_rentals:
         seen_names.add(r.vehicle_name.lower().strip())
+        hours_eval = OperatingHoursEngine.evaluate_osm_hours(r.opening_hours, r.latitude, r.longitude)
+        action_links = ActionLinkGenerator.generate_rental_action_links(
+            provider_name=r.provider_name,
+            latitude=r.latitude,
+            longitude=r.longitude,
+            website=None,
+            phone=None,
+        )
         results.append(RentalOptionResponse(
             id=r.id,
             destination_id=r.destination_id,
@@ -263,7 +304,8 @@ async def get_rentals(
             latitude=r.latitude,
             longitude=r.longitude,
             opening_hours=r.opening_hours or "08:00 AM - 08:00 PM",
-            hours_available=True,
+            hours_available=hours_eval.hours_available,
+            is_open_now=hours_eval.is_open_now,
             rating=r.rating,
             image_url=r.image_url,
             phone=None,
@@ -272,7 +314,10 @@ async def get_rentals(
             source_id=r.id,
             is_live=False,
             inventory_verified=True,
-            distance_km=None
+            distance_km=None,
+            action_links=action_links,
+            data_state="VERIFIED",
+            trust_source="VANVAS_CURATED",
         ))
 
     # 2. Query Live Rentals Provider (OSM mobility hubs)
@@ -309,6 +354,7 @@ async def get_rentals(
                 longitude=lr["longitude"],
                 opening_hours=lr.get("opening_hours", "Hours not listed"),
                 hours_available=lr.get("hours_available", False),
+                is_open_now=lr.get("is_open_now"),
                 rating=lr.get("rating"),
                 image_url=lr.get("image_url", "/images/vehicles/automatic_scooter.svg"),
                 phone=lr.get("phone"),
@@ -317,7 +363,10 @@ async def get_rentals(
                 source_id=lr.get("source_id"),
                 is_live=lr.get("is_live", True),
                 inventory_verified=lr.get("inventory_verified", False),
-                distance_km=lr.get("distance_km")
+                distance_km=lr.get("distance_km"),
+                action_links=lr.get("action_links", []),
+                data_state=lr.get("data_state", "LIVE"),
+                trust_source=lr.get("trust_source", "OPENSTREETMAP"),
             ))
     except Exception:
         pass

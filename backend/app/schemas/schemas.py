@@ -79,6 +79,12 @@ class DestinationResponse(DestinationBase):
     class Config:
         from_attributes = True
 
+# ----------------- Trust & Action Link Schemas -----------------
+class ActionLink(BaseModel):
+    type: str  # "directions", "website", "phone", "booking", "provider"
+    label: str
+    url: str
+
 # ----------------- Place Schemas -----------------
 class PlaceBase(BaseModel):
     destination_id: str
@@ -96,6 +102,7 @@ class PlaceBase(BaseModel):
     opening_time: Optional[str] = None
     closing_time: Optional[str] = None
     hours_available: Optional[bool] = None
+    is_open_now: Optional[bool] = None
     phone: Optional[str] = None
     website: Optional[str] = None
     recommended_duration_mins: Optional[int] = 60
@@ -110,6 +117,9 @@ class PlaceBase(BaseModel):
     source_id: Optional[str] = None
     is_live: Optional[bool] = False
     distance_km: Optional[float] = None
+    action_links: List[ActionLink] = []
+    data_state: Optional[str] = "VERIFIED"
+    trust_source: Optional[str] = "VANVAS_CURATED"
 
 class PlaceResponse(PlaceBase):
     id: str
@@ -144,6 +154,9 @@ class HotelResponse(BaseModel):
     is_live: Optional[bool] = False
     price_verified: Optional[bool] = True
     distance_km: Optional[float] = None
+    action_links: List[ActionLink] = []
+    data_state: Optional[str] = "VERIFIED"
+    trust_source: Optional[str] = "VANVAS_CURATED"
 
     class Config:
         from_attributes = True
@@ -161,6 +174,7 @@ class RentalOptionResponse(BaseModel):
     longitude: float
     opening_hours: Optional[str] = "08:00 AM - 08:00 PM"
     hours_available: Optional[bool] = True
+    is_open_now: Optional[bool] = None
     rating: Optional[float] = None
     image_url: Optional[str] = None
     phone: Optional[str] = None
@@ -170,6 +184,9 @@ class RentalOptionResponse(BaseModel):
     is_live: Optional[bool] = False
     inventory_verified: Optional[bool] = False
     distance_km: Optional[float] = None
+    action_links: List[ActionLink] = []
+    data_state: Optional[str] = "VERIFIED"
+    trust_source: Optional[str] = "VANVAS_CURATED"
 
     class Config:
         from_attributes = True
@@ -192,6 +209,9 @@ class TransportOptionResponse(BaseModel):
     source_id: Optional[str] = None
     is_live: Optional[bool] = False
     schedule_type: Optional[str] = "curated_schedule"
+    action_links: List[ActionLink] = []
+    data_state: Optional[str] = "VERIFIED"
+    trust_source: Optional[str] = "VANVAS_CURATED"
 
     class Config:
         from_attributes = True

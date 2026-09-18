@@ -8,6 +8,8 @@ from app.api.deps import get_current_user, get_current_user_optional
 from app.itinerary.clustering import haversine_distance_km
 from app.recommendation.scorer import RecommendationScorer
 from app.providers.provider_factory import ProviderFactory
+from app.services.operating_hours_engine import OperatingHoursEngine
+from app.services.action_link_generator import ActionLinkGenerator
 
 router = APIRouter()
 scorer = RecommendationScorer()
@@ -44,6 +46,18 @@ async def get_nearby_places(
                 current_lng=lng
             )
             
+            hours_eval = OperatingHoursEngine.evaluate_simple_hours(p.opening_time, p.closing_time, p.latitude, p.longitude)
+            action_links = ActionLinkGenerator.generate_place_action_links(
+                name=p.name,
+                latitude=p.latitude,
+                longitude=p.longitude,
+                website=p.booking_url,
+                phone=None,
+                booking_url=p.booking_url,
+                source="vanvas_curated",
+                source_id=p.id,
+            )
+
             p_res = PlaceResponse(
                 id=p.id,
                 destination_id=p.destination_id,
@@ -60,8 +74,10 @@ async def get_nearby_places(
                 review_count=p.review_count,
                 opening_time=p.opening_time,
                 closing_time=p.closing_time,
+                hours_available=hours_eval.hours_available,
+                is_open_now=hours_eval.is_open_now,
                 phone=None,
-                website=None,
+                website=p.booking_url,
                 recommended_duration_mins=p.recommended_duration_mins or 60,
                 tags=p.tags or "Mountain",
                 image_url=p.image_url,
@@ -75,7 +91,10 @@ async def get_nearby_places(
                 source="vanvas_curated",
                 source_id=p.id,
                 is_live=False,
-                distance_km=round(dist, 1)
+                distance_km=round(dist, 1),
+                action_links=action_links,
+                data_state="VERIFIED",
+                trust_source="VANVAS_CURATED",
             )
             nearby_results.append((dist, p_res))
 
@@ -112,6 +131,8 @@ async def get_nearby_places(
                     review_count=lp.get("review_count"),
                     opening_time=lp.get("opening_time"),
                     closing_time=lp.get("closing_time"),
+                    hours_available=lp.get("hours_available", False),
+                    is_open_now=lp.get("is_open_now"),
                     phone=lp.get("phone"),
                     website=lp.get("website"),
                     recommended_duration_mins=lp.get("recommended_duration_mins", 60),
@@ -127,7 +148,10 @@ async def get_nearby_places(
                     source=lp.get("source", "openstreetmap"),
                     source_id=lp.get("source_id"),
                     is_live=lp.get("is_live", True),
-                    distance_km=round(dist, 1)
+                    distance_km=round(dist, 1),
+                    action_links=lp.get("action_links", []),
+                    data_state=lp.get("data_state", "LIVE"),
+                    trust_source=lp.get("trust_source", "OPENSTREETMAP"),
                 )))
     except Exception as e:
         pass
@@ -154,6 +178,17 @@ def get_saved_places(
     for sp in saved_entries:
         p = sp.place
         if p:
+            hours_eval = OperatingHoursEngine.evaluate_simple_hours(p.opening_time, p.closing_time, p.latitude, p.longitude)
+            action_links = ActionLinkGenerator.generate_place_action_links(
+                name=p.name,
+                latitude=p.latitude,
+                longitude=p.longitude,
+                website=p.booking_url,
+                phone=None,
+                booking_url=p.booking_url,
+                source="vanvas_curated",
+                source_id=p.id,
+            )
             results.append(PlaceResponse(
                 id=p.id,
                 destination_id=p.destination_id,
@@ -170,6 +205,10 @@ def get_saved_places(
                 review_count=p.review_count,
                 opening_time=p.opening_time,
                 closing_time=p.closing_time,
+                hours_available=hours_eval.hours_available,
+                is_open_now=hours_eval.is_open_now,
+                phone=None,
+                website=p.booking_url,
                 recommended_duration_mins=p.recommended_duration_mins,
                 tags=p.tags,
                 image_url=p.image_url,
@@ -178,7 +217,10 @@ def get_saved_places(
                 is_must_visit=p.is_must_visit,
                 is_hidden_gem=p.is_hidden_gem,
                 is_indoor=p.is_indoor,
-                is_saved=True
+                is_saved=True,
+                action_links=action_links,
+                data_state="VERIFIED",
+                trust_source="VANVAS_CURATED",
             ))
     return results
 
@@ -228,6 +270,18 @@ def get_place_detail(
             SavedPlace.place_id == place_id
         ).first() is not None
 
+    hours_eval = OperatingHoursEngine.evaluate_simple_hours(place.opening_time, place.closing_time, place.latitude, place.longitude)
+    action_links = ActionLinkGenerator.generate_place_action_links(
+        name=place.name,
+        latitude=place.latitude,
+        longitude=place.longitude,
+        website=place.booking_url,
+        phone=None,
+        booking_url=place.booking_url,
+        source="vanvas_curated",
+        source_id=place.id,
+    )
+
     return PlaceResponse(
         id=place.id,
         destination_id=place.destination_id,
@@ -244,6 +298,10 @@ def get_place_detail(
         review_count=place.review_count,
         opening_time=place.opening_time,
         closing_time=place.closing_time,
+        hours_available=hours_eval.hours_available,
+        is_open_now=hours_eval.is_open_now,
+        phone=None,
+        website=place.booking_url,
         recommended_duration_mins=place.recommended_duration_mins,
         tags=place.tags,
         image_url=place.image_url,
@@ -252,5 +310,8 @@ def get_place_detail(
         is_must_visit=place.is_must_visit,
         is_hidden_gem=place.is_hidden_gem,
         is_indoor=place.is_indoor,
-        is_saved=is_saved
+        is_saved=is_saved,
+        action_links=action_links,
+        data_state="VERIFIED",
+        trust_source="VANVAS_CURATED",
     )

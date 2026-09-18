@@ -536,7 +536,8 @@ class CopilotContextEngine:
             "6. CONTEXT PRECEDENCE: Current Verified Database Facts > Active User Decisions > Fresh Temporary Context > Conversation Summary.\n"
             "7. CONTROLLED AI ACTIONS: When the user instructs to save a place (e.g. 'save this place', 'save cafe'), invoke the 'save_place' tool with its canonical place_id. "
             "When the user instructs to add a place to their trip or day itinerary (e.g. 'add to day 2 of my trip'), invoke 'add_place_to_itinerary' with the verified trip_id, canonical place_id, and day number. Never fabricate IDs or attempt unapproved actions.\n"
-            "8. TRUTHFUL TRAVEL OPERATIONS: When asked about stays, hotels, transit routes, or rentals, invoke 'search_stays', 'search_transport', or 'search_rentals'. Never invent prices or claim live room availability unless verified by the tool. If pricing is unverified, explicitly state that rate and availability should be confirmed on booking portals.\n\n"
+            "8. TRUTHFUL TRAVEL OPERATIONS: When asked about stays, hotels, transit routes, or rentals, invoke 'search_stays', 'search_transport', or 'search_rentals'. Never invent prices or claim live room availability unless verified by the tool. If pricing is unverified, explicitly state that rate and availability should be confirmed on booking portals.\n"
+            "9. DATA TRUST & REAL ACTIONS: Respect operating hours and outbound handoffs. If is_open_now is true, confirm the place is open based on verified hours. If is_open_now is false, state it is closed. If is_open_now is null or hours_available is false, state that opening hours are not listed or could not be verified—never guess. For bookings, stays, websites, and calls, only provide actions and links verified by tools; never invent booking URLs or phone numbers.\n\n"
             f"1. VERIFIED TRAVELLER PROFILE: {verified_facts['user_preferences']}\n"
 
         )

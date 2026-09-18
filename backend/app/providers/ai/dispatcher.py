@@ -13,6 +13,8 @@ from app.models.models import (
 from app.services.copilot_actions import CopilotActionService
 from app.providers.provider_factory import ProviderFactory
 from app.itinerary.clustering import haversine_distance_km
+from app.services.operating_hours_engine import OperatingHoursEngine
+from app.services.action_link_generator import ActionLinkGenerator
 
 logger = logging.getLogger("vanvas.ai.dispatcher")
 
@@ -97,6 +99,18 @@ class AIToolDispatcher:
         if not place:
             return {"error": f"Place '{place_id}' not found in verified places."}
 
+        hours_eval = OperatingHoursEngine.evaluate_simple_hours(place.opening_time, place.closing_time, place.latitude, place.longitude)
+        action_links = ActionLinkGenerator.generate_place_action_links(
+            name=place.name,
+            latitude=place.latitude,
+            longitude=place.longitude,
+            website=place.booking_url,
+            phone=None,
+            booking_url=place.booking_url,
+            source="vanvas_curated",
+            source_id=place.id,
+        )
+
         return {
             "place_id": place.id,
             "canonical_slug": place.slug,
@@ -110,12 +124,17 @@ class AIToolDispatcher:
             "review_count": place.review_count,
             "opening_time": place.opening_time,
             "closing_time": place.closing_time,
+            "hours_available": hours_eval.hours_available,
+            "is_open_now": hours_eval.is_open_now,
             "recommended_duration_mins": place.recommended_duration_mins,
             "why_vanvas_recommends": place.why_vanvas_recommends,
             "is_indoor": place.is_indoor,
             "is_must_visit": place.is_must_visit,
             "is_hidden_gem": place.is_hidden_gem,
             "image_url": place.image_url,
+            "action_links": action_links,
+            "data_state": "VERIFIED",
+            "trust_source": "VANVAS_CURATED",
         }
 
     async def _search_places(self, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -143,6 +162,17 @@ class AIToolDispatcher:
         for p in curated_places:
             norm = p.name.lower().strip()
             seen_names.add(norm)
+            hours_eval = OperatingHoursEngine.evaluate_simple_hours(p.opening_time, p.closing_time, p.latitude, p.longitude)
+            action_links = ActionLinkGenerator.generate_place_action_links(
+                name=p.name,
+                latitude=p.latitude,
+                longitude=p.longitude,
+                website=p.booking_url,
+                phone=None,
+                booking_url=p.booking_url,
+                source="vanvas_curated",
+                source_id=p.id,
+            )
             found_places.append({
                 "place_id": p.id,
                 "name": p.name,
@@ -154,13 +184,18 @@ class AIToolDispatcher:
                 "review_count": p.review_count,
                 "opening_time": p.opening_time,
                 "closing_time": p.closing_time,
+                "hours_available": hours_eval.hours_available,
+                "is_open_now": hours_eval.is_open_now,
                 "recommended_duration_mins": p.recommended_duration_mins,
                 "is_indoor": p.is_indoor,
                 "is_must_visit": p.is_must_visit,
                 "image_url": p.image_url,
                 "source": "vanvas_curated",
                 "is_live": False,
-                "coordinates": {"lat": p.latitude, "lng": p.longitude}
+                "coordinates": {"lat": p.latitude, "lng": p.longitude},
+                "action_links": action_links,
+                "data_state": "VERIFIED",
+                "trust_source": "VANVAS_CURATED",
             })
 
         # 2. Query Live Places Provider (OSM Overpass / Google Places) if more places needed or dynamic location
@@ -186,6 +221,8 @@ class AIToolDispatcher:
                         "review_count": lp.get("review_count"),
                         "opening_time": lp.get("opening_time"),
                         "closing_time": lp.get("closing_time"),
+                        "hours_available": lp.get("hours_available", False),
+                        "is_open_now": lp.get("is_open_now"),
                         "phone": lp.get("phone"),
                         "website": lp.get("website"),
                         "recommended_duration_mins": lp.get("recommended_duration_mins", 60),
@@ -194,7 +231,10 @@ class AIToolDispatcher:
                         "image_url": lp.get("image_url"),
                         "source": lp.get("source", "openstreetmap"),
                         "is_live": lp.get("is_live", True),
-                        "coordinates": {"lat": lp.get("latitude"), "lng": lp.get("longitude")}
+                        "coordinates": {"lat": lp.get("latitude"), "lng": lp.get("longitude")},
+                        "action_links": lp.get("action_links", []),
+                        "data_state": lp.get("data_state", "LIVE"),
+                        "trust_source": lp.get("trust_source", "OPENSTREETMAP"),
                     })
                     if len(found_places) >= 8:
                         break
@@ -231,6 +271,17 @@ class AIToolDispatcher:
                 if category and category.lower() != "all" and category.lower() not in p.category.lower():
                     continue
                 seen_names.add(p.name.lower().strip())
+                hours_eval = OperatingHoursEngine.evaluate_simple_hours(p.opening_time, p.closing_time, p.latitude, p.longitude)
+                action_links = ActionLinkGenerator.generate_place_action_links(
+                    name=p.name,
+                    latitude=p.latitude,
+                    longitude=p.longitude,
+                    website=p.booking_url,
+                    phone=None,
+                    booking_url=p.booking_url,
+                    source="vanvas_curated",
+                    source_id=p.id,
+                )
                 nearby.append((dist, {
                     "place_id": p.id,
                     "name": p.name,
@@ -238,11 +289,18 @@ class AIToolDispatcher:
                     "distance_km": round(dist, 2),
                     "approx_cost": p.approx_cost,
                     "rating": p.rating,
+                    "opening_time": p.opening_time,
+                    "closing_time": p.closing_time,
+                    "hours_available": hours_eval.hours_available,
+                    "is_open_now": hours_eval.is_open_now,
                     "recommended_duration_mins": p.recommended_duration_mins,
                     "is_indoor": p.is_indoor,
                     "image_url": p.image_url,
                     "source": "vanvas_curated",
-                    "is_live": False
+                    "is_live": False,
+                    "action_links": action_links,
+                    "data_state": "VERIFIED",
+                    "trust_source": "VANVAS_CURATED",
                 }))
 
         # Also fetch live places from provider
@@ -263,11 +321,18 @@ class AIToolDispatcher:
                     "distance_km": round(dist, 2),
                     "approx_cost": lp.get("approx_cost"),
                     "rating": lp.get("rating"),
+                    "opening_time": lp.get("opening_time"),
+                    "closing_time": lp.get("closing_time"),
+                    "hours_available": lp.get("hours_available", False),
+                    "is_open_now": lp.get("is_open_now"),
                     "recommended_duration_mins": lp.get("recommended_duration_mins", 60),
                     "is_indoor": lp.get("is_indoor", False),
                     "image_url": lp.get("image_url"),
                     "source": lp.get("source", "openstreetmap"),
-                    "is_live": lp.get("is_live", True)
+                    "is_live": lp.get("is_live", True),
+                    "action_links": lp.get("action_links", []),
+                    "data_state": lp.get("data_state", "LIVE"),
+                    "trust_source": lp.get("trust_source", "OPENSTREETMAP"),
                 }))
         except Exception as e:
             logger.warning(f"Live nearby places in tool dispatcher encountered: {e}")
@@ -541,6 +606,16 @@ class AIToolDispatcher:
 
         for h in curated:
             seen_names.add(h.name.lower().strip())
+            action_links = ActionLinkGenerator.generate_hotel_action_links(
+                name=h.name,
+                latitude=h.latitude,
+                longitude=h.longitude,
+                website=h.booking_url,
+                phone=None,
+                booking_url=h.booking_url,
+                source="vanvas_curated",
+                source_id=h.id,
+            )
             stays_list.append({
                 "stay_id": h.id,
                 "name": h.name,
@@ -556,7 +631,10 @@ class AIToolDispatcher:
                 "booking_url": h.booking_url,
                 "source": "vanvas_curated",
                 "is_live": False,
-                "price_note": "Verified curated rate"
+                "price_note": "Verified curated rate",
+                "action_links": action_links,
+                "data_state": "VERIFIED",
+                "trust_source": "VANVAS_CURATED",
             })
 
         # 2. Fetch live accommodation from LiveHotelsProvider
@@ -587,11 +665,14 @@ class AIToolDispatcher:
                     "rating": ls.get("rating"),
                     "style": ls.get("hotel_style"),
                     "amenities": ls.get("amenities"),
-                    "booking_url": ls.get("booking_url"),
+                    "booking_url": None,
                     "phone": ls.get("phone"),
                     "source": ls.get("source", "openstreetmap"),
                     "is_live": True,
-                    "price_note": "Live POI: pricing/availability not verified online"
+                    "price_note": "Live POI: pricing/availability not verified online",
+                    "action_links": ls.get("action_links", []),
+                    "data_state": "LIVE",
+                    "trust_source": "OPENSTREETMAP",
                 })
                 if len(stays_list) >= 8:
                     break
@@ -637,6 +718,7 @@ class AIToolDispatcher:
         routes = []
 
         for opt in db_options:
+            action_links = ActionLinkGenerator.generate_transport_action_links(opt.operator_name, opt.booking_url)
             routes.append({
                 "route_id": opt.id,
                 "origin_city": opt.origin_city,
@@ -653,7 +735,10 @@ class AIToolDispatcher:
                 "recommendation_badge": opt.recommendation_badge,
                 "source": "vanvas_curated",
                 "is_live": False,
-                "schedule_type": "curated_schedule"
+                "schedule_type": "curated_schedule",
+                "action_links": action_links,
+                "data_state": "VERIFIED",
+                "trust_source": "VANVAS_CURATED",
             })
 
         if not routes:
@@ -665,6 +750,7 @@ class AIToolDispatcher:
                 transport_type=transport_type
             )
             for r in live_routes:
+                action_links = ActionLinkGenerator.generate_transport_action_links(r["operator_name"], r.get("booking_url"))
                 routes.append({
                     "route_id": r.get("id"),
                     "origin_city": r.get("origin_city", origin_city),
@@ -681,7 +767,10 @@ class AIToolDispatcher:
                     "recommendation_badge": r.get("recommendation_badge"),
                     "source": r.get("source", "vanvas_curated"),
                     "is_live": False,
-                    "schedule_type": "curated_schedule"
+                    "schedule_type": "curated_schedule",
+                    "action_links": action_links,
+                    "data_state": "VERIFIED",
+                    "trust_source": "VANVAS_CURATED",
                 })
 
         return {
@@ -715,6 +804,14 @@ class AIToolDispatcher:
 
         for r in db_rentals:
             seen_names.add(r.vehicle_name.lower().strip())
+            hours_eval = OperatingHoursEngine.evaluate_osm_hours(r.opening_hours, r.latitude, r.longitude)
+            action_links = ActionLinkGenerator.generate_rental_action_links(
+                provider_name=r.provider_name,
+                latitude=r.latitude,
+                longitude=r.longitude,
+                website=None,
+                phone=None,
+            )
             rentals_list.append({
                 "rental_id": r.id,
                 "provider_name": r.provider_name,
@@ -724,10 +821,15 @@ class AIToolDispatcher:
                 "deposit_amount": r.deposit_amount,
                 "location": r.location,
                 "opening_hours": r.opening_hours,
+                "hours_available": hours_eval.hours_available,
+                "is_open_now": hours_eval.is_open_now,
                 "rating": r.rating,
                 "source": "vanvas_curated",
                 "is_live": False,
-                "inventory_verified": True
+                "inventory_verified": True,
+                "action_links": action_links,
+                "data_state": "VERIFIED",
+                "trust_source": "VANVAS_CURATED",
             })
 
         # 2. Query Live Rentals Provider
@@ -757,10 +859,15 @@ class AIToolDispatcher:
                     "deposit_amount": None,
                     "location": lr.get("location"),
                     "opening_hours": lr.get("opening_hours"),
+                    "hours_available": lr.get("hours_available", False),
+                    "is_open_now": lr.get("is_open_now"),
                     "phone": lr.get("phone"),
                     "source": lr.get("source", "openstreetmap"),
                     "is_live": True,
-                    "inventory_verified": False
+                    "inventory_verified": False,
+                    "action_links": lr.get("action_links", []),
+                    "data_state": "LIVE",
+                    "trust_source": "OPENSTREETMAP",
                 })
                 if len(rentals_list) >= 8:
                     break

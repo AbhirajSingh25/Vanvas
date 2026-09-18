@@ -713,12 +713,17 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                           }`}>
                             {isLiveStay ? "LIVE STAY" : (h.badge || "Handpicked")}
                           </span>
+                          {!isPriceVerified && (
+                            <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] text-[9px] font-mono uppercase tracking-wider border border-white/10">
+                              Rate Unverified
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{h.name}</h4>
-                          <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/70 text-[11px]"}`}>
+                          <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
                             {isPriceVerified ? `₹${h.price_per_night}/n` : "Rate on booking"}
                           </span>
                         </div>
@@ -728,19 +733,32 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
                     <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52]">
                       <span className="line-clamp-1">Amenities: {h.amenities?.split(",")[0] || "Scenic Stay"}</span>
-                      {h.booking_url ? (
-                        <a
-                          href={h.booking_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#B65E3C] font-bold hover:underline flex items-center gap-1 shrink-0"
-                        >
-                          <span>View details</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-[11px] text-[#7B4D36] italic">Contact on arrival</span>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {h.latitude && h.longitude && (
+                          <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#173B32] hover:text-[#B65E3C] p-1"
+                            title="Get directions"
+                          >
+                            <MapPin className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {h.booking_url ? (
+                          <a
+                            href={h.booking_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#B65E3C] font-bold hover:underline flex items-center gap-1"
+                          >
+                            <span>Book</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <span className="text-[11px] text-[#7B4D36] italic">Contact on arrival</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -786,7 +804,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                           alt={r.vehicle_name}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-2.5 left-2.5">
+                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                           <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
                             isLiveRent
                               ? "bg-emerald-600 text-white"
@@ -794,12 +812,17 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                           }`}>
                             {isLiveRent ? "LIVE MOBILITY" : "CURATED"}
                           </span>
+                          {!isPriceVerified && (
+                            <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] text-[9px] font-mono uppercase tracking-wider border border-white/10">
+                              Inventory Unverified
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{r.vehicle_name}</h4>
-                          <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#173B32]" : "text-[#7B4D36]/70 text-[11px]"}`}>
+                          <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#173B32]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
                             {isPriceVerified ? `₹${r.price_per_day}/day` : "Rate upon pickup"}
                           </span>
                         </div>

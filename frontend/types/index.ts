@@ -41,6 +41,12 @@ export interface Destination {
   rentals_count?: number;
 }
 
+export interface ActionLink {
+  type: "directions" | "website" | "phone" | "booking" | "provider" | string;
+  label: string;
+  url: string;
+}
+
 export interface Place {
   id: string;
   destination_id: string;
@@ -74,6 +80,10 @@ export interface Place {
   is_live?: boolean;
   distance_km?: number;
   hours_available?: boolean;
+  is_open_now?: boolean | null;
+  action_links?: ActionLink[];
+  data_state?: string;
+  trust_source?: string;
 }
 
 export interface DestinationSearchResult {
@@ -139,6 +149,9 @@ export interface Hotel {
   is_live?: boolean;
   price_verified?: boolean;
   distance_km?: number;
+  action_links?: ActionLink[];
+  data_state?: string;
+  trust_source?: string;
 }
 
 export interface RentalOption {
@@ -154,6 +167,7 @@ export interface RentalOption {
   longitude: number;
   opening_hours?: string;
   hours_available?: boolean;
+  is_open_now?: boolean | null;
   rating?: number | null;
   image_url?: string;
   phone?: string;
@@ -163,6 +177,9 @@ export interface RentalOption {
   is_live?: boolean;
   inventory_verified?: boolean;
   distance_km?: number;
+  action_links?: ActionLink[];
+  data_state?: string;
+  trust_source?: string;
 }
 
 export interface TransportOption {
@@ -183,6 +200,9 @@ export interface TransportOption {
   source_id?: string;
   is_live?: boolean;
   schedule_type?: "curated_schedule" | "live_realtime" | string;
+  action_links?: ActionLink[];
+  data_state?: string;
+  trust_source?: string;
 }
 
 export interface ItineraryItem {

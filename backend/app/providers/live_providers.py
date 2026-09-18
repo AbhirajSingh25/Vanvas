@@ -11,6 +11,8 @@ from app.providers.demo_providers import (
     DemoWeatherProvider, DemoPlacesProvider, DemoHotelsProvider,
     DemoRentalsProvider, DemoTransportProvider
 )
+from app.services.operating_hours_engine import OperatingHoursEngine
+from app.services.action_link_generator import ActionLinkGenerator
 
 logger = logging.getLogger("vanvas.providers")
 
@@ -262,13 +264,7 @@ class LivePlacesProvider(PlacesProvider):
         addr = ", ".join([p for p in addr_parts if p]) or (f"{dist} km from center" if dist > 0 else None)
 
         op_hours = tags.get("opening_hours")
-        op_time = None
-        cl_time = None
-        if op_hours and "-" in op_hours:
-            parts = op_hours.split("-")
-            if len(parts) >= 2:
-                op_time = parts[0].strip()[-5:]
-                cl_time = parts[1].strip()[:5]
+        hours_eval = OperatingHoursEngine.evaluate_osm_hours(op_hours, p_lat, p_lng)
 
         phone = tags.get("phone") or tags.get("contact:phone")
         website = tags.get("website") or tags.get("contact:website") or tags.get("url")
@@ -279,6 +275,17 @@ class LivePlacesProvider(PlacesProvider):
                 osm_rating = float(tags["rating"])
             except Exception:
                 osm_rating = None
+
+        action_links = ActionLinkGenerator.generate_place_action_links(
+            name=p_name,
+            latitude=p_lat,
+            longitude=p_lng,
+            website=website,
+            phone=phone,
+            booking_url=None,
+            source="openstreetmap",
+            source_id=str(el.get("id")),
+        )
 
         return {
             "id": f"osm-{el.get('id')}",
@@ -292,9 +299,10 @@ class LivePlacesProvider(PlacesProvider):
             "approx_cost": None,
             "rating": osm_rating,
             "review_count": None,
-            "opening_time": op_time,
-            "closing_time": cl_time,
-            "hours_available": bool(op_hours),
+            "opening_time": hours_eval.opening_time,
+            "closing_time": hours_eval.closing_time,
+            "hours_available": hours_eval.hours_available,
+            "is_open_now": hours_eval.is_open_now,
             "phone": phone,
             "website": website,
             "recommended_duration_mins": 60,
@@ -308,6 +316,9 @@ class LivePlacesProvider(PlacesProvider):
             "source_id": str(el.get("id")),
             "is_live": True,
             "distance_km": dist,
+            "action_links": action_links,
+            "data_state": "LIVE",
+            "trust_source": "OPENSTREETMAP",
         }
 
     async def search_places(self, query: str, destination_name: str = "", category: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -377,6 +388,17 @@ class LivePlacesProvider(PlacesProvider):
                                 review_cnt = int(item["user_ratings_total"]) if "user_ratings_total" in item and item["user_ratings_total"] is not None else None
                                 price_lvl = ("₹" * int(item["price_level"])) if "price_level" in item and item["price_level"] is not None else None
 
+                                gp_action_links = ActionLinkGenerator.generate_place_action_links(
+                                    name=p_name,
+                                    latitude=p_lat,
+                                    longitude=p_lng,
+                                    website=None,
+                                    phone=None,
+                                    booking_url=None,
+                                    source="google_places",
+                                    source_id=item.get("place_id"),
+                                )
+
                                 gathered_live.append({
                                     "id": f"gp-{item.get('place_id', '')[:16]}",
                                     "name": p_name,
@@ -391,6 +413,8 @@ class LivePlacesProvider(PlacesProvider):
                                     "review_count": review_cnt,
                                     "opening_time": None,
                                     "closing_time": None,
+                                    "hours_available": False,
+                                    "is_open_now": None,
                                     "phone": None,
                                     "website": None,
                                     "recommended_duration_mins": 60,
@@ -404,6 +428,9 @@ class LivePlacesProvider(PlacesProvider):
                                     "source_id": item.get("place_id"),
                                     "is_live": True,
                                     "distance_km": dist,
+                                    "action_links": gp_action_links,
+                                    "data_state": "LIVE",
+                                    "trust_source": "GOOGLE_PLACES",
                                 })
                 except Exception as e:
                     logger.warning(f"Google Places text search failed: {e}")
@@ -490,6 +517,17 @@ class LivePlacesProvider(PlacesProvider):
                             review_cnt = int(item["user_ratings_total"]) if "user_ratings_total" in item and item["user_ratings_total"] is not None else None
                             price_lvl = ("₹" * int(item["price_level"])) if "price_level" in item and item["price_level"] is not None else None
 
+                            gp_nb_links = ActionLinkGenerator.generate_place_action_links(
+                                name=p_name,
+                                latitude=p_lat,
+                                longitude=p_lng,
+                                website=None,
+                                phone=None,
+                                booking_url=None,
+                                source="google_places",
+                                source_id=item.get("place_id"),
+                            )
+
                             gathered_places.append({
                                 "id": f"gp-{item.get('place_id', '')[:16]}",
                                 "name": p_name,
@@ -504,6 +542,8 @@ class LivePlacesProvider(PlacesProvider):
                                 "review_count": review_cnt,
                                 "opening_time": None,
                                 "closing_time": None,
+                                "hours_available": False,
+                                "is_open_now": None,
                                 "phone": None,
                                 "website": None,
                                 "recommended_duration_mins": 60,
@@ -517,6 +557,9 @@ class LivePlacesProvider(PlacesProvider):
                                 "source_id": item.get("place_id"),
                                 "is_live": True,
                                 "distance_km": dist,
+                                "action_links": gp_nb_links,
+                                "data_state": "LIVE",
+                                "trust_source": "GOOGLE_PLACES",
                             })
             except Exception as e:
                 logger.warning(f"Google Places live discovery failed: {e}")
@@ -661,7 +704,11 @@ class HaversineRoutingProvider(RoutingProvider):
         return {
             "distance_km": res["distance_km"],
             "duration_mins": res["duration_mins"],
-            "is_mountain_adjusted": True
+            "is_mountain_adjusted": True,
+            "schedule_type": "estimated_route",
+            "source": "internal",
+            "data_state": "VERIFIED",
+            "trust_source": "INTERNAL",
         }
 
 
@@ -764,6 +811,17 @@ class LiveHotelsProvider(HotelsProvider):
             amenity_list.append("Swimming Pool")
         amenity_str = ",".join(amenity_list) if amenity_list else "Mountain Views,Scenic Stay"
 
+        hotel_action_links = ActionLinkGenerator.generate_hotel_action_links(
+            name=h_name,
+            latitude=h_lat,
+            longitude=h_lng,
+            website=website,
+            phone=phone,
+            booking_url=None,
+            source="openstreetmap",
+            source_id=str(el.get("id")),
+        )
+
         return {
             "id": f"osm-stay-{el.get('id')}",
             "destination_id": "live",
@@ -779,7 +837,7 @@ class LiveHotelsProvider(HotelsProvider):
             "check_in_time": tags.get("check_in") or "12:00 PM",
             "check_out_time": tags.get("check_out") or "10:00 AM",
             "image_url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-            "booking_url": website,
+            "booking_url": None,
             "badge": "Live POI Stay",
             "phone": phone,
             "website": website,
@@ -787,7 +845,10 @@ class LiveHotelsProvider(HotelsProvider):
             "source_id": str(el.get("id")),
             "is_live": True,
             "price_verified": False,
-            "distance_km": dist
+            "distance_km": dist,
+            "action_links": hotel_action_links,
+            "data_state": "LIVE",
+            "trust_source": "OPENSTREETMAP",
         }
 
     async def search_hotels(
@@ -941,6 +1002,7 @@ class LiveRentalsProvider(RentalsProvider):
             addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from center"
 
             op_hours = tags.get("opening_hours")
+            r_hours_eval = OperatingHoursEngine.evaluate_osm_hours(op_hours, r_lat, r_lng)
             phone = tags.get("phone") or tags.get("contact:phone")
             website = tags.get("website") or tags.get("url")
 
@@ -949,6 +1011,14 @@ class LiveRentalsProvider(RentalsProvider):
                 v_type = "Bicycle"
             elif tags.get("amenity") == "car_rental":
                 v_type = "Car"
+
+            rental_action_links = ActionLinkGenerator.generate_rental_action_links(
+                provider_name=r_name,
+                latitude=r_lat,
+                longitude=r_lng,
+                website=website,
+                phone=phone,
+            )
 
             results.append({
                 "id": f"osm-rent-{el.get('id')}",
@@ -962,7 +1032,8 @@ class LiveRentalsProvider(RentalsProvider):
                 "latitude": r_lat,
                 "longitude": r_lng,
                 "opening_hours": op_hours or "Hours not listed",
-                "hours_available": bool(op_hours),
+                "hours_available": r_hours_eval.hours_available,
+                "is_open_now": r_hours_eval.is_open_now,
                 "rating": None,
                 "image_url": "/images/vehicles/automatic_scooter.svg",
                 "phone": phone,
@@ -971,7 +1042,10 @@ class LiveRentalsProvider(RentalsProvider):
                 "source_id": str(el.get("id")),
                 "is_live": True,
                 "inventory_verified": False,
-                "distance_km": dist
+                "distance_km": dist,
+                "action_links": rental_action_links,
+                "data_state": "LIVE",
+                "trust_source": "OPENSTREETMAP",
             })
 
         results.sort(key=lambda x: x.get("distance_km", 999))

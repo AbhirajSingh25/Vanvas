@@ -165,9 +165,22 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
 
         {/* Footer Meta */}
         <div className="flex items-center justify-between pt-3 border-t border-[#E5D5BA] text-[11px] text-[#536B52]">
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3 text-[#B65E3C]" />
-            <span>{place.opening_time ? `${place.opening_time} - ${place.closing_time || "Close"}` : "Hours not listed"}</span>
+          <div className="flex items-center gap-1.5">
+            <Clock className={`w-3.5 h-3.5 ${place.is_open_now === true ? "text-emerald-600" : place.is_open_now === false ? "text-[#7B4D36]" : "text-[#B65E3C]"}`} />
+            {place.is_open_now === true ? (
+              <span className="font-bold text-emerald-700 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                Open Now
+              </span>
+            ) : place.is_open_now === false ? (
+              <span className="font-semibold text-[#7B4D36]">
+                Closed Now
+              </span>
+            ) : (
+              <span className="text-[#536B52]">
+                {place.opening_time ? `${place.opening_time} - ${place.closing_time || "Close"}` : "Hours not listed"}
+              </span>
+            )}
           </div>
 
           <span className="text-[#B65E3C] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
