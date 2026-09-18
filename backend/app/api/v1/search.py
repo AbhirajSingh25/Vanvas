@@ -56,12 +56,15 @@ async def unified_travel_search(
             "data": weather
         }
     elif intent_type == "place":
-        loc = intent["extracted_location"] or "Manali"
+        loc = intent.get("extracted_location") or "Manali"
         geocoder = ProviderFactory.get_geocoding_provider()
         geo = await geocoder.geocode(loc)
-        lat = geo["lat"] if geo else 32.2396
-        lng = geo["lng"] if geo else 77.1887
-        places = await ProviderFactory.get_places_provider().get_nearby_places(lat, lng, radius_km=10.0, category=intent.get("category"))
+        places_provider = ProviderFactory.get_places_provider()
+        places = await places_provider.search_places(query=q, destination_name=loc, category=intent.get("category"))
+        if not places and geo:
+            lat = geo.get("lat", 32.2396)
+            lng = geo.get("lng", 77.1887)
+            places = await places_provider.get_nearby_places(lat, lng, radius_km=10.0, category=intent.get("category"))
         return {
             "intent": intent,
             "result_type": "places",

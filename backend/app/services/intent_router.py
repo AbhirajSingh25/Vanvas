@@ -32,7 +32,7 @@ class SearchIntentRouter:
         "Local Food": [r"\brestaurants?\b", r"\bdhabas?\b", r"\bfood\b", r"\bdine\b", r"\beat\b", r"\blunch\b", r"\bdinner\b", r"\bstreet\s*food\b"],
         "Attractions": [r"\bthings\s+to\s+do\b", r"\bplaces\s+to\s+visit\b", r"\battractions?\b", r"\bsightseeing\b", r"\blandmarks?\b", r"\bmuseums?\b"],
         "Nature & Trails": [r"\btrails?\b", r"\btreks?\b", r"\bwaterfalls?\b", r"\bviewpoints?\b", r"\bhikes?\b", r"\blakes?\b"],
-        "Culture & Heritage": [r"\btemples?\b", r"\bforts?\b", r"\bpalaces?\b", r"\bmonaster(y|ies)\b", r"\bghats?\b", r"\baartis?\b"],
+        "Culture & Heritage": [r"\btemples?\b", r"\bforts?\b", r"\bpalaces?\b", r"\bmonaster(y|ies)\b", r"\bghats?\b", r"\baartis?\b", r"\bchurch(es)?\b", r"\bcathedrals?\b", r"\bchapels?\b", r"\bashrams?\b", r"\bshrines?\b"],
         "Adventure": [r"\brafting\b", r"\bparagliding\b", r"\bkayaking\b", r"\bzipline\b", r"\bcamping\b", r"\badventure\b"],
         "Shopping": [r"\bmarkets?\b", r"\bshops?\b", r"\bshopping\b", r"\bbazaars?\b", r"\bgrocery\b", r"\bmalls?\b"],
         "Mobility": [r"\bbike\s+rentals?\b", r"\bscooter\s+rentals?\b", r"\brent\s+a\s+bike\b", r"\btaxis?\b", r"\bcabs?\b", r"\brentals?\b", r"\bhire\b", r"\bscooters?\b", r"\bmotorcycles?\b"],
@@ -89,10 +89,10 @@ class SearchIntentRouter:
         for cat_name, patterns in cls.PLACE_CATEGORY_PATTERNS.items():
             if any(re.search(pat, q) for pat in patterns):
                 # Extract potential destination name
-                stop_words = r"\b(cafes?|restaurants?|dhabas?|coffee|bakery|food|things\s+to\s+do|places\s+to\s+visit|in|near|at|around|bike\s+rentals?|scooters?|temples?|waterfalls?|viewpoints?|best|top|good|hospitals?|pharmacy|chemist|scooter\s+hire)\b"
+                stop_words = r"\b(cafes?|restaurants?|dhabas?|coffee|bakery|food|things\s+to\s+do|places\s+to\s+visit|in|near|at|around|bike\s+rentals?|scooters?|temples?|waterfalls?|viewpoints?|best|top|good|quiet|famous|hospitals?|pharmacy|chemist|scooter\s+hire|church(es)?|cathedrals?|chapels?|monaster(y|ies)|forts?|palaces?|ghats?)\b"
                 loc = re.sub(stop_words, "", q).strip()
                 loc_clean = loc.title() if len(loc) >= 3 else None
-                cat_key = "coffee" if "Café" in cat_name else ("food" if "Food" in cat_name else ("attractions" if "Attraction" in cat_name else ("mobility" if "Mobility" in cat_name else ("essentials" if "Essential" in cat_name else cat_name.lower()))))
+                cat_key = "coffee" if "Café" in cat_name else ("food" if "Food" in cat_name else ("attractions" if "Attraction" in cat_name else ("mobility" if "Mobility" in cat_name else ("essentials" if "Essential" in cat_name else ("culture" if "Culture" in cat_name else cat_name.lower())))))
                 return {
                     "intent": "place",
                     "confidence": 0.88,

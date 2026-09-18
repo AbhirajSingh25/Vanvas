@@ -119,42 +119,93 @@ class AIToolDispatcher:
         dest_slug = (args.get("destination_slug") or "").strip().lower()
         category = (args.get("category") or "").strip()
 
-        db_query = self.db.query(Place).join(Destination)
+        found_places: List[Dict[str, Any]] = []
+        seen_names = set()
 
+        # 1. Search Curated DB places
+        db_query = self.db.query(Place).join(Destination)
         if dest_slug:
             db_query = db_query.filter((Destination.slug == dest_slug) | (Destination.name.ilike(dest_slug)))
-
         if query:
             db_query = db_query.filter(
                 (Place.name.ilike(f"%{query}%")) | 
                 (Place.description.ilike(f"%{query}%")) |
                 (Place.tags.ilike(f"%{query}%"))
             )
-
         if category and category.lower() != "all":
             db_query = db_query.filter(Place.category.ilike(f"%{category}%"))
 
-        places = db_query.limit(6).all()
+        curated_places = db_query.limit(6).all()
+        for p in curated_places:
+            norm = p.name.lower().strip()
+            seen_names.add(norm)
+            found_places.append({
+                "place_id": p.id,
+                "name": p.name,
+                "category": p.category,
+                "destination_name": p.destination.name if p.destination else "",
+                "address": p.address,
+                "approx_cost": p.approx_cost,
+                "rating": p.rating,
+                "review_count": p.review_count,
+                "opening_time": p.opening_time,
+                "closing_time": p.closing_time,
+                "recommended_duration_mins": p.recommended_duration_mins,
+                "is_indoor": p.is_indoor,
+                "is_must_visit": p.is_must_visit,
+                "image_url": p.image_url,
+                "source": "vanvas_curated",
+                "is_live": False,
+                "coordinates": {"lat": p.latitude, "lng": p.longitude}
+            })
 
-        if not places:
-            return {"places": [], "message": f"No verified places found matching '{query}'."}
+        # 2. Query Live Places Provider (OSM Overpass / Google Places) if more places needed or dynamic location
+        if len(found_places) < 6 or not curated_places:
+            try:
+                places_provider = ProviderFactory.get_places_provider()
+                search_loc = dest_slug if dest_slug else query
+                live_res = await places_provider.search_places(query=query, destination_name=search_loc, category=category)
+                for lp in live_res:
+                    lp_name = lp.get("name", "")
+                    lp_norm = lp_name.lower().strip()
+                    if any(lp_norm in s or s in lp_norm for s in seen_names):
+                        continue
+                    seen_names.add(lp_norm)
+                    found_places.append({
+                        "place_id": lp.get("id", f"live-{lp.get('source_id', lp_name)}"),
+                        "name": lp_name,
+                        "category": lp.get("category", "Attractions"),
+                        "destination_name": dest_slug.title() if dest_slug else "",
+                        "address": lp.get("address"),
+                        "approx_cost": lp.get("approx_cost"),
+                        "rating": lp.get("rating"),
+                        "review_count": lp.get("review_count"),
+                        "opening_time": lp.get("opening_time"),
+                        "closing_time": lp.get("closing_time"),
+                        "phone": lp.get("phone"),
+                        "website": lp.get("website"),
+                        "recommended_duration_mins": lp.get("recommended_duration_mins", 60),
+                        "is_indoor": lp.get("is_indoor", False),
+                        "is_must_visit": lp.get("is_must_visit", False),
+                        "image_url": lp.get("image_url"),
+                        "source": lp.get("source", "openstreetmap"),
+                        "is_live": lp.get("is_live", True),
+                        "coordinates": {"lat": lp.get("latitude"), "lng": lp.get("longitude")}
+                    })
+                    if len(found_places) >= 8:
+                        break
+            except Exception as e:
+                logger.warning(f"Live places search in tool dispatcher encountered: {e}")
+
+        if not found_places:
+            return {
+                "places": [],
+                "message": f"VANVAS could not verify the requested place '{query}' in {dest_slug or 'the specified area'}."
+            }
 
         return {
-            "places": [
-                {
-                    "place_id": p.id,
-                    "name": p.name,
-                    "category": p.category,
-                    "destination_name": p.destination.name if p.destination else "",
-                    "approx_cost": p.approx_cost,
-                    "recommended_duration_mins": p.recommended_duration_mins,
-                    "is_indoor": p.is_indoor,
-                    "is_must_visit": p.is_must_visit,
-                    "image_url": p.image_url,
-                }
-                for p in places
-            ],
-            "total_matches": len(places)
+            "places": found_places[:8],
+            "total_matches": len(found_places)
         }
 
     async def _get_nearby_places(self, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -168,31 +219,60 @@ class AIToolDispatcher:
 
         all_places = self.db.query(Place).all()
         nearby = []
+        seen_names = set()
 
         for p in all_places:
             dist = haversine_distance_km(lat, lng, p.latitude, p.longitude)
             if dist <= radius_km:
                 if category and category.lower() != "all" and category.lower() not in p.category.lower():
                     continue
-                nearby.append((dist, p))
-
-        nearby.sort(key=lambda x: x[0])
-        top_nearby = nearby[:6]
-
-        return {
-            "places": [
-                {
+                seen_names.add(p.name.lower().strip())
+                nearby.append((dist, {
                     "place_id": p.id,
                     "name": p.name,
                     "category": p.category,
                     "distance_km": round(dist, 2),
                     "approx_cost": p.approx_cost,
+                    "rating": p.rating,
                     "recommended_duration_mins": p.recommended_duration_mins,
                     "is_indoor": p.is_indoor,
                     "image_url": p.image_url,
-                }
-                for dist, p in top_nearby
-            ],
+                    "source": "vanvas_curated",
+                    "is_live": False
+                }))
+
+        # Also fetch live places from provider
+        try:
+            places_provider = ProviderFactory.get_places_provider()
+            live_res = await places_provider.get_nearby_places(lat, lng, radius_km, category)
+            for lp in live_res:
+                lp_name = lp.get("name", "")
+                lp_norm = lp_name.lower().strip()
+                if any(lp_norm in s or s in lp_norm for s in seen_names):
+                    continue
+                seen_names.add(lp_norm)
+                dist = lp.get("distance_km") or haversine_distance_km(lat, lng, lp.get("latitude", lat), lp.get("longitude", lng))
+                nearby.append((dist, {
+                    "place_id": lp.get("id", f"live-{lp.get('source_id', lp_name)}"),
+                    "name": lp_name,
+                    "category": lp.get("category", "Attractions"),
+                    "distance_km": round(dist, 2),
+                    "approx_cost": lp.get("approx_cost"),
+                    "rating": lp.get("rating"),
+                    "recommended_duration_mins": lp.get("recommended_duration_mins", 60),
+                    "is_indoor": lp.get("is_indoor", False),
+                    "image_url": lp.get("image_url"),
+                    "source": lp.get("source", "openstreetmap"),
+                    "is_live": lp.get("is_live", True)
+                }))
+        except Exception as e:
+            logger.warning(f"Live nearby places in tool dispatcher encountered: {e}")
+
+        nearby.sort(key=lambda x: x[0])
+        top_nearby = [item[1] for item in nearby[:8]]
+
+        return {
+            "places": top_nearby,
             "center": {"lat": lat, "lng": lng},
             "radius_km": radius_km
         }
