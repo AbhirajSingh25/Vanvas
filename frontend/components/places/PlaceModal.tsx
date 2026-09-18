@@ -88,6 +88,8 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({ place, destinationName =
                     ? "bg-emerald-600 text-white border border-emerald-400/40"
                     : visualRes.tier === "exact_place"
                     ? "bg-[#B49252] text-[#0F2924] border border-[#B49252]"
+                    : visualRes.tier === "destination_category"
+                    ? "bg-[#173B32] text-[#FAF4E8] border border-[#536B52]"
                     : "bg-[#7B4D36] text-[#FAF4E8] border border-[#7B4D36]"
                 }`}
               >

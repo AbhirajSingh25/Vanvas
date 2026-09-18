@@ -11,12 +11,14 @@ class AIFactory:
 
     @staticmethod
     def get_provider() -> AIProvider:
-        provider_name = (settings.AI_PROVIDER or "disabled").lower().strip()
+        provider_name = (settings.AI_PROVIDER or "gemini").lower().strip()
         
-        if provider_name == "gemini":
+        # In VANVAS architecture, the standard free-first AI provider is Google Gemini.
+        # "gemini", "default", "auto", "google" all resolve to GeminiProvider.
+        if provider_name in ("gemini", "default", "auto", "google"):
             return GeminiProvider(
                 api_key=settings.GEMINI_API_KEY,
-                model=settings.GEMINI_MODEL
+                model=settings.GEMINI_MODEL or "gemini-3.5-flash-lite"
             )
         
         return DisabledAIProvider()

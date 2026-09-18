@@ -83,6 +83,8 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
                 ? "bg-emerald-600/90 text-white border border-emerald-400/40"
                 : visualRes.tier === "exact_place"
                 ? "bg-[#B49252]/90 text-[#0F2924] border border-[#B49252]"
+                : visualRes.tier === "destination_category"
+                ? "bg-[#173B32]/90 text-[#FAF4E8] border border-[#536B52]"
                 : "bg-[#7B4D36]/90 text-[#FAF4E8] border border-[#7B4D36]"
             }`}
           >

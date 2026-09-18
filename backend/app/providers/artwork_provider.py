@@ -19,6 +19,16 @@ class CuratedArtworkProvider(ArtworkProvider):
     # Exact Place Artwork Registry mapped deterministically by normalized key
     PLACE_ARTWORK_REGISTRY: Dict[str, Dict[str, Any]] = {
         # Mussoorie
+        "mussoorie:st-pauls-church": {
+            "image_url": "/images/places/mussoorie/st-pauls-church.webp",
+            "tier": "exact_place",
+            "place_name": "St. Paul's Church, Landour",
+            "destination": "Mussoorie",
+            "category": "Culture & Heritage",
+            "visual_description": "Historic 1852 stone Anglican church in Landour with steep gabled wooden roof and lancet windows under deodar pines.",
+            "source": "curated_artwork",
+            "art_style": "VANVAS editorial travel artwork"
+        },
         "mussoorie:landour-bakehouse": {
             "image_url": "/images/places/mussoorie/landour-bakehouse.webp",
             "tier": "exact_place",
@@ -141,30 +151,22 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source": "curated_artwork",
             "art_style": "VANVAS editorial travel artwork"
         },
-        "manali:cafe-1947": {
-            "image_url": "/images/places/manali/old-manali.webp",
+
+        # Rishikesh
+        "rishikesh:triveni-ghat": {
+            "image_url": "/images/places/rishikesh/triveni-ghat.webp",
             "tier": "exact_place",
-            "place_name": "Café 1947",
-            "destination": "Manali",
-            "category": "Cafés & Bakery",
-            "visual_description": "Rustic stone mountain cafe with wooden deck sitting directly over the rushing Manalsu river.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork"
-        },
-        "manali:jogini-waterfall": {
-            "image_url": "/images/destinations/manali/hero.jpg",
-            "tier": "exact_place",
-            "place_name": "Jogini Waterfall Pine Trail",
-            "destination": "Manali",
-            "category": "Nature & Trails",
-            "visual_description": "Gentle cascading multi-tier waterfall surrounded by apple orchards and pine groves.",
+            "place_name": "Triveni Ghat Evening Maha Aarti",
+            "destination": "Rishikesh",
+            "category": "Culture & Heritage",
+            "visual_description": "Sacred stone riverfront steps at the Ganges confluence with twilight brass aarti lamps and floating diyas.",
             "source": "curated_artwork",
             "art_style": "VANVAS editorial travel artwork"
         },
 
         # Udaipur
         "udaipur:city-palace-udaipur": {
-            "image_url": "/images/destinations/udaipur/hero.jpg",
+            "image_url": "/images/places/udaipur/city-palace-udaipur.webp",
             "tier": "exact_place",
             "place_name": "City Palace of Udaipur",
             "destination": "Udaipur",
@@ -173,20 +175,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source": "curated_artwork",
             "art_style": "VANVAS editorial travel artwork"
         },
-        "udaipur:lake-pichola-boat": {
-            "image_url": "/images/destinations/udaipur/illustration.jpg",
-            "tier": "exact_place",
-            "place_name": "Lake Pichola Sunset Boat Voyage",
-            "destination": "Udaipur",
-            "category": "Nature & Trails",
-            "visual_description": "Tranquil evening lake waters reflecting whitewashed Mewari palaces and Jag Mandir island.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork"
-        },
 
         # Varanasi
         "varanasi:dashashwamedh-ghat-aarti": {
-            "image_url": "/images/destinations/varanasi/hero.jpg",
+            "image_url": "/images/places/varanasi/dashashwamedh-ghat-aarti.webp",
             "tier": "exact_place",
             "place_name": "Dashashwamedh Ghat Evening Maha Aarti",
             "destination": "Varanasi",
@@ -205,10 +197,20 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source": "curated_artwork",
             "art_style": "VANVAS editorial travel artwork"
         },
+        "varanasi:assi-ghat": {
+            "image_url": "/images/destinations/varanasi/illustration.jpg",
+            "tier": "exact_place",
+            "place_name": "Assi Ghat & Subah-e-Banaras",
+            "destination": "Varanasi",
+            "category": "Culture & Heritage",
+            "visual_description": "Dawn light on the southern ghats with wooden rowboats resting on calm holy waters.",
+            "source": "curated_artwork",
+            "art_style": "VANVAS editorial travel artwork"
+        },
 
         # Jaipur
         "jaipur:hawa-mahal": {
-            "image_url": "/images/destinations/jaipur/hero.jpg",
+            "image_url": "/images/places/jaipur/hawa-mahal.webp",
             "tier": "exact_place",
             "place_name": "Hawa Mahal",
             "destination": "Jaipur",
@@ -217,30 +219,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source": "curated_artwork",
             "art_style": "VANVAS editorial travel artwork"
         },
-        "jaipur:amber-palace-fort": {
-            "image_url": "/images/destinations/jaipur/illustration.jpg",
-            "tier": "exact_place",
-            "place_name": "Amber Fort & Maota Lake",
-            "destination": "Jaipur",
-            "category": "Culture & Heritage",
-            "visual_description": "Hilltop sandstone fortress reflected over Maota Lake with fortified mountain ramparts.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork"
-        },
 
         # Goa
-        "goa:palolem-beach-cove": {
-            "image_url": "/images/destinations/goa/hero.jpg",
-            "tier": "exact_place",
-            "place_name": "Palolem Beach Crescent Cove",
-            "destination": "Goa",
-            "category": "Nature & Trails",
-            "visual_description": "Curved white sand cove framed by coconut palms and calm turquoise waters.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork"
-        },
         "goa:fontainhas-latin-quarter": {
-            "image_url": "/images/destinations/goa/illustration.jpg",
+            "image_url": "/images/places/goa/fontainhas-latin-quarter.webp",
             "tier": "exact_place",
             "place_name": "Fontainhas Latin Heritage Quarter",
             "destination": "Goa",
@@ -249,25 +231,25 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source": "curated_artwork",
             "art_style": "VANVAS editorial travel artwork"
         },
+        "goa:aguada-fort": {
+            "image_url": "/images/places/goa/aguada-fort.webp",
+            "tier": "exact_place",
+            "place_name": "Aguada Fort & Historic Lighthouse",
+            "destination": "Goa",
+            "category": "Culture & Heritage",
+            "visual_description": "17th-century Portuguese laterite stone sea fortress and cylindrical lighthouse on the coastal headland.",
+            "source": "curated_artwork",
+            "art_style": "VANVAS editorial travel artwork"
+        },
 
         # Leh
         "leh:thiksey-monastery-gompa": {
-            "image_url": "/images/destinations/leh/hero.jpg",
+            "image_url": "/images/places/leh/thiksey-monastery-gompa.webp",
             "tier": "exact_place",
             "place_name": "Thiksey Monastery Gompa",
             "destination": "Leh",
             "category": "Culture & Heritage",
             "visual_description": "Tiered Buddhist gompa crowning a desert hill resembling the Potala Palace.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork"
-        },
-        "leh:pangong-lake-edge": {
-            "image_url": "/images/destinations/leh/illustration.jpg",
-            "tier": "exact_place",
-            "place_name": "Pangong Tso Alpine Shore",
-            "destination": "Leh",
-            "category": "Nature & Trails",
-            "visual_description": "Vibrant cobalt and turquoise saline lake mirroring stark Ladakhi mountain peaks.",
             "source": "curated_artwork",
             "art_style": "VANVAS editorial travel artwork"
         },
@@ -286,7 +268,7 @@ class CuratedArtworkProvider(ArtworkProvider):
 
         # Dharamshala
         "dharamshala:namgyal-monastery": {
-            "image_url": "/images/destinations/dharamshala/hero.jpg",
+            "image_url": "/images/places/dharamshala/namgyal-monastery.webp",
             "tier": "exact_place",
             "place_name": "Namgyal Monastery (Tsuglagkhang)",
             "destination": "Dharamshala",
@@ -295,20 +277,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source": "curated_artwork",
             "art_style": "VANVAS editorial travel artwork"
         },
-        "dharamshala:bhagsunag-waterfall": {
-            "image_url": "/images/destinations/dharamshala/illustration.jpg",
-            "tier": "exact_place",
-            "place_name": "Bhagsunag Mountain Waterfall",
-            "destination": "Dharamshala",
-            "category": "Nature & Trails",
-            "visual_description": "Mountain waterfall with bohemian cliffside cafe above Bhagsu village.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork"
-        },
 
         # Spiti
         "spiti:key-monastery": {
-            "image_url": "/images/destinations/spiti-valley/hero.jpg",
+            "image_url": "/images/places/spiti/key-monastery.webp",
             "tier": "exact_place",
             "place_name": "Key Gompa (Kye Monastery)",
             "destination": "Spiti",
@@ -366,10 +338,17 @@ class CuratedArtworkProvider(ArtworkProvider):
         "munnar": {"hero": "/images/destinations/fallbacks/valley.jpg", "illustration": "/images/destinations/fallbacks/valley.jpg"}
     }
 
+    def _clean_str(self, text: str) -> str:
+        s = (text or "").lower()
+        s = re.sub(r"['’`]", "", s)
+        s = s.replace("&", "and")
+        s = re.sub(r"[^a-z0-9]", "-", s)
+        s = re.sub(r"-+", "-", s).strip("-")
+        return s
+
     def _normalize_key(self, dest: str, place: str) -> str:
         d_clean = re.sub(r"[^a-z0-9]", "", (dest or "").lower())
-        p_clean = re.sub(r"[^a-z0-9]", "-", (place or "").lower().strip("-"))
-        p_clean = re.sub(r"-+", "-", p_clean)
+        p_clean = self._clean_str(place)
         return f"{d_clean}:{p_clean}"
 
     async def resolve_place_artwork(
@@ -380,8 +359,7 @@ class CuratedArtworkProvider(ArtworkProvider):
         locality: Optional[str] = None
     ) -> Dict[str, Any]:
         dest_norm = re.sub(r"[^a-z0-9]", "", (destination_name or "").lower())
-        place_norm = re.sub(r"[^a-z0-9]", "-", (place_name or "").lower().strip("-"))
-        place_norm = re.sub(r"-+", "-", place_norm)
+        place_norm = self._clean_str(place_name)
         
         # 1. Check Exact Place Artwork (scored by best match)
         best_exact_match = None
