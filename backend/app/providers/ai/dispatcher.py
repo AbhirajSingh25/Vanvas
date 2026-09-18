@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.models import (
     Destination, Place, Trip, TripMember, User, UserPreference, Expense, Itinerary, ItineraryItem
 )
+from app.services.copilot_actions import CopilotActionService
 from app.providers.provider_factory import ProviderFactory
 from app.itinerary.clustering import haversine_distance_km
 
@@ -35,7 +36,10 @@ class AIToolDispatcher:
             "get_trip": self._get_trip,
             "get_user_preferences": self._get_user_preferences,
             "get_budget_summary": self._get_budget_summary,
+            "save_place": self._save_place,
+            "add_place_to_itinerary": self._add_place_to_itinerary,
         }
+
 
         handler = handler_map.get(tool_name)
         if not handler:
@@ -407,3 +411,20 @@ class AIToolDispatcher:
             "category_breakdown": categories,
             "expenses_count": len(expenses)
         }
+
+    async def _save_place(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        return CopilotActionService.execute_action(
+            db=self.db,
+            user=self.user,
+            action_name="save_place",
+            payload=args,
+        )
+
+    async def _add_place_to_itinerary(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        return CopilotActionService.execute_action(
+            db=self.db,
+            user=self.user,
+            action_name="add_place_to_itinerary",
+            payload=args,
+        )
+

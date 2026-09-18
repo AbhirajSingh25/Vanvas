@@ -199,6 +199,38 @@ async def copilot_chat(
                 "payload": res
             })
 
+        elif name == "save_place" and isinstance(res, dict):
+            actions.append({
+                "action_type": "save_place",
+                "title": res.get("message", "Place Saved"),
+                "payload": res
+            })
+            p = res.get("place", {})
+            pid = p.get("id")
+            if pid and pid not in seen_place_ids:
+                seen_place_ids.add(pid)
+                referenced_places.append({
+                    "place_id": pid,
+                    "name": p.get("name", ""),
+                    "category": p.get("category", "Attraction"),
+                })
+
+        elif name == "add_place_to_itinerary" and isinstance(res, dict):
+            actions.append({
+                "action_type": "add_place_to_itinerary",
+                "title": res.get("message", "Added to Itinerary"),
+                "payload": res
+            })
+            p = res.get("place", {})
+            pid = p.get("id")
+            if pid and pid not in seen_place_ids:
+                seen_place_ids.add(pid)
+                referenced_places.append({
+                    "place_id": pid,
+                    "name": p.get("name", ""),
+                    "category": p.get("category", "Attraction"),
+                })
+
         elif name in ["search_places", "get_nearby_places"] and isinstance(res, dict) and "places" in res:
             for p in res.get("places", []):
                 pid = p.get("place_id")
@@ -222,14 +254,29 @@ async def copilot_chat(
         "latency_ms": latency_ms,
     }
 
-    # 9. Persist Assistant Response & Compact Tool Audit
+    # 9. Persist Assistant Response & Sanitized Compact Tool Audit
+    def _sanitize_dict(d: Any) -> Any:
+        if isinstance(d, dict):
+            sanitized = {}
+            for k, v in d.items():
+                if any(sec in k.lower() for sec in ["token", "secret", "password", "key", "auth", "credential", "cookie"]):
+                    sanitized[k] = "[REDACTED]"
+                else:
+                    sanitized[k] = _sanitize_dict(v)
+            return sanitized
+        elif isinstance(d, list):
+            return [_sanitize_dict(i) for i in d]
+        elif isinstance(d, str) and any(sec in d.lower() for sec in ["bearer ", "jwt "]):
+            return "[REDACTED]"
+        return d
+
     compact_tool_calls = json.dumps([
-        {"name": tc.get("name"), "args": tc.get("arguments", {})}
+        {"name": tc.get("name"), "args": _sanitize_dict(tc.get("arguments", {}))}
         for tc in executed_tools
     ]) if executed_tools else None
 
     compact_tool_results = json.dumps([
-        {"name": tc.get("name"), "summary": str(tc.get("result", {}))[:200]}
+        {"name": tc.get("name"), "summary": str(_sanitize_dict(tc.get("result", {})))[:300]}
         for tc in executed_tools
     ]) if executed_tools else None
 
@@ -254,3 +301,4 @@ async def copilot_chat(
         metadata=metadata_dict,
         error=ai_res.get("error_code")
     )
+

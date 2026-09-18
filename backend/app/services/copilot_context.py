@@ -533,8 +533,11 @@ class CopilotContextEngine:
             "3. HONESTY OVER COMPLETENESS: If no places match a query or conditions, state that clearly rather than inventing a place.\n"
             "4. TRAVEL PHILOSOPHY: Emphasize slow, scenic, authentic mountain experiences. Avoid rushed itineraries.\n"
             "5. TOOL FIRST: If the user asks for plans, weather, places, budget, or routing, invoke the corresponding tool before finalizing your advice.\n"
-            "6. CONTEXT PRECEDENCE: Current Verified Database Facts > Active User Decisions > Fresh Temporary Context > Conversation Summary.\n\n"
+            "6. CONTEXT PRECEDENCE: Current Verified Database Facts > Active User Decisions > Fresh Temporary Context > Conversation Summary.\n"
+            "7. CONTROLLED AI ACTIONS: When the user instructs to save a place (e.g. 'save this place', 'save cafe'), invoke the 'save_place' tool with its canonical place_id. "
+            "When the user instructs to add a place to their trip or day itinerary (e.g. 'add to day 2 of my trip'), invoke 'add_place_to_itinerary' with the verified trip_id, canonical place_id, and day number. Never fabricate IDs or attempt unapproved actions.\n\n"
             f"1. VERIFIED TRAVELLER PROFILE: {verified_facts['user_preferences']}\n"
+
         )
 
         if verified_facts.get("trip"):

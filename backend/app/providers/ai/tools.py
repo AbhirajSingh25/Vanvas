@@ -179,5 +179,42 @@ VANVAS_COPILOT_TOOLS: List[Dict[str, Any]] = [
             },
             "required": ["trip_id"]
         }
+    },
+    {
+        "name": "save_place",
+        "description": "Save a verified canonical place to the authenticated user's travel collection.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "place_id": {
+                    "type": "string",
+                    "description": "The canonical place ID or slug (e.g. 'mussoorie_landour_bakehouse', 'manali_hadimba_temple')."
+                }
+            },
+            "required": ["place_id"]
+        }
+    },
+    {
+        "name": "add_place_to_itinerary",
+        "description": "Add a verified canonical place to a specific day of the user's active authorized trip itinerary.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "trip_id": {
+                    "type": "string",
+                    "description": "The active authorized trip ID."
+                },
+                "place_id": {
+                    "type": "string",
+                    "description": "The canonical place ID or slug to add."
+                },
+                "day": {
+                    "type": "integer",
+                    "description": "The day number in the itinerary (e.g. 1, 2, 3)."
+                }
+            },
+            "required": ["trip_id", "place_id", "day"]
+        }
     }
 ]
+
