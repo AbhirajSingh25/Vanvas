@@ -64,7 +64,7 @@ class AIToolDispatcher:
             return {"error": f"Tool execution error: {str(e)}"}
 
     async def _get_destination_info(self, args: Dict[str, Any]) -> Dict[str, Any]:
-        slug = (args.get("destination_slug") or "").strip().lower()
+        slug = (args.get("destination_slug") or args.get("destination") or "").strip().lower()
         if not slug:
             return {"error": "Missing required argument 'destination_slug'"}
 
@@ -73,7 +73,26 @@ class AIToolDispatcher:
         ).first()
 
         if not dest:
-            return {"error": f"Destination '{slug}' not found in curated sanctuaries."}
+            from app.services.destination_intelligence import DestinationIntelligenceService
+            dyn = await DestinationIntelligenceService.resolve_dynamic_destination(slug)
+            if not dyn:
+                return {"error": f"Destination '{slug}' could not be resolved."}
+            return {
+                "destination_id": dyn["id"],
+                "destination_slug": dyn["slug"],
+                "destination_name": dyn["name"],
+                "state": dyn["state"],
+                "region": dyn["region"],
+                "tagline": dyn["tagline"],
+                "altitude_meters": dyn["altitude_meters"],
+                "weather_type": dyn["weather_type"],
+                "best_time_to_visit": dyn["best_time_to_visit"],
+                "total_curated_places": 0,
+                "must_visit_highlights": [],
+                "coordinates": {"lat": dyn["latitude"], "lng": dyn["longitude"]},
+                "is_curated": False,
+                "is_dynamic": True
+            }
 
         places_count = self.db.query(Place).filter(Place.destination_id == dest.id).count()
         top_places = self.db.query(Place).filter(Place.destination_id == dest.id, Place.is_must_visit == True).limit(5).all()
@@ -90,7 +109,9 @@ class AIToolDispatcher:
             "best_time_to_visit": dest.best_time_to_visit,
             "total_curated_places": places_count,
             "must_visit_highlights": [p.name for p in top_places],
-            "coordinates": {"lat": dest.latitude, "lng": dest.longitude}
+            "coordinates": {"lat": dest.latitude, "lng": dest.longitude},
+            "is_curated": True,
+            "is_dynamic": False
         }
 
     async def _get_place(self, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -355,8 +376,23 @@ class AIToolDispatcher:
     async def _get_weather_forecast(self, args: Dict[str, Any]) -> Dict[str, Any]:
         lat = args.get("latitude")
         lng = args.get("longitude")
+        dest_input = args.get("destination_slug") or args.get("destination")
+
+        if (lat is None or lng is None) and dest_input:
+            clean_d = dest_input.strip().lower()
+            db_dest = self.db.query(Destination).filter((Destination.slug == clean_d) | (Destination.name.ilike(clean_d))).first()
+            if db_dest:
+                lat = db_dest.latitude
+                lng = db_dest.longitude
+            else:
+                from app.services.destination_intelligence import DestinationIntelligenceService
+                dyn = await DestinationIntelligenceService.resolve_dynamic_destination(clean_d)
+                if dyn:
+                    lat = dyn["latitude"]
+                    lng = dyn["longitude"]
+
         if lat is None or lng is None:
-            return {"error": "Missing coordinates"}
+            return {"error": "Missing coordinates or resolvable destination"}
 
         weather_provider = ProviderFactory.get_weather_provider()
         forecasts = await weather_provider.get_forecast(lat, lng, days=3)

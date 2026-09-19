@@ -141,6 +141,36 @@ def build_verified_context(
                 "tagline": dest.tagline,
                 "coordinates": {"lat": dest.latitude, "lng": dest.longitude},
             }
+        else:
+            from app.providers.geocoding_provider import SEED_DESTINATIONS
+            clean_s = target_dest_slug.lower().strip()
+            seed_match = next((s for s in SEED_DESTINATIONS if s["slug"].lower() == clean_s or s["name"].lower() == clean_s), None)
+            if seed_match:
+                dest_facts = {
+                    "destination_id": f"dyn-{seed_match['slug']}",
+                    "name": seed_match["name"],
+                    "slug": seed_match["slug"],
+                    "state": seed_match["state"],
+                    "region": seed_match["region"],
+                    "altitude_meters": seed_match.get("altitude_meters", 1000),
+                    "weather_type": "Live Dynamic",
+                    "best_time_to_visit": "Check seasonal conditions",
+                    "tagline": f"Live travel discovery in {seed_match['name']}.",
+                    "coordinates": {"lat": seed_match["lat"], "lng": seed_match["lng"]},
+                }
+            else:
+                dest_facts = {
+                    "destination_id": f"dyn-{clean_s}",
+                    "name": target_dest_slug.replace("-", " ").title(),
+                    "slug": clean_s,
+                    "state": "India",
+                    "region": "India",
+                    "altitude_meters": 550,
+                    "weather_type": "Live Dynamic",
+                    "best_time_to_visit": "Check seasonal conditions",
+                    "tagline": f"Live destination exploration in {target_dest_slug.title()}.",
+                    "coordinates": None,
+                }
 
     # 4. Saved Places & User Votes (Compact)
     saved = db.query(SavedPlace).filter(SavedPlace.user_id == user.id).limit(6).all()
@@ -564,6 +594,7 @@ class CopilotContextEngine:
             "temporary_context": valid_temp_context,
             "conversation_summary": conversation_summary,
             "recent_messages": recent_messages,
+            "destination": verified_facts.get("destination"),
             "user_context": verified_facts["user_preferences"],
             "trip_context": verified_facts.get("trip"),
             "destination_context": verified_facts.get("destination"),

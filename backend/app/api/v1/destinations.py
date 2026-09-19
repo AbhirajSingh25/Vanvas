@@ -46,8 +46,8 @@ async def resolve_destination(
             "longitude": dest.longitude,
             "altitude_meters": dest.altitude_meters,
             "weather_type": dest.weather_type,
-            "is_curated": True,
-            "is_dynamic": False
+            "is_curated": bool(dest.is_featured),
+            "is_dynamic": not bool(dest.is_featured)
         }
 
     dyn = await DestinationIntelligenceService.resolve_dynamic_destination(query)
@@ -161,16 +161,60 @@ async def get_destination_detail(
     if not dyn_dest:
         raise HTTPException(status_code=404, detail="Destination not found")
     
+    # Fetch live points of interest and accommodation
+    live_places = []
+    live_hotels = []
+    try:
+        places_provider = ProviderFactory.get_places_provider()
+        live_places_raw = await places_provider.get_nearby_places(dyn_dest["latitude"], dyn_dest["longitude"], radius_km=15.0)
+        for lp in live_places_raw:
+            live_places.append({
+                "id": lp.get("id", f"live-{lp.get('source_id', lp.get('name'))}"),
+                "destination_id": dyn_dest["id"],
+                "category": lp.get("category", "Attractions"),
+                "name": lp.get("name"),
+                "slug": lp.get("name", "").lower().replace(" ", "-"),
+                "description": lp.get("address") or f"Point of interest in {dyn_dest['name']}",
+                "address": lp.get("address"),
+                "latitude": lp.get("latitude"),
+                "longitude": lp.get("longitude"),
+                "price_level": lp.get("price_level", "₹₹"),
+                "approx_cost": lp.get("approx_cost", 0.0),
+                "rating": lp.get("rating"),
+                "review_count": lp.get("review_count"),
+                "opening_time": lp.get("opening_time"),
+                "closing_time": lp.get("closing_time"),
+                "hours_available": lp.get("hours_available", False),
+                "is_open_now": lp.get("is_open_now"),
+                "phone": lp.get("phone"),
+                "website": lp.get("website"),
+                "recommended_duration_mins": lp.get("recommended_duration_mins", 60),
+                "tags": lp.get("category", ""),
+                "image_url": lp.get("image_url"),
+                "why_vanvas_recommends": None,
+                "booking_url": lp.get("website"),
+                "is_must_visit": False,
+                "is_hidden_gem": False,
+                "is_indoor": lp.get("is_indoor", False),
+                "is_saved": False,
+                "action_links": lp.get("action_links", []),
+                "data_state": lp.get("data_state", "LIVE"),
+                "trust_source": lp.get("trust_source", "OPENSTREETMAP"),
+                "is_live": True,
+            })
+    except Exception as e:
+        logger.warning(f"Could not load live places for {dyn_dest['name']}: {e}")
+
     return {
         "destination": dyn_dest,
         "is_curated": False,
         "is_dynamic": True,
-        "places": [],
-        "hotels": [],
+        "places": live_places,
+        "hotels": live_hotels,
         "rentals": [],
         "weather": dyn_dest.get("weather", []),
-        "places_count": 0,
-        "hotels_count": 0,
+        "places_count": len(live_places),
+        "hotels_count": len(live_hotels),
         "rentals_count": 0
     }
 
@@ -178,7 +222,7 @@ from app.services.operating_hours_engine import OperatingHoursEngine
 from app.services.action_link_generator import ActionLinkGenerator
 
 @router.get("/{destination_id}/places", response_model=List[PlaceResponse])
-def get_destination_places(
+async def get_destination_places(
     destination_id: str,
     category: Optional[str] = None,
     is_must_visit: Optional[bool] = None,
@@ -192,7 +236,78 @@ def get_destination_places(
         (Destination.id == destination_id) | (Destination.slug == destination_id)
     ).first()
     if not dest:
-        return []
+        # Dynamic destination resolution for non-curated destination places
+        dyn_dest = await DestinationIntelligenceService.resolve_dynamic_destination(destination_id)
+        if not dyn_dest:
+            return []
+        try:
+            places_provider = ProviderFactory.get_places_provider()
+            cat_filter = category if (category and category != "all") else None
+            live_places_raw = await places_provider.get_nearby_places(
+                dyn_dest["latitude"],
+                dyn_dest["longitude"],
+                radius_km=15.0,
+                category_filter=cat_filter
+            )
+            dyn_results: List[PlaceResponse] = []
+            for lp in live_places_raw:
+                if search and search.lower() not in lp.get("name", "").lower():
+                    continue
+                if is_indoor is not None and lp.get("is_indoor") != is_indoor:
+                    continue
+                hours_eval = OperatingHoursEngine.evaluate_simple_hours(
+                    lp.get("opening_time"),
+                    lp.get("closing_time"),
+                    lp.get("latitude") or dyn_dest["latitude"],
+                    lp.get("longitude") or dyn_dest["longitude"],
+                )
+                action_links = lp.get("action_links") or ActionLinkGenerator.generate_place_action_links(
+                    name=lp.get("name", ""),
+                    latitude=lp.get("latitude") or dyn_dest["latitude"],
+                    longitude=lp.get("longitude") or dyn_dest["longitude"],
+                    website=lp.get("website"),
+                    phone=lp.get("phone"),
+                    booking_url=lp.get("website"),
+                    source=lp.get("source", "openstreetmap"),
+                    source_id=lp.get("source_id", ""),
+                )
+                dyn_results.append(PlaceResponse(
+                    id=lp.get("id", f"live-{lp.get('source_id', lp.get('name'))}"),
+                    destination_id=dyn_dest["id"],
+                    category=lp.get("category", "Attractions"),
+                    name=lp.get("name", "Local Landmark"),
+                    slug=lp.get("name", "").lower().replace(" ", "-"),
+                    description=lp.get("address") or f"Point of interest in {dyn_dest['name']}",
+                    address=lp.get("address"),
+                    latitude=lp.get("latitude") or dyn_dest["latitude"],
+                    longitude=lp.get("longitude") or dyn_dest["longitude"],
+                    price_level=lp.get("price_level", "₹₹"),
+                    approx_cost=lp.get("approx_cost", 0.0),
+                    rating=lp.get("rating"),
+                    review_count=lp.get("review_count"),
+                    opening_time=lp.get("opening_time"),
+                    closing_time=lp.get("closing_time"),
+                    hours_available=hours_eval.hours_available,
+                    is_open_now=hours_eval.is_open_now,
+                    phone=lp.get("phone"),
+                    website=lp.get("website"),
+                    recommended_duration_mins=lp.get("recommended_duration_mins", 60),
+                    tags=lp.get("category", ""),
+                    image_url=lp.get("image_url"),
+                    why_vanvas_recommends=None,
+                    booking_url=lp.get("website"),
+                    is_must_visit=False,
+                    is_hidden_gem=False,
+                    is_indoor=lp.get("is_indoor", False),
+                    is_saved=False,
+                    action_links=action_links,
+                    data_state="LIVE",
+                    trust_source="OPENSTREETMAP",
+                ))
+            return dyn_results
+        except Exception as e:
+            logger.warning(f"Error resolving dynamic places for {destination_id}: {e}")
+            return []
 
     query = db.query(Place).filter(Place.destination_id == dest.id, Place.is_active == True)
     if category and category != "all":

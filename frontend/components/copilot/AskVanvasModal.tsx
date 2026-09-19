@@ -30,7 +30,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const [messages, setMessages] = useState<MessageItem[]>([
     {
       role: "assistant",
-      text: `नमस्ते! I am VANVAS Intelligence, powered by Google Gemini reasoning over verified Himalayan travel knowledge. Where would you like to explore?`,
+      text: `नमस्ते! I am VANVAS Intelligence, powered by Google Gemini reasoning over verified travel knowledge across India. Where would you like to explore?`,
       actions: [
         { label: "Top Cafes in Mussoorie", action: "explore_mussoorie" },
         { label: "Manali 3-Day Itinerary", action: "plan_manali" },
@@ -43,7 +43,16 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const destinations = ["Mussoorie", "Manali", "Rishikesh", "Dharamshala", "Leh Ladakh", "Spiti Valley"];
+  const baseDestinations = ["Mussoorie", "Manali", "Rishikesh", "Dharamshala", "Leh Ladakh", "Spiti Valley", "Goa", "Jaipur"];
+  const destinations = selectedDest && !baseDestinations.map(d => d.toLowerCase()).includes(selectedDest.toLowerCase())
+    ? [selectedDest, ...baseDestinations]
+    : baseDestinations;
+
+  useEffect(() => {
+    if (defaultDestination) {
+      setSelectedDest(defaultDestination);
+    }
+  }, [defaultDestination, isOpen]);
 
   // Lock body scroll while modal is open
   useEffect(() => {

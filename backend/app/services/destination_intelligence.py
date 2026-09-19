@@ -54,8 +54,11 @@ class DestinationIntelligenceService:
         state = geo_data.get("state") or "Global"
         country = geo_data.get("country") or "India"
         region = geo_data.get("region") or f"{state}, {country}"
-        lat = geo_data.get("lat", 22.7196)
-        lng = geo_data.get("lng", 75.8577)
+        lat = geo_data.get("latitude") if geo_data.get("latitude") is not None else geo_data.get("lat")
+        lng = geo_data.get("longitude") if geo_data.get("longitude") is not None else geo_data.get("lng")
+        if lat is None or lng is None:
+            logger.warning(f"Geocoding result for '{query}' missing valid coordinates.")
+            return None
         altitude = geo_data.get("altitude_meters", 550)
 
         # High-res photography mapping with regional fallback

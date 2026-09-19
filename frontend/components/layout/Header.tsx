@@ -188,6 +188,7 @@ export const Header: React.FC = () => {
       <AskVanvasModal
         isOpen={askVanvasOpen}
         onClose={() => setAskVanvasOpen(false)}
+        defaultDestination={pathname.startsWith("/explore/") ? pathname.replace("/explore/", "").split("/")[0].replace(/-/g, " ") : undefined}
       />
     </>
   );

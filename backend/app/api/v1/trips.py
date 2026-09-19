@@ -19,6 +19,9 @@ from app.itinerary.generator import ItineraryEngine
 from app.itinerary.dynamic_replanner import DynamicReplanner
 from app.itinerary.clustering import haversine_distance_km
 
+from app.services.destination_intelligence import DestinationIntelligenceService
+from app.providers.provider_factory import ProviderFactory
+
 router = APIRouter()
 itinerary_engine = ItineraryEngine()
 replanner = DynamicReplanner()
@@ -47,6 +50,7 @@ def get_user_trips(
         summaries.append(TripSummaryResponse(
             id=t.id,
             title=t.title,
+            destination_id=t.destination_id,
             destination_name=t.destination.name if t.destination else "Himalayan Journey",
             destination_slug=t.destination.slug if t.destination else "manali",
             hero_image=t.destination.hero_image if t.destination else None,
@@ -62,7 +66,7 @@ def get_user_trips(
     return summaries
 
 @router.post("", response_model=TripDetailResponse)
-def create_trip(
+async def create_trip(
     trip_in: TripCreateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -72,7 +76,67 @@ def create_trip(
     ).first()
     
     if not destination:
-        raise HTTPException(status_code=404, detail="Destination not found")
+        # Resolve dynamic destination across India
+        dyn = await DestinationIntelligenceService.resolve_dynamic_destination(trip_in.destination_id)
+        if not dyn:
+            raise HTTPException(status_code=404, detail=f"Destination '{trip_in.destination_id}' not found")
+        
+        # Check if already in DB by slug
+        existing = db.query(Destination).filter(Destination.slug == dyn["slug"]).first()
+        if existing:
+            destination = existing
+        else:
+            destination = Destination(
+                id=dyn["id"],
+                name=dyn["name"],
+                slug=dyn["slug"],
+                state=dyn["state"],
+                region=dyn["region"],
+                tagline=dyn["tagline"],
+                description=dyn["description"],
+                hero_image=dyn.get("hero_image"),
+                latitude=dyn["latitude"],
+                longitude=dyn["longitude"],
+                altitude_meters=dyn.get("altitude_meters", 550),
+                weather_type=dyn.get("weather_type", "Live Dynamic"),
+                is_featured=False
+            )
+            db.add(destination)
+            db.flush()
+
+        # Fetch live places for dynamic destination
+        try:
+            places_provider = ProviderFactory.get_places_provider()
+            live_places_raw = await places_provider.get_nearby_places(destination.latitude, destination.longitude, radius_km=15.0)
+            for lp in live_places_raw:
+                p_name = lp.get("name")
+                if not p_name:
+                    continue
+                p_exist = db.query(Place).filter(Place.destination_id == destination.id, Place.name == p_name).first()
+                if not p_exist:
+                    new_p = Place(
+                        id=lp.get("id", f"place-{generate_uuid()[:8]}"),
+                        destination_id=destination.id,
+                        category=lp.get("category", "Attractions"),
+                        name=p_name,
+                        slug=p_name.lower().replace(" ", "-"),
+                        description=lp.get("address") or f"Point of interest in {destination.name}",
+                        address=lp.get("address"),
+                        latitude=lp.get("latitude") or destination.latitude,
+                        longitude=lp.get("longitude") or destination.longitude,
+                        price_level=lp.get("price_level", "₹₹"),
+                        approx_cost=lp.get("approx_cost", 0.0),
+                        rating=lp.get("rating"),
+                        review_count=lp.get("review_count"),
+                        opening_time=lp.get("opening_time") or "09:00",
+                        closing_time=lp.get("closing_time") or "20:00",
+                        booking_url=lp.get("website"),
+                        is_active=True
+                    )
+                    db.add(new_p)
+            db.flush()
+        except Exception as e:
+            pass
     
     num_days = max(1, (trip_in.end_date - trip_in.start_date).days + 1)
     

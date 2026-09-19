@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles, MapPin, Calendar, Wallet, Users, Compass, Sun, Flame, Check,
-  ArrowRight, ArrowLeft, Mountain, Coffee, Trees, Heart, Shield
+  ArrowRight, ArrowLeft, Mountain, Coffee, Trees, Heart, Shield, Search, Loader2
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
@@ -24,8 +24,15 @@ function PlanTripContent() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loadingDestinations, setLoadingDestinations] = useState(true);
 
-  // Form State
+  // Form State & Universal Destination Resolution
   const [selectedDestId, setSelectedDestId] = useState<string>(initialDest);
+  const [selectedDestObject, setSelectedDestObject] = useState<Destination | any | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+
   const [startDate, setStartDate] = useState<string>(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -71,6 +78,18 @@ function PlanTripContent() {
     jaipur: "जयपुर",
     udaipur: "उदयपुर",
     mussoorie: "मसूरी",
+    delhi: "दिल्ली",
+    pune: "पुणे",
+    kolkata: "कोलकाता",
+    ayodhya: "अयोध्या",
+    varanasi: "वाराणसी",
+    mumbai: "मुंबई",
+    bengaluru: "बेंगलुरु",
+    chennai: "चेन्नई",
+    kochi: "कोच्चि",
+    agra: "आगरा",
+    amritsar: "अमृतसर",
+    lucknow: "लखनऊ",
   };
 
   const fallbackDestinations: Destination[] = [
@@ -84,9 +103,10 @@ function PlanTripContent() {
     { id: "dest-udaipur", name: "Udaipur", slug: "udaipur", state: "Rajasthan", region: "Mewar", tagline: "City of lakes & palaces", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 24.5854, longitude: 73.7125, altitude_meters: 598, weather_type: "Warm Lake", is_featured: true, is_curated: true },
   ];
 
+  // Resolve initial destination from query params or database
   useEffect(() => {
     api.getDestinations(false)
-      .then((data) => {
+      .then(async (data) => {
         const loaded = (data && data.length > 0) ? data : fallbackDestinations;
         setDestinations(loaded);
         const match = loaded.find(
@@ -94,8 +114,26 @@ function PlanTripContent() {
         );
         if (match) {
           setSelectedDestId(match.id);
-        } else if (loaded.length > 0) {
-          setSelectedDestId(loaded[0].id);
+          setSelectedDestObject(match);
+        } else {
+          try {
+            setIsResolving(true);
+            const resolved = await api.resolveDestination(initialDest);
+            if (resolved) {
+              setSelectedDestId(resolved.id || resolved.slug);
+              setSelectedDestObject(resolved);
+            } else if (loaded.length > 0) {
+              setSelectedDestId(loaded[0].id);
+              setSelectedDestObject(loaded[0]);
+            }
+          } catch {
+            if (loaded.length > 0) {
+              setSelectedDestId(loaded[0].id);
+              setSelectedDestObject(loaded[0]);
+            }
+          } finally {
+            setIsResolving(false);
+          }
         }
       })
       .catch((err) => {
@@ -104,10 +142,55 @@ function PlanTripContent() {
         const match = fallbackDestinations.find(
           (d) => d.id === initialDest || d.slug.toLowerCase() === initialDest.toLowerCase()
         );
-        if (match) setSelectedDestId(match.id);
+        if (match) {
+          setSelectedDestId(match.id);
+          setSelectedDestObject(match);
+        }
       })
       .finally(() => setLoadingDestinations(false));
   }, [initialDest]);
+
+  // Debounced search for destination input
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await api.searchDestinations(searchQuery, 8);
+        setSearchResults(res || []);
+      } catch (err) {
+        console.error("Destination search error in plan page:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSelectDestination = async (destOrQuery: any) => {
+    setResolveError(null);
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsResolving(true);
+    try {
+      const q = typeof destOrQuery === "string" ? destOrQuery : (destOrQuery.name || destOrQuery.slug);
+      const res = await api.resolveDestination(q);
+      if (res) {
+        setSelectedDestId(res.id || res.slug);
+        setSelectedDestObject(res);
+      } else {
+        setResolveError(`Could not resolve '${q}'. Please try another location.`);
+      }
+    } catch (err: any) {
+      setResolveError(err.message || "Failed to resolve destination");
+    } finally {
+      setIsResolving(false);
+    }
+  };
 
   // Pre-fill user saved preferences if available
   useEffect(() => {
@@ -156,8 +239,9 @@ function PlanTripContent() {
     }, 800);
 
     try {
+      const targetId = selectedDestObject?.id || selectedDestObject?.slug || selectedDestId;
       const trip = await api.createTrip({
-        destination_id: selectedDestId,
+        destination_id: targetId,
         start_date: startDate,
         end_date: endDate,
         budget: customBudget ? parseFloat(customBudget) : budget,
@@ -209,7 +293,7 @@ function PlanTripContent() {
           {/* Subtle paper background grid */}
           <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#173B32_1px,transparent_1px)] [background-size:20px_20px]" />
 
-          {/* STEP 1: DESTINATION (कहाँ चलें?) */}
+          {/* STEP 1: UNIVERSAL DESTINATION SELECTION (कहाँ चलें?) */}
           {step === 1 && (
             <div className="space-y-5 sm:space-y-6 relative z-10 animate-fadeIn">
               <div>
@@ -220,58 +304,156 @@ function PlanTripContent() {
                 <h2 className="text-xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
                   Where is the road taking you?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5 sm:mt-1">Select your mountain sanctuary or heritage trail.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5 sm:mt-1">
+                  Search any Indian city, town, hill station or choose a featured sanctuary.
+                </p>
               </div>
 
-              {loadingDestinations ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                    <div
-                      key={n}
-                      className="p-3 sm:p-3.5 rounded-2xl border-2 border-[#E5D5BA] bg-[#FAF7F0] min-h-[110px] sm:min-h-[135px] animate-pulse flex flex-col justify-between"
-                    >
-                      <div className="w-12 h-3 bg-[#E5D5BA] rounded-md" />
-                      <div className="space-y-1.5">
-                        <div className="w-16 h-2.5 bg-[#E5D5BA] rounded-md" />
-                        <div className="w-24 h-4 bg-[#E5D5BA] rounded-md" />
-                        <div className="w-10 h-2 bg-[#E5D5BA] rounded-md" />
-                      </div>
-                    </div>
-                  ))}
+              {/* Universal Destination Search Input */}
+              <div className="relative">
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && searchQuery.trim()) {
+                        e.preventDefault();
+                        handleSelectDestination(searchQuery.trim());
+                      }
+                    }}
+                    placeholder="Search any destination: Delhi, Pune, Kolkata, Ayodhya, Varanasi, Goa, Manali..."
+                    className="w-full pl-10 pr-10 py-3 bg-white border-2 border-[#E5D5BA] rounded-2xl text-xs sm:text-sm font-semibold text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32] shadow-sm transition-all"
+                  />
+                  <Search className="w-4 h-4 text-[#7B4D36] absolute left-3.5 pointer-events-none" />
+                  {(isSearching || isResolving) && (
+                    <Loader2 className="w-4 h-4 text-[#B65E3C] animate-spin absolute right-3.5 pointer-events-none" />
+                  )}
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 max-h-[360px] sm:max-h-[340px] overflow-y-auto pr-1">
-                  {destinations.map((d) => {
-                    const isSelected = selectedDestId === d.id || selectedDestId === d.slug;
-                    return (
-                      <button
-                        key={d.id}
-                        onClick={() => setSelectedDestId(d.id)}
-                        className={`p-3 sm:p-3.5 rounded-2xl border-2 text-left transition-all flex flex-col justify-between min-h-[110px] sm:min-h-[135px] relative overflow-hidden group cursor-pointer active:scale-95 ${
-                          isSelected
-                            ? "border-[#173B32] bg-[#173B32] text-[#EFE5D2] shadow-lg scale-102"
-                            : "border-[#E5D5BA] bg-[#FAF7F0] text-[#20211D] hover:border-[#173B32]/50 hover:bg-[#EFE5D2]"
-                        }`}
-                      >
-                        <div className="relative z-10 flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                            {d.region ? d.region.split(" ")[0] : "VALLEY"}
-                          </span>
-                          {isSelected && <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B49252]" />}
-                        </div>
 
-                        <div className="relative z-10">
-                          <span className="text-[11px] font-serif opacity-80 block leading-tight">
-                            {destHindiMap[d.slug] || "यात्रा"}
-                          </span>
-                          <div className="font-serif font-black text-base sm:text-lg leading-tight mt-0.5">{d.name}</div>
-                          <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">{d.altitude_meters ? `${d.altitude_meters}m` : d.state}</div>
+                {/* Autocomplete Dropdown */}
+                {searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-2xl shadow-2xl overflow-hidden divide-y divide-[#E5D5BA]/60 max-h-60 overflow-y-auto">
+                    {searchResults.map((item, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectDestination(item)}
+                        className="w-full text-left p-3 flex items-center justify-between hover:bg-[#EFE5D2] text-[#20211D] transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-[#B65E3C] shrink-0" />
+                          <div>
+                            <div className="text-xs font-bold font-serif text-[#173B32]">{item.name}</div>
+                            <div className="text-[10px] text-[#7B4D36]">
+                              {[item.state, item.country].filter(Boolean).join(", ")}
+                              {item.altitude_meters ? ` • ${item.altitude_meters}m` : ""}
+                            </div>
+                          </div>
                         </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E5D5BA] text-[#173B32]">
+                          Select
+                        </span>
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {resolveError && (
+                <p className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 p-2.5 rounded-xl">
+                  {resolveError}
+                </p>
+              )}
+
+              {/* Active Selected Destination Preview Card */}
+              {selectedDestObject && (
+                <div className="p-4 rounded-2xl bg-[#EFE5D2] border-2 border-[#173B32]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-fadeIn">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
+                        selectedDestObject.is_curated !== false
+                          ? "bg-[#173B32] text-[#EFE5D2]"
+                          : "bg-emerald-700 text-white"
+                      }`}>
+                        {selectedDestObject.is_curated !== false ? "VANVAS VERIFIED SANCTUARY" : "LIVE DESTINATION DISCOVERY"}
+                      </span>
+                      {selectedDestObject.latitude && selectedDestObject.longitude && (
+                        <span className="text-[10px] font-mono text-[#7B4D36]">
+                          {Number(selectedDestObject.latitude).toFixed(2)}°N, {Number(selectedDestObject.longitude).toFixed(2)}°E
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-xl font-serif font-black text-[#173B32]">
+                        {selectedDestObject.name}
+                      </h3>
+                      <span className="text-xs font-serif text-[#B65E3C]">
+                        {destHindiMap[selectedDestObject.slug?.toLowerCase()] || selectedDestObject.hindi_name || ""}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#20211D]/80 line-clamp-1 font-light">
+                      {[selectedDestObject.state, selectedDestObject.country || "India"].filter(Boolean).join(", ")}
+                      {selectedDestObject.altitude_meters ? ` • Elevation: ${selectedDestObject.altitude_meters}m` : ""}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Destination Confirmed</span>
+                    </span>
+                  </div>
                 </div>
               )}
+
+              {/* Quick-Select Shortcuts for Popular Sanctuaries */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#7B4D36]">
+                  <span>Featured Sanctuaries • Quick Select</span>
+                </div>
+
+                {loadingDestinations ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                    {[1, 2, 3, 4].map((n) => (
+                      <div key={n} className="p-3 rounded-2xl border-2 border-[#E5D5BA] bg-[#FAF7F0] min-h-[90px] animate-pulse" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    {destinations.map((d) => {
+                      const isSelected = selectedDestObject?.id === d.id || selectedDestObject?.slug === d.slug || selectedDestId === d.id || selectedDestId === d.slug;
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDestId(d.id);
+                            setSelectedDestObject(d);
+                            setResolveError(null);
+                          }}
+                          className={`p-3 rounded-2xl border-2 text-left transition-all flex flex-col justify-between min-h-[85px] relative overflow-hidden group cursor-pointer active:scale-95 ${
+                            isSelected
+                              ? "border-[#173B32] bg-[#173B32] text-[#EFE5D2] shadow-md"
+                              : "border-[#E5D5BA] bg-[#FAF7F0] text-[#20211D] hover:border-[#173B32]/50 hover:bg-[#EFE5D2]"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-bold uppercase tracking-wider opacity-80">
+                              {d.state || "SANCTUARY"}
+                            </span>
+                            {isSelected && <Check className="w-3 h-3 text-[#B49252]" />}
+                          </div>
+                          <div>
+                            <div className="font-serif font-bold text-sm leading-tight">{d.name}</div>
+                            <span className="text-[10px] opacity-75 font-serif">{destHindiMap[d.slug] || ""}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
