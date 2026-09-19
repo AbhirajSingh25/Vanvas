@@ -8,7 +8,7 @@ import {
   Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { Destination, Place, Hotel, RentalOption } from "@/types";
+import { Destination, Place, Hotel, RentalOption, Offer } from "@/types";
 import { PlaceCard } from "@/components/places/PlaceCard";
 import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
@@ -33,6 +33,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   const [destination, setDestination] = useState<Destination | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [stayOffers, setStayOffers] = useState<Offer[]>([]);
   const [rentals, setRentals] = useState<RentalOption[]>([]);
   const [weather, setWeather] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -196,6 +197,16 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
         setHotels(loadedHotels);
         setRentals(loadedRentals);
         setWeather(data.weather || []);
+
+        // Fetch verified live stay commerce offers
+        try {
+          const offers = await api.getOffers(data.destination.id || slug, "stay");
+          if (offers && offers.length > 0) {
+            setStayOffers(offers.filter(o => o.is_live || o.provider === "amadeus_stays"));
+          }
+        } catch (e) {
+          // keep empty
+        }
       })
       .catch((err) => {
         console.error("Destination fetch error:", err);
@@ -766,6 +777,85 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                           <span className="text-[11px] text-[#7B4D36] italic">Contact on arrival</span>
                         )}
                       </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* LIVE PROVIDER OFFERS (AMADEUS GDS / REAL COMMERCE OFFERS) */}
+        {stayOffers.length > 0 && (
+          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
+            <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                  लाइव आवास • Verified GDS Offers
+                </span>
+                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
+                  <Sparkles className="w-6 h-6 text-[#B65E3C]" />
+                  <span>Live Stay Offers ({stayOffers.length})</span>
+                </h3>
+              </div>
+              <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-emerald-500/10 border border-emerald-500/30 text-emerald-800">
+                Live GDS Engine
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {stayOffers.map((offer) => {
+                const isAvail = offer.availability_state === "AVAILABLE";
+                const isPriceVerified = typeof offer.price === "number" && offer.price > 0;
+
+                return (
+                  <div key={offer.provider_offer_id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3.5 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2]">
+                          LIVE PROVIDER OFFER
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold ${
+                          isAvail
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-slate-100 text-slate-700 border border-slate-300"
+                        }`}>
+                          {offer.availability_state || "UNKNOWN"}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{offer.title}</h4>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-xs font-mono text-[#7B4D36] uppercase">{offer.provider}</span>
+                          <span className="text-xs text-[#7B4D36]">•</span>
+                          <span className="text-xs font-mono font-bold text-[#B65E3C]">
+                            {isPriceVerified ? `${offer.currency || "INR"} ${offer.price}` : "Price on request"}
+                          </span>
+                        </div>
+                        {offer.cancellation_policy && (
+                          <p className="text-[11px] text-emerald-800 mt-1 font-sans bg-emerald-50/80 p-1.5 rounded-md border border-emerald-200/60 line-clamp-2">
+                            {offer.cancellation_policy}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52]">
+                      <span className="text-[11px] font-mono text-[#7B4D36]">Verified Commerce Tier</span>
+                      {offer.booking_capability === "EXTERNAL_CHECKOUT" && offer.deep_link ? (
+                        <a
+                          href={offer.deep_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
+                        >
+                          <span>Continue with Provider</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-[#7B4D36] italic">Discovery Only</span>
+                      )}
                     </div>
                   </div>
                 );

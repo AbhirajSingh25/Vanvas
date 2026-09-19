@@ -531,13 +531,16 @@ export const api = {
     });
   },
 
-  async getOffers(destination: string, productType?: string): Promise<{ destination: string; total_offers: number; offers: Offer[]; disclaimer: string }> {
+  async getOffers(destination: string, productType?: string): Promise<Offer[]> {
     const params = new URLSearchParams({ destination });
     if (productType) params.set("product_type", productType);
-    return fetchApi(`/offers?${params.toString()}`);
+    const res = await fetchApi<any>(`/offers?${params.toString()}`);
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.offers)) return res.offers;
+    return [];
   },
 
-  async checkOfferAvailability(offerId: string): Promise<{ offer_id: string; provider: string; availability_state: string; is_available: boolean; valid_until: string | null; message: string }> {
+  async checkOfferAvailability(offerId: string): Promise<{ offer_id: string; provider?: string; availability_state: string; is_available?: boolean; valid_until?: string | null; message: string; price?: number | null; currency?: string; cancellation_policy?: string | null }> {
     return fetchApi(`/offers/${encodeURIComponent(offerId)}/availability`);
   }
 };

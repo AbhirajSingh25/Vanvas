@@ -16,6 +16,7 @@ from app.itinerary.clustering import haversine_distance_km
 from app.services.operating_hours_engine import OperatingHoursEngine
 from app.services.action_link_generator import ActionLinkGenerator
 from app.providers.commerce.discovery_adapter import DiscoveryCommerceAdapter
+from app.providers.commerce.amadeus_stay_adapter import AmadeusStayCommerceAdapter
 
 logger = logging.getLogger("vanvas.ai.dispatcher")
 
@@ -946,11 +947,27 @@ class AIToolDispatcher:
             return {"error": "Missing required argument 'destination'"}
 
         product_type = args.get("product_type")
+        all_offers = []
+
+        # 1. Live Stay Commerce Provider if stay requested
+        p_type = (product_type or "").lower().strip()
+        if not p_type or p_type in ["stay", "hotel", "accommodation"]:
+            amadeus_adapter = AmadeusStayCommerceAdapter()
+            if amadeus_adapter.is_configured:
+                try:
+                    live_offers = await amadeus_adapter.search_offers_async(destination=destination, product_type=product_type)
+                    if live_offers:
+                        all_offers.extend(live_offers)
+                except Exception as exc:
+                    logger.warning(f"Error querying live Amadeus stay offers in dispatcher: {exc}")
+
+        # 2. Discovery Commerce Adapter
         adapter = DiscoveryCommerceAdapter(db=self.db)
-        offers = await adapter.search(destination=destination, product_type=product_type)
+        discovery_offers = await adapter.search(destination=destination, product_type=product_type)
+        all_offers.extend(discovery_offers)
 
         offers_data = []
-        for o in offers[:8]:
+        for o in all_offers[:12]:
             offers_data.append({
                 "provider": o.provider,
                 "provider_offer_id": o.provider_offer_id,
@@ -960,6 +977,7 @@ class AIToolDispatcher:
                 "price": o.price,
                 "currency": o.currency,
                 "availability_state": o.availability_state,
+                "cancellation_policy": o.cancellation_policy,
                 "booking_capability": o.booking_capability,
                 "trust_source": o.trust_source,
                 "is_live": o.is_live,

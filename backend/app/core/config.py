@@ -86,6 +86,11 @@ class Settings(BaseSettings):
     TRANSPORT_API_KEY: str = os.getenv("TRANSPORT_API_KEY", "")
     WEB_SEARCH_API_KEY: str = os.getenv("WEB_SEARCH_API_KEY", os.getenv("TAVILY_API_KEY", os.getenv("SERP_API_KEY", "")))
     WEB_SEARCH_PROVIDER: str = os.getenv("WEB_SEARCH_PROVIDER", "auto")
+    # Live Stay Commerce Provider (Amadeus Hotel Offers / Self-Service GDS)
+    AMADEUS_CLIENT_ID: str = os.getenv("AMADEUS_CLIENT_ID", os.getenv("HOTEL_PROVIDER_API_KEY", ""))
+    AMADEUS_CLIENT_SECRET: str = os.getenv("AMADEUS_CLIENT_SECRET", os.getenv("HOTEL_PROVIDER_SECRET", ""))
+    AMADEUS_ENV: str = os.getenv("AMADEUS_ENV", "test")  # "test" or "production"
+    AMADEUS_TIMEOUT: float = float(os.getenv("AMADEUS_TIMEOUT", "10.0"))
     # Image Generation & Creative Art Provider
     IMAGE_PROVIDER: str = os.getenv("IMAGE_PROVIDER", "curated")  # "openai" or "curated"
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
