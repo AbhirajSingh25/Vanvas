@@ -644,3 +644,96 @@ class ReviewModerateRequest(BaseModel):
     status: str  # published, hidden, removed
     moderation_note: Optional[str] = None
 
+
+# ----------------- Travel Commerce Foundation Schemas -----------------
+class Offer(BaseModel):
+    provider: str
+    provider_offer_id: Optional[str] = None
+    product_type: str  # stay, transport, rental, place, experience
+    title: str
+    destination: Optional[str] = None
+    price: Optional[float] = None  # None if unknown
+    currency: Optional[str] = "INR"
+    availability_state: str = "UNKNOWN"  # AVAILABLE, LIMITED, UNKNOWN, UNAVAILABLE
+    valid_until: Optional[datetime] = None
+    cancellation_policy: Optional[str] = None
+    deep_link: Optional[str] = None
+    booking_capability: str = "DISCOVERY_ONLY"  # DISCOVERY_ONLY, EXTERNAL_CHECKOUT, IN_APP_BOOKING, UNAVAILABLE
+    trust_source: str = "VANVAS_VERIFIED"
+    source_id: Optional[str] = None
+    is_live: bool = False
+
+
+class BookingItemResponse(BaseModel):
+    id: str
+    booking_id: str
+    provider_offer_id: Optional[str] = None
+    product_type: str
+    title: str
+    destination: Optional[str] = None
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    quantity: int = 1
+    unit_price: Optional[float] = None
+    total_price: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BookingEventResponse(BaseModel):
+    id: str
+    booking_id: str
+    event_type: str
+    previous_status: Optional[str] = None
+    new_status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BookingResponse(BaseModel):
+    id: str
+    user_id: str
+    trip_id: Optional[str] = None
+    provider: str
+    provider_booking_id: Optional[str] = None
+    booking_type: str
+    status: str
+    currency: str = "INR"
+    total_amount: Optional[float] = None
+    confirmation_reference: Optional[str] = None
+    checkout_url: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    items: List[BookingItemResponse] = []
+    events: List[BookingEventResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class BookingIntentCreateRequest(BaseModel):
+    trip_id: Optional[str] = None
+    provider: str = "vanvas_curated"
+    provider_offer_id: Optional[str] = None
+    booking_type: str = "stay"
+    title: Optional[str] = "Booking Item"
+    destination: Optional[str] = None
+    unit_price: Optional[float] = None
+    total_amount: Optional[float] = None
+    currency: str = "INR"
+    quantity: int = 1
+    checkout_url: Optional[str] = None
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    items: Optional[List[Dict[str, Any]]] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class BookingTransitionRequest(BaseModel):
+    target_status: str
+    reason: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+

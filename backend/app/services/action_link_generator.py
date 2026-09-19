@@ -63,7 +63,11 @@ def format_tel_url(phone: str) -> str:
 
 
 class ActionLinkGenerator:
-    """Generates strictly verified ActionLink objects for places, hotels, rentals, and transport."""
+    """Deterministic, provider-neutral action link generator for VANVAS entities."""
+
+    is_valid_url = staticmethod(is_valid_url)
+    is_valid_phone = staticmethod(is_valid_phone)
+    format_tel_url = staticmethod(format_tel_url)
 
     @classmethod
     def generate_place_action_links(
@@ -104,21 +108,23 @@ class ActionLinkGenerator:
                 "url": format_tel_url(phone),
             })
 
-        # 4. Booking link (only if genuine)
+        # 4. External Checkout / Booking link (only if genuine verified URL)
         if is_valid_url(booking_url):
             links.append({
                 "type": "booking",
-                "label": "Book Now",
+                "label": "Continue with Provider",
                 "url": booking_url.strip(),
+                "capability": "EXTERNAL_CHECKOUT",
             })
 
         # 5. OpenStreetMap POI link (if live OSM item)
-        if source == "openstreetmap" and source_id and source_id.isdigit():
+        if source == "openstreetmap" and source_id and str(source_id).isdigit():
             osm_url = f"https://www.openstreetmap.org/node/{source_id}"
             links.append({
                 "type": "provider",
                 "label": "View on OpenStreetMap",
                 "url": osm_url,
+                "capability": "DISCOVERY_ONLY",
             })
 
         return links
@@ -146,19 +152,21 @@ class ActionLinkGenerator:
                 "url": maps_url,
             })
 
-        # 2. Genuine Booking link
+        # 2. Genuine External Checkout link
         if is_valid_url(booking_url):
             links.append({
                 "type": "booking",
-                "label": "View Stay & Book",
+                "label": "Continue with Provider",
                 "url": booking_url.strip(),
+                "capability": "EXTERNAL_CHECKOUT",
             })
         elif is_valid_url(website):
-            # Fallback to official stay website
+            # Fallback to official stay website (discovery / official website)
             links.append({
                 "type": "website",
                 "label": "Official Stay Website",
                 "url": website.strip(),
+                "capability": "DISCOVERY_ONLY",
             })
 
         # 3. Verified Phone
@@ -191,12 +199,13 @@ class ActionLinkGenerator:
                 "url": maps_url,
             })
 
-        # 2. Website
+        # 2. Website / Provider handoff
         if is_valid_url(website):
             links.append({
                 "type": "website",
                 "label": "Visit Rental Site",
                 "url": website.strip(),
+                "capability": "DISCOVERY_ONLY",
             })
 
         # 3. Phone
@@ -218,8 +227,9 @@ class ActionLinkGenerator:
         links: List[Dict[str, str]] = []
         if is_valid_url(booking_url):
             links.append({
-                "type": "booking",
-                "label": f"Book with {operator_name}",
+                "type": "external_checkout",
+                "label": f"Continue with {operator_name}",
                 "url": booking_url.strip(),
+                "capability": "EXTERNAL_CHECKOUT",
             })
         return links

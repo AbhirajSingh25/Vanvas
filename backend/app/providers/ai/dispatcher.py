@@ -8,13 +8,14 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from app.models.models import (
     Destination, Place, Trip, TripMember, User, UserPreference, Expense, Itinerary, ItineraryItem,
-    Hotel, RentalOption, TransportOption, Review
+    Hotel, RentalOption, TransportOption, Review, Booking
 )
 from app.services.copilot_actions import CopilotActionService
 from app.providers.provider_factory import ProviderFactory
 from app.itinerary.clustering import haversine_distance_km
 from app.services.operating_hours_engine import OperatingHoursEngine
 from app.services.action_link_generator import ActionLinkGenerator
+from app.providers.commerce.discovery_adapter import DiscoveryCommerceAdapter
 
 logger = logging.getLogger("vanvas.ai.dispatcher")
 
@@ -45,6 +46,8 @@ class AIToolDispatcher:
             "search_transport": self._search_transport,
             "search_rentals": self._search_rentals,
             "get_place_reviews": self._get_place_reviews,
+            "search_commerce_offers": self._search_commerce_offers,
+            "get_user_bookings": self._get_user_bookings,
         }
 
 
@@ -934,5 +937,101 @@ class AIToolDispatcher:
             "reviews": recent_list,
             "trust_source": "VANVAS_COMMUNITY",
             "message": f"Verified {total} community review(s) with an average rating of {avg_rating}/5.0."
+        }
+
+    async def _search_commerce_offers(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Search verified commerce offers with explicit booking capabilities (DISCOVERY_ONLY, EXTERNAL_CHECKOUT, IN_APP_BOOKING, UNAVAILABLE)."""
+        destination = (args.get("destination") or "").strip()
+        if not destination:
+            return {"error": "Missing required argument 'destination'"}
+
+        product_type = args.get("product_type")
+        adapter = DiscoveryCommerceAdapter(db=self.db)
+        offers = await adapter.search(destination=destination, product_type=product_type)
+
+        offers_data = []
+        for o in offers[:8]:
+            offers_data.append({
+                "provider": o.provider,
+                "provider_offer_id": o.provider_offer_id,
+                "product_type": o.product_type,
+                "title": o.title,
+                "destination": o.destination,
+                "price": o.price,
+                "currency": o.currency,
+                "availability_state": o.availability_state,
+                "booking_capability": o.booking_capability,
+                "trust_source": o.trust_source,
+                "is_live": o.is_live,
+                "deep_link": o.deep_link,
+            })
+
+        return {
+            "destination": destination,
+            "product_type": product_type or "all",
+            "total_offers": len(offers_data),
+            "offers": offers_data,
+            "disclaimer": "Discovered places and providers represent verified travel information. Live booking occurs via official external checkout or verified provider platforms.",
+        }
+
+    async def _get_user_bookings(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch verified booking records for the authenticated user."""
+        if not self.user:
+            return {
+                "authenticated": False,
+                "message": "User authentication required to view booking records.",
+                "bookings": [],
+            }
+
+        booking_id = (args.get("booking_id") or "").strip()
+        query = self.db.query(Booking).filter(Booking.user_id == self.user.id)
+
+        if booking_id:
+            query = query.filter(
+                (Booking.id == booking_id) | (Booking.confirmation_reference == booking_id)
+            )
+
+        bookings = query.order_by(Booking.created_at.desc()).all()
+
+        results = []
+        for b in bookings:
+            items_data = [
+                {
+                    "item_id": item.id,
+                    "product_type": item.product_type,
+                    "title": item.title,
+                    "destination": item.destination,
+                    "quantity": item.quantity,
+                    "unit_price": item.unit_price,
+                    "total_price": item.total_price,
+                    "start_at": item.start_at.isoformat() if item.start_at else None,
+                    "end_at": item.end_at.isoformat() if item.end_at else None,
+                }
+                for item in b.items
+            ]
+            results.append({
+                "booking_id": b.id,
+                "booking_type": b.booking_type,
+                "provider": b.provider,
+                "status": b.status,
+                "currency": b.currency,
+                "total_amount": b.total_amount,
+                "confirmation_reference": b.confirmation_reference,
+                "created_at": b.created_at.isoformat() if b.created_at else None,
+                "items": items_data,
+            })
+
+        if not results:
+            msg = f"No verified bookings found matching '{booking_id}'." if booking_id else "No active or past bookings found in your VANVAS account."
+            return {
+                "total_bookings": 0,
+                "bookings": [],
+                "message": msg,
+            }
+
+        return {
+            "total_bookings": len(results),
+            "bookings": results,
+            "message": f"Retrieved {len(results)} verified booking record(s).",
         }
 

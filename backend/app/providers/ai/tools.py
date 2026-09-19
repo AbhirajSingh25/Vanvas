@@ -292,6 +292,37 @@ VANVAS_COPILOT_TOOLS: List[Dict[str, Any]] = [
             },
             "required": ["place_id"]
         }
+    },
+    {
+        "name": "search_commerce_offers",
+        "description": "Search verified provider offers and travel options with explicit booking capabilities (DISCOVERY_ONLY, EXTERNAL_CHECKOUT, IN_APP_BOOKING, UNAVAILABLE). Preserves unknown prices/availability.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "type": "string",
+                    "description": "Destination name or slug (e.g. 'manali', 'mussoorie', 'rishikesh')."
+                },
+                "product_type": {
+                    "type": "string",
+                    "description": "Optional product filter ('stay', 'transport', 'rental', 'activity', 'place')."
+                }
+            },
+            "required": ["destination"]
+        }
+    },
+    {
+        "name": "get_user_bookings",
+        "description": "Fetch verified booking history and confirmation records for the current authenticated user. Never fabricate booking confirmations.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "booking_id": {
+                    "type": "string",
+                    "description": "Optional specific booking ID or confirmation reference to check."
+                }
+            }
+        }
     }
 ]
 

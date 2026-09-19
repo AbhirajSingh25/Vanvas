@@ -515,3 +515,105 @@ export interface ReviewReportInput {
   reason: "inappropriate" | "spam" | "incorrect_info" | "other" | string;
   details?: string;
 }
+
+// ---------------------------------------------------------------------------
+// TRAVEL COMMERCE FOUNDATION TYPES
+// ---------------------------------------------------------------------------
+
+export type BookingCapability =
+  | "DISCOVERY_ONLY"
+  | "EXTERNAL_CHECKOUT"
+  | "IN_APP_BOOKING"
+  | "UNAVAILABLE";
+
+export type BookingStatus =
+  | "DISCOVERED"
+  | "SELECTED"
+  | "CHECKOUT_READY"
+  | "PENDING"
+  | "CONFIRMED"
+  | "FAILED"
+  | "CANCELLED"
+  | "REFUND_PENDING"
+  | "REFUNDED";
+
+export interface Offer {
+  provider: string;
+  provider_offer_id: string;
+  product_type: "stay" | "transport" | "rental" | "activity" | "place" | string;
+  title: string;
+  destination: string;
+  price?: number | null;
+  currency?: string | null;
+  availability_state: "AVAILABLE" | "LIMITED" | "UNAVAILABLE" | "UNKNOWN" | string;
+  valid_until?: string | null;
+  cancellation_policy?: string | null;
+  deep_link?: string | null;
+  booking_capability: BookingCapability;
+  trust_source: string;
+  source_id?: string | null;
+  is_live: boolean;
+  metadata?: Record<string, any>;
+}
+
+export interface BookingItem {
+  id: string;
+  booking_id: string;
+  provider_offer_id?: string | null;
+  product_type: string;
+  title: string;
+  destination: string;
+  start_at?: string | null;
+  end_at?: string | null;
+  quantity: number;
+  unit_price?: number | null;
+  total_price?: number | null;
+  metadata?: Record<string, any>;
+}
+
+export interface BookingEvent {
+  id: string;
+  booking_id: string;
+  event_type: string;
+  previous_status?: string | null;
+  new_status: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface Booking {
+  id: string;
+  user_id: string;
+  trip_id?: string | null;
+  provider: string;
+  provider_booking_id?: string | null;
+  booking_type: string;
+  status: BookingStatus;
+  currency: string;
+  total_amount?: number | null;
+  confirmation_reference?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  items: BookingItem[];
+  events?: BookingEvent[];
+}
+
+export interface BookingIntentInput {
+  trip_id?: string;
+  provider: string;
+  booking_type: string;
+  currency?: string;
+  total_amount?: number;
+  items: Array<{
+    provider_offer_id?: string;
+    product_type: string;
+    title: string;
+    destination: string;
+    quantity?: number;
+    unit_price?: number;
+    total_price?: number;
+    start_at?: string;
+    end_at?: string;
+    metadata?: Record<string, any>;
+  }>;
+}

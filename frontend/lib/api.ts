@@ -3,7 +3,8 @@ import {
   BudgetSummary, Expense, GroupSummary, ChecklistItem,
   ImHereResponse, ArrivalOptimizerResponse, CopilotResponse, CopilotChatResponse,
   AdminStats, User, UserPreferences, TripInvitePreview, TripMemberItem,
-  Review, ReviewAggregate, ReviewCreateInput, ReviewReportInput
+  Review, ReviewAggregate, ReviewCreateInput, ReviewReportInput,
+  Booking, Offer, BookingIntentInput
 } from "@/types";
 
 function getApiBaseUrl(): string {
@@ -492,5 +493,51 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     });
+  },
+
+  // ---------------------------------------------------------------------------
+  // TRAVEL COMMERCE FOUNDATION
+  // ---------------------------------------------------------------------------
+
+  async getBookings(tripId?: string): Promise<Booking[]> {
+    const query = tripId ? `?trip_id=${encodeURIComponent(tripId)}` : "";
+    return fetchApi(`/bookings${query}`);
+  },
+
+  async getBooking(bookingId: string): Promise<Booking> {
+    return fetchApi(`/bookings/${encodeURIComponent(bookingId)}`);
+  },
+
+  async createBookingIntent(data: BookingIntentInput): Promise<Booking> {
+    return fetchApi("/bookings/intent", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async transitionBooking(
+    bookingId: string,
+    targetStatus: string,
+    reason?: string,
+    metadata?: Record<string, any>
+  ): Promise<Booking> {
+    return fetchApi(`/bookings/${encodeURIComponent(bookingId)}/transition`, {
+      method: "POST",
+      body: JSON.stringify({
+        target_status: targetStatus,
+        reason,
+        metadata,
+      }),
+    });
+  },
+
+  async getOffers(destination: string, productType?: string): Promise<{ destination: string; total_offers: number; offers: Offer[]; disclaimer: string }> {
+    const params = new URLSearchParams({ destination });
+    if (productType) params.set("product_type", productType);
+    return fetchApi(`/offers?${params.toString()}`);
+  },
+
+  async checkOfferAvailability(offerId: string): Promise<{ offer_id: string; provider: string; availability_state: string; is_available: boolean; valid_until: string | null; message: string }> {
+    return fetchApi(`/offers/${encodeURIComponent(offerId)}/availability`);
   }
 };

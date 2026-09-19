@@ -29,6 +29,7 @@ class User(Base):
     saved_places = relationship("SavedPlace", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
+    bookings = relationship("Booking", back_populates="user", cascade="all, delete-orphan")
 
 class UserPreference(Base):
     __tablename__ = "user_preferences"
@@ -212,6 +213,7 @@ class Trip(Base):
     expenses = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
     checklist_items = relationship("ChecklistItem", back_populates="trip", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="trip")
+    bookings = relationship("Booking", back_populates="trip", cascade="all, delete-orphan")
 
 class TripMember(Base):
     __tablename__ = "trip_members"
@@ -419,4 +421,65 @@ class ReviewReport(Base):
     # Relationships
     review = relationship("Review", back_populates="reports")
     reporter = relationship("User")
+
+
+# ----------------- Travel Commerce Foundation Models -----------------
+class Booking(Base):
+    __tablename__ = "bookings"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=True, index=True)
+    provider = Column(String(100), nullable=False)  # e.g., "vanvas_curated", "openstreetmap", "partner_direct"
+    provider_booking_id = Column(String(255), nullable=True)
+    booking_type = Column(String(50), nullable=False)  # stay, transport, rental, place, experience
+    status = Column(String(50), default="DISCOVERED", index=True)
+    currency = Column(String(10), default="INR")
+    total_amount = Column(Float, nullable=True)
+    confirmation_reference = Column(String(100), nullable=True)
+    checkout_url = Column(String(1000), nullable=True)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="bookings")
+    trip = relationship("Trip", back_populates="bookings")
+    items = relationship("BookingItem", back_populates="booking", cascade="all, delete-orphan")
+    events = relationship("BookingEvent", back_populates="booking", cascade="all, delete-orphan", order_by="BookingEvent.created_at")
+
+
+class BookingItem(Base):
+    __tablename__ = "booking_items"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    booking_id = Column(String(36), ForeignKey("bookings.id"), nullable=False, index=True)
+    provider_offer_id = Column(String(255), nullable=True)
+    product_type = Column(String(50), nullable=False)
+    title = Column(String(255), nullable=False)
+    destination = Column(String(255), nullable=True)
+    start_at = Column(DateTime, nullable=True)
+    end_at = Column(DateTime, nullable=True)
+    quantity = Column(Integer, default=1)
+    unit_price = Column(Float, nullable=True)
+    total_price = Column(Float, nullable=True)
+    metadata_json = Column(Text, nullable=True)
+
+    # Relationships
+    booking = relationship("Booking", back_populates="items")
+
+
+class BookingEvent(Base):
+    __tablename__ = "booking_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    booking_id = Column(String(36), ForeignKey("bookings.id"), nullable=False, index=True)
+    event_type = Column(String(100), nullable=False)
+    previous_status = Column(String(50), nullable=True)
+    new_status = Column(String(50), nullable=False)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    booking = relationship("Booking", back_populates="events")
 
