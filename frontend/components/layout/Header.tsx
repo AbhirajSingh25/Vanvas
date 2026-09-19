@@ -1,21 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/context/AuthContext";
-import { Compass, Calendar, MapPin, Sparkles, Menu, X, SlidersHorizontal, User as UserIcon } from "lucide-react";
-import { ProfilePreferencesModal } from "@/components/profile/ProfilePreferencesModal";
+import {
+  Compass, Calendar, MapPin, Sparkles, Menu, X, SlidersHorizontal,
+  User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield
+} from "lucide-react";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [askVanvasOpen, setAskVanvasOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    setProfileDropdownOpen(false);
+    setMobileMenuOpen(false);
+    logout();
+    router.push("/login");
+  };
 
   const navLinks = [
     { name: "Explore", devanagari: "खोज", href: "/explore", icon: Compass },
@@ -23,6 +45,15 @@ export const Header: React.FC = () => {
     { name: "Plan", devanagari: "योजना", href: "/plan", icon: Sparkles },
     { name: "Nearby", devanagari: "आस-पास", href: "/nearby", icon: MapPin },
   ];
+
+  const getInitials = (name?: string) => {
+    if (!name) return "V";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+    }
+    return name.charAt(0).toUpperCase();
+  };
 
   return (
     <>
@@ -68,19 +99,107 @@ export const Header: React.FC = () => {
               <span className="font-devanagari text-[10px] text-[#B49252] font-normal">पूछें</span>
             </button>
 
-            {/* User Profile Pill - Opens Preferences Editor */}
-            <button
-              type="button"
-              onClick={() => setProfileModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs text-[#20211D] hover:border-[#173B32] hover:shadow-sm transition-all group cursor-pointer"
-              title="Edit Profile & Travel Preferences"
-            >
-              <div className="w-6 h-6 rounded-full bg-[#173B32] group-hover:bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-[10px] transition-colors">
-                {user?.full_name?.charAt(0) || "T"}
+            {/* Authenticated User Menu vs Guest Login Button */}
+            {user ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs text-[#20211D] hover:border-[#173B32] hover:shadow-sm transition-all group cursor-pointer"
+                  aria-expanded={profileDropdownOpen}
+                  aria-haspopup="true"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#173B32] group-hover:bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-[10px] transition-colors border border-[#B49252]/40">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.full_name} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      getInitials(user.full_name)
+                    )}
+                  </div>
+                  <span className="font-medium max-w-[120px] truncate">{user.full_name}</span>
+                  <ChevronDown className={`w-3 h-3 text-[#173B32]/70 transition-transform ${profileDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {/* Profile Dropdown Menu */}
+                {profileDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl py-2 z-50 animate-fadeIn">
+                    {/* User Header */}
+                    <div className="px-4 py-3 border-b border-[#D8CBB2]/60">
+                      <div className="font-serif font-bold text-sm text-[#173B32] truncate">
+                        {user.full_name}
+                      </div>
+                      <div className="text-[11px] text-[#20211D]/60 truncate mt-0.5">
+                        {user.email}
+                      </div>
+                      <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#173B32]/10 text-[10px] font-bold text-[#173B32] uppercase tracking-wider">
+                        <Shield className="w-2.5 h-2.5" />
+                        <span>{user.role === "admin" ? "Admin" : "Verified Traveler"}</span>
+                      </div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-1">
+                      <Link
+                        href="/profile"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
+                      >
+                        <UserIcon className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>Profile & Travel Journal</span>
+                      </Link>
+
+                      <Link
+                        href="/profile?tab=saved"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
+                      >
+                        <Bookmark className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>Saved Places & Gems</span>
+                      </Link>
+
+                      <Link
+                        href="/trips"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>My Expeditions</span>
+                      </Link>
+
+                      <Link
+                        href="/settings"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>Account & Settings</span>
+                      </Link>
+                    </div>
+
+                    {/* Logout Footer */}
+                    <div className="pt-1 border-t border-[#D8CBB2]/60">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-[#B65E3C] hover:bg-[#B65E3C]/10 transition-colors font-semibold text-left cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5 text-[#B65E3C]" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <span className="font-medium max-w-[110px] truncate">{user?.full_name || "Traveller"}</span>
-              <SlidersHorizontal className="w-3 h-3 text-[#B49252] opacity-70 group-hover:opacity-100 transition-opacity" />
-            </button>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs font-semibold text-[#173B32] hover:bg-[#E5D5BA] hover:shadow-sm transition-all"
+              >
+                <LogIn className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>Sign In</span>
+                <span className="font-devanagari text-[10px] text-[#B49252] font-normal">लॉगिन</span>
+              </Link>
+            )}
 
             {/* Primary Terracotta CTA */}
             <Link
@@ -104,7 +223,7 @@ export const Header: React.FC = () => {
 
         {/* Mobile Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-b border-[#D8CBB2] bg-[#FAF4E8] px-4 pt-3 pb-6 space-y-2 animate-fadeIn">
+          <div className="md:hidden border-b border-[#D8CBB2] bg-[#FAF4E8] px-4 pt-3 pb-6 space-y-3 animate-fadeIn">
             {/* Ask VANVAS in Mobile Drawer */}
             <button
               type="button"
@@ -112,7 +231,7 @@ export const Header: React.FC = () => {
                 setMobileMenuOpen(false);
                 setAskVanvasOpen(true);
               }}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#173B32] text-[#FAF7F0] font-semibold text-sm shadow-sm"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#173B32] text-[#FAF7F0] font-semibold text-sm shadow-sm cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#B49252]" />
@@ -121,53 +240,106 @@ export const Header: React.FC = () => {
               <span className="font-devanagari text-xs text-[#B49252]">पूछें</span>
             </button>
 
-            {/* User Profile Pill in Mobile Drawer */}
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setProfileModalOpen(true);
-              }}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#FAF4E8] border border-[#D8CBB2] text-sm font-semibold text-[#173B32] hover:bg-[#E5D5BA]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-xs">
-                  {user?.full_name?.charAt(0) || "T"}
+            {/* Mobile User Identity Card */}
+            {user ? (
+              <div className="p-3 bg-[#FAF7F0] rounded-2xl border border-[#D8CBB2] space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-xs">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.full_name} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      getInitials(user.full_name)
+                    )}
+                  </div>
+                  <div className="text-left min-w-0 flex-1">
+                    <div className="text-xs font-bold text-[#173B32] truncate">{user.full_name}</div>
+                    <div className="text-[10px] text-[#20211D]/65 truncate">{user.email}</div>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <div className="text-xs font-bold text-[#173B32]">{user?.full_name || "Traveller"}</div>
-                  <div className="text-[10px] text-[#20211D]/65">Travel Preferences & Identity</div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#D8CBB2]/50 text-xs">
+                  <Link
+                    href="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-[#D8CBB2] font-semibold text-[#173B32]"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-[#B49252]" />
+                    <span>Profile</span>
+                  </Link>
+                  <Link
+                    href="/settings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-[#D8CBB2] font-semibold text-[#173B32]"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-[#B49252]" />
+                    <span>Settings</span>
+                  </Link>
                 </div>
               </div>
-              <span className="font-devanagari text-xs text-[#B49252] font-semibold">मेरी पसंद</span>
-            </button>
-
-            {navLinks.map((item) => {
-              const isActive = pathname === item.href;
-              return (
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
                 <Link
-                  key={item.name}
-                  href={item.href}
+                  href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold ${
-                    isActive ? "bg-[#173B32] text-[#EFE5D2]" : "text-[#20211D] hover:bg-[#E5D5BA]"
-                  }`}
+                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white border border-[#D8CBB2] text-xs font-bold text-[#173B32]"
                 >
-                  <span>{item.name}</span>
-                  <span className="font-devanagari text-xs opacity-70">({item.devanagari})</span>
+                  <LogIn className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>Sign In</span>
                 </Link>
-              );
-            })}
-            <div className="pt-3">
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#173B32] text-xs font-bold text-[#EFE5D2]"
+                >
+                  <span>Join VANVAS</span>
+                </Link>
+              </div>
+            )}
+
+            {/* Navigation Links */}
+            <div className="space-y-1">
+              {navLinks.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-semibold ${
+                      isActive ? "bg-[#173B32] text-[#EFE5D2]" : "text-[#20211D] hover:bg-[#E5D5BA]"
+                    }`}
+                  >
+                    <span>{item.name}</span>
+                    <span className="font-devanagari text-[11px] opacity-70">({item.devanagari})</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Mobile Plan Button */}
+            <div className="pt-2">
               <Link
                 href="/plan"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#B65E3C] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-md"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#B65E3C] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-md"
               >
                 <span>Plan My Trip</span>
-                <span className="font-devanagari text-sm">चलो निकलते हैं</span>
+                <span className="font-devanagari text-xs">चलो निकलते हैं</span>
               </Link>
             </div>
+
+            {/* Mobile Logout if authenticated */}
+            {user && (
+              <div className="pt-2 border-t border-[#D8CBB2]/60">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-[#B65E3C] hover:bg-[#B65E3C]/10 rounded-xl"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out of VANVAS</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -176,12 +348,6 @@ export const Header: React.FC = () => {
       <FloatingCopilotTrigger
         isOpen={askVanvasOpen}
         onClick={() => setAskVanvasOpen(true)}
-      />
-
-      {/* Global Profile Preferences Modal */}
-      <ProfilePreferencesModal
-        isOpen={profileModalOpen}
-        onClose={() => setProfileModalOpen(false)}
       />
 
       {/* Global Ask VANVAS AI Copilot Modal */}

@@ -2,7 +2,8 @@ import {
   Trip, TripSummary, Destination, Place, Hotel, RentalOption, TransportOption,
   BudgetSummary, Expense, GroupSummary, ChecklistItem,
   ImHereResponse, ArrivalOptimizerResponse, CopilotResponse, CopilotChatResponse,
-  AdminStats, User, UserPreferences, TripInvitePreview, TripMemberItem,
+  AdminStats, User, UserPreferences, UserStats, PasswordChangePayload, UserDataExport,
+  TripInvitePreview, TripMemberItem,
   Review, ReviewAggregate, ReviewCreateInput, ReviewReportInput,
   Booking, Offer, BookingIntentInput
 } from "@/types";
@@ -64,7 +65,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?
 }
 
 export const api = {
-  // Auth
+  // Auth & Profile
   async login(email: string, password: string): Promise<{ access_token: string; user: User }> {
     return fetchApi("/auth/login", {
       method: "POST",
@@ -83,6 +84,10 @@ export const api = {
     return fetchApi("/auth/me");
   },
 
+  async getProfileStats(): Promise<UserStats> {
+    return fetchApi("/auth/profile/stats");
+  },
+
   async updateProfile(data: {
     full_name?: string;
     avatar_url?: string;
@@ -94,6 +99,21 @@ export const api = {
     accommodation_preference?: string;
     transport_preference?: string;
     companion_style?: string;
+    language?: string;
+    region?: string;
+    currency?: string;
+    theme?: string;
+    location_mode?: string;
+    notify_trip_reminders?: boolean;
+    notify_trip_changes?: boolean;
+    notify_booking_updates?: boolean;
+    notify_suggestions?: boolean;
+    notify_copilot_updates?: boolean;
+    notify_announcements?: boolean;
+    ai_copilot_enabled?: boolean;
+    ai_personalized_recommendations?: boolean;
+    ai_use_travel_preferences?: boolean;
+    ai_use_trip_context?: boolean;
   }): Promise<User> {
     return fetchApi("/auth/profile", {
       method: "PUT",
@@ -101,10 +121,38 @@ export const api = {
     });
   },
 
+  async getPreferences(): Promise<UserPreferences> {
+    return fetchApi("/auth/preferences");
+  },
+
   async updatePreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
     return fetchApi("/auth/preferences", {
       method: "PUT",
       body: JSON.stringify(preferences),
+    });
+  },
+
+  async changePassword(payload: PasswordChangePayload): Promise<{ message: string }> {
+    return fetchApi("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async logoutSession(): Promise<{ message: string }> {
+    return fetchApi("/auth/logout", {
+      method: "POST",
+    });
+  },
+
+  async exportUserData(): Promise<UserDataExport> {
+    return fetchApi("/auth/export");
+  },
+
+  async deleteAccount(payload?: { password?: string; confirmation?: string }): Promise<{ message: string; status: string }> {
+    return fetchApi("/auth/account", {
+      method: "DELETE",
+      body: JSON.stringify(payload || {}),
     });
   },
 

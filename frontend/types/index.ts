@@ -17,6 +17,54 @@ export interface UserPreferences {
   accommodation_preference?: string;
   transport_preference?: string;
   companion_style?: string;
+  language?: string;
+  region?: string;
+  currency?: string;
+  theme?: string;
+  location_mode?: string;
+  notify_trip_reminders?: boolean;
+  notify_trip_changes?: boolean;
+  notify_booking_updates?: boolean;
+  notify_suggestions?: boolean;
+  notify_copilot_updates?: boolean;
+  notify_announcements?: boolean;
+  ai_copilot_enabled?: boolean;
+  ai_personalized_recommendations?: boolean;
+  ai_use_travel_preferences?: boolean;
+  ai_use_trip_context?: boolean;
+}
+
+export interface UserStats {
+  saved_places_count: number;
+  saved_trips_count: number;
+  upcoming_trips_count: number;
+  completed_trips_count: number;
+  reviews_count: number;
+  bookings_count: number;
+  member_since: string;
+}
+
+export interface PasswordChangePayload {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+export interface UserDataExport {
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    role: string;
+    avatar_url?: string;
+    created_at?: string;
+  };
+  preferences?: Record<string, any>;
+  trips: any[];
+  saved_places: any[];
+  reviews: any[];
+  bookings: any[];
+  exported_at: string;
 }
 
 export interface Destination {

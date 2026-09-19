@@ -36,15 +36,42 @@ class UserPreference(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), unique=True, nullable=False)
-    preferred_travel_style = Column(String(50), default="Balanced")  # Budget, Balanced, Comfort, Premium
+    preferred_travel_style = Column(String(50), default="Balanced")  # Budget, Balanced, Premium / Relaxed, Balanced, Packed
     wake_up_preference = Column(String(50), default="Normal")  # Early, Normal, Late
-    activity_intensity = Column(String(50), default="Balanced")  # Relaxed, Balanced, Packed
+    activity_intensity = Column(String(50), default="Balanced")  # Relaxed, Balanced, Packed / Slow, Moderate, Fast
     dietary_preference = Column(String(50), default="All")  # All, Veg, Non-Veg, Vegan, Local Dhabas
     interests = Column(Text, default="Nature,Cafés,Adventure,Food")  # Comma-separated tags
     accommodation_preference = Column(String(100), default="Riverside & Forest Stays")  # Riverside, Boutique, Homestay, etc.
-    transport_preference = Column(String(100), default="Volvo Bus")  # Volvo Bus, Self-Drive, Train, Flight, Any
-    companion_style = Column(String(50), default="Solo")  # Solo, Couple, Friends, Family
+    transport_preference = Column(String(100), default="Volvo Bus")  # Walking, Public transport, Cab, Rental, Volvo Bus, Self-Drive 4x4, Train, Flight, Mixed
+    companion_style = Column(String(50), default="Solo")  # Solo, Couple, Friends, Family, Mixed
+    
+    # Regional & Localization
+    language = Column(String(20), default="en")  # en, hi
+    region = Column(String(50), default="India")  # India
+    currency = Column(String(10), default="INR")  # INR, USD, EUR, GBP
+    
+    # Theme & Appearance
+    theme = Column(String(20), default="system")  # light, dark, system
+    
+    # Location & Privacy Preferences
+    location_mode = Column(String(50), default="ask_every_time")  # ask_every_time, while_using, never
+    
+    # Notification Preferences
+    notify_trip_reminders = Column(Boolean, default=True)
+    notify_trip_changes = Column(Boolean, default=True)
+    notify_booking_updates = Column(Boolean, default=True)
+    notify_suggestions = Column(Boolean, default=True)
+    notify_copilot_updates = Column(Boolean, default=False)
+    notify_announcements = Column(Boolean, default=False)
+    
+    # AI & Copilot Preferences
+    ai_copilot_enabled = Column(Boolean, default=True)
+    ai_personalized_recommendations = Column(Boolean, default=True)
+    ai_use_travel_preferences = Column(Boolean, default=True)
+    ai_use_trip_context = Column(Boolean, default=True)
+
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="preferences")
 

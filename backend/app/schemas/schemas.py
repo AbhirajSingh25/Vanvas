@@ -23,6 +23,21 @@ class UserPreferenceSchema(BaseModel):
     accommodation_preference: Optional[str] = "Riverside & Forest Stays"
     transport_preference: Optional[str] = "Volvo Bus"
     companion_style: Optional[str] = "Solo"
+    language: Optional[str] = "en"
+    region: Optional[str] = "India"
+    currency: Optional[str] = "INR"
+    theme: Optional[str] = "system"
+    location_mode: Optional[str] = "ask_every_time"
+    notify_trip_reminders: Optional[bool] = True
+    notify_trip_changes: Optional[bool] = True
+    notify_booking_updates: Optional[bool] = True
+    notify_suggestions: Optional[bool] = True
+    notify_copilot_updates: Optional[bool] = False
+    notify_announcements: Optional[bool] = False
+    ai_copilot_enabled: Optional[bool] = True
+    ai_personalized_recommendations: Optional[bool] = True
+    ai_use_travel_preferences: Optional[bool] = True
+    ai_use_trip_context: Optional[bool] = True
 
     class Config:
         from_attributes = True
@@ -38,6 +53,48 @@ class UserProfileUpdateRequest(BaseModel):
     accommodation_preference: Optional[str] = None
     transport_preference: Optional[str] = None
     companion_style: Optional[str] = None
+    language: Optional[str] = None
+    region: Optional[str] = None
+    currency: Optional[str] = None
+    theme: Optional[str] = None
+    location_mode: Optional[str] = None
+    notify_trip_reminders: Optional[bool] = None
+    notify_trip_changes: Optional[bool] = None
+    notify_booking_updates: Optional[bool] = None
+    notify_suggestions: Optional[bool] = None
+    notify_copilot_updates: Optional[bool] = None
+    notify_announcements: Optional[bool] = None
+    ai_copilot_enabled: Optional[bool] = None
+    ai_personalized_recommendations: Optional[bool] = None
+    ai_use_travel_preferences: Optional[bool] = None
+    ai_use_trip_context: Optional[bool] = None
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6)
+    confirm_password: str = Field(..., min_length=6)
+
+class AccountDeleteRequest(BaseModel):
+    password: Optional[str] = None
+    confirmation: Optional[str] = None
+
+class UserStatsResponse(BaseModel):
+    saved_places_count: int = 0
+    saved_trips_count: int = 0
+    upcoming_trips_count: int = 0
+    completed_trips_count: int = 0
+    reviews_count: int = 0
+    bookings_count: int = 0
+    member_since: datetime
+
+class UserDataExportResponse(BaseModel):
+    user: Dict[str, Any]
+    preferences: Optional[Dict[str, Any]] = None
+    trips: List[Dict[str, Any]] = []
+    saved_places: List[Dict[str, Any]] = []
+    reviews: List[Dict[str, Any]] = []
+    bookings: List[Dict[str, Any]] = []
+    exported_at: datetime
 
 class UserResponse(UserBase):
     id: str

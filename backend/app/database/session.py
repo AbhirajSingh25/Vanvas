@@ -26,10 +26,31 @@ def ensure_sqlite_schema(eng=engine):
             result = conn.execute(text("PRAGMA table_info(user_preferences)"))
             existing_cols = {row[1] for row in result.fetchall()}
             if existing_cols:
-                if "accommodation_preference" not in existing_cols:
-                    conn.execute(text("ALTER TABLE user_preferences ADD COLUMN accommodation_preference VARCHAR(100) DEFAULT 'Riverside & Forest Stays'"))
-                if "transport_preference" not in existing_cols:
-                    conn.execute(text("ALTER TABLE user_preferences ADD COLUMN transport_preference VARCHAR(100) DEFAULT 'Volvo Bus'"))
+                cols_to_add = {
+                    "accommodation_preference": "VARCHAR(100) DEFAULT 'Riverside & Forest Stays'",
+                    "transport_preference": "VARCHAR(100) DEFAULT 'Volvo Bus'",
+                    "companion_style": "VARCHAR(50) DEFAULT 'Solo'",
+                    "language": "VARCHAR(20) DEFAULT 'en'",
+                    "region": "VARCHAR(50) DEFAULT 'India'",
+                    "currency": "VARCHAR(10) DEFAULT 'INR'",
+                    "theme": "VARCHAR(20) DEFAULT 'system'",
+                    "location_mode": "VARCHAR(50) DEFAULT 'ask_every_time'",
+                    "notify_trip_reminders": "BOOLEAN DEFAULT 1",
+                    "notify_trip_changes": "BOOLEAN DEFAULT 1",
+                    "notify_booking_updates": "BOOLEAN DEFAULT 1",
+                    "notify_suggestions": "BOOLEAN DEFAULT 1",
+                    "notify_copilot_updates": "BOOLEAN DEFAULT 0",
+                    "notify_announcements": "BOOLEAN DEFAULT 0",
+                    "ai_copilot_enabled": "BOOLEAN DEFAULT 1",
+                    "ai_personalized_recommendations": "BOOLEAN DEFAULT 1",
+                    "ai_use_travel_preferences": "BOOLEAN DEFAULT 1",
+                    "ai_use_trip_context": "BOOLEAN DEFAULT 1",
+                    "created_at": "DATETIME",
+                    "updated_at": "DATETIME",
+                }
+                for col, col_type in cols_to_add.items():
+                    if col not in existing_cols:
+                        conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col} {col_type}"))
             # Ensure trip_invites table exists if missing in SQLite
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS trip_invites (
