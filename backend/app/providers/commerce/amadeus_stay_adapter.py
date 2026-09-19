@@ -501,17 +501,15 @@ class AmadeusStayCommerceAdapter(BaseCommerceProvider):
 
         # Deep link / Booking capability
         deep_link: Optional[str] = None
-        raw_self_url = raw_offer.get("self")
         raw_booking_url = raw_offer.get("bookingUrl") or (
             hotel_info.get("contact", {}).get("bookingUrl") if isinstance(hotel_info.get("contact"), dict) else None
         )
 
-        candidate_url = raw_booking_url or raw_self_url
-        if candidate_url and ActionLinkGenerator.is_valid_url(candidate_url):
-            deep_link = candidate_url
+        if raw_booking_url and ActionLinkGenerator.is_valid_url(raw_booking_url):
+            deep_link = raw_booking_url
             booking_cap = "EXTERNAL_CHECKOUT"
         else:
-            booking_cap = "EXTERNAL_CHECKOUT" if parsed_price is not None else "DISCOVERY_ONLY"
+            booking_cap = "DISCOVERY_ONLY"
 
         return Offer(
             provider=self.provider_name,
