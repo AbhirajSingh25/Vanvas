@@ -586,12 +586,16 @@ class ConversationSchema(BaseModel):
 class ReviewCreate(BaseModel):
     rating: float  # 1.0 to 5.0
     title: Optional[str] = None
-    body: str
+    body: Optional[str] = None
+    comment: Optional[str] = None
+    place_id: Optional[str] = None
+    travel_date: Optional[str] = None
 
 class ReviewUpdate(BaseModel):
     rating: Optional[float] = None
     title: Optional[str] = None
     body: Optional[str] = None
+    comment: Optional[str] = None
 
 class ReviewResponse(BaseModel):
     id: str
@@ -602,7 +606,10 @@ class ReviewResponse(BaseModel):
     rating: float
     title: Optional[str] = None
     body: str
+    comment: Optional[str] = None
     status: str
+    moderation_note: Optional[str] = None
+    reports: List[ReviewReportResponse] = []
     created_at: datetime
     updated_at: Optional[datetime] = None
     trust_source: str = "VANVAS_COMMUNITY"
@@ -618,7 +625,9 @@ class ReviewAggregateResponse(BaseModel):
     trust_source: str = "VANVAS_COMMUNITY"
 
 class ReviewReportCreate(BaseModel):
+    review_id: Optional[str] = None
     reason: str
+    details: Optional[str] = None
 
 class ReviewReportResponse(BaseModel):
     id: str

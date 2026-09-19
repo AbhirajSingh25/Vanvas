@@ -428,37 +428,67 @@ export const api = {
     return fetchApi(`/search/unified?${params.toString()}`);
   },
 
-  // Authentic VANVAS Community Reviews
+  // Authentic VANVAS Community Reviews & Moderation
   async getPlaceReviews(placeId: string): Promise<Review[]> {
-    return fetchApi(`/reviews/place/${encodeURIComponent(placeId)}`);
+    try {
+      const res = await fetchApi<ReviewAggregate>(`/places/${encodeURIComponent(placeId)}/reviews`);
+      return res.reviews || [];
+    } catch {
+      return [];
+    }
   },
 
   async getPlaceReviewAggregate(placeId: string): Promise<ReviewAggregate> {
-    return fetchApi(`/reviews/place/${encodeURIComponent(placeId)}/aggregate`);
+    return fetchApi(`/places/${encodeURIComponent(placeId)}/reviews`);
   },
 
   async createReview(data: ReviewCreateInput): Promise<Review> {
-    return fetchApi("/reviews", {
+    const placeId = data.place_id;
+    return fetchApi(`/places/${encodeURIComponent(placeId)}/reviews`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        rating: data.rating,
+        title: data.title,
+        body: data.body || data.comment,
+        place_id: data.place_id,
+        travel_date: data.travel_date,
+      }),
     });
   },
 
   async updateReview(reviewId: string, data: Partial<ReviewCreateInput>): Promise<Review> {
     return fetchApi(`/reviews/${encodeURIComponent(reviewId)}`, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        rating: data.rating,
+        title: data.title,
+        body: data.body || data.comment,
+      }),
     });
   },
 
-  async deleteReview(reviewId: string): Promise<{ message: string; review_id: string }> {
+  async deleteReview(reviewId: string): Promise<{ message: string; id: string }> {
     return fetchApi(`/reviews/${encodeURIComponent(reviewId)}`, {
       method: "DELETE",
     });
   },
 
-  async reportReview(data: ReviewReportInput): Promise<{ message: string; report_id: string }> {
-    return fetchApi("/reviews/reports", {
+  async reportReview(data: ReviewReportInput): Promise<{ id: string; review_id: string; reason: string; status: string; created_at: string }> {
+    return fetchApi(`/reviews/${encodeURIComponent(data.review_id)}/report`, {
+      method: "POST",
+      body: JSON.stringify({
+        reason: data.reason,
+        details: data.details,
+      }),
+    });
+  },
+
+  async getReportedReviews(): Promise<Review[]> {
+    return fetchApi("/admin/reviews/reported");
+  },
+
+  async moderateReview(reviewId: string, data: { status: "published" | "hidden" | "removed"; moderation_note?: string }): Promise<Review> {
+    return fetchApi(`/admin/reviews/${encodeURIComponent(reviewId)}/moderate`, {
       method: "POST",
       body: JSON.stringify(data),
     });

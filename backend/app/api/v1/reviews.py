@@ -16,6 +16,17 @@ router = APIRouter()
 def _to_review_response(review: Review) -> ReviewResponse:
     user_name = review.user.full_name if review.user else "VANVAS Traveller"
     user_avatar = review.user.avatar_url if review.user else None
+    report_items = []
+    if hasattr(review, "reports") and review.reports:
+        for rep in review.reports:
+            report_items.append(ReviewReportResponse(
+                id=rep.id,
+                review_id=rep.review_id,
+                reporter_user_id=rep.reporter_user_id,
+                reason=rep.reason,
+                status=rep.status,
+                created_at=rep.created_at,
+            ))
     return ReviewResponse(
         id=review.id,
         place_id=review.place_id,
@@ -25,7 +36,10 @@ def _to_review_response(review: Review) -> ReviewResponse:
         rating=review.rating,
         title=review.title,
         body=review.body,
+        comment=review.body,
         status=review.status,
+        moderation_note=review.moderation_note,
+        reports=report_items,
         created_at=review.created_at,
         updated_at=review.updated_at,
         trust_source="VANVAS_COMMUNITY",
@@ -42,19 +56,20 @@ def create_place_review(
     """
     Creates a new authentic community review for a verified or live destination place.
     """
-    if not place_id or not place_id.strip():
+    target_place_id = (place_id or req.place_id or "").strip()
+    if not target_place_id:
         raise HTTPException(status_code=400, detail="A valid place reference is required.")
 
     if req.rating < 1.0 or req.rating > 5.0:
         raise HTTPException(status_code=400, detail="Rating must be between 1.0 and 5.0.")
 
-    clean_body = (req.body or "").strip()
+    clean_body = (req.body or req.comment or "").strip()
     if len(clean_body) < 5 or len(clean_body) > 2000:
         raise HTTPException(status_code=400, detail="Review body must be between 5 and 2000 characters.")
 
     review = Review(
         user_id=current_user.id,
-        place_id=place_id.strip(),
+        place_id=target_place_id,
         rating=round(float(req.rating), 1),
         title=req.title.strip() if req.title else None,
         body=clean_body,
@@ -67,6 +82,20 @@ def create_place_review(
     db.refresh(review)
 
     return _to_review_response(review)
+
+
+@router.post("/reviews", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
+def create_review_direct(
+    req: ReviewCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Alternative route for creating a review with place_id in payload.
+    """
+    if not req.place_id or not req.place_id.strip():
+        raise HTTPException(status_code=400, detail="A valid place reference is required.")
+    return create_place_review(place_id=req.place_id, req=req, db=db, current_user=current_user)
 
 
 @router.get("/places/{place_id}/reviews", response_model=ReviewAggregateResponse)
@@ -217,6 +246,20 @@ def report_review(
         status=report.status,
         created_at=report.created_at,
     )
+
+
+@router.post("/reviews/reports", response_model=ReviewReportResponse, status_code=status.HTTP_201_CREATED)
+def report_review_direct(
+    req: ReviewReportCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Alternative route for reporting a review with review_id in payload.
+    """
+    if not req.review_id or not req.review_id.strip():
+        raise HTTPException(status_code=400, detail="A valid review_id is required.")
+    return report_review(review_id=req.review_id, req=req, db=db, current_user=current_user)
 
 
 # ----------------- Admin Moderation Endpoints -----------------

@@ -464,18 +464,31 @@ export interface AdminStats {
   }>;
 }
 
+export interface ReviewReportItem {
+  id: string;
+  review_id: string;
+  reporter_user_id: string;
+  reason: string;
+  status: string;
+  created_at: string;
+}
+
 export interface Review {
   id: string;
   place_id: string;
   user_id: string;
   user_name: string;
+  user_avatar?: string | null;
   rating: number;
   title?: string | null;
+  body?: string;
   comment: string;
   travel_date?: string | null;
   status: "published" | "pending" | "hidden" | "reported" | "removed";
+  moderation_note?: string | null;
+  reports?: ReviewReportItem[];
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
   trust_source: "VANVAS_COMMUNITY";
 }
 
@@ -483,7 +496,8 @@ export interface ReviewAggregate {
   place_id: string;
   total_reviews: number;
   average_rating: number | null;
-  rating_distribution: Record<string, number>;
+  rating_distribution?: Record<string, number>;
+  reviews?: Review[];
   trust_source: "VANVAS_COMMUNITY";
 }
 
@@ -491,12 +505,13 @@ export interface ReviewCreateInput {
   place_id: string;
   rating: number;
   title?: string;
-  comment: string;
+  comment?: string;
+  body?: string;
   travel_date?: string;
 }
 
 export interface ReviewReportInput {
   review_id: string;
-  reason: "inappropriate" | "spam" | "incorrect_info" | "other";
+  reason: "inappropriate" | "spam" | "incorrect_info" | "other" | string;
   details?: string;
 }
