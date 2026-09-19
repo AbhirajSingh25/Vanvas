@@ -278,12 +278,16 @@ class CopilotActionService:
             }
 
         # 7. Calculate Time Slot while Preserving Existing & Locked Items
-        existing_items = list(target_itinerary.items)
+        existing_items = db.query(ItineraryItem).filter(
+            ItineraryItem.itinerary_id == target_itinerary.id
+        ).all()
         duration_mins = min(120, max(30, place.recommended_duration_mins or 60))
 
         if existing_items:
             # Parse end times of existing items
-            def parse_time_mins(time_str: str) -> int:
+            def parse_time_mins(time_str: Optional[str]) -> int:
+                if not time_str:
+                    return 600
                 try:
                     parts = time_str.strip().split(":")
                     return int(parts[0]) * 60 + int(parts[1])
@@ -291,7 +295,7 @@ class CopilotActionService:
                     return 600
 
             max_end_mins = max(parse_time_mins(item.end_time) for item in existing_items)
-            start_mins = max_end_mins + 15  # 15 mins travel buffer
+            start_mins = min(max_end_mins + 15, 23 * 60)  # 15 mins travel buffer, max 23:00
         else:
             # First item of the day
             wake_pref = (trip.wake_up_preference or "Normal").lower()
@@ -302,7 +306,7 @@ class CopilotActionService:
             else:
                 start_mins = 9 * 60 + 30  # 09:30
 
-        end_mins = start_mins + duration_mins
+        end_mins = min(start_mins + duration_mins, 23 * 60 + 59)
         start_str = f"{(start_mins // 60) % 24:02d}:{start_mins % 60:02d}"
         end_str = f"{(end_mins // 60) % 24:02d}:{end_mins % 60:02d}"
 

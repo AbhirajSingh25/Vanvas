@@ -506,10 +506,15 @@ class CopilotMessageResponse(BaseModel):
 # ----------------- Admin Schemas -----------------
 class ProviderHealthStatus(BaseModel):
     provider_name: str
-    status: str  # "healthy", "demo_mode", "live", "error"
-    is_live: bool
-    latency_ms: int
-    message: str
+    status: str  # "healthy", "demo_mode", "live", "error", "degraded", "unavailable", "not_configured"
+    is_live: bool = True
+    latency_ms: float = 0.0
+    message: Optional[str] = "Provider operational"
+    is_configured: Optional[bool] = True
+    last_success_at: Optional[str] = None
+    last_failure_at: Optional[str] = None
+    last_failure_reason: Optional[str] = None
+    consecutive_failures: Optional[int] = 0
 
 class AdminDashboardStats(BaseModel):
     total_users: int

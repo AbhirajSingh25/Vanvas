@@ -343,6 +343,13 @@ def test_7_invalid_itinerary_day_rejected(db, test_user_owner, test_place, test_
 
 def test_8_locked_itinerary_items_preserved(db, test_user_owner, test_place, test_trip):
     """8. Adding a place to a day with a locked item preserves the locked item intact."""
+    # Ensure a clean baseline for day 2 items
+    db.query(ItineraryItem).filter(
+        ItineraryItem.itinerary_id == "it-action-day-2",
+        ItineraryItem.id != "it-item-locked-1"
+    ).delete()
+    db.commit()
+
     # Day 2 has a locked item 'Sunrise Meditation'
     locked_item = db.query(ItineraryItem).filter(ItineraryItem.id == "it-item-locked-1").first()
     assert locked_item is not None
