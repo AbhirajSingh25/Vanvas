@@ -254,7 +254,12 @@ export function resolveDestinationVisualProfile(
     text.includes("andaman") ||
     text.includes("gokarna") ||
     text.includes("varkala") ||
-    text.includes("alappuzha")
+    text.includes("alappuzha") ||
+    text.includes("mumbai") ||
+    text.includes("chennai") ||
+    text.includes("kochi") ||
+    text.includes("pondicherry") ||
+    text.includes("puri")
   ) {
     terrain = "coastal";
   } else if (
@@ -263,6 +268,8 @@ export function resolveDestinationVisualProfile(
     text.includes("jaisalmer") ||
     text.includes("bikaner") ||
     text.includes("rajasthan") ||
+    text.includes("thar") ||
+    text.includes("pushkar") ||
     text.includes("dubai") ||
     text.includes("cairo")
   ) {
@@ -278,8 +285,12 @@ export function resolveDestinationVisualProfile(
   } else if (
     text.includes("ghat") ||
     text.includes("varanasi") ||
+    text.includes("ayodhya") ||
     text.includes("haridwar") ||
     text.includes("hampi") ||
+    text.includes("ujjain") ||
+    text.includes("mathura") ||
+    text.includes("prayagraj") ||
     text.includes("river")
   ) {
     terrain = "river_ghat";
@@ -293,7 +304,10 @@ export function resolveDestinationVisualProfile(
     text.includes("kodaikanal") ||
     text.includes("tea") ||
     text.includes("valley") ||
-    text.includes("chikmagalur")
+    text.includes("chikmagalur") ||
+    text.includes("pune") ||
+    text.includes("mahabaleshwar") ||
+    text.includes("lonavala")
   ) {
     terrain = "valley";
   } else if (
@@ -307,6 +321,7 @@ export function resolveDestinationVisualProfile(
     text.includes("pahalgam") ||
     text.includes("uttarakhand") ||
     text.includes("himachal") ||
+    text.includes("shimla") ||
     (elevationMeters && elevationMeters > 1200)
   ) {
     terrain = "himalayan";

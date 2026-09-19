@@ -16,6 +16,7 @@ import { JournalNote } from "@/components/ui/JournalNote";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
+import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
 
 const DISCOVERY_MESSAGES = [
   "VANVAS is gathering live travel information...",
@@ -712,14 +713,15 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
               {hotels.map((h) => {
                 const isLiveStay = h.is_live || h.source === "openstreetmap" || h.source === "google_places";
                 const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
+                const stayVisual = resolvePlaceArtwork(h.name, destination.name, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
 
                 return (
                   <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3.5 flex flex-col justify-between">
                     <div className="space-y-3">
                       <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
                         <VanvasImage
-                          src={h.image_url || `/images/places/${destination.slug || "manali"}/categories/stay.webp`}
-                          fallbackSrc={`/images/places/${destination.slug || "manali"}/categories/stay.webp`}
+                          src={stayVisual.imageUrl}
+                          fallbackSrc={stayVisual.fallbackUrl}
                           alt={`${h.name} in ${destination.name}`}
                           className="w-full h-full object-cover"
                         />
