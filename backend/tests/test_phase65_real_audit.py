@@ -109,9 +109,9 @@ async def test_mussoorie_cannot_receive_varanasi_records():
 @pytest.mark.asyncio
 async def test_varanasi_receives_actual_ghats():
     resolver = CuratedArtworkProvider()
-    res = await resolver.resolve_place_artwork("Assi Ghat Aarti", "Varanasi", "Culture & Heritage")
+    res = await resolver.resolve_place_artwork("Dashashwamedh Ghat Aarti", "Varanasi", "Culture & Heritage")
     assert res["tier"] == "exact_place"
-    assert "assi-ghat" in res["artwork_key"]
+    assert "dashashwamedh-ghat" in res["artwork_key"]
 
 # 8. Place source labels are truthful
 def test_place_source_labels_truthful():
