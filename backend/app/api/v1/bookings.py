@@ -16,6 +16,7 @@ from app.api.deps import get_current_user, get_current_admin
 from app.services.booking_service import BookingService
 from app.providers.commerce.discovery_adapter import DiscoveryCommerceAdapter
 from app.providers.commerce.amadeus_stay_adapter import AmadeusStayCommerceAdapter
+from app.providers.commerce.stayingapi_stay_adapter import StayingAPIStayCommerceAdapter
 
 router = APIRouter()
 
@@ -87,9 +88,23 @@ def search_commerce_offers(
     """
     offers: List[Offer] = []
 
-    # 1. Live Stay Commerce Provider (Amadeus) if stay product requested
+    # 1. Live Stay Commerce Providers (StayingAPI & Amadeus) if stay product requested
     p_type = (product_type or "").lower().strip()
-    if not p_type or p_type in ["stay", "hotel", "accommodation"]:
+    if not p_type or p_type in ["stay", "hotel", "accommodation", "homestay", "resort"]:
+        stayingapi_adapter = StayingAPIStayCommerceAdapter()
+        if stayingapi_adapter.is_configured:
+            try:
+                live_staying_offers = stayingapi_adapter.search_offers(
+                    destination=destination,
+                    product_type=product_type,
+                    query=query,
+                    max_price=max_price,
+                )
+                if live_staying_offers:
+                    offers.extend(live_staying_offers)
+            except Exception:
+                pass
+
         amadeus_adapter = AmadeusStayCommerceAdapter()
         if amadeus_adapter.is_configured:
             try:
@@ -129,6 +144,15 @@ def check_offer_availability(
     Checks provider-neutral availability across live providers and discovery tier.
     Returns explicit UNKNOWN, AVAILABLE, or UNAVAILABLE states without fabricating live inventory.
     """
+    if offer_id.startswith("stayingapi-") or offer_id.startswith("stayingapi_"):
+        stayingapi_adapter = StayingAPIStayCommerceAdapter()
+        return stayingapi_adapter.check_availability(
+            offer_id=offer_id,
+            start_date=start_date,
+            end_date=end_date,
+            guests=guests,
+        )
+
     if offer_id.startswith("amadeus-") or offer_id.startswith("amadeus_"):
         amadeus_adapter = AmadeusStayCommerceAdapter()
         return amadeus_adapter.check_availability(

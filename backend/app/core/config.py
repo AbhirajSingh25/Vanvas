@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     AMADEUS_CLIENT_SECRET: str = os.getenv("AMADEUS_CLIENT_SECRET", os.getenv("HOTEL_PROVIDER_SECRET", ""))
     AMADEUS_ENV: str = os.getenv("AMADEUS_ENV", "test")  # "test" or "production"
     AMADEUS_TIMEOUT: float = float(os.getenv("AMADEUS_TIMEOUT", "10.0"))
+    # Live Stay Commerce Provider (StayingAPI Accommodation Engine)
+    STAYINGAPI_KEY: str = os.getenv("STAYINGAPI_KEY", "")
+    STAYINGAPI_TIMEOUT: float = float(os.getenv("STAYINGAPI_TIMEOUT", "10.0"))
     # Image Generation & Creative Art Provider
     IMAGE_PROVIDER: str = os.getenv("IMAGE_PROVIDER", "curated")  # "openai" or "curated"
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")

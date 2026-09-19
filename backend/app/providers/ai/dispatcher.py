@@ -17,6 +17,7 @@ from app.services.operating_hours_engine import OperatingHoursEngine
 from app.services.action_link_generator import ActionLinkGenerator
 from app.providers.commerce.discovery_adapter import DiscoveryCommerceAdapter
 from app.providers.commerce.amadeus_stay_adapter import AmadeusStayCommerceAdapter
+from app.providers.commerce.stayingapi_stay_adapter import StayingAPIStayCommerceAdapter
 
 logger = logging.getLogger("vanvas.ai.dispatcher")
 
@@ -949,9 +950,18 @@ class AIToolDispatcher:
         product_type = args.get("product_type")
         all_offers = []
 
-        # 1. Live Stay Commerce Provider if stay requested
+        # 1. Live Stay Commerce Providers if stay requested
         p_type = (product_type or "").lower().strip()
-        if not p_type or p_type in ["stay", "hotel", "accommodation"]:
+        if not p_type or p_type in ["stay", "hotel", "accommodation", "homestay", "resort"]:
+            stayingapi_adapter = StayingAPIStayCommerceAdapter()
+            if stayingapi_adapter.is_configured:
+                try:
+                    live_staying_offers = await stayingapi_adapter.search_offers_async(destination=destination, product_type=product_type)
+                    if live_staying_offers:
+                        all_offers.extend(live_staying_offers)
+                except Exception as exc:
+                    logger.warning(f"Error querying live StayingAPI stay offers in dispatcher: {exc}")
+
             amadeus_adapter = AmadeusStayCommerceAdapter()
             if amadeus_adapter.is_configured:
                 try:
