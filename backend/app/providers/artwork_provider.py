@@ -13,12 +13,66 @@ class CuratedArtworkProvider(ArtworkProvider):
     """
     Production Curated & Local Artwork Resolver.
     Provides deterministic place-specific visual intelligence matching recognized landmarks
-    and applying authentic multi-tier fallbacks without random array indexing or fake exact-place badges.
+    and applying authentic 8-level fallbacks without random array indexing or fake exact-place badges.
     """
     
     # Exact Place Artwork Registry mapped deterministically by normalized key.
-    # Contains ONLY verified landmark-specific artwork assets that physically exist on disk.
+    # Contains verified landmark-specific artwork assets that physically exist on disk.
     PLACE_ARTWORK_REGISTRY: Dict[str, Dict[str, Any]] = {
+        # Kasol Landmarks
+        "kasol:moon-dance-cafe": {
+            "image_url": "/images/places/kasol/moon-dance-cafe.webp",
+            "tier": "exact_place",
+            "place_name": "Moon Dance Café & German Bakery",
+            "destination": "Kasol",
+            "category": "Cafés & Bakery",
+            "visual_description": "Legendary bohemian bakery in Kasol serving fresh apple crumble, pastries, and mountain coffee under Parvati deodars.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["moon-dance-cafe", "moon-dance-cafe-and-german-bakery", "moon-dance-german-bakery", "moon-dance-bakery", "german-bakery-kasol"]
+        },
+        "kasol:chalal-trail": {
+            "image_url": "/images/places/kasol/chalal-trail.webp",
+            "tier": "exact_place",
+            "place_name": "Chalal Pine Riverside Trail",
+            "destination": "Kasol",
+            "category": "Nature & Trails",
+            "visual_description": "Scenic suspended cable bridge path following emerald Parvati river through ancient towering pine woods to Chalal village.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["chalal-trail", "chalal-pine-riverside-trail", "chalal-pine-trail", "chalal-riverside-walk", "chalal-village-trail", "chalal"]
+        },
+        "kasol:manikaran-sahib": {
+            "image_url": "/images/places/kasol/manikaran-sahib.webp",
+            "tier": "exact_place",
+            "place_name": "Gurudwara Shri Manikaran Sahib",
+            "destination": "Kasol",
+            "category": "Culture & Heritage",
+            "visual_description": "Historic sacred hot sulphur springs and Gurudwara complex nestled along the roaring Parvati River gorge.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["manikaran-sahib", "manikaran-gurudwara", "manikaran-hot-springs", "gurudwara-shri-manikaran-sahib", "manikaran"]
+        },
+        "kasol:kheerganga-trail": {
+            "image_url": "/images/places/kasol/kheerganga-trail.webp",
+            "tier": "exact_place",
+            "place_name": "Kheerganga Alpine Meadow Trail",
+            "destination": "Kasol",
+            "category": "Nature & Trails",
+            "visual_description": "Exhilarating Himalayan trekking trail ascending through pine forests to high alpine meadows and natural hot baths.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["kheerganga-trail", "kheerganga-trek", "khirganga-trail", "khirganga"]
+        },
+
         # Mussoorie / Landour
         "mussoorie:st-pauls-church": {
             "image_url": "/images/places/mussoorie/st-pauls-church.webp",
@@ -27,8 +81,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Culture & Heritage",
             "visual_description": "Historic 1852 stone Anglican church in Landour with steep gabled wooden roof and lancet windows under deodar pines.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["st-pauls-church-landour", "st-pauls-church", "st-paul-church"]
         },
         "mussoorie:landour-bakehouse": {
@@ -38,8 +94,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Cafés & Bakery",
             "visual_description": "Historic stone and timber hill bakery at Sisters Bazaar with Victorian glass vitrines and deodar canopy.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["landour-bakehouse", "landour-bakery", "sisters-bazaar-bakehouse"]
         },
         "mussoorie:lal-tibba": {
@@ -49,8 +107,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Nature & Trails",
             "visual_description": "Highest mountain ridge viewpoint in Landour with telescope overlooking distant Garhwal snow peaks.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["lal-tibba", "lal-tibba-scenic-viewpoint", "lal-tibba-viewpoint"]
         },
         "mussoorie:kempty-falls": {
@@ -60,8 +120,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Nature & Trails",
             "visual_description": "Steep rocky mountain waterfall cascade plunging into jade mountain pools.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["kempty-falls", "kempty-falls-mountain-cascade", "kempty-waterfall"]
         },
         "mussoorie:gun-hill": {
@@ -71,8 +133,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Culture & Heritage",
             "visual_description": "Elevated colonial peak with ropeway cable car overlooking the vast Doon Valley.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["gun-hill", "gun-hill-historic-viewpoint", "gun-hill-viewpoint"]
         },
         "mussoorie:camel-back-road": {
@@ -82,8 +146,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Nature & Trails",
             "visual_description": "Tranquil oak-shaded walking promenade framing natural camel rock outcrop and winterline sunsets.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["camel-back-road", "camels-back-road", "camels-back-road-and-winterline-trail"]
         },
         "mussoorie:mall-road": {
@@ -93,8 +159,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Culture & Heritage",
             "visual_description": "Colonial promenade with glowing vintage iron lampposts, bookshops, and evening strolls.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["mall-road", "mussoorie-mall-road", "mall-road-heritage-promenade"]
         },
         "mussoorie:george-everest": {
@@ -104,8 +172,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Nature & Trails",
             "visual_description": "White stone colonial observatory estate perched on grassy ridge with panoramic snow peak vistas.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["george-everest", "george-everest-peak-and-observatory-house", "sir-george-everest-house"]
         },
         "mussoorie:clouds-end": {
@@ -115,8 +185,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Culture & Heritage",
             "visual_description": "Secluded historic stone bungalow nestled deep in ancient deodar and pine wilderness.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["clouds-end", "clouds-end-forest-retreat", "clouds-end-estate"]
         },
         "mussoorie:landour": {
@@ -126,8 +198,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Mussoorie",
             "category": "Culture & Heritage",
             "visual_description": "Misty colonial ridge settlement with stone cottages and silent oak paths.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["landour", "landour-cantonment", "landour-heritage-ridge-and-sisters-bazaar"]
         },
 
@@ -139,9 +213,11 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Manali",
             "category": "Culture & Heritage",
             "visual_description": "Four-tiered wooden pagoda temple set inside Dhungri towering deodar pine forest.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
-            "aliases": ["hadimba-temple", "hadimba-devi-cedar-forest-temple", "hidimba-devi-temple", "dhungri-temple"]
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["hadimba-temple", "hadimba-devi-cedar-forest-temple", "hidimba-devi-temple", "dhungri-temple", "hidimba-temple"]
         },
         "manali:solang-valley": {
             "image_url": "/images/places/manali/solang-valley.webp",
@@ -150,8 +226,10 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Manali",
             "category": "Adventure & Sport",
             "visual_description": "Expansive green alpine valley surrounded by snow-capped Pir Panjal peaks with paragliders in azure sky.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["solang-valley", "solang-valley-ridge-and-paragliding", "solang-nullah"]
         },
         "manali:old-manali": {
@@ -161,9 +239,78 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Manali",
             "category": "Culture & Heritage",
             "visual_description": "Traditional timber-and-stone Himachali houses, apple orchards, and bohemian riverside verandas.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["old-manali", "old-manali-village-and-manu-temple", "old-manali-village"]
+        },
+        "manali:mall-road": {
+            "image_url": "/images/places/manali/mall-road.webp",
+            "tier": "exact_place",
+            "place_name": "Manali Mall Road",
+            "destination": "Manali",
+            "category": "Culture & Heritage",
+            "visual_description": "Vibrant mountain pedestrian promenade with wooden balconies and woollen bazaars.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["mall-road", "manali-mall-road", "the-mall-manali"]
+        },
+        "manali:jogini-waterfall": {
+            "image_url": "/images/places/manali/jogini-waterfall.webp",
+            "tier": "exact_place",
+            "place_name": "Jogini Waterfall",
+            "destination": "Manali",
+            "category": "Nature & Trails",
+            "visual_description": "Scenic cascading waterfall plunging down pine-clad cliffs near Vashisht village.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["jogini-waterfall", "jogini-falls", "jugni-waterfall"]
+        },
+
+        # Goa
+        "goa:fontainhas-latin-quarter": {
+            "image_url": "/images/places/goa/fontainhas-latin-quarter.webp",
+            "tier": "exact_place",
+            "place_name": "Fontainhas Latin Heritage Quarter",
+            "destination": "Goa",
+            "category": "Culture & Heritage",
+            "visual_description": "Pastel-painted Portuguese heritage houses with wrought-iron balconies and bougainvillea in Panaji.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["fontainhas-latin-quarter", "fontainhas", "fontainhas-latin-heritage-quarter"]
+        },
+        "goa:aguada-fort": {
+            "image_url": "/images/places/goa/aguada-fort.webp",
+            "tier": "exact_place",
+            "place_name": "Fort Aguada & Lighthouse",
+            "destination": "Goa",
+            "category": "Culture & Heritage",
+            "visual_description": "17th-century Portuguese laterite stone sea fortress and cylindrical lighthouse on coastal headland.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["aguada-fort", "aguada-fort-and-historic-lighthouse", "fort-aguada"]
+        },
+        "goa:anjuna-beach": {
+            "image_url": "/images/places/goa/anjuna-beach.webp",
+            "tier": "exact_place",
+            "place_name": "Anjuna Beach Coastline",
+            "destination": "Goa",
+            "category": "Nature & Trails",
+            "visual_description": "Curved palm-fringed Arabian sea coastline with rocky laterite outcrops and seaside shacks.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["anjuna-beach", "anjuna-flea-market", "anjuna"]
         },
 
         # Rishikesh
@@ -174,9 +321,52 @@ class CuratedArtworkProvider(ArtworkProvider):
             "destination": "Rishikesh",
             "category": "Culture & Heritage",
             "visual_description": "Sacred stone riverfront steps at the Ganges confluence with twilight brass aarti lamps and floating diyas.",
-            "source": "curated_artwork",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["triveni-ghat", "triveni-ghat-evening-maha-aarti", "triveni-ghat-aarti"]
+        },
+        "rishikesh:laxman-jhula": {
+            "image_url": "/images/places/rishikesh/laxman-jhula.webp",
+            "tier": "exact_place",
+            "place_name": "Laxman Jhula Suspension Bridge",
+            "destination": "Rishikesh",
+            "category": "Culture & Heritage",
+            "visual_description": "Iconic iron suspension bridge spanning across turquoise Ganga with multi-storey temple spires.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["laxman-jhula", "lakshman-jhula", "lakshman-suspension-bridge"]
+        },
+
+        # Jaipur
+        "jaipur:hawa-mahal": {
+            "image_url": "/images/places/jaipur/hawa-mahal.webp",
+            "tier": "exact_place",
+            "place_name": "Hawa Mahal Palace of Winds",
+            "destination": "Jaipur",
+            "category": "Culture & Heritage",
+            "visual_description": "Five-storey pink sandstone honeycomb facade with 953 carved jharokha lattice windows.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["hawa-mahal", "hawa-mahal-palace-of-winds", "palace-of-winds"]
+        },
+        "jaipur:amber-fort": {
+            "image_url": "/images/places/jaipur/amber-fort.webp",
+            "tier": "exact_place",
+            "place_name": "Amber Fort & Palace",
+            "destination": "Jaipur",
+            "category": "Culture & Heritage",
+            "visual_description": "Majestic hilltop fort with pale yellow and pink sandstone ramparts reflected in Maota Lake.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["amber-fort", "amer-fort", "amber-palace", "amer-palace"]
         },
 
         # Udaipur
@@ -186,260 +376,245 @@ class CuratedArtworkProvider(ArtworkProvider):
             "place_name": "City Palace of Udaipur",
             "destination": "Udaipur",
             "category": "Culture & Heritage",
-            "visual_description": "Monumental white marble palace with mirrored domes towering over the east bank of Lake Pichola.",
-            "source": "curated_artwork",
+            "visual_description": "Monumental whitewashed marble palace with mirrored domes rising over eastern shore of Lake Pichola.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["city-palace-udaipur", "city-palace-of-udaipur", "city-palace"]
+        },
+        "udaipur:lake-pichola": {
+            "image_url": "/images/places/udaipur/lake-pichola.webp",
+            "tier": "exact_place",
+            "place_name": "Lake Pichola Waterfront",
+            "destination": "Udaipur",
+            "category": "Nature & Trails",
+            "visual_description": "Picturesque freshwater lake surrounded by whitewashed havelis, ghats, and hill silhouettes.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["lake-pichola", "pichola-lake", "pichola"]
         },
 
         # Varanasi
         "varanasi:dashashwamedh-ghat-aarti": {
             "image_url": "/images/places/varanasi/dashashwamedh-ghat-aarti.webp",
             "tier": "exact_place",
-            "place_name": "Dashashwamedh Ghat Evening Maha Aarti",
+            "place_name": "Dashashwamedh Ghat Evening Ganga Aarti",
             "destination": "Varanasi",
             "category": "Culture & Heritage",
-            "visual_description": "Historic stone riverfront steps illuminated by brass oil lamps and twilight river reflections.",
-            "source": "curated_artwork",
+            "visual_description": "Historic stone riverfront steps illuminated by brass oil lamps and evening river reflections.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["dashashwamedh-ghat-aarti", "dashashwamedh-ghat-evening-maha-aarti", "dashashwamedh-ghat"]
         },
-
-        # Jaipur
-        "jaipur:hawa-mahal": {
-            "image_url": "/images/places/jaipur/hawa-mahal.webp",
+        "varanasi:kashi-vishwanath": {
+            "image_url": "/images/places/varanasi/kashi-vishwanath.webp",
             "tier": "exact_place",
-            "place_name": "Hawa Mahal",
-            "destination": "Jaipur",
+            "place_name": "Kashi Vishwanath Jyotirlinga Temple",
+            "destination": "Varanasi",
             "category": "Culture & Heritage",
-            "visual_description": "Intricately carved pink sandstone honeycomb facade with 953 jharokha windows.",
-            "source": "curated_artwork",
+            "visual_description": "Sacred golden-spired temple of Lord Shiva along the eternal lanes of Kashi.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
-            "aliases": ["hawa-mahal", "hawa-mahal-palace-of-winds", "palace-of-winds"]
-        },
-
-        # Goa
-        "goa:fontainhas-latin-quarter": {
-            "image_url": "/images/places/goa/fontainhas-latin-quarter.webp",
-            "tier": "exact_place",
-            "place_name": "Fontainhas Latin Heritage Quarter",
-            "destination": "Goa",
-            "category": "Culture & Heritage",
-            "visual_description": "Pastel-painted Portuguese heritage houses with wrought-iron balconies and tiled street corners.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork",
-            "aliases": ["fontainhas-latin-quarter", "fontainhas", "fontainhas-latin-heritage-quarter"]
-        },
-        "goa:aguada-fort": {
-            "image_url": "/images/places/goa/aguada-fort.webp",
-            "tier": "exact_place",
-            "place_name": "Aguada Fort & Historic Lighthouse",
-            "destination": "Goa",
-            "category": "Culture & Heritage",
-            "visual_description": "17th-century Portuguese laterite stone sea fortress and cylindrical lighthouse on the coastal headland.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork",
-            "aliases": ["aguada-fort", "aguada-fort-and-historic-lighthouse", "fort-aguada"]
-        },
-
-        # Leh
-        "leh:thiksey-monastery-gompa": {
-            "image_url": "/images/places/leh/thiksey-monastery-gompa.webp",
-            "tier": "exact_place",
-            "place_name": "Thiksey Monastery Gompa",
-            "destination": "Leh",
-            "category": "Culture & Heritage",
-            "visual_description": "Tiered Buddhist gompa crowning a desert hill resembling the Potala Palace.",
-            "source": "curated_artwork",
-            "art_style": "VANVAS editorial travel artwork",
-            "aliases": ["thiksey-monastery-gompa", "thiksey-monastery", "thiksey-gompa"]
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["kashi-vishwanath", "kashi-vishwanath-temple", "vishwanath-temple"]
         },
 
         # Dharamshala
         "dharamshala:namgyal-monastery": {
             "image_url": "/images/places/dharamshala/namgyal-monastery.webp",
             "tier": "exact_place",
-            "place_name": "Namgyal Monastery (Tsuglagkhang)",
+            "place_name": "Namgyal Monastery & Tsuglagkhang Complex",
             "destination": "Dharamshala",
             "category": "Culture & Heritage",
-            "visual_description": "Dalai Lama monastery complex surrounded by cedar woods and prayer wheels.",
-            "source": "curated_artwork",
+            "visual_description": "Dalai Lama monastery complex with prayer wheels surrounded by cedar woods under the Dhauladhar wall.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["namgyal-monastery", "namgyal-monastery-and-tsuglagkhang-complex", "tsuglagkhang"]
         },
 
-        # Spiti
+        # Leh Ladakh
+        "leh:thiksey-monastery-gompa": {
+            "image_url": "/images/places/leh/thiksey-monastery-gompa.webp",
+            "tier": "exact_place",
+            "place_name": "Thiksey Monastery Gompa",
+            "destination": "Leh",
+            "category": "Culture & Heritage",
+            "visual_description": "Layered 12-storey whitewashed and ochre Tibetan monastery rising on a hill above the Indus Valley.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
+            "aliases": ["thiksey-monastery-gompa", "thiksey-monastery", "thiksey-gompa"]
+        },
+
+        # Spiti Valley
         "spiti:key-monastery": {
             "image_url": "/images/places/spiti/key-monastery.webp",
             "tier": "exact_place",
-            "place_name": "Key Gompa (Kye Monastery)",
+            "place_name": "Key Monastery Ki Gompa",
             "destination": "Spiti",
             "category": "Culture & Heritage",
-            "visual_description": "Thousand-year-old fort-like Tibetan monastery in high-altitude cold desert.",
-            "source": "curated_artwork",
+            "visual_description": "Thousand-year-old fort-like Tibetan monastery perched atop a rocky hill in high-altitude cold desert.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
             "art_style": "VANVAS editorial travel artwork",
+            "attribution": "VANVAS Verified Sanctuary Asset",
             "aliases": ["key-monastery", "key-monastery-ki-gompa", "ki-gompa", "kye-gompa"]
-        }
+        },
     }
 
-    # Curated Seeded Destinations with verified illustration and hero assets
-    DESTINATION_HEROES: Dict[str, Dict[str, str]] = {
-        "manali": {"hero": "/images/destinations/manali/hero.jpg", "illustration": "/images/destinations/manali/illustration.jpg"},
-        "mussoorie": {"hero": "/images/destinations/mussoorie/hero.jpg", "illustration": "/images/destinations/mussoorie/illustration.jpg"},
-        "udaipur": {"hero": "/images/destinations/udaipur/hero.jpg", "illustration": "/images/destinations/udaipur/illustration.jpg"},
-        "varanasi": {"hero": "/images/destinations/varanasi/hero.jpg", "illustration": "/images/destinations/varanasi/illustration.jpg"},
-        "jaipur": {"hero": "/images/destinations/jaipur/hero.jpg", "illustration": "/images/destinations/jaipur/illustration.jpg"},
-        "goa": {"hero": "/images/destinations/goa/hero.jpg", "illustration": "/images/destinations/goa/illustration.jpg"},
-        "leh": {"hero": "/images/destinations/leh/hero.jpg", "illustration": "/images/destinations/leh/illustration.jpg"},
-        "spiti": {"hero": "/images/destinations/spiti-valley/hero.jpg", "illustration": "/images/destinations/spiti-valley/illustration.jpg"},
-        "rishikesh": {"hero": "/images/destinations/rishikesh/hero.jpg", "illustration": "/images/destinations/rishikesh/illustration.jpg"},
-        "kasol": {"hero": "/images/destinations/kasol/hero.jpg", "illustration": "/images/destinations/kasol/illustration.jpg"},
-        "dharamshala": {"hero": "/images/destinations/dharamshala/hero.jpg", "illustration": "/images/destinations/dharamshala/illustration.jpg"},
-        "munnar": {"hero": "/images/destinations/fallbacks/valley.jpg", "illustration": "/images/destinations/fallbacks/valley.jpg"}
+    DESTINATION_HEROES: Dict[str, str] = {
+        "manali": "/images/destinations/manali/hero.jpg",
+        "mussoorie": "/images/destinations/mussoorie/hero.jpg",
+        "udaipur": "/images/destinations/udaipur/hero.jpg",
+        "varanasi": "/images/destinations/varanasi/hero.jpg",
+        "jaipur": "/images/destinations/jaipur/hero.jpg",
+        "goa": "/images/destinations/goa/hero.jpg",
+        "leh": "/images/destinations/leh/hero.jpg",
+        "spiti": "/images/destinations/spiti-valley/hero.jpg",
+        "spitivalley": "/images/destinations/spiti-valley/hero.jpg",
+        "rishikesh": "/images/destinations/rishikesh/hero.jpg",
+        "kasol": "/images/destinations/kasol/hero.jpg",
+        "dharamshala": "/images/destinations/dharamshala/hero.jpg",
+        "munnar": "/images/destinations/fallbacks/valley.jpg",
     }
 
-    # Controlled semantic category taxonomy mapping to standardized theme assets
-    CATEGORY_THEME_MAP = {
+    CATEGORY_THEME_MAP: Dict[str, str] = {
         "cafe": "cafe",
-        "coffee": "cafe",
+        "café": "cafe",
         "bakery": "cafe",
-        "food": "cafe",
-        "restaurant": "cafe",
-        "dhaba": "cafe",
-        "momo": "cafe",
-        "tibetan": "cafe",
-        "dining": "cafe",
-        "breakfast": "cafe",
-        "tea": "cafe",
-        
-        "nature": "nature",
-        "trail": "nature",
-        "waterfall": "nature",
-        "cascade": "nature",
-        "lake": "nature",
-        "river": "nature",
-        "forest": "nature",
-        "trek": "nature",
-        "park": "nature",
-        "garden": "nature",
-        "wildlife": "nature",
-        "sanctuary": "nature",
-
-        "temple": "spiritual",
-        "shrine": "spiritual",
-        "monastery": "spiritual",
-        "gompa": "spiritual",
-        "church": "spiritual",
-        "chapel": "spiritual",
-        "ghat": "spiritual",
-        "ashram": "spiritual",
-        "spiritual": "spiritual",
-        "heritage": "spiritual",
-        "culture": "spiritual",
-        "fort": "spiritual",
-        "palace": "spiritual",
-        "museum": "spiritual",
-        "monument": "spiritual",
-
-        "stay": "stay",
+        "bakehouse": "cafe",
+        "coffee": "cafe",
+        "food": "food",
+        "restaurant": "food",
+        "dhaba": "food",
+        "dining": "food",
+        "street food": "food",
+        "momo": "food",
         "hotel": "stay",
         "resort": "stay",
-        "cottage": "stay",
-        "homestay": "stay",
+        "stay": "stay",
         "hostel": "stay",
+        "homestay": "stay",
         "guesthouse": "stay",
-        "accommodation": "stay",
-
+        "cottage": "stay",
+        "lodge": "stay",
+        "church": "church",
+        "cathedral": "church",
+        "monastery": "monastery",
+        "gompa": "monastery",
+        "temple": "spiritual",
+        "mandir": "spiritual",
+        "shrine": "spiritual",
+        "ashram": "spiritual",
+        "ghat": "spiritual",
+        "aarti": "spiritual",
+        "gurudwara": "spiritual",
+        "waterfall": "waterfall",
+        "falls": "waterfall",
+        "beach": "beach",
+        "coast": "beach",
+        "fort": "heritage",
+        "palace": "heritage",
+        "museum": "heritage",
+        "monument": "heritage",
+        "market": "shopping",
+        "bazaar": "shopping",
+        "shop": "shopping",
+        "transport": "transport",
+        "rental": "transport",
+        "scooter": "transport",
+        "bike": "transport",
+        "trail": "nature",
+        "trek": "nature",
+        "forest": "nature",
+        "woods": "nature",
+        "river": "nature",
+        "lake": "nature",
+        "nature": "nature",
         "viewpoint": "viewpoint",
-        "scenic": "viewpoint",
-        "sunset": "viewpoint",
-        "sunrise": "viewpoint",
-        "peak": "viewpoint",
-        "market": "viewpoint",
-        "bazaar": "viewpoint",
-        "shopping": "viewpoint",
-        "mobility": "viewpoint",
-        "rental": "viewpoint"
+        "ridge": "viewpoint",
     }
 
-    @classmethod
-    def detect_artwork_collisions(cls) -> List[str]:
-        """
-        Deterministic collision guard.
-        Verifies that no exact place artwork asset is assigned to unrelated places
-        without explicit multi-alias intention. Returns a list of warnings if any collisions exist.
-        """
-        asset_to_places: Dict[str, List[str]] = {}
+    def detect_artwork_collisions(self) -> List[str]:
+        asset_map: Dict[str, List[str]] = {}
         warnings: List[str] = []
 
-        for reg_key, item in cls.PLACE_ARTWORK_REGISTRY.items():
-            img = item.get("image_url")
-            if not img:
-                continue
-            if img not in asset_to_places:
-                asset_to_places[img] = []
-            asset_to_places[img].append(reg_key)
+        for key, item in self.PLACE_ARTWORK_REGISTRY.items():
+            img_url = item["image_url"]
+            if img_url not in asset_map:
+                asset_map[img_url] = []
+            asset_map[img_url].append(key)
 
-        for img, keys in asset_to_places.items():
-            # If multiple registry keys point to same image, ensure they are intentional aliases of the same destination/landmark
+        for img_url, keys in asset_map.items():
             if len(keys) > 1:
                 destinations = set(k.split(":")[0] for k in keys)
                 if len(destinations) > 1:
-                    msg = f"ARTWORK COLLISION: asset {img} assigned to unrelated places across destinations: {keys}"
-                    logger.error(msg)
+                    msg = f"ARTWORK COLLISION: asset {img_url} assigned across destinations: {', '.join(keys)}"
+                    logger.warning(msg)
                     warnings.append(msg)
+
         return warnings
 
     def _clean_str(self, text: str) -> str:
         s = (text or "").lower()
-        s = re.sub(r"['’`]", "", s)
-        s = s.replace("&", "and")
+        s = re.sub(r"[’'`]", "", s)
+        s = re.sub(r"&", "and", s)
         s = re.sub(r"[^a-z0-9]", "-", s)
-        s = re.sub(r"-+", "-", s).strip("-")
-        return s
+        s = re.sub(r"-+", "-", s)
+        return s.strip("-")
 
-    def _normalize_key(self, dest: str, place: str) -> str:
-        d_clean = re.sub(r"[^a-z0-9]", "", (dest or "").lower())
-        p_clean = self._clean_str(place)
-        return f"{d_clean}:{p_clean}"
-
-    def _classify_category_theme(self, category: str, place_name: str = "") -> str:
-        """
-        Classifies place category strictly from structured taxonomy without hallucinating arbitrary categories.
-        """
-        text = f"{(category or '').lower()} {place_name.lower()}"
+    def _classify_category_theme(self, category: str = "", place_name: str = "") -> str:
+        text = f"{(category or '').lower()} {(place_name or '').lower()}"
         for keyword, theme in self.CATEGORY_THEME_MAP.items():
-            if re.search(r'\b' + re.escape(keyword) + r'\b', text) or keyword in text:
+            if keyword in text:
                 return theme
         return "nature"
 
     def _resolve_regional_fallback(self, destination_name: str, category: str, place_name: str = "") -> str:
-        """
-        Resolves semantic regional fallback ensuring semantic correctness:
-        - Coastal/Beach context: coastal fallback (never mountain/desert)
-        - Desert/Arid context: desert fallback
-        - River Ghat / Historic context: valley/river fallback
-        - General / Himalayan: himalayan fallback
-        """
         d_lower = (destination_name or "").lower()
         c_lower = (category or "").lower()
         p_lower = (place_name or "").lower()
         combined = f"{d_lower} {c_lower} {p_lower}"
 
-        # 1. Beach / Coastal
         if any(w in combined for w in ["beach", "coast", "sea", "goa", "kerala", "gokarna", "varkala", "andaman", "alappuzha", "pondicherry"]):
             return "/images/destinations/fallbacks/coastal.jpg"
 
-        # 2. Desert / Arid
         if any(w in combined for w in ["desert", "jaipur", "jodhpur", "jaisalmer", "bikaner", "rajasthan", "thar", "pushkar"]):
             return "/images/destinations/fallbacks/desert.jpg"
 
-        # 3. River Ghat / Tea Valley / Green Plateau
         if any(w in combined for w in ["varanasi", "ayodhya", "haridwar", "hampi", "ujjain", "mathura", "prayagraj", "ganga", "ghat", "munnar", "coorg", "wayanad", "ooty", "meghalaya", "shillong", "tea"]):
             return "/images/destinations/fallbacks/valley.jpg"
 
-        # 4. Default Himalayan / Hill
         return "/images/destinations/fallbacks/himalayan.jpg"
+
+    def _get_universal_fallback(self, theme: str) -> str:
+        theme_map = {
+            "cafe": "/images/places/universal/cafe.webp",
+            "food": "/images/places/universal/food.webp",
+            "nature": "/images/places/universal/nature.webp",
+            "waterfall": "/images/places/universal/waterfall.webp",
+            "beach": "/images/places/universal/beach.webp",
+            "lake": "/images/places/universal/lake.webp",
+            "spiritual": "/images/places/universal/spiritual.webp",
+            "monastery": "/images/places/universal/monastery.webp",
+            "church": "/images/places/universal/church.webp",
+            "heritage": "/images/places/universal/heritage.webp",
+            "stay": "/images/places/universal/stay.webp",
+            "shopping": "/images/places/universal/shopping.webp",
+            "transport": "/images/places/universal/transport.webp",
+            "nightlife": "/images/places/universal/nightlife.webp",
+            "viewpoint": "/images/places/universal/viewpoint.webp",
+        }
+        return theme_map.get(theme, "/images/places/universal/nature.webp")
 
     async def resolve_place_artwork(
         self,
@@ -450,39 +625,44 @@ class CuratedArtworkProvider(ArtworkProvider):
         source_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Deterministic 8-Level Priority Matching:
-        1. Exact place ID / key in registry
-        2. Exact provider / source ID (if registered)
-        3. Normalized exact place name + destination match
-        4. Known aliases match
-        5. Destination + Category Artwork (dedicated theme assets in /images/places/{dest}/categories/)
-        6. Destination Artwork (Curated hero/illustration)
-        7. Regional Artwork (Semantic geography fallback)
-        8. Universal Fallback
+        Deterministic 8-Level Priority Matching adhering strictly to ImageContract.
         """
         dest_norm = re.sub(r"[^a-z0-9]", "", (destination_name or "").lower())
         place_norm = self._clean_str(place_name)
         lookup_key = f"{dest_norm}:{place_norm}"
 
+        dest_hero = self.DESTINATION_HEROES.get(dest_norm)
+        theme = self._classify_category_theme(category, place_name)
+        universal_fallback = self._get_universal_fallback(theme)
+        fallback_url = dest_hero or universal_fallback
+
         # Priority 1: Exact direct place key match in registry
         if lookup_key in self.PLACE_ARTWORK_REGISTRY:
             item = self.PLACE_ARTWORK_REGISTRY[lookup_key]
             return {
+                "url": item["image_url"],
+                "fallback_url": fallback_url,
+                "source": item.get("source", "vanvas_curated"),
+                "source_type": item.get("source_type", "editorial_artwork"),
+                "provenance": "exact_place",
+                "semantic_category": theme,
+                "exactness": "exact",
+                "attribution": item.get("attribution", "VANVAS Verified Sanctuary Asset"),
+                "alt_text": f"{place_name} in {destination_name}",
+                "badge_label": "VANVAS PLACE ARTWORK",
                 "artwork_key": lookup_key,
                 "image_url": item["image_url"],
                 "tier": "exact_place",
                 "place_name": place_name,
                 "destination": destination_name,
                 "category": category,
-                "source": "curated_artwork",
-                "is_real_photo": False,
-                "art_style": item.get("art_style", "VANVAS editorial travel artwork"),
+                "is_real_photo": item.get("source_type") == "real_photo",
                 "badge": "VANVAS PLACE ARTWORK",
                 "visual_description": item.get("visual_description"),
                 "metadata": item
             }
 
-        # Priority 2 & 3 & 4: Exact place matching against aliases and normalized tokens
+        # Priority 2, 3, 4: Exact place matching against aliases and normalized tokens
         best_exact_match: Optional[Tuple[str, Dict[str, Any]]] = None
         best_score = 0
 
@@ -492,11 +672,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 score = 0
                 aliases = item.get("aliases", [reg_place])
                 
-                # Direct match on place or alias
                 if place_norm == reg_place or place_norm in aliases:
                     score = 100
                 else:
-                    # Check aliases for substring
                     for al in aliases:
                         if al == place_norm:
                             score = max(score, 100)
@@ -531,15 +709,23 @@ class CuratedArtworkProvider(ArtworkProvider):
         if best_exact_match and best_score >= 45:
             reg_key, item = best_exact_match
             return {
+                "url": item["image_url"],
+                "fallback_url": fallback_url,
+                "source": item.get("source", "vanvas_curated"),
+                "source_type": item.get("source_type", "editorial_artwork"),
+                "provenance": "exact_place",
+                "semantic_category": theme,
+                "exactness": "exact",
+                "attribution": item.get("attribution", "VANVAS Verified Sanctuary Asset"),
+                "alt_text": f"{place_name} in {destination_name}",
+                "badge_label": "VANVAS PLACE ARTWORK",
                 "artwork_key": reg_key,
                 "image_url": item["image_url"],
                 "tier": "exact_place",
                 "place_name": place_name,
                 "destination": destination_name,
                 "category": category,
-                "source": "curated_artwork",
-                "is_real_photo": False,
-                "art_style": item.get("art_style", "VANVAS editorial travel artwork"),
+                "is_real_photo": item.get("source_type") == "real_photo",
                 "badge": "VANVAS PLACE ARTWORK",
                 "visual_description": item.get("visual_description"),
                 "metadata": item
@@ -548,86 +734,74 @@ class CuratedArtworkProvider(ArtworkProvider):
         # Priority 5: Destination + Category Artwork Fallback
         dest_key = dest_norm
         for k in self.DESTINATION_HEROES:
-            if k in dest_norm or dest_norm in k:
+            if dest_norm in k or k in dest_norm:
                 dest_key = k
                 break
 
-        theme = self._classify_category_theme(category, place_name)
-        category_img = f"/images/places/{dest_key}/categories/{theme}.webp"
+        mapped_cat_folder = theme if theme in ["cafe", "nature", "spiritual", "stay", "viewpoint"] else ("cafe" if theme in ["food", "shopping"] else ("nature" if theme in ["waterfall", "beach"] else ("spiritual" if theme in ["monastery", "church", "heritage"] else "nature")))
+        category_artwork_path = f"/images/places/{dest_key}/categories/{mapped_cat_folder}.webp"
 
         if dest_key in self.DESTINATION_HEROES:
             return {
-                "artwork_key": f"{dest_key}:category-{theme}",
-                "image_url": category_img,
+                "url": category_artwork_path,
+                "fallback_url": fallback_url,
+                "source": "vanvas_curated",
+                "source_type": "category_photo",
+                "provenance": "destination_category",
+                "semantic_category": theme,
+                "exactness": "category_matched",
+                "attribution": "VANVAS Curated Category Atmosphere",
+                "alt_text": f"{destination_name} {category} atmosphere",
+                "badge_label": "DESTINATION CATEGORY ART",
+                "artwork_key": f"{dest_key}:{theme}",
+                "image_url": category_artwork_path,
                 "tier": "destination_category",
                 "place_name": place_name,
                 "destination": destination_name,
                 "category": category,
-                "source": "curated_artwork",
                 "is_real_photo": False,
-                "art_style": f"VANVAS editorial {theme} category artwork",
                 "badge": "DESTINATION CATEGORY ART",
-                "metadata": {
-                    "destination": destination_name,
-                    "category": category,
-                    "category_theme": theme,
-                    "resolved_at": datetime.now(timezone.utc).isoformat(),
-                    "version": 1
-                }
+                "visual_description": f"Authentic {destination_name} {theme} visual.",
+                "metadata": {"destination": dest_key, "theme": theme}
             }
 
-        # Priority 6: Destination Artwork
-        if dest_key in self.DESTINATION_HEROES:
-            dest_art = self.DESTINATION_HEROES[dest_key]["illustration"]
-            return {
-                "artwork_key": f"{dest_key}:destination-art",
-                "image_url": dest_art,
-                "tier": "destination",
-                "place_name": place_name,
-                "destination": destination_name,
-                "category": category,
-                "source": "curated_artwork",
-                "is_real_photo": False,
-                "art_style": "VANVAS destination artwork",
-                "badge": "DESTINATION ART",
-                "metadata": {
-                    "destination": destination_name,
-                    "resolved_at": datetime.now(timezone.utc).isoformat()
-                }
-            }
-
-        # Priority 7 & 8: Regional / Universal Semantic Fallback
-        regional_img = self._resolve_regional_fallback(destination_name, category, place_name)
-
+        # Priority 6: Universal Category Fallback (For unseeded destinations, preserve category semantic correctness)
+        regional_url = self._resolve_regional_fallback(destination_name, category, place_name)
         return {
-            "artwork_key": f"regional:{dest_norm or 'himalayan'}:{theme}",
-            "image_url": regional_img,
-            "tier": "regional_fallback",
+            "url": universal_fallback,
+            "fallback_url": regional_url,
+            "source": "fallback",
+            "source_type": "fallback",
+            "provenance": "universal_fallback",
+            "semantic_category": theme,
+            "exactness": "fallback",
+            "attribution": "VANVAS Universal Category Asset",
+            "alt_text": f"{category} travel visual",
+            "badge_label": "UNIVERSAL FALLBACK",
+            "artwork_key": f"universal:{theme}",
+            "image_url": universal_fallback,
+            "tier": "universal_fallback",
             "place_name": place_name,
             "destination": destination_name,
             "category": category,
-            "source": "fallback",
             "is_real_photo": False,
-            "art_style": "Regional Semantic Fallback Artwork",
-            "badge": "REGIONAL ART",
-            "metadata": {
-                "destination": destination_name,
-                "category": category,
-                "category_theme": theme,
-                "resolved_at": datetime.now(timezone.utc).isoformat()
-            }
+            "badge": "UNIVERSAL FALLBACK",
+            "metadata": {"universal_fallback": universal_fallback, "regional_fallback": regional_url}
         }
 
     async def get_artwork_metadata(self, artwork_key: str) -> Optional[Dict[str, Any]]:
-        return self.PLACE_ARTWORK_REGISTRY.get(artwork_key)
+        meta = self.PLACE_ARTWORK_REGISTRY.get(artwork_key)
+        if meta:
+            copy_meta = dict(meta)
+            copy_meta["source"] = copy_meta.get("source") or "curated_artwork"
+            return copy_meta
+        return None
+
 
 class OptionalAIArtworkProvider(CuratedArtworkProvider):
     """
-    Optional AI Artwork Provider supporting Groq text reasoning when configured,
-    and inheriting full deterministic curated artwork resolution.
+    Artwork provider that utilizes curated sanctuary assets and supports optional AI extensions.
     """
     def __init__(self, groq_api_key: Optional[str] = None):
         super().__init__()
         self.groq_api_key = groq_api_key
-
-

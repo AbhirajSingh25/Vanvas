@@ -201,13 +201,19 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
                 className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider ${
                   isStale
                     ? "bg-amber-800 text-amber-100 border border-amber-500/40"
-                    : isLive
+                    : visualRes.badgeLabel === "LIVE PLACE PHOTO" || isLive
                     ? "bg-emerald-600 text-white border border-emerald-400/40"
-                    : visualRes.tier === "exact_place"
+                    : visualRes.badgeLabel === "EXACT PLACE PHOTO"
+                    ? "bg-emerald-700 text-emerald-100 border border-emerald-400"
+                    : visualRes.badgeLabel === "VANVAS PLACE ARTWORK"
                     ? "bg-[#B49252] text-[#0F2924] border border-[#B49252]"
-                    : visualRes.tier === "destination_category"
+                    : visualRes.badgeLabel === "DESTINATION CATEGORY ART"
                     ? "bg-[#173B32] text-[#FAF4E8] border border-[#536B52]"
-                    : "bg-[#7B4D36] text-[#FAF4E8] border border-[#7B4D36]"
+                    : visualRes.badgeLabel === "DESTINATION ART"
+                    ? "bg-[#3F4F42] text-[#FAF4E8] border border-[#536B52]"
+                    : visualRes.badgeLabel === "REGIONAL ART"
+                    ? "bg-[#7B4D36] text-[#FAF4E8] border border-[#7B4D36]"
+                    : "bg-neutral-800 text-neutral-200 border border-neutral-600"
                 }`}
               >
                 {isStale ? "STALE CACHED SNAPSHOT" : visualRes.badgeLabel}

@@ -688,3 +688,49 @@ export interface BookingIntentInput {
     metadata?: Record<string, any>;
   }>;
 }
+
+export type ProvenanceBadge =
+  | "VANVAS PLACE ARTWORK"
+  | "EXACT PLACE PHOTO"
+  | "LIVE PLACE PHOTO"
+  | "DESTINATION CATEGORY ART"
+  | "DESTINATION ART"
+  | "REGIONAL ART"
+  | "UNIVERSAL FALLBACK";
+
+export type ImageSourceType =
+  | "real_photo"
+  | "editorial_artwork"
+  | "category_photo"
+  | "fallback";
+
+export type ImageProvenanceTier =
+  | "exact_place"
+  | "live_place"
+  | "destination_category"
+  | "destination"
+  | "regional_fallback"
+  | "universal_fallback";
+
+export type ImageExactness =
+  | "exact"
+  | "approximate"
+  | "category_matched"
+  | "destination_matched"
+  | "regional_matched"
+  | "fallback";
+
+export interface ImageContract {
+  url: string;
+  fallback_url?: string;
+  source: "wikimedia" | "osm" | "vanvas_curated" | "live_provider" | "fallback" | string;
+  source_type: ImageSourceType;
+  provenance: ImageProvenanceTier;
+  semantic_category: string;
+  exactness: ImageExactness;
+  attribution?: string;
+  license?: string;
+  alt_text: string;
+  badge_label: ProvenanceBadge;
+  visual_description?: string;
+}

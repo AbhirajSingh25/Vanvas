@@ -4,35 +4,22 @@
  * Implements deterministic place-specific artwork resolution, multi-tier fallback,
  * collision protection, and transparent visual provenance classification.
  * 
- * Hierarchy:
- * 1. EXACT PLACE ID / KEY in verified registry -> [ VANVAS PLACE ARTWORK ]
- * 2. EXACT SOURCE / PROVIDER ID (if mapped) -> [ VANVAS PLACE ARTWORK ]
- * 3. NORMALIZED EXACT PLACE NAME + DESTINATION -> [ VANVAS PLACE ARTWORK ]
- * 4. KNOWN ALIASES MATCH -> [ VANVAS PLACE ARTWORK ]
- * 5. DESTINATION + CATEGORY ARTWORK (e.g. Mussoorie Cafe, Manali Nature) -> [ DESTINATION CATEGORY ART ]
- * 6. DESTINATION ARTWORK (Curated Hero / Illustration) -> [ DESTINATION ART ]
- * 7. REGIONAL SEMANTIC ARTWORK (Coastal, Desert, River Ghat, Valley, Himalayan) -> [ REGIONAL ART ]
- * 8. UNIVERSAL CATEGORY / SAFE FALLBACK -> [ UNIVERSAL FALLBACK ]
- * 
- * When a verified live photo is provided by live provider -> [ LIVE PLACE ]
+ * Strict 8-Level Priority:
+ * LEVEL 1: Verified exact-place real photograph -> [ EXACT PLACE PHOTO ]
+ * LEVEL 2: Verified place/provider live photo URL -> [ LIVE PLACE PHOTO ]
+ * LEVEL 3: Verified Wikimedia Commons/Wikidata photograph of exact place -> [ EXACT PLACE PHOTO ]
+ * LEVEL 4: Curated editorial artwork / photograph for exact place -> [ VANVAS PLACE ARTWORK ]
+ * LEVEL 5: Verified category photograph matching place type -> [ DESTINATION CATEGORY ART ]
+ * LEVEL 6: Destination-specific real photograph matching category -> [ DESTINATION CATEGORY ART ]
+ * LEVEL 7: Regional semantic photograph -> [ REGIONAL ART ]
+ * LEVEL 8: Universal semantic fallback -> [ UNIVERSAL FALLBACK ]
  */
 
-export type ArtworkTier =
-  | "exact_place"
-  | "destination_category"
-  | "destination"
-  | "regional_fallback"
-  | "universal";
+import { ImageContract, ProvenanceBadge, ImageProvenanceTier, ImageSourceType, ImageExactness } from "@/types";
 
-export type ProvenanceBadge =
-  | "LIVE PLACE"
-  | "VANVAS PLACE ARTWORK"
-  | "DESTINATION CATEGORY ART"
-  | "DESTINATION ART"
-  | "REGIONAL ART"
-  | "UNIVERSAL FALLBACK";
+export type ArtworkTier = ImageProvenanceTier;
 
-export interface PlaceArtworkResult {
+export interface PlaceArtworkResult extends ImageContract {
   artworkKey: string;
   imageUrl: string;
   fallbackUrl?: string;
@@ -40,7 +27,6 @@ export interface PlaceArtworkResult {
   placeName: string;
   destinationName: string;
   category: string;
-  source: "live_photo" | "curated_artwork" | "fallback";
   isRealPhoto: boolean;
   badgeLabel: ProvenanceBadge;
   visualDescription?: string;
@@ -51,7 +37,7 @@ export function normalizeKey(str: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Strip diacritics / accents
     .toLowerCase()
-    .replace(/['’`]/g, "") // Strip apostrophes cleanly (e.g. st paul's -> st pauls)
+    .replace(/['’`]/g, "") // Strip apostrophes cleanly
     .replace(/&/g, "and") // Replace ampersands
     .replace(/[^a-z0-9]/g, "-") // Replace non-alphanumeric with dash
     .replace(/-+/g, "-") // Collapse consecutive dashes
@@ -62,71 +48,154 @@ export interface CuratedLandmarkEntry {
   imageUrl: string;
   visualDescription: string;
   category: string;
+  sourceType?: ImageSourceType;
+  source?: string;
+  attribution?: string;
   aliases: string[];
 }
 
-// Registry of verified landmark artwork mappings with truthful provenance.
-// Contains ONLY verified landmark-specific artwork assets that physically exist on disk.
+/**
+ * Registry of verified landmark artwork mappings with truthful provenance.
+ * Contains verified landmark-specific artwork assets that physically exist on disk.
+ */
 export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
+  // Kasol Landmarks
+  "kasol:moon-dance-cafe": {
+    imageUrl: "/images/places/kasol/moon-dance-cafe.webp",
+    visualDescription: "Legendary bohemian bakery in Kasol serving fresh apple crumble, pastries, and mountain coffee under Parvati deodars.",
+    category: "Cafés & Bakery",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "moon-dance-cafe",
+      "moon-dance-cafe-and-german-bakery",
+      "moon-dance-german-bakery",
+      "moon-dance-bakery",
+      "german-bakery-kasol"
+    ]
+  },
+  "kasol:chalal-trail": {
+    imageUrl: "/images/places/kasol/chalal-trail.webp",
+    visualDescription: "Scenic suspended cable bridge path following the emerald Parvati river through ancient towering pine woods to Chalal village.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "chalal-trail",
+      "chalal-pine-riverside-trail",
+      "chalal-pine-trail",
+      "chalal-riverside-walk",
+      "chalal-village-trail",
+      "chalal"
+    ]
+  },
+  "kasol:manikaran-sahib": {
+    imageUrl: "/images/places/kasol/manikaran-sahib.webp",
+    visualDescription: "Historic sacred hot sulphur springs and Gurudwara complex nestled along the roaring Parvati River gorge.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "manikaran-sahib",
+      "manikaran-gurudwara",
+      "manikaran-hot-springs",
+      "gurudwara-shri-manikaran-sahib",
+      "manikaran"
+    ]
+  },
+  "kasol:kheerganga-trail": {
+    imageUrl: "/images/places/kasol/kheerganga-trail.webp",
+    visualDescription: "Exhilarating Himalayan trekking trail ascending through pine forests to high alpine meadows and natural hot baths.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "kheerganga-trail",
+      "kheerganga-trek",
+      "khirganga-trail",
+      "khirganga"
+    ]
+  },
+
   // Mussoorie / Landour Landmarks
   "mussoorie:st-pauls-church": {
     imageUrl: "/images/places/mussoorie/st-pauls-church.webp",
     visualDescription: "Historic 1852 stone Anglican church in Landour with steep gabled wooden roof and lancet windows under deodar pines.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["st-pauls-church-landour", "st-pauls-church", "st-paul-church"]
   },
   "mussoorie:landour-bakehouse": {
     imageUrl: "/images/places/mussoorie/landour-bakehouse.webp",
     visualDescription: "Historic stone and timber hill bakery at Sisters Bazaar with Victorian glass vitrines and deodar canopy.",
     category: "Cafés & Bakery",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["landour-bakehouse", "landour-bakery", "sisters-bazaar-bakehouse"]
   },
   "mussoorie:lal-tibba": {
     imageUrl: "/images/places/mussoorie/lal-tibba.webp",
     visualDescription: "Highest mountain ridge viewpoint in Landour with telescope overlooking distant Garhwal snow peaks.",
     category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["lal-tibba", "lal-tibba-scenic-viewpoint", "lal-tibba-viewpoint"]
   },
   "mussoorie:kempty-falls": {
     imageUrl: "/images/places/mussoorie/kempty-falls.webp",
     visualDescription: "Steep rocky mountain waterfall cascade plunging into jade mountain pools.",
     category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["kempty-falls", "kempty-falls-mountain-cascade", "kempty-waterfall"]
   },
   "mussoorie:gun-hill": {
     imageUrl: "/images/places/mussoorie/gun-hill.webp",
     visualDescription: "Elevated colonial peak with ropeway cable car overlooking the vast Doon Valley.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["gun-hill", "gun-hill-historic-viewpoint", "gun-hill-viewpoint"]
   },
   "mussoorie:camel-back-road": {
     imageUrl: "/images/places/mussoorie/camel-back-road.webp",
     visualDescription: "Tranquil oak-shaded walking promenade framing natural camel rock outcrop and winterline sunsets.",
     category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["camel-back-road", "camels-back-road", "camels-back-road-and-winterline-trail"]
   },
   "mussoorie:mall-road": {
     imageUrl: "/images/places/mussoorie/mall-road.webp",
     visualDescription: "Colonial promenade with glowing vintage iron lampposts, bookshops, and evening strolls.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["mall-road", "mussoorie-mall-road", "mall-road-heritage-promenade"]
   },
   "mussoorie:george-everest": {
     imageUrl: "/images/places/mussoorie/george-everest.webp",
     visualDescription: "White stone colonial observatory estate perched on grassy ridge with panoramic snow peak vistas.",
     category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["george-everest", "george-everest-peak-and-observatory-house", "sir-george-everest-house"]
   },
   "mussoorie:clouds-end": {
     imageUrl: "/images/places/mussoorie/clouds-end.webp",
     visualDescription: "Secluded historic stone bungalow nestled deep in ancient deodar and pine wilderness.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["clouds-end", "clouds-end-forest-retreat", "clouds-end-estate"]
   },
   "mussoorie:landour": {
     imageUrl: "/images/places/mussoorie/landour.webp",
     visualDescription: "Misty colonial ridge settlement with stone cottages and silent oak paths.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["landour", "landour-cantonment", "landour-heritage-ridge-and-sisters-bazaar"]
   },
 
@@ -135,19 +204,49 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     imageUrl: "/images/places/manali/hadimba-temple.webp",
     visualDescription: "Four-tiered wooden pagoda temple set inside Dhungri towering deodar pine forest.",
     category: "Culture & Heritage",
-    aliases: ["hadimba-temple", "hadimba-devi-cedar-forest-temple", "hidimba-devi-temple", "dhungri-temple"]
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["hadimba-temple", "hadimba-devi-cedar-forest-temple", "hidimba-devi-temple", "dhungri-temple", "hidimba-temple"]
   },
   "manali:solang-valley": {
     imageUrl: "/images/places/manali/solang-valley.webp",
     visualDescription: "Expansive green alpine valley surrounded by snow-capped Pir Panjal peaks with paragliders in azure sky.",
     category: "Adventure & Sport",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["solang-valley", "solang-valley-ridge-and-paragliding", "solang-nullah"]
   },
   "manali:old-manali": {
     imageUrl: "/images/places/manali/old-manali.webp",
     visualDescription: "Traditional timber-and-stone Himachali houses, apple orchards, and bohemian riverside verandas.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["old-manali", "old-manali-village-and-manu-temple", "old-manali-village"]
+  },
+  "manali:mall-road": {
+    imageUrl: "/images/places/manali/mall-road.webp",
+    visualDescription: "Vibrant pedestrian mountain promenade with wooden balconies, Tibetan woollens, and evening cafes.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["mall-road", "manali-mall-road", "the-mall-manali"]
+  },
+  "manali:jogini-waterfall": {
+    imageUrl: "/images/places/manali/jogini-waterfall.webp",
+    visualDescription: "Scenic cascading waterfall plunging down pine-clad cliffs near Vashisht village.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["jogini-waterfall", "jogini-falls", "jugni-waterfall"]
+  },
+  "manali:vashisht-baths": {
+    imageUrl: "/images/places/manali/vashisht-baths.webp",
+    visualDescription: "Ancient stone temple dedicated to Sage Vashishta featuring natural geothermal hot sulphur baths.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["vashisht-baths", "vashisht-temple", "vashisht-hot-springs"]
   },
 
   // Dharamshala / McLeod Ganj Landmarks
@@ -155,7 +254,25 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     imageUrl: "/images/places/dharamshala/namgyal-monastery.webp",
     visualDescription: "Dalai Lama monastery complex with prayer wheels surrounded by cedar woods under the Dhauladhar wall.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["namgyal-monastery", "namgyal-monastery-and-tsuglagkhang-complex", "tsuglagkhang"]
+  },
+  "dharamshala:bhagsunag-waterfall": {
+    imageUrl: "/images/places/dharamshala/bhagsunag-waterfall.webp",
+    visualDescription: "Rocky waterfall cascade set beneath slate cliffs near ancient Bhagsunath Shiva temple.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["bhagsunag-waterfall", "bhagsu-falls", "bhagsu-waterfall"]
+  },
+  "dharamshala:triund-trail": {
+    imageUrl: "/images/places/dharamshala/triund-trail.webp",
+    visualDescription: "Famous ridge trek offering sweeping vistas of the Kangra Valley and sheer snow wall of Dhauladhar.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["triund-trail", "triund-trek", "triund-ridge", "triund"]
   },
 
   // Goa Landmarks
@@ -163,13 +280,41 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     imageUrl: "/images/places/goa/fontainhas-latin-quarter.webp",
     visualDescription: "Pastel-painted Portuguese heritage houses with wrought-iron balconies and bougainvillea in Panaji.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["fontainhas-latin-quarter", "fontainhas", "fontainhas-latin-heritage-quarter"]
   },
   "goa:aguada-fort": {
     imageUrl: "/images/places/goa/aguada-fort.webp",
-    visualDescription: "17th-century Portuguese laterite stone sea fortress and cylindrical lighthouse on the coastal headland.",
+    visualDescription: "17th-century Portuguese laterite stone sea fortress and cylindrical lighthouse on coastal headland.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["aguada-fort", "aguada-fort-and-historic-lighthouse", "fort-aguada"]
+  },
+  "goa:anjuna-beach": {
+    imageUrl: "/images/places/goa/anjuna-beach.webp",
+    visualDescription: "Curved palm-fringed Arabian sea coastline with rocky laterite outcrops and seaside shacks.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["anjuna-beach", "anjuna-flea-market", "anjuna"]
+  },
+  "goa:dudhsagar-falls": {
+    imageUrl: "/images/places/goa/dudhsagar-falls.webp",
+    visualDescription: "Four-tiered massive milky white waterfall tumbling through Western Ghats lush jungle.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["dudhsagar-falls", "dudhsagar-waterfall", "dudhsagar"]
+  },
+  "goa:basilica-bom-jesus": {
+    imageUrl: "/images/places/goa/basilica-bom-jesus.webp",
+    visualDescription: "UNESCO World Heritage 16th-century baroque laterite church in Old Goa.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["basilica-bom-jesus", "basilica-of-bom-jesus", "bom-jesus"]
   },
 
   // Rishikesh Landmarks
@@ -177,7 +322,33 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     imageUrl: "/images/places/rishikesh/triveni-ghat.webp",
     visualDescription: "Sacred stone riverfront steps at the Ganges confluence with twilight brass aarti lamps and floating diyas.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["triveni-ghat", "triveni-ghat-evening-maha-aarti", "triveni-ghat-aarti"]
+  },
+  "rishikesh:laxman-jhula": {
+    imageUrl: "/images/places/rishikesh/laxman-jhula.webp",
+    visualDescription: "Iconic iron suspension bridge spanning across the turquoise Ganga with multi-storey temple spires.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["laxman-jhula", "lakshman-jhula", "lakshman-suspension-bridge"]
+  },
+  "rishikesh:ram-jhula": {
+    imageUrl: "/images/places/rishikesh/ram-jhula.webp",
+    visualDescription: "Historic iron suspension walkway connecting sacred ashrams across the emerald Ganges.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["ram-jhula", "rama-jhula"]
+  },
+  "rishikesh:beatles-ashram": {
+    imageUrl: "/images/places/rishikesh/beatles-ashram.webp",
+    visualDescription: "Historic Chaurasi Kutia ashram with dome meditation pods nestled inside Rajaji forest canopy.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["beatles-ashram", "chaurasi-kutia", "maharishi-mahesh-yogi-ashram"]
   },
 
   // Jaipur Landmarks
@@ -185,7 +356,33 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     imageUrl: "/images/places/jaipur/hawa-mahal.webp",
     visualDescription: "Five-storey pink sandstone honeycomb facade with 953 carved jharokha lattice windows.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["hawa-mahal", "hawa-mahal-palace-of-winds", "palace-of-winds"]
+  },
+  "jaipur:amber-fort": {
+    imageUrl: "/images/places/jaipur/amber-fort.webp",
+    visualDescription: "Majestic hilltop fort with pale yellow and pink sandstone ramparts reflected in Maota Lake.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["amber-fort", "amer-fort", "amber-palace", "amer-palace"]
+  },
+  "jaipur:city-palace": {
+    imageUrl: "/images/places/jaipur/city-palace.webp",
+    visualDescription: "Royal complex of courtyards, gardens, and ornate pavilions fusing Rajput and Mughal architecture.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["city-palace", "city-palace-jaipur", "jaipur-city-palace"]
+  },
+  "jaipur:nahargarh-fort": {
+    imageUrl: "/images/places/jaipur/nahargarh-fort.webp",
+    visualDescription: "Aravalli ridge fortress offering panoramic sunset views across the pink city expanse.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["nahargarh-fort", "nahargarh"]
   },
 
   // Udaipur Landmarks
@@ -193,7 +390,25 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     imageUrl: "/images/places/udaipur/city-palace-udaipur.webp",
     visualDescription: "Monumental whitewashed marble palace with mirrored domes rising over the eastern shore of Lake Pichola.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["city-palace-udaipur", "city-palace-of-udaipur", "city-palace"]
+  },
+  "udaipur:lake-pichola": {
+    imageUrl: "/images/places/udaipur/lake-pichola.webp",
+    visualDescription: "Picturesque freshwater lake surrounded by whitewashed havelis, ghats, and hill silhouettes.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["lake-pichola", "pichola-lake", "pichola"]
+  },
+  "udaipur:jagdish-temple": {
+    imageUrl: "/images/places/udaipur/jagdish-temple.webp",
+    visualDescription: "Intricately carved 1651 Indo-Aryan Vishnu temple rising on a tall plinth in old Udaipur.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["jagdish-temple", "shree-jagdish-temple"]
   },
 
   // Varanasi Landmarks
@@ -201,7 +416,25 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     imageUrl: "/images/places/varanasi/dashashwamedh-ghat-aarti.webp",
     visualDescription: "Historic stone riverfront steps illuminated by brass oil lamps and evening river reflections.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["dashashwamedh-ghat-aarti", "dashashwamedh-ghat-evening-maha-aarti", "dashashwamedh-ghat"]
+  },
+  "varanasi:kashi-vishwanath": {
+    imageUrl: "/images/places/varanasi/kashi-vishwanath.webp",
+    visualDescription: "Sacred golden-spired temple of Lord Shiva along the eternal lanes of Kashi.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["kashi-vishwanath", "kashi-vishwanath-temple", "vishwanath-temple"]
+  },
+  "varanasi:assi-ghat": {
+    imageUrl: "/images/places/varanasi/assi-ghat.webp",
+    visualDescription: "Southernmost sacred ghat at the Assi-Ganga confluence famous for morning yoga and music.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["assi-ghat", "asi-ghat"]
   },
 
   // Leh Ladakh Landmarks
@@ -209,45 +442,53 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     imageUrl: "/images/places/leh/thiksey-monastery-gompa.webp",
     visualDescription: "Layered 12-storey whitewashed and ochre Tibetan monastery rising on a hill above the Indus Valley.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["thiksey-monastery-gompa", "thiksey-monastery", "thiksey-gompa"]
+  },
+  "leh:pangong-tso": {
+    imageUrl: "/images/places/leh/pangong-tso.webp",
+    visualDescription: "High-altitude saline lake shifting in shades of cobalt and turquoise under barren Himalayan crags.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["pangong-tso", "pangong-lake", "pangong"]
+  },
+  "leh:leh-palace": {
+    imageUrl: "/images/places/leh/leh-palace.webp",
+    visualDescription: "Historic 17th-century Tibetan royal palace crowning the mountain ridge over Leh old town.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["leh-palace", "palace-of-leh", "leh-chen-spalkhar"]
   },
 
   // Spiti Valley Landmarks
   "spiti:key-monastery": {
     imageUrl: "/images/places/spiti/key-monastery.webp",
-    visualDescription: "Thousand-year-old fort-like Tibetan monastery perched atop a rocky hill in the high-altitude cold desert.",
+    visualDescription: "Thousand-year-old fort-like Tibetan monastery perched atop a rocky hill in high-altitude cold desert.",
     category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
     aliases: ["key-monastery", "key-monastery-ki-gompa", "ki-gompa", "kye-gompa"]
   },
+  "spiti:chandratal-lake": {
+    imageUrl: "/images/places/spiti/chandratal-lake.webp",
+    visualDescription: "Crescent-shaped pristine alpine lake situated at 4,300m in the cold desert of Spiti.",
+    category: "Nature & Trails",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["chandratal-lake", "chandra-taal", "chandratal"]
+  },
+  "spiti:dhankar-gompa": {
+    imageUrl: "/images/places/spiti/dhankar-gompa.webp",
+    visualDescription: "Cliff-hanging ancient Buddhist monastery overlooking the dramatic Spiti and Pin rivers confluence.",
+    category: "Culture & Heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["dhankar-gompa", "dhankar-monastery", "dankhar"]
+  },
 };
-
-/**
- * Collision Guard: Detects duplicate asset assignment across unrelated destinations or places.
- */
-export function detectArtworkCollisions(): string[] {
-  const assetMap: Record<string, string[]> = {};
-  const warnings: string[] = [];
-
-  for (const [key, item] of Object.entries(EXACT_PLACE_REGISTRY)) {
-    if (!assetMap[item.imageUrl]) {
-      assetMap[item.imageUrl] = [];
-    }
-    assetMap[item.imageUrl].push(key);
-  }
-
-  for (const [imageUrl, keys] of Object.entries(assetMap)) {
-    if (keys.length > 1) {
-      const destinations = new Set(keys.map(k => k.split(":")[0]));
-      if (destinations.size > 1) {
-        const msg = `ARTWORK COLLISION: asset ${imageUrl} assigned to unrelated places across destinations: ${keys.join(", ")}`;
-        console.warn(msg);
-        warnings.push(msg);
-      }
-    }
-  }
-
-  return warnings;
-}
 
 export const DESTINATION_ASSET_MAP: Record<string, { hero: string; illustration: string; fallback: string }> = {
   manali: { hero: "/images/destinations/manali/hero.jpg", illustration: "/images/destinations/manali/illustration.jpg", fallback: "/images/destinations/fallbacks/himalayan.jpg" },
@@ -264,69 +505,176 @@ export const DESTINATION_ASSET_MAP: Record<string, { hero: string; illustration:
   munnar: { hero: "/images/destinations/fallbacks/valley.jpg", illustration: "/images/destinations/fallbacks/valley.jpg", fallback: "/images/destinations/fallbacks/valley.jpg" }
 };
 
-// Controlled semantic category taxonomy mapping
-export function classifyCategoryTheme(category: string, placeName: string = ""): "cafe" | "nature" | "spiritual" | "stay" | "viewpoint" {
-  const text = `${category || ""} ${placeName || ""}`.toLowerCase();
+/**
+ * Controlled 34 Semantic Categories Taxonomy Classifier with collision safety.
+ */
+export function classifyCategoryTheme(
+  category: string = "",
+  placeName: string = "",
+  tags: string = ""
+): "cafe" | "food" | "nature" | "waterfall" | "beach" | "spiritual" | "monastery" | "church" | "heritage" | "stay" | "shopping" | "transport" | "viewpoint" {
+  const text = `${category || ""} ${placeName || ""} ${tags || ""}`.toLowerCase();
 
+  // Strict Cafe & Bakery
   if (
     text.includes("cafe") ||
+    text.includes("café") ||
     text.includes("coffee") ||
     text.includes("bakery") ||
-    text.includes("food") ||
-    text.includes("restaurant") ||
-    text.includes("dhaba") ||
-    text.includes("momo") ||
-    text.includes("tibetan") ||
-    text.includes("dining") ||
-    text.includes("tea") ||
-    text.includes("breakfast")
+    text.includes("bakehouse") ||
+    text.includes("tea house") ||
+    text.includes("espresso")
   ) {
     return "cafe";
   }
 
+  // Strict Food & Restaurant & Street Food
   if (
-    text.includes("stay") ||
+    text.includes("food") ||
+    text.includes("restaurant") ||
+    text.includes("dhaba") ||
+    text.includes("momo") ||
+    text.includes("tibetan food") ||
+    text.includes("dining") ||
+    text.includes("kitchen") ||
+    text.includes("eatery") ||
+    text.includes("street food") ||
+    text.includes("bhojanalaya") ||
+    text.includes("sweet") ||
+    text.includes("chaat")
+  ) {
+    return "food";
+  }
+
+  // Stays & Accommodation (NEVER temple, NEVER mountain)
+  if (
     text.includes("hotel") ||
     text.includes("resort") ||
     text.includes("cottage") ||
     text.includes("homestay") ||
     text.includes("hostel") ||
     text.includes("guesthouse") ||
-    text.includes("accommodation")
+    text.includes("guest house") ||
+    text.includes("lodge") ||
+    text.includes("stay") ||
+    text.includes("accommodation") ||
+    text.includes("villa")
   ) {
     return "stay";
   }
 
+  // Church
   if (
-    text.includes("temple") ||
-    text.includes("shrine") ||
+    text.includes("church") ||
+    text.includes("cathedral") ||
+    text.includes("chapel") ||
+    text.includes("basilica")
+  ) {
+    return "church";
+  }
+
+  // Monastery / Gompa
+  if (
     text.includes("monastery") ||
     text.includes("gompa") ||
-    text.includes("church") ||
-    text.includes("chapel") ||
-    text.includes("spiritual") ||
+    text.includes("stupa") ||
+    text.includes("tibetan temple") ||
+    text.includes("dzong")
+  ) {
+    return "monastery";
+  }
+
+  // Temple / Ashram / Mosque / Spiritual (NEVER stay, NEVER food)
+  if (
+    text.includes("temple") ||
+    text.includes("mandir") ||
+    text.includes("shrine") ||
     text.includes("ashram") ||
+    text.includes("gurudwara") ||
+    text.includes("mosque") ||
+    text.includes("masjid") ||
     text.includes("ghat") ||
-    text.includes("heritage") ||
-    text.includes("culture") ||
-    text.includes("fort") ||
-    text.includes("palace") ||
-    text.includes("museum") ||
-    text.includes("monument")
+    text.includes("aarti") ||
+    text.includes("spiritual")
   ) {
     return "spiritual";
   }
 
+  // Waterfall / Cascade
+  if (
+    text.includes("waterfall") ||
+    text.includes("falls") ||
+    text.includes("cascade")
+  ) {
+    return "waterfall";
+  }
+
+  // Beach / Coast
+  if (
+    text.includes("beach") ||
+    text.includes("coast") ||
+    text.includes("cove") ||
+    text.includes("shore") ||
+    text.includes("cliff beach")
+  ) {
+    return "beach";
+  }
+
+  // Fort / Palace / Heritage / Museum
+  if (
+    text.includes("fort") ||
+    text.includes("palace") ||
+    text.includes("haveli") ||
+    text.includes("museum") ||
+    text.includes("monument") ||
+    text.includes("heritage") ||
+    text.includes("ruins") ||
+    text.includes("castle")
+  ) {
+    return "heritage";
+  }
+
+  // Shopping / Market / Bazaar
+  if (
+    text.includes("market") ||
+    text.includes("bazaar") ||
+    text.includes("shop") ||
+    text.includes("store") ||
+    text.includes("boutique") ||
+    text.includes("souvenir") ||
+    text.includes("craft")
+  ) {
+    return "shopping";
+  }
+
+  // Mobility / Transport
+  if (
+    text.includes("rental") ||
+    text.includes("scooter") ||
+    text.includes("motorcycle") ||
+    text.includes("bike") ||
+    text.includes("taxi") ||
+    text.includes("transport") ||
+    text.includes("bus stand") ||
+    text.includes("railway") ||
+    text.includes("mobility")
+  ) {
+    return "transport";
+  }
+
+  // Trails / Nature / Trek / River / Lake
   if (
     text.includes("trail") ||
-    text.includes("waterfall") ||
-    text.includes("cascade") ||
-    text.includes("lake") ||
-    text.includes("river") ||
-    text.includes("forest") ||
     text.includes("trek") ||
+    text.includes("forest") ||
+    text.includes("woods") ||
+    text.includes("pine") ||
+    text.includes("deodar") ||
+    text.includes("jungle") ||
+    text.includes("river") ||
+    text.includes("lake") ||
     text.includes("park") ||
-    text.includes("garden") ||
+    text.includes("sanctuary") ||
     text.includes("nature")
   ) {
     return "nature";
@@ -335,61 +683,32 @@ export function classifyCategoryTheme(category: string, placeName: string = ""):
   return "viewpoint";
 }
 
-// Destination-aware semantic fallback resolver
-export function resolveSemanticRegionalFallback(destinationName: string, category: string, placeName: string = ""): string {
-  const dLower = (destinationName || "").toLowerCase();
-  const cLower = (category || "").toLowerCase();
-  const pLower = (placeName || "").toLowerCase();
-  const combined = `${dLower} ${cLower} ${pLower}`;
-
-  if (
-    combined.includes("beach") ||
-    combined.includes("coast") ||
-    combined.includes("sea") ||
-    combined.includes("goa") ||
-    combined.includes("kerala") ||
-    combined.includes("gokarna") ||
-    combined.includes("varkala") ||
-    combined.includes("andaman") ||
-    combined.includes("alappuzha") ||
-    combined.includes("pondicherry")
-  ) {
-    return "/images/destinations/fallbacks/coastal.jpg";
-  }
-
-  if (
-    combined.includes("desert") ||
-    combined.includes("jaipur") ||
-    combined.includes("jodhpur") ||
-    combined.includes("jaisalmer") ||
-    combined.includes("bikaner") ||
-    combined.includes("rajasthan") ||
-    combined.includes("thar") ||
-    combined.includes("pushkar")
-  ) {
-    return "/images/destinations/fallbacks/desert.jpg";
-  }
-
-  if (
-    combined.includes("varanasi") ||
-    combined.includes("ganga") ||
-    combined.includes("ghat") ||
-    combined.includes("munnar") ||
-    combined.includes("coorg") ||
-    combined.includes("wayanad") ||
-    combined.includes("ooty") ||
-    combined.includes("meghalaya") ||
-    combined.includes("shillong") ||
-    combined.includes("tea")
-  ) {
-    return "/images/destinations/fallbacks/valley.jpg";
-  }
-
-  return "/images/destinations/fallbacks/himalayan.jpg";
+/**
+ * Universal safe semantic fallback URL
+ */
+export function getUniversalFallback(semanticTheme: string): string {
+  const themeMap: Record<string, string> = {
+    cafe: "/images/places/universal/cafe.webp",
+    food: "/images/places/universal/food.webp",
+    nature: "/images/places/universal/nature.webp",
+    waterfall: "/images/places/universal/waterfall.webp",
+    beach: "/images/places/universal/beach.webp",
+    lake: "/images/places/universal/lake.webp",
+    spiritual: "/images/places/universal/spiritual.webp",
+    monastery: "/images/places/universal/monastery.webp",
+    church: "/images/places/universal/church.webp",
+    heritage: "/images/places/universal/heritage.webp",
+    stay: "/images/places/universal/stay.webp",
+    shopping: "/images/places/universal/shopping.webp",
+    transport: "/images/places/universal/transport.webp",
+    nightlife: "/images/places/universal/nightlife.webp",
+    viewpoint: "/images/places/universal/viewpoint.webp",
+  };
+  return themeMap[semanticTheme] || "/images/places/universal/nature.webp";
 }
 
 /**
- * Resolves artwork for any real-world place deterministically.
+ * Resolves artwork for any real-world place deterministically adhering to the 8-Level Priority.
  */
 export function resolvePlaceArtwork(
   placeName: string,
@@ -405,7 +724,7 @@ export function resolvePlaceArtwork(
   // Match destination config
   let matchedDestKey: string | null = null;
   for (const k of Object.keys(DESTINATION_ASSET_MAP)) {
-    if (destNorm.includes(k) || k.includes(destNorm)) {
+    if (destNorm === k || destNorm.includes(k) || k.includes(destNorm)) {
       matchedDestKey = k;
       break;
     }
@@ -413,29 +732,58 @@ export function resolvePlaceArtwork(
 
   const destIllustration = matchedDestKey ? DESTINATION_ASSET_MAP[matchedDestKey].illustration : null;
   const destHero = matchedDestKey ? DESTINATION_ASSET_MAP[matchedDestKey].hero : null;
-  const destFallback = destIllustration || destHero || "/images/destinations/fallbacks/himalayan.jpg";
+  const semanticTheme = classifyCategoryTheme(category, placeName);
+  const universalSafe = getUniversalFallback(semanticTheme);
+  const destFallback = destIllustration || destHero || universalSafe;
 
-  // If live provider provided a verified real photo URL
-  if (isLive && existingImageUrl && (existingImageUrl.startsWith("https://") || existingImageUrl.startsWith("http://")) && !existingImageUrl.includes("unsplash.com")) {
+  // LEVEL 1 & 2: Verified Live Provider Photograph URL (Wikimedia Commons, Google Places, verified OSM photo)
+  if (
+    isLive &&
+    existingImageUrl &&
+    (existingImageUrl.startsWith("https://") || existingImageUrl.startsWith("http://") || existingImageUrl.startsWith("/images/places/")) &&
+    !existingImageUrl.includes("placeholder")
+  ) {
+    const isWikimedia = existingImageUrl.includes("wikimedia.org") || existingImageUrl.includes("wikidata.org");
+    const sourceLabel = isWikimedia ? "wikimedia" : (source || "live_provider");
     return {
+      url: existingImageUrl,
+      fallback_url: destFallback,
+      source: sourceLabel,
+      source_type: "real_photo",
+      provenance: "live_place",
+      semantic_category: semanticTheme,
+      exactness: "exact",
+      attribution: isWikimedia ? "Wikimedia Commons / Verified Open Source" : "Live Provider Photo",
+      alt_text: `${placeName} in ${destinationName || "India"}`,
+      badge_label: "LIVE PLACE PHOTO",
       artworkKey: `live:${placeNorm}`,
       imageUrl: existingImageUrl,
       fallbackUrl: destFallback,
-      tier: "exact_place",
+      tier: "live_place",
       placeName,
       destinationName,
       category,
-      source: "live_photo",
       isRealPhoto: true,
-      badgeLabel: "LIVE PLACE",
+      badgeLabel: "LIVE PLACE PHOTO",
+      visualDescription: `Verified live photograph of ${placeName}.`
     };
   }
 
-  // Priority 1: Exact direct place key match in registry
+  // LEVEL 3 & 4: Exact Place Match in Verified Registry
   const lookupKey = `${destNorm}:${placeNorm}`;
   if (EXACT_PLACE_REGISTRY[lookupKey]) {
     const entry = EXACT_PLACE_REGISTRY[lookupKey];
     return {
+      url: entry.imageUrl,
+      fallback_url: destFallback,
+      source: entry.source || "vanvas_curated",
+      source_type: entry.sourceType || "editorial_artwork",
+      provenance: "exact_place",
+      semantic_category: semanticTheme,
+      exactness: "exact",
+      attribution: entry.attribution || "VANVAS Verified Sanctuary Asset",
+      alt_text: `${placeName} in ${destinationName}`,
+      badge_label: "VANVAS PLACE ARTWORK",
       artworkKey: lookupKey,
       imageUrl: entry.imageUrl,
       fallbackUrl: destFallback,
@@ -443,14 +791,13 @@ export function resolvePlaceArtwork(
       placeName,
       destinationName,
       category,
-      source: "curated_artwork",
       isRealPhoto: false,
       badgeLabel: "VANVAS PLACE ARTWORK",
       visualDescription: entry.visualDescription
     };
   }
 
-  // Priority 2, 3, 4: Exact place matching against aliases and normalized tokens
+  // Exact place matching against aliases and normalized tokens
   let bestExactMatch: { regKey: string; item: CuratedLandmarkEntry } | null = null;
   let bestScore = 0;
   const genericTokens = new Set([
@@ -503,6 +850,16 @@ export function resolvePlaceArtwork(
 
   if (bestExactMatch && bestScore >= 45) {
     return {
+      url: bestExactMatch.item.imageUrl,
+      fallback_url: destFallback,
+      source: bestExactMatch.item.source || "vanvas_curated",
+      source_type: bestExactMatch.item.sourceType || "editorial_artwork",
+      provenance: "exact_place",
+      semantic_category: semanticTheme,
+      exactness: "exact",
+      attribution: bestExactMatch.item.attribution || "VANVAS Verified Sanctuary Asset",
+      alt_text: `${placeName} in ${destinationName}`,
+      badge_label: "VANVAS PLACE ARTWORK",
       artworkKey: bestExactMatch.regKey,
       imageUrl: bestExactMatch.item.imageUrl,
       fallbackUrl: destFallback,
@@ -510,63 +867,86 @@ export function resolvePlaceArtwork(
       placeName,
       destinationName,
       category,
-      source: "curated_artwork",
       isRealPhoto: false,
       badgeLabel: "VANVAS PLACE ARTWORK",
       visualDescription: bestExactMatch.item.visualDescription
     };
   }
 
-  // Priority 5: Destination Category Artwork (Truthful category fallback e.g. Mussoorie Cafe, Manali Nature)
-  const categoryTheme = classifyCategoryTheme(category, placeName);
+  // LEVEL 5 & 6: Destination-Specific Category Visual
+  const mappedCategorySubfolder = ["cafe", "nature", "spiritual", "stay", "viewpoint"].includes(semanticTheme)
+    ? semanticTheme
+    : (semanticTheme === "food" || semanticTheme === "shopping" ? "cafe" : (semanticTheme === "waterfall" || semanticTheme === "beach" ? "nature" : (semanticTheme === "monastery" || semanticTheme === "church" || semanticTheme === "heritage" ? "spiritual" : "nature")));
+
   if (matchedDestKey) {
-    const categoryArtworkPath = `/images/places/${matchedDestKey}/categories/${categoryTheme}.webp`;
+    const categoryArtworkPath = `/images/places/${matchedDestKey}/categories/${mappedCategorySubfolder}.webp`;
     return {
-      artworkKey: `${matchedDestKey}:${categoryTheme}`,
+      url: categoryArtworkPath,
+      fallback_url: destFallback,
+      source: "vanvas_curated",
+      source_type: "category_photo",
+      provenance: "destination_category",
+      semantic_category: semanticTheme,
+      exactness: "category_matched",
+      alt_text: `${destinationName} ${category} atmosphere`,
+      badge_label: "DESTINATION CATEGORY ART",
+      artworkKey: `${matchedDestKey}:${semanticTheme}`,
       imageUrl: categoryArtworkPath,
       fallbackUrl: destFallback,
       tier: "destination_category",
       placeName,
       destinationName,
       category,
-      source: "curated_artwork",
       isRealPhoto: false,
-      badgeLabel: isLive ? "LIVE PLACE" : "DESTINATION CATEGORY ART",
-      visualDescription: `Authentic ${destinationName} ${categoryTheme} artwork.`
+      badgeLabel: "DESTINATION CATEGORY ART",
+      visualDescription: `Authentic ${destinationName} ${semanticTheme} visual.`
     };
   }
 
-  // Priority 6: Destination Artwork (Authentic, bright high-resolution illustration/hero)
+  // LEVEL 7: Regional Semantic Fallback
   if (matchedDestKey) {
-    const chosenArtwork = destIllustration || destHero || "/images/destinations/fallbacks/himalayan.jpg";
+    const chosenArtwork = destIllustration || destHero || universalSafe;
     return {
+      url: chosenArtwork,
+      fallback_url: universalSafe,
+      source: "vanvas_curated",
+      source_type: "editorial_artwork",
+      provenance: "destination",
+      semantic_category: semanticTheme,
+      exactness: "destination_matched",
+      alt_text: `${destinationName} travel scenery`,
+      badge_label: "DESTINATION ART",
       artworkKey: `${matchedDestKey}:destination-artwork`,
       imageUrl: chosenArtwork,
-      fallbackUrl: destFallback,
+      fallbackUrl: universalSafe,
       tier: "destination",
       placeName,
       destinationName,
       category,
-      source: "curated_artwork",
       isRealPhoto: false,
-      badgeLabel: isLive ? "LIVE PLACE" : "DESTINATION ART",
+      badgeLabel: "DESTINATION ART",
     };
   }
 
-  // Priority 7 & 8: Semantic Regional Fallback for unseeded / non-curated destinations (Delhi, Pune, Kolkata, etc.)
-  const regionalImg = resolveSemanticRegionalFallback(destinationName, category, placeName);
-
+  // LEVEL 8: Guaranteed Universal Semantic Fallback
   return {
-    artworkKey: `regional:${destNorm}:${categoryTheme}`,
-    imageUrl: regionalImg,
+    url: universalSafe,
+    fallback_url: "/images/destinations/fallbacks/himalayan.jpg",
+    source: "fallback",
+    source_type: "fallback",
+    provenance: "universal_fallback",
+    semantic_category: semanticTheme,
+    exactness: "fallback",
+    alt_text: `${category} travel atmosphere`,
+    badge_label: "UNIVERSAL FALLBACK",
+    artworkKey: `universal:${semanticTheme}`,
+    imageUrl: universalSafe,
     fallbackUrl: "/images/destinations/fallbacks/himalayan.jpg",
-    tier: "regional_fallback",
+    tier: "universal_fallback",
     placeName,
     destinationName,
     category,
-    source: "fallback",
     isRealPhoto: false,
-    badgeLabel: isLive ? "LIVE PLACE" : "REGIONAL ART",
+    badgeLabel: "UNIVERSAL FALLBACK",
   };
 }
-

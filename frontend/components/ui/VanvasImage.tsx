@@ -13,6 +13,8 @@ export interface VanvasImageProps extends Omit<React.ImgHTMLAttributes<HTMLImage
   className?: string;
 }
 
+const GUARANTEED_UNIVERSAL_FALLBACK = "/images/places/universal/nature.webp";
+
 export const VanvasImage: React.FC<VanvasImageProps> = ({
   src,
   fallbackSrc,
@@ -24,52 +26,60 @@ export const VanvasImage: React.FC<VanvasImageProps> = ({
   style,
   ...props
 }) => {
-  const defaultFallback =
-    fallbackSrc ||
+  const regionalFallback =
     REGIONAL_FALLBACK_ARTWORKS[regionType] ||
     REGIONAL_FALLBACK_ARTWORKS.general;
 
-  const targetSrc = src || defaultFallback;
-  const [currentSrc, setCurrentSrc] = useState<string>(targetSrc);
-  const [hasError, setHasError] = useState<boolean>(false);
+  // Build the cascading fallback chain:
+  // 1. Primary src
+  // 2. Explicit fallbackSrc
+  // 3. Regional fallback
+  // 4. Guaranteed universal local asset
+  const initialChain = React.useMemo(() => {
+    const chain: string[] = [];
+    if (src) chain.push(src);
+    if (fallbackSrc && !chain.includes(fallbackSrc)) chain.push(fallbackSrc);
+    if (regionalFallback && !chain.includes(regionalFallback)) chain.push(regionalFallback);
+    if (!chain.includes(GUARANTEED_UNIVERSAL_FALLBACK)) chain.push(GUARANTEED_UNIVERSAL_FALLBACK);
+    return chain.length > 0 ? chain : [GUARANTEED_UNIVERSAL_FALLBACK];
+  }, [src, fallbackSrc, regionalFallback]);
+
+  const [chainIndex, setChainIndex] = useState<number>(0);
+  const [currentSrc, setCurrentSrc] = useState<string>(initialChain[0]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Sync state when src changes
   useEffect(() => {
-    const newTarget = src || defaultFallback;
-    setCurrentSrc(newTarget);
-    setHasError(false);
+    setChainIndex(0);
+    setCurrentSrc(initialChain[0]);
     
-    // Check if the image is already cached / completed in browser
     if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
       setIsLoading(false);
     } else {
       setIsLoading(true);
     }
 
-    // Safety timeout: Never stay in loading state forever (max 2 seconds)
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 2500);
 
     return () => clearTimeout(timer);
-  }, [src, defaultFallback]);
+  }, [initialChain]);
 
   const handleLoad = () => {
     setIsLoading(false);
   };
 
   const handleError = () => {
-    if (!hasError && currentSrc !== defaultFallback) {
-      setHasError(true);
-      setCurrentSrc(defaultFallback);
-      // If fallback is also loaded or complete
-      if (imgRef.current && imgRef.current.complete) {
+    const nextIdx = chainIndex + 1;
+    if (nextIdx < initialChain.length) {
+      setChainIndex(nextIdx);
+      setCurrentSrc(initialChain[nextIdx]);
+      if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
         setIsLoading(false);
       }
     } else {
-      // Fallback failed or already applied
+      // Reached end of chain
       setIsLoading(false);
     }
   };

@@ -217,17 +217,17 @@ class LivePlacesProvider(PlacesProvider):
 
     def _category_image(self, category: str) -> str:
         images = {
-            "Cafés & Bakery": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800",
-            "Local Food": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800",
-            "Nature & Trails": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800",
-            "Culture & Heritage": "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=800",
-            "Adventure": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800",
-            "Shops & Markets": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800",
-            "Mobility & Transport": "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800",
-            "Essentials & Medical": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800",
-            "Attractions": "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800",
+            "Cafés & Bakery": "/images/places/universal/cafe.webp",
+            "Local Food": "/images/places/universal/food.webp",
+            "Nature & Trails": "/images/places/universal/nature.webp",
+            "Culture & Heritage": "/images/places/universal/spiritual.webp",
+            "Adventure": "/images/places/universal/viewpoint.webp",
+            "Shops & Markets": "/images/places/universal/shopping.webp",
+            "Mobility & Transport": "/images/places/universal/transport.webp",
+            "Essentials & Medical": "/images/places/universal/stay.webp",
+            "Attractions": "/images/places/universal/viewpoint.webp",
         }
-        return images.get(category, "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800")
+        return images.get(category, "/images/places/universal/nature.webp")
 
     def _haversine(self, lat1: float, lng1: float, lat2: float, lng2: float) -> float:
         r = 6371.0
@@ -317,6 +317,21 @@ class LivePlacesProvider(PlacesProvider):
             source_id=str(el.get("id")),
         )
 
+        # Inspect OSM visual tags: direct image URL or Wikimedia Commons reference
+        osm_img_url = None
+        if "image" in tags and str(tags["image"]).startswith("http"):
+            osm_img_url = str(tags["image"]).strip()
+        elif "wikimedia_commons" in tags:
+            wm_val = str(tags["wikimedia_commons"]).strip()
+            if wm_val.startswith("File:") or wm_val.startswith("Image:"):
+                fname = wm_val.split(":", 1)[1].strip()
+            else:
+                fname = wm_val
+            fname_clean = fname.replace(" ", "_")
+            osm_img_url = f"https://commons.wikimedia.org/wiki/Special:FilePath/{fname_clean}?width=800"
+
+        final_img_url = osm_img_url or self._category_image(p_cat)
+
         return {
             "id": f"osm-{el.get('id')}",
             "name": p_name,
@@ -337,7 +352,7 @@ class LivePlacesProvider(PlacesProvider):
             "website": website,
             "recommended_duration_mins": 60,
             "tags": f"{p_cat},OpenStreetMap",
-            "image_url": self._category_image(p_cat),
+            "image_url": final_img_url,
             "why_vanvas_recommends": None,
             "is_must_visit": False,
             "is_hidden_gem": tags.get("tourism") == "viewpoint",

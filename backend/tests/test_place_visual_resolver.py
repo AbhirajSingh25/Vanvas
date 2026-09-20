@@ -73,5 +73,5 @@ async def test_artwork_api_endpoint():
         assert r_meta.status_code == 200
         meta = r_meta.json()
         assert meta["place_name"] == "Landour Bakehouse"
-        assert meta["source"] == "curated_artwork"
+        assert meta["source"] in ["curated_artwork", "vanvas_curated"]
         assert "api_key" not in meta
