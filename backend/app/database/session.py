@@ -1,6 +1,9 @@
-from sqlalchemy import create_engine, text
+import logging
+from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.core.config import settings
+
+logger = logging.getLogger("vanvas.database")
 
 # Determine database engine arguments & normalize connection URL
 db_url = settings.DATABASE_URL
@@ -20,13 +23,40 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-def ensure_sqlite_schema(eng=engine):
+def ensure_database_schema(eng=engine):
+    """
+    Production-safe, additive, dialect-agnostic database migration helper.
+    Ensures missing columns and tables exist without dropping or modifying existing data.
+    Works transparently on PostgreSQL and SQLite.
+    """
     try:
+        # 1. Create any missing tables defined in models
+        Base.metadata.create_all(bind=eng)
+
+        inspector = inspect(eng)
+        existing_tables = set(inspector.get_table_names())
+        
         with eng.connect() as conn:
-            result = conn.execute(text("PRAGMA table_info(user_preferences)"))
-            existing_cols = {row[1] for row in result.fetchall()}
-            if existing_cols:
-                cols_to_add = {
+            # 2. Check and migrate `users` table
+            if "users" in existing_tables:
+                user_cols = {col["name"] for col in inspector.get_columns("users")}
+                
+                if "email_verified_at" not in user_cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN email_verified_at TIMESTAMP NULL"))
+                    logger.info("Migrated schema: added email_verified_at to users table.")
+                    
+                if "avatar_url" not in user_cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500) NULL"))
+                    logger.info("Migrated schema: added avatar_url to users table.")
+                    
+                if "role" not in user_cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'traveller'"))
+                    logger.info("Migrated schema: added role to users table.")
+
+            # 3. Check and migrate `user_preferences` table
+            if "user_preferences" in existing_tables:
+                pref_cols = {col["name"] for col in inspector.get_columns("user_preferences")}
+                pref_additions = {
                     "accommodation_preference": "VARCHAR(100) DEFAULT 'Riverside & Forest Stays'",
                     "transport_preference": "VARCHAR(100) DEFAULT 'Volvo Bus'",
                     "companion_style": "VARCHAR(50) DEFAULT 'Solo'",
@@ -35,92 +65,44 @@ def ensure_sqlite_schema(eng=engine):
                     "currency": "VARCHAR(10) DEFAULT 'INR'",
                     "theme": "VARCHAR(20) DEFAULT 'system'",
                     "location_mode": "VARCHAR(50) DEFAULT 'ask_every_time'",
-                    "notify_trip_reminders": "BOOLEAN DEFAULT 1",
-                    "notify_trip_changes": "BOOLEAN DEFAULT 1",
-                    "notify_booking_updates": "BOOLEAN DEFAULT 1",
-                    "notify_suggestions": "BOOLEAN DEFAULT 1",
-                    "notify_copilot_updates": "BOOLEAN DEFAULT 0",
-                    "notify_announcements": "BOOLEAN DEFAULT 0",
-                    "ai_copilot_enabled": "BOOLEAN DEFAULT 1",
-                    "ai_personalized_recommendations": "BOOLEAN DEFAULT 1",
-                    "ai_use_travel_preferences": "BOOLEAN DEFAULT 1",
-                    "ai_use_trip_context": "BOOLEAN DEFAULT 1",
-                    "created_at": "DATETIME",
-                    "updated_at": "DATETIME",
+                    "notify_trip_reminders": "BOOLEAN DEFAULT TRUE",
+                    "notify_trip_changes": "BOOLEAN DEFAULT TRUE",
+                    "notify_booking_updates": "BOOLEAN DEFAULT TRUE",
+                    "notify_suggestions": "BOOLEAN DEFAULT TRUE",
+                    "notify_copilot_updates": "BOOLEAN DEFAULT FALSE",
+                    "notify_announcements": "BOOLEAN DEFAULT FALSE",
+                    "ai_copilot_enabled": "BOOLEAN DEFAULT TRUE",
+                    "ai_personalized_recommendations": "BOOLEAN DEFAULT TRUE",
+                    "ai_use_travel_preferences": "BOOLEAN DEFAULT TRUE",
+                    "ai_use_trip_context": "BOOLEAN DEFAULT TRUE",
+                    "created_at": "TIMESTAMP NULL",
+                    "updated_at": "TIMESTAMP NULL",
                 }
-                for col, col_type in cols_to_add.items():
-                    if col not in existing_cols:
-                        conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col} {col_type}"))
+                for col_name, col_def in pref_additions.items():
+                    if col_name not in pref_cols:
+                        conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col_name} {col_def}"))
+                        logger.info(f"Migrated schema: added {col_name} to user_preferences table.")
 
-            # Ensure users table has email_verified_at
-            user_result = conn.execute(text("PRAGMA table_info(users)"))
-            existing_user_cols = {row[1] for row in user_result.fetchall()}
-            if existing_user_cols and "email_verified_at" not in existing_user_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN email_verified_at DATETIME NULL"))
+            # 4. Ensure essential indexes on email_verification_tokens
+            if "email_verification_tokens" in existing_tables:
+                try:
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_token_hash ON email_verification_tokens(token_hash)"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_user_id ON email_verification_tokens(user_id)"))
+                except Exception:
+                    pass
 
-            # Ensure email_verification_tokens table exists if missing in SQLite
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS email_verification_tokens (
-                    id VARCHAR(36) PRIMARY KEY,
-                    user_id VARCHAR(36) NOT NULL,
-                    token_hash VARCHAR(64) NOT NULL,
-                    created_at DATETIME,
-                    expires_at DATETIME NOT NULL,
-                    used_at DATETIME,
-                    FOREIGN KEY(user_id) REFERENCES users(id)
-                )
-            """))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_token_hash ON email_verification_tokens(token_hash)"))
-            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_user_id ON email_verification_tokens(user_id)"))
-
-            # Ensure trip_invites table exists if missing in SQLite
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS trip_invites (
-                    id VARCHAR(36) PRIMARY KEY,
-                    trip_id VARCHAR(36) NOT NULL,
-                    code VARCHAR(32) NOT NULL UNIQUE,
-                    created_at DATETIME,
-                    expires_at DATETIME,
-                    revoked BOOLEAN DEFAULT 0,
-                    FOREIGN KEY(trip_id) REFERENCES trips(id)
-                )
-            """))
-            # Ensure conversations and conversation_messages tables exist if missing in persistent SQLite
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS conversations (
-                    id VARCHAR(36) PRIMARY KEY,
-                    user_id VARCHAR(36) NOT NULL,
-                    trip_id VARCHAR(36),
-                    destination_slug VARCHAR(100),
-                    title VARCHAR(255) DEFAULT 'Mountain Expedition Session',
-                    summary TEXT,
-                    context_state TEXT,
-                    created_at DATETIME,
-                    updated_at DATETIME,
-                    FOREIGN KEY(user_id) REFERENCES users(id),
-                    FOREIGN KEY(trip_id) REFERENCES trips(id)
-                )
-            """))
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS conversation_messages (
-                    id VARCHAR(36) PRIMARY KEY,
-                    conversation_id VARCHAR(36) NOT NULL,
-                    role VARCHAR(20) NOT NULL,
-                    content TEXT NOT NULL,
-                    tool_calls TEXT,
-                    tool_results TEXT,
-                    metadata_json TEXT,
-                    created_at DATETIME,
-                    FOREIGN KEY(conversation_id) REFERENCES conversations(id)
-                )
-            """))
             conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"ensure_database_schema encountered an issue: {e}")
 
-# Run on module load for persistent SQLite database file
-if settings.DATABASE_URL.startswith("sqlite"):
-    ensure_sqlite_schema(engine)
+# Backward compatibility alias
+ensure_sqlite_schema = ensure_database_schema
+
+# Run safe schema migration on module load
+try:
+    ensure_database_schema(engine)
+except Exception:
+    pass
 
 def get_db():
     db = SessionLocal()
@@ -128,3 +110,4 @@ def get_db():
         yield db
     finally:
         db.close()
+

@@ -4,48 +4,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.core.config import settings
-from app.database.session import engine, Base, get_db
+from app.database.session import engine, Base, get_db, ensure_database_schema
 from app.seed.seed_data import seed_database
 from app.api.v1 import (
     auth, destinations, trips, budget, group, places,
     transport_hotels_rentals, copilot, checklist, admin, search, artwork, reviews, bookings
 )
 
-def _ensure_sqlite_schema():
-    from sqlalchemy import text
-    try:
-        with engine.connect() as conn:
-            # Check user_preferences
-            result = conn.execute(text("PRAGMA table_info(user_preferences)"))
-            existing_cols = {row[1] for row in result.fetchall()}
-            if existing_cols:
-                if "accommodation_preference" not in existing_cols:
-                    conn.execute(text("ALTER TABLE user_preferences ADD COLUMN accommodation_preference VARCHAR(100) DEFAULT 'Riverside & Forest Stays'"))
-                if "transport_preference" not in existing_cols:
-                    conn.execute(text("ALTER TABLE user_preferences ADD COLUMN transport_preference VARCHAR(100) DEFAULT 'Volvo Bus'"))
-                if "companion_style" not in existing_cols:
-                    conn.execute(text("ALTER TABLE user_preferences ADD COLUMN companion_style VARCHAR(50) DEFAULT 'Solo'"))
-                conn.commit()
-
-            # Check users
-            user_result = conn.execute(text("PRAGMA table_info(users)"))
-            existing_user_cols = {row[1] for row in user_result.fetchall()}
-            if existing_user_cols:
-                if "email_verified_at" not in existing_user_cols:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN email_verified_at DATETIME NULL"))
-                conn.commit()
-    except Exception:
-        pass
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize database tables
-    Base.metadata.create_all(bind=engine)
-    # Ensure SQLite columns exist for UserPreference
-    _ensure_sqlite_schema()
+    # Ensure database schema is up-to-date and all tables/columns exist
+    ensure_database_schema(engine)
     # Seed database with authentic Indian mountain travel data
     seed_database()
     yield
+
 
 app = FastAPI(
     title="VANVAS API - Travel Operating Layer",
