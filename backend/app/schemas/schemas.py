@@ -100,6 +100,8 @@ class UserResponse(UserBase):
     id: str
     role: str
     avatar_url: Optional[str] = None
+    email_verified_at: Optional[datetime] = None
+    is_verified: bool = False
     created_at: datetime
     preferences: Optional[UserPreferenceSchema] = None
 
@@ -110,6 +112,30 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+class RegistrationSuccessResponse(BaseModel):
+    message: str
+    email: str
+    email_verified: bool = False
+    email_delivery_status: Optional[str] = None
+
+class VerifyEmailRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+
+class VerifyEmailResponse(BaseModel):
+    success: bool
+    message: str
+    email: Optional[str] = None
+    already_verified: bool = False
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+class ResendVerificationResponse(BaseModel):
+    success: bool
+    message: str
+    cooldown_seconds: int = 60
+    email_delivery_status: Optional[str] = None
 
 # ----------------- Destination Schemas -----------------
 class DestinationBase(BaseModel):

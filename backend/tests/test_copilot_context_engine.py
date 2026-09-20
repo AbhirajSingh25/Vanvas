@@ -59,6 +59,7 @@ def user_a(db):
         hashed_password=get_password_hash("SuperSecurePass123!"),
         full_name="Aarav Mehta",
         role="traveller",
+        email_verified_at=datetime.now(timezone.utc),
     )
     db.add(user)
     db.commit()
@@ -88,6 +89,7 @@ def user_b(db):
         hashed_password=get_password_hash("AnotherSecret456!"),
         full_name="Sneha Kapoor",
         role="traveller",
+        email_verified_at=datetime.now(timezone.utc),
     )
     db.add(user)
     db.commit()

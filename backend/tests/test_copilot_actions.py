@@ -50,6 +50,7 @@ def test_user_owner(db):
             hashed_password=get_password_hash("Secret123!"),
             full_name="Action Owner Traveller",
             role="traveller",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.commit()
@@ -67,6 +68,7 @@ def test_user_intruder(db):
             hashed_password=get_password_hash("Secret456!"),
             full_name="Action Intruder Traveller",
             role="traveller",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.commit()

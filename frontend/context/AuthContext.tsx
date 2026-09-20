@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { User, UserPreferences, PasswordChangePayload, UserDataExport } from "@/types";
+import { User, UserPreferences, PasswordChangePayload, UserDataExport, RegistrationResult } from "@/types";
 import { api } from "@/lib/api";
 
 interface ProfileUpdatePayload {
@@ -37,8 +37,9 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  emailVerified: boolean;
   login: (email: string, pass: string) => Promise<User>;
-  register: (email: string, pass: string, name: string) => Promise<User>;
+  register: (email: string, pass: string, name: string) => Promise<RegistrationResult>;
   logout: () => void;
   refreshUser: () => Promise<User | null>;
   setUser: (user: User | null) => void;
@@ -114,14 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (email: string, pass: string, name: string): Promise<User> => {
+  const register = async (email: string, pass: string, name: string): Promise<RegistrationResult> => {
     setIsLoading(true);
     try {
       const res = await api.register(email.trim().toLowerCase(), pass, name.trim());
-      localStorage.setItem("vanvas_token", res.access_token);
-      setToken(res.access_token);
-      setUser(res.user);
-      return res.user;
+      return res;
     } catch (err: any) {
       throw err;
     } finally {
@@ -177,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       isLoading,
       isAuthenticated: !!user,
+      emailVerified: !!user?.email_verified_at,
       login,
       register,
       logout,

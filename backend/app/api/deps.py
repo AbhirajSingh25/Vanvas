@@ -55,6 +55,17 @@ def get_current_user(
         )
     return user
 
+def get_current_verified_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    if current_user.email_verified_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email address to access this feature.",
+            headers={"X-Auth-Reason": "EMAIL_NOT_VERIFIED"}
+        )
+    return current_user
+
 def get_current_admin(
     current_user: User = Depends(get_current_user)
 ) -> User:

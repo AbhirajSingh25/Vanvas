@@ -1,19 +1,25 @@
-from datetime import datetime, timezone, date
+import secrets
+import hashlib
+from datetime import datetime, timezone, date, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.models import (
-    User, UserPreference, Trip, SavedPlace, Review, Booking,
+    User, UserPreference, EmailVerificationToken, Trip, SavedPlace, Review, Booking,
     Itinerary, Expense, ChecklistItem
 )
 from app.schemas.schemas import (
     UserCreate, UserLogin, UserResponse, TokenResponse,
+    RegistrationSuccessResponse, VerifyEmailRequest, VerifyEmailResponse,
+    ResendVerificationRequest, ResendVerificationResponse,
     UserPreferenceSchema, UserProfileUpdateRequest,
     PasswordChangeRequest, AccountDeleteRequest,
     UserStatsResponse, UserDataExportResponse
 )
 from app.core.security import verify_password, get_password_hash, create_access_token
+from app.core.config import settings
+from app.services.email_service import EmailService
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -29,7 +35,7 @@ PREFERENCE_FIELDS = [
     "ai_use_trip_context"
 ]
 
-@router.post("/register", response_model=TokenResponse)
+@router.post("/register", response_model=RegistrationSuccessResponse)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == user_in.email.lower().strip()).first()
     if existing:
@@ -54,7 +60,8 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
         email=user_in.email.lower().strip(),
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name.strip(),
-        role="traveller"
+        role="traveller",
+        email_verified_at=None  # Explicitly unverified upon creation
     )
     db.add(user)
     db.flush()
@@ -62,11 +69,34 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     # Create default preferences
     pref = UserPreference(user_id=user.id)
     db.add(pref)
+
+    # Generate cryptographically secure verification token
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS)
+
+    verification_record = EmailVerificationToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        expires_at=expires_at
+    )
+    db.add(verification_record)
     db.commit()
     db.refresh(user)
 
-    token = create_access_token(user.id)
-    return TokenResponse(access_token=token, token_type="bearer", user=user)
+    # Dispatch transactional verification email
+    delivery = EmailService.send_verification_email(
+        to_email=user.email,
+        recipient_name=user.full_name,
+        raw_token=raw_token
+    )
+
+    return RegistrationSuccessResponse(
+        message="Account created. Please check your email to verify your address.",
+        email=user.email,
+        email_verified=False,
+        email_delivery_status=delivery.status
+    )
 
 @router.post("/login", response_model=TokenResponse)
 def login(login_in: UserLogin, db: Session = Depends(get_db)):
@@ -76,8 +106,167 @@ def login(login_in: UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
+
+    # Enforce email verification
+    if user.email_verified_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email address before continuing. Check your inbox for the verification link.",
+            headers={"X-Auth-Reason": "EMAIL_NOT_VERIFIED"}
+        )
+
     token = create_access_token(user.id)
     return TokenResponse(access_token=token, token_type="bearer", user=user)
+
+@router.post("/verify-email/confirm", response_model=VerifyEmailResponse)
+def confirm_email_verification(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
+    clean_token = payload.token.strip()
+    if not clean_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification token is required."
+        )
+
+    token_hash = hashlib.sha256(clean_token.encode("utf-8")).hexdigest()
+    record = db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.token_hash == token_hash
+    ).first()
+
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification link or token."
+        )
+
+    if record.used_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This verification link has already been used. Please sign in or request a new link."
+        )
+
+    now_utc = datetime.now(timezone.utc)
+    # Ensure record.expires_at is comparable with now_utc
+    expires_at = record.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at < now_utc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Your verification link has expired. Please request a new verification email."
+        )
+
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User associated with this token no longer exists."
+        )
+
+    # Mark token as used
+    record.used_at = now_utc
+
+    if user.email_verified_at is not None:
+        db.commit()
+        return VerifyEmailResponse(
+            success=True,
+            message="Your email is already verified. You can now sign in.",
+            email=user.email,
+            already_verified=True
+        )
+
+    # Set user email_verified_at
+    user.email_verified_at = now_utc
+
+    # Invalidate other unused verification tokens for this user
+    other_tokens = db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user.id,
+        EmailVerificationToken.id != record.id,
+        EmailVerificationToken.used_at.is_(None)
+    ).all()
+    for ot in other_tokens:
+        ot.used_at = now_utc
+
+    db.commit()
+    db.refresh(user)
+
+    return VerifyEmailResponse(
+        success=True,
+        message="Your email has been verified successfully. Welcome to VANVAS!",
+        email=user.email,
+        already_verified=False
+    )
+
+@router.post("/verify-email/request", response_model=ResendVerificationResponse)
+@router.post("/resend-verification", response_model=ResendVerificationResponse)
+def resend_verification_email(payload: ResendVerificationRequest, db: Session = Depends(get_db)):
+    clean_email = payload.email.lower().strip()
+    user = db.query(User).filter(User.email == clean_email).first()
+
+    # Mitigate account enumeration by returning a generic success message if not found
+    if not user:
+        return ResendVerificationResponse(
+            success=True,
+            message="If an unverified account with this email exists, a verification link has been sent.",
+            cooldown_seconds=settings.EMAIL_RESEND_COOLDOWN_SECONDS,
+            email_delivery_status="SENT_IF_EXISTS"
+        )
+
+    if user.email_verified_at is not None:
+        return ResendVerificationResponse(
+            success=True,
+            message="This email address is already verified. Please sign in.",
+            cooldown_seconds=0,
+            email_delivery_status="ALREADY_VERIFIED"
+        )
+
+    # Rate limiting / cooldown check
+    now_utc = datetime.now(timezone.utc)
+    cooldown_cutoff = now_utc - timedelta(seconds=settings.EMAIL_RESEND_COOLDOWN_SECONDS)
+
+    recent_token = db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user.id,
+        EmailVerificationToken.created_at >= cooldown_cutoff
+    ).first()
+
+    if recent_token:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Please wait before requesting another verification email. Try again in {settings.EMAIL_RESEND_COOLDOWN_SECONDS} seconds."
+        )
+
+    # Invalidate older active tokens
+    db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user.id,
+        EmailVerificationToken.used_at.is_(None)
+    ).update({"used_at": now_utc}, synchronize_session=False)
+
+    # Generate new token
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    expires_at = now_utc + timedelta(hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS)
+
+    new_token_record = EmailVerificationToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        created_at=now_utc,
+        expires_at=expires_at
+    )
+    db.add(new_token_record)
+    db.commit()
+
+    delivery = EmailService.send_verification_email(
+        to_email=user.email,
+        recipient_name=user.full_name,
+        raw_token=raw_token
+    )
+
+    return ResendVerificationResponse(
+        success=True,
+        message="A new verification link has been sent to your email address.",
+        cooldown_seconds=settings.EMAIL_RESEND_COOLDOWN_SECONDS,
+        email_delivery_status=delivery.status
+    )
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

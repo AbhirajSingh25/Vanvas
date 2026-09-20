@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, timedelta
+from datetime import datetime, timezone, date, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -39,13 +39,15 @@ def setup_test_db():
         email="traveller@vanvas.com",
         full_name="Vanvas Traveller",
         hashed_password=get_password_hash("pass123"),
-        role="traveller"
+        role="traveller",
+        email_verified_at=datetime.now(timezone.utc)
     )
     admin = User(
         email="admin@vanvas.com",
         full_name="Vanvas Admin",
         hashed_password=get_password_hash("admin123"),
-        role="admin"
+        role="admin",
+        email_verified_at=datetime.now(timezone.utc)
     )
     dest = Destination(
         name="Manali",
@@ -81,7 +83,8 @@ def create_user_with_token(email: str, name: str, role: str = "traveller") -> tu
         email=email,
         full_name=name,
         hashed_password=get_password_hash("securepass123"),
-        role=role
+        role=role,
+        email_verified_at=datetime.now(timezone.utc)
     )
     db.add(user)
     db.commit()

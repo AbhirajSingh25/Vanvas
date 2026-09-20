@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, timedelta
+from datetime import datetime, timezone, date, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -75,13 +75,16 @@ def setup_db():
 
 client = TestClient(app)
 
+from datetime import date, timedelta, datetime, timezone
+
 def create_test_user(email: str, name: str) -> tuple[User, str, dict]:
     db = TestingSessionLocal()
     user = User(
         email=email,
         full_name=name,
         hashed_password=get_password_hash("pass123"),
-        role="traveller"
+        role="traveller",
+        email_verified_at=datetime.now(timezone.utc)
     )
     db.add(user)
     db.commit()

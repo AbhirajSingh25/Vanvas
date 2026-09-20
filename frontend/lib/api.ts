@@ -5,7 +5,8 @@ import {
   AdminStats, User, UserPreferences, UserStats, PasswordChangePayload, UserDataExport,
   TripInvitePreview, TripMemberItem,
   Review, ReviewAggregate, ReviewCreateInput, ReviewReportInput,
-  Booking, Offer, BookingIntentInput
+  Booking, Offer, BookingIntentInput,
+  RegistrationResult, VerifyEmailResult, ResendVerificationResult
 } from "@/types";
 
 function getApiBaseUrl(): string {
@@ -30,7 +31,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const timeoutMs = options.timeoutMs ?? 25000;
+  const timeoutMs = options.timeoutMs ?? 45000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -58,7 +59,10 @@ async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?
   } catch (err: any) {
     clearTimeout(timeoutId);
     if (err.name === "AbortError") {
-      throw new Error("Request timed out while connecting to VANVAS servers. Please check your network or try again.");
+      throw new Error("Request timed out while connecting to VANVAS servers. The server might be waking up; please try again in a few moments.");
+    }
+    if (err.message === "Failed to fetch") {
+      throw new Error("Unable to connect to VANVAS servers. Please check your internet connection or try again.");
     }
     throw err;
   }
@@ -73,10 +77,24 @@ export const api = {
     });
   },
 
-  async register(email: string, password: string, full_name: string): Promise<{ access_token: string; user: User }> {
+  async register(email: string, password: string, full_name: string): Promise<RegistrationResult> {
     return fetchApi("/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password, full_name }),
+    });
+  },
+
+  async verifyEmail(token: string): Promise<VerifyEmailResult> {
+    return fetchApi("/auth/verify-email/confirm", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  async resendVerification(email: string): Promise<ResendVerificationResult> {
+    return fetchApi("/auth/verify-email/request", {
+      method: "POST",
+      body: JSON.stringify({ email }),
     });
   },
 

@@ -18,6 +18,7 @@ Validates:
 
 import pytest
 import httpx
+from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 
@@ -150,6 +151,7 @@ def test_user(db):
             hashed_password=get_password_hash("Pass123!"),
             full_name="Stay Tester",
             role="traveller",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.commit()

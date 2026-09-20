@@ -12,9 +12,15 @@ from app.itinerary.dynamic_replanner import DynamicReplanner
 from app.services.destination_intelligence import DestinationIntelligenceService
 from app.recommendation.scorer import RecommendationScorer
 
+from sqlalchemy.pool import StaticPool
+
 # In-memory SQLite DB for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-test_engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+test_engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool
+)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 @pytest.fixture

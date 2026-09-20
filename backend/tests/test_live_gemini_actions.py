@@ -10,7 +10,7 @@ Validates:
 """
 import pytest
 import os
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -43,6 +43,7 @@ def test_real_gemini_action_execution():
                 hashed_password=get_password_hash("GeminiAction123!"),
                 full_name="E2E Gemini Action Traveller",
                 role="traveller",
+                email_verified_at=datetime.now(timezone.utc),
             )
             session.add(user)
             session.commit()

@@ -111,6 +111,19 @@ class Settings(BaseSettings):
     GEMINI_IMAGE_MODEL: str = os.getenv("GEMINI_IMAGE_MODEL", "imagen-3.0-generate-002")
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     
+    # Email & Verification Provider
+    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "auto")  # "resend", "smtp", "disabled"
+    EMAIL_API_KEY: str = os.getenv("EMAIL_API_KEY", os.getenv("RESEND_API_KEY", ""))
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "VANVAS <noreply@vanvasai.com>")
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_TLS: bool = os.getenv("SMTP_TLS", "true").lower() in ("true", "1", "yes")
+    APP_PUBLIC_URL: str = os.getenv("APP_PUBLIC_URL", "https://vanvasai.vercel.app")
+    EMAIL_VERIFICATION_EXPIRE_HOURS: int = int(os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24"))
+    EMAIL_RESEND_COOLDOWN_SECONDS: int = int(os.getenv("EMAIL_RESEND_COOLDOWN_SECONDS", "60"))
+
     # Recommendation weights
     WEIGHT_INTEREST: float = 0.25
     WEIGHT_BUDGET: float = 0.15

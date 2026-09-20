@@ -7,13 +7,18 @@ from app.database.session import Base
 from app.models.models import Destination, Place, Hotel, RentalOption, WeatherSnapshot
 from app.services.destination_intelligence import DestinationIntelligenceService
 from app.services.place_visual_resolver import PlaceVisualResolverService
+from sqlalchemy.pool import StaticPool
 from app.providers.provider_factory import ProviderFactory
 from app.providers.artwork_provider import CuratedArtworkProvider
 from app.providers.geocoding_provider import LiveGeocodingProvider
 
 # In-memory SQLite DB for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-test_engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+test_engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool
+)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 @pytest.fixture

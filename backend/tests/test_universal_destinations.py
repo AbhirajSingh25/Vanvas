@@ -8,7 +8,7 @@ and Copilot destination context without fallback to unrelated destinations.
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi.testclient import TestClient
-from datetime import date, timedelta
+from datetime import datetime, timezone, date, timedelta
 
 from app.main import app
 from app.database.session import get_db, Base, engine, SessionLocal
@@ -38,6 +38,7 @@ def test_user(db_session):
             hashed_password="mockhashedpassword",
             full_name="Universal Voyager",
             role="traveller",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db_session.add(user)
         db_session.commit()

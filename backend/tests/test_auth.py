@@ -48,8 +48,11 @@ def test_jwt_token_creation():
     payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     assert payload.get("sub") == user_id
 
+from datetime import datetime, timezone
+from app.models.models import User
+
 def test_user_registration_and_profile_preferences():
-    # 1. Register a user
+    # 1. Register a user (creates unverified account)
     reg_resp = client.post("/api/v1/auth/register", json={
         "email": "himalayan_wanderer@vanvas.com",
         "password": "mountainpass123",
@@ -57,9 +60,36 @@ def test_user_registration_and_profile_preferences():
     })
     assert reg_resp.status_code == 200
     data = reg_resp.json()
-    token = data["access_token"]
-    assert data["user"]["full_name"] == "Maya Negi"
-    assert data["user"]["preferences"]["wake_up_preference"] == "Normal"
+    assert data["email"] == "himalayan_wanderer@vanvas.com"
+    assert data["email_verified"] is False
+    assert "access_token" not in data  # Token is not exposed in registration response
+
+    # 2. Login before verification must fail with 403
+    unverified_login = client.post("/api/v1/auth/login", json={
+        "email": "himalayan_wanderer@vanvas.com",
+        "password": "mountainpass123"
+    })
+    assert unverified_login.status_code == 403
+    assert "verify your email" in unverified_login.json()["detail"].lower()
+
+    # 3. Mark user verified in DB and login
+    db = TestingSessionLocal()
+    user = db.query(User).filter(User.email == "himalayan_wanderer@vanvas.com").first()
+    assert user is not None
+    user.email_verified_at = datetime.now(timezone.utc)
+    db.commit()
+    db.close()
+
+    # 4. Login after verification succeeds
+    login_resp = client.post("/api/v1/auth/login", json={
+        "email": "himalayan_wanderer@vanvas.com",
+        "password": "mountainpass123"
+    })
+    assert login_resp.status_code == 200
+    login_data = login_resp.json()
+    token = login_data["access_token"]
+    assert login_data["user"]["full_name"] == "Maya Negi"
+    assert login_data["user"]["preferences"]["wake_up_preference"] == "Normal"
 
     headers = {"Authorization": f"Bearer {token}"}
 

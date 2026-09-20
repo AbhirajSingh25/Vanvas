@@ -50,6 +50,7 @@ def test_user_a(db):
             hashed_password=get_password_hash("Pass123!"),
             full_name="Aarav Sharma",
             role="traveller",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.commit()
@@ -67,6 +68,7 @@ def test_user_b(db):
             hashed_password=get_password_hash("Pass456!"),
             full_name="Bhavna Patel",
             role="traveller",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.commit()

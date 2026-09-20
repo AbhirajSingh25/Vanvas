@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Logo } from "@/components/brand/Logo";
+import { api } from "@/lib/api";
 import {
-  Compass, Lock, Mail, ArrowRight, AlertCircle, Sparkles, CheckCircle2
+  Compass, Lock, Mail, ArrowRight, AlertCircle, RefreshCw, Send, CheckCircle2
 } from "lucide-react";
 
 function LoginForm() {
@@ -22,6 +22,22 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Unverified account handling
+  const [isUnverified, setIsUnverified] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState<{ text: string; isError: boolean } | null>(null);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
@@ -31,21 +47,36 @@ function LoginForm() {
 
     setLoading(true);
     setError(null);
+    setIsUnverified(false);
+    setResendMessage(null);
 
     try {
       await login(email.trim(), password);
       router.push(redirectUrl);
     } catch (err: any) {
-      setError(err.message || "Invalid credentials. Please check your email and password.");
+      const errMsg = err.message || "Invalid credentials. Please check your email and password.";
+      setError(errMsg);
+      if (errMsg.toLowerCase().includes("verify your email") || errMsg.toLowerCase().includes("email_not_verified")) {
+        setIsUnverified(true);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const fillDemoAccount = () => {
-    setEmail("traveller@vanvas.com");
-    setPassword("pass123");
-    setError(null);
+  const handleResend = async () => {
+    if (!email.trim() || resendCooldown > 0 || resendLoading) return;
+    setResendLoading(true);
+    setResendMessage(null);
+    try {
+      const res = await api.resendVerification(email.trim());
+      setResendMessage({ text: res.message || "Verification email sent.", isError: false });
+      setResendCooldown(res.cooldown_seconds || 60);
+    } catch (err: any) {
+      setResendMessage({ text: err.message || "Failed to resend verification link.", isError: true });
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   return (
@@ -54,10 +85,8 @@ function LoginForm() {
       <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#173B32]/5 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#B65E3C]/5 blur-3xl pointer-events-none" />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="flex justify-center mb-6">
-          <Logo size="lg" />
-        </div>
+      {/* Header without duplicate logo */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center px-4">
         <h2 className="font-serif text-3xl font-bold text-[#173B32] tracking-tight">
           Welcome Back, Traveler
         </h2>
@@ -72,11 +101,53 @@ function LoginForm() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-[#FAF7F0] py-8 px-6 sm:px-10 shadow-lg border border-[#D8CBB2] rounded-3xl relative">
           {error && (
-            <div className="mb-6 p-4 rounded-2xl bg-[#B65E3C]/10 border border-[#B65E3C]/30 flex items-start gap-3 animate-fadeIn">
-              <AlertCircle className="w-5 h-5 text-[#B65E3C] shrink-0 mt-0.5" />
-              <div className="text-xs text-[#7B4D36] font-medium leading-relaxed">
-                {error}
+            <div className="mb-6 p-4 rounded-2xl bg-[#B65E3C]/10 border border-[#B65E3C]/30 space-y-3 animate-fadeIn">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-[#B65E3C] shrink-0 mt-0.5" />
+                <div className="text-xs text-[#7B4D36] font-medium leading-relaxed">
+                  {error}
+                </div>
               </div>
+
+              {/* Inline Resend Action if Account is Unverified */}
+              {isUnverified && (
+                <div className="pt-2 border-t border-[#B65E3C]/20">
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resendCooldown > 0 || resendLoading}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#173B32] text-[11px] font-bold uppercase tracking-wider text-[#EFE5D2] hover:bg-[#20453B] transition-all disabled:opacity-60 cursor-pointer shadow-xs"
+                  >
+                    {resendLoading ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#B49252]" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5 text-[#B49252]" />
+                    )}
+                    <span>
+                      {resendCooldown > 0
+                        ? `Resend Link (${resendCooldown}s)`
+                        : "Resend Verification Email"}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {resendMessage && (
+            <div
+              className={`mb-6 p-3 rounded-xl text-xs font-medium flex items-start gap-2 ${
+                resendMessage.isError
+                  ? "bg-[#B65E3C]/10 border border-[#B65E3C]/30 text-[#7B4D36]"
+                  : "bg-[#173B32]/10 border border-[#173B32]/30 text-[#173B32]"
+              }`}
+            >
+              {resendMessage.isError ? (
+                <AlertCircle className="w-4 h-4 text-[#B65E3C] shrink-0 mt-0.5" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-[#173B32] shrink-0 mt-0.5" />
+              )}
+              <span>{resendMessage.text}</span>
             </div>
           )}
 
@@ -136,18 +207,6 @@ function LoginForm() {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Pre-fill Pill */}
-          <div className="mt-6 pt-5 border-t border-[#D8CBB2]/60 text-center">
-            <button
-              type="button"
-              onClick={fillDemoAccount}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#E5D5BA]/50 text-[11px] font-semibold text-[#173B32] hover:bg-[#E5D5BA] transition-colors cursor-pointer border border-[#D8CBB2]"
-            >
-              <Sparkles className="w-3 h-3 text-[#B49252]" />
-              <span>Use Demo Account (traveller@vanvas.com)</span>
-            </button>
-          </div>
 
           <div className="mt-6 text-center text-xs text-[#20211D]/70">
             <span>New to VANVAS? </span>

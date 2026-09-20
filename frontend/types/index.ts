@@ -4,8 +4,31 @@ export interface User {
   full_name: string;
   role: string;
   avatar_url?: string;
+  email_verified_at?: string | null;
+  is_verified?: boolean;
   created_at: string;
   preferences?: UserPreferences;
+}
+
+export interface RegistrationResult {
+  message: string;
+  email: string;
+  email_verified: boolean;
+  email_delivery_status?: string;
+}
+
+export interface VerifyEmailResult {
+  success: boolean;
+  message: string;
+  email?: string;
+  already_verified?: boolean;
+}
+
+export interface ResendVerificationResult {
+  success: boolean;
+  message: string;
+  cooldown_seconds: number;
+  email_delivery_status?: string;
 }
 
 export interface UserPreferences {

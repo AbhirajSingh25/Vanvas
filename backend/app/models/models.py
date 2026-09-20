@@ -18,10 +18,12 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     role = Column(String(50), default="traveller")  # 'traveller' or 'admin'
     avatar_url = Column(String(500), nullable=True)
+    email_verified_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     preferences = relationship("UserPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    verification_tokens = relationship("EmailVerificationToken", back_populates="user", cascade="all, delete-orphan")
     trips = relationship("Trip", back_populates="creator", cascade="all, delete-orphan")
     memberships = relationship("TripMember", back_populates="user", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="user", cascade="all, delete-orphan")
@@ -30,6 +32,22 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     bookings = relationship("Booking", back_populates="user", cascade="all, delete-orphan")
+
+    @property
+    def is_verified(self) -> bool:
+        return self.email_verified_at is not None
+
+class EmailVerificationToken(Base):
+    __tablename__ = "email_verification_tokens"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
+    token_hash = Column(String(64), index=True, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="verification_tokens")
 
 class UserPreference(Base):
     __tablename__ = "user_preferences"

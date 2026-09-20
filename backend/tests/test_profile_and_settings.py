@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, timedelta
+from datetime import datetime, timezone, date, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -43,13 +43,16 @@ def setup_test_db():
 
 client = TestClient(app)
 
+from datetime import datetime, timezone
+
 def create_user_with_token(email: str, name: str, password: str = "securepass123") -> tuple[User, str, dict]:
     db = TestingSessionLocal()
     user = User(
         email=email,
         full_name=name,
         hashed_password=get_password_hash(password),
-        role="traveller"
+        role="traveller",
+        email_verified_at=datetime.now(timezone.utc)
     )
     db.add(user)
     db.flush()
@@ -66,14 +69,30 @@ def create_user_with_token(email: str, name: str, password: str = "securepass123
 
 
 def test_user_registration_and_stats():
-    # 1. Register User
+    # 1. Register User (unverified)
     reg_resp = client.post("/api/v1/auth/register", json={
         "email": "aarav.wanderer@vanvas.com",
         "password": "mountainsecret123",
         "full_name": "Aarav Sharma"
     })
     assert reg_resp.status_code == 200
-    token = reg_resp.json()["access_token"]
+    reg_data = reg_resp.json()
+    assert reg_data["email"] == "aarav.wanderer@vanvas.com"
+    assert reg_data["email_verified"] is False
+
+    # Mark verified in DB and login
+    db = TestingSessionLocal()
+    u = db.query(User).filter(User.email == "aarav.wanderer@vanvas.com").first()
+    u.email_verified_at = datetime.now(timezone.utc)
+    db.commit()
+    db.close()
+
+    login_resp = client.post("/api/v1/auth/login", json={
+        "email": "aarav.wanderer@vanvas.com",
+        "password": "mountainsecret123"
+    })
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     # 2. Get profile stats (initially 0 counts)

@@ -51,6 +51,28 @@ def ensure_sqlite_schema(eng=engine):
                 for col, col_type in cols_to_add.items():
                     if col not in existing_cols:
                         conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col} {col_type}"))
+
+            # Ensure users table has email_verified_at
+            user_result = conn.execute(text("PRAGMA table_info(users)"))
+            existing_user_cols = {row[1] for row in user_result.fetchall()}
+            if existing_user_cols and "email_verified_at" not in existing_user_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN email_verified_at DATETIME NULL"))
+
+            # Ensure email_verification_tokens table exists if missing in SQLite
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS email_verification_tokens (
+                    id VARCHAR(36) PRIMARY KEY,
+                    user_id VARCHAR(36) NOT NULL,
+                    token_hash VARCHAR(64) NOT NULL,
+                    created_at DATETIME,
+                    expires_at DATETIME NOT NULL,
+                    used_at DATETIME,
+                    FOREIGN KEY(user_id) REFERENCES users(id)
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_token_hash ON email_verification_tokens(token_hash)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_user_id ON email_verification_tokens(user_id)"))
+
             # Ensure trip_invites table exists if missing in SQLite
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS trip_invites (

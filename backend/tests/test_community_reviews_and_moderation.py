@@ -43,6 +43,7 @@ def user_author(db):
             hashed_password=get_password_hash("Secret123!"),
             full_name="Priya Sharma",
             role="traveller",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.commit()
@@ -60,6 +61,7 @@ def user_other(db):
             hashed_password=get_password_hash("Secret456!"),
             full_name="Rohan Verma",
             role="traveller",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.commit()
@@ -77,6 +79,7 @@ def user_admin(db):
             hashed_password=get_password_hash("AdminPass123!"),
             full_name="Admin Moderator",
             role="admin",
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.commit()

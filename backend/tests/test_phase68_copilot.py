@@ -9,6 +9,7 @@ Verifies:
 - Disabled mode deterministic safety
 """
 import pytest
+from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 from app.main import app
 from app.core.config import settings
@@ -39,7 +40,8 @@ def traveller_user(db):
             id="test-traveller-user",
             email="traveller@vanvas.com",
             hashed_password="hash",
-            full_name="Test Explorer"
+            full_name="Test Explorer",
+            email_verified_at=datetime.now(timezone.utc)
         )
         db.add(user)
         db.commit()
@@ -55,7 +57,8 @@ def other_user(db):
             id="test-other-user",
             email="other@vanvas.com",
             hashed_password="hash",
-            full_name="Other Explorer"
+            full_name="Other Explorer",
+            email_verified_at=datetime.now(timezone.utc)
         )
         db.add(user)
         db.commit()
