@@ -120,7 +120,9 @@ class RegistrationSuccessResponse(BaseModel):
     email_delivery_status: Optional[str] = None
 
 class VerifyEmailRequest(BaseModel):
-    token: str = Field(..., min_length=1)
+    email: Optional[EmailStr] = None
+    otp: Optional[str] = Field(None, min_length=6, max_length=6, description="6-digit numeric verification code")
+    token: Optional[str] = Field(None, min_length=1, description="Legacy verification token")
 
 class VerifyEmailResponse(BaseModel):
     success: bool

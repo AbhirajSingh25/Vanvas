@@ -84,10 +84,10 @@ export const api = {
     });
   },
 
-  async verifyEmail(token: string): Promise<VerifyEmailResult> {
+  async verifyEmail(email: string, otp: string): Promise<VerifyEmailResult> {
     return fetchApi("/auth/verify-email/confirm", {
       method: "POST",
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ email, otp }),
     });
   },
 

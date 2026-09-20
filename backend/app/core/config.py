@@ -111,10 +111,12 @@ class Settings(BaseSettings):
     GEMINI_IMAGE_MODEL: str = os.getenv("GEMINI_IMAGE_MODEL", "imagen-3.0-generate-002")
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     
-    # Email & Verification Provider
-    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "auto")  # "resend", "smtp", "disabled"
+    # Email & Verification Provider (Brevo HTTPS Transactional Engine)
+    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "brevo")  # "brevo", "auto", "disabled"
+    BREVO_API_KEY: str = os.getenv("BREVO_API_KEY", os.getenv("EMAIL_API_KEY", ""))
     EMAIL_API_KEY: str = os.getenv("EMAIL_API_KEY", os.getenv("RESEND_API_KEY", ""))
-    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "VANVAS <noreply@vanvasai.com>")
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "thesortedclub@gmail.com")
+    EMAIL_FROM_NAME: str = os.getenv("EMAIL_FROM_NAME", "VANVAS")
     SMTP_HOST: str = os.getenv("SMTP_HOST", "")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
     SMTP_USER: str = os.getenv("SMTP_USER", "")
@@ -123,6 +125,9 @@ class Settings(BaseSettings):
     APP_PUBLIC_URL: str = os.getenv("APP_PUBLIC_URL", "https://vanvasai.vercel.app")
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = int(os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24"))
     EMAIL_RESEND_COOLDOWN_SECONDS: int = int(os.getenv("EMAIL_RESEND_COOLDOWN_SECONDS", "60"))
+    EMAIL_OTP_EXPIRE_MINUTES: int = int(os.getenv("EMAIL_OTP_EXPIRE_MINUTES", "10"))
+    EMAIL_OTP_RESEND_COOLDOWN_SECONDS: int = int(os.getenv("EMAIL_OTP_RESEND_COOLDOWN_SECONDS", "60"))
+    EMAIL_OTP_MAX_ATTEMPTS: int = int(os.getenv("EMAIL_OTP_MAX_ATTEMPTS", "5"))
 
     # Recommendation weights
     WEIGHT_INTEREST: float = 0.25

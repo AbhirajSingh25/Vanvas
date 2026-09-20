@@ -112,13 +112,13 @@ function RegisterForm() {
 
             <div className="mt-5 p-4 rounded-2xl bg-[#EFE5D2]/70 border border-[#D8CBB2] text-left space-y-2">
               <div className="text-xs font-semibold text-[#173B32] uppercase tracking-wider">
-                Check your inbox at:
+                We've sent a 6-digit verification code to:
               </div>
               <div className="text-sm font-bold text-[#B65E3C] break-all">
                 {registeredEmail}
               </div>
               <p className="text-xs text-[#20211D]/80 leading-relaxed pt-1">
-                We sent you a secure verification link to activate your VANVAS travel passport. Please click the link to complete registration.
+                Enter the 6-digit verification code from your email to activate your VANVAS travel passport.
               </p>
             </div>
 
@@ -140,6 +140,14 @@ function RegisterForm() {
             )}
 
             <div className="mt-6 space-y-3">
+              <Link
+                href={`/verify-email?email=${encodeURIComponent(registeredEmail)}`}
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl text-xs font-bold uppercase tracking-widest text-[#EFE5D2] bg-[#B65E3C] hover:bg-[#9E4D2E] active:scale-[0.99] transition-all shadow-md"
+              >
+                <span>Verify Email (Enter Code)</span>
+                <ArrowRight className="w-4 h-4 text-[#EFE5D2]" />
+              </Link>
+
               <button
                 type="button"
                 onClick={handleResend}
@@ -153,17 +161,16 @@ function RegisterForm() {
                 )}
                 <span>
                   {resendCooldown > 0
-                    ? `Resend Email (${resendCooldown}s)`
-                    : "Resend Verification Email"}
+                    ? `Resend Code (${resendCooldown}s)`
+                    : "Resend Verification Code"}
                 </span>
               </button>
 
               <Link
                 href={`/login?redirect=${encodeURIComponent(redirectUrl)}`}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-bold uppercase tracking-widest text-[#EFE5D2] bg-[#173B32] hover:bg-[#20453B] active:scale-[0.99] transition-all shadow-md"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 text-xs font-bold text-[#173B32] hover:underline"
               >
                 <span>Back to Sign In</span>
-                <ArrowRight className="w-4 h-4 text-[#B49252]" />
               </Link>
             </div>
 

@@ -105,13 +105,23 @@ function LoginForm() {
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-[#B65E3C] shrink-0 mt-0.5" />
                 <div className="text-xs text-[#7B4D36] font-medium leading-relaxed">
-                  {error}
+                  {isUnverified
+                    ? "Your email is not verified yet. We've sent a 6-digit verification code to your email address."
+                    : error}
                 </div>
               </div>
 
-              {/* Inline Resend Action if Account is Unverified */}
+              {/* Inline OTP Verify & Resend Action if Account is Unverified */}
               {isUnverified && (
-                <div className="pt-2 border-t border-[#B65E3C]/20">
+                <div className="pt-3 border-t border-[#B65E3C]/20 flex flex-wrap gap-2">
+                  <Link
+                    href={`/verify-email?email=${encodeURIComponent(email.trim())}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#B65E3C] text-[11px] font-bold uppercase tracking-wider text-[#EFE5D2] hover:bg-[#9E4D2E] transition-all cursor-pointer shadow-xs"
+                  >
+                    <span>Verify Email (Enter Code)</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#EFE5D2]" />
+                  </Link>
+
                   <button
                     type="button"
                     onClick={handleResend}
@@ -125,8 +135,8 @@ function LoginForm() {
                     )}
                     <span>
                       {resendCooldown > 0
-                        ? `Resend Link (${resendCooldown}s)`
-                        : "Resend Verification Email"}
+                        ? `Resend Code (${resendCooldown}s)`
+                        : "Resend Code"}
                     </span>
                   </button>
                 </div>

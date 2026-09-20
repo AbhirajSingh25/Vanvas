@@ -24,6 +24,7 @@ class User(Base):
     # Relationships
     preferences = relationship("UserPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
     verification_tokens = relationship("EmailVerificationToken", back_populates="user", cascade="all, delete-orphan")
+    verification_otps = relationship("EmailVerificationOTP", back_populates="user", cascade="all, delete-orphan")
     trips = relationship("Trip", back_populates="creator", cascade="all, delete-orphan")
     memberships = relationship("TripMember", back_populates="user", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="user", cascade="all, delete-orphan")
@@ -48,6 +49,19 @@ class EmailVerificationToken(Base):
     used_at = Column(DateTime, nullable=True)
 
     user = relationship("User", back_populates="verification_tokens")
+
+class EmailVerificationOTP(Base):
+    __tablename__ = "email_verification_otps"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True, nullable=False)
+    otp_hash = Column(String(64), index=True, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)
+    attempt_count = Column(Integer, default=0, nullable=False)
+
+    user = relationship("User", back_populates="verification_otps")
 
 class UserPreference(Base):
     __tablename__ = "user_preferences"

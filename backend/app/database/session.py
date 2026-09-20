@@ -30,6 +30,12 @@ def ensure_database_schema(eng=engine):
     Works transparently on PostgreSQL and SQLite.
     """
     try:
+        # Ensure all models are imported so Base.metadata is complete
+        try:
+            import app.models.models  # noqa: F401
+        except Exception:
+            pass
+
         # 1. Create any missing tables defined in models
         Base.metadata.create_all(bind=eng)
 
@@ -83,11 +89,18 @@ def ensure_database_schema(eng=engine):
                         conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col_name} {col_def}"))
                         logger.info(f"Migrated schema: added {col_name} to user_preferences table.")
 
-            # 4. Ensure essential indexes on email_verification_tokens
+            # 4. Ensure essential indexes on email_verification_tokens (legacy) and email_verification_otps
             if "email_verification_tokens" in existing_tables:
                 try:
                     conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_token_hash ON email_verification_tokens(token_hash)"))
                     conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_user_id ON email_verification_tokens(user_id)"))
+                except Exception:
+                    pass
+
+            if "email_verification_otps" in existing_tables:
+                try:
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_otps_otp_hash ON email_verification_otps(otp_hash)"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_otps_user_id ON email_verification_otps(user_id)"))
                 except Exception:
                     pass
 

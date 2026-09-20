@@ -18,9 +18,10 @@ from app.models.models import (
     ChecklistItem,
     WeatherSnapshot,
     Conversation,
-    ConversationMessage,
     Review,
     ReviewReport,
+    EmailVerificationToken,
+    EmailVerificationOTP,
 )
 
 __all__ = [
