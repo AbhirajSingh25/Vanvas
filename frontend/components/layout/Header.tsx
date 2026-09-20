@@ -109,9 +109,16 @@ export const Header: React.FC = () => {
                   aria-expanded={profileDropdownOpen}
                   aria-haspopup="true"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#173B32] group-hover:bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-[10px] transition-colors border border-[#B49252]/40">
+                  <div className="w-6 h-6 rounded-full bg-[#173B32] group-hover:bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-[10px] transition-colors border border-[#B49252]/40 overflow-hidden">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.full_name} className="w-full h-full rounded-full object-cover" />
+                      <img
+                        src={user.avatar_url}
+                        alt={user.full_name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
                     ) : (
                       getInitials(user.full_name)
                     )}
@@ -244,9 +251,16 @@ export const Header: React.FC = () => {
             {user ? (
               <div className="p-3 bg-[#FAF7F0] rounded-2xl border border-[#D8CBB2] space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-xs">
+                  <div className="w-8 h-8 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-xs overflow-hidden border border-[#B49252]/40">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.full_name} className="w-full h-full rounded-full object-cover" />
+                      <img
+                        src={user.avatar_url}
+                        alt={user.full_name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
                     ) : (
                       getInitials(user.full_name)
                     )}

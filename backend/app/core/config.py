@@ -129,6 +129,19 @@ class Settings(BaseSettings):
     EMAIL_OTP_RESEND_COOLDOWN_SECONDS: int = int(os.getenv("EMAIL_OTP_RESEND_COOLDOWN_SECONDS", "60"))
     EMAIL_OTP_MAX_ATTEMPTS: int = int(os.getenv("EMAIL_OTP_MAX_ATTEMPTS", "5"))
 
+    # Persistent Storage Provider (Profile Photos & Assets)
+    STORAGE_PROVIDER: str = os.getenv("STORAGE_PROVIDER", "auto")  # "auto", "local", "cloudinary", "s3", "disabled"
+    STORAGE_UPLOAD_DIR: str = os.getenv("STORAGE_UPLOAD_DIR", "uploads/avatars")
+    CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY", "")
+    CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET", "")
+    S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", os.getenv("AWS_STORAGE_BUCKET_NAME", ""))
+    S3_ACCESS_KEY_ID: str = os.getenv("S3_ACCESS_KEY_ID", os.getenv("AWS_ACCESS_KEY_ID", ""))
+    S3_SECRET_ACCESS_KEY: str = os.getenv("S3_SECRET_ACCESS_KEY", os.getenv("AWS_SECRET_ACCESS_KEY", ""))
+    S3_REGION_NAME: str = os.getenv("S3_REGION_NAME", os.getenv("AWS_REGION", "us-east-1"))
+    S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "")
+    MAX_AVATAR_SIZE_BYTES: int = int(os.getenv("MAX_AVATAR_SIZE_BYTES", str(5 * 1024 * 1024)))
+
     # Recommendation weights
     WEIGHT_INTEREST: float = 0.25
     WEIGHT_BUDGET: float = 0.15

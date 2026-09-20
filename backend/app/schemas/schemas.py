@@ -69,6 +69,10 @@ class UserProfileUpdateRequest(BaseModel):
     ai_use_travel_preferences: Optional[bool] = None
     ai_use_trip_context: Optional[bool] = None
 
+class AvatarUploadResponse(BaseModel):
+    avatar_url: Optional[str] = None
+    message: str
+
 class PasswordChangeRequest(BaseModel):
     current_password: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=6)

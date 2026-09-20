@@ -18,6 +18,7 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     role = Column(String(50), default="traveller")  # 'traveller' or 'admin'
     avatar_url = Column(String(500), nullable=True)
+    avatar_storage_key = Column(String(255), nullable=True)
     email_verified_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

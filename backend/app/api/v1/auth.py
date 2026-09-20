@@ -1,8 +1,11 @@
+import io
+import uuid
 import secrets
 import hashlib
 from datetime import datetime, timezone, date, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from PIL import Image, UnidentifiedImageError
+from fastapi import APIRouter, Depends, HTTPException, status, Response, UploadFile, File
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.models import (
@@ -15,11 +18,13 @@ from app.schemas.schemas import (
     ResendVerificationRequest, ResendVerificationResponse,
     UserPreferenceSchema, UserProfileUpdateRequest,
     PasswordChangeRequest, AccountDeleteRequest,
-    UserStatsResponse, UserDataExportResponse
+    UserStatsResponse, UserDataExportResponse,
+    AvatarUploadResponse
 )
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.config import settings
 from app.services.email_service import EmailService
+from app.services.storage_service import StorageService, StorageServiceException
 from app.api.deps import get_current_user
 
 router = APIRouter()
@@ -453,6 +458,153 @@ def update_profile(
     db.refresh(pref)
     current_user.preferences = pref
     return current_user
+
+@router.post("/profile/avatar", response_model=AvatarUploadResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not file.content_type or file.content_type.lower() not in (
+        "image/jpeg", "image/jpg", "image/png", "image/webp"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid image format. Allowed formats: JPEG, PNG, WebP."
+        )
+
+    contents = await file.read()
+    if not contents or len(contents) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty image file."
+        )
+
+    if len(contents) > settings.MAX_AVATAR_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Profile photo exceeds maximum allowed size of {settings.MAX_AVATAR_SIZE_BYTES // (1024 * 1024)} MB."
+        )
+
+    try:
+        # Verify image integrity
+        img_check = Image.open(io.BytesIO(contents))
+        img_check.verify()
+
+        # Reopen for processing
+        img = Image.open(io.BytesIO(contents))
+    except (UnidentifiedImageError, Exception):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or corrupt image file."
+        )
+
+    if img.format not in ("JPEG", "PNG", "WEBP"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported image format. Allowed formats: JPEG, PNG, WebP."
+        )
+
+    # Convert mode
+    if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+        img = img.convert("RGBA")
+    else:
+        img = img.convert("RGB")
+
+    # Center crop to 1:1 square
+    w, h = img.size
+    min_dim = min(w, h)
+    left = (w - min_dim) // 2
+    top = (h - min_dim) // 2
+    right = left + min_dim
+    bottom = top + min_dim
+    img = img.crop((left, top, right, bottom))
+
+    # Resize to max 512x512
+    if min_dim > 512:
+        img = img.resize((512, 512), Image.Resampling.LANCZOS)
+
+    # Export to WebP without metadata
+    output_io = io.BytesIO()
+    img.save(output_io, format="WEBP", quality=85, method=6)
+    webp_bytes = output_io.getvalue()
+
+    # Generate secure random storage key
+    unique_filename = f"{uuid.uuid4().hex}.webp"
+    storage_key = f"users/{current_user.id}/avatar/{unique_filename}"
+
+    try:
+        avatar_url = StorageService.upload_profile_photo(
+            storage_key=storage_key,
+            file_bytes=webp_bytes,
+            content_type="image/webp"
+        )
+    except StorageServiceException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+    # Clean up old avatar if exists
+    if current_user.avatar_storage_key and current_user.avatar_storage_key != storage_key:
+        try:
+            StorageService.delete_profile_photo(current_user.avatar_storage_key)
+        except Exception:
+            pass
+
+    current_user.avatar_storage_key = storage_key
+    current_user.avatar_url = avatar_url
+    db.commit()
+    db.refresh(current_user)
+
+    return AvatarUploadResponse(
+        avatar_url=current_user.avatar_url,
+        message="Profile photo updated successfully."
+    )
+
+@router.delete("/profile/avatar", response_model=AvatarUploadResponse)
+def delete_avatar(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.avatar_storage_key:
+        try:
+            StorageService.delete_profile_photo(current_user.avatar_storage_key)
+        except Exception:
+            pass
+
+    current_user.avatar_storage_key = None
+    current_user.avatar_url = None
+    db.commit()
+    db.refresh(current_user)
+
+    return AvatarUploadResponse(
+        avatar_url=None,
+        message="Profile photo removed successfully."
+    )
+
+@router.get("/profile/avatar/file/{key_path:path}")
+def serve_avatar_file(key_path: str):
+    if ".." in key_path or key_path.startswith("/") or key_path.startswith("\\"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file path."
+        )
+
+    avatar_bytes, mime_type = StorageService.read_local_avatar(key_path)
+    if avatar_bytes is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile photo not found."
+        )
+
+    return Response(
+        content=avatar_bytes,
+        media_type=mime_type or "image/webp",
+        headers={
+            "Cache-Control": "public, max-age=86400, immutable"
+        }
+    )
 
 @router.get("/preferences", response_model=UserPreferenceSchema)
 def get_preferences(

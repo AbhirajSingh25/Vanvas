@@ -44,6 +44,8 @@ interface AuthContextType {
   refreshUser: () => Promise<User | null>;
   setUser: (user: User | null) => void;
   updateProfile: (data: ProfileUpdatePayload) => Promise<User>;
+  uploadAvatar: (file: File) => Promise<{ avatar_url: string; message: string }>;
+  deleteAvatar: () => Promise<{ message: string }>;
   updatePreferences: (preferences: Partial<UserPreferences>) => Promise<UserPreferences>;
   changePassword: (payload: PasswordChangePayload) => Promise<{ message: string }>;
   deleteAccount: (password?: string, confirmation?: string) => Promise<{ message: string }>;
@@ -144,6 +146,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return updated;
   };
 
+  const uploadAvatar = async (file: File): Promise<{ avatar_url: string; message: string }> => {
+    const res = await api.uploadProfileAvatar(file);
+    if (user) {
+      setUser({
+        ...user,
+        avatar_url: res.avatar_url,
+      });
+    }
+    return res;
+  };
+
+  const deleteAvatar = async (): Promise<{ message: string }> => {
+    const res = await api.deleteProfileAvatar();
+    if (user) {
+      setUser({
+        ...user,
+        avatar_url: undefined,
+      });
+    }
+    return res;
+  };
+
   const updatePreferences = async (preferences: Partial<UserPreferences>): Promise<UserPreferences> => {
     const updatedPrefs = await api.updatePreferences(preferences);
     if (user) {
@@ -182,6 +206,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser,
       setUser,
       updateProfile,
+      uploadAvatar,
+      deleteAvatar,
       updatePreferences,
       changePassword,
       deleteAccount,

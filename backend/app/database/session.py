@@ -54,6 +54,10 @@ def ensure_database_schema(eng=engine):
                 if "avatar_url" not in user_cols:
                     conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500) NULL"))
                     logger.info("Migrated schema: added avatar_url to users table.")
+
+                if "avatar_storage_key" not in user_cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN avatar_storage_key VARCHAR(255) NULL"))
+                    logger.info("Migrated schema: added avatar_storage_key to users table.")
                     
                 if "role" not in user_cols:
                     conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'traveller'"))

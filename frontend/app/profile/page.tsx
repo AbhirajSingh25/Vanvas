@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -11,12 +11,12 @@ import {
   User as UserIcon, Settings as SettingsIcon, Bookmark, Calendar,
   Sparkles, MapPin, Compass, Edit3, CheckCircle2, AlertCircle,
   ExternalLink, Trash2, Shield, Heart, Utensils, Car, Trees,
-  Clock, ArrowRight, X, RefreshCw
+  Clock, ArrowRight, X, RefreshCw, Camera, Upload, Image as ImageIcon
 } from "lucide-react";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 
 function ProfileContent() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, uploadAvatar, deleteAvatar } = useAuth();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "saved" ? "saved" : "overview";
 
@@ -33,10 +33,14 @@ function ProfileContent() {
   // Edit Profile Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
-  const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [removeAvatarRequested, setRemoveAvatarRequested] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load real statistics, saved places, and trips
   const loadProfileData = async () => {
@@ -64,11 +68,55 @@ function ProfileContent() {
   const openEditModal = () => {
     if (user) {
       setEditName(user.full_name);
-      setEditAvatarUrl(user.avatar_url || "");
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setRemoveAvatarRequested(false);
       setProfileSaveError(null);
       setProfileSaveSuccess(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       setEditModalOpen(true);
     }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      setProfileSaveError("Please select a JPG, PNG, or WebP image.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileSaveError("Selected photo exceeds the 5 MB limit. Please choose a smaller photo.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    const newPreview = URL.createObjectURL(file);
+    setSelectedFile(file);
+    setPreviewUrl(newPreview);
+    setRemoveAvatarRequested(false);
+    setProfileSaveError(null);
+  };
+
+  const handleRemovePhoto = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setRemoveAvatarRequested(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setProfileSaveError(null);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -82,15 +130,30 @@ function ProfileContent() {
     setProfileSaveError(null);
 
     try {
-      await updateProfile({
-        full_name: editName.trim(),
-        avatar_url: editAvatarUrl.trim() || undefined,
-      });
+      if (selectedFile) {
+        await uploadAvatar(selectedFile);
+      } else if (removeAvatarRequested) {
+        await deleteAvatar();
+      }
+
+      if (editName.trim() !== user?.full_name) {
+        await updateProfile({
+          full_name: editName.trim(),
+        });
+      }
+
       setProfileSaveSuccess(true);
+      setAvatarLoadFailed(false);
       setTimeout(() => {
         setEditModalOpen(false);
         setProfileSaveSuccess(false);
-      }, 1200);
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+          setPreviewUrl(null);
+        }
+        setSelectedFile(null);
+        setRemoveAvatarRequested(false);
+      }, 1000);
     } catch (err: any) {
       setProfileSaveError(err.message || "Failed to update profile. Please try again.");
     } finally {
@@ -149,11 +212,12 @@ function ProfileContent() {
               {/* Avatar with gold ring & initials fallback */}
               <div className="relative">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold border-3 border-[#B49252] shadow-inner overflow-hidden">
-                  {user?.avatar_url ? (
+                  {user?.avatar_url && !avatarLoadFailed ? (
                     <img
                       src={user.avatar_url}
                       alt={user.full_name}
                       className="w-full h-full object-cover"
+                      onError={() => setAvatarLoadFailed(true)}
                     />
                   ) : (
                     <span>{getInitials(user?.full_name)}</span>
@@ -541,20 +605,73 @@ function ProfileContent() {
                 />
               </div>
 
+              {/* Profile Photo Upload Section */}
               <div>
                 <label className="block text-xs font-bold text-[#173B32] uppercase tracking-wider mb-1.5">
-                  Avatar Image URL (Optional)
+                  Profile Photo
                 </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={editAvatarUrl}
-                  onChange={(e) => setEditAvatarUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#D8CBB2] bg-white text-sm text-[#20211D] focus:ring-2 focus:ring-[#173B32] focus:outline-hidden"
-                />
-                <span className="text-[10px] text-[#20211D]/60 mt-1 block">
-                  Leave empty to use your authentic initials passport avatar.
-                </span>
+                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-[#D8CBB2]/80 shadow-xs">
+                  {/* Circular Avatar Preview */}
+                  <div className="relative w-16 h-16 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif text-xl font-bold border-2 border-[#B49252] overflow-hidden shrink-0 shadow-inner">
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        alt="Selected Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : !removeAvatarRequested && user?.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.full_name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <span>{getInitials(editName || user?.full_name)}</span>
+                    )}
+                  </div>
+
+                  {/* Actions & Description */}
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/jpeg,image/png,image/webp,image/jpg"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        id="vanvas-profile-photo-input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF4E8] hover:bg-[#E5D5BA]/70 border border-[#D8CBB2] text-xs font-bold text-[#173B32] transition-colors cursor-pointer"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>{previewUrl || (!removeAvatarRequested && user?.avatar_url) ? "Change Photo" : "Upload Photo"}</span>
+                      </button>
+
+                      {(previewUrl || (!removeAvatarRequested && user?.avatar_url)) && (
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-xs font-semibold text-red-700 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-[#20211D]/60 flex items-center gap-1">
+                      <span>JPG, PNG or WebP · Max 5 MB</span>
+                    </div>
+                    <div className="text-[10px] text-[#20211D]/40">
+                      Auto-cropped square and optimized for Himalayan travel stamps.
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>

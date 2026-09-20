@@ -22,8 +22,9 @@ const API_BASE_URL = getApiBaseUrl();
 // Helper for authenticated requests with timeout
 async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("vanvas_token") : null;
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers as Record<string, string> || {}),
   };
 
@@ -136,6 +137,21 @@ export const api = {
     return fetchApi("/auth/profile", {
       method: "PUT",
       body: JSON.stringify(data),
+    });
+  },
+
+  async uploadProfileAvatar(file: File): Promise<{ avatar_url: string; message: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetchApi("/auth/profile/avatar", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  async deleteProfileAvatar(): Promise<{ avatar_url: null; message: string }> {
+    return fetchApi("/auth/profile/avatar", {
+      method: "DELETE",
     });
   },
 
