@@ -543,7 +543,7 @@ def seed_database():
                     "opening_time": "10:00",
                     "closing_time": "20:00",
                     "tags": "Haveli,Folk Dance,Culture,Puppets,Ghat",
-                    "image_url": "/images/places/udaipur/jagdish-temple.webp",
+                    "image_url": "/images/places/udaipur/categories/heritage.webp",
                     "why_vanvas_recommends": "The most authentic cultural evening performance in Rajasthan.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -738,7 +738,7 @@ def seed_database():
                     "opening_time": "06:00",
                     "closing_time": "23:00",
                     "tags": "Beach,Kayaking,Sunset,Palms,South Goa",
-                    "image_url": "/images/places/goa/anjuna-beach.webp",
+                    "image_url": "/images/places/goa/categories/nature.webp",
                     "why_vanvas_recommends": "The ideal gentle swimming beach in Goa with serene dolphin spotting kayak trails.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -780,7 +780,7 @@ def seed_database():
                     "opening_time": "08:00",
                     "closing_time": "18:30",
                     "tags": "Fort,Laterite,Sunset,Ocean Views,Cliffs",
-                    "image_url": "/images/places/goa/aguada-fort.webp",
+                    "image_url": "/images/places/goa/categories/viewpoint.webp",
                     "why_vanvas_recommends": "Famous sunset cliff viewpoint overlooking the confluence of Chapora River and Arabian Sea.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -845,7 +845,7 @@ def seed_database():
                     "opening_time": "05:00",
                     "closing_time": "21:00",
                     "tags": "Stupa,Peace,Sunrise,Sunset,Panoramas",
-                    "image_url": "/images/places/leh/leh-palace.webp",
+                    "image_url": "/images/places/leh/categories/viewpoint.webp",
                     "why_vanvas_recommends": "Unbeatable dawn and dusk views of the entire Leh valley and Stok Kangri mountain wall.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -904,7 +904,7 @@ def seed_database():
                     "rating": 4.9,
                     "review_count": 980,
                     "tags": "Rafting,Adventure,River,Thrill",
-                    "image_url": "/images/places/rishikesh/laxman-jhula.webp",
+                    "image_url": "/images/places/rishikesh/categories/nature.webp",
                     "why_vanvas_recommends": "The quintessential adventure benchmark in Northern India.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -1045,7 +1045,7 @@ def seed_database():
                     "rating": 4.9,
                     "review_count": 880,
                     "tags": "Tea Estate,Sunrise,Clouds,Western Ghats",
-                    "image_url": "/images/places/munnar/categories/nature.webp",
+                    "image_url": "/images/places/munnar/kolukkumalai-tea.webp",
                     "why_vanvas_recommends": "Watch dawn break over a sea of white clouds from century-old tea trails.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -1064,7 +1064,7 @@ def seed_database():
                     "rating": 4.7,
                     "review_count": 1400,
                     "tags": "National Park,Nilgiri Tahr,Anamudi,Shola Grasslands",
-                    "image_url": "/images/places/munnar/categories/nature.webp",
+                    "image_url": "/images/places/munnar/eravikulam-park.webp",
                     "why_vanvas_recommends": "Iconic mist-draped shola forest ecosystem unique to the Western Ghats.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -1074,17 +1074,33 @@ def seed_database():
         }
 
         # Seed places for all destinations
+        curated_place_keys = set()
         for dest_slug, places_list in curated_places_by_dest.items():
             if dest_slug in dest_objects:
                 dest_obj = dest_objects[dest_slug]
                 for p_data in places_list:
+                    curated_place_keys.add((dest_obj.id, p_data["slug"]))
                     existing_p = db.query(Place).filter(Place.destination_id == dest_obj.id, Place.slug == p_data["slug"]).first()
                     if not existing_p:
                         p = Place(destination_id=dest_obj.id, **p_data)
                         db.add(p)
+                    else:
+                        for k, v in p_data.items():
+                            setattr(existing_p, k, v)
+
+        # Clean up legacy / orphan / duplicate places
+        seen_dest_slug = set()
+        for old_p in db.query(Place).all():
+            key = (old_p.destination_id, old_p.slug)
+            if key not in curated_place_keys or key in seen_dest_slug:
+                db.query(ItineraryItem).filter(ItineraryItem.place_id == old_p.id).delete()
+                db.query(SavedPlace).filter(SavedPlace.place_id == old_p.id).delete()
+                db.delete(old_p)
+            else:
+                seen_dest_slug.add(key)
         db.flush()
 
-        # 5. Seed Curated Stays (Hotels) for all destinations
+        # 5. Seed Curated Stays (Hotels) for all 12 destinations
         curated_hotels_by_dest = {
             "manali": [
                 {
@@ -1187,6 +1203,108 @@ def seed_database():
                     "booking_url": "https://booking.vanvas.com/spiti-homestay",
                     "badge": "Authentic Mudhouse"
                 }
+            ],
+            "kasol": [
+                {
+                    "name": "Parvati Woods Bohemian Alpine Lodge",
+                    "address": "Near Old Bridge, Kasol, HP",
+                    "latitude": 32.0115,
+                    "longitude": 77.3160,
+                    "price_per_night": 2200.0,
+                    "rating": 4.8,
+                    "hotel_style": "Alpine Lodge / Pine Balcony",
+                    "amenities": "Riverside Cafe,High-Speed WiFi,Bonfire Lounge,Hammocks",
+                    "check_in_time": "12:00 PM",
+                    "check_out_time": "11:00 AM",
+                    "image_url": "/images/places/kasol/categories/stay.webp",
+                    "booking_url": "https://booking.vanvas.com/parvati-woods",
+                    "badge": "Riverside Alpine Lodge"
+                }
+            ],
+            "goa": [
+                {
+                    "name": "Fontainhas Heritage Boutique Villa",
+                    "address": "31st January Road, Panaji, Goa",
+                    "latitude": 15.4975,
+                    "longitude": 73.8320,
+                    "price_per_night": 4500.0,
+                    "rating": 4.9,
+                    "hotel_style": "Portuguese Heritage / Latin Quarter",
+                    "amenities": "Courtyard Garden,Portuguese Balcony,Artisan Breakfast",
+                    "check_in_time": "02:00 PM",
+                    "check_out_time": "11:00 AM",
+                    "image_url": "/images/places/goa/categories/stay.webp",
+                    "booking_url": "https://booking.vanvas.com/fontainhas-villa",
+                    "badge": "Latin Heritage Villa"
+                }
+            ],
+            "jaipur": [
+                {
+                    "name": "Samode Haveli Royal Residence",
+                    "address": "Gangapole, Jaipur, Rajasthan",
+                    "latitude": 26.9290,
+                    "longitude": 75.8350,
+                    "price_per_night": 8500.0,
+                    "rating": 4.9,
+                    "hotel_style": "Royal Haveli / Heritage Courtyard",
+                    "amenities": "Moorish Pool,Sheesh Mahal Dining,Frescoed Courtyards,Spa",
+                    "check_in_time": "02:00 PM",
+                    "check_out_time": "12:00 PM",
+                    "image_url": "/images/places/jaipur/categories/stay.webp",
+                    "booking_url": "https://booking.vanvas.com/samode-haveli",
+                    "badge": "Royal Haveli"
+                }
+            ],
+            "dharamshala": [
+                {
+                    "name": "Chonor House Tibetan Heritage Lodge",
+                    "address": "Near The Dalai Lama Temple, McLeod Ganj, HP",
+                    "latitude": 32.2360,
+                    "longitude": 76.3255,
+                    "price_per_night": 3800.0,
+                    "rating": 4.9,
+                    "hotel_style": "Tibetan Art / Cedar Forest View",
+                    "amenities": "Hand-painted Murals,Organic Bakery,Dhauladhar Terrace",
+                    "check_in_time": "01:00 PM",
+                    "check_out_time": "11:00 AM",
+                    "image_url": "/images/places/dharamshala/categories/stay.webp",
+                    "booking_url": "https://booking.vanvas.com/chonor-house",
+                    "badge": "Tibetan Cultural Sanctuary"
+                }
+            ],
+            "rishikesh": [
+                {
+                    "name": "Ganga Kinare Riverside Retreat",
+                    "address": "23 Barrage Road, Rishikesh, UK",
+                    "latitude": 30.0980,
+                    "longitude": 78.2910,
+                    "price_per_night": 5400.0,
+                    "rating": 4.8,
+                    "hotel_style": "Riverside Retreat / Yoga & Spa",
+                    "amenities": "Private Ganga Ghat,Sunrise Yoga,Ayurvedic Spa,Organic Dining",
+                    "check_in_time": "02:00 PM",
+                    "check_out_time": "11:00 AM",
+                    "image_url": "/images/places/rishikesh/categories/stay.webp",
+                    "booking_url": "https://booking.vanvas.com/ganga-kinare",
+                    "badge": "Private Ganga Ghat"
+                }
+            ],
+            "munnar": [
+                {
+                    "name": "Windermere Estate Tea Plantation Sanctuary",
+                    "address": "Pothamedu, Munnar, Kerala",
+                    "latitude": 10.0550,
+                    "longitude": 77.0580,
+                    "price_per_night": 6200.0,
+                    "rating": 4.9,
+                    "hotel_style": "Colonial Planter Bungalow",
+                    "amenities": "Tea Garden Trails,Cardamom Forest Walk,Fireplace Dining",
+                    "check_in_time": "01:00 PM",
+                    "check_out_time": "11:00 AM",
+                    "image_url": "/images/places/munnar/categories/stay.webp",
+                    "booking_url": "https://booking.vanvas.com/windermere-estate",
+                    "badge": "Tea Planter Sanctuary"
+                }
             ]
         }
 
@@ -1199,8 +1317,15 @@ def seed_database():
                         h = Hotel(destination_id=dest_obj.id, **h_data)
                         db.add(h)
                     else:
-                        existing_h.image_url = h_data.get("image_url", existing_h.image_url)
-                db.flush()
+                        for k, v in h_data.items():
+                            setattr(existing_h, k, v)
+
+        # Clean up legacy / orphan hotels
+        curated_hotel_names = {h["name"] for hotel_list in curated_hotels_by_dest.values() for h in hotel_list}
+        for old_h in db.query(Hotel).all():
+            if old_h.name not in curated_hotel_names:
+                db.delete(old_h)
+        db.flush()
 
         # 6. Seed Curated Rentals for all destinations
         curated_rentals_by_dest = {

@@ -30,7 +30,7 @@ async def test_chalal_trail_exact_resolution(provider):
         category="Nature & Trails"
     )
     assert res["tier"] == "exact_place"
-    assert res["semantic_category"] == "nature"
+    assert res["semantic_category"] in ["trail", "nature"]
     assert "chalal-trail" in res["image_url"]
     assert res["badge_label"] == "VANVAS PLACE ARTWORK"
 

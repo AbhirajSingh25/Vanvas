@@ -224,7 +224,8 @@ class LivePlacesProvider(PlacesProvider):
             "Adventure": "/images/places/universal/viewpoint.webp",
             "Shops & Markets": "/images/places/universal/shopping.webp",
             "Mobility & Transport": "/images/places/universal/transport.webp",
-            "Essentials & Medical": "/images/places/universal/stay.webp",
+            "Essentials & Medical": "/images/places/universal/medical.webp",
+            "Stays & Sanctuaries": "/images/places/universal/stay.webp",
             "Attractions": "/images/places/universal/viewpoint.webp",
         }
         return images.get(category, "/images/places/universal/nature.webp")

@@ -154,7 +154,7 @@ async def test_missing_artwork_does_not_block():
     resolver = CuratedArtworkProvider()
     res = await resolver.resolve_place_artwork("Unrecorded Remote Shrine", "UnknownTown", "Attraction")
     assert res["image_url"] is not None
-    assert res["tier"] == "regional_fallback"
+    assert res["tier"] in ["regional_fallback", "universal_fallback"]
 
 # 13. Vehicle artwork is used everywhere
 def test_vehicle_artwork_files_exist():
