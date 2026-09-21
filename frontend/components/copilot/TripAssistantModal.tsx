@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { MessageSquare, Send, Sparkles, X, Compass, ArrowRight, Bot, MapPin, Clock, Coins, Calendar, Navigation, ShieldCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { CopilotChatResponse } from "@/types";
+import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
 
 interface TripAssistantModalProps {
   tripId?: string;
@@ -229,18 +230,28 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
                           key={pIdx} 
                           className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] shadow-2xs hover:border-[#173B32] transition-colors relative"
                         >
-                          {place.image_url ? (
-                            <img 
-                              src={place.image_url} 
-                              alt={place.name} 
-                              className="w-12 h-12 rounded-lg object-cover border border-[#E5D5BA]"
-                              onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-[#EFE5D2] flex items-center justify-center text-[#173B32]">
-                              <MapPin className="w-5 h-5" />
-                            </div>
-                          )}
+                          {(() => {
+                            const visual = resolvePlaceArtwork(
+                              place.name,
+                              destinationName || place.destination || "",
+                              place.category || "Sight",
+                              place.image_url,
+                              place.is_live,
+                              place.source
+                            );
+                            return (
+                              <img 
+                                src={visual.imageUrl} 
+                                alt={place.name} 
+                                className="w-12 h-12 rounded-lg object-cover border border-[#E5D5BA]"
+                                onError={(e: any) => { 
+                                  if (visual.fallbackUrl && e.currentTarget.src !== visual.fallbackUrl) {
+                                    e.currentTarget.src = visual.fallbackUrl;
+                                  }
+                                }}
+                              />
+                            );
+                          })()}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-1">
                               <p className="text-xs font-serif font-bold text-[#173B32] truncate">{place.name}</p>

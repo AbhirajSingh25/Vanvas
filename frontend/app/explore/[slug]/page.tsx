@@ -47,65 +47,10 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   
   const [stayOffers, setStayOffers] = useState<Offer[]>([]);
   
-  const [livePlaces, setLivePlaces] = useState<Place[]>([]);
-  const [liveCategory, setLiveCategory] = useState<string>("all");
-  const [liveLoading, setLiveLoading] = useState(false);
-  const [liveError, setLiveError] = useState<string | null>(null);
-
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isDuplicateOfCurated = (livePlace: Place, curatedPlaces: Place[]): boolean => {
-    const normLive = (livePlace.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (!normLive) return false;
-
-    for (const cp of curatedPlaces) {
-      const normCurated = (cp.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      if (!normCurated) continue;
-
-      if (normLive === normCurated || normLive.includes(normCurated) || normCurated.includes(normLive)) {
-        return true;
-      }
-
-      if (
-        typeof livePlace.latitude === "number" &&
-        typeof livePlace.longitude === "number" &&
-        typeof cp.latitude === "number" &&
-        typeof cp.longitude === "number"
-      ) {
-        const dLat = Math.abs(livePlace.latitude - cp.latitude);
-        const dLng = Math.abs(livePlace.longitude - cp.longitude);
-        if (dLat < 0.005 && dLng < 0.005) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  const fetchLiveDiscovery = (lat: number, lng: number, cat: string, curPlaces: Place[] = places) => {
-    setLiveLoading(true);
-    setLiveError(null);
-    api.getNearbyPlaces(lat, lng, 15, cat === "all" ? undefined : cat, "recommended", true)
-      .then((res) => {
-        const raw = res || [];
-        const unique = raw.filter((lp) => !isDuplicateOfCurated(lp, curPlaces));
-        setLivePlaces(unique);
-        if (unique.length === 0) {
-          setLiveError(cat === "all" ? "No additional live places discovered in this radius." : `No additional live ${cat} found in this radius.`);
-        }
-      })
-      .catch(() => {
-        setLiveError("Live places are temporarily unavailable.");
-      })
-      .finally(() => setLiveLoading(false));
-  };
 
   useEffect(() => {
     if (!destLoading) return;
@@ -242,10 +187,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           })
           .catch(() => {});
 
-        // 4. Live POIs
-        if (lat && lng) {
-          fetchLiveDiscovery(lat, lng, liveCategory, data.places || []);
-        }
       })
       .catch((err) => {
         console.error("Destination fetch error:", err);
@@ -259,12 +200,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   useEffect(() => {
     fetchDestination();
   }, [slug]);
-
-  useEffect(() => {
-    if (destination?.latitude && destination?.longitude) {
-      fetchLiveDiscovery(destination.latitude, destination.longitude, liveCategory);
-    }
-  }, [liveCategory]);
 
   const getCategory = (p: Place): string => {
     return typeof p.category === "string" ? p.category.toLowerCase() : "";
@@ -647,88 +582,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
             </div>
           </div>
         )}
-
-        {/* LIVE PLACES NEAR DESTINATION (Real-Time Category Tag Search) */}
-        <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5D5BA] pb-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 text-[10px] font-mono font-bold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  LIVE POI DISCOVERY
-                </span>
-                <span className="text-xs text-[#7B4D36] font-mono">
-                  {destination.latitude.toFixed(2)}°N, {destination.longitude.toFixed(2)}°E
-                </span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-                Live Places Near {destination.name}
-              </h3>
-              <p className="text-xs text-[#7B4D36]">
-                Retrieved in real-time from open geographic datasets. Automatically deduplicated against curated editorial landmarks.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {[
-              { id: "all", label: "All Categories" },
-              { id: "food", label: "Food & Dining" },
-              { id: "coffee", label: "Coffee & Cafes" },
-              { id: "attractions", label: "Things to Do" },
-              { id: "shopping", label: "Markets & Shops" },
-              { id: "mobility", label: "Mobility & Rentals" },
-              { id: "essentials", label: "Essentials & Medical" },
-            ].map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setLiveCategory(cat.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  liveCategory === cat.id
-                    ? "bg-[#173B32] text-[#EFE5D2] shadow-sm border-2 border-[#173B32]"
-                    : "bg-[#FAF7F0] text-[#20211D]/80 border border-[#E5D5BA] hover:bg-[#E5D5BA]"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {liveLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] animate-pulse space-y-4">
-                  <div className="h-44 bg-[#E5D5BA]/60 rounded-2xl" />
-                  <div className="h-5 bg-[#E5D5BA]/80 rounded w-3/4" />
-                  <div className="h-3 bg-[#E5D5BA]/50 rounded w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : liveError ? (
-            <div className="p-6 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] text-center space-y-2">
-              <p className="text-sm font-serif font-bold text-[#7B4D36]">{liveError}</p>
-              <p className="text-xs text-[#20211D]/70">Explore our curated sanctuary guide above for verified landmarks.</p>
-            </div>
-          ) : livePlaces.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {livePlaces.map((place) => (
-                <PlaceCard
-                  key={place.id}
-                  place={place}
-                  destinationName={destination.name}
-                  onSelect={(p) => {
-                    setSelectedPlace(p);
-                    setModalOpen(true);
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="p-6 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] text-center space-y-1">
-              <p className="text-xs text-[#7B4D36]">No verified places found in this category yet in open geographic registry.</p>
-            </div>
-          )}
-        </div>
 
         {/* STAYS & SANCTUARIES */}
         <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">

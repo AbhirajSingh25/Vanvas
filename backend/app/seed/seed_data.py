@@ -650,7 +650,7 @@ def seed_database():
                     "opening_time": "09:00",
                     "closing_time": "22:00",
                     "tags": "Local Food,Lassi,Traditional,Kulhad,Street Food",
-                    "image_url": "/images/places/varanasi/categories/cafe.webp",
+                    "image_url": "/images/places/varanasi/blue-lassi-shop.webp",
                     "why_vanvas_recommends": "Famous artisanal lassi spot decorated with traveller passport photos from around the world.",
                     "is_must_visit": False,
                     "is_hidden_gem": True,
