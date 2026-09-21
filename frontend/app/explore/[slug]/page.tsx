@@ -61,14 +61,44 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     setMounted(true);
   }, []);
 
-  const fetchLiveDiscovery = (lat: number, lng: number, cat: string) => {
+  const isDuplicateOfCurated = (livePlace: Place, curatedPlaces: Place[]): boolean => {
+    const normLive = (livePlace.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!normLive) return false;
+
+    for (const cp of curatedPlaces) {
+      const normCurated = (cp.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!normCurated) continue;
+
+      if (normLive === normCurated || normLive.includes(normCurated) || normCurated.includes(normLive)) {
+        return true;
+      }
+
+      if (
+        typeof livePlace.latitude === "number" &&
+        typeof livePlace.longitude === "number" &&
+        typeof cp.latitude === "number" &&
+        typeof cp.longitude === "number"
+      ) {
+        const dLat = Math.abs(livePlace.latitude - cp.latitude);
+        const dLng = Math.abs(livePlace.longitude - cp.longitude);
+        if (dLat < 0.005 && dLng < 0.005) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const fetchLiveDiscovery = (lat: number, lng: number, cat: string, curPlaces: Place[] = places) => {
     setLiveLoading(true);
     setLiveError(null);
-    api.getNearbyPlaces(lat, lng, 15, cat === "all" ? undefined : cat)
+    api.getNearbyPlaces(lat, lng, 15, cat === "all" ? undefined : cat, "recommended", true)
       .then((res) => {
-        setLivePlaces(res || []);
-        if (!res || res.length === 0) {
-          setLiveError("No live places returned in this radius.");
+        const raw = res || [];
+        const unique = raw.filter((lp) => !isDuplicateOfCurated(lp, curPlaces));
+        setLivePlaces(unique);
+        if (unique.length === 0) {
+          setLiveError(cat === "all" ? "No additional live places discovered in this radius." : `No additional live ${cat} found in this radius.`);
         }
       })
       .catch(() => {
@@ -214,7 +244,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
         // 4. Live POIs
         if (lat && lng) {
-          fetchLiveDiscovery(lat, lng, liveCategory);
+          fetchLiveDiscovery(lat, lng, liveCategory, data.places || []);
         }
       })
       .catch((err) => {

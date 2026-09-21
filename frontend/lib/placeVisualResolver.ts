@@ -79,6 +79,65 @@ export type SemanticTheme =
 
 export type ArtworkTier = ImageProvenanceTier;
 
+export type AssetQualityStatus = "APPROVED" | "DEPRECATED" | "REVIEW_REQUIRED";
+
+/**
+ * Validates whether an image asset meets strict VANVAS visual quality standards.
+ * Rejects flat vectors, geometric illustrations, generic placeholders, and broken paths.
+ */
+export function getAssetQualityStatus(url?: string | null): AssetQualityStatus {
+  if (!url || typeof url !== "string") return "DEPRECATED";
+  const trimmed = url.trim().toLowerCase();
+  if (trimmed.length === 0 || trimmed === "null" || trimmed === "undefined") return "DEPRECATED";
+
+  const deprecatedSubstrings = [
+    "placeholder",
+    "via.placeholder",
+    "default-",
+    "default_",
+    "vector",
+    "clipart",
+    ".svg",
+    "cartoon",
+    "geometric",
+    "icon-",
+    "simple-moon",
+    "generic-house",
+    "flat-art",
+    "dummy"
+  ];
+
+  for (const pat of deprecatedSubstrings) {
+    if (trimmed.includes(pat)) {
+      return "DEPRECATED";
+    }
+  }
+
+  if (
+    trimmed.startsWith("/images/") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("http://")
+  ) {
+    if (
+      trimmed.endsWith(".webp") ||
+      trimmed.endsWith(".jpg") ||
+      trimmed.endsWith(".jpeg") ||
+      trimmed.endsWith(".png") ||
+      trimmed.includes("unsplash.com") ||
+      trimmed.includes("wikimedia.org") ||
+      trimmed.includes("openstreetmap.org")
+    ) {
+      return "APPROVED";
+    }
+  }
+
+  return "DEPRECATED";
+}
+
+export function isApprovedAsset(url?: string | null): boolean {
+  return getAssetQualityStatus(url) === "APPROVED";
+}
+
 export interface PlaceArtworkResult extends ImageContract {
   artworkKey: string;
   imageUrl: string;
@@ -1108,9 +1167,8 @@ export function resolvePlaceArtwork(
   // --- LEVEL 1 & 2 & 3: Verified Real Photograph URL (Live Provider, Wikimedia Commons, OpenStreetMap) ---
   if (
     existingImageUrl &&
-    (existingImageUrl.startsWith("https://") || existingImageUrl.startsWith("http://")) &&
-    !existingImageUrl.includes("placeholder") &&
-    !existingImageUrl.includes("default")
+    isApprovedAsset(existingImageUrl) &&
+    (existingImageUrl.startsWith("https://") || existingImageUrl.startsWith("http://"))
   ) {
     const isWikimedia = existingImageUrl.includes("wikimedia.org") || existingImageUrl.includes("wikidata.org");
     const isRealExact = isWikimedia || isLive === true || source === "google_places" || source === "wikimedia";
@@ -1145,7 +1203,7 @@ export function resolvePlaceArtwork(
   const lookupKey = `${destNorm}:${placeNorm}`;
   if (EXACT_PLACE_REGISTRY[lookupKey]) {
     const entry = EXACT_PLACE_REGISTRY[lookupKey];
-    if (areThemesCompatible(entry.semanticTheme, semanticTheme)) {
+    if (isApprovedAsset(entry.imageUrl) && areThemesCompatible(entry.semanticTheme, semanticTheme)) {
       return {
         url: entry.imageUrl,
         fallback_url: safeFallback,
@@ -1185,7 +1243,7 @@ export function resolvePlaceArtwork(
   ]);
 
   for (const [regKey, item] of Object.entries(EXACT_PLACE_REGISTRY)) {
-    if (!areThemesCompatible(item.semanticTheme, semanticTheme)) {
+    if (!isApprovedAsset(item.imageUrl) || !areThemesCompatible(item.semanticTheme, semanticTheme)) {
       continue;
     }
     const [regDest, regPlace] = regKey.split(":");
@@ -1224,7 +1282,7 @@ export function resolvePlaceArtwork(
     }
   }
 
-  if (bestExactMatch && bestScore >= 55) {
+  if (bestExactMatch && bestScore >= 55 && isApprovedAsset(bestExactMatch.item.imageUrl)) {
     return {
       url: bestExactMatch.item.imageUrl,
       fallback_url: safeFallback,
@@ -1251,7 +1309,7 @@ export function resolvePlaceArtwork(
   }
 
   // --- LEVEL 6: Place-Type / Category-Specific Destination Artwork ---
-  if (destConfig && destConfig.categories[semanticTheme]) {
+  if (destConfig && destConfig.categories[semanticTheme] && isApprovedAsset(destConfig.categories[semanticTheme])) {
     const categoryUrl = destConfig.categories[semanticTheme]!;
     return {
       url: categoryUrl,

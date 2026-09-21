@@ -22,6 +22,7 @@ async def get_nearby_places(
     radius_km: float = Query(15.0, description="Radius in km"),
     category: Optional[str] = Query(None, description="Category filter"),
     sort_by: Optional[str] = Query("recommended", description="distance, rating, price, recommended"),
+    live_only: bool = Query(False, description="If true, returns strictly unique live POIs excluding all curated places"),
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
@@ -35,7 +36,7 @@ async def get_nearby_places(
     if current_user:
         user_saved_ids = {sp.place_id for sp in db.query(SavedPlace).filter(SavedPlace.user_id == current_user.id).all()}
 
-    nearby_results = []
+    curated_nearby = []
     for p in all_places:
         dist = haversine_distance_km(lat, lng, p.latitude, p.longitude)
         if dist <= radius_km:
@@ -97,22 +98,25 @@ async def get_nearby_places(
                 data_state="VERIFIED",
                 trust_source="VANVAS_CURATED",
             )
-            nearby_results.append((dist, p_res))
+            curated_nearby.append((dist, p_res))
+
+    # Build initial results
+    nearby_results = [] if live_only else list(curated_nearby)
 
     # Also discover live places from live provider (Google Places / OpenStreetMap)
     try:
         places_provider = ProviderFactory.get_places_provider()
-        curated_for_exclusion = [{"name": p_res.name, "latitude": p_res.latitude, "longitude": p_res.longitude} for _, p_res in nearby_results]
+        curated_for_exclusion = [{"name": p_res.name, "latitude": p_res.latitude, "longitude": p_res.longitude} for _, p_res in curated_nearby]
         live_places = await places_provider.get_nearby_places(lat, lng, radius_km, category, excluded_curated=curated_for_exclusion)
         for lp in live_places:
             lp_name = lp.get("name", "").lower().strip()
             lp_lat = lp.get("latitude")
             lp_lng = lp.get("longitude")
             is_dup = False
-            for dist_ex, p_ex in nearby_results:
+            for dist_ex, p_ex in curated_nearby:
                 p_ex_name = p_ex.name.lower().strip()
                 if lp_name and (p_ex_name in lp_name or lp_name in p_ex_name or (hasattr(places_provider, "_are_places_duplicate") and places_provider._are_places_duplicate(lp_name, lp_lat, lp_lng, p_ex_name, p_ex.latitude, p_ex.longitude))):
-                    if haversine_distance_km(lp_lat, lp_lng, p_ex.latitude, p_ex.longitude) < 0.35:
+                    if haversine_distance_km(lp_lat, lp_lng, p_ex.latitude, p_ex.longitude) < 0.4:
                         is_dup = True
                         break
             if not is_dup:

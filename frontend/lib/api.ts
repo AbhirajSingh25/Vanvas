@@ -373,13 +373,21 @@ export const api = {
   },
 
   // Places & Nearby
-  async getNearbyPlaces(lat: number, lng: number, radiusKm = 15, category?: string, sortBy = "recommended"): Promise<Place[]> {
+  async getNearbyPlaces(
+    lat: number,
+    lng: number,
+    radiusKm = 15,
+    category?: string,
+    sortBy = "recommended",
+    liveOnly = false
+  ): Promise<Place[]> {
     const params = new URLSearchParams({
       lat: String(lat),
       lng: String(lng),
       radius_km: String(radiusKm),
       sort_by: sortBy,
     });
+    if (liveOnly) params.append("live_only", "true");
     if (category && category !== "all") params.append("category", category);
     return fetchApi(`/places/nearby?${params.toString()}`);
   },

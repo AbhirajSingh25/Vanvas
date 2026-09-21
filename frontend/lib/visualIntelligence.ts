@@ -348,15 +348,37 @@ export function resolveDestinationVisualProfile(
 }
 
 /**
- * Quality validation helper preventing broken or empty visual assets
+ * Quality validation helper preventing broken or deprecated visual assets
  */
 export function validateArtworkQuality(assetUrl?: string | null): boolean {
   if (!assetUrl) return false;
   if (typeof assetUrl !== "string") return false;
-  const trimmed = assetUrl.trim();
-  if (trimmed.length === 0) return false;
-  if (trimmed === "null" || trimmed === "undefined") return false;
-  if (trimmed.includes("placeholder.com") || trimmed.includes("via.placeholder")) return false;
+  const trimmed = assetUrl.trim().toLowerCase();
+  if (trimmed.length === 0 || trimmed === "null" || trimmed === "undefined") return false;
+
+  const deprecatedSubstrings = [
+    "placeholder",
+    "via.placeholder",
+    "default-",
+    "default_",
+    "vector",
+    "clipart",
+    ".svg",
+    "cartoon",
+    "geometric",
+    "icon-",
+    "simple-moon",
+    "generic-house",
+    "flat-art",
+    "dummy"
+  ];
+
+  for (const pat of deprecatedSubstrings) {
+    if (trimmed.includes(pat)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
