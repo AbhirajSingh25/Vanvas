@@ -119,6 +119,32 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["dhankar-gompa", "dhankar-monastery", "dankhar"]
         },
+        "spiti:tabo-monastery": {
+            "image_url": "/images/places/spiti/tabo-monastery.webp",
+            "tier": "exact_place",
+            "place_name": "Tabo Monastery (Ajanta of the Himalayas)",
+            "destination": "Spiti Valley",
+            "category": "Culture & Heritage",
+            "semantic_theme": "monastery",
+            "visual_description": "Thousand-year-old mud-brick Tibetan Buddhist monastic complex with ancient stupas and mural halls against arid cliffs.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["tabo-monastery", "tabo-gompa", "tabo", "tabo-monastery-ajanta-of-the-himalayas"]
+        },
+        "spiti:kaza": {
+            "image_url": "/images/places/spiti/kaza.webp",
+            "tier": "exact_place",
+            "place_name": "Kaza Town & Market",
+            "destination": "Spiti Valley",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "High-altitude capital town with traditional whitewashed mud houses, prayer flags, and suspension footbridge over braided river.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["kaza", "kaza-town", "kaza-market", "kaza-spiti"]
+        },
 
         # --- Manali Landmarks ---
         "manali:hadimba-temple": {
@@ -158,7 +184,33 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source": "vanvas_curated",
             "source_type": "editorial_artwork",
             "attribution": "VANVAS Verified Editorial Asset",
-            "aliases": ["old-manali", "old-manali-village-and-manu-temple", "old-manali-village", "old-manali-village-and-cafes"]
+            "aliases": ["old-manali", "old-manali-village", "old-manali-village-and-cafes", "old-manali-cafes"]
+        },
+        "manali:manu-temple": {
+            "image_url": "/images/places/manali/manu-temple.webp",
+            "tier": "exact_place",
+            "place_name": "Manu Maharishi Temple, Old Manali",
+            "destination": "Manali",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "visual_description": "Historic multi-tiered wooden pagoda temple dedicated to Sage Manu nestled amidst apple orchards and deodar pines.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["manu-temple", "manu-maharishi-temple", "sage-manu-temple", "manu-mandir"]
+        },
+        "manali:mall-road": {
+            "image_url": "/images/places/manali/mall-road.webp",
+            "tier": "exact_place",
+            "place_name": "Mall Road Manali Promenade",
+            "destination": "Manali",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "Bustling Himalayan pedestrian promenade with wooden storefronts, vintage lamps, and snow-capped mountain views.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["mall-road", "manali-mall-road", "the-mall-manali", "mall-road-manali"]
         },
         "manali:jogini-waterfall": {
             "image_url": "/images/places/manali/jogini-waterfall.webp",
