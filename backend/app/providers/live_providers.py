@@ -116,6 +116,8 @@ class LiveWeatherProvider(WeatherProvider):
 import re
 from app.core.cache import places_cache
 
+import unicodedata
+
 class LivePlacesProvider(PlacesProvider):
     """
     Genuine Location-Aware Live Places Provider.
@@ -144,38 +146,88 @@ class LivePlacesProvider(PlacesProvider):
         return self._geocoder
 
     def _normalize_name(self, name: str) -> str:
-        clean = re.sub(r"[^a-zA-Z0-9\s]", "", (name or "").lower())
-        stop_words = {"cafe", "café", "restaurant", "hotel", "resort", "dhaba", "bake", "bakery", "shop", "store", "point", "viewpoint", "temple", "the", "and"}
+        if not name:
+            return ""
+        clean = unicodedata.normalize("NFKD", str(name)).encode("ASCII", "ignore").decode("utf-8")
+        clean = re.sub(r"[^a-zA-Z0-9\s]", " ", clean.lower())
+        stop_words = {
+            "cafe", "café", "restaurant", "hotel", "resort", "dhaba", "bake", "bakery",
+            "shop", "store", "point", "viewpoint", "temple", "the", "and", "trail", "walk",
+            "trek", "gurudwara", "sahib", "monastery", "gompa", "ghat", "falls", "waterfall",
+            "riverside", "pine", "market", "bazaar", "heritage", "palace", "fort"
+        }
         tokens = [t for t in clean.split() if t not in stop_words]
         return " ".join(tokens) if tokens else clean
 
-    def _deduplicate_places(self, places: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        unique = []
-        seen_source_ids = set()
+    def _are_places_duplicate(self, p1_name: str, p1_lat: Optional[float], p1_lng: Optional[float],
+                              p2_name: str, p2_lat: Optional[float], p2_lng: Optional[float],
+                              max_distance_km: float = 0.35) -> bool:
+        if not p1_name or not p2_name:
+            return False
+        
+        # Exact normalized string match
+        n1 = self._normalize_name(p1_name)
+        n2 = self._normalize_name(p2_name)
+        if n1 and n2 and n1 == n2:
+            return True
+
+        # Check token containment if geographically close
+        if p1_lat is not None and p1_lng is not None and p2_lat is not None and p2_lng is not None:
+            dist = self._haversine(p1_lat, p1_lng, p2_lat, p2_lng)
+            if dist <= max_distance_km:
+                if n1 and n2 and (n1 in n2 or n2 in n1):
+                    return True
+                # Token overlap check (Jaccard similarity >= 0.5)
+                tokens1 = set(n1.split())
+                tokens2 = set(n2.split())
+                if tokens1 and tokens2:
+                    overlap = len(tokens1 & tokens2) / float(len(tokens1 | tokens2))
+                    if overlap >= 0.5:
+                        return True
+        return False
+
+    def _deduplicate_places(self, places: List[Dict[str, Any]], excluded_curated: Optional[List[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
+        unique: List[Dict[str, Any]] = []
+        seen_source_ids: Set[str] = set()
+
+        # Build set of normalized names & coordinates from excluded curated places
+        curated_ref: List[Tuple[str, Optional[float], Optional[float]]] = []
+        if excluded_curated:
+            for cp in excluded_curated:
+                c_name = cp.get("name") or ""
+                c_lat = cp.get("latitude")
+                c_lng = cp.get("longitude")
+                curated_ref.append((c_name, c_lat, c_lng))
 
         source_priority = {"google_places": 3, "openstreetmap": 2, "vanvas_curated": 1}
         sorted_places = sorted(places, key=lambda p: source_priority.get(p.get("source", ""), 0), reverse=True)
 
         for p in sorted_places:
-            sid = p.get("source_id")
+            sid = str(p.get("source_id") or "")
             if sid and sid in seen_source_ids:
                 continue
 
+            p_name = p.get("name", "")
             p_lat = p.get("latitude")
             p_lng = p.get("longitude")
-            p_norm = self._normalize_name(p.get("name", ""))
+
+            # Check if this place matches any curated place that should not be duplicated in live stream
+            is_curated_dup = False
+            for c_name, c_lat, c_lng in curated_ref:
+                if self._are_places_duplicate(p_name, p_lat, p_lng, c_name, c_lat, c_lng, max_distance_km=0.4):
+                    is_curated_dup = True
+                    break
+            if is_curated_dup:
+                continue
 
             is_dup = False
             for existing in unique:
+                e_name = existing.get("name", "")
                 e_lat = existing.get("latitude")
                 e_lng = existing.get("longitude")
-                if p_lat is not None and p_lng is not None and e_lat is not None and e_lng is not None:
-                    dist = self._haversine(p_lat, p_lng, e_lat, e_lng)
-                    if dist < 0.15:  # within 150m
-                        e_norm = self._normalize_name(existing.get("name", ""))
-                        if p_norm and e_norm and (p_norm in e_norm or e_norm in p_norm):
-                            is_dup = True
-                            break
+                if self._are_places_duplicate(p_name, p_lat, p_lng, e_name, e_lat, e_lng, max_distance_km=0.2):
+                    is_dup = True
+                    break
 
             if not is_dup:
                 unique.append(p)
@@ -190,26 +242,29 @@ class LivePlacesProvider(PlacesProvider):
         historic = tags.get("historic", "").lower()
         leisure = tags.get("leisure", "").lower()
         shop = tags.get("shop", "").lower()
+        natural = tags.get("natural", "").lower()
+        highway = tags.get("highway", "").lower()
 
-        if amenity in ["cafe", "bakery", "coffee_shop"] or shop in ["bakery", "pastry"]:
+        if amenity in ["cafe", "bakery", "coffee_shop"] or shop in ["bakery", "pastry", "coffee"]:
             return "Cafés & Bakery"
-        elif amenity in ["restaurant", "food_court", "fast_food", "dhaba", "pub", "bar"]:
+        elif amenity in ["restaurant", "food_court", "fast_food", "dhaba", "pub", "bar", "food", "ice_cream"]:
             return "Local Food"
-        elif tourism in ["viewpoint", "camp_site", "wilderness_hut"] or leisure in ["park", "nature_reserve", "track"]:
+        elif tourism in ["viewpoint", "camp_site", "wilderness_hut", "picnic_site"] or leisure in ["park", "nature_reserve", "track", "garden"] or natural in ["waterfall", "beach", "peak", "spring", "hot_spring", "tree"] or highway in ["trail", "path"]:
             return "Nature & Trails"
         elif (
-            historic in ["monument", "memorial", "castle", "ruins", "archaeological_site", "temple", "shrine", "fort", "palace", "church", "cathedral", "chapel"]
+            historic in ["monument", "memorial", "castle", "ruins", "archaeological_site", "temple", "shrine", "fort", "palace", "church", "cathedral", "chapel", "monastery", "mosque", "tomb", "city_gate"]
             or tourism in ["museum", "gallery", "artwork"]
             or amenity in ["place_of_worship"]
+            or tags.get("religion") in ["hindu", "buddhist", "sikh", "christian", "muslim", "jain"]
         ):
             return "Culture & Heritage"
         elif leisure in ["sports_centre", "water_park", "marina", "slipway"] or tags.get("sport"):
             return "Adventure"
-        elif amenity in ["bicycle_rental", "car_rental", "parking", "fuel", "bus_station", "taxi"] or shop in ["motorcycle", "bicycle"]:
+        elif amenity in ["bicycle_rental", "motorcycle_rental", "car_rental", "scooter_rental", "parking", "fuel", "bus_station", "taxi"] or shop in ["motorcycle", "bicycle", "rental"]:
             return "Mobility & Transport"
-        elif shop in ["convenience", "supermarket", "general", "department_store", "clothes", "craft", "gift", "mall"]:
+        elif shop in ["convenience", "supermarket", "general", "department_store", "clothes", "craft", "gift", "mall", "spices", "tea", "books", "souvenir", "shoes"]:
             return "Shops & Markets"
-        elif amenity in ["pharmacy", "hospital", "clinic", "doctors", "atm", "bank", "police", "post_office"]:
+        elif amenity in ["pharmacy", "hospital", "clinic", "doctors", "dentist", "atm", "bank", "police", "post_office"]:
             return "Essentials & Medical"
         elif tourism in ["attraction", "theme_park", "zoo"]:
             return "Attractions"
@@ -237,17 +292,19 @@ class LivePlacesProvider(PlacesProvider):
         dlambda = math.radians(lng2 - lng1)
         a = math.sin(dphi / 2.0)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2.0)**2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-        return round(r * c, 1)
+        return round(r * c, 2)
 
     async def _execute_overpass_query(self, query_str: str) -> List[Dict[str, Any]]:
-        """Executes an Overpass QL query across primary and backup endpoints with tight timeout."""
+        """Executes an Overpass QL query across primary and backup endpoints with robust timeout."""
         for endpoint in self.OVERPASS_ENDPOINTS:
             try:
-                async with httpx.AsyncClient(timeout=3.5, headers=self.headers) as client:
+                async with httpx.AsyncClient(timeout=5.5, headers=self.headers) as client:
                     res = await client.post(endpoint, data={"data": query_str})
                     if res.status_code == 200:
                         data = res.json()
-                        return data.get("elements", [])
+                        elements = data.get("elements", [])
+                        if elements:
+                            return elements
             except Exception as e:
                 logger.debug(f"Overpass endpoint {endpoint} failed: {e}")
         return []
@@ -264,6 +321,7 @@ class LivePlacesProvider(PlacesProvider):
         if not p_name:
             return None
 
+        # Support node lat/lon or way/relation center lat/lon
         p_lat = el.get("lat") or el.get("center", {}).get("lat", center_lat)
         p_lng = el.get("lon") or el.get("center", {}).get("lon", center_lng)
         if p_lat is None or p_lng is None:
@@ -273,19 +331,19 @@ class LivePlacesProvider(PlacesProvider):
 
         if category_filter and category_filter.lower() != "all":
             cat_lower = category_filter.lower()
-            if cat_lower in ["food", "restaurant", "dining"] and p_cat not in ["Local Food", "Cafés & Bakery"]:
+            if cat_lower in ["food", "restaurant", "dining", "local food"] and p_cat not in ["Local Food", "Cafés & Bakery"]:
                 return None
-            elif cat_lower in ["coffee", "cafe", "cafes", "bakery"] and p_cat != "Cafés & Bakery":
+            elif cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"] and p_cat != "Cafés & Bakery":
                 return None
-            elif cat_lower in ["attractions", "things to do", "attraction"] and p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails", "Adventure"]:
+            elif cat_lower in ["attractions", "things to do", "attraction", "nature", "trails & nature"] and p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails", "Adventure"]:
                 return None
-            elif cat_lower in ["shopping", "market", "markets"] and p_cat != "Shops & Markets":
+            elif cat_lower in ["shopping", "market", "markets", "shops & markets"] and p_cat != "Shops & Markets":
                 return None
-            elif cat_lower in ["mobility", "transport", "rentals"] and p_cat != "Mobility & Transport":
+            elif cat_lower in ["mobility", "transport", "rentals", "mobility & rentals"] and p_cat != "Mobility & Transport":
                 return None
-            elif cat_lower in ["essentials", "medical", "hospital"] and p_cat != "Essentials & Medical":
+            elif cat_lower in ["essentials", "medical", "hospital", "essentials & medical"] and p_cat != "Essentials & Medical":
                 return None
-            elif cat_lower in ["culture", "heritage", "spiritual", "temple", "church"] and p_cat != "Culture & Heritage":
+            elif cat_lower in ["culture", "heritage", "spiritual", "temple", "church", "culture & heritage"] and p_cat != "Culture & Heritage":
                 return None
             elif cat_lower not in p_cat.lower():
                 return None
@@ -318,7 +376,6 @@ class LivePlacesProvider(PlacesProvider):
             source_id=str(el.get("id")),
         )
 
-        # Inspect OSM visual tags: direct image URL or Wikimedia Commons reference
         osm_img_url = None
         if "image" in tags and str(tags["image"]).startswith("http"):
             osm_img_url = str(tags["image"]).strip()
@@ -377,7 +434,6 @@ class LivePlacesProvider(PlacesProvider):
             return cached_val
 
         start_time = time.time()
-        # 1. Fetch curated matches first
         curated_matches = await self.demo_fallback.search_places(query, destination_name, category)
         for p in curated_matches:
             p["source"] = "vanvas_curated"
@@ -385,7 +441,6 @@ class LivePlacesProvider(PlacesProvider):
             p["data_state"] = "VERIFIED"
             p["trust_source"] = "VANVAS_CURATED"
 
-        # 2. Resolve destination coordinates
         target_location = destination_name.strip()
         if not target_location and query:
             from app.services.intent_router import SearchIntentRouter
@@ -403,18 +458,18 @@ class LivePlacesProvider(PlacesProvider):
         gathered_live: List[Dict[str, Any]] = []
 
         if lat is not None and lng is not None:
-            radius_m = 12000
+            radius_m = 15000
 
-            # 3. Google Places Text Search (when configured)
+            # 1. Google Places Text Search (when configured)
             if self.api_key and len(self.api_key) > 10 and not self.api_key.startswith("your_"):
                 try:
                     clean_q = f"{query} in {target_location}" if target_location not in query else query
                     gp_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={httpx.URL(clean_q)}&location={lat},{lng}&radius={radius_m}&key={self.api_key}"
-                    async with httpx.AsyncClient(timeout=3.5) as client:
+                    async with httpx.AsyncClient(timeout=4.0) as client:
                         res = await client.get(gp_url)
                         if res.status_code == 200:
                             gp_data = res.json()
-                            for item in gp_data.get("results", [])[:15]:
+                            for item in gp_data.get("results", [])[:20]:
                                 p_name = item.get("name")
                                 if not p_name:
                                     continue
@@ -484,21 +539,21 @@ class LivePlacesProvider(PlacesProvider):
                 except Exception as e:
                     logger.warning(f"Google Places text search failed: {e}")
 
-            # 4. OpenStreetMap Overpass Search
+            # 2. OpenStreetMap Overpass Search (nodes + ways)
             clean_search_tokens = [t for t in re.sub(r"[^a-zA-Z0-9\s]", "", query.lower()).split() if t not in {"in", "near", "best", "quiet", "famous", "top", "good", "the", "and", target_location.lower()}]
             keyword_regex = "|".join(clean_search_tokens) if clean_search_tokens else "cafe|restaurant|temple|church|attraction"
 
             query_str = f"""
-            [out:json][timeout:3];
+            [out:json][timeout:5];
             (
-              node["name"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
-              node["amenity"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
-              node["tourism"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
-              node["historic"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
-              node["shop"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
-              node["leisure"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
+              nwr["name"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
+              nwr["amenity"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
+              nwr["tourism"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
+              nwr["historic"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
+              nwr["shop"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
+              nwr["leisure"~"{keyword_regex}",i](around:{radius_m},{lat},{lng});
             );
-            out body 25;
+            out center 35;
             """
             elements = await self._execute_overpass_query(query_str)
             for el in elements:
@@ -506,7 +561,6 @@ class LivePlacesProvider(PlacesProvider):
                 if parsed:
                     gathered_live.append(parsed)
 
-        # 5. Merge Curated and Live Results
         combined = curated_matches + gathered_live
         if combined:
             deduped = self._deduplicate_places(combined)
@@ -515,7 +569,6 @@ class LivePlacesProvider(PlacesProvider):
             cache_service.set(cache_key, deduped, ttl_seconds=300)
             return deduped
 
-        # Check stale cache fallback if live lookup failed or returned nothing
         stale_data = cache_service.get_stale(cache_key)
         if stale_data:
             stale_results = []
@@ -527,25 +580,32 @@ class LivePlacesProvider(PlacesProvider):
 
         return []
 
-    async def get_nearby_places(self, lat: float, lng: float, radius_km: float = 5.0, category: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def get_nearby_places(
+        self,
+        lat: float,
+        lng: float,
+        radius_km: float = 12.0,
+        category: Optional[str] = None,
+        excluded_curated: Optional[List[Dict[str, Any]]] = None
+    ) -> List[Dict[str, Any]]:
         cache_key = cache_service.make_places_key(lat, lng, radius_km, category)
         cached_val, is_stale = cache_service.get(cache_key)
         if cached_val is not None and not is_stale:
             return cached_val
 
         start_time = time.time()
-        radius_m = min(int(radius_km * 1000), 25000)
         gathered_places: List[Dict[str, Any]] = []
 
-        # 1. Try Google Places if configured with valid API Key (backend only)
+        # 1. Try Google Places if configured with valid API Key
         if self.api_key and len(self.api_key) > 10 and not self.api_key.startswith("your_"):
             try:
+                radius_m = min(int(radius_km * 1000), 25000)
                 gp_url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius={radius_m}&key={self.api_key}"
-                async with httpx.AsyncClient(timeout=3.5) as client:
+                async with httpx.AsyncClient(timeout=4.0) as client:
                     res = await client.get(gp_url)
                     if res.status_code == 200:
                         gp_data = res.json()
-                        for item in gp_data.get("results", [])[:20]:
+                        for item in gp_data.get("results", [])[:25]:
                             p_name = item.get("name")
                             if not p_name:
                                 continue
@@ -626,37 +686,59 @@ class LivePlacesProvider(PlacesProvider):
             except Exception as e:
                 logger.warning(f"Google Places live discovery failed: {e}")
 
-        # 2. Try OpenStreetMap Overpass Live Query (Free, Open, Global & Indian mountain coverage)
+        # 2. Comprehensive OpenStreetMap Overpass Live Query (nwr: nodes + ways with centers)
+        # Search radius 1 (initial practical radius, e.g. 10km - 15km)
+        radius_m = min(int(radius_km * 1000), 20000)
         try:
             query_str = f"""
-            [out:json][timeout:3];
+            [out:json][timeout:6];
             (
-              node["tourism"~"attraction|viewpoint|museum|gallery|theme_park|zoo|artwork|camp_site|wilderness_hut"](around:{radius_m},{lat},{lng});
-              node["amenity"~"cafe|restaurant|fast_food|food_court|pub|bar|marketplace|pharmacy|hospital|clinic|doctors|atm|bank|police|fuel|bicycle_rental|car_rental|parking|place_of_worship"](around:{radius_m},{lat},{lng});
-              node["historic"~"monument|memorial|castle|ruins|archaeological_site|fort|palace|city_gate|church|cathedral|chapel"](around:{radius_m},{lat},{lng});
-              node["shop"~"bakery|pastry|supermarket|convenience|department_store|clothes|craft|gift|mall|general|motorcycle|bicycle"](around:{radius_m},{lat},{lng});
-              node["leisure"~"park|nature_reserve|track|sports_centre"](around:{radius_m},{lat},{lng});
+              nwr["tourism"~"attraction|viewpoint|museum|gallery|theme_park|zoo|artwork|camp_site|wilderness_hut|picnic_site"](around:{radius_m},{lat},{lng});
+              nwr["amenity"~"cafe|restaurant|fast_food|food_court|pub|bar|dhaba|marketplace|pharmacy|hospital|clinic|doctors|atm|bank|police|fuel|bicycle_rental|motorcycle_rental|car_rental|parking|place_of_worship"](around:{radius_m},{lat},{lng});
+              nwr["historic"~"monument|memorial|castle|ruins|archaeological_site|fort|palace|city_gate|church|cathedral|chapel|monastery|temple|shrine|mosque|tomb"](around:{radius_m},{lat},{lng});
+              nwr["shop"~"bakery|pastry|supermarket|convenience|department_store|clothes|craft|gift|mall|general|motorcycle|bicycle|spices|tea|books|souvenir"](around:{radius_m},{lat},{lng});
+              nwr["leisure"~"park|nature_reserve|track|sports_centre|garden"](around:{radius_m},{lat},{lng});
+              nwr["natural"~"waterfall|beach|peak|spring|hot_spring"](around:{radius_m},{lat},{lng});
+              nwr["highway"~"trail"](around:{radius_m},{lat},{lng});
             );
-            out body 25;
+            out center 60;
             """
             elements = await self._execute_overpass_query(query_str)
             for el in elements:
                 parsed = self._parse_osm_element(el, lat, lng, category)
                 if parsed:
                     gathered_places.append(parsed)
+
+            # Adaptive radius expansion: If compact valley destination yields fewer than 8 places, expand radius
+            if len(gathered_places) < 8 and radius_km < 25.0:
+                expanded_radius_m = 25000
+                expand_query_str = f"""
+                [out:json][timeout:6];
+                (
+                  nwr["tourism"~"attraction|viewpoint|museum|gallery|camp_site"](around:{expanded_radius_m},{lat},{lng});
+                  nwr["amenity"~"cafe|restaurant|dhaba|place_of_worship|marketplace|bicycle_rental|motorcycle_rental"](around:{expanded_radius_m},{lat},{lng});
+                  nwr["historic"~"monument|memorial|fort|monastery|temple|shrine"](around:{expanded_radius_m},{lat},{lng});
+                );
+                out center 40;
+                """
+                extra_elements = await self._execute_overpass_query(expand_query_str)
+                for el in extra_elements:
+                    parsed = self._parse_osm_element(el, lat, lng, category)
+                    if parsed:
+                        gathered_places.append(parsed)
         except Exception as e:
             logger.warning(f"Overpass live query failed: {e}")
 
-        # 3. Deduplicate across Google Places and OSM
+        # 3. Deduplicate across Google Places and OSM, and EXCLUDE curated places
         if gathered_places:
-            deduped = self._deduplicate_places(gathered_places)
+            deduped = self._deduplicate_places(gathered_places, excluded_curated=excluded_curated)
             deduped.sort(key=lambda x: x.get("distance_km", 999))
             latency_ms = (time.time() - start_time) * 1000
             health_tracker.record_success("places", latency_ms)
             cache_service.set(cache_key, deduped, ttl_seconds=300)
             return deduped
 
-        # Check stale cache fallback before curated
+        # Check stale cache fallback
         stale_data = cache_service.get_stale(cache_key)
         if stale_data:
             stale_results = []
@@ -666,20 +748,8 @@ class LivePlacesProvider(PlacesProvider):
                 stale_results.append(stale_item)
             return stale_results
 
-        # 4. Transparent Fallback: Return Curated Places marked clearly as Curated
-        curated_fallback = await self.demo_fallback.get_nearby_places(lat, lng, radius_km, category)
-        for p in curated_fallback:
-            p["source"] = "vanvas_curated"
-            p["is_live"] = False
-            p["data_state"] = "VERIFIED"
-            p["trust_source"] = "VANVAS_CURATED"
-            p["distance_km"] = self._haversine(lat, lng, p.get("latitude", lat), p.get("longitude", lng))
-        
-        if curated_fallback:
-            cache_service.set(cache_key, curated_fallback, ttl_seconds=120)
-            return curated_fallback
-
         return []
+
 
 
 class LiveImageProvider(ImageProvider):
@@ -964,14 +1034,13 @@ class LiveHotelsProvider(HotelsProvider):
             return cached_val
 
         start_time = time.time()
-        radius_m = min(int(radius_km * 1000), 20000)
+        radius_m = min(int(radius_km * 1000), 25000)
         query_str = f"""
-        [out:json][timeout:3];
+        [out:json][timeout:6];
         (
-          node["tourism"~"hotel|guest_house|hostel|motel|chalet|alpine_hut|camp_site|apartment"](around:{radius_m},{target_lat},{target_lng});
-          way["tourism"~"hotel|guest_house|hostel|motel|chalet|alpine_hut|camp_site|apartment"](around:{radius_m},{target_lat},{target_lng});
+          nwr["tourism"~"hotel|guest_house|hostel|motel|chalet|alpine_hut|camp_site|apartment"](around:{radius_m},{target_lat},{target_lng});
         );
-        out center 25;
+        out center 50;
         """
         try:
             elements = await self._execute_overpass_query(query_str)
@@ -1041,16 +1110,18 @@ class LiveRentalsProvider(RentalsProvider):
         dlambda = math.radians(lng2 - lng1)
         a = math.sin(dphi / 2.0)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2.0)**2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-        return round(r * c, 1)
+        return round(r * c, 2)
 
     async def _execute_overpass_query(self, query_str: str) -> List[Dict[str, Any]]:
         for endpoint in self.OVERPASS_ENDPOINTS:
             try:
-                async with httpx.AsyncClient(timeout=3.5, headers=self.headers) as client:
+                async with httpx.AsyncClient(timeout=5.5, headers=self.headers) as client:
                     res = await client.post(endpoint, data={"data": query_str})
                     if res.status_code == 200:
                         data = res.json()
-                        return data.get("elements", [])
+                        elements = data.get("elements", [])
+                        if elements:
+                            return elements
             except Exception as e:
                 logger.debug(f"Overpass rental query {endpoint} failed: {e}")
         return []
@@ -1083,14 +1154,14 @@ class LiveRentalsProvider(RentalsProvider):
             return cached_val
 
         start_time = time.time()
-        radius_m = min(int(radius_km * 1000), 20000)
+        radius_m = min(int(radius_km * 1000), 25000)
         query_str = f"""
-        [out:json][timeout:3];
+        [out:json][timeout:6];
         (
-          node["amenity"~"bicycle_rental|car_rental|motorcycle_rental"](around:{radius_m},{target_lat},{target_lng});
-          node["shop"~"motorcycle|bicycle"](around:{radius_m},{target_lat},{target_lng});
+          nwr["amenity"~"bicycle_rental|car_rental|motorcycle_rental|scooter_rental|taxi"](around:{radius_m},{target_lat},{target_lng});
+          nwr["shop"~"motorcycle|bicycle|rental|car_rental"](around:{radius_m},{target_lat},{target_lng});
         );
-        out body 20;
+        out center 35;
         """
         try:
             elements = await self._execute_overpass_query(query_str)

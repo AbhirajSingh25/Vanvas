@@ -78,6 +78,32 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["kheerganga-trail", "kheerganga-trek", "khirganga-trail", "khirganga"]
         },
+        "kasol:tosh-village": {
+            "image_url": "/images/places/kasol/tosh-village.webp",
+            "tier": "exact_place",
+            "place_name": "Tosh Village & Waterfall Trail",
+            "destination": "Kasol",
+            "category": "Nature & Trails",
+            "semantic_theme": "trail",
+            "visual_description": "Traditional wooden mountain hamlet perched on a high ridge overlooking snowy peaks and rushing waterfalls.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["tosh-village", "tosh-village-and-waterfall-trail", "tosh", "tosh-trail"]
+        },
+        "kasol:evergreen-cafe": {
+            "image_url": "/images/places/kasol/evergreen-cafe.webp",
+            "tier": "exact_place",
+            "place_name": "Evergreen Café & Garden",
+            "destination": "Kasol",
+            "category": "Cafés & Bakery",
+            "semantic_theme": "cafe",
+            "visual_description": "Iconic wooden garden café serving authentic Middle Eastern platters, wood-fired pizzas, and mountain tea.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["evergreen-cafe", "evergreen-cafe-and-garden", "evergreen-restaurant", "evergreen"]
+        },
 
         # --- Spiti Valley Landmarks ---
         "spiti:key-monastery": {
@@ -506,6 +532,19 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["assi-ghat", "assi-ghat-subah", "assi-ghat-and-subah-e-banaras-dawn-chants", "asi-ghat"]
         },
+        "varanasi:blue-lassi-shop": {
+            "image_url": "/images/places/varanasi/blue-lassi-shop.webp",
+            "tier": "exact_place",
+            "place_name": "Blue Lassi Shop",
+            "destination": "Varanasi",
+            "category": "Food & Dining",
+            "semantic_theme": "food",
+            "visual_description": "Legendary century-old blue-walled lane shop churning thick hand-whipped fruit lassis in earthen kulhars near Manikarnika.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["blue-lassi-shop", "blue-lassi", "blue-lassi-corner", "blue-lassi-center"]
+        },
 
         # --- Rishikesh Landmarks ---
         "rishikesh:triveni-ghat": {
@@ -534,6 +573,19 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["laxman-jhula", "lakshman-jhula", "laxman-jhula-suspension-bridge", "lakshman-suspension-bridge"]
         },
+        "rishikesh:little-buddha-cafe": {
+            "image_url": "/images/places/rishikesh/little-buddha-cafe.webp",
+            "tier": "exact_place",
+            "place_name": "Little Buddha Café",
+            "destination": "Rishikesh",
+            "category": "Cafés & Bakery",
+            "semantic_theme": "cafe",
+            "visual_description": "Treehouse-style bamboo rooftop café overlooking the turquoise Ganges and Laxman Jhula bridge.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["little-buddha-cafe", "little-buddha", "little-buddha-rooftop-cafe"]
+        },
 
         # --- Dharamshala / McLeod Ganj Landmarks ---
         "dharamshala:namgyal-monastery": {
@@ -561,6 +613,19 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source_type": "editorial_artwork",
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["bhagsunag-waterfall", "bhagsunag-waterfall-and-shiva-cafe", "bhagsu-falls", "bhagsu-waterfall"]
+        },
+        "dharamshala:triund-trek": {
+            "image_url": "/images/places/dharamshala/triund-trek.webp",
+            "tier": "exact_place",
+            "place_name": "Triund Ridge Alpine Trek",
+            "destination": "Dharamshala",
+            "category": "Nature & Trails",
+            "semantic_theme": "trail",
+            "visual_description": "Panoramic mountain ridge trail through oak and rhododendron forest opening to direct vistas of the Dhauladhar snow wall.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["triund-trek", "triund-ridge", "triund-trail", "triund"]
         },
 
         # --- Leh Ladakh Landmarks ---
@@ -671,6 +736,19 @@ class CuratedArtworkProvider(ArtworkProvider):
             "source_type": "editorial_artwork",
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["eravikulam-park", "eravikulam-national-park-and-anamudi-ridge", "eravikulam-national-park"]
+        },
+        "munnar:mattupetty-dam": {
+            "image_url": "/images/places/munnar/mattupetty-dam.webp",
+            "tier": "exact_place",
+            "place_name": "Mattupetty Dam & Lake",
+            "destination": "Munnar",
+            "category": "Nature & Trails",
+            "semantic_theme": "nature",
+            "visual_description": "Serene concrete gravity dam and tranquil mountain reservoir bordered by tea plantations and mist-covered hills.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["mattupetty-dam", "mattupetty-dam-and-lake", "mattupetty-lake", "mattupetty"]
         }
     }
 

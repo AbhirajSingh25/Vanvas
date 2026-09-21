@@ -102,7 +102,8 @@ async def get_nearby_places(
     # Also discover live places from live provider (Google Places / OpenStreetMap)
     try:
         places_provider = ProviderFactory.get_places_provider()
-        live_places = await places_provider.get_nearby_places(lat, lng, radius_km, category)
+        curated_for_exclusion = [{"name": p_res.name, "latitude": p_res.latitude, "longitude": p_res.longitude} for _, p_res in nearby_results]
+        live_places = await places_provider.get_nearby_places(lat, lng, radius_km, category, excluded_curated=curated_for_exclusion)
         for lp in live_places:
             lp_name = lp.get("name", "").lower().strip()
             lp_lat = lp.get("latitude")
@@ -110,8 +111,8 @@ async def get_nearby_places(
             is_dup = False
             for dist_ex, p_ex in nearby_results:
                 p_ex_name = p_ex.name.lower().strip()
-                if lp_name and (p_ex_name in lp_name or lp_name in p_ex_name):
-                    if haversine_distance_km(lp_lat, lp_lng, p_ex.latitude, p_ex.longitude) < 0.2:
+                if lp_name and (p_ex_name in lp_name or lp_name in p_ex_name or (hasattr(places_provider, "_are_places_duplicate") and places_provider._are_places_duplicate(lp_name, lp_lat, lp_lng, p_ex_name, p_ex.latitude, p_ex.longitude))):
+                    if haversine_distance_km(lp_lat, lp_lng, p_ex.latitude, p_ex.longitude) < 0.35:
                         is_dup = True
                         break
             if not is_dup:

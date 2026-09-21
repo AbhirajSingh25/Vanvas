@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Compass, MapPin, Sparkles, Star, BedDouble, Bike, Clock,
   ExternalLink, ArrowRight, ShieldCheck, Bookmark, Check, Mountain,
-  Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw
+  Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw, Layers
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination, Place, Hotel, RentalOption, Offer } from "@/types";
@@ -33,27 +33,33 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   const [mounted, setMounted] = useState(false);
   const [destination, setDestination] = useState<Destination | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [stayOffers, setStayOffers] = useState<Offer[]>([]);
-  const [rentals, setRentals] = useState<RentalOption[]>([]);
   const [weather, setWeather] = useState<any[]>([]);
+  
+  // Independent Section Data & Loading States
+  const [destLoading, setDestLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [staysLoading, setStaysLoading] = useState(true);
+  
+  const [rentals, setRentals] = useState<RentalOption[]>([]);
+  const [rentalsLoading, setRentalsLoading] = useState(true);
+  
+  const [stayOffers, setStayOffers] = useState<Offer[]>([]);
+  
+  const [livePlaces, setLivePlaces] = useState<Place[]>([]);
+  const [liveCategory, setLiveCategory] = useState<string>("all");
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
+
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
-  const [loadingSeconds, setLoadingSeconds] = useState(0);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Live Discovery State
-  const [livePlaces, setLivePlaces] = useState<Place[]>([]);
-  const [liveCategory, setLiveCategory] = useState<string>("all");
-  const [liveLoading, setLiveLoading] = useState<boolean>(false);
-  const [liveError, setLiveError] = useState<string | null>(null);
 
   const fetchLiveDiscovery = (lat: number, lng: number, cat: string) => {
     setLiveLoading(true);
@@ -62,7 +68,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
       .then((res) => {
         setLivePlaces(res || []);
         if (!res || res.length === 0) {
-          setLiveError("Live places are temporarily unavailable in this radius.");
+          setLiveError("No live places returned in this radius.");
         }
       })
       .catch(() => {
@@ -72,21 +78,12 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   };
 
   useEffect(() => {
-    if (!loading) {
-      setLoadingSeconds(0);
-      return;
-    }
+    if (!destLoading) return;
     const msgTimer = setInterval(() => {
       setLoadingMsgIdx((prev) => (prev + 1) % DISCOVERY_MESSAGES.length);
     }, 1200);
-    const secTimer = setInterval(() => {
-      setLoadingSeconds((prev) => prev + 1);
-    }, 1000);
-    return () => {
-      clearInterval(msgTimer);
-      clearInterval(secTimer);
-    };
-  }, [loading]);
+    return () => clearInterval(msgTimer);
+  }, [destLoading]);
 
   const destMetadata: Record<string, { hindi: string; alt: string; quote: string; province: string }> = {
     manali: {
@@ -164,56 +161,69 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   };
 
   const fetchDestination = () => {
-    setLoading(true);
+    setDestLoading(true);
     setLoadError(null);
+    setStaysLoading(true);
+    setRentalsLoading(true);
+
     api.getDestinationDetail(slug)
-      .then(async (data) => {
+      .then((data) => {
         if (!data || !data.destination) {
           throw new Error("404: Sanctuary not found in index");
         }
         setDestination(data.destination);
         setPlaces(data.places || []);
-        
-        let loadedHotels = data.hotels || [];
-        let loadedRentals = data.rentals || [];
-
-        // If no curated stays/rentals, fetch live options from providers
-        if (loadedHotels.length === 0) {
-          try {
-            const liveStays = await api.getHotels(data.destination.id || slug);
-            if (liveStays && liveStays.length > 0) loadedHotels = liveStays;
-          } catch (e) {
-            // keep empty
-          }
-        }
-        if (loadedRentals.length === 0) {
-          try {
-            const liveR = await api.getRentals(data.destination.id || slug);
-            if (liveR && liveR.length > 0) loadedRentals = liveR;
-          } catch (e) {
-            // keep empty
-          }
-        }
-
-        setHotels(loadedHotels);
-        setRentals(loadedRentals);
         setWeather(data.weather || []);
+        setDestLoading(false);
 
-        // Fetch verified live stay commerce offers
-        try {
-          const offers = await api.getOffers(data.destination.id || slug, "stay");
-          if (offers && offers.length > 0) {
-            setStayOffers(offers.filter(o => o.is_live || o.provider === "amadeus_stays"));
-          }
-        } catch (e) {
-          // keep empty
+        const destId = data.destination.id || slug;
+        const lat = data.destination.latitude;
+        const lng = data.destination.longitude;
+
+        // Progressive Background Fetches
+        // 1. Stays
+        if (data.hotels && data.hotels.length > 0) {
+          setHotels(data.hotels);
+          setStaysLoading(false);
+        } else {
+          api.getHotels(destId)
+            .then((loadedStays) => setHotels(loadedStays || []))
+            .catch(() => setHotels([]))
+            .finally(() => setStaysLoading(false));
+        }
+
+        // 2. Rentals
+        if (data.rentals && data.rentals.length > 0) {
+          setRentals(data.rentals);
+          setRentalsLoading(false);
+        } else {
+          api.getRentals(destId)
+            .then((loadedR) => setRentals(loadedR || []))
+            .catch(() => setRentals([]))
+            .finally(() => setRentalsLoading(false));
+        }
+
+        // 3. Commerce Stay Offers
+        api.getOffers(destId, "stay")
+          .then((offers) => {
+            if (offers && offers.length > 0) {
+              setStayOffers(offers.filter(o => o.is_live || o.provider === "amadeus_stays"));
+            }
+          })
+          .catch(() => {});
+
+        // 4. Live POIs
+        if (lat && lng) {
+          fetchLiveDiscovery(lat, lng, liveCategory);
         }
       })
       .catch((err) => {
         console.error("Destination fetch error:", err);
         setLoadError(err.message || "Failed to load destination");
-      })
-      .finally(() => setLoading(false));
+        setDestLoading(false);
+        setStaysLoading(false);
+        setRentalsLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -224,7 +234,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     if (destination?.latitude && destination?.longitude) {
       fetchLiveDiscovery(destination.latitude, destination.longitude, liveCategory);
     }
-  }, [destination?.latitude, destination?.longitude, liveCategory]);
+  }, [liveCategory]);
 
   const getCategory = (p: Place): string => {
     return typeof p.category === "string" ? p.category.toLowerCase() : "";
@@ -235,9 +245,9 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     { id: "must-visit", label: "Must Visit", count: places.filter((p) => Boolean(p.is_must_visit)).length },
     { id: "hidden", label: "Hidden Gems", count: places.filter((p) => Boolean(p.is_hidden_gem)).length },
     { id: "cafes", label: "Cafés & Bakeries", count: places.filter((p) => getCategory(p).includes("café") || getCategory(p).includes("bakery") || getCategory(p).includes("cafe")).length },
-    { id: "nature", label: "Trails & Nature", count: places.filter((p) => getCategory(p).includes("nature") || getCategory(p).includes("trail") || getCategory(p).includes("waterfall") || getCategory(p).includes("scenic")).length },
+    { id: "nature", label: "Trails & Nature", count: places.filter((p) => getCategory(p).includes("nature") || getCategory(p).includes("trail") || getCategory(p).includes("waterfall") || getCategory(p).includes("scenic") || getCategory(p).includes("lake")).length },
     { id: "food", label: "Local Food", count: places.filter((p) => getCategory(p).includes("food") || getCategory(p).includes("dhaba") || getCategory(p).includes("restaurant")).length },
-    { id: "culture", label: "Culture & Heritage", count: places.filter((p) => getCategory(p).includes("culture") || getCategory(p).includes("temple") || getCategory(p).includes("heritage") || getCategory(p).includes("monastery") || getCategory(p).includes("ghat")).length },
+    { id: "culture", label: "Culture & Heritage", count: places.filter((p) => getCategory(p).includes("culture") || getCategory(p).includes("temple") || getCategory(p).includes("heritage") || getCategory(p).includes("monastery") || getCategory(p).includes("ghat") || getCategory(p).includes("spiritual") || getCategory(p).includes("fort")).length },
   ];
 
   const filteredPlaces = places.filter((p) => {
@@ -246,9 +256,9 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     if (selectedCategory === "hidden") return Boolean(p.is_hidden_gem);
     const cat = getCategory(p);
     if (selectedCategory === "cafes") return cat.includes("café") || cat.includes("bakery") || cat.includes("cafe");
-    if (selectedCategory === "nature") return cat.includes("nature") || cat.includes("trail") || cat.includes("waterfall") || cat.includes("scenic");
+    if (selectedCategory === "nature") return cat.includes("nature") || cat.includes("trail") || cat.includes("waterfall") || cat.includes("scenic") || cat.includes("lake");
     if (selectedCategory === "food") return cat.includes("food") || cat.includes("dhaba") || cat.includes("restaurant");
-    if (selectedCategory === "culture") return cat.includes("culture") || cat.includes("temple") || cat.includes("heritage") || cat.includes("monastery") || cat.includes("ghat");
+    if (selectedCategory === "culture") return cat.includes("culture") || cat.includes("temple") || cat.includes("heritage") || cat.includes("monastery") || cat.includes("ghat") || cat.includes("spiritual") || cat.includes("fort");
     return true;
   });
 
@@ -263,7 +273,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
   const isCurated = destination ? destination.is_curated !== false : true;
 
-  if (!mounted || loading) {
+  if (!mounted || destLoading) {
     return (
       <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-4 px-4 text-center">
         <div className="w-12 h-12 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
@@ -272,9 +282,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
             {mounted ? DISCOVERY_MESSAGES[loadingMsgIdx] : "VANVAS is gathering live travel information..."}
           </p>
           <p className="text-xs font-mono text-[#7B4D36] opacity-80">
-            {loadingSeconds > 4
-              ? "Waking up Himalayan intelligence servers (first connection)..."
-              : "VANVAS Live Intelligence Pipeline"}
+            VANVAS Himalayan Intelligence Operating Layer
           </p>
         </div>
       </div>
@@ -610,7 +618,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           </div>
         )}
 
-        {/* LIVE PLACES NEAR DESTINATION (Real-Time Location POI Search) */}
+        {/* LIVE PLACES NEAR DESTINATION (Real-Time Category Tag Search) */}
         <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5D5BA] pb-4">
             <div className="space-y-1">
@@ -627,7 +635,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 Live Places Near {destination.name}
               </h3>
               <p className="text-xs text-[#7B4D36]">
-                Retrieved in real-time from open geographic datasets. Distinctly separated from curated editorial dispatches.
+                Retrieved in real-time from open geographic datasets. Automatically deduplicated against curated editorial landmarks.
               </p>
             </div>
           </div>
@@ -657,9 +665,14 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           </div>
 
           {liveLoading ? (
-            <div className="py-16 flex flex-col items-center justify-center text-[#173B32] gap-3">
-              <div className="w-8 h-8 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs font-mono text-[#7B4D36]">Querying live coordinates around {destination.name}...</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] animate-pulse space-y-4">
+                  <div className="h-44 bg-[#E5D5BA]/60 rounded-2xl" />
+                  <div className="h-5 bg-[#E5D5BA]/80 rounded w-3/4" />
+                  <div className="h-3 bg-[#E5D5BA]/50 rounded w-1/2" />
+                </div>
+              ))}
             </div>
           ) : liveError ? (
             <div className="p-6 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] text-center space-y-2">
@@ -682,33 +695,43 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
             </div>
           ) : (
             <div className="p-6 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] text-center space-y-1">
-              <p className="text-xs text-[#7B4D36]">No live POIs found for this category in immediate radius.</p>
+              <p className="text-xs text-[#7B4D36]">No verified places found in this category yet in open geographic registry.</p>
             </div>
           )}
         </div>
 
         {/* STAYS & SANCTUARIES */}
-        {hotels.length > 0 && (
-          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
-            <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  आशियाना • Stays &amp; Cottages
-                </span>
-                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
-                  <BedDouble className="w-6 h-6 text-[#B65E3C]" />
-                  <span>Stays &amp; Sanctuaries ({hotels.length})</span>
-                </h3>
-              </div>
-              <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${
-                isCurated
-                  ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
-                  : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
-              }`}>
-                {isCurated ? "Curated Sanctuaries" : "Live Accommodation"}
+        <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
+          <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                आशियाना • Stays &amp; Cottages
               </span>
+              <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
+                <BedDouble className="w-6 h-6 text-[#B65E3C]" />
+                <span>Stays &amp; Sanctuaries {!staysLoading && `(${hotels.length})`}</span>
+              </h3>
             </div>
+            <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${
+              isCurated
+                ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
+                : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
+            }`}>
+              {isCurated ? "Verified Stays" : "Live Accommodation"}
+            </span>
+          </div>
 
+          {staysLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] animate-pulse space-y-4">
+                  <div className="h-44 bg-[#E5D5BA]/60 rounded-2xl" />
+                  <div className="h-5 bg-[#E5D5BA]/80 rounded w-2/3" />
+                  <div className="h-3 bg-[#E5D5BA]/50 rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : hotels.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {hotels.map((h) => {
                 const isLiveStay = h.is_live || h.source === "openstreetmap" || h.source === "google_places";
@@ -784,8 +807,12 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="p-6 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] text-center space-y-1">
+              <p className="text-xs text-[#7B4D36]">Live stays are temporarily unavailable or not registered in this exact coordinate sector.</p>
+            </div>
+          )}
+        </div>
 
         {/* LIVE PROVIDER OFFERS (AMADEUS GDS / REAL COMMERCE OFFERS) */}
         {stayOffers.length > 0 && (
@@ -867,27 +894,37 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
         )}
 
         {/* VALLEY MOBILITY & RENTALS */}
-        {rentals.length > 0 && (
-          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
-            <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  सवारी • Valley Mobility
-                </span>
-                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
-                  <Bike className="w-6 h-6 text-[#B65E3C]" />
-                  <span>Scooter &amp; Motorcycle Rentals ({rentals.length})</span>
-                </h3>
-              </div>
-              <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${
-                isCurated
-                  ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
-                  : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
-              }`}>
-                {isCurated ? "Curated Mobility" : "Live Rental Hubs"}
+        <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
+          <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                सवारी • Valley Mobility &amp; Rentals
               </span>
+              <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
+                <Bike className="w-6 h-6 text-[#B65E3C]" />
+                <span>Scooter &amp; Motorcycle Rentals {!rentalsLoading && `(${rentals.length})`}</span>
+              </h3>
             </div>
+            <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${
+              isCurated
+                ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
+                : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
+            }`}>
+              {isCurated ? "Curated Mobility" : "Live Rental Hubs"}
+            </span>
+          </div>
 
+          {rentalsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] animate-pulse space-y-4">
+                  <div className="h-44 bg-[#E5D5BA]/60 rounded-2xl" />
+                  <div className="h-5 bg-[#E5D5BA]/80 rounded w-2/3" />
+                  <div className="h-3 bg-[#E5D5BA]/50 rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : rentals.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {rentals.map((r) => {
                 const isLiveRent = r.is_live || r.source === "openstreetmap";
@@ -939,8 +976,12 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="p-6 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] text-center space-y-1">
+              <p className="text-xs text-[#7B4D36]">No verified mobility rentals registered in open geographic datasets for this immediate sector. Taxis and local rentals can typically be hailed at the main taxi union hub.</p>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Place Detail Modal */}

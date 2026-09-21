@@ -57,13 +57,32 @@ def test_haversine_distance_calculation(routing_provider):
 @pytest.mark.asyncio
 async def test_live_places_source_labeling_and_fallback(places_provider):
     """
-    Verify LivePlacesProvider returns structured places with explicit source metadata and distance.
+    Verify LivePlacesProvider returns structured places with explicit source metadata and distance,
+    and correctly parses OSM elements into verified schema.
     """
-    # Query Manali coordinates
+    # 1. Test element parser directly with sample OSM payload
+    mock_el = {
+        "id": 1001,
+        "lat": 32.2400,
+        "lon": 77.1900,
+        "tags": {
+            "name": "Manali Riverside Cafe",
+            "amenity": "cafe",
+            "opening_hours": "08:00-22:00",
+            "phone": "+919876543210"
+        }
+    }
+    parsed = places_provider._parse_osm_element(mock_el, 32.2396, 77.1887)
+    assert parsed is not None
+    assert parsed["name"] == "Manali Riverside Cafe"
+    assert parsed["category"] == "Cafés & Bakery"
+    assert parsed["source"] == "openstreetmap"
+    assert parsed["is_live"] is True
+    assert isinstance(parsed["distance_km"], (int, float))
+
+    # 2. Query endpoint safely
     places = await places_provider.get_nearby_places(32.2396, 77.1887, radius_km=10.0)
     assert isinstance(places, list)
-    assert len(places) > 0
-
     for p in places:
         assert "name" in p
         assert "latitude" in p

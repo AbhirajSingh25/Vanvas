@@ -224,6 +224,44 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     source: "vanvas_curated",
     aliases: ["dhankar-gompa", "dhankar-monastery", "dankhar"]
   },
+  "spiti:tabo-monastery": {
+    imageUrl: "/images/places/spiti/tabo-monastery.webp",
+    visualDescription: "Thousand-year-old mud-brick Tibetan Buddhist monastic complex with ancient stupas and mural halls.",
+    category: "Culture & Heritage",
+    semanticTheme: "monastery",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["tabo-monastery", "tabo-gompa", "tabo", "tabo-monastery-ajanta-of-the-himalayas"]
+  },
+  "spiti:kaza-town": {
+    imageUrl: "/images/places/spiti/kaza.webp",
+    visualDescription: "High-altitude administrative capital town with whitewashed mud homes and local handicraft bazaar.",
+    category: "Shops & Markets",
+    semanticTheme: "shopping",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["kaza", "kaza-town", "kaza-market", "kaza-high-town-and-local-bazaar"]
+  },
+
+  // --- Kasol Landmarks ---
+  "kasol:tosh-village": {
+    imageUrl: "/images/places/kasol/tosh-village.webp",
+    visualDescription: "Traditional wooden Himachali village at 2,400m perched at the edge of Tosh Glacier with panoramic snow peak vistas.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["tosh-village", "tosh-traditional-wooden-village", "tosh-glacier-view", "tosh"]
+  },
+  "kasol:evergreen-cafe": {
+    imageUrl: "/images/places/kasol/evergreen-cafe.webp",
+    visualDescription: "Beloved garden café shaded by deodar pines famous for fresh Israeli platters, wood-fired pizza, and mountain teas.",
+    category: "Cafés & Bakery",
+    semanticTheme: "cafe",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["evergreen-cafe", "evergreen-cafe-and-garden-patio", "evergreen-kasol"]
+  },
 
   // --- Manali Landmarks ---
   "manali:hadimba-temple": {
@@ -376,15 +414,6 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     source: "vanvas_curated",
     aliases: ["lake-pichola", "lake-pichola-boat", "lake-pichola-sunset-boat-voyage", "pichola-lake", "pichola"]
   },
-  "udaipur:jagdish-temple": {
-    imageUrl: "/images/places/udaipur/jagdish-temple.webp",
-    visualDescription: "Intricately carved 1651 Indo-Aryan Vishnu temple rising on a tall plinth in old Udaipur.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["jagdish-temple", "shree-jagdish-temple"]
-  },
   "udaipur:saheliyon-ki-bari": {
     imageUrl: "/images/places/udaipur/saheliyon-ki-bari.webp",
     visualDescription: "Historic royal garden with marble pavilions, lotus pools, and natural rain fountains.",
@@ -407,7 +436,7 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
   },
   "varanasi:kashi-vishwanath": {
     imageUrl: "/images/places/varanasi/kashi-vishwanath.webp",
-    visualDescription: "Sacred golden-spired temple of Lord Shiva along the eternal lanes of Kashi.",
+    visualDescription: "Sacred golden-spired temple of Lord Shiva along the eternal sandstone corridor of Kashi.",
     category: "Culture & Heritage",
     semanticTheme: "spiritual",
     sourceType: "editorial_artwork",
@@ -416,12 +445,30 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
   },
   "varanasi:assi-ghat": {
     imageUrl: "/images/places/varanasi/assi-ghat.webp",
-    visualDescription: "Southernmost sacred ghat at the Assi-Ganga confluence famous for morning yoga and music.",
+    visualDescription: "Southernmost sacred ghat at the Assi-Ganga confluence famous for morning yoga, Vedic chants, and sunrise mist.",
     category: "Culture & Heritage",
     semanticTheme: "spiritual",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
     aliases: ["assi-ghat", "assi-ghat-subah", "assi-ghat-and-subah-e-banaras-dawn-chants", "asi-ghat"]
+  },
+  "varanasi:blue-lassi-shop": {
+    imageUrl: "/images/places/varanasi/blue-lassi-shop.webp",
+    visualDescription: "Historic alley shop serving thick hand-churned curd lassi in clay kulhad with fresh fruit and rabri.",
+    category: "Local Food",
+    semanticTheme: "food",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["blue-lassi-shop", "blue-lassi", "blue-lassi-traditional-shop"]
+  },
+  "varanasi:sarnath": {
+    imageUrl: "/images/places/varanasi/sarnath.webp",
+    visualDescription: "Sacred deer park and monumental Dhamek Stupa where Lord Buddha gave his first sermon.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["sarnath", "sarnath-stupa", "sarnath-sacred-deer-park-and-dhamek-stupa", "dhamek-stupa"]
   },
 
   // --- Rishikesh Landmarks ---
@@ -434,14 +481,32 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     source: "vanvas_curated",
     aliases: ["triveni-ghat", "triveni-ghat-evening-maha-aarti", "triveni-ghat-aarti"]
   },
-  "rishikesh:laxman-jhula": {
-    imageUrl: "/images/places/rishikesh/laxman-jhula.webp",
-    visualDescription: "Iconic iron suspension bridge spanning across the turquoise Ganga with multi-storey temple spires.",
+  "rishikesh:little-buddha-cafe": {
+    imageUrl: "/images/places/rishikesh/little-buddha-cafe.webp",
+    visualDescription: "Treehouse café overlooking the emerald Ganga and Lakshman Jhula with sunset mountain views.",
+    category: "Cafés & Bakery",
+    semanticTheme: "cafe",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["little-buddha-cafe", "the-little-buddha-cafe", "little-buddha"]
+  },
+  "rishikesh:beatles-ashram": {
+    imageUrl: "/images/places/rishikesh/beatles-ashram.webp",
+    visualDescription: "Transcendental meditation ashram tucked inside Rajaji Tiger Reserve with stone meditation domes and murals.",
     category: "Culture & Heritage",
     semanticTheme: "spiritual",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["laxman-jhula", "lakshman-jhula", "laxman-jhula-suspension-bridge", "lakshman-suspension-bridge"]
+    aliases: ["beatles-ashram", "the-beatles-ashram-chaurasi-kutia", "chaurasi-kutia", "beatles-ashram-rishikesh"]
+  },
+  "rishikesh:neer-garh-waterfall": {
+    imageUrl: "/images/places/rishikesh/neer-garh-waterfall.webp",
+    visualDescription: "Tiered jade-colored natural spring waterfall cascading into jungle limestone pools.",
+    category: "Nature & Trails",
+    semanticTheme: "waterfall",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["neer-garh-waterfall", "neer-garh", "neer-waterfall"]
   },
 
   // --- Dharamshala / McLeod Ganj Landmarks ---
@@ -452,16 +517,54 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     semanticTheme: "monastery",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["namgyal-monastery", "namgyal-monastery-and-tsuglagkhang-complex", "tsuglagkhang", "tsuglagkhang-complex"]
+    aliases: ["namgyal-monastery", "namgyal-monastery-and-tsuglagkhang-complex", "tsuglagkhang-complex"]
   },
   "dharamshala:bhagsunag-waterfall": {
     imageUrl: "/images/places/dharamshala/bhagsunag-waterfall.webp",
-    visualDescription: "Rocky waterfall cascade set beneath slate cliffs near ancient Bhagsunath Shiva temple.",
+    visualDescription: "Fresh mountain waterfall tumbling down rocky cliffs with bohemian Shiva Café above.",
     category: "Nature & Trails",
     semanticTheme: "waterfall",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["bhagsunag-waterfall", "bhagsunag-waterfall-and-shiva-cafe", "bhagsu-falls", "bhagsu-waterfall"]
+    aliases: ["bhagsunag-waterfall", "bhagsunag-waterfall-and-shiva-cafe", "bhagsu-waterfall", "bhagsu-falls"]
+  },
+  "dharamshala:triund-trek": {
+    imageUrl: "/images/places/dharamshala/triund-trek.webp",
+    visualDescription: "High-altitude ridge trail opening to views of the sheer Dhauladhar granite wall and Kangra valley.",
+    category: "Adventure",
+    semanticTheme: "trail",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["triund-trek", "triund-high-ridge-himalayan-trek", "triund"]
+  },
+
+  // --- Munnar Landmarks ---
+  "munnar:kolukkumalai-tea": {
+    imageUrl: "/images/places/munnar/kolukkumalai-tea.webp",
+    visualDescription: "World's highest organic tea plantation perched at 2,160m with sunrise cloud inversions.",
+    category: "Nature & Trails",
+    semanticTheme: "nature",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["kolukkumalai-tea", "kolukkumalai-highest-tea-estate", "kolukkumalai"]
+  },
+  "munnar:eravikulam-park": {
+    imageUrl: "/images/places/munnar/eravikulam-park.webp",
+    visualDescription: "High-altitude rolling grassland sanctuary home to the Nilgiri Tahr and Anamudi peak.",
+    category: "Nature & Trails",
+    semanticTheme: "nature",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["eravikulam-park", "eravikulam-national-park-and-anamudi-ridge", "eravikulam-national-park"]
+  },
+  "munnar:mattupetty-dam": {
+    imageUrl: "/images/places/munnar/mattupetty-dam.webp",
+    visualDescription: "Tranquil concrete gravity dam surrounded by emerald tea plantation slopes reflecting in the lake.",
+    category: "Nature & Trails",
+    semanticTheme: "lake",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: ["mattupetty-dam", "mattupetty-dam-and-reflection-lake", "mattupetty-lake"]
   },
 
   // --- Leh Ladakh Landmarks ---
@@ -520,26 +623,6 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
     aliases: ["anjuna-beach", "anjuna-flea-market", "anjuna"]
-  },
-
-  // --- Munnar Landmarks ---
-  "munnar:kolukkumalai-tea": {
-    imageUrl: "/images/places/munnar/kolukkumalai-tea.webp",
-    visualDescription: "The world's highest organic tea plantation perched at 2,160m with sunrise cloud inversions.",
-    category: "Nature & Trails",
-    semanticTheme: "nature",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["kolukkumalai-tea", "kolukkumalai-highest-tea-estate", "kolukkumalai"]
-  },
-  "munnar:eravikulam-park": {
-    imageUrl: "/images/places/munnar/eravikulam-park.webp",
-    visualDescription: "High-altitude rolling grassland sanctuary home to the endangered Nilgiri Tahr and views of Anamudi.",
-    category: "Nature & Trails",
-    semanticTheme: "nature",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["eravikulam-park", "eravikulam-national-park-and-anamudi-ridge", "eravikulam-national-park"]
   }
 };
 
