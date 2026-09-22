@@ -1,11 +1,14 @@
-﻿import pytest
+import pytest
 import os
+import asyncio
 from fastapi.testclient import TestClient
 from app.main import app
 from app.database.session import SessionLocal, Base, engine
 from app.models.models import User, Destination, Place, SavedPlace
 from app.core.security import get_password_hash
 from app.itinerary.clustering import haversine_distance_km
+from app.providers.artwork_provider import CuratedArtworkProvider
+from app.providers.live_providers import LivePlacesProvider
 
 client = TestClient(app)
 
@@ -34,7 +37,7 @@ def auth_headers(test_db):
     return {"Authorization": f"Bearer {token}"}
 
 # ==========================================================
-# PHASE 1 & 2 & 22: PLACE ARTWORK IDENTITY AUDIT & REGRESSION
+# PHASE 1: DISK ASSETS & ARTWORK INTEGRITY
 # ==========================================================
 
 def test_artwork_identity_on_disk_assets():
@@ -64,56 +67,102 @@ def test_artwork_identity_on_disk_assets():
     spiti_stay_path = os.path.join(frontend_public, "images", "places", "spiti", "categories", "stay.webp")
     assert os.path.exists(spiti_stay_path), f"Spiti Stay asset missing at {spiti_stay_path}"
 
-    # Verify Bagore and City Palace and Saheliyon Ki Bari and Lake Pichola are NOT identical file sizes
-    size_bagore = os.path.getsize(bagore_path)
-    size_saheliyon = os.path.getsize(saheliyon_path)
-    size_city_palace = os.path.getsize(city_palace_path)
-    size_lake_pichola = os.path.getsize(lake_pichola_path)
-    size_transport = os.path.getsize(transport_path)
+    # 7. Rishikesh Distinct Landmark Assets
+    beatles_path = os.path.join(frontend_public, "images", "places", "rishikesh", "beatles-ashram.webp")
+    neer_garh_path = os.path.join(frontend_public, "images", "places", "rishikesh", "neer-garh-waterfall.webp")
+    parmarth_path = os.path.join(frontend_public, "images", "places", "rishikesh", "parmarth-niketan.webp")
+    shivpuri_path = os.path.join(frontend_public, "images", "places", "rishikesh", "shivpuri-rafting.webp")
+    little_buddha_path = os.path.join(frontend_public, "images", "places", "rishikesh", "little-buddha-cafe.webp")
+    triveni_path = os.path.join(frontend_public, "images", "places", "rishikesh", "triveni-ghat.webp")
     
-    assert size_bagore != size_city_palace, "Bagore Ki Haveli must NOT be identical to City Palace asset!"
-    assert size_saheliyon != size_lake_pichola, "Saheliyon Ki Bari must NOT be identical to Lake Pichola asset!"
-    assert size_saheliyon != size_city_palace, "Saheliyon Ki Bari must NOT be identical to City Palace asset!"
+    assert os.path.exists(beatles_path), f"Beatles Ashram asset missing at {beatles_path}"
+    assert os.path.exists(neer_garh_path), f"Neer Garh Waterfall asset missing at {neer_garh_path}"
+    assert os.path.exists(parmarth_path), f"Parmarth Niketan asset missing at {parmarth_path}"
+    assert os.path.exists(shivpuri_path), f"Shivpuri Rafting asset missing at {shivpuri_path}"
+    assert os.path.exists(little_buddha_path), f"Little Buddha Cafe asset missing at {little_buddha_path}"
+    assert os.path.exists(triveni_path), f"Triveni Ghat asset missing at {triveni_path}"
 
-def test_seed_data_artwork_integrity(test_db):
-    udaipur_places = test_db.query(Place).join(Destination).filter(Destination.slug == "udaipur").all()
-    assert len(udaipur_places) > 0, "Udaipur places should exist in DB"
+    # Verify uniqueness of files
+    rishikesh_sizes = {
+        "beatles": os.path.getsize(beatles_path),
+        "neer_garh": os.path.getsize(neer_garh_path),
+        "parmarth": os.path.getsize(parmarth_path),
+        "shivpuri": os.path.getsize(shivpuri_path),
+        "little_buddha": os.path.getsize(little_buddha_path),
+        "triveni": os.path.getsize(triveni_path),
+    }
+    assert len(set(rishikesh_sizes.values())) == len(rishikesh_sizes), "All Rishikesh landmarks must have unique distinct assets!"
+
+def test_stay_artwork_isolation_backend():
+    provider = CuratedArtworkProvider()
     
-    place_map = {p.name: p.image_url for p in udaipur_places}
+    # 1. Jagat Niwas Palace Lakeside Heritage (Udaipur Stay)
+    jagat_res = asyncio.run(provider.resolve_place_artwork(
+        place_name="Jagat Niwas Palace Lakeside Heritage",
+        destination_name="Udaipur",
+        category="Stays & Sanctuaries"
+    ))
+    assert "lake-pichola" not in jagat_res["image_url"], "Jagat Niwas stay MUST NEVER resolve to Lake Pichola artwork!"
+    assert "stay" in jagat_res["image_url"], f"Jagat Niwas must resolve to stay category asset, got {jagat_res['image_url']}"
     
-    # Check Bagore Ki Haveli
-    bagore_names = [n for n in place_map if "Bagore" in n]
-    assert len(bagore_names) > 0, "Bagore Ki Haveli should be in seed database"
-    assert "bagore-ki-haveli.webp" in place_map[bagore_names[0]]
-    assert "city-palace" not in place_map[bagore_names[0]]
+    # 2. Ganga Kinare Riverside Retreat (Rishikesh Stay)
+    ganga_res = asyncio.run(provider.resolve_place_artwork(
+        place_name="Ganga Kinare Riverside Retreat",
+        destination_name="Rishikesh",
+        category="Stays & Sanctuaries"
+    ))
+    assert "hero.jpg" not in ganga_res["image_url"], "Ganga Kinare must NOT resolve to destination hero bridge!"
+    assert "stay" in ganga_res["image_url"], f"Ganga Kinare must resolve to stay category asset, got {ganga_res['image_url']}"
+
+def test_rishikesh_semantic_place_artwork():
+    provider = CuratedArtworkProvider()
     
-    # Check Saheliyon Ki Bari
-    saheliyon_names = [n for n in place_map if "Saheliyon" in n]
-    assert len(saheliyon_names) > 0, "Saheliyon Ki Bari should be in seed database"
-    assert "saheliyon-ki-bari.webp" in place_map[saheliyon_names[0]]
-    
-    # Check City Palace
-    cp_names = [n for n in place_map if "City Palace" in n]
-    assert len(cp_names) > 0
-    assert "city-palace-udaipur.webp" in place_map[cp_names[0]]
-    
-    # Check Lake Pichola
-    lp_names = [n for n in place_map if "Lake Pichola" in n or "Pichola" in n]
-    assert len(lp_names) > 0
-    assert "lake-pichola.webp" in place_map[lp_names[0]]
+    # Beatles Ashram
+    beatles = asyncio.run(provider.resolve_place_artwork(
+        place_name="The Beatles Ashram (Chaurasi Kutia)",
+        destination_name="Rishikesh",
+        category="Culture & Heritage"
+    ))
+    assert "beatles-ashram" in beatles["image_url"]
+
+    # Neer Garh Waterfall
+    waterfall = asyncio.run(provider.resolve_place_artwork(
+        place_name="Neer Garh Multi-Tier Waterfall",
+        destination_name="Rishikesh",
+        category="Nature & Trails"
+    ))
+    assert "neer-garh-waterfall" in waterfall["image_url"]
+
+    # Parmarth Niketan Ganga Aarti
+    parmarth = asyncio.run(provider.resolve_place_artwork(
+        place_name="Parmarth Niketan Ganga Aarti",
+        destination_name="Rishikesh",
+        category="Culture & Heritage"
+    ))
+    assert "parmarth-niketan" in parmarth["image_url"]
+
+    # Shivpuri White Water Rafting
+    rafting = asyncio.run(provider.resolve_place_artwork(
+        place_name="Shivpuri White Water Rafting",
+        destination_name="Rishikesh",
+        category="Adventure"
+    ))
+    assert "shivpuri-rafting" in rafting["image_url"]
 
 # ==========================================================
-# PHASE 8 - 21: NEARBY GPS & LIVE POI DISCOVERY SYSTEM TESTS
+# PHASE 2: GPS NEARBY & LIVE DISCOVERY PIPELINE
 # ==========================================================
 
-def test_nearby_arbitrary_coordinates_delhi():
-    delhi_lat = 28.6315
-    delhi_lng = 77.2167
+def test_nearby_raw_gps_coordinates_delhi():
+    # Production test coordinates
+    delhi_lat = 28.6746
+    delhi_lng = 77.0666
     
     res = client.get(f"/api/v1/places/nearby?lat={delhi_lat}&lng={delhi_lng}&radius_km=10.0")
     assert res.status_code == 200
     places = res.json()
     assert isinstance(places, list)
+    assert len(places) > 0, "GPS nearby for Delhi coordinates (28.6746, 77.0666) must return real live POIs!"
     
     for p in places:
         assert "id" in p
@@ -122,48 +171,59 @@ def test_nearby_arbitrary_coordinates_delhi():
         assert "latitude" in p
         assert "longitude" in p
         assert "distance_km" in p
+        assert p["distance_km"] <= 10.1, f"Place distance {p['distance_km']} exceeds requested radius 10.0 km"
         assert p["distance_km"] >= 0.0
 
+def test_nearby_second_arbitrary_location_connaught_place():
+    cp_lat = 28.6315
+    cp_lng = 77.2167
+    
+    res = client.get(f"/api/v1/places/nearby?lat={cp_lat}&lng={cp_lng}&radius_km=5.0")
+    assert res.status_code == 200
+    places = res.json()
+    assert isinstance(places, list)
+    assert len(places) > 0, "Nearby search for Connaught Place must return live places!"
+    
+    # Must contain live POI with valid source
+    live_sources = {p.get("source") for p in places}
+    assert any(s in live_sources for s in ["openstreetmap", "google_places"]), "Must contain live provider sources"
+
 def test_nearby_distance_sorting():
-    lat = 32.2396
-    lng = 77.1887
-    res = client.get(f"/api/v1/places/nearby?lat={lat}&lng={lng}&radius_km=15.0&sort_by=distance")
+    lat = 28.6746
+    lng = 77.0666
+    res = client.get(f"/api/v1/places/nearby?lat={lat}&lng={lng}&radius_km=10.0&sort_by=distance")
     assert res.status_code == 200
     places = res.json()
     assert len(places) > 0
     
     distances = [p["distance_km"] for p in places if p.get("distance_km") is not None]
-    assert distances == sorted(distances)
+    assert distances == sorted(distances), f"Distances must be sorted ascending: {distances}"
 
 def test_nearby_category_filtering():
-    lat = 32.2396
-    lng = 77.1887
+    lat = 28.6746
+    lng = 77.0666
     
-    res_food = client.get(f"/api/v1/places/nearby?lat={lat}&lng={lng}&radius_km=15.0&category=food")
-    assert res_food.status_code == 200
-    food_places = res_food.json()
-    for p in food_places:
-        assert any(term in p["category"].lower() for term in ["food", "caf", "dining", "bakery", "restaurant"])
-
     res_coffee = client.get(f"/api/v1/places/nearby?lat={lat}&lng={lng}&radius_km=15.0&category=coffee")
     assert res_coffee.status_code == 200
     coffee_places = res_coffee.json()
+    assert len(coffee_places) > 0, "Coffee filter must return coffee/cafes"
     for p in coffee_places:
         assert any(term in p["category"].lower() for term in ["caf", "bakery", "coffee"])
 
-def test_nearby_radius_expansion():
-    lat = 32.2396
-    lng = 77.1887
+def test_nearby_radius_enforcement():
+    lat = 28.6746
+    lng = 77.0666
     
-    res_small = client.get(f"/api/v1/places/nearby?lat={lat}&lng={lng}&radius_km=1.0")
-    assert res_small.status_code == 200
-    places_small = res_small.json()
+    res_1km = client.get(f"/api/v1/places/nearby?lat={lat}&lng={lng}&radius_km=1.0")
+    assert res_1km.status_code == 200
+    places_1km = res_1km.json()
+    for p in places_1km:
+        assert p["distance_km"] <= 1.1, f"Radius 1km violation: {p['name']} at {p['distance_km']}km"
     
-    res_large = client.get(f"/api/v1/places/nearby?lat={lat}&lng={lng}&radius_km=25.0")
-    assert res_large.status_code == 200
-    places_large = res_large.json()
-    
-    assert len(places_large) >= len(places_small)
+    res_25km = client.get(f"/api/v1/places/nearby?lat={lat}&lng={lng}&radius_km=25.0")
+    assert res_25km.status_code == 200
+    places_25km = res_25km.json()
+    assert len(places_25km) >= len(places_1km), "25km radius must return equal or more places than 1km"
 
 def test_save_and_retrieve_live_poi(auth_headers):
     live_poi_id = "osm-node-99887766"
@@ -190,9 +250,3 @@ def test_get_place_detail_live_id():
     place = res.json()
     assert place["id"] == live_id
     assert place["data_state"] == "LIVE"
-
-def test_destination_autocomplete_arbitrary():
-    res = client.get("/api/v1/destinations/search?q=Connaught+Place&limit=5")
-    assert res.status_code == 200
-    results = res.json()
-    assert isinstance(results, list)

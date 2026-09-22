@@ -755,6 +755,28 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["ram-jhula", "ram-suspension-bridge"]
         },
+        "rishikesh:parmarth-niketan": {
+            "image_url": "/images/places/rishikesh/parmarth-niketan.webp",
+            "tier": "exact_place",
+            "place_name": "Parmarth Niketan Ganga Aarti",
+            "destination": "Rishikesh",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["parmarth-niketan", "parmarth-niketan-ganga-aarti", "parmarth-ashram", "parmarth-niketan-ashram", "parmarth"]
+        },
+        "rishikesh:shivpuri-rafting": {
+            "image_url": "/images/places/rishikesh/shivpuri-rafting.webp",
+            "tier": "exact_place",
+            "place_name": "Shivpuri White Water Rafting",
+            "destination": "Rishikesh",
+            "category": "Adventure",
+            "semantic_theme": "activity",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["shivpuri-rafting", "shivpuri-white-water-rafting", "shivpuri-river-rafting", "rishikesh-rafting", "shivpuri"]
+        },
 
         # --- Spiti Valley Landmarks ---
         "spiti:key-monastery": {
@@ -1086,7 +1108,7 @@ class CuratedArtworkProvider(ArtworkProvider):
     def _classify_category_theme(self, category: str = "", place_name: str = "", tags: str = "") -> str:
         text = f"{(category or '').lower()} {(place_name or '').lower()} {(tags or '').lower()}"
 
-        if any(w in text for w in ["hotel", "resort", "cottage", "homestay", "hostel", "guesthouse", "guest house", "lodge", "stay", "accommodation", "villa", "inn", "mudhouse", "sanctuary retreat", "boutique retreat", "camp", "tent", "residency"]):
+        if any(w in text for w in ["hotel", "resort", "cottage", "homestay", "hostel", "guesthouse", "guest house", "lodge", "stay", "accommodation", "villa", "inn", "mudhouse", "sanctuary retreat", "boutique retreat", "retreat", "niwas", "manor", "residency", "camp", "tent", "bed & breakfast", "b&b"]) or ("haveli" in text and any(s in text for s in ["stay", "hotel", "room", "sanctuary", "heritage", "jagat"])) or ("palace" in text and any(s in text for s in ["hotel", "retreat", "resort", "stay", "lakeside", "niwas", "brijrama"])):
             return "stay"
         if any(w in text for w in ["cafe", "café", "coffee", "bakery", "bakehouse", "tea house", "espresso", "german bakery", "patisserie", "tibetan kitchen"]):
             return "cafe"

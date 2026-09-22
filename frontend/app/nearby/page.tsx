@@ -80,6 +80,7 @@ export default function NearbyPage() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Browser Geolocation
   const requestCurrentLocation = useCallback(() => {
@@ -132,6 +133,7 @@ export default function NearbyPage() {
   // Fetch Nearby Places
   const loadNearby = useCallback(async () => {
     setLoading(true);
+    setApiError(null);
     try {
       const data = await api.getNearbyPlaces(
         searchCenter.lat,
@@ -141,9 +143,10 @@ export default function NearbyPage() {
         sortBy
       );
       setPlaces(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load nearby places:", err);
       setPlaces([]);
+      setApiError(err?.message || "Live place data is temporarily unavailable.");
     } finally {
       setLoading(false);
     }
@@ -456,6 +459,33 @@ export default function NearbyPage() {
             <span className="text-xs font-serif italic text-[#7B4D36]">
               Querying OpenStreetMap and live local places around {searchCenter.name}...
             </span>
+          </div>
+        ) : apiError ? (
+          <div className="py-16 px-6 text-center rounded-3xl bg-[#FAF7F0] border-2 border-red-200 space-y-4 max-w-xl mx-auto">
+            <AlertCircle className="w-12 h-12 text-amber-700 mx-auto opacity-80" />
+            <div className="space-y-1">
+              <h3 className="text-lg font-serif font-black text-[#173B32]">
+                Live place data is temporarily unavailable
+              </h3>
+              <p className="text-xs text-[#7B4D36] font-light leading-relaxed">
+                We encountered an issue querying live OpenStreetMap servers. Please retry or adjust your search radius.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+              <button
+                onClick={loadNearby}
+                className="px-4 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#20453B] transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry Search</span>
+              </button>
+              <button
+                onClick={() => setRadiusKm(10)}
+                className="px-4 py-2 rounded-xl bg-[#FAF7F0] text-[#173B32] border border-[#E5D5BA] text-xs font-bold hover:bg-[#E5D5BA] transition-all cursor-pointer"
+              >
+                Try 10 km Radius
+              </button>
+            </div>
           </div>
         ) : places.length === 0 ? (
           <div className="py-16 px-6 text-center rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4 max-w-xl mx-auto">

@@ -126,9 +126,11 @@ class LivePlacesProvider(PlacesProvider):
     with multi-tier curated fallback and strict data-source transparency.
     """
     OVERPASS_ENDPOINTS = [
+        "https://lz4.overpass-api.de/api/interpreter",
+        "https://z.overpass-api.de/api/interpreter",
         "https://overpass-api.de/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
-        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
     ]
 
     def __init__(self, api_key: str = ""):
@@ -144,6 +146,270 @@ class LivePlacesProvider(PlacesProvider):
             from app.providers.geocoding_provider import LiveGeocodingProvider
             self._geocoder = LiveGeocodingProvider()
         return self._geocoder
+
+    def _calculate_bbox(self, lat: float, lng: float, radius_km: float) -> Tuple[float, float, float, float]:
+        lat_delta = radius_km / 111.0
+        cos_lat = max(math.cos(math.radians(lat)), 0.01)
+        lng_delta = radius_km / (111.0 * cos_lat)
+        return (lat - lat_delta, lng - lng_delta, lat + lat_delta, lng + lng_delta)
+
+    def _build_overpass_query(self, south: float, west: float, north: float, east: float, category: Optional[str] = None) -> str:
+        cat_lower = (category or "").lower().strip()
+        bbox_str = f"{south:.4f},{west:.4f},{north:.4f},{east:.4f}"
+        
+        if cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
+            body = f"""
+            node["amenity"="cafe"]({bbox_str});
+            node["amenity"="bakery"]({bbox_str});
+            node["shop"="bakery"]({bbox_str});
+            node["shop"="coffee"]({bbox_str});
+            way["amenity"="cafe"]({bbox_str});
+            """
+        elif cat_lower in ["food", "dining", "restaurant", "street_food", "local food"]:
+            body = f"""
+            node["amenity"="restaurant"]({bbox_str});
+            node["amenity"="fast_food"]({bbox_str});
+            node["amenity"="food_court"]({bbox_str});
+            node["amenity"="dhaba"]({bbox_str});
+            node["amenity"="pub"]({bbox_str});
+            way["amenity"="restaurant"]({bbox_str});
+            way["amenity"="food_court"]({bbox_str});
+            """
+        elif cat_lower in ["attractions", "things to do", "attraction", "sightseeing"]:
+            body = f"""
+            node["tourism"="attraction"]({bbox_str});
+            node["tourism"="viewpoint"]({bbox_str});
+            node["tourism"="museum"]({bbox_str});
+            node["tourism"="gallery"]({bbox_str});
+            node["historic"="monument"]({bbox_str});
+            node["historic"="memorial"]({bbox_str});
+            node["historic"="fort"]({bbox_str});
+            node["historic"="palace"]({bbox_str});
+            way["tourism"="attraction"]({bbox_str});
+            way["historic"="fort"]({bbox_str});
+            """
+        elif cat_lower in ["spiritual", "temple", "monastery", "church", "faith"]:
+            body = f"""
+            node["amenity"="place_of_worship"]({bbox_str});
+            node["historic"="temple"]({bbox_str});
+            node["historic"="monastery"]({bbox_str});
+            node["historic"="church"]({bbox_str});
+            node["historic"="mosque"]({bbox_str});
+            way["amenity"="place_of_worship"]({bbox_str});
+            way["historic"="temple"]({bbox_str});
+            """
+        elif cat_lower in ["nature", "trails", "nature & trails", "viewpoint", "waterfall"]:
+            body = f"""
+            node["natural"="waterfall"]({bbox_str});
+            node["natural"="peak"]({bbox_str});
+            node["natural"="spring"]({bbox_str});
+            node["leisure"="park"]({bbox_str});
+            node["leisure"="nature_reserve"]({bbox_str});
+            node["tourism"="viewpoint"]({bbox_str});
+            way["leisure"="park"]({bbox_str});
+            way["leisure"="nature_reserve"]({bbox_str});
+            """
+        elif cat_lower in ["shopping", "market", "markets", "shops & markets", "craft"]:
+            body = f"""
+            node["shop"="supermarket"]({bbox_str});
+            node["shop"="convenience"]({bbox_str});
+            node["shop"="department_store"]({bbox_str});
+            node["shop"="clothes"]({bbox_str});
+            node["shop"="mall"]({bbox_str});
+            node["amenity"="marketplace"]({bbox_str});
+            way["shop"="mall"]({bbox_str});
+            way["amenity"="marketplace"]({bbox_str});
+            """
+        elif cat_lower in ["mobility", "transport", "rental", "rentals", "bike", "motorcycle"]:
+            body = f"""
+            node["amenity"="bicycle_rental"]({bbox_str});
+            node["amenity"="motorcycle_rental"]({bbox_str});
+            node["amenity"="car_rental"]({bbox_str});
+            node["amenity"="fuel"]({bbox_str});
+            node["amenity"="bus_station"]({bbox_str});
+            node["amenity"="parking"]({bbox_str});
+            way["amenity"="parking"]({bbox_str});
+            """
+        elif cat_lower in ["stay", "stays", "hotel", "hostel", "homestay", "stays & sanctuaries"]:
+            body = f"""
+            node["tourism"="hotel"]({bbox_str});
+            node["tourism"="hostel"]({bbox_str});
+            node["tourism"="guest_house"]({bbox_str});
+            node["tourism"="motel"]({bbox_str});
+            way["tourism"="hotel"]({bbox_str});
+            """
+        elif cat_lower in ["essentials", "medical", "hospital", "pharmacy", "essentials & medical"]:
+            body = f"""
+            node["amenity"="pharmacy"]({bbox_str});
+            node["amenity"="hospital"]({bbox_str});
+            node["amenity"="clinic"]({bbox_str});
+            node["amenity"="bank"]({bbox_str});
+            node["amenity"="atm"]({bbox_str});
+            node["amenity"="police"]({bbox_str});
+            way["amenity"="hospital"]({bbox_str});
+            """
+        else:
+            # Balanced general selection of real places
+            body = f"""
+            node["tourism"]({bbox_str});
+            node["amenity"]({bbox_str});
+            node["historic"]({bbox_str});
+            node["shop"]({bbox_str});
+            node["leisure"]({bbox_str});
+            way["tourism"]({bbox_str});
+            way["historic"]({bbox_str});
+            way["leisure"]({bbox_str});
+            """
+        
+        return f"""[out:json][timeout:8];
+(
+{body}
+);
+out center 60;"""
+
+    async def _execute_overpass_query(self, query_str: str) -> List[Dict[str, Any]]:
+        """Executes an Overpass QL query across primary and backup endpoints with robust timeout."""
+        for endpoint in self.OVERPASS_ENDPOINTS:
+            try:
+                async with httpx.AsyncClient(timeout=6.0, headers=self.headers) as client:
+                    res = await client.post(endpoint, data={"data": query_str})
+                    if res.status_code == 200:
+                        data = res.json()
+                        elements = data.get("elements", [])
+                        if elements:
+                            return elements
+            except Exception as e:
+                logger.debug(f"Overpass endpoint {endpoint} failed: {e}")
+        return []
+
+    async def _query_photon_fallback(self, lat: float, lng: float, radius_km: float, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Fallback live OSM geocoding/POI discovery via Photon API."""
+        try:
+            cat_lower = (category or "").lower().strip()
+            if cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
+                terms = ["cafe", "bakery", "coffee"]
+            elif cat_lower in ["food", "dining", "restaurant", "street_food", "local food"]:
+                terms = ["restaurant", "dhaba", "food"]
+            elif cat_lower in ["attractions", "sightseeing"]:
+                terms = ["monument", "museum", "fort", "palace"]
+            elif cat_lower in ["spiritual", "temple", "faith"]:
+                terms = ["temple", "mandir", "church", "mosque", "ashram"]
+            elif cat_lower in ["nature", "trails", "nature & trails"]:
+                terms = ["park", "garden", "lake", "waterfall"]
+            elif cat_lower in ["shopping", "market", "markets"]:
+                terms = ["market", "bazaar", "mall", "store"]
+            elif cat_lower in ["mobility", "transport", "rental"]:
+                terms = ["fuel", "parking", "station", "rental"]
+            elif cat_lower in ["stay", "hotel", "hostel"]:
+                terms = ["hotel", "resort", "homestay", "hostel"]
+            elif cat_lower in ["essentials", "medical"]:
+                terms = ["hospital", "pharmacy", "bank", "atm"]
+            else:
+                terms = ["restaurant", "cafe", "temple", "park", "hotel", "market", "monument"]
+
+            results: List[Dict[str, Any]] = []
+            seen_ids = set()
+
+            async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
+                for q_term in terms[:3]:
+                    url = f"https://photon.komoot.io/api/?lat={lat}&lon={lng}&q={q_term}&limit=15"
+                    try:
+                        res = await client.get(url)
+                        if res.status_code == 200:
+                            data = res.json()
+                            for feat in data.get("features", []):
+                                props = feat.get("properties", {})
+                                geom = feat.get("geometry", {})
+                                coords = geom.get("coordinates", [])
+                                if len(coords) < 2:
+                                    continue
+                                p_lng, p_lat = coords[0], coords[1]
+                                p_name = props.get("name")
+                                if not p_name:
+                                    continue
+                                osm_id = str(props.get("osm_id", p_name))
+                                if osm_id in seen_ids:
+                                    continue
+                                dist = self._haversine(lat, lng, p_lat, p_lng)
+                                if dist > radius_km:
+                                    continue
+                                
+                                osm_key = props.get("osm_key", "")
+                                osm_val = props.get("osm_value", "")
+                                tags = {osm_key: osm_val, "name": p_name}
+                                p_cat = self._map_osm_category(tags)
+
+                                if category and category.lower() != "all":
+                                    cat_l = category.lower()
+                                    if cat_l in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"] and p_cat != "Cafés & Bakery":
+                                        continue
+                                    elif cat_l in ["food", "restaurant", "dining", "local food"] and p_cat not in ["Local Food", "Cafés & Bakery"]:
+                                        continue
+                                    elif cat_l in ["attractions", "things to do", "attraction"] and p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails", "Adventure"]:
+                                        continue
+                                    elif cat_l in ["shopping", "market", "markets", "shops & markets"] and p_cat != "Shops & Markets":
+                                        continue
+                                    elif cat_l in ["mobility", "transport", "rentals"] and p_cat != "Mobility & Transport":
+                                        continue
+                                    elif cat_l in ["essentials", "medical", "hospital"] and p_cat != "Essentials & Medical":
+                                        continue
+                                    elif cat_l in ["culture", "heritage", "spiritual", "temple", "church"] and p_cat != "Culture & Heritage":
+                                        continue
+
+                                addr_parts = [props.get("housenumber"), props.get("street"), props.get("district"), props.get("city"), props.get("state")]
+                                addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from search location"
+
+                                action_links = ActionLinkGenerator.generate_place_action_links(
+                                    name=p_name,
+                                    latitude=p_lat,
+                                    longitude=p_lng,
+                                    website=None,
+                                    phone=None,
+                                    booking_url=None,
+                                    source="openstreetmap",
+                                    source_id=osm_id,
+                                )
+
+                                results.append({
+                                    "id": f"osm-{osm_id}",
+                                    "name": p_name,
+                                    "category": p_cat,
+                                    "description": f"Verified {p_cat.lower()} located in {props.get('city') or props.get('state') or 'the area'}.",
+                                    "address": addr,
+                                    "latitude": p_lat,
+                                    "longitude": p_lng,
+                                    "price_level": None,
+                                    "approx_cost": None,
+                                    "rating": None,
+                                    "review_count": None,
+                                    "opening_time": None,
+                                    "closing_time": None,
+                                    "hours_available": False,
+                                    "is_open_now": None,
+                                    "phone": None,
+                                    "website": None,
+                                    "recommended_duration_mins": 60,
+                                    "tags": f"{p_cat},OpenStreetMap",
+                                    "image_url": self._category_image(p_cat),
+                                    "why_vanvas_recommends": None,
+                                    "is_must_visit": False,
+                                    "is_hidden_gem": False,
+                                    "is_indoor": p_cat in ["Cafés & Bakery", "Essentials & Medical", "Shops & Markets"],
+                                    "source": "openstreetmap",
+                                    "source_id": osm_id,
+                                    "is_live": True,
+                                    "distance_km": dist,
+                                    "action_links": action_links,
+                                    "data_state": "LIVE",
+                                    "trust_source": "OPENSTREETMAP",
+                                })
+                                seen_ids.add(osm_id)
+                    except Exception as e:
+                        logger.debug(f"Photon term {q_term} failed: {e}")
+            return results
+        except Exception as e:
+            logger.debug(f"Photon fallback query failed: {e}")
+        return []
 
     def _normalize_name(self, name: str) -> str:
         if not name:
@@ -686,52 +952,36 @@ class LivePlacesProvider(PlacesProvider):
             except Exception as e:
                 logger.warning(f"Google Places live discovery failed: {e}")
 
-        # 2. Comprehensive OpenStreetMap Overpass Live Query (nwr: nodes + ways with centers)
-        # Search radius 1 (initial practical radius, e.g. 10km - 15km)
-        radius_m = min(int(radius_km * 1000), 20000)
+        # 2. Comprehensive OpenStreetMap Overpass Live Query (Indexed BBOX query on nodes and ways)
+        south, west, north, east = self._calculate_bbox(lat, lng, radius_km)
         try:
-            query_str = f"""
-            [out:json][timeout:6];
-            (
-              nwr["tourism"~"attraction|viewpoint|museum|gallery|theme_park|zoo|artwork|camp_site|wilderness_hut|picnic_site"](around:{radius_m},{lat},{lng});
-              nwr["amenity"~"cafe|restaurant|fast_food|food_court|pub|bar|dhaba|marketplace|pharmacy|hospital|clinic|doctors|atm|bank|police|fuel|bicycle_rental|motorcycle_rental|car_rental|parking|place_of_worship"](around:{radius_m},{lat},{lng});
-              nwr["historic"~"monument|memorial|castle|ruins|archaeological_site|fort|palace|city_gate|church|cathedral|chapel|monastery|temple|shrine|mosque|tomb"](around:{radius_m},{lat},{lng});
-              nwr["shop"~"bakery|pastry|supermarket|convenience|department_store|clothes|craft|gift|mall|general|motorcycle|bicycle|spices|tea|books|souvenir"](around:{radius_m},{lat},{lng});
-              nwr["leisure"~"park|nature_reserve|track|sports_centre|garden"](around:{radius_m},{lat},{lng});
-              nwr["natural"~"waterfall|beach|peak|spring|hot_spring"](around:{radius_m},{lat},{lng});
-              nwr["highway"~"trail"](around:{radius_m},{lat},{lng});
-            );
-            out center 60;
-            """
+            query_str = self._build_overpass_query(south, west, north, east, category)
             elements = await self._execute_overpass_query(query_str)
             for el in elements:
                 parsed = self._parse_osm_element(el, lat, lng, category)
-                if parsed:
+                if parsed and parsed.get("distance_km", 999) <= radius_km:
                     gathered_places.append(parsed)
 
-            # Adaptive radius expansion: If compact valley destination yields fewer than 8 places, expand radius
-            if len(gathered_places) < 8 and radius_km < 25.0:
-                expanded_radius_m = 25000
-                expand_query_str = f"""
-                [out:json][timeout:6];
-                (
-                  nwr["tourism"~"attraction|viewpoint|museum|gallery|camp_site"](around:{expanded_radius_m},{lat},{lng});
-                  nwr["amenity"~"cafe|restaurant|dhaba|place_of_worship|marketplace|bicycle_rental|motorcycle_rental"](around:{expanded_radius_m},{lat},{lng});
-                  nwr["historic"~"monument|memorial|fort|monastery|temple|shrine"](around:{expanded_radius_m},{lat},{lng});
-                );
-                out center 40;
-                """
-                extra_elements = await self._execute_overpass_query(expand_query_str)
-                for el in extra_elements:
-                    parsed = self._parse_osm_element(el, lat, lng, category)
-                    if parsed:
-                        gathered_places.append(parsed)
+            # If Overpass returned few results or failed, invoke Photon live POI discovery
+            if len(gathered_places) < 4:
+                photon_places = await self._query_photon_fallback(lat, lng, radius_km, category)
+                for pp in photon_places:
+                    if pp.get("distance_km", 999) <= radius_km:
+                        gathered_places.append(pp)
         except Exception as e:
             logger.warning(f"Overpass live query failed: {e}")
+            # Try photon fallback
+            photon_places = await self._query_photon_fallback(lat, lng, radius_km, category)
+            for pp in photon_places:
+                if pp.get("distance_km", 999) <= radius_km:
+                    gathered_places.append(pp)
 
         # 3. Deduplicate across Google Places and OSM, and EXCLUDE curated places
-        if gathered_places:
-            deduped = self._deduplicate_places(gathered_places, excluded_curated=excluded_curated)
+        # Ensure strict radius enforcement
+        valid_radius_places = [p for p in gathered_places if (p.get("distance_km") or 0) <= (radius_km + 0.1)]
+
+        if valid_radius_places:
+            deduped = self._deduplicate_places(valid_radius_places, excluded_curated=excluded_curated)
             deduped.sort(key=lambda x: x.get("distance_km", 999))
             latency_ms = (time.time() - start_time) * 1000
             health_tracker.record_success("places", latency_ms)

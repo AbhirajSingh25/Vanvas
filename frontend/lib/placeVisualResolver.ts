@@ -1063,6 +1063,36 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "ram-suspension-bridge"
     ]
   },
+  "rishikesh:parmarth-niketan": {
+    imageUrl: "/images/places/rishikesh/parmarth-niketan.webp",
+    visualDescription: "Expansive spiritual ashram on the Ganga banks famous for Vedic chanting and Lord Shiva statue reflections.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "parmarth-niketan",
+      "parmarth-niketan-ganga-aarti",
+      "parmarth-ashram",
+      "parmarth-niketan-ashram",
+      "parmarth"
+    ]
+  },
+  "rishikesh:shivpuri-rafting": {
+    imageUrl: "/images/places/rishikesh/shivpuri-rafting.webp",
+    visualDescription: "Thrilling white water rafting expedition through emerald Himalayan Ganga rapids.",
+    category: "Adventure",
+    semanticTheme: "activity",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "shivpuri-rafting",
+      "shivpuri-white-water-rafting",
+      "shivpuri-river-rafting",
+      "rishikesh-rafting",
+      "shivpuri"
+    ]
+  },
 
   // ==========================================
   // --- SPITI VALLEY LANDMARKS ---
@@ -1422,9 +1452,16 @@ export function classifyCategoryTheme(
     text.includes("mudhouse") ||
     text.includes("sanctuary retreat") ||
     text.includes("boutique retreat") ||
+    text.includes("retreat") ||
+    text.includes("niwas") ||
+    text.includes("manor") ||
     text.includes("camp") ||
     text.includes("tent") ||
-    text.includes("residency")
+    text.includes("bed & breakfast") ||
+    text.includes("b&b") ||
+    text.includes("residency") ||
+    (text.includes("haveli") && (text.includes("stay") || text.includes("hotel") || text.includes("sanctuary") || text.includes("heritage") || text.includes("jagat"))) ||
+    (text.includes("palace") && (text.includes("hotel") || text.includes("retreat") || text.includes("stay") || text.includes("lakeside") || text.includes("niwas") || text.includes("brijrama")))
   ) {
     return "stay";
   }

@@ -254,6 +254,8 @@ async def copilot_chat(
         "tools_executed_count": len(executed_tools),
         "latency_ms": latency_ms,
     }
+    if ai_res.get("error_code"):
+        metadata_dict["error_code"] = ai_res.get("error_code")
 
     # 9. Persist Assistant Response & Sanitized Compact Tool Audit
     def _sanitize_dict(d: Any) -> Any:
