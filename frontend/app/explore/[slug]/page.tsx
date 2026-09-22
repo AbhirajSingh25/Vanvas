@@ -147,10 +147,10 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
     const abortTimeout = setTimeout(() => {
       setDestLoading(false);
-      setLoadError("Connection timed out. The Himalayan intelligence layer took too long to respond.");
+      setLoadError("Connection timed out. The Himalayan intelligence layer took too long to respond. Tap retry to reconnect.");
       setStaysLoading(false);
       setRentalsLoading(false);
-    }, 15000);
+    }, 45000);
 
     api.getDestinationDetail(slug)
       .then((data) => {
