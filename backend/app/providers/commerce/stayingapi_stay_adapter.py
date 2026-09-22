@@ -178,6 +178,77 @@ class StayingAPIStayCommerceAdapter(BaseCommerceProvider):
             logger.warning("StayingAPI search execution error: %s", str(exc))
             return []
 
+    async def search_stay_listings_async(
+        self,
+        destination: str,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None,
+        check_in: Optional[str] = None,
+        check_out: Optional[str] = None,
+        adults: int = 1,
+        children: int = 0,
+        max_price: Optional[float] = None,
+        limit: int = 15,
+    ) -> List[Dict[str, Any]]:
+        """
+        Queries live accommodation inventory from StayingAPI, preserving full raw metadata
+        (platform, listing ID, property type, occupancy, bedrooms, amenities, images, real price, URL).
+        """
+        if not self.is_configured:
+            return []
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+        }
+
+        loc_str = destination.strip()
+        if not (loc_str.lower().endswith("india") or loc_str.lower().endswith("himachal pradesh")):
+            loc_str = f"{loc_str}, India"
+
+        params: Dict[str, Any] = {
+            "location": loc_str,
+            "limit": max(1, min(limit, 25)),
+        }
+        if check_in:
+            params["checkIn"] = check_in
+        if check_out:
+            params["checkOut"] = check_out
+        if adults > 1:
+            params["adults"] = adults
+        if children > 0:
+            params["children"] = children
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                res = await client.get(
+                    f"{self.BASE_URL}/v1/search",
+                    headers=headers,
+                    params=params,
+                )
+
+                if res.status_code != 200:
+                    logger.warning("StayingAPI search_stay_listings error: HTTP %s - %s", res.status_code, res.text[:200])
+                    return []
+
+                payload = res.json()
+                data = payload.get("data", [])
+                if not isinstance(data, list):
+                    return []
+
+                # Cache raw listings
+                for item in data:
+                    if isinstance(item, dict) and item.get("id"):
+                        self._listing_meta_cache[item["id"]] = item
+                        offer = self._map_listing_to_offer(item, destination)
+                        if offer:
+                            self._offer_cache[offer.provider_offer_id] = offer
+
+                return data
+        except Exception as exc:
+            logger.warning("StayingAPI search_stay_listings_async execution error: %s", str(exc))
+            return []
+
     def get_offer(self, offer_id: str) -> Optional[Offer]:
         """
         Retrieves a specific offer from session memory cache.

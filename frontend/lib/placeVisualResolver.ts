@@ -1788,20 +1788,35 @@ export function resolvePlaceArtwork(
 
   // --- HARD ISOLATION FOR STAYS: Never inherit landmark artwork ---
   if (semanticTheme === "stay") {
-    const stayAsset = destConfig?.categories.stay || universalSafe;
+    let stayCategoryAsset = destConfig?.categories.stay || universalSafe;
+    const lowerPlace = placeNorm.toLowerCase();
+    const lowerCat = category.toLowerCase();
+
+    if (lowerPlace.includes("hostel") || lowerPlace.includes("dorm") || lowerCat.includes("hostel") || lowerCat.includes("dorm")) {
+      stayCategoryAsset = "/images/places/universal/hostel.webp";
+    } else if (lowerPlace.includes("homestay") || lowerPlace.includes("guest house") || lowerPlace.includes("b&b") || lowerPlace.includes("cottage") || lowerCat.includes("homestay") || lowerCat.includes("guest house")) {
+      stayCategoryAsset = "/images/places/universal/homestay.webp";
+    } else if (lowerPlace.includes("resort") || lowerCat.includes("resort")) {
+      stayCategoryAsset = "/images/places/universal/resort.webp";
+    } else if (lowerPlace.includes("boutique") || lowerCat.includes("boutique")) {
+      stayCategoryAsset = "/images/places/universal/boutique.webp";
+    } else if (lowerPlace.includes("heritage") || lowerPlace.includes("haveli") || lowerPlace.includes("palace") || lowerCat.includes("heritage")) {
+      stayCategoryAsset = "/images/places/universal/heritage.webp";
+    }
+
     return {
-      url: stayAsset,
+      url: stayCategoryAsset,
       fallback_url: universalSafe,
       source: "vanvas_curated",
       source_type: "category_photo",
       provenance: "destination_category",
       semantic_category: "stay",
       exactness: "category_matched",
-      attribution: `VANVAS Curated ${destinationName} Stay Sanctuary`,
+      attribution: `VANVAS Verified ${destinationName} Stay Sanctuary`,
       alt_text: `${placeName} accommodation in ${destinationName}`,
       badge_label: "DESTINATION CATEGORY ART",
       artworkKey: `${matchedDestKey || "universal"}:stay`,
-      imageUrl: stayAsset,
+      imageUrl: stayCategoryAsset,
       fallbackUrl: universalSafe,
       tier: "destination_category",
       placeName,

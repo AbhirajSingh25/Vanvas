@@ -518,10 +518,24 @@ export const api = {
   },
 
   // Transport, Hotels & Rentals
-  async getHotels(destId: string, style?: string, maxPrice?: number): Promise<Hotel[]> {
+  async getHotels(
+    destId: string,
+    style?: string,
+    travellerProfile?: string,
+    maxPrice?: number,
+    checkIn?: string,
+    checkOut?: string,
+    adults?: number,
+    children?: number
+  ): Promise<Hotel[]> {
     const params = new URLSearchParams({ destination_id: destId });
     if (style && style !== "All") params.append("style", style);
+    if (travellerProfile && travellerProfile !== "All") params.append("traveller_profile", travellerProfile);
     if (maxPrice) params.append("max_price", String(maxPrice));
+    if (checkIn) params.append("check_in", checkIn);
+    if (checkOut) params.append("check_out", checkOut);
+    if (adults && adults > 1) params.append("adults", String(adults));
+    if (children && children > 0) params.append("children", String(children));
     return fetchApi(`/hotels?${params.toString()}`);
   },
 

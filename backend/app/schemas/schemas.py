@@ -227,9 +227,14 @@ class HotelResponse(BaseModel):
     latitude: float
     longitude: float
     price_per_night: Optional[float] = None
+    price_formatted: Optional[str] = None
+    currency: Optional[str] = "INR"
+    availability_state: Optional[str] = "UNKNOWN"
     rating: Optional[float] = None
     review_count: Optional[int] = None
     hotel_style: Optional[str] = "Boutique / Mountain Stay"
+    accommodation_type: Optional[str] = "Hotel"
+    traveller_tags: List[str] = []
     amenities: Optional[str] = "WiFi,Hot Water"
     check_in_time: Optional[str] = "11:00 AM"
     check_out_time: Optional[str] = "10:00 AM"
@@ -240,6 +245,9 @@ class HotelResponse(BaseModel):
     website: Optional[str] = None
     source: Optional[str] = "vanvas_curated"
     source_id: Optional[str] = None
+    provider_source: Optional[str] = None
+    provider_listing_id: Optional[str] = None
+    provider_url: Optional[str] = None
     is_live: Optional[bool] = False
     price_verified: Optional[bool] = True
     distance_km: Optional[float] = None

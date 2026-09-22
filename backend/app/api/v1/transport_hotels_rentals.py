@@ -147,120 +147,26 @@ def optimize_arrival_timing(
 async def get_hotels(
     destination_id: str,
     style: Optional[str] = None,
+    traveller_profile: Optional[str] = None,
     max_price: Optional[float] = None,
+    check_in: Optional[str] = None,
+    check_out: Optional[str] = None,
+    adults: int = 1,
+    children: int = 0,
     db: Session = Depends(get_db)
 ):
-    dest = db.query(Destination).filter(
-        (Destination.id == destination_id) | (Destination.slug == destination_id)
-    ).first()
-    dest_id = dest.id if dest else destination_id
-
-    # 1. Fetch curated DB stays
-    query = db.query(Hotel).filter(Hotel.destination_id == dest_id)
-    if style and style != "All":
-        query = query.filter(Hotel.hotel_style.ilike(f"%{style}%"))
-    if max_price:
-        query = query.filter(Hotel.price_per_night <= max_price)
-    
-    curated_hotels = query.order_by(Hotel.rating.desc()).all()
-    results: List[HotelResponse] = []
-    seen_names = set()
-
-    for h in curated_hotels:
-        seen_names.add(h.name.lower().strip())
-        action_links = ActionLinkGenerator.generate_hotel_action_links(
-            name=h.name,
-            latitude=h.latitude,
-            longitude=h.longitude,
-            website=h.booking_url,
-            phone=None,
-            booking_url=h.booking_url,
-            source="vanvas_curated",
-            source_id=h.id,
-        )
-        results.append(HotelResponse(
-            id=h.id,
-            destination_id=h.destination_id,
-            name=h.name,
-            address=h.address,
-            latitude=h.latitude,
-            longitude=h.longitude,
-            price_per_night=h.price_per_night,
-            rating=h.rating,
-            review_count=120,
-            hotel_style=h.hotel_style or "Boutique / Mountain Stay",
-            amenities=h.amenities or "WiFi,Hot Water",
-            check_in_time=h.check_in_time or "11:00 AM",
-            check_out_time=h.check_out_time or "10:00 AM",
-            image_url=h.image_url,
-            booking_url=h.booking_url,
-            badge=h.badge or "Curated Sanctuary",
-            phone=None,
-            website=h.booking_url,
-            source="vanvas_curated",
-            source_id=h.id,
-            is_live=False,
-            price_verified=True,
-            distance_km=None,
-            action_links=action_links,
-            data_state="VERIFIED",
-            trust_source="VANVAS_CURATED",
-        ))
-
-    # 2. Query Live Accommodation Provider (OSM Overpass / Google Places)
-    try:
-        hotels_provider = ProviderFactory.get_hotels_provider()
-        target_name = dest.name if dest else destination_id
-        target_lat = dest.latitude if dest else None
-        target_lng = dest.longitude if dest else None
-        live_stays = await asyncio.wait_for(
-            hotels_provider.search_hotels(
-                destination=target_name,
-                lat=target_lat,
-                lng=target_lng,
-                radius_km=15.0
-            ),
-            timeout=3.5
-        )
-        for ls in live_stays:
-            norm = ls.get("name", "").lower().strip()
-            if any(norm in s or s in norm for s in seen_names):
-                continue
-            if style and style != "All" and style.lower() not in ls.get("hotel_style", "").lower():
-                continue
-            seen_names.add(norm)
-            results.append(HotelResponse(
-                id=ls.get("id", f"live-stay-{ls.get('source_id', norm[:12])}"),
-                destination_id=dest_id,
-                name=ls["name"],
-                address=ls.get("address", "Local Area"),
-                latitude=ls["latitude"],
-                longitude=ls["longitude"],
-                price_per_night=ls.get("price_per_night"),
-                rating=ls.get("rating"),
-                review_count=ls.get("review_count"),
-                hotel_style=ls.get("hotel_style", "Mountain Stay"),
-                amenities=ls.get("amenities", "Mountain Views"),
-                check_in_time=ls.get("check_in_time", "12:00 PM"),
-                check_out_time=ls.get("check_out_time", "10:00 AM"),
-                image_url=ls.get("image_url", f"/images/places/{dest.slug if dest else 'manali'}/categories/stay.webp"),
-                booking_url=ls.get("booking_url"),
-                badge=ls.get("badge", "Live POI Stay"),
-                phone=ls.get("phone"),
-                website=ls.get("website"),
-                source=ls.get("source", "openstreetmap"),
-                source_id=ls.get("source_id"),
-                is_live=ls.get("is_live", True),
-                price_verified=ls.get("price_verified", False),
-                distance_km=ls.get("distance_km"),
-                action_links=ls.get("action_links", []),
-                data_state=ls.get("data_state", "LIVE"),
-                trust_source=ls.get("trust_source", "OPENSTREETMAP"),
-            ))
-    except Exception:
-        pass
-
-    return results
+    from app.services.stay_matching_service import StayMatchingService
+    return await StayMatchingService.match_stays(
+        db=db,
+        destination_id=destination_id,
+        style=style,
+        traveller_profile=traveller_profile,
+        max_price=max_price,
+        check_in=check_in,
+        check_out=check_out,
+        adults=adults,
+        children=children,
+    )
 
 @router.get("/rentals", response_model=List[RentalOptionResponse])
 async def get_rentals(

@@ -6,7 +6,7 @@ import {
   Compass, MapPin, Sparkles, Star, BedDouble, Bike, Clock,
   ExternalLink, ArrowRight, ShieldCheck, Bookmark, Check, Mountain,
   Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw, Layers,
-  Phone, Navigation, MessageCircle
+  Phone, Navigation, MessageCircle, Globe, Users, X, Home, Building2, CheckCircle2
 } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -29,6 +29,14 @@ const DISCOVERY_MESSAGES = [
   "Reading local trails & sanctuaries..."
 ];
 
+const TRAVELLER_PROFILES = [
+  "All", "Budget", "Couple", "Family", "Friends", "Solo", "Group", "Party/Social"
+];
+
+const ACCOMMODATION_TYPES = [
+  "All", "Dorm", "Private", "Hostel", "Homestay", "Hotel", "Boutique", "Resort", "Heritage"
+];
+
 export default function DestinationDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
 
@@ -43,6 +51,10 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [staysLoading, setStaysLoading] = useState(true);
+  const [selectedTravellerProfile, setSelectedTravellerProfile] = useState<string>("All");
+  const [selectedStayType, setSelectedStayType] = useState<string>("All");
+  const [selectedStayForModal, setSelectedStayForModal] = useState<Hotel | null>(null);
+  const [stayModalOpen, setStayModalOpen] = useState(false);
   
   const [rentals, setRentals] = useState<RentalOption[]>([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
@@ -210,6 +222,26 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
         setStaysLoading(false);
         setRentalsLoading(false);
       });
+  };
+
+  const fetchFilteredStays = (travellerProfile?: string, stayType?: string) => {
+    if (!destination) return;
+    const destId = destination.id || slug;
+    setStaysLoading(true);
+    api.getHotels(destId, stayType, travellerProfile)
+      .then((loadedStays) => setHotels(loadedStays || []))
+      .catch(() => setHotels([]))
+      .finally(() => setStaysLoading(false));
+  };
+
+  const handleTravellerProfileChange = (profile: string) => {
+    setSelectedTravellerProfile(profile);
+    fetchFilteredStays(profile, selectedStayType);
+  };
+
+  const handleStayTypeChange = (type: string) => {
+    setSelectedStayType(type);
+    fetchFilteredStays(selectedTravellerProfile, type);
   };
 
   useEffect(() => {
@@ -600,25 +632,90 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
         {/* STAYS & SANCTUARIES */}
         <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
-          <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] pb-4 gap-3">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                आशियाना • Stays &amp; Cottages
+                आशियाना • Verified Stays &amp; Sanctuaries
               </span>
               <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
                 <BedDouble className="w-6 h-6 text-[#B65E3C]" />
                 <span>Stays &amp; Sanctuaries {!staysLoading && `(${hotels.length})`}</span>
               </h3>
             </div>
-            <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${
-              isCurated
-                ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
-                : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
-            }`}>
-              {isCurated ? "Verified Stays" : "Live Accommodation"}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Live Stay Inventory</span>
+              </span>
+            </div>
           </div>
 
+          {/* TRAVELLER & ACCOMMODATION FILTER BAR */}
+          <div className="space-y-3 bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA]">
+            {/* Traveller Profiles */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs text-[#7B4D36]">
+                <span className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <Users className="w-3.5 h-3.5 text-[#B65E3C]" />
+                  <span>Traveller Profile</span>
+                </span>
+                <span className="text-[10px] font-mono opacity-70">
+                  {selectedTravellerProfile === "All" ? "All Profiles" : `${selectedTravellerProfile} Verified`}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {TRAVELLER_PROFILES.map((profile) => {
+                  const isActive = selectedTravellerProfile === profile;
+                  return (
+                    <button
+                      key={profile}
+                      onClick={() => handleTravellerProfileChange(profile)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        isActive
+                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs scale-[1.02]"
+                          : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]/80"
+                      }`}
+                    >
+                      {profile}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Accommodation Preferences */}
+            <div className="space-y-1.5 pt-2 border-t border-[#E5D5BA]/60">
+              <div className="flex items-center justify-between text-xs text-[#7B4D36]">
+                <span className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <Building2 className="w-3.5 h-3.5 text-[#B65E3C]" />
+                  <span>Accommodation Style</span>
+                </span>
+                <span className="text-[10px] font-mono opacity-70">
+                  {selectedStayType === "All" ? "All Styles" : selectedStayType}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {ACCOMMODATION_TYPES.map((type) => {
+                  const isActive = selectedStayType === type;
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => handleStayTypeChange(type)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        isActive
+                          ? "bg-[#B65E3C] text-[#FAF4E8] shadow-xs scale-[1.02]"
+                          : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]/80"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* STAYS GRID */}
           {staysLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
@@ -632,73 +729,140 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           ) : hotels.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {hotels.map((h) => {
-                const isLiveStay = h.is_live || h.source === "openstreetmap" || h.source === "google_places";
+                const isLiveStay = h.is_live !== false;
                 const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
                 const stayVisual = resolvePlaceArtwork(h.name, destination.name, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
+                const displayPrice = h.price_formatted || (isPriceVerified ? `₹${h.price_per_night}/night` : "Rate unavailable");
+                const availState = h.availability_state || "UNKNOWN";
 
                 return (
-                  <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3.5 flex flex-col justify-between">
+                  <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
                     <div className="space-y-3">
-                      <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                      {/* Visual Header */}
+                      <div className="relative h-48 rounded-2xl overflow-hidden bg-[#E5D5BA]">
                         <VanvasImage
                           src={stayVisual.imageUrl}
                           fallbackSrc={stayVisual.fallbackUrl}
                           alt={`${h.name} in ${destination.name}`}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                        {/* Top Badges */}
+                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
                           <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
-                            isLiveStay
-                              ? "bg-emerald-600 text-white"
+                            h.provider_source?.includes("airbnb")
+                              ? "bg-rose-600 text-white"
+                              : h.provider_source?.includes("vrbo")
+                              ? "bg-blue-700 text-white"
+                              : isLiveStay
+                              ? "bg-emerald-700 text-white"
                               : "bg-[#173B32] text-[#EFE5D2]"
                           }`}>
-                            {isLiveStay ? "LIVE STAY" : (h.badge || "Handpicked")}
+                            {h.badge || (isLiveStay ? "LIVE STAY" : "VERIFIED SANCTUARY")}
                           </span>
-                          {!isPriceVerified && (
-                            <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] text-[9px] font-mono uppercase tracking-wider border border-white/10">
-                              Rate Unverified
-                            </span>
-                          )}
+
+                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-xs ${
+                            availState === "AVAILABLE"
+                              ? "bg-emerald-600 text-white"
+                              : availState === "UNAVAILABLE"
+                              ? "bg-rose-700 text-white"
+                              : "bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] border border-white/15"
+                          }`}>
+                            {availState}
+                          </span>
+                        </div>
+
+                        {/* Bottom Category Tag */}
+                        <div className="absolute bottom-2.5 left-2.5">
+                          <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-medium border border-white/10">
+                            {h.accommodation_type || h.hotel_style || "Stay Sanctuary"}
+                          </span>
                         </div>
                       </div>
+
+                      {/* Content Details */}
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{h.name}</h4>
                           <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
-                            {isPriceVerified ? `₹${h.price_per_night}/n` : "Rate on booking"}
+                            {displayPrice}
                           </span>
                         </div>
-                        <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">{h.address}</p>
+                        <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">
+                          {h.address}
+                          {typeof h.distance_km === "number" && ` • ${h.distance_km} km from center`}
+                        </p>
+
+                        {/* Verified Tags */}
+                        {h.traveller_tags && h.traveller_tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {h.traveller_tags.slice(0, 3).map((tag) => (
+                              <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-[#EFE5D2] text-[#7B4D36] border border-[#E5D5BA]">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52]">
-                      <span className="line-clamp-1">Amenities: {h.amenities?.split(",")[0] || "Scenic Stay"}</span>
-                      <div className="flex items-center gap-2 shrink-0">
+                    {/* Action Toolbar */}
+                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52] gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedStayForModal(h);
+                          setStayModalOpen(true);
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-semibold text-xs hover:bg-[#EFE5D2] hover:border-[#173B32] transition-colors cursor-pointer"
+                      >
+                        View Property
+                      </button>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {h.latitude && h.longitude && (
                           <a
                             href={`https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#173B32] hover:text-[#B65E3C] p-1"
+                            className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#B65E3C] transition-colors"
                             title="Get directions"
                           >
                             <MapPin className="w-3.5 h-3.5" />
                           </a>
                         )}
-                        {h.booking_url ? (
+
+                        {h.phone && (
                           <a
-                            href={h.booking_url}
+                            href={`tel:${h.phone}`}
+                            className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-emerald-700 hover:border-emerald-700 transition-colors"
+                            title={`Call ${h.phone}`}
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+
+                        {h.website && (
+                          <a
+                            href={h.website}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#B65E3C] font-bold hover:underline flex items-center gap-1"
+                            className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#B65E3C] transition-colors"
+                            title="Official Website"
+                          >
+                            <Globe className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+
+                        {(h.booking_url || h.provider_url) ? (
+                          <a
+                            href={h.booking_url || h.provider_url || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
                           >
                             <span>Book</span>
                             <ExternalLink className="w-3 h-3" />
                           </a>
-                        ) : (
-                          <span className="text-[11px] text-[#7B4D36] italic">Contact on arrival</span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -706,90 +870,25 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
               })}
             </div>
           ) : (
-            <div className="p-6 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] text-center space-y-1">
-              <p className="text-xs text-[#7B4D36]">Live stays are temporarily unavailable or not registered in this exact coordinate sector.</p>
+            <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
+              <BedDouble className="w-8 h-8 text-[#B65E3C] mx-auto opacity-70" />
+              <h4 className="font-serif font-bold text-base text-[#173B32]">No verified stays available for these dates.</h4>
+              <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
+                No accommodation matching your criteria was verified by live inventory providers for this destination. Try switching traveller profiles or resetting style filters.
+              </p>
+              <button
+                onClick={() => {
+                  setSelectedTravellerProfile("All");
+                  setSelectedStayType("All");
+                  fetchFilteredStays("All", "All");
+                }}
+                className="mt-2 px-4 py-1.5 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold hover:bg-[#B65E3C] transition-colors cursor-pointer"
+              >
+                Reset All Filters
+              </button>
             </div>
           )}
         </div>
-
-        {/* LIVE PROVIDER OFFERS (AMADEUS GDS / REAL COMMERCE OFFERS) */}
-        {stayOffers.length > 0 && (
-          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
-            <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  लाइव आवास • Verified Stay Offers
-                </span>
-                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
-                  <Sparkles className="w-6 h-6 text-[#B65E3C]" />
-                  <span>Live Stay Offers ({stayOffers.length})</span>
-                </h3>
-              </div>
-              <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-emerald-500/10 border border-emerald-500/30 text-emerald-800">
-                Live Stay Engine
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {stayOffers.map((offer) => {
-                const isAvail = offer.availability_state === "AVAILABLE";
-                const isPriceVerified = typeof offer.price === "number" && offer.price > 0;
-
-                return (
-                  <div key={offer.provider_offer_id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3.5 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2]">
-                          LIVE PROVIDER OFFER
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold ${
-                          isAvail
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                            : "bg-slate-100 text-slate-700 border border-slate-300"
-                        }`}>
-                          {offer.availability_state || "UNKNOWN"}
-                        </span>
-                      </div>
-
-                      <div>
-                        <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{offer.title}</h4>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="text-xs font-mono text-[#7B4D36] uppercase">{offer.provider}</span>
-                          <span className="text-xs text-[#7B4D36]">•</span>
-                          <span className="text-xs font-mono font-bold text-[#B65E3C]">
-                            {isPriceVerified ? `${offer.currency || "INR"} ${offer.price}` : "Price on request"}
-                          </span>
-                        </div>
-                        {offer.cancellation_policy && (
-                          <p className="text-[11px] text-emerald-800 mt-1 font-sans bg-emerald-50/80 p-1.5 rounded-md border border-emerald-200/60 line-clamp-2">
-                            {offer.cancellation_policy}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52]">
-                      <span className="text-[11px] font-mono text-[#7B4D36]">Verified Commerce Tier</span>
-                      {offer.booking_capability === "EXTERNAL_CHECKOUT" && offer.deep_link ? (
-                        <a
-                          href={offer.deep_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
-                        >
-                          <span>Continue with Provider</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-[11px] text-[#7B4D36] italic">Discovery Only</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {/* VALLEY MOBILITY & RENTALS */}
         <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
@@ -985,6 +1084,199 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
       />
+
+      {/* Stay Detail Modal */}
+      {stayModalOpen && selectedStayForModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4 max-h-[90vh] flex flex-col justify-between">
+            {/* Header Visual */}
+            <div className="relative h-56 bg-[#E5D5BA] shrink-0">
+              {(() => {
+                const stayVisual = resolvePlaceArtwork(
+                  selectedStayForModal.name,
+                  destination.name,
+                  "Stays & Sanctuaries",
+                  selectedStayForModal.image_url,
+                  selectedStayForModal.is_live,
+                  selectedStayForModal.source
+                );
+                return (
+                  <VanvasImage
+                    src={stayVisual.imageUrl}
+                    fallbackSrc={stayVisual.fallbackUrl}
+                    alt={selectedStayForModal.name}
+                    className="w-full h-full object-cover"
+                  />
+                );
+              })()}
+
+              <button
+                onClick={() => setStayModalOpen(false)}
+                className="absolute top-3 right-3 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="absolute top-3 left-3 flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-sm">
+                  {selectedStayForModal.badge || "Verified Stay"}
+                </span>
+                <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider shadow-sm ${
+                  selectedStayForModal.availability_state === "AVAILABLE"
+                    ? "bg-emerald-600 text-white"
+                    : selectedStayForModal.availability_state === "UNAVAILABLE"
+                    ? "bg-rose-700 text-white"
+                    : "bg-[#0F2924]/85 text-[#FAF4E8]"
+                }`}>
+                  {selectedStayForModal.availability_state || "UNKNOWN"}
+                </span>
+              </div>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              <div>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[#B65E3C] font-semibold">
+                  {selectedStayForModal.accommodation_type || "Accommodation"} • {destination.name}
+                </span>
+                <h3 className="font-serif font-black text-2xl text-[#173B32] leading-tight mt-0.5">
+                  {selectedStayForModal.name}
+                </h3>
+                <p className="text-xs text-[#7B4D36] mt-1 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#B65E3C] shrink-0" />
+                  <span>
+                    {selectedStayForModal.address}
+                    {typeof selectedStayForModal.distance_km === "number" && ` (${selectedStayForModal.distance_km} km from destination center)`}
+                  </span>
+                </p>
+              </div>
+
+              {/* Price & Rating Tier */}
+              <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono uppercase text-[#7B4D36] block">Verified Rate</span>
+                  <span className="font-serif font-bold text-lg text-[#B65E3C]">
+                    {selectedStayForModal.price_formatted || (selectedStayForModal.price_per_night ? `₹${selectedStayForModal.price_per_night}/night` : "Rate unavailable")}
+                  </span>
+                </div>
+                {selectedStayForModal.rating && (
+                  <div className="text-right">
+                    <span className="text-[10px] font-mono uppercase text-[#7B4D36] block">Guest Score</span>
+                    <span className="font-bold text-sm text-[#173B32] flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                      <span>{selectedStayForModal.rating}</span>
+                      {selectedStayForModal.review_count && (
+                        <span className="text-xs font-normal text-[#7B4D36]">({selectedStayForModal.review_count})</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Traveller Matching Tags */}
+              {selectedStayForModal.traveller_tags && selectedStayForModal.traveller_tags.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold text-[#173B32] uppercase tracking-wider block">
+                    Matching Traveller Profiles
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedStayForModal.traveller_tags.map((tag) => (
+                      <span key={tag} className="px-2.5 py-1 rounded-lg text-xs font-mono font-medium bg-[#173B32]/10 text-[#173B32] border border-[#173B32]/20 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                        <span>{tag}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Amenities */}
+              {selectedStayForModal.amenities && (
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold text-[#173B32] uppercase tracking-wider block">
+                    Verified Amenities &amp; Features
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedStayForModal.amenities.split(",").map((a, idx) => (
+                      <span key={idx} className="px-2.5 py-1 rounded-lg text-xs bg-white text-[#7B4D36] border border-[#E5D5BA]">
+                        {a.trim()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Timing */}
+              <div className="grid grid-cols-2 gap-3 text-xs text-[#7B4D36]">
+                <div className="p-2.5 rounded-xl bg-white border border-[#E5D5BA]">
+                  <span className="font-mono uppercase text-[10px] text-[#7B4D36]/80 block">Check-in</span>
+                  <span className="font-semibold text-[#173B32]">{selectedStayForModal.check_in_time || "12:00 PM"}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white border border-[#E5D5BA]">
+                  <span className="font-mono uppercase text-[10px] text-[#7B4D36]/80 block">Check-out</span>
+                  <span className="font-semibold text-[#173B32]">{selectedStayForModal.check_out_time || "10:00 AM"}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Action Buttons */}
+            <div className="p-4 border-t border-[#E5D5BA] bg-[#FAF7F0] flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                {selectedStayForModal.latitude && selectedStayForModal.longitude && (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedStayForModal.latitude},${selectedStayForModal.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] transition-colors"
+                    title="Get Directions"
+                  >
+                    <MapPin className="w-4 h-4" />
+                  </a>
+                )}
+                {selectedStayForModal.phone && (
+                  <a
+                    href={`tel:${selectedStayForModal.phone}`}
+                    className="p-2 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-emerald-800 hover:text-emerald-950 transition-colors"
+                    title={`Call ${selectedStayForModal.phone}`}
+                  >
+                    <Phone className="w-4 h-4" />
+                  </a>
+                )}
+                {selectedStayForModal.website && (
+                  <a
+                    href={selectedStayForModal.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] transition-colors"
+                    title="Official Website"
+                  >
+                    <Globe className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+
+              {(selectedStayForModal.booking_url || selectedStayForModal.provider_url) ? (
+                <a
+                  href={selectedStayForModal.booking_url || selectedStayForModal.provider_url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-5 py-2.5 bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>Book with Provider</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              ) : (
+                <button
+                  onClick={() => setStayModalOpen(false)}
+                  className="px-5 py-2.5 bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors"
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

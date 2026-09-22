@@ -204,9 +204,14 @@ export interface Hotel {
   latitude: number;
   longitude: number;
   price_per_night?: number | null;
+  price_formatted?: string | null;
+  currency?: string;
+  availability_state?: "AVAILABLE" | "UNAVAILABLE" | "UNKNOWN" | string;
   rating?: number | null;
   review_count?: number | null;
   hotel_style?: string;
+  accommodation_type?: string;
+  traveller_tags?: string[];
   amenities?: string;
   check_in_time?: string;
   check_out_time?: string;
@@ -217,6 +222,9 @@ export interface Hotel {
   website?: string;
   source?: "vanvas_curated" | "openstreetmap" | "google_places" | string;
   source_id?: string;
+  provider_source?: string | null;
+  provider_listing_id?: string | null;
+  provider_url?: string | null;
   is_live?: boolean;
   price_verified?: boolean;
   distance_km?: number;
