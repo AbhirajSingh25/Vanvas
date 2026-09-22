@@ -232,6 +232,7 @@ export interface RentalOption {
   vehicle_type: string;
   vehicle_name: string;
   price_per_day?: number | null;
+  hourly_price?: number | null;
   deposit_amount?: number | null;
   location: string;
   latitude: number;
@@ -242,16 +243,19 @@ export interface RentalOption {
   rating?: number | null;
   image_url?: string;
   phone?: string;
+  whatsapp?: string;
   website?: string;
-  source?: "vanvas_curated" | "openstreetmap" | "google_places" | string;
+  source?: "vanvas_curated" | "openstreetmap" | "google_places" | "provider_direct" | string;
   source_id?: string;
   is_live?: boolean;
   inventory_verified?: boolean;
+  verification_status?: "LIVE_PROVIDER" | "LIVE_OSM" | "CURATED" | "UNVERIFIED" | "UNAVAILABLE" | string;
   distance_km?: number;
   action_links?: ActionLink[];
   data_state?: string;
   trust_source?: string;
 }
+
 
 export interface TransportOption {
   id: string;

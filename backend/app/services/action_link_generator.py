@@ -187,36 +187,61 @@ class ActionLinkGenerator:
         longitude: Optional[float] = None,
         website: Optional[str] = None,
         phone: Optional[str] = None,
+        whatsapp: Optional[str] = None,
+        booking_url: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         links: List[Dict[str, str]] = []
 
-        # 1. Directions
-        if latitude is not None and longitude is not None:
+        # 1. Directions (from actual verified coordinates)
+        if latitude is not None and longitude is not None and abs(latitude) <= 90 and abs(longitude) <= 180:
             maps_url = f"https://www.google.com/maps/dir/?api=1&destination={latitude:.6f},{longitude:.6f}"
             links.append({
                 "type": "directions",
-                "label": "Directions to Rental Hub",
+                "label": "Get Directions",
                 "url": maps_url,
             })
 
-        # 2. Website / Provider handoff
+        # 2. Call (only if real verified phone)
+        if is_valid_phone(phone):
+            links.append({
+                "type": "phone",
+                "label": f"Call {phone.strip()}",
+                "url": format_tel_url(phone),
+            })
+
+        # 3. WhatsApp (only if real verified whatsapp/phone number)
+        wa_target = whatsapp or phone
+        if wa_target and is_valid_phone(wa_target):
+            clean_digits = re.sub(r"[^\d]", "", wa_target.strip())
+            if len(clean_digits) == 10:
+                clean_digits = f"91{clean_digits}"
+            if len(clean_digits) >= 10:
+                links.append({
+                    "type": "whatsapp",
+                    "label": "Chat on WhatsApp",
+                    "url": f"https://wa.me/{clean_digits}",
+                })
+
+        # 4. Website / Provider handoff (only if genuine website)
         if is_valid_url(website):
             links.append({
                 "type": "website",
-                "label": "Visit Rental Site",
+                "label": "Visit Website",
                 "url": website.strip(),
                 "capability": "DISCOVERY_ONLY",
             })
 
-        # 3. Phone
-        if is_valid_phone(phone):
+        # 5. External Booking link (only if genuine verified booking URL)
+        if is_valid_url(booking_url):
             links.append({
-                "type": "phone",
-                "label": "Call Rental Provider",
-                "url": format_tel_url(phone),
+                "type": "booking",
+                "label": "Book with Provider",
+                "url": booking_url.strip(),
+                "capability": "EXTERNAL_CHECKOUT",
             })
 
         return links
+
 
     @classmethod
     def generate_transport_action_links(

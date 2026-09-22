@@ -268,107 +268,11 @@ async def get_rentals(
     vehicle_type: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    dest = db.query(Destination).filter(
-        (Destination.id == destination_id) | (Destination.slug == destination_id)
-    ).first()
-    dest_id = dest.id if dest else destination_id
+    from app.services.mobility_service import MobilityService
+    listings = await MobilityService.get_mobility_listings(
+        db=db,
+        destination_slug_or_id=destination_id,
+        vehicle_type=vehicle_type,
+    )
+    return listings
 
-    # 1. Fetch curated DB rentals
-    query = db.query(RentalOption).filter(RentalOption.destination_id == dest_id)
-    if vehicle_type and vehicle_type != "All":
-        query = query.filter(RentalOption.vehicle_type.ilike(f"%{vehicle_type}%"))
-    
-    curated_rentals = query.order_by(RentalOption.price_per_day.asc()).all()
-    results: List[RentalOptionResponse] = []
-    seen_names = set()
-
-    for r in curated_rentals:
-        seen_names.add(r.vehicle_name.lower().strip())
-        hours_eval = OperatingHoursEngine.evaluate_osm_hours(r.opening_hours, r.latitude, r.longitude)
-        action_links = ActionLinkGenerator.generate_rental_action_links(
-            provider_name=r.provider_name,
-            latitude=r.latitude,
-            longitude=r.longitude,
-            website=None,
-            phone=None,
-        )
-        results.append(RentalOptionResponse(
-            id=r.id,
-            destination_id=r.destination_id,
-            provider_name=r.provider_name,
-            vehicle_type=r.vehicle_type,
-            vehicle_name=r.vehicle_name,
-            price_per_day=r.price_per_day,
-            deposit_amount=r.deposit_amount,
-            location=r.location,
-            latitude=r.latitude,
-            longitude=r.longitude,
-            opening_hours=r.opening_hours or "08:00 AM - 08:00 PM",
-            hours_available=hours_eval.hours_available,
-            is_open_now=hours_eval.is_open_now,
-            rating=r.rating,
-            image_url=r.image_url,
-            phone=None,
-            website=None,
-            source="vanvas_curated",
-            source_id=r.id,
-            is_live=False,
-            inventory_verified=True,
-            distance_km=None,
-            action_links=action_links,
-            data_state="VERIFIED",
-            trust_source="VANVAS_CURATED",
-        ))
-
-    # 2. Query Live Rentals Provider (OSM mobility hubs)
-    try:
-        rentals_provider = ProviderFactory.get_rentals_provider()
-        target_name = dest.name if dest else destination_id
-        target_lat = dest.latitude if dest else None
-        target_lng = dest.longitude if dest else None
-        live_rentals = await asyncio.wait_for(
-            rentals_provider.search_rentals(
-                destination=target_name,
-                vehicle_type=vehicle_type,
-                lat=target_lat,
-                lng=target_lng,
-                radius_km=15.0
-            ),
-            timeout=3.5
-        )
-        for lr in live_rentals:
-            norm = lr.get("vehicle_name", "").lower().strip()
-            if any(norm in s or s in norm for s in seen_names):
-                continue
-            seen_names.add(norm)
-            results.append(RentalOptionResponse(
-                id=lr.get("id", f"live-rent-{lr.get('source_id', norm[:12])}"),
-                destination_id=dest_id,
-                provider_name=lr["provider_name"],
-                vehicle_type=lr.get("vehicle_type", "Scooter / Motorcycle"),
-                vehicle_name=lr["vehicle_name"],
-                price_per_day=lr.get("price_per_day"),
-                deposit_amount=lr.get("deposit_amount"),
-                location=lr.get("location", "Local Area"),
-                latitude=lr["latitude"],
-                longitude=lr["longitude"],
-                opening_hours=lr.get("opening_hours", "Hours not listed"),
-                hours_available=lr.get("hours_available", False),
-                is_open_now=lr.get("is_open_now"),
-                rating=lr.get("rating"),
-                image_url=lr.get("image_url", "/images/vehicles/automatic_scooter.svg"),
-                phone=lr.get("phone"),
-                website=lr.get("website"),
-                source=lr.get("source", "openstreetmap"),
-                source_id=lr.get("source_id"),
-                is_live=lr.get("is_live", True),
-                inventory_verified=lr.get("inventory_verified", False),
-                distance_km=lr.get("distance_km"),
-                action_links=lr.get("action_links", []),
-                data_state=lr.get("data_state", "LIVE"),
-                trust_source=lr.get("trust_source", "OPENSTREETMAP"),
-            ))
-    except Exception:
-        pass
-
-    return results

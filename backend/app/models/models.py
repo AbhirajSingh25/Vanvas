@@ -208,8 +208,8 @@ class RentalOption(Base):
     provider_name = Column(String(255), nullable=False)
     vehicle_type = Column(String(50), nullable=False)  # Scooter, Royal Enfield, Himalayan Bike, EV Scooter, Car
     vehicle_name = Column(String(255), nullable=False)
-    price_per_day = Column(Float, nullable=False)
-    deposit_amount = Column(Float, default=1000.0)
+    price_per_day = Column(Float, nullable=True)
+    deposit_amount = Column(Float, nullable=True, default=1000.0)
     location = Column(String(255), nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
@@ -218,6 +218,54 @@ class RentalOption(Base):
     image_url = Column(String(500), nullable=True)
 
     destination = relationship("Destination", back_populates="rentals")
+
+class MobilityProvider(Base):
+    __tablename__ = "mobility_providers"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    business_name = Column(String(255), nullable=False, index=True)
+    owner_name = Column(String(255), nullable=True)
+    phone = Column(String(50), nullable=True)
+    whatsapp = Column(String(50), nullable=True)
+    email = Column(String(255), nullable=True)
+    website = Column(String(500), nullable=True)
+    address = Column(String(500), nullable=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    city = Column(String(100), nullable=True, index=True)
+    service_area = Column(String(255), nullable=True)
+    verification_status = Column(String(50), default="UNVERIFIED", index=True)  # LIVE_PROVIDER, LIVE_OSM, CURATED, UNVERIFIED, UNAVAILABLE
+    source = Column(String(100), default="vanvas_curated")  # provider_direct, openstreetmap, vanvas_curated
+    source_id = Column(String(255), nullable=True, index=True)
+    claimed = Column(Boolean, default=False)
+    verified_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    vehicles = relationship("MobilityVehicle", back_populates="provider", cascade="all, delete-orphan")
+
+class MobilityVehicle(Base):
+    __tablename__ = "mobility_vehicles"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    provider_id = Column(String(36), ForeignKey("mobility_providers.id"), nullable=False, index=True)
+    vehicle_type = Column(String(50), nullable=False)  # Scooter, Motorcycle, Touring Motorcycle, Electric Scooter, Mountain Bike
+    brand = Column(String(100), nullable=True)
+    model = Column(String(100), nullable=True)
+    variant = Column(String(100), nullable=True)
+    registration_optional = Column(Boolean, default=False)
+    daily_price = Column(Float, nullable=True)
+    hourly_price = Column(Float, nullable=True)
+    deposit = Column(Float, nullable=True)
+    availability_status = Column(String(50), default="AVAILABLE")  # AVAILABLE, LIMITED, UNAVAILABLE
+    quantity = Column(Integer, default=1)
+    image_url = Column(String(500), nullable=True)
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    provider = relationship("MobilityProvider", back_populates="vehicles")
+
 
 class TransportOption(Base):
     __tablename__ = "transport_options"

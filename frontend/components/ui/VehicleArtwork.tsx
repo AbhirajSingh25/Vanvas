@@ -6,11 +6,14 @@ export type VehicleCategory =
   | "adventure_motorcycle"
   | "classic_bullet"
   | "automatic_scooter"
-  | "car_suv";
+  | "electric_scooter"
+  | "mountain_bike"
+  | "universal_mobility";
 
 interface VehicleArtworkProps {
   type?: string;
   name?: string;
+  imageUrl?: string | null;
   alt?: string;
   className?: string;
   aspectRatio?: "video" | "square" | "wide";
@@ -18,7 +21,7 @@ interface VehicleArtworkProps {
 }
 
 /**
- * Resolves vehicle title/type to approved VANVAS editorial artwork
+ * Resolves vehicle title/type to approved VANVAS editorial mobility artwork
  */
 export function resolveVehicleArtwork(typeOrName?: string): {
   src: string;
@@ -27,7 +30,38 @@ export function resolveVehicleArtwork(typeOrName?: string): {
 } {
   const query = (typeOrName || "").toLowerCase();
 
-  // 1. Himalayan Adventure Motorcycle
+  // 1. Mountain Bike / Bicycle
+  if (
+    query.includes("bicycle") ||
+    query.includes("cycle") ||
+    query.includes("mtb") ||
+    query.includes("mountain bike") ||
+    (query.includes("bike") && !query.includes("motor") && !query.includes("bullet") && !query.includes("enfield") && !query.includes("himalayan"))
+  ) {
+    return {
+      src: "/images/vehicles/mountain_bike.jpg",
+      label: "Mountain Trail Cycle",
+      category: "mountain_bike",
+    };
+  }
+
+  // 2. Electric Smart Scooter (EV)
+  if (
+    query.includes("electric") ||
+    query.includes("ev") ||
+    query.includes("ather") ||
+    query.includes("ola") ||
+    query.includes("chetak") ||
+    query.includes("iqube")
+  ) {
+    return {
+      src: "/images/vehicles/electric_scooter.jpg",
+      label: "Smart Electric Scooter",
+      category: "electric_scooter",
+    };
+  }
+
+  // 3. Himalayan Adventure Motorcycle
   if (
     query.includes("himalayan") ||
     query.includes("adventure") ||
@@ -41,13 +75,13 @@ export function resolveVehicleArtwork(typeOrName?: string): {
     query.includes("rally")
   ) {
     return {
-      src: "/images/places/universal/transport.webp",
-      label: "Himalayan Adventure Motorcycle",
+      src: "/images/vehicles/adventure_motorcycle.jpg",
+      label: "Himalayan Adventure Tourer",
       category: "adventure_motorcycle",
     };
   }
 
-  // 2. Activa-style Automatic Scooter
+  // 4. Activa-style Automatic Hill Scooter
   if (
     query.includes("activa") ||
     query.includes("scooter") ||
@@ -56,28 +90,44 @@ export function resolveVehicleArtwork(typeOrName?: string): {
     query.includes("access") ||
     query.includes("vespa") ||
     query.includes("moped") ||
-    query.includes("ntorq") ||
-    query.includes("ola") ||
-    query.includes("ather")
+    query.includes("ntorq")
   ) {
     return {
-      src: "/images/places/universal/transport.webp",
+      src: "/images/vehicles/automatic_scooter.jpg",
       label: "Automatic Hill Scooter",
       category: "automatic_scooter",
     };
   }
 
-  // 3. Classic Royal Enfield / Bullet Roadster (Default motorcycle)
+  // 5. Classic Royal Enfield / Bullet Roadster
+  if (
+    query.includes("bullet") ||
+    query.includes("classic") ||
+    query.includes("enfield") ||
+    query.includes("350") ||
+    query.includes("motorcycle") ||
+    query.includes("hunter") ||
+    query.includes("meteor")
+  ) {
+    return {
+      src: "/images/vehicles/classic_bullet.jpg",
+      label: "Classic Himalayan Bullet",
+      category: "classic_bullet",
+    };
+  }
+
+  // 6. Universal Valley Mobility
   return {
-    src: "/images/places/universal/transport.webp",
-    label: "Classic Himalayan Roadster",
-    category: "classic_bullet",
+    src: "/images/vehicles/universal_mobility.jpg",
+    label: "Valley Mobility Fleet",
+    category: "universal_mobility",
   };
 }
 
 export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
   type,
   name,
+  imageUrl,
   alt,
   className = "w-full h-full object-cover",
   aspectRatio = "video",
@@ -85,6 +135,10 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
 }) => {
   const artwork = resolveVehicleArtwork(type || name);
   const [hasError, setHasError] = useState(false);
+
+  const finalSrc = (!hasError && imageUrl && (imageUrl.startsWith("http") || imageUrl.startsWith("/")))
+    ? imageUrl
+    : (hasError ? "/images/vehicles/universal_mobility.jpg" : artwork.src);
 
   const aspectClass =
     aspectRatio === "video"
@@ -100,7 +154,7 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
       }`}
     >
       <Image
-        src={hasError ? "/images/places/universal/transport.webp" : artwork.src}
+        src={finalSrc}
         alt={alt || artwork.label}
         fill
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -109,9 +163,10 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
         onError={() => setHasError(true)}
       />
       {/* Subtle Editorial Texture Badge */}
-      <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-md bg-brand-forest-900/80 backdrop-blur-md text-brand-sand-100 text-[11px] font-sans tracking-wide uppercase font-medium shadow-sm border border-brand-sand-200/20">
+      <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-md bg-[#0F2924]/85 backdrop-blur-md text-[#FAF4E8] text-[11px] font-sans tracking-wide uppercase font-medium shadow-sm border border-white/10">
         VANVAS Mobility • {artwork.label}
       </div>
     </div>
   );
 };
+

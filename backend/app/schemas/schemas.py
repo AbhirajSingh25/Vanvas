@@ -257,21 +257,24 @@ class RentalOptionResponse(BaseModel):
     vehicle_type: str
     vehicle_name: str
     price_per_day: Optional[float] = None
-    deposit_amount: Optional[float] = 1000.0
+    hourly_price: Optional[float] = None
+    deposit_amount: Optional[float] = None
     location: str
     latitude: float
     longitude: float
-    opening_hours: Optional[str] = "08:00 AM - 08:00 PM"
-    hours_available: Optional[bool] = True
+    opening_hours: Optional[str] = "Hours not listed"
+    hours_available: Optional[bool] = False
     is_open_now: Optional[bool] = None
     rating: Optional[float] = None
     image_url: Optional[str] = None
     phone: Optional[str] = None
+    whatsapp: Optional[str] = None
     website: Optional[str] = None
     source: Optional[str] = "vanvas_curated"
     source_id: Optional[str] = None
     is_live: Optional[bool] = False
     inventory_verified: Optional[bool] = False
+    verification_status: Optional[str] = "CURATED"  # LIVE_PROVIDER, LIVE_OSM, CURATED, UNVERIFIED, UNAVAILABLE
     distance_km: Optional[float] = None
     action_links: List[ActionLink] = []
     data_state: Optional[str] = "VERIFIED"
@@ -279,6 +282,103 @@ class RentalOptionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ----------------- Mobility Provider & Vehicle Schemas -----------------
+class MobilityVehicleBase(BaseModel):
+    vehicle_type: str
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    variant: Optional[str] = None
+    registration_optional: bool = False
+    daily_price: Optional[float] = None
+    hourly_price: Optional[float] = None
+    deposit: Optional[float] = None
+    availability_status: str = "AVAILABLE"
+    quantity: int = 1
+    image_url: Optional[str] = None
+    active: bool = True
+
+class MobilityVehicleCreate(MobilityVehicleBase):
+    pass
+
+class MobilityVehicleResponse(MobilityVehicleBase):
+    id: str
+    provider_id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class MobilityProviderBase(BaseModel):
+    business_name: str
+    owner_name: Optional[str] = None
+    phone: Optional[str] = None
+    whatsapp: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    address: Optional[str] = None
+    latitude: float
+    longitude: float
+    city: Optional[str] = None
+    service_area: Optional[str] = None
+
+class MobilityProviderCreate(MobilityProviderBase):
+    verification_status: str = "UNVERIFIED"
+    source: str = "provider_direct"
+    source_id: Optional[str] = None
+    claimed: bool = False
+
+class MobilityProviderClaim(BaseModel):
+    owner_name: str
+    phone: str
+    whatsapp: Optional[str] = None
+    email: Optional[str] = None
+    business_name: Optional[str] = None
+    address: Optional[str] = None
+    operating_hours: Optional[str] = None
+    daily_price: Optional[float] = None
+    deposit: Optional[float] = None
+    notes: Optional[str] = None
+
+class MobilityProviderResponse(MobilityProviderBase):
+    id: str
+    verification_status: str
+    source: str
+    source_id: Optional[str] = None
+    claimed: bool
+    verified_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    vehicles: List[MobilityVehicleResponse] = []
+
+    class Config:
+        from_attributes = True
+
+class MobilityListingResponse(BaseModel):
+    id: str
+    provider: MobilityProviderResponse
+    vehicle: Optional[MobilityVehicleResponse] = None
+    vehicle_type: str
+    vehicle_name: str
+    pickup_location: str
+    service_area: Optional[str] = None
+    hours: Optional[str] = None
+    hours_available: bool = False
+    is_open_now: Optional[bool] = None
+    pricing: Dict[str, Any] = {}
+    daily_price: Optional[float] = None
+    hourly_price: Optional[float] = None
+    deposit: Optional[float] = None
+    rating: Optional[float] = None
+    image_url: Optional[str] = None
+    distance_km: Optional[float] = None
+    verification_status: str  # LIVE_PROVIDER, LIVE_OSM, CURATED, UNVERIFIED, UNAVAILABLE
+    provenance: str
+    trust_source: str
+    actions: List[ActionLink] = []
+    action_links: List[ActionLink] = []
+
 
 class TransportOptionResponse(BaseModel):
     id: str

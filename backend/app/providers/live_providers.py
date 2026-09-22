@@ -1408,8 +1408,8 @@ class LiveRentalsProvider(RentalsProvider):
         query_str = f"""
         [out:json][timeout:6];
         (
-          nwr["amenity"~"bicycle_rental|car_rental|motorcycle_rental|scooter_rental|taxi"](around:{radius_m},{target_lat},{target_lng});
-          nwr["shop"~"motorcycle|bicycle|rental|car_rental"](around:{radius_m},{target_lat},{target_lng});
+          nwr["amenity"~"bicycle_rental|motorcycle_rental|scooter_rental|two_wheeler_rental|car_rental"](around:{radius_m},{target_lat},{target_lng});
+          nwr["shop"~"motorcycle|bicycle|rental|scooter|vehicle_rental"](around:{radius_m},{target_lat},{target_lng});
         );
         out center 35;
         """
@@ -1435,19 +1435,63 @@ class LiveRentalsProvider(RentalsProvider):
                     continue
 
                 dist = self._haversine(target_lat, target_lng, r_lat, r_lng)
-                addr_parts = [tags.get("addr:housenumber"), tags.get("addr:street"), tags.get("addr:suburb"), tags.get("addr:city")]
-                addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from center"
+                addr_parts = [
+                    tags.get("addr:housenumber"),
+                    tags.get("addr:street"),
+                    tags.get("addr:suburb") or tags.get("addr:neighbourhood") or tags.get("addr:district"),
+                    tags.get("addr:city") or tags.get("addr:town") or tags.get("addr:village")
+                ]
+                real_addr = ", ".join([p for p in addr_parts if p])
+                addr = real_addr if real_addr else (f"{tags.get('addr:suburb') or tags.get('addr:city')}" if tags.get('addr:suburb') or tags.get('addr:city') else f"{dist} km from center")
 
                 op_hours = tags.get("opening_hours")
                 r_hours_eval = OperatingHoursEngine.evaluate_osm_hours(op_hours, r_lat, r_lng)
                 phone = tags.get("phone") or tags.get("contact:phone")
-                website = tags.get("website") or tags.get("url")
+                whatsapp = tags.get("whatsapp") or tags.get("contact:whatsapp")
+                website = tags.get("website") or tags.get("contact:website") or tags.get("url")
 
-                v_type = "Scooter / Motorcycle"
-                if tags.get("amenity") == "bicycle_rental" or tags.get("shop") == "bicycle":
-                    v_type = "Bicycle"
-                elif tags.get("amenity") == "car_rental":
-                    v_type = "Car"
+                # Vehicle classification & category artwork selection
+                amenity_val = (tags.get("amenity") or "").lower()
+                shop_val = (tags.get("shop") or "").lower()
+                desc_val = ((tags.get("description") or "") + " " + (r_name or "")).lower()
+
+                if amenity_val == "bicycle_rental" or shop_val == "bicycle" or (("bicycle" in desc_val or "cycle" in desc_val or "mtb" in desc_val) and "motorcycle" not in amenity_val and "motorcycle" not in shop_val and "scooter" not in amenity_val):
+                    v_type = "Mountain Bike / Bicycle"
+                    v_name = f"{r_name} MTB & Cycle Fleet"
+                    category_artwork = "/images/vehicles/mountain_bike.jpg"
+                elif "electric" in desc_val or "ev" in desc_val or "ather" in desc_val or "ola" in desc_val:
+                    v_type = "Electric Scooter"
+                    v_name = f"{r_name} Smart EV Fleet"
+                    category_artwork = "/images/vehicles/electric_scooter.jpg"
+                elif "motorcycle" in amenity_val or "motorcycle" in shop_val or "motor" in desc_val or "biker" in desc_val or "rider" in desc_val or "bullet" in desc_val or "enfield" in desc_val or "himalayan" in desc_val:
+                    if "himalayan" in desc_val or "adventure" in desc_val:
+                        v_type = "Touring Motorcycle"
+                        v_name = f"{r_name} Himalayan Adventure Fleet"
+                        category_artwork = "/images/vehicles/adventure_motorcycle.jpg"
+                    else:
+                        v_type = "Touring Motorcycle"
+                        v_name = f"{r_name} Royal Enfield & Motorcycle Fleet"
+                        category_artwork = "/images/vehicles/classic_bullet.jpg"
+                elif "scooter" in amenity_val or "scooter" in shop_val or "activa" in desc_val or "scoot" in desc_val:
+                    v_type = "Automatic Hill Scooter"
+                    v_name = f"{r_name} Automatic Scooter Fleet"
+                    category_artwork = "/images/vehicles/automatic_scooter.jpg"
+                else:
+                    v_type = "Scooter & Motorcycle"
+                    v_name = f"{r_name} Two-Wheeler Fleet"
+                    category_artwork = "/images/vehicles/universal_mobility.jpg"
+
+
+
+                # Filter if specific vehicle_type requested
+                if vehicle_type and vehicle_type != "All":
+                    req_lower = vehicle_type.lower()
+                    if req_lower not in v_type.lower() and req_lower not in v_name.lower():
+                        continue
+
+                # Photo hierarchy: Provider/OSM photo -> Category artwork -> Universal
+                osm_photo = tags.get("image") or tags.get("image:0") or tags.get("photo")
+                final_image = osm_photo if osm_photo and osm_photo.startswith("http") else category_artwork
 
                 rental_action_links = ActionLinkGenerator.generate_rental_action_links(
                     provider_name=r_name,
@@ -1455,6 +1499,7 @@ class LiveRentalsProvider(RentalsProvider):
                     longitude=r_lng,
                     website=website,
                     phone=phone,
+                    whatsapp=whatsapp,
                 )
 
                 results.append({
@@ -1462,8 +1507,9 @@ class LiveRentalsProvider(RentalsProvider):
                     "destination_id": "live",
                     "provider_name": r_name,
                     "vehicle_type": v_type,
-                    "vehicle_name": f"{r_name} Fleet",
+                    "vehicle_name": v_name,
                     "price_per_day": None,
+                    "hourly_price": None,
                     "deposit_amount": None,
                     "location": addr,
                     "latitude": r_lat,
@@ -1472,13 +1518,15 @@ class LiveRentalsProvider(RentalsProvider):
                     "hours_available": r_hours_eval.hours_available,
                     "is_open_now": r_hours_eval.is_open_now,
                     "rating": None,
-                    "image_url": "/images/vehicles/automatic_scooter.svg",
+                    "image_url": final_image,
                     "phone": phone,
+                    "whatsapp": whatsapp,
                     "website": website,
                     "source": "openstreetmap",
                     "source_id": str(el.get("id")),
                     "is_live": True,
                     "inventory_verified": False,
+                    "verification_status": "LIVE_OSM",
                     "distance_km": dist,
                     "action_links": rental_action_links,
                     "data_state": "LIVE",

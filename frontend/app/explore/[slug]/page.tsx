@@ -5,8 +5,10 @@ import Link from "next/link";
 import {
   Compass, MapPin, Sparkles, Star, BedDouble, Bike, Clock,
   ExternalLink, ArrowRight, ShieldCheck, Bookmark, Check, Mountain,
-  Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw, Layers
+  Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw, Layers,
+  Phone, Navigation, MessageCircle
 } from "lucide-react";
+
 import { api } from "@/lib/api";
 import { Destination, Place, Hotel, RentalOption, Offer } from "@/types";
 import { PlaceCard } from "@/components/places/PlaceCard";
@@ -806,7 +808,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
                 : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
             }`}>
-              {isCurated ? "Curated Mobility" : "Live Rental Hubs"}
+              {isCurated ? "Curated Mobility" : "Live Mobility Directory"}
             </span>
           </div>
 
@@ -823,61 +825,157 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           ) : rentals.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {rentals.map((r) => {
-                const isLiveRent = r.is_live || r.source === "openstreetmap";
-                const isPriceVerified = r.inventory_verified !== false && typeof r.price_per_day === "number" && r.price_per_day > 0;
+                const vStatus = r.verification_status || (r.is_live || r.source === "openstreetmap" ? "LIVE_OSM" : (r.source === "vanvas_curated" ? "CURATED" : "UNVERIFIED"));
+                const isLiveProvider = vStatus === "LIVE_PROVIDER";
+                const isLiveOsm = vStatus === "LIVE_OSM";
+                const isCuratedMob = vStatus === "CURATED";
+                const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
+                const hasHourly = typeof r.hourly_price === "number" && r.hourly_price > 0;
+
+                // Action links resolution
+                const dirLink = r.action_links?.find((l) => l.type === "directions")?.url ||
+                  (r.latitude && r.longitude ? `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}` : null);
+                const phoneLink = r.action_links?.find((l) => l.type === "phone")?.url || (r.phone ? `tel:${r.phone}` : null);
+                const waLink = r.action_links?.find((l) => l.type === "whatsapp")?.url ||
+                  (r.whatsapp ? `https://wa.me/${r.whatsapp.replace(/[^\d]/g, "")}` : null);
+                const webLink = r.action_links?.find((l) => l.type === "website" || l.type === "booking")?.url || r.website || null;
 
                 return (
-                  <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3 flex flex-col justify-between">
+                  <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
                     <div className="space-y-3">
                       <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
                         <VehicleArtwork
                           type={r.vehicle_type}
                           name={r.vehicle_name}
+                          imageUrl={r.image_url}
                           alt={r.vehicle_name}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
                           <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
-                            isLiveRent
+                            isLiveProvider
                               ? "bg-emerald-600 text-white"
-                              : "bg-[#173B32] text-[#EFE5D2]"
+                              : isLiveOsm
+                              ? "bg-teal-700 text-white"
+                              : isCuratedMob
+                              ? "bg-[#173B32] text-[#EFE5D2]"
+                              : "bg-[#7B4D36] text-[#FAF4E8]"
                           }`}>
-                            {isLiveRent ? "LIVE MOBILITY" : "CURATED"}
+                            {isLiveProvider ? "LIVE PROVIDER" : isLiveOsm ? "LIVE OSM" : isCuratedMob ? "CURATED" : "UNVERIFIED"}
                           </span>
-                          {!isPriceVerified && (
-                            <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] text-[9px] font-mono uppercase tracking-wider border border-white/10">
-                              Inventory Unverified
+                          {r.distance_km != null && (
+                            <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] text-[9px] font-mono tracking-wider border border-white/10 flex items-center gap-1">
+                              <MapPin className="w-2.5 h-2.5" />
+                              {r.distance_km} km away
                             </span>
                           )}
                         </div>
                       </div>
-                      <div>
+
+                      <div className="space-y-1">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{r.vehicle_name}</h4>
-                          <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#173B32]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
-                            {isPriceVerified ? `₹${r.price_per_day}/day` : "Rate upon pickup"}
-                          </span>
+                          <div>
+                            <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{r.vehicle_name}</h4>
+                            <p className="text-[11px] font-medium text-[#7B4D36]">
+                              {r.provider_name}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className={`font-bold text-sm block ${hasPrice ? "text-[#173B32]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
+                              {hasPrice ? `₹${r.price_per_day}/day` : "Price not listed"}
+                            </span>
+                            {hasHourly && (
+                              <span className="text-[10px] text-[#7B4D36] font-mono">
+                                ₹{r.hourly_price}/hr
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-[11px] text-[#7B4D36] mt-0.5">
-                          Provider: {r.provider_name} {r.deposit_amount ? `• Deposit: ₹${r.deposit_amount}` : ""}
-                        </p>
+
+                        {r.deposit_amount ? (
+                          <p className="text-[11px] text-[#7B4D36]">
+                            Security Deposit: <span className="font-semibold text-[#173B32]">₹{r.deposit_amount}</span>
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between">
-                      <span className="line-clamp-1">{r.location}</span>
-                      <span className="text-[11px] text-[#7B4D36] shrink-0">{r.opening_hours || "Hours not listed"}</span>
+                    <div className="space-y-3 pt-2">
+                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between gap-2">
+                        <span className="line-clamp-1 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
+                          <span className="truncate">{r.location || "Location upon contact"}</span>
+                        </span>
+                        <span className="text-[11px] text-[#7B4D36] shrink-0 flex items-center gap-1">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span>{r.opening_hours || "Hours not listed"}</span>
+                        </span>
+                      </div>
+
+                      {/* Real Action Links */}
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        {dirLink && (
+                          <a
+                            href={dirLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
+                          >
+                            <Navigation className="w-3.5 h-3.5" />
+                            <span>Directions</span>
+                          </a>
+                        )}
+
+                        {phoneLink && (
+                          <a
+                            href={phoneLink}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
+                          >
+                            <Phone className="w-3.5 h-3.5 text-[#173B32]" />
+                            <span>Call</span>
+                          </a>
+                        )}
+
+                        {waLink && (
+                          <a
+                            href={waLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-2xs"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+
+                        {webLink && (
+                          <a
+                            href={webLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] text-xs font-medium hover:text-[#173B32] hover:border-[#173B32] transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Website</span>
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="p-6 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] text-center space-y-1">
-              <p className="text-xs text-[#7B4D36]">No verified mobility rentals registered in open geographic datasets for this immediate sector. Taxis and local rentals can typically be hailed at the main taxi union hub.</p>
+            <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
+              <Bike className="w-8 h-8 text-[#B65E3C] mx-auto opacity-70" />
+              <h4 className="font-serif font-bold text-base text-[#173B32]">No verified mobility rentals found nearby</h4>
+              <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
+                Local rentals may operate from nearby taxi/rental hubs or regional transport unions. No speculative or unverified businesses are shown.
+              </p>
             </div>
           )}
         </div>
+
       </main>
 
       {/* Place Detail Modal */}
