@@ -71,25 +71,36 @@ async def create_trip(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    raw_dest_id = trip_in.destination_id.strip()
+    clean_slug = DestinationIntelligenceService._clean_query(raw_dest_id).lower().replace(" ", "-")
+
     destination = db.query(Destination).filter(
-        (Destination.id == trip_in.destination_id) | (Destination.slug == trip_in.destination_id)
+        (Destination.id == raw_dest_id) |
+        (Destination.id == f"dest-{clean_slug}") |
+        (Destination.id == f"dyn-{clean_slug}") |
+        (Destination.slug == clean_slug) |
+        (Destination.name.ilike(clean_slug.replace("-", " ")))
     ).first()
     
     if not destination:
         # Resolve dynamic destination across India
-        dyn = await DestinationIntelligenceService.resolve_dynamic_destination(trip_in.destination_id)
+        dyn = await DestinationIntelligenceService.resolve_dynamic_destination(raw_dest_id)
         if not dyn:
             raise HTTPException(status_code=404, detail=f"Destination '{trip_in.destination_id}' not found")
         
-        # Check if already in DB by slug
-        existing = db.query(Destination).filter(Destination.slug == dyn["slug"]).first()
+        # Check if already in DB by canonical slug
+        canonical_slug = dyn.get("canonical_slug") or dyn["slug"]
+        existing = db.query(Destination).filter(
+            (Destination.slug == canonical_slug) |
+            (Destination.id == f"dyn-{canonical_slug}")
+        ).first()
         if existing:
             destination = existing
         else:
             destination = Destination(
                 id=dyn["id"],
                 name=dyn["name"],
-                slug=dyn["slug"],
+                slug=canonical_slug,
                 state=dyn["state"],
                 region=dyn["region"],
                 tagline=dyn["tagline"],
@@ -103,6 +114,7 @@ async def create_trip(
             )
             db.add(destination)
             db.flush()
+
 
         # Fetch live places for dynamic destination
         try:

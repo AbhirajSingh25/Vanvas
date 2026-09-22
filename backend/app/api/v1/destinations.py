@@ -36,9 +36,14 @@ async def resolve_destination(
     if dest:
         return {
             "id": dest.id,
+            "destination_id": dest.id,
+            "canonical_slug": dest.slug,
             "name": dest.name,
             "slug": dest.slug,
+            "city": dest.name,
+            "display_name": f"{dest.name}, {dest.state}",
             "state": dest.state,
+            "country": "India",
             "region": dest.region,
             "tagline": dest.tagline,
             "hero_image": dest.hero_image,
@@ -47,7 +52,8 @@ async def resolve_destination(
             "altitude_meters": dest.altitude_meters,
             "weather_type": dest.weather_type,
             "is_curated": bool(dest.is_featured),
-            "is_dynamic": not bool(dest.is_featured)
+            "is_dynamic": not bool(dest.is_featured),
+            "source": "curated" if dest.is_featured else "database"
         }
 
     dyn = await DestinationIntelligenceService.resolve_dynamic_destination(query)
@@ -55,9 +61,14 @@ async def resolve_destination(
         raise HTTPException(status_code=404, detail=f"Could not resolve destination '{query}'")
     return {
         "id": dyn["id"],
+        "destination_id": dyn["id"],
+        "canonical_slug": dyn["canonical_slug"],
         "name": dyn["name"],
         "slug": dyn["slug"],
+        "city": dyn.get("city", dyn["name"]),
+        "display_name": dyn.get("display_name", f"{dyn['name']}, {dyn['state']}"),
         "state": dyn["state"],
+        "country": dyn.get("country", "India"),
         "region": dyn["region"],
         "tagline": dyn["tagline"],
         "hero_image": dyn["hero_image"],
@@ -66,14 +77,16 @@ async def resolve_destination(
         "altitude_meters": dyn["altitude_meters"],
         "weather_type": dyn["weather_type"],
         "is_curated": False,
-        "is_dynamic": True
+        "is_dynamic": True,
+        "source": dyn.get("source", "live_geocoding")
     }
 
 @router.get("", response_model=List[DestinationResponse])
 def get_destinations(
-    featured_only: bool = False,
+    featured_only: bool = True,
     region: Optional[str] = None,
     search: Optional[str] = None,
+    include_dynamic: bool = False,
     db: Session = Depends(get_db)
 ):
     """
@@ -81,8 +94,11 @@ def get_destinations(
     Dynamic search destinations will NEVER enter this catalogue.
     """
     query = db.query(Destination)
-    if featured_only:
+    if not include_dynamic:
         query = query.filter(Destination.is_featured == True)
+    elif featured_only:
+        query = query.filter(Destination.is_featured == True)
+
     if region and region != "All":
         query = query.filter(Destination.region.ilike(f"%{region}%"))
     if search:
@@ -116,6 +132,7 @@ def get_destinations(
         }
         results.append(d_dict)
     return results
+
 
 @router.get("/{slug_or_id}")
 async def get_destination_detail(

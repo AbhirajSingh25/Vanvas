@@ -37,7 +37,7 @@ export const DestinationSearchBar: React.FC<DestinationSearchBarProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Debounced live autocomplete search
+  // Debounced live autocomplete search with cancellation
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
@@ -45,21 +45,28 @@ export const DestinationSearchBar: React.FC<DestinationSearchBarProps> = ({
       return;
     }
 
+    const abortController = new AbortController();
+
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await api.searchDestinations(query);
+        const res = await api.searchDestinations(query, 6, abortController.signal);
         setResults(res || []);
         setIsOpen(true);
         setSelectedIndex(-1);
-      } catch (err) {
-        console.error("Destination search error:", err);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("Destination search error:", err);
+        }
       } finally {
         setLoading(false);
       }
-    }, 250);
+    }, 200);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
   }, [query]);
 
   // Click outside listener to close dropdown
@@ -76,21 +83,23 @@ export const DestinationSearchBar: React.FC<DestinationSearchBarProps> = ({
   const handleSelectItem = (item: SearchResultItem) => {
     setIsOpen(false);
     setQuery("");
+    const targetSlug = (item as any).canonical_slug || item.slug;
     if (onSelect) {
-      onSelect(item);
+      onSelect({ ...item, slug: targetSlug });
     } else {
-      router.push(`/explore/${item.slug}`);
+      router.push(`/explore/${targetSlug}`);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen || results.length === 0) {
       if (e.key === "Enter" && query.trim()) {
-        const slug = query.trim().toLowerCase().replace(/\s+/g, "-");
+        const slug = query.trim().toLowerCase().replace(/^(dyn|dest)-/, "").replace(/\s+/g, "-");
         router.push(`/explore/${slug}`);
       }
       return;
     }
+
 
     if (e.key === "ArrowDown") {
       e.preventDefault();

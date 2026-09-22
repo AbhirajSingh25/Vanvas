@@ -16,7 +16,8 @@ import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 function PlanTripContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialDest = searchParams?.get("dest") || "manali";
+  const rawInitial = searchParams?.get("dest") || "manali";
+  const initialDest = rawInitial.replace(/^(dyn|dest)-/, "").trim() || "manali";
   const { user } = useAuth();
 
   // Step Tracker (1 to 9)
@@ -105,12 +106,13 @@ function PlanTripContent() {
 
   // Resolve initial destination from query params or database
   useEffect(() => {
+    const cleanDestParam = initialDest.replace(/^(dyn|dest)-/, "").trim();
     api.getDestinations(false)
       .then(async (data) => {
         const loaded = (data && data.length > 0) ? data : fallbackDestinations;
         setDestinations(loaded);
         const match = loaded.find(
-          (d) => d.id === initialDest || d.slug.toLowerCase() === initialDest.toLowerCase()
+          (d) => d.id === initialDest || d.slug.toLowerCase() === cleanDestParam.toLowerCase() || d.id === `dest-${cleanDestParam.toLowerCase()}`
         );
         if (match) {
           setSelectedDestId(match.id);
@@ -118,7 +120,7 @@ function PlanTripContent() {
         } else {
           try {
             setIsResolving(true);
-            const resolved = await api.resolveDestination(initialDest);
+            const resolved = await api.resolveDestination(cleanDestParam);
             if (resolved) {
               setSelectedDestId(resolved.id || resolved.slug);
               setSelectedDestObject(resolved);
@@ -140,7 +142,7 @@ function PlanTripContent() {
         console.error("Could not fetch destinations for plan wizard:", err);
         setDestinations(fallbackDestinations);
         const match = fallbackDestinations.find(
-          (d) => d.id === initialDest || d.slug.toLowerCase() === initialDest.toLowerCase()
+          (d) => d.id === initialDest || d.slug.toLowerCase() === cleanDestParam.toLowerCase()
         );
         if (match) {
           setSelectedDestId(match.id);
@@ -150,25 +152,31 @@ function PlanTripContent() {
       .finally(() => setLoadingDestinations(false));
   }, [initialDest]);
 
-  // Debounced search for destination input
+  // Debounced search for destination input with request cancellation
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setIsSearching(false);
       return;
     }
+    const abortController = new AbortController();
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await api.searchDestinations(searchQuery, 8);
+        const res = await api.searchDestinations(searchQuery, 8, abortController.signal);
         setSearchResults(res || []);
-      } catch (err) {
-        console.error("Destination search error in plan page:", err);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("Destination search error in plan page:", err);
+        }
       } finally {
         setIsSearching(false);
       }
-    }, 250);
-    return () => clearTimeout(timer);
+    }, 200);
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
   }, [searchQuery]);
 
   const handleSelectDestination = async (destOrQuery: any) => {
@@ -177,7 +185,8 @@ function PlanTripContent() {
     setSearchResults([]);
     setIsResolving(true);
     try {
-      const q = typeof destOrQuery === "string" ? destOrQuery : (destOrQuery.name || destOrQuery.slug);
+      const rawQ = typeof destOrQuery === "string" ? destOrQuery : (destOrQuery.canonical_slug || destOrQuery.name || destOrQuery.slug);
+      const q = String(rawQ).replace(/^(dyn|dest)-/, "").trim();
       const res = await api.resolveDestination(q);
       if (res) {
         setSelectedDestId(res.id || res.slug);
@@ -239,7 +248,10 @@ function PlanTripContent() {
     }, 800);
 
     try {
-      const targetId = selectedDestObject?.id || selectedDestObject?.slug || selectedDestId;
+      const targetSlug = selectedDestObject?.canonical_slug || selectedDestObject?.slug || selectedDestId;
+      const cleanTarget = String(targetSlug).replace(/^(dyn|dest)-/, "").trim();
+      const targetId = selectedDestObject?.id || (selectedDestObject?.is_curated ? `dest-${cleanTarget}` : `dyn-${cleanTarget}`);
+
       const trip = await api.createTrip({
         destination_id: targetId,
         start_date: startDate,

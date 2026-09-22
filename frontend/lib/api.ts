@@ -19,6 +19,27 @@ function getApiBaseUrl(): string {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// Short-lived in-memory caches for snappy search & destinations
+const memoryCache = new Map<string, { data: any; expiry: number }>();
+
+function getCached<T>(key: string): T | null {
+  const item = memoryCache.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expiry) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return item.data as T;
+}
+
+function setCached<T>(key: string, data: T, ttlMs = 60000): void {
+  memoryCache.set(key, { data, expiry: Date.now() + ttlMs });
+}
+
+export function clearApiCache(): void {
+  memoryCache.clear();
+}
+
 // Helper for authenticated requests with timeout
 async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("vanvas_token") : null;
@@ -72,6 +93,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?
 export const api = {
   // Auth & Profile
   async login(email: string, password: string): Promise<{ access_token: string; user: User }> {
+    clearApiCache();
     return fetchApi("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
@@ -79,6 +101,7 @@ export const api = {
   },
 
   async register(email: string, password: string, full_name: string): Promise<RegistrationResult> {
+    clearApiCache();
     return fetchApi("/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password, full_name }),
@@ -86,6 +109,7 @@ export const api = {
   },
 
   async verifyEmail(email: string, otp: string): Promise<VerifyEmailResult> {
+    clearApiCache();
     return fetchApi("/auth/verify-email/confirm", {
       method: "POST",
       body: JSON.stringify({ email, otp }),
@@ -134,6 +158,7 @@ export const api = {
     ai_use_travel_preferences?: boolean;
     ai_use_trip_context?: boolean;
   }): Promise<User> {
+    clearApiCache();
     return fetchApi("/auth/profile", {
       method: "PUT",
       body: JSON.stringify(data),
@@ -141,6 +166,7 @@ export const api = {
   },
 
   async uploadProfileAvatar(file: File): Promise<{ avatar_url: string; message: string }> {
+    clearApiCache();
     const formData = new FormData();
     formData.append("file", file);
     return fetchApi("/auth/profile/avatar", {
@@ -150,6 +176,7 @@ export const api = {
   },
 
   async deleteProfileAvatar(): Promise<{ avatar_url: null; message: string }> {
+    clearApiCache();
     return fetchApi("/auth/profile/avatar", {
       method: "DELETE",
     });
@@ -160,6 +187,7 @@ export const api = {
   },
 
   async updatePreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
+    clearApiCache();
     return fetchApi("/auth/preferences", {
       method: "PUT",
       body: JSON.stringify(preferences),
@@ -174,6 +202,7 @@ export const api = {
   },
 
   async logoutSession(): Promise<{ message: string }> {
+    clearApiCache();
     return fetchApi("/auth/logout", {
       method: "POST",
     });
@@ -184,6 +213,7 @@ export const api = {
   },
 
   async deleteAccount(payload?: { password?: string; confirmation?: string }): Promise<{ message: string; status: string }> {
+    clearApiCache();
     return fetchApi("/auth/account", {
       method: "DELETE",
       body: JSON.stringify(payload || {}),
@@ -191,24 +221,55 @@ export const api = {
   },
 
   // Destinations
-  async searchDestinations(query: string, limit = 6): Promise<any[]> {
-    const params = new URLSearchParams({ q: query, limit: String(limit) });
-    return fetchApi(`/destinations/search?${params.toString()}`);
+  async searchDestinations(query: string, limit = 6, signal?: AbortSignal): Promise<any[]> {
+    const clean = (query || "").trim().toLowerCase();
+    if (!clean) return [];
+    const cacheKey = `search:${clean}:${limit}`;
+    const cached = getCached<any[]>(cacheKey);
+    if (cached) return cached;
+
+    const params = new URLSearchParams({ q: clean, limit: String(limit) });
+    const res = await fetchApi<any[]>(`/destinations/search?${params.toString()}`, { signal });
+    if (res && res.length > 0) {
+      setCached(cacheKey, res, 120000);
+    }
+    return res;
   },
 
-  async resolveDestination(query: string): Promise<any> {
-    const params = new URLSearchParams({ query });
-    return fetchApi(`/destinations/resolve?${params.toString()}`, { method: "POST" });
+  async resolveDestination(query: string, signal?: AbortSignal): Promise<any> {
+    const clean = (query || "").trim().toLowerCase();
+    if (!clean) return null;
+    const cacheKey = `resolve:${clean}`;
+    const cached = getCached<any>(cacheKey);
+    if (cached) return cached;
+
+    const params = new URLSearchParams({ query: clean });
+    const res = await fetchApi<any>(`/destinations/resolve?${params.toString()}`, {
+      method: "POST",
+      signal
+    });
+    if (res) {
+      setCached(cacheKey, res, 300000);
+    }
+    return res;
   },
 
-  async getDestinations(featuredOnly = false, search = ""): Promise<Destination[]> {
+  async getDestinations(featuredOnly = true, search = "", signal?: AbortSignal): Promise<Destination[]> {
+    const cacheKey = `destinations:${featuredOnly}:${search}`;
+    const cached = getCached<Destination[]>(cacheKey);
+    if (cached) return cached;
+
     const params = new URLSearchParams();
     if (featuredOnly) params.append("featured_only", "true");
     if (search) params.append("search", search);
-    return fetchApi(`/destinations?${params.toString()}`);
+    const res = await fetchApi<Destination[]>(`/destinations?${params.toString()}`, { signal });
+    if (res && res.length > 0) {
+      setCached(cacheKey, res, 180000);
+    }
+    return res;
   },
 
-  async getDestinationDetail(slugOrId: string): Promise<{
+  async getDestinationDetail(slugOrId: string, signal?: AbortSignal): Promise<{
     destination: Destination;
     places: Place[];
     hotels: Hotel[];
@@ -216,15 +277,24 @@ export const api = {
     weather: any[];
     places_count: number;
   }> {
-    return fetchApi(`/destinations/${slugOrId}`);
+    const cacheKey = `dest_detail:${slugOrId.toLowerCase()}`;
+    const cached = getCached<any>(cacheKey);
+    if (cached) return cached;
+
+    const res = await fetchApi<any>(`/destinations/${slugOrId}`, { signal });
+    if (res) {
+      setCached(cacheKey, res, 180000);
+    }
+    return res;
   },
 
-  async getDestinationPlaces(destId: string, category?: string, search?: string): Promise<Place[]> {
+  async getDestinationPlaces(destId: string, category?: string, search?: string, signal?: AbortSignal): Promise<Place[]> {
     const params = new URLSearchParams();
     if (category && category !== "all") params.append("category", category);
     if (search) params.append("search", search);
-    return fetchApi(`/destinations/${destId}/places?${params.toString()}`);
+    return fetchApi(`/destinations/${destId}/places?${params.toString()}`, { signal });
   },
+
 
   // Trips
   async getTrips(): Promise<TripSummary[]> {

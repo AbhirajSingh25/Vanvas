@@ -1,5 +1,6 @@
 import re
 import uuid
+import asyncio
 import logging
 from datetime import datetime, date
 from typing import Dict, Any, Optional, List
@@ -11,16 +12,28 @@ logger = logging.getLogger("vanvas.intelligence")
 
 class DestinationIntelligenceService:
     @staticmethod
+    def _clean_query(query: str) -> str:
+        q = (query or "").strip()
+        q = re.sub(r'^(dyn|dest)-', '', q, flags=re.IGNORECASE).strip()
+        return q
+
+    @staticmethod
     async def resolve_destination(query: str, db: Session) -> Optional[Destination]:
         """
         Looks up an approved curated destination from the database.
         Never inserts dynamic search results into the database.
         """
-        clean_q = query.strip().lower().replace("-", " ")
-        slug = query.strip().lower().replace(" ", "-").replace(",", "").replace("'", "")
+        clean_raw = DestinationIntelligenceService._clean_query(query)
+        if not clean_raw:
+            return None
 
-        # 1. Exact match by slug or name
+        clean_q = clean_raw.lower().replace("-", " ")
+        slug = clean_raw.lower().replace(" ", "-").replace(",", "").replace("'", "")
+
+        # 1. Exact match by id, slug, or name
         dest = db.query(Destination).filter(
+            (Destination.id == query.strip()) |
+            (Destination.id == f"dest-{slug}") |
             (Destination.slug == slug) |
             (Destination.name.ilike(clean_q))
         ).first()
@@ -29,7 +42,7 @@ class DestinationIntelligenceService:
         if not dest:
             dest = db.query(Destination).filter(
                 (Destination.name.ilike(f"{clean_q}%")) |
-                (Destination.slug.ilike(f"{clean_q.replace(' ', '-')}%"))
+                (Destination.slug.ilike(f"{slug}%"))
             ).first()
 
         if dest:
@@ -40,39 +53,56 @@ class DestinationIntelligenceService:
     @staticmethod
     async def resolve_dynamic_destination(query: str) -> Optional[Dict[str, Any]]:
         """
-        Dynamically geocodes an unseeded / searched destination (e.g. Indore, London, etc.)
+        Dynamically geocodes an unseeded / searched destination (e.g. Delhi, Pune, Indore, etc.)
         and builds a transient live discovery payload WITHOUT saving to the database.
         """
+        clean_query = DestinationIntelligenceService._clean_query(query)
+        if not clean_query:
+            return None
+
         geocoder = ProviderFactory.get_geocoding_provider()
-        geo_data = await geocoder.geocode(query)
+        geo_data = await geocoder.geocode(clean_query)
         if not geo_data:
-            logger.warning(f"Could not dynamically geocode '{query}'")
+            logger.warning(f"Could not dynamically geocode '{clean_query}'")
             return None
 
         name = geo_data["name"]
-        slug = geo_data.get("slug") or query.strip().lower().replace(" ", "-")
+        slug = geo_data.get("canonical_slug") or geo_data.get("slug") or clean_query.lower().replace(" ", "-")
         state = geo_data.get("state") or "Global"
         country = geo_data.get("country") or "India"
         region = geo_data.get("region") or f"{state}, {country}"
         lat = geo_data.get("latitude") if geo_data.get("latitude") is not None else geo_data.get("lat")
         lng = geo_data.get("longitude") if geo_data.get("longitude") is not None else geo_data.get("lng")
         if lat is None or lng is None:
-            logger.warning(f"Geocoding result for '{query}' missing valid coordinates.")
+            logger.warning(f"Geocoding result for '{clean_query}' missing valid coordinates.")
             return None
         altitude = geo_data.get("altitude_meters", 550)
 
-        # High-res photography mapping with regional fallback
+        # Parallelize photography search and live weather forecast with timeout to keep response snappy
         image_provider = ProviderFactory.get_image_provider()
-        images = await image_provider.search_images(name)
+        weather_provider = ProviderFactory.get_weather_provider()
+
+        async def fetch_images():
+            try:
+                return await asyncio.wait_for(image_provider.search_images(name), timeout=2.0)
+            except Exception:
+                return []
+
+        async def fetch_weather():
+            try:
+                return await asyncio.wait_for(weather_provider.get_forecast(lat, lng, days=5), timeout=2.0)
+            except Exception:
+                return []
+
+        images_task = asyncio.create_task(fetch_images())
+        weather_task = asyncio.create_task(fetch_weather())
+        images, forecasts = await asyncio.gather(images_task, weather_task)
+
         hero_image = images[0] if images else "/images/destinations/fallbacks/himalayan.jpg"
 
         # Honest dynamic tagline & description
         tagline = f"Live travel discovery and verified local points of interest in {name}."
         desc = f"{name} is located in {state}, {country} at {altitude}m elevation ({lat:.4f}°N, {lng:.4f}°E). Live weather, local eateries, attractions, and essentials are retrieved in real-time."
-
-        # Live weather forecast directly from Open-Meteo
-        weather_provider = ProviderFactory.get_weather_provider()
-        forecasts = await weather_provider.get_forecast(lat, lng, days=5)
 
         weather_snapshots = []
         for fc in forecasts:
@@ -95,10 +125,16 @@ class DestinationIntelligenceService:
                 "source": "live_open_meteo"
             })
 
+        display_name = geo_data.get("display_name") or f"{name}, {state}, {country}"
+
         return {
             "id": f"dyn-{slug}",
+            "destination_id": f"dyn-{slug}",
             "name": name,
+            "canonical_slug": slug,
             "slug": slug,
+            "city": geo_data.get("city") or name,
+            "display_name": display_name,
             "state": state,
             "country": country,
             "region": region,
@@ -113,7 +149,7 @@ class DestinationIntelligenceService:
             "is_featured": False,
             "is_curated": False,
             "is_dynamic": True,
-            "source": "live_geocoding",
+            "source": geo_data.get("source", "live_geocoding"),
             "weather": weather_snapshots,
             "places": [],
             "hotels": [],

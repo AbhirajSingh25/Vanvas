@@ -399,10 +399,16 @@ SEED_DESTINATIONS: List[Dict[str, Any]] = [
     }
 ]
 
+import re
 import time
 from app.core.cache import geo_cache
 from app.services.cache_service import cache_service
 from app.services.provider_health_tracker import health_tracker
+
+APPROVED_CURATED_SLUGS = {
+    "manali", "rishikesh", "kasol", "dharamshala", "goa",
+    "jaipur", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar"
+}
 
 class LiveGeocodingProvider(GeocodingProvider):
     def __init__(self):
@@ -410,35 +416,42 @@ class LiveGeocodingProvider(GeocodingProvider):
             "User-Agent": "VANVAS-Travel-Operating-System/2.0 (expedition@vanvas.com)"
         }
 
+    @staticmethod
+    def _clean_query(query: str) -> str:
+        q = (query or "").strip()
+        q = re.sub(r'^(dyn|dest)-', '', q, flags=re.IGNORECASE).strip()
+        return q
+
     def _score_place_type(self, place_type: str, name: str, query: str) -> int:
         pt = (place_type or "").lower()
-        q = query.strip().lower()
+        q = self._clean_query(query).lower()
         nm = (name or "").lower()
 
         score = 0
         # 1. City / Town / Village / Hill Station / Suburb prioritize highest
-        if pt in ["city", "town", "village", "municipality", "suburb", "hamlet", "hill_station", "neighbourhood"]:
+        if pt in ["city", "town", "village", "municipality", "suburb", "hamlet", "hill_station", "neighbourhood", "administrative"]:
             score += 100
-        elif pt in ["district", "county", "state_district", "administrative"]:
+        elif pt in ["district", "county", "state_district"]:
             score += 50
         elif pt in ["state", "province", "region"]:
             score += 20
         elif pt in ["country", "nation"]:
-            # If user explicitly searched country (e.g. "india", "nepal", "bhutan", "france"), allow it
             if q == nm or q in nm:
                 score += 30
             else:
-                score -= 150 # Heavy penalty for broad country collapse when searching a city
+                score -= 150
+        elif pt in ["restaurant", "amenity", "food", "bar", "pub", "cafe", "fast_food", "shop", "commercial", "house", "building"]:
+            score -= 120 # Heavy penalty for amenities/restaurants when searching for destinations
         else:
             score += 40
 
         # Exact / Prefix name matching bonus
         if nm == q:
-            score += 80
+            score += 120
         elif nm.startswith(q):
-            score += 40
+            score += 60
         elif q in nm:
-            score += 20
+            score += 30
 
         return score
 
@@ -453,7 +466,8 @@ class LiveGeocodingProvider(GeocodingProvider):
         source: str,
         hindi_name: Optional[str] = None,
         source_id: Optional[str] = None,
-        altitude_meters: int = 1000
+        altitude_meters: int = 1000,
+        is_curated: bool = False
     ) -> Dict[str, Any]:
         slug = name.lower().replace(" ", "-").replace(",", "").replace("'", "").replace("&", "and")
         display_parts = [name]
@@ -463,13 +477,19 @@ class LiveGeocodingProvider(GeocodingProvider):
             display_parts.append(country)
         display_name = ", ".join(display_parts)
 
+        dest_id = f"dest-{slug}" if is_curated else f"dyn-{slug}"
+
         return {
+            "id": dest_id,
+            "destination_id": dest_id,
+            "canonical_slug": slug,
+            "slug": slug,
             "name": name,
             "city": name,
+            "display_name": display_name,
             "state": state or ("India" if country == "India" else country),
             "country": country or "India",
             "region": f"{state}, {country}" if state else country,
-            "display_name": display_name,
             "latitude": round(lat, 4),
             "longitude": round(lng, 4),
             "lat": round(lat, 4),
@@ -477,15 +497,16 @@ class LiveGeocodingProvider(GeocodingProvider):
             "place_type": place_type or "city",
             "type": place_type or "city",
             "altitude_meters": altitude_meters,
-            "slug": slug,
             "hindi_name": hindi_name,
             "source": source,
             "source_id": source_id,
+            "is_curated": is_curated,
+            "is_dynamic": not is_curated
         }
 
     async def autocomplete(self, query: str, limit: int = 8) -> List[Dict[str, Any]]:
-        q = query.strip().lower()
-        if not q:
+        clean_q = self._clean_query(query).lower()
+        if not clean_q:
             return [
                 self._format_destination_result(
                     name=d["name"],
@@ -494,20 +515,21 @@ class LiveGeocodingProvider(GeocodingProvider):
                     lat=d["lat"],
                     lng=d["lng"],
                     place_type=d.get("type", "city"),
-                    source="curated",
+                    source="curated" if d["slug"] in APPROVED_CURATED_SLUGS else "seed",
                     hindi_name=d.get("hindi_name"),
-                    altitude_meters=d.get("altitude_meters", 1000)
+                    altitude_meters=d.get("altitude_meters", 1000),
+                    is_curated=(d["slug"] in APPROVED_CURATED_SLUGS)
                 ) for d in SEED_DESTINATIONS[:limit]
             ]
 
-        cache_key = f"auto:{q}:{limit}"
+        cache_key = f"auto:{clean_q}:{limit}"
         cached = geo_cache.get(cache_key)
         if cached:
             return cached
 
         matched: List[Dict[str, Any]] = []
 
-        # 1. Match against known curated destinations (exact slug / prefix first)
+        # 1. Match against known curated & seed destinations (exact slug / prefix first)
         exact_seeds = []
         prefix_seeds = []
         sub_seeds = []
@@ -517,6 +539,7 @@ class LiveGeocodingProvider(GeocodingProvider):
             d_slug = dest["slug"].lower()
             d_hindi = dest.get("hindi_name", "").lower()
             d_state = dest["state"].lower()
+            is_cur = dest["slug"] in APPROVED_CURATED_SLUGS
 
             item = self._format_destination_result(
                 name=dest["name"],
@@ -525,16 +548,17 @@ class LiveGeocodingProvider(GeocodingProvider):
                 lat=dest["lat"],
                 lng=dest["lng"],
                 place_type=dest.get("type", "city"),
-                source="curated",
+                source="curated" if is_cur else "seed",
                 hindi_name=dest.get("hindi_name"),
-                altitude_meters=dest.get("altitude_meters", 1000)
+                altitude_meters=dest.get("altitude_meters", 1000),
+                is_curated=is_cur
             )
 
-            if q == d_slug or q == d_name:
+            if clean_q == d_slug or clean_q == d_name:
                 exact_seeds.append(item)
-            elif d_name.startswith(q) or d_slug.startswith(q):
+            elif d_name.startswith(clean_q) or d_slug.startswith(clean_q):
                 prefix_seeds.append(item)
-            elif (len(q) >= 3 and (q in d_name or q in d_hindi or q in d_state or q in d_slug)):
+            elif (len(clean_q) >= 3 and (clean_q in d_name or clean_q in d_hindi or clean_q in d_state or clean_q in d_slug)):
                 sub_seeds.append(item)
 
         matched.extend(exact_seeds + prefix_seeds + sub_seeds)
@@ -545,7 +569,7 @@ class LiveGeocodingProvider(GeocodingProvider):
 
         # 2. Query Photon Komoot API with multi-result ranking
         try:
-            url = f"https://photon.komoot.io/api/?q={httpx.URL(q)}&limit={max(limit, 6)}"
+            url = f"https://photon.komoot.io/api/?q={httpx.URL(clean_q)}&limit={max(limit, 6)}"
             async with httpx.AsyncClient(timeout=2.5, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
@@ -557,11 +581,18 @@ class LiveGeocodingProvider(GeocodingProvider):
                         coords = geom.get("coordinates", [0, 0])
 
                         osm_val = props.get("osm_value") or props.get("type") or "city"
-                        city_name = props.get("city") or props.get("town") or props.get("village") or props.get("name") or q.title()
+                        feat_name = props.get("name") or ""
+                        
+                        # Preserve place name accurately
+                        if feat_name and (clean_q in feat_name.lower() or feat_name.lower().startswith(clean_q)):
+                            city_name = feat_name
+                        else:
+                            city_name = props.get("city") or props.get("town") or props.get("village") or props.get("name") or clean_q.title()
+                            
                         state = props.get("state") or props.get("county") or ""
                         country = props.get("country") or "India"
 
-                        score = self._score_place_type(osm_val, city_name, q)
+                        score = self._score_place_type(osm_val, city_name, clean_q)
                         item = self._format_destination_result(
                             name=city_name,
                             state=state,
@@ -571,7 +602,8 @@ class LiveGeocodingProvider(GeocodingProvider):
                             place_type=osm_val,
                             source="openstreetmap",
                             source_id=str(props.get("osm_id", "")),
-                            altitude_meters=1000
+                            altitude_meters=1000,
+                            is_curated=False
                         )
                         candidates.append((score, item))
 
@@ -588,7 +620,7 @@ class LiveGeocodingProvider(GeocodingProvider):
 
         # 3. Query OpenStreetMap Nominatim with structured ranking
         try:
-            url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(q)}&format=json&addressdetails=1&limit={max(limit, 6)}"
+            url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(clean_q)}&format=json&addressdetails=1&limit={max(limit, 6)}"
             async with httpx.AsyncClient(timeout=3.0, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
@@ -597,11 +629,15 @@ class LiveGeocodingProvider(GeocodingProvider):
                     for item in data:
                         addr = item.get("address", {})
                         place_type = item.get("type") or item.get("class") or "city"
-                        city_name = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality") or addr.get("county") or item.get("name") or q.title()
+                        item_name = item.get("name") or ""
+                        if item_name and (clean_q in item_name.lower() or item_name.lower().startswith(clean_q)):
+                            city_name = item_name
+                        else:
+                            city_name = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality") or addr.get("county") or item.get("name") or clean_q.title()
                         state = addr.get("state") or addr.get("region") or ""
                         country = addr.get("country") or "India"
 
-                        score = self._score_place_type(place_type, city_name, q)
+                        score = self._score_place_type(place_type, city_name, clean_q)
                         formatted = self._format_destination_result(
                             name=city_name,
                             state=state,
@@ -611,7 +647,8 @@ class LiveGeocodingProvider(GeocodingProvider):
                             place_type=place_type,
                             source="openstreetmap",
                             source_id=str(item.get("osm_id", "")),
-                            altitude_meters=1000
+                            altitude_meters=1000,
+                            is_curated=False
                         )
                         candidates.append((score, formatted))
 
@@ -628,18 +665,19 @@ class LiveGeocodingProvider(GeocodingProvider):
         return result
 
     async def geocode(self, query: str) -> Optional[Dict[str, Any]]:
-        q = query.strip().lower()
-        if not q:
+        clean_q = self._clean_query(query).lower()
+        if not clean_q:
             return None
 
-        cache_key = f"geocode:{q}"
+        cache_key = f"geocode:{clean_q}"
         cached = geo_cache.get(cache_key)
         if cached:
             return cached
 
         # 1. Exact match in seed
         for dest in SEED_DESTINATIONS:
-            if q == dest["slug"].lower() or q == dest["name"].lower():
+            if clean_q == dest["slug"].lower() or clean_q == dest["name"].lower():
+                is_cur = dest["slug"] in APPROVED_CURATED_SLUGS
                 res = self._format_destination_result(
                     name=dest["name"],
                     state=dest["state"],
@@ -647,16 +685,18 @@ class LiveGeocodingProvider(GeocodingProvider):
                     lat=dest["lat"],
                     lng=dest["lng"],
                     place_type=dest.get("type", "city"),
-                    source="curated",
+                    source="curated" if is_cur else "seed",
                     hindi_name=dest.get("hindi_name"),
-                    altitude_meters=dest.get("altitude_meters", 1000)
+                    altitude_meters=dest.get("altitude_meters", 1000),
+                    is_curated=is_cur
                 )
                 geo_cache.set(cache_key, res, ttl_seconds=600)
                 return res
 
         # Prefix seed match
         for dest in SEED_DESTINATIONS:
-            if dest["slug"].lower().startswith(q) or dest["name"].lower().startswith(q):
+            if dest["slug"].lower().startswith(clean_q) or dest["name"].lower().startswith(clean_q):
+                is_cur = dest["slug"] in APPROVED_CURATED_SLUGS
                 res = self._format_destination_result(
                     name=dest["name"],
                     state=dest["state"],
@@ -664,16 +704,17 @@ class LiveGeocodingProvider(GeocodingProvider):
                     lat=dest["lat"],
                     lng=dest["lng"],
                     place_type=dest.get("type", "city"),
-                    source="curated",
+                    source="curated" if is_cur else "seed",
                     hindi_name=dest.get("hindi_name"),
-                    altitude_meters=dest.get("altitude_meters", 1000)
+                    altitude_meters=dest.get("altitude_meters", 1000),
+                    is_curated=is_cur
                 )
                 geo_cache.set(cache_key, res, ttl_seconds=600)
                 return res
 
         # 2. Photon Komoot Fast Geocoder with multi-result city ranking
         try:
-            url = f"https://photon.komoot.io/api/?q={httpx.URL(q)}&limit=6"
+            url = f"https://photon.komoot.io/api/?q={httpx.URL(clean_q)}&limit=6"
             async with httpx.AsyncClient(timeout=2.5, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
@@ -685,11 +726,16 @@ class LiveGeocodingProvider(GeocodingProvider):
                             props = f.get("properties", {})
                             coords = f.get("geometry", {}).get("coordinates", [0, 0])
                             osm_val = props.get("osm_value") or props.get("type") or "city"
-                            city_name = props.get("city") or props.get("town") or props.get("village") or props.get("name") or query.title()
+                            feat_name = props.get("name") or ""
+                            
+                            if feat_name and (clean_q in feat_name.lower() or feat_name.lower().startswith(clean_q)):
+                                city_name = feat_name
+                            else:
+                                city_name = props.get("city") or props.get("town") or props.get("village") or props.get("name") or clean_q.title()
                             state = props.get("state") or props.get("county") or ""
                             country = props.get("country") or "India"
 
-                            score = self._score_place_type(osm_val, city_name, q)
+                            score = self._score_place_type(osm_val, city_name, clean_q)
                             item = self._format_destination_result(
                                 name=city_name,
                                 state=state,
@@ -699,7 +745,8 @@ class LiveGeocodingProvider(GeocodingProvider):
                                 place_type=osm_val,
                                 source="openstreetmap",
                                 source_id=str(props.get("osm_id", "")),
-                                altitude_meters=1000
+                                altitude_meters=1000,
+                                is_curated=False
                             )
                             scored_candidates.append((score, item))
 
@@ -724,7 +771,7 @@ class LiveGeocodingProvider(GeocodingProvider):
 
         # 3. Live Nominatim Search with structured address details
         try:
-            url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(q)}&format=json&addressdetails=1&limit=6"
+            url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(clean_q)}&format=json&addressdetails=1&limit=6"
             async with httpx.AsyncClient(timeout=3.5, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
@@ -734,11 +781,15 @@ class LiveGeocodingProvider(GeocodingProvider):
                         for item in data:
                             addr = item.get("address", {})
                             place_type = item.get("type") or item.get("class") or "city"
-                            city_name = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality") or addr.get("county") or item.get("name") or query.title()
+                            item_name = item.get("name") or ""
+                            if item_name and (clean_q in item_name.lower() or item_name.lower().startswith(clean_q)):
+                                city_name = item_name
+                            else:
+                                city_name = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality") or addr.get("county") or item.get("name") or clean_q.title()
                             state = addr.get("state") or addr.get("region") or ""
                             country = addr.get("country") or "India"
 
-                            score = self._score_place_type(place_type, city_name, q)
+                            score = self._score_place_type(place_type, city_name, clean_q)
                             formatted = self._format_destination_result(
                                 name=city_name,
                                 state=state,
@@ -748,7 +799,8 @@ class LiveGeocodingProvider(GeocodingProvider):
                                 place_type=place_type,
                                 source="openstreetmap",
                                 source_id=str(item.get("osm_id", "")),
-                                altitude_meters=1000
+                                altitude_meters=1000,
+                                is_curated=False
                             )
                             scored_candidates.append((score, formatted))
 
@@ -773,3 +825,4 @@ class LiveGeocodingProvider(GeocodingProvider):
             logger.error(f"Live geocode failed for '{query}': {e}")
 
         return None
+
