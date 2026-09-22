@@ -176,11 +176,429 @@ export interface CuratedLandmarkEntry {
 }
 
 /**
- * Registry of verified landmark artwork mappings with truthful provenance.
- * Every landmark has a distinct, dedicated asset on disk with unique hash.
+ * Authoritative Registry of Curated Exact Landmark Artwork Mappings.
+ * Every curated landmark has a dedicated, verified editorial WebP asset on disk.
  */
 export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
-  // --- Kasol Landmarks ---
+  // ==========================================
+  // --- JAIPUR LANDMARKS ---
+  // ==========================================
+  "jaipur:hawa-mahal": {
+    imageUrl: "/images/places/jaipur/hawa-mahal.webp",
+    visualDescription: "Five-storey pink sandstone honeycomb facade with 953 carved jharokha lattice windows.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "hawa-mahal",
+      "hawa-mahal-palace-of-winds",
+      "palace-of-winds",
+      "hawa-mahal-jaipur",
+      "hawa"
+    ]
+  },
+  "jaipur:amber-fort": {
+    imageUrl: "/images/places/jaipur/amber-fort.webp",
+    visualDescription: "Majestic hilltop fort with pale yellow and pink sandstone ramparts reflected in Maota Lake.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "amber-fort",
+      "amber-fort-and-maota-lake",
+      "amber-palace-fort",
+      "amer-fort",
+      "amber-palace",
+      "amer-palace",
+      "amber-fort-maota-lake",
+      "amber",
+      "amer"
+    ]
+  },
+  "jaipur:nahargarh-fort": {
+    imageUrl: "/images/places/jaipur/nahargarh-fort.webp",
+    visualDescription: "Aravalli ridge fortress offering panoramic sunset views across the pink city expanse.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "nahargarh-fort",
+      "nahargarh-fort-sunset",
+      "nahargarh-fort-sunset-bastion",
+      "nahargarh"
+    ]
+  },
+  "jaipur:city-palace": {
+    imageUrl: "/images/places/jaipur/city-palace.webp",
+    visualDescription: "Royal complex of courtyards, gardens, and ornate pavilions fusing Rajput and Mughal architecture.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "city-palace",
+      "city-palace-jaipur",
+      "jaipur-city-palace",
+      "city-palace-complex-jaipur"
+    ]
+  },
+  "jaipur:jantar-mantar": {
+    imageUrl: "/images/places/jaipur/jantar-mantar.webp",
+    visualDescription: "UNESCO World Heritage 18th-century astronomical observatory with stone sundials and geometric instruments.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "jantar-mantar",
+      "jantar-mantar-jaipur",
+      "jantar-mantar-observatory"
+    ]
+  },
+
+  // ==========================================
+  // --- LEH LADAKH LANDMARKS ---
+  // ==========================================
+  "leh:leh-palace": {
+    imageUrl: "/images/places/leh/leh-palace.webp",
+    visualDescription: "Historic 17th-century Tibetan royal palace crowning the mountain ridge over Leh old town.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "leh-palace",
+      "palace-of-leh",
+      "leh-chen-spalkhar",
+      "leh-royal-palace",
+      "royal-leh-palace"
+    ]
+  },
+  "leh:pangong-tso": {
+    imageUrl: "/images/places/leh/pangong-tso.webp",
+    visualDescription: "High-altitude saline lake shifting in shades of cobalt and turquoise under barren Himalayan crags.",
+    category: "Nature & Trails",
+    semanticTheme: "lake",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "pangong-tso",
+      "pangong-tso-lake",
+      "pangong-tso-alpine-lake",
+      "pangong-lake",
+      "pangong"
+    ]
+  },
+  "leh:thiksey-monastery-gompa": {
+    imageUrl: "/images/places/leh/thiksey-monastery-gompa.webp",
+    visualDescription: "Layered 12-storey whitewashed and ochre Tibetan monastery rising on a hill above the Indus Valley.",
+    category: "Culture & Heritage",
+    semanticTheme: "monastery",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "thiksey-monastery-gompa",
+      "thiksey-monastery",
+      "thiksey-gompa",
+      "thiksay",
+      "thiksey"
+    ]
+  },
+
+  // ==========================================
+  // --- UDAIPUR LANDMARKS ---
+  // ==========================================
+  "udaipur:city-palace-udaipur": {
+    imageUrl: "/images/places/udaipur/city-palace-udaipur.webp",
+    visualDescription: "Monumental whitewashed marble palace with mirrored domes rising over the eastern shore of Lake Pichola.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "city-palace-udaipur",
+      "city-palace-of-udaipur",
+      "city-palace",
+      "udaipur-city-palace"
+    ]
+  },
+  "udaipur:lake-pichola": {
+    imageUrl: "/images/places/udaipur/lake-pichola.webp",
+    visualDescription: "Picturesque freshwater lake surrounded by whitewashed havelis, ghats, and hill silhouettes.",
+    category: "Nature & Trails",
+    semanticTheme: "lake",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "lake-pichola",
+      "lake-pichola-boat",
+      "lake-pichola-sunset-boat-voyage",
+      "pichola-lake",
+      "pichola"
+    ]
+  },
+  "udaipur:jagdish-temple": {
+    imageUrl: "/images/places/udaipur/jagdish-temple.webp",
+    visualDescription: "Indo-Aryan carved stone temple dedicated to Lord Vishnu in the heart of Udaipur.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "jagdish-temple",
+      "jagdish-mandir",
+      "shri-jagdish-temple",
+      "jagdish"
+    ]
+  },
+  "udaipur:saheliyon-ki-bari": {
+    imageUrl: "/images/places/udaipur/saheliyon-ki-bari.webp",
+    visualDescription: "Historic royal garden with marble pavilions, lotus pools, and natural rain fountains.",
+    category: "Nature & Trails",
+    semanticTheme: "nature",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "saheliyon-ki-bari",
+      "saheliyon-ki-bari-garden-of-the-maids",
+      "garden-of-the-maids",
+      "saheliyon-bari"
+    ]
+  },
+
+  // ==========================================
+  // --- DHARAMSHALA / MCLEOD GANJ LANDMARKS ---
+  // ==========================================
+  "dharamshala:namgyal-monastery": {
+    imageUrl: "/images/places/dharamshala/namgyal-monastery.webp",
+    visualDescription: "Dalai Lama monastery complex with prayer wheels surrounded by cedar woods under the Dhauladhar wall.",
+    category: "Culture & Heritage",
+    semanticTheme: "monastery",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "namgyal-monastery",
+      "namgyal-monastery-and-tsuglagkhang-complex",
+      "tsuglagkhang-complex",
+      "namgyal-gompa",
+      "namgyal"
+    ]
+  },
+  "dharamshala:bhagsunag-waterfall": {
+    imageUrl: "/images/places/dharamshala/bhagsunag-waterfall.webp",
+    visualDescription: "Fresh mountain waterfall tumbling down rocky cliffs with bohemian Shiva Café above.",
+    category: "Nature & Trails",
+    semanticTheme: "waterfall",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "bhagsunag-waterfall",
+      "bhagsunag-waterfall-and-shiva-cafe",
+      "bhagsu-waterfall",
+      "bhagsu-falls",
+      "bhagsunag"
+    ]
+  },
+  "dharamshala:triund-trek": {
+    imageUrl: "/images/places/dharamshala/triund-trek.webp",
+    visualDescription: "High-altitude ridge trail opening to views of the sheer Dhauladhar granite wall and Kangra valley.",
+    category: "Adventure",
+    semanticTheme: "trail",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "triund-trek",
+      "triund-high-ridge-himalayan-trek",
+      "triund-trail",
+      "triund"
+    ]
+  },
+
+  // ==========================================
+  // --- VARANASI LANDMARKS ---
+  // ==========================================
+  "varanasi:dashashwamedh-ghat-aarti": {
+    imageUrl: "/images/places/varanasi/dashashwamedh-ghat-aarti.webp",
+    visualDescription: "Historic stone riverfront steps illuminated by brass oil lamps and evening river reflections.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "dashashwamedh-ghat-aarti",
+      "dashashwamedh-ghat-evening-maha-aarti",
+      "dashashwamedh-ghat",
+      "dashashwamedh"
+    ]
+  },
+  "varanasi:assi-ghat": {
+    imageUrl: "/images/places/varanasi/assi-ghat.webp",
+    visualDescription: "Southernmost sacred ghat at the Assi-Ganga confluence famous for morning yoga, Vedic chants, and sunrise mist.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "assi-ghat",
+      "assi-ghat-subah",
+      "assi-ghat-and-subah-e-banaras-dawn-chants",
+      "asi-ghat",
+      "assi"
+    ]
+  },
+  "varanasi:kashi-vishwanath": {
+    imageUrl: "/images/places/varanasi/kashi-vishwanath.webp",
+    visualDescription: "Sacred golden-spired temple of Lord Shiva along the eternal sandstone corridor of Kashi.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "kashi-vishwanath",
+      "kashi-vishwanath-golden-temple-corridor",
+      "kashi-vishwanath-temple",
+      "vishwanath-temple",
+      "kashi-vishwanath-golden-temple"
+    ]
+  },
+  "varanasi:blue-lassi-shop": {
+    imageUrl: "/images/places/varanasi/blue-lassi-shop.webp",
+    visualDescription: "Historic alley shop serving thick hand-churned curd lassi in clay kulhad with fresh fruit and rabri.",
+    category: "Local Food",
+    semanticTheme: "food",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "blue-lassi-shop",
+      "blue-lassi",
+      "blue-lassi-traditional-shop"
+    ]
+  },
+  "varanasi:sarnath": {
+    imageUrl: "/images/places/varanasi/sarnath.webp",
+    visualDescription: "Sacred deer park and monumental Dhamek Stupa where Lord Buddha gave his first sermon.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "sarnath",
+      "sarnath-stupa",
+      "sarnath-sacred-deer-park-and-dhamek-stupa",
+      "dhamek-stupa"
+    ]
+  },
+
+  // ==========================================
+  // --- MANALI LANDMARKS ---
+  // ==========================================
+  "manali:hadimba-temple": {
+    imageUrl: "/images/places/manali/hadimba-temple.webp",
+    visualDescription: "Four-tiered wooden pagoda temple set inside Dhungri towering deodar pine forest.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "hadimba-temple",
+      "hadimba-devi-cedar-forest-temple",
+      "hidimba-devi-temple",
+      "dhungri-temple",
+      "hidimba-temple",
+      "hadimba"
+    ]
+  },
+  "manali:solang-valley": {
+    imageUrl: "/images/places/manali/solang-valley.webp",
+    visualDescription: "Expansive green alpine valley surrounded by snow-capped Pir Panjal peaks with paragliders in azure sky.",
+    category: "Adventure & Sport",
+    semanticTheme: "viewpoint",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "solang-valley",
+      "solang-valley-alpine-meadow",
+      "solang-valley-ridge-and-paragliding",
+      "solang-nullah",
+      "solang"
+    ]
+  },
+  "manali:old-manali": {
+    imageUrl: "/images/places/manali/old-manali.webp",
+    visualDescription: "Traditional timber-and-stone Himachali houses, apple orchards, and bohemian riverside verandas.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "old-manali",
+      "old-manali-village-and-manu-temple",
+      "old-manali-village",
+      "old-manali-village-and-cafes"
+    ]
+  },
+  "manali:jogini-waterfall": {
+    imageUrl: "/images/places/manali/jogini-waterfall.webp",
+    visualDescription: "Scenic cascading waterfall plunging down pine-clad cliffs near Vashisht village.",
+    category: "Nature & Trails",
+    semanticTheme: "waterfall",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "jogini-waterfall",
+      "jogini-waterfall-pine-trail",
+      "jogini-falls",
+      "jugni-waterfall",
+      "jogini"
+    ]
+  },
+  "manali:mall-road": {
+    imageUrl: "/images/places/manali/mall-road.webp",
+    visualDescription: "Bustling Himalayan pedestrian promenade with wooden shops, local woolen shawls, and mountain views.",
+    category: "Markets & Craft",
+    semanticTheme: "shopping",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "mall-road",
+      "manali-mall-road",
+      "the-mall-road-manali"
+    ]
+  },
+  "manali:manu-temple": {
+    imageUrl: "/images/places/manali/manu-temple.webp",
+    visualDescription: "Ancient stone and wood pagoda temple dedicated to Sage Manu above Old Manali.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "manu-temple",
+      "sage-manu-temple",
+      "manu-mandir"
+    ]
+  },
+  "manali:vashisht-baths": {
+    imageUrl: "/images/places/manali/vashisht-baths.webp",
+    visualDescription: "Natural sacred hot sulphur springs and ancient carved stone temple in Vashisht village.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "vashisht-baths",
+      "vashisht-hot-water-springs",
+      "vashisht-temple-and-springs",
+      "vashisht"
+    ]
+  },
+
+  // ==========================================
+  // --- KASOL / PARVATI VALLEY LANDMARKS ---
+  // ==========================================
   "kasol:moon-dance-cafe": {
     imageUrl: "/images/places/kasol/moon-dance-cafe.webp",
     visualDescription: "Legendary bohemian bakery in Kasol serving fresh apple crumble, pastries, and mountain coffee under Parvati deodars.",
@@ -193,7 +611,8 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "moon-dance-cafe-and-german-bakery",
       "moon-dance-german-bakery",
       "moon-dance-bakery",
-      "german-bakery-kasol"
+      "german-bakery-kasol",
+      "moon-dance"
     ]
   },
   "kasol:chalal-trail": {
@@ -224,6 +643,7 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "manikaran-gurudwara",
       "manikaran-hot-springs",
       "gurudwara-shri-manikaran-sahib",
+      "gurudwara-shri-manikaran-sahib-and-hot-springs",
       "manikaran"
     ]
   },
@@ -237,12 +657,384 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     aliases: [
       "kheerganga-trail",
       "kheerganga-trek",
+      "kheerganga-alpine-meadow-trail",
       "khirganga-trail",
-      "khirganga"
+      "khirganga",
+      "kheerganga"
+    ]
+  },
+  "kasol:tosh-village": {
+    imageUrl: "/images/places/kasol/tosh-village.webp",
+    visualDescription: "Traditional wooden Himachali village at 2,400m perched at the edge of Tosh Glacier with panoramic snow peak vistas.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "tosh-village",
+      "tosh-traditional-wooden-village",
+      "tosh-glacier-view",
+      "tosh-village-and-waterfall-trail",
+      "tosh"
+    ]
+  },
+  "kasol:evergreen-cafe": {
+    imageUrl: "/images/places/kasol/evergreen-cafe.webp",
+    visualDescription: "Beloved garden café shaded by deodar pines famous for fresh Israeli platters, wood-fired pizza, and mountain teas.",
+    category: "Cafés & Bakery",
+    semanticTheme: "cafe",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "evergreen-cafe",
+      "evergreen-cafe-and-garden-patio",
+      "evergreen-cafe-and-garden",
+      "evergreen-kasol",
+      "evergreen"
     ]
   },
 
-  // --- Spiti Valley Landmarks ---
+  // ==========================================
+  // --- MUSSOORIE / LANDOUR LANDMARKS ---
+  // ==========================================
+  "mussoorie:st-pauls-church": {
+    imageUrl: "/images/places/mussoorie/st-pauls-church.webp",
+    visualDescription: "Historic 1852 stone Anglican church in Landour with steep gabled wooden roof and lancet windows under deodar pines.",
+    category: "Culture & Heritage",
+    semanticTheme: "church",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "st-pauls-church-landour",
+      "st-pauls-church",
+      "st-paul-church"
+    ]
+  },
+  "mussoorie:landour-bakehouse": {
+    imageUrl: "/images/places/mussoorie/landour-bakehouse.webp",
+    visualDescription: "Historic stone and timber hill bakery at Sisters Bazaar with Victorian glass vitrines and deodar canopy.",
+    category: "Cafés & Bakery",
+    semanticTheme: "cafe",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "landour-bakehouse",
+      "landour-bakery",
+      "sisters-bazaar-bakehouse"
+    ]
+  },
+  "mussoorie:lal-tibba": {
+    imageUrl: "/images/places/mussoorie/lal-tibba.webp",
+    visualDescription: "Highest mountain ridge viewpoint in Landour with telescope overlooking distant Garhwal snow peaks.",
+    category: "Nature & Trails",
+    semanticTheme: "viewpoint",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "lal-tibba",
+      "lal-tibba-scenic-viewpoint",
+      "lal-tibba-viewpoint"
+    ]
+  },
+  "mussoorie:kempty-falls": {
+    imageUrl: "/images/places/mussoorie/kempty-falls.webp",
+    visualDescription: "Steep rocky mountain waterfall cascade plunging into jade mountain pools.",
+    category: "Nature & Trails",
+    semanticTheme: "waterfall",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "kempty-falls",
+      "kempty-falls-mountain-cascade",
+      "kempty-waterfall",
+      "kempty"
+    ]
+  },
+  "mussoorie:gun-hill": {
+    imageUrl: "/images/places/mussoorie/gun-hill.webp",
+    visualDescription: "Elevated colonial peak with ropeway cable car overlooking the vast Doon Valley.",
+    category: "Culture & Heritage",
+    semanticTheme: "viewpoint",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "gun-hill",
+      "gun-hill-historic-viewpoint",
+      "gun-hill-viewpoint"
+    ]
+  },
+  "mussoorie:camel-back-road": {
+    imageUrl: "/images/places/mussoorie/camel-back-road.webp",
+    visualDescription: "Tranquil oak-shaded walking promenade framing natural camel rock outcrop and winterline sunsets.",
+    category: "Nature & Trails",
+    semanticTheme: "trail",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "camel-back-road",
+      "camels-back-road",
+      "camels-back-road-and-winterline-trail",
+      "camels-back-road-promenade"
+    ]
+  },
+  "mussoorie:clouds-end": {
+    imageUrl: "/images/places/mussoorie/clouds-end.webp",
+    visualDescription: "Dense oak and deodar wilderness marking the geographical end of the Mussoorie hill ridge.",
+    category: "Nature & Trails",
+    semanticTheme: "nature",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "clouds-end",
+      "clouds-end-forest-retreat",
+      "clouds-end-heritage"
+    ]
+  },
+  "mussoorie:george-everest": {
+    imageUrl: "/images/places/mussoorie/george-everest.webp",
+    visualDescription: "Historic estate and ridge viewpoint of the Surveyor General of India offering panoramic vistas.",
+    category: "Culture & Heritage",
+    semanticTheme: "viewpoint",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "george-everest",
+      "george-everest-peak",
+      "george-everest-house",
+      "sir-george-everest"
+    ]
+  },
+  "mussoorie:landour": {
+    imageUrl: "/images/places/mussoorie/landour.webp",
+    visualDescription: "Peaceful colonial cantonment hill settlement with pine trails and red-roofed cottages.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "landour",
+      "landour-cantonment",
+      "landour-hill"
+    ]
+  },
+  "mussoorie:mall-road": {
+    imageUrl: "/images/places/mussoorie/mall-road.webp",
+    visualDescription: "Colonial-era hilltop promenade with street lamps, heritage bookshops, and Doon valley views.",
+    category: "Markets & Craft",
+    semanticTheme: "shopping",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "mall-road",
+      "mussoorie-mall-road",
+      "the-mall-road-mussoorie"
+    ]
+  },
+
+  // ==========================================
+  // --- GOA LANDMARKS ---
+  // ==========================================
+  "goa:fontainhas-latin-quarter": {
+    imageUrl: "/images/places/goa/fontainhas-latin-quarter.webp",
+    visualDescription: "Pastel-painted Portuguese heritage houses with wrought-iron balconies and bougainvillea in Panaji.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "fontainhas-latin-quarter",
+      "fontainhas",
+      "fontainhas-latin-heritage-quarter"
+    ]
+  },
+  "goa:aguada-fort": {
+    imageUrl: "/images/places/goa/aguada-fort.webp",
+    visualDescription: "17th-century Portuguese laterite stone sea fortress and cylindrical lighthouse on coastal headland.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "aguada-fort",
+      "aguada-fort-and-historic-lighthouse",
+      "fort-aguada",
+      "aguada"
+    ]
+  },
+  "goa:anjuna-beach": {
+    imageUrl: "/images/places/goa/anjuna-beach.webp",
+    visualDescription: "Curved palm-fringed Arabian sea coastline with rocky laterite outcrops and seaside shacks.",
+    category: "Nature & Trails",
+    semanticTheme: "beach",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "anjuna-beach",
+      "anjuna-flea-market",
+      "anjuna"
+    ]
+  },
+  "goa:basilica-bom-jesus": {
+    imageUrl: "/images/places/goa/basilica-bom-jesus.webp",
+    visualDescription: "UNESCO World Heritage 16th-century baroque laterite basilica holding the mortal remains of St. Francis Xavier.",
+    category: "Culture & Heritage",
+    semanticTheme: "church",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "basilica-bom-jesus",
+      "basilica-of-bom-jesus",
+      "bom-jesus-basilica",
+      "bom-jesus"
+    ]
+  },
+  "goa:dudhsagar-falls": {
+    imageUrl: "/images/places/goa/dudhsagar-falls.webp",
+    visualDescription: "Four-tiered massive milky white waterfall cascading down Western Ghats cliffs with railway viaduct.",
+    category: "Nature & Trails",
+    semanticTheme: "waterfall",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "dudhsagar-falls",
+      "dudhsagar-waterfalls",
+      "dudhsagar"
+    ]
+  },
+
+  // ==========================================
+  // --- MUNNAR LANDMARKS ---
+  // ==========================================
+  "munnar:kolukkumalai-tea": {
+    imageUrl: "/images/places/munnar/kolukkumalai-tea.webp",
+    visualDescription: "World's highest organic tea plantation perched at 2,160m with sunrise cloud inversions.",
+    category: "Nature & Trails",
+    semanticTheme: "nature",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "kolukkumalai-tea",
+      "kolukkumalai-highest-tea-estate",
+      "kolukkumalai-tea-estate",
+      "kolukkumalai"
+    ]
+  },
+  "munnar:eravikulam-park": {
+    imageUrl: "/images/places/munnar/eravikulam-park.webp",
+    visualDescription: "High-altitude rolling grassland sanctuary home to the Nilgiri Tahr and Anamudi peak.",
+    category: "Nature & Trails",
+    semanticTheme: "nature",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "eravikulam-park",
+      "eravikulam-national-park-and-anamudi-ridge",
+      "eravikulam-national-park",
+      "eravikulam"
+    ]
+  },
+  "munnar:mattupetty-dam": {
+    imageUrl: "/images/places/munnar/mattupetty-dam.webp",
+    visualDescription: "Tranquil concrete gravity dam surrounded by emerald tea plantation slopes reflecting in the lake.",
+    category: "Nature & Trails",
+    semanticTheme: "lake",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "mattupetty-dam",
+      "mattupetty-dam-and-reflection-lake",
+      "mattupetty-lake",
+      "mattupetty"
+    ]
+  },
+
+  // ==========================================
+  // --- RISHIKESH LANDMARKS ---
+  // ==========================================
+  "rishikesh:triveni-ghat": {
+    imageUrl: "/images/places/rishikesh/triveni-ghat.webp",
+    visualDescription: "Sacred stone riverfront steps at the Ganges confluence with twilight brass aarti lamps and floating diyas.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "triveni-ghat",
+      "triveni-ghat-evening-maha-aarti",
+      "triveni-ghat-aarti",
+      "triveni"
+    ]
+  },
+  "rishikesh:little-buddha-cafe": {
+    imageUrl: "/images/places/rishikesh/little-buddha-cafe.webp",
+    visualDescription: "Treehouse café overlooking the emerald Ganga and Lakshman Jhula with sunset mountain views.",
+    category: "Cafés & Bakery",
+    semanticTheme: "cafe",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "little-buddha-cafe",
+      "the-little-buddha-cafe",
+      "little-buddha"
+    ]
+  },
+  "rishikesh:beatles-ashram": {
+    imageUrl: "/images/places/rishikesh/beatles-ashram.webp",
+    visualDescription: "Transcendental meditation ashram tucked inside Rajaji Tiger Reserve with stone meditation domes and murals.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "beatles-ashram",
+      "the-beatles-ashram-chaurasi-kutia",
+      "chaurasi-kutia",
+      "beatles-ashram-rishikesh"
+    ]
+  },
+  "rishikesh:neer-garh-waterfall": {
+    imageUrl: "/images/places/rishikesh/neer-garh-waterfall.webp",
+    visualDescription: "Tiered jade-colored natural spring waterfall cascading into jungle limestone pools.",
+    category: "Nature & Trails",
+    semanticTheme: "waterfall",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "neer-garh-waterfall",
+      "neer-garh-multi-tier-waterfall",
+      "neer-garh",
+      "neer-waterfall"
+    ]
+  },
+  "rishikesh:laxman-jhula": {
+    imageUrl: "/images/places/rishikesh/laxman-jhula.webp",
+    visualDescription: "Historic iron suspension bridge spanning the sacred turquoise Ganga between Tapovan and Jonk.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "laxman-jhula",
+      "lakshman-jhula",
+      "laxman-suspension-bridge"
+    ]
+  },
+  "rishikesh:ram-jhula": {
+    imageUrl: "/images/places/rishikesh/ram-jhula.webp",
+    visualDescription: "Graceful pedestrian suspension bridge connecting vibrant ashrams across the holy Ganga.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "ram-jhula",
+      "ram-suspension-bridge"
+    ]
+  },
+
+  // ==========================================
+  // --- SPITI VALLEY LANDMARKS ---
+  // ==========================================
   "spiti:key-monastery": {
     imageUrl: "/images/places/spiti/key-monastery.webp",
     visualDescription: "Thousand-year-old fort-like Tibetan monastery perched atop a rocky hill at 4,166m overlooking the Spiti River.",
@@ -281,7 +1073,11 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     semanticTheme: "monastery",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["dhankar-gompa", "dhankar-monastery", "dankhar"]
+    aliases: [
+      "dhankar-gompa",
+      "dhankar-monastery",
+      "dankhar"
+    ]
   },
   "spiti:tabo-monastery": {
     imageUrl: "/images/places/spiti/tabo-monastery.webp",
@@ -290,398 +1086,26 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     semanticTheme: "monastery",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["tabo-monastery", "tabo-gompa", "tabo", "tabo-monastery-ajanta-of-the-himalayas"]
+    aliases: [
+      "tabo-monastery",
+      "tabo-gompa",
+      "tabo",
+      "tabo-monastery-ajanta-of-the-himalayas"
+    ]
   },
-  "spiti:kaza-town": {
+  "spiti:kaza": {
     imageUrl: "/images/places/spiti/kaza.webp",
     visualDescription: "High-altitude administrative capital town with whitewashed mud homes and local handicraft bazaar.",
     category: "Shops & Markets",
-    semanticTheme: "shopping",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["kaza", "kaza-town", "kaza-market", "kaza-high-town-and-local-bazaar"]
-  },
-
-  // --- Kasol Landmarks ---
-  "kasol:tosh-village": {
-    imageUrl: "/images/places/kasol/tosh-village.webp",
-    visualDescription: "Traditional wooden Himachali village at 2,400m perched at the edge of Tosh Glacier with panoramic snow peak vistas.",
-    category: "Culture & Heritage",
     semanticTheme: "heritage",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["tosh-village", "tosh-traditional-wooden-village", "tosh-glacier-view", "tosh"]
-  },
-  "kasol:evergreen-cafe": {
-    imageUrl: "/images/places/kasol/evergreen-cafe.webp",
-    visualDescription: "Beloved garden café shaded by deodar pines famous for fresh Israeli platters, wood-fired pizza, and mountain teas.",
-    category: "Cafés & Bakery",
-    semanticTheme: "cafe",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["evergreen-cafe", "evergreen-cafe-and-garden-patio", "evergreen-kasol"]
-  },
-
-  // --- Manali Landmarks ---
-  "manali:hadimba-temple": {
-    imageUrl: "/images/places/manali/hadimba-temple.webp",
-    visualDescription: "Four-tiered wooden pagoda temple set inside Dhungri towering deodar pine forest.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["hadimba-temple", "hadimba-devi-cedar-forest-temple", "hidimba-devi-temple", "dhungri-temple", "hidimba-temple"]
-  },
-  "manali:solang-valley": {
-    imageUrl: "/images/places/manali/solang-valley.webp",
-    visualDescription: "Expansive green alpine valley surrounded by snow-capped Pir Panjal peaks with paragliders in azure sky.",
-    category: "Adventure & Sport",
-    semanticTheme: "viewpoint",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["solang-valley", "solang-valley-alpine-meadow", "solang-valley-ridge-and-paragliding", "solang-nullah"]
-  },
-  "manali:old-manali": {
-    imageUrl: "/images/places/manali/old-manali.webp",
-    visualDescription: "Traditional timber-and-stone Himachali houses, apple orchards, and bohemian riverside verandas.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["old-manali", "old-manali-village-and-manu-temple", "old-manali-village", "old-manali-village-and-cafes"]
-  },
-  "manali:jogini-waterfall": {
-    imageUrl: "/images/places/manali/jogini-waterfall.webp",
-    visualDescription: "Scenic cascading waterfall plunging down pine-clad cliffs near Vashisht village.",
-    category: "Nature & Trails",
-    semanticTheme: "waterfall",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["jogini-waterfall", "jogini-waterfall-pine-trail", "jogini-falls", "jugni-waterfall"]
-  },
-
-  // --- Mussoorie Landmarks ---
-  "mussoorie:st-pauls-church": {
-    imageUrl: "/images/places/mussoorie/st-pauls-church.webp",
-    visualDescription: "Historic 1852 stone Anglican church in Landour with steep gabled wooden roof and lancet windows under deodar pines.",
-    category: "Culture & Heritage",
-    semanticTheme: "church",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["st-pauls-church-landour", "st-pauls-church", "st-paul-church"]
-  },
-  "mussoorie:landour-bakehouse": {
-    imageUrl: "/images/places/mussoorie/landour-bakehouse.webp",
-    visualDescription: "Historic stone and timber hill bakery at Sisters Bazaar with Victorian glass vitrines and deodar canopy.",
-    category: "Cafés & Bakery",
-    semanticTheme: "cafe",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["landour-bakehouse", "landour-bakery", "sisters-bazaar-bakehouse"]
-  },
-  "mussoorie:lal-tibba": {
-    imageUrl: "/images/places/mussoorie/lal-tibba.webp",
-    visualDescription: "Highest mountain ridge viewpoint in Landour with telescope overlooking distant Garhwal snow peaks.",
-    category: "Nature & Trails",
-    semanticTheme: "viewpoint",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["lal-tibba", "lal-tibba-scenic-viewpoint", "lal-tibba-viewpoint"]
-  },
-  "mussoorie:kempty-falls": {
-    imageUrl: "/images/places/mussoorie/kempty-falls.webp",
-    visualDescription: "Steep rocky mountain waterfall cascade plunging into jade mountain pools.",
-    category: "Nature & Trails",
-    semanticTheme: "waterfall",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["kempty-falls", "kempty-falls-mountain-cascade", "kempty-waterfall"]
-  },
-  "mussoorie:gun-hill": {
-    imageUrl: "/images/places/mussoorie/gun-hill.webp",
-    visualDescription: "Elevated colonial peak with ropeway cable car overlooking the vast Doon Valley.",
-    category: "Culture & Heritage",
-    semanticTheme: "viewpoint",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["gun-hill", "gun-hill-historic-viewpoint", "gun-hill-viewpoint"]
-  },
-  "mussoorie:camel-back-road": {
-    imageUrl: "/images/places/mussoorie/camel-back-road.webp",
-    visualDescription: "Tranquil oak-shaded walking promenade framing natural camel rock outcrop and winterline sunsets.",
-    category: "Nature & Trails",
-    semanticTheme: "trail",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["camel-back-road", "camels-back-road", "camels-back-road-and-winterline-trail", "camels-back-road-promenade"]
-  },
-
-  // --- Jaipur Landmarks ---
-  "jaipur:hawa-mahal": {
-    imageUrl: "/images/places/jaipur/hawa-mahal.webp",
-    visualDescription: "Five-storey pink sandstone honeycomb facade with 953 carved jharokha lattice windows.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["hawa-mahal", "hawa-mahal-palace-of-winds", "palace-of-winds"]
-  },
-  "jaipur:amber-fort": {
-    imageUrl: "/images/places/jaipur/amber-fort.webp",
-    visualDescription: "Majestic hilltop fort with pale yellow and pink sandstone ramparts reflected in Maota Lake.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["amber-fort", "amber-fort-and-maota-lake", "amer-fort", "amber-palace", "amer-palace"]
-  },
-  "jaipur:city-palace": {
-    imageUrl: "/images/places/jaipur/city-palace.webp",
-    visualDescription: "Royal complex of courtyards, gardens, and ornate pavilions fusing Rajput and Mughal architecture.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["city-palace", "city-palace-jaipur", "jaipur-city-palace"]
-  },
-  "jaipur:nahargarh-fort": {
-    imageUrl: "/images/places/jaipur/nahargarh-fort.webp",
-    visualDescription: "Aravalli ridge fortress offering panoramic sunset views across the pink city expanse.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["nahargarh-fort", "nahargarh-fort-sunset", "nahargarh-fort-sunset-bastion", "nahargarh"]
-  },
-
-  // --- Udaipur Landmarks ---
-  "udaipur:city-palace-udaipur": {
-    imageUrl: "/images/places/udaipur/city-palace-udaipur.webp",
-    visualDescription: "Monumental whitewashed marble palace with mirrored domes rising over the eastern shore of Lake Pichola.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["city-palace-udaipur", "city-palace-of-udaipur", "city-palace"]
-  },
-  "udaipur:lake-pichola": {
-    imageUrl: "/images/places/udaipur/lake-pichola.webp",
-    visualDescription: "Picturesque freshwater lake surrounded by whitewashed havelis, ghats, and hill silhouettes.",
-    category: "Nature & Trails",
-    semanticTheme: "lake",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["lake-pichola", "lake-pichola-boat", "lake-pichola-sunset-boat-voyage", "pichola-lake", "pichola"]
-  },
-  "udaipur:saheliyon-ki-bari": {
-    imageUrl: "/images/places/udaipur/saheliyon-ki-bari.webp",
-    visualDescription: "Historic royal garden with marble pavilions, lotus pools, and natural rain fountains.",
-    category: "Nature & Trails",
-    semanticTheme: "nature",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["saheliyon-ki-bari", "saheliyon-ki-bari-garden-of-the-maids", "garden-of-the-maids"]
-  },
-
-  // --- Varanasi Landmarks ---
-  "varanasi:dashashwamedh-ghat-aarti": {
-    imageUrl: "/images/places/varanasi/dashashwamedh-ghat-aarti.webp",
-    visualDescription: "Historic stone riverfront steps illuminated by brass oil lamps and evening river reflections.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["dashashwamedh-ghat-aarti", "dashashwamedh-ghat-evening-maha-aarti", "dashashwamedh-ghat"]
-  },
-  "varanasi:kashi-vishwanath": {
-    imageUrl: "/images/places/varanasi/kashi-vishwanath.webp",
-    visualDescription: "Sacred golden-spired temple of Lord Shiva along the eternal sandstone corridor of Kashi.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["kashi-vishwanath", "kashi-vishwanath-golden-temple-corridor", "kashi-vishwanath-temple", "vishwanath-temple"]
-  },
-  "varanasi:assi-ghat": {
-    imageUrl: "/images/places/varanasi/assi-ghat.webp",
-    visualDescription: "Southernmost sacred ghat at the Assi-Ganga confluence famous for morning yoga, Vedic chants, and sunrise mist.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["assi-ghat", "assi-ghat-subah", "assi-ghat-and-subah-e-banaras-dawn-chants", "asi-ghat"]
-  },
-  "varanasi:blue-lassi-shop": {
-    imageUrl: "/images/places/varanasi/blue-lassi-shop.webp",
-    visualDescription: "Historic alley shop serving thick hand-churned curd lassi in clay kulhad with fresh fruit and rabri.",
-    category: "Local Food",
-    semanticTheme: "food",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["blue-lassi-shop", "blue-lassi", "blue-lassi-traditional-shop"]
-  },
-  "varanasi:sarnath": {
-    imageUrl: "/images/places/varanasi/sarnath.webp",
-    visualDescription: "Sacred deer park and monumental Dhamek Stupa where Lord Buddha gave his first sermon.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["sarnath", "sarnath-stupa", "sarnath-sacred-deer-park-and-dhamek-stupa", "dhamek-stupa"]
-  },
-
-  // --- Rishikesh Landmarks ---
-  "rishikesh:triveni-ghat": {
-    imageUrl: "/images/places/rishikesh/triveni-ghat.webp",
-    visualDescription: "Sacred stone riverfront steps at the Ganges confluence with twilight brass aarti lamps and floating diyas.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["triveni-ghat", "triveni-ghat-evening-maha-aarti", "triveni-ghat-aarti"]
-  },
-  "rishikesh:little-buddha-cafe": {
-    imageUrl: "/images/places/rishikesh/little-buddha-cafe.webp",
-    visualDescription: "Treehouse café overlooking the emerald Ganga and Lakshman Jhula with sunset mountain views.",
-    category: "Cafés & Bakery",
-    semanticTheme: "cafe",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["little-buddha-cafe", "the-little-buddha-cafe", "little-buddha"]
-  },
-  "rishikesh:beatles-ashram": {
-    imageUrl: "/images/places/rishikesh/beatles-ashram.webp",
-    visualDescription: "Transcendental meditation ashram tucked inside Rajaji Tiger Reserve with stone meditation domes and murals.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["beatles-ashram", "the-beatles-ashram-chaurasi-kutia", "chaurasi-kutia", "beatles-ashram-rishikesh"]
-  },
-  "rishikesh:neer-garh-waterfall": {
-    imageUrl: "/images/places/rishikesh/neer-garh-waterfall.webp",
-    visualDescription: "Tiered jade-colored natural spring waterfall cascading into jungle limestone pools.",
-    category: "Nature & Trails",
-    semanticTheme: "waterfall",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["neer-garh-waterfall", "neer-garh", "neer-waterfall"]
-  },
-
-  // --- Dharamshala / McLeod Ganj Landmarks ---
-  "dharamshala:namgyal-monastery": {
-    imageUrl: "/images/places/dharamshala/namgyal-monastery.webp",
-    visualDescription: "Dalai Lama monastery complex with prayer wheels surrounded by cedar woods under the Dhauladhar wall.",
-    category: "Culture & Heritage",
-    semanticTheme: "monastery",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["namgyal-monastery", "namgyal-monastery-and-tsuglagkhang-complex", "tsuglagkhang-complex"]
-  },
-  "dharamshala:bhagsunag-waterfall": {
-    imageUrl: "/images/places/dharamshala/bhagsunag-waterfall.webp",
-    visualDescription: "Fresh mountain waterfall tumbling down rocky cliffs with bohemian Shiva Café above.",
-    category: "Nature & Trails",
-    semanticTheme: "waterfall",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["bhagsunag-waterfall", "bhagsunag-waterfall-and-shiva-cafe", "bhagsu-waterfall", "bhagsu-falls"]
-  },
-  "dharamshala:triund-trek": {
-    imageUrl: "/images/places/dharamshala/triund-trek.webp",
-    visualDescription: "High-altitude ridge trail opening to views of the sheer Dhauladhar granite wall and Kangra valley.",
-    category: "Adventure",
-    semanticTheme: "trail",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["triund-trek", "triund-high-ridge-himalayan-trek", "triund"]
-  },
-
-  // --- Munnar Landmarks ---
-  "munnar:kolukkumalai-tea": {
-    imageUrl: "/images/places/munnar/kolukkumalai-tea.webp",
-    visualDescription: "World's highest organic tea plantation perched at 2,160m with sunrise cloud inversions.",
-    category: "Nature & Trails",
-    semanticTheme: "nature",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["kolukkumalai-tea", "kolukkumalai-highest-tea-estate", "kolukkumalai"]
-  },
-  "munnar:eravikulam-park": {
-    imageUrl: "/images/places/munnar/eravikulam-park.webp",
-    visualDescription: "High-altitude rolling grassland sanctuary home to the Nilgiri Tahr and Anamudi peak.",
-    category: "Nature & Trails",
-    semanticTheme: "nature",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["eravikulam-park", "eravikulam-national-park-and-anamudi-ridge", "eravikulam-national-park"]
-  },
-  "munnar:mattupetty-dam": {
-    imageUrl: "/images/places/munnar/mattupetty-dam.webp",
-    visualDescription: "Tranquil concrete gravity dam surrounded by emerald tea plantation slopes reflecting in the lake.",
-    category: "Nature & Trails",
-    semanticTheme: "lake",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["mattupetty-dam", "mattupetty-dam-and-reflection-lake", "mattupetty-lake"]
-  },
-
-  // --- Leh Ladakh Landmarks ---
-  "leh:thiksey-monastery-gompa": {
-    imageUrl: "/images/places/leh/thiksey-monastery-gompa.webp",
-    visualDescription: "Layered 12-storey whitewashed and ochre Tibetan monastery rising on a hill above the Indus Valley.",
-    category: "Culture & Heritage",
-    semanticTheme: "monastery",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["thiksey-monastery-gompa", "thiksey-monastery", "thiksey-gompa"]
-  },
-  "leh:pangong-tso": {
-    imageUrl: "/images/places/leh/pangong-tso.webp",
-    visualDescription: "High-altitude saline lake shifting in shades of cobalt and turquoise under barren Himalayan crags.",
-    category: "Nature & Trails",
-    semanticTheme: "lake",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["pangong-tso", "pangong-tso-lake", "pangong-tso-alpine-lake", "pangong-lake", "pangong"]
-  },
-  "leh:leh-palace": {
-    imageUrl: "/images/places/leh/leh-palace.webp",
-    visualDescription: "Historic 17th-century Tibetan royal palace crowning the mountain ridge over Leh old town.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["leh-palace", "palace-of-leh", "leh-chen-spalkhar"]
-  },
-
-  // --- Goa Landmarks ---
-  "goa:fontainhas-latin-quarter": {
-    imageUrl: "/images/places/goa/fontainhas-latin-quarter.webp",
-    visualDescription: "Pastel-painted Portuguese heritage houses with wrought-iron balconies and bougainvillea in Panaji.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["fontainhas-latin-quarter", "fontainhas", "fontainhas-latin-heritage-quarter"]
-  },
-  "goa:aguada-fort": {
-    imageUrl: "/images/places/goa/aguada-fort.webp",
-    visualDescription: "17th-century Portuguese laterite stone sea fortress and cylindrical lighthouse on coastal headland.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["aguada-fort", "aguada-fort-and-historic-lighthouse", "fort-aguada"]
-  },
-  "goa:anjuna-beach": {
-    imageUrl: "/images/places/goa/anjuna-beach.webp",
-    visualDescription: "Curved palm-fringed Arabian sea coastline with rocky laterite outcrops and seaside shacks.",
-    category: "Nature & Trails",
-    semanticTheme: "beach",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: ["anjuna-beach", "anjuna-flea-market", "anjuna"]
+    aliases: [
+      "kaza",
+      "kaza-town",
+      "kaza-market",
+      "kaza-high-town-and-local-bazaar"
+    ]
   }
 };
 
@@ -696,31 +1120,104 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
     categories: Partial<Record<SemanticTheme, string>>;
   }
 > = {
-  spiti: {
-    generic: "/images/destinations/spiti-valley/hero.jpg",
+  jaipur: {
+    generic: "/images/destinations/jaipur/hero.jpg",
     categories: {
-      stay: "/images/places/spiti/categories/stay.webp",
-      cafe: "/images/places/spiti/categories/cafe.webp",
-      food: "/images/places/spiti/categories/cafe.webp",
-      nature: "/images/places/spiti/categories/nature.webp",
-      trail: "/images/places/spiti/categories/nature.webp",
-      lake: "/images/places/spiti/categories/lake.webp",
-      monastery: "/images/places/spiti/categories/monastery.webp",
-      spiritual: "/images/places/spiti/categories/spiritual.webp",
-      heritage: "/images/places/spiti/categories/heritage.webp",
-      viewpoint: "/images/places/spiti/categories/viewpoint.webp"
+      stay: "/images/places/jaipur/categories/stay.webp",
+      cafe: "/images/places/jaipur/categories/cafe.webp",
+      food: "/images/places/jaipur/categories/cafe.webp",
+      nature: "/images/places/jaipur/categories/nature.webp",
+      trail: "/images/places/jaipur/categories/nature.webp",
+      heritage: "/images/places/jaipur/categories/heritage.webp",
+      spiritual: "/images/places/jaipur/categories/spiritual.webp",
+      viewpoint: "/images/places/jaipur/categories/viewpoint.webp",
+      waterfall: "/images/places/jaipur/categories/waterfall.webp",
+      lake: "/images/places/jaipur/categories/lake.webp",
+      monastery: "/images/places/jaipur/categories/monastery.webp",
+      church: "/images/places/jaipur/categories/church.webp",
+      beach: "/images/places/jaipur/categories/beach.webp",
+      shopping: "/images/places/jaipur/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
     }
   },
-  kasol: {
-    generic: "/images/destinations/kasol/hero.jpg",
+  leh: {
+    generic: "/images/destinations/leh/hero.jpg",
     categories: {
-      stay: "/images/places/kasol/categories/stay.webp",
-      cafe: "/images/places/kasol/categories/cafe.webp",
-      food: "/images/places/kasol/categories/cafe.webp",
-      nature: "/images/places/kasol/categories/nature.webp",
-      trail: "/images/places/kasol/categories/nature.webp",
-      spiritual: "/images/places/kasol/categories/spiritual.webp",
-      viewpoint: "/images/places/kasol/categories/viewpoint.webp"
+      stay: "/images/places/leh/categories/stay.webp",
+      cafe: "/images/places/leh/categories/cafe.webp",
+      food: "/images/places/leh/categories/cafe.webp",
+      nature: "/images/places/leh/categories/nature.webp",
+      trail: "/images/places/leh/categories/nature.webp",
+      lake: "/images/places/leh/categories/lake.webp",
+      monastery: "/images/places/leh/categories/monastery.webp",
+      heritage: "/images/places/leh/categories/heritage.webp",
+      spiritual: "/images/places/leh/categories/spiritual.webp",
+      viewpoint: "/images/places/leh/categories/viewpoint.webp",
+      waterfall: "/images/places/leh/categories/waterfall.webp",
+      church: "/images/places/leh/categories/church.webp",
+      beach: "/images/places/leh/categories/beach.webp",
+      shopping: "/images/places/leh/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
+    }
+  },
+  udaipur: {
+    generic: "/images/destinations/udaipur/hero.jpg",
+    categories: {
+      stay: "/images/places/udaipur/categories/stay.webp",
+      cafe: "/images/places/udaipur/categories/cafe.webp",
+      food: "/images/places/udaipur/categories/cafe.webp",
+      nature: "/images/places/udaipur/categories/nature.webp",
+      trail: "/images/places/udaipur/categories/nature.webp",
+      lake: "/images/places/udaipur/categories/lake.webp",
+      heritage: "/images/places/udaipur/categories/heritage.webp",
+      spiritual: "/images/places/udaipur/categories/spiritual.webp",
+      viewpoint: "/images/places/udaipur/categories/viewpoint.webp",
+      waterfall: "/images/places/udaipur/categories/waterfall.webp",
+      monastery: "/images/places/udaipur/categories/monastery.webp",
+      church: "/images/places/udaipur/categories/church.webp",
+      beach: "/images/places/udaipur/categories/beach.webp",
+      shopping: "/images/places/udaipur/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
+    }
+  },
+  dharamshala: {
+    generic: "/images/destinations/dharamshala/hero.jpg",
+    categories: {
+      stay: "/images/places/dharamshala/categories/stay.webp",
+      cafe: "/images/places/dharamshala/categories/cafe.webp",
+      food: "/images/places/dharamshala/categories/cafe.webp",
+      nature: "/images/places/dharamshala/categories/nature.webp",
+      trail: "/images/places/dharamshala/categories/nature.webp",
+      waterfall: "/images/places/dharamshala/categories/waterfall.webp",
+      monastery: "/images/places/dharamshala/categories/monastery.webp",
+      spiritual: "/images/places/dharamshala/categories/spiritual.webp",
+      heritage: "/images/places/dharamshala/categories/heritage.webp",
+      viewpoint: "/images/places/dharamshala/categories/viewpoint.webp",
+      lake: "/images/places/dharamshala/categories/lake.webp",
+      church: "/images/places/dharamshala/categories/church.webp",
+      beach: "/images/places/dharamshala/categories/beach.webp",
+      shopping: "/images/places/dharamshala/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
+    }
+  },
+  varanasi: {
+    generic: "/images/destinations/varanasi/hero.jpg",
+    categories: {
+      stay: "/images/places/varanasi/categories/stay.webp",
+      cafe: "/images/places/varanasi/categories/cafe.webp",
+      food: "/images/places/varanasi/categories/cafe.webp",
+      nature: "/images/places/varanasi/categories/nature.webp",
+      trail: "/images/places/varanasi/categories/nature.webp",
+      spiritual: "/images/places/varanasi/categories/spiritual.webp",
+      heritage: "/images/places/varanasi/categories/heritage.webp",
+      viewpoint: "/images/places/varanasi/categories/viewpoint.webp",
+      lake: "/images/places/varanasi/categories/lake.webp",
+      waterfall: "/images/places/varanasi/categories/waterfall.webp",
+      monastery: "/images/places/varanasi/categories/monastery.webp",
+      church: "/images/places/varanasi/categories/church.webp",
+      beach: "/images/places/varanasi/categories/beach.webp",
+      shopping: "/images/places/varanasi/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
     }
   },
   manali: {
@@ -734,7 +1231,33 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       waterfall: "/images/places/manali/categories/waterfall.webp",
       spiritual: "/images/places/manali/categories/spiritual.webp",
       heritage: "/images/places/manali/categories/heritage.webp",
-      viewpoint: "/images/places/manali/categories/viewpoint.webp"
+      viewpoint: "/images/places/manali/categories/viewpoint.webp",
+      lake: "/images/places/manali/categories/lake.webp",
+      monastery: "/images/places/manali/categories/monastery.webp",
+      church: "/images/places/manali/categories/church.webp",
+      beach: "/images/places/manali/categories/beach.webp",
+      shopping: "/images/places/manali/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
+    }
+  },
+  kasol: {
+    generic: "/images/destinations/kasol/hero.jpg",
+    categories: {
+      stay: "/images/places/kasol/categories/stay.webp",
+      cafe: "/images/places/kasol/categories/cafe.webp",
+      food: "/images/places/kasol/categories/food.webp",
+      nature: "/images/places/kasol/categories/nature.webp",
+      trail: "/images/places/kasol/categories/nature.webp",
+      spiritual: "/images/places/kasol/categories/spiritual.webp",
+      heritage: "/images/places/kasol/categories/heritage.webp",
+      viewpoint: "/images/places/kasol/categories/viewpoint.webp",
+      waterfall: "/images/places/kasol/categories/waterfall.webp",
+      lake: "/images/places/kasol/categories/lake.webp",
+      monastery: "/images/places/kasol/categories/monastery.webp",
+      church: "/images/places/kasol/categories/church.webp",
+      beach: "/images/places/kasol/categories/beach.webp",
+      shopping: "/images/places/kasol/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
     }
   },
   mussoorie: {
@@ -748,45 +1271,53 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       waterfall: "/images/places/mussoorie/categories/waterfall.webp",
       church: "/images/places/mussoorie/categories/church.webp",
       spiritual: "/images/places/mussoorie/categories/spiritual.webp",
-      viewpoint: "/images/places/mussoorie/categories/viewpoint.webp"
+      heritage: "/images/places/mussoorie/categories/heritage.webp",
+      viewpoint: "/images/places/mussoorie/categories/viewpoint.webp",
+      lake: "/images/places/mussoorie/categories/lake.webp",
+      monastery: "/images/places/mussoorie/categories/monastery.webp",
+      beach: "/images/places/mussoorie/categories/beach.webp",
+      shopping: "/images/places/mussoorie/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
     }
   },
-  jaipur: {
-    generic: "/images/destinations/jaipur/hero.jpg",
+  goa: {
+    generic: "/images/destinations/goa/hero.jpg",
     categories: {
-      stay: "/images/places/jaipur/categories/stay.webp",
-      cafe: "/images/places/jaipur/categories/cafe.webp",
-      food: "/images/places/jaipur/categories/cafe.webp",
-      nature: "/images/places/jaipur/categories/nature.webp",
-      heritage: "/images/places/jaipur/categories/heritage.webp",
-      spiritual: "/images/places/jaipur/categories/spiritual.webp",
-      viewpoint: "/images/places/jaipur/categories/viewpoint.webp",
-      shopping: "/images/places/jaipur/categories/cafe.webp"
+      stay: "/images/places/goa/categories/stay.webp",
+      cafe: "/images/places/goa/categories/cafe.webp",
+      food: "/images/places/goa/categories/cafe.webp",
+      nature: "/images/places/goa/categories/nature.webp",
+      trail: "/images/places/goa/categories/nature.webp",
+      beach: "/images/places/goa/categories/beach.webp",
+      heritage: "/images/places/goa/categories/heritage.webp",
+      spiritual: "/images/places/goa/categories/spiritual.webp",
+      church: "/images/places/goa/categories/church.webp",
+      waterfall: "/images/places/goa/categories/waterfall.webp",
+      viewpoint: "/images/places/goa/categories/viewpoint.webp",
+      lake: "/images/places/goa/categories/lake.webp",
+      monastery: "/images/places/goa/categories/monastery.webp",
+      shopping: "/images/places/goa/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
     }
   },
-  udaipur: {
-    generic: "/images/destinations/udaipur/hero.jpg",
+  munnar: {
+    generic: "/images/destinations/fallbacks/valley.jpg",
     categories: {
-      stay: "/images/places/udaipur/categories/stay.webp",
-      cafe: "/images/places/udaipur/categories/cafe.webp",
-      food: "/images/places/udaipur/categories/cafe.webp",
-      nature: "/images/places/udaipur/categories/nature.webp",
-      lake: "/images/places/udaipur/categories/lake.webp",
-      heritage: "/images/places/udaipur/categories/heritage.webp",
-      spiritual: "/images/places/udaipur/categories/spiritual.webp",
-      viewpoint: "/images/places/udaipur/categories/viewpoint.webp"
-    }
-  },
-  varanasi: {
-    generic: "/images/destinations/varanasi/hero.jpg",
-    categories: {
-      stay: "/images/places/varanasi/categories/stay.webp",
-      cafe: "/images/places/varanasi/categories/cafe.webp",
-      food: "/images/places/varanasi/categories/cafe.webp",
-      nature: "/images/places/varanasi/categories/nature.webp",
-      spiritual: "/images/places/varanasi/categories/spiritual.webp",
-      heritage: "/images/places/varanasi/categories/heritage.webp",
-      viewpoint: "/images/places/varanasi/categories/viewpoint.webp"
+      stay: "/images/places/munnar/categories/stay.webp",
+      cafe: "/images/places/munnar/categories/cafe.webp",
+      food: "/images/places/munnar/categories/cafe.webp",
+      nature: "/images/places/munnar/categories/nature.webp",
+      trail: "/images/places/munnar/categories/nature.webp",
+      waterfall: "/images/places/munnar/categories/waterfall.webp",
+      lake: "/images/places/munnar/categories/lake.webp",
+      heritage: "/images/places/munnar/categories/heritage.webp",
+      spiritual: "/images/places/munnar/categories/spiritual.webp",
+      viewpoint: "/images/places/munnar/categories/viewpoint.webp",
+      monastery: "/images/places/munnar/categories/monastery.webp",
+      church: "/images/places/munnar/categories/church.webp",
+      beach: "/images/places/munnar/categories/beach.webp",
+      shopping: "/images/places/munnar/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
     }
   },
   rishikesh: {
@@ -798,65 +1329,41 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       nature: "/images/places/rishikesh/categories/nature.webp",
       trail: "/images/places/rishikesh/categories/nature.webp",
       spiritual: "/images/places/rishikesh/categories/spiritual.webp",
-      viewpoint: "/images/places/rishikesh/categories/viewpoint.webp"
+      heritage: "/images/places/rishikesh/categories/heritage.webp",
+      waterfall: "/images/places/rishikesh/categories/waterfall.webp",
+      viewpoint: "/images/places/rishikesh/categories/viewpoint.webp",
+      lake: "/images/places/rishikesh/categories/lake.webp",
+      monastery: "/images/places/rishikesh/categories/monastery.webp",
+      church: "/images/places/rishikesh/categories/church.webp",
+      beach: "/images/places/rishikesh/categories/beach.webp",
+      shopping: "/images/places/rishikesh/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
     }
   },
-  dharamshala: {
-    generic: "/images/destinations/dharamshala/hero.jpg",
+  spiti: {
+    generic: "/images/destinations/spiti-valley/hero.jpg",
     categories: {
-      stay: "/images/places/dharamshala/categories/stay.webp",
-      cafe: "/images/places/dharamshala/categories/cafe.webp",
-      food: "/images/places/dharamshala/categories/cafe.webp",
-      nature: "/images/places/dharamshala/categories/nature.webp",
-      waterfall: "/images/places/dharamshala/categories/waterfall.webp",
-      monastery: "/images/places/dharamshala/categories/monastery.webp",
-      spiritual: "/images/places/dharamshala/categories/spiritual.webp",
-      viewpoint: "/images/places/dharamshala/categories/viewpoint.webp"
-    }
-  },
-  leh: {
-    generic: "/images/destinations/leh/hero.jpg",
-    categories: {
-      stay: "/images/places/leh/categories/stay.webp",
-      cafe: "/images/places/leh/categories/cafe.webp",
-      food: "/images/places/leh/categories/cafe.webp",
-      nature: "/images/places/leh/categories/nature.webp",
-      lake: "/images/places/leh/categories/lake.webp",
-      monastery: "/images/places/leh/categories/monastery.webp",
-      heritage: "/images/places/leh/categories/heritage.webp",
-      spiritual: "/images/places/leh/categories/spiritual.webp",
-      viewpoint: "/images/places/leh/categories/viewpoint.webp"
-    }
-  },
-  goa: {
-    generic: "/images/destinations/goa/hero.jpg",
-    categories: {
-      stay: "/images/places/goa/categories/stay.webp",
-      cafe: "/images/places/goa/categories/cafe.webp",
-      food: "/images/places/goa/categories/cafe.webp",
-      nature: "/images/places/goa/categories/nature.webp",
-      beach: "/images/places/goa/categories/beach.webp",
-      heritage: "/images/places/goa/categories/heritage.webp",
-      spiritual: "/images/places/goa/categories/spiritual.webp",
-      viewpoint: "/images/places/goa/categories/viewpoint.webp"
-    }
-  },
-  munnar: {
-    generic: "/images/destinations/fallbacks/valley.jpg",
-    categories: {
-      stay: "/images/places/munnar/categories/stay.webp",
-      cafe: "/images/places/munnar/categories/cafe.webp",
-      food: "/images/places/munnar/categories/cafe.webp",
-      nature: "/images/places/munnar/categories/nature.webp",
-      trail: "/images/places/munnar/categories/nature.webp",
-      spiritual: "/images/places/munnar/categories/spiritual.webp",
-      viewpoint: "/images/places/munnar/categories/viewpoint.webp"
+      stay: "/images/places/spiti/categories/stay.webp",
+      cafe: "/images/places/spiti/categories/cafe.webp",
+      food: "/images/places/spiti/categories/food.webp",
+      nature: "/images/places/spiti/categories/nature.webp",
+      trail: "/images/places/spiti/categories/nature.webp",
+      lake: "/images/places/spiti/categories/lake.webp",
+      monastery: "/images/places/spiti/categories/monastery.webp",
+      spiritual: "/images/places/spiti/categories/spiritual.webp",
+      heritage: "/images/places/spiti/categories/heritage.webp",
+      viewpoint: "/images/places/spiti/categories/viewpoint.webp",
+      waterfall: "/images/places/spiti/categories/waterfall.webp",
+      church: "/images/places/spiti/categories/church.webp",
+      beach: "/images/places/spiti/categories/beach.webp",
+      shopping: "/images/places/spiti/categories/cafe.webp",
+      transport: "/images/places/universal/transport.webp"
     }
   }
 };
 
 /**
- * Controlled 38 Semantic Categories Taxonomy Classifier.
+ * Controlled Semantic Categories Taxonomy Classifier.
  * Deterministic mapping to prevent theme collisions.
  */
 export function classifyCategoryTheme(
@@ -880,7 +1387,12 @@ export function classifyCategoryTheme(
     text.includes("accommodation") ||
     text.includes("villa") ||
     text.includes("inn") ||
-    text.includes("mudhouse")
+    text.includes("mudhouse") ||
+    text.includes("sanctuary retreat") ||
+    text.includes("boutique retreat") ||
+    text.includes("camp") ||
+    text.includes("tent") ||
+    text.includes("residency")
   ) {
     return "stay";
   }
@@ -894,7 +1406,8 @@ export function classifyCategoryTheme(
     text.includes("bakehouse") ||
     text.includes("tea house") ||
     text.includes("espresso") ||
-    text.includes("german bakery")
+    text.includes("german bakery") ||
+    text.includes("patisserie")
   ) {
     return "cafe";
   }
@@ -914,7 +1427,9 @@ export function classifyCategoryTheme(
     text.includes("sweet") ||
     text.includes("chaat") ||
     text.includes("thukpa") ||
-    text.includes("lassi")
+    text.includes("lassi") ||
+    text.includes("rasoi") ||
+    text.includes("thali")
   ) {
     return "food";
   }
@@ -959,7 +1474,8 @@ export function classifyCategoryTheme(
     text.includes("tal") ||
     text.includes("river") ||
     text.includes("stream") ||
-    text.includes("pond")
+    text.includes("pond") ||
+    text.includes("dam")
   ) {
     return "lake";
   }
@@ -982,7 +1498,8 @@ export function classifyCategoryTheme(
     text.includes("walk") ||
     text.includes("hike") ||
     text.includes("promenade") ||
-    text.includes("climb")
+    text.includes("climb") ||
+    text.includes("pass")
   ) {
     return "trail";
   }
@@ -1069,7 +1586,6 @@ export function classifyCategoryTheme(
     text.includes("peak") ||
     text.includes("tibba") ||
     text.includes("top") ||
-    text.includes("pass") ||
     text.includes("scenic point")
   ) {
     return "viewpoint";
@@ -1126,13 +1642,15 @@ export function getUniversalFallback(semanticTheme: SemanticTheme): string {
 
 export function areThemesCompatible(t1: SemanticTheme, t2: SemanticTheme): boolean {
   if (t1 === t2) return true;
-  const natureGroup = new Set<SemanticTheme>(["nature", "trail", "waterfall", "lake", "viewpoint", "beach"]);
+  // Stays are completely isolated
+  if (t1 === "stay" || t2 === "stay") return false;
+  // Food & Cafe isolated from spiritual/temples
   const foodGroup = new Set<SemanticTheme>(["cafe", "food"]);
   const spiritGroup = new Set<SemanticTheme>(["spiritual", "monastery", "church"]);
-  if (natureGroup.has(t1) && natureGroup.has(t2)) return true;
-  if (foodGroup.has(t1) && foodGroup.has(t2)) return true;
-  if (spiritGroup.has(t1) && spiritGroup.has(t2)) return true;
-  return false;
+  if ((foodGroup.has(t1) && spiritGroup.has(t2)) || (spiritGroup.has(t1) && foodGroup.has(t2))) {
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -1199,11 +1717,39 @@ export function resolvePlaceArtwork(
     };
   }
 
+  // --- HARD ISOLATION FOR STAYS: Never inherit landmark artwork ---
+  if (semanticTheme === "stay") {
+    const stayAsset = destConfig?.categories.stay || universalSafe;
+    return {
+      url: stayAsset,
+      fallback_url: universalSafe,
+      source: "vanvas_curated",
+      source_type: "category_photo",
+      provenance: "destination_category",
+      semantic_category: "stay",
+      exactness: "category_matched",
+      attribution: `VANVAS Curated ${destinationName} Stay Sanctuary`,
+      alt_text: `${placeName} accommodation in ${destinationName}`,
+      badge_label: "DESTINATION CATEGORY ART",
+      artworkKey: `${matchedDestKey || "universal"}:stay`,
+      imageUrl: stayAsset,
+      fallbackUrl: universalSafe,
+      tier: "destination_category",
+      placeName,
+      destinationName,
+      category,
+      semanticTheme: "stay",
+      isRealPhoto: false,
+      badgeLabel: "DESTINATION CATEGORY ART",
+      visualDescription: `Serene stay and hospitality sanctuary in ${destinationName}.`
+    };
+  }
+
   // --- LEVEL 4: Curated Exact-Place Artwork (Direct Key Lookup) ---
   const lookupKey = `${destNorm}:${placeNorm}`;
   if (EXACT_PLACE_REGISTRY[lookupKey]) {
     const entry = EXACT_PLACE_REGISTRY[lookupKey];
-    if (isApprovedAsset(entry.imageUrl) && areThemesCompatible(entry.semanticTheme, semanticTheme)) {
+    if (isApprovedAsset(entry.imageUrl)) {
       return {
         url: entry.imageUrl,
         fallback_url: safeFallback,
@@ -1233,17 +1779,22 @@ export function resolvePlaceArtwork(
   // --- LEVEL 4B: Curated Exact-Place Artwork (High-Confidence Alias & Distinctive Token Match) ---
   let bestExactMatch: { regKey: string; item: CuratedLandmarkEntry } | null = null;
   let bestScore = 0;
+
+  // Comprehensive generic tokens to prevent false-positive landmark collisions
   const genericTokens = new Set([
     "aarti", "temple", "trail", "waterfall", "point", "viewpoint",
-    "cove", "road", "lake", "palace", "fort", "cafe", "bakery",
-    "hill", "ridge", "view", "falls", "market", "bazaar", "shop",
-    "village", "quarter", "forest", "park", "shrine", "monastery",
+    "cove", "crescent", "road", "lake", "palace", "fort", "cafe", "bakery",
+    "hill", "ridge", "view", "falls", "market", "bazaar", "shop", "beach",
+    "village", "quarter", "forest", "park", "shrine", "monastery", "meadow",
     "gompa", "mountain", "ancient", "heritage", "pine", "scenic", "stream",
-    "house", "complex", "center", "centre", "and", "the", "near", "rd", "hall"
+    "house", "complex", "center", "centre", "and", "the", "near", "rd", "hall",
+    "stupa", "dam", "river", "sanctuary", "town", "valley", "cascade", "pool",
+    "retreat", "resort", "hotel", "villa", "lodge", "camp", "treehouse",
+    "walk", "promenade", "dome", "institute", "cultural", "woods", "stone"
   ]);
 
   for (const [regKey, item] of Object.entries(EXACT_PLACE_REGISTRY)) {
-    if (!isApprovedAsset(item.imageUrl) || !areThemesCompatible(item.semanticTheme, semanticTheme)) {
+    if (!isApprovedAsset(item.imageUrl)) {
       continue;
     }
     const [regDest, regPlace] = regKey.split(":");
@@ -1257,9 +1808,9 @@ export function resolvePlaceArtwork(
         for (const al of aliases) {
           if (al === placeNorm) {
             score = Math.max(score, 100);
-          } else if (placeNorm.includes(al)) {
+          } else if (placeNorm.includes(al) && al.length >= 4) {
             score = Math.max(score, 80 + al.length);
-          } else if (al.includes(placeNorm)) {
+          } else if (al.includes(placeNorm) && placeNorm.length >= 4) {
             score = Math.max(score, 70 + placeNorm.length);
           }
         }

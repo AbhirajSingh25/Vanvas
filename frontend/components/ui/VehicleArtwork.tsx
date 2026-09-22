@@ -18,7 +18,7 @@ interface VehicleArtworkProps {
 }
 
 /**
- * Resolves vehicle title/type to approved VANVAS vector artwork
+ * Resolves vehicle title/type to approved VANVAS editorial artwork
  */
 export function resolveVehicleArtwork(typeOrName?: string): {
   src: string;
@@ -41,7 +41,7 @@ export function resolveVehicleArtwork(typeOrName?: string): {
     query.includes("rally")
   ) {
     return {
-      src: "/images/vehicles/adventure_motorcycle.svg",
+      src: "/images/places/universal/transport.webp",
       label: "Himalayan Adventure Motorcycle",
       category: "adventure_motorcycle",
     };
@@ -61,7 +61,7 @@ export function resolveVehicleArtwork(typeOrName?: string): {
     query.includes("ather")
   ) {
     return {
-      src: "/images/vehicles/automatic_scooter.svg",
+      src: "/images/places/universal/transport.webp",
       label: "Automatic Hill Scooter",
       category: "automatic_scooter",
     };
@@ -69,7 +69,7 @@ export function resolveVehicleArtwork(typeOrName?: string): {
 
   // 3. Classic Royal Enfield / Bullet Roadster (Default motorcycle)
   return {
-    src: "/images/vehicles/classic_bullet.svg",
+    src: "/images/places/universal/transport.webp",
     label: "Classic Himalayan Roadster",
     category: "classic_bullet",
   };
@@ -100,7 +100,7 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
       }`}
     >
       <Image
-        src={hasError ? "/images/vehicles/adventure_motorcycle.svg" : artwork.src}
+        src={hasError ? "/images/places/universal/transport.webp" : artwork.src}
         alt={alt || artwork.label}
         fill
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
