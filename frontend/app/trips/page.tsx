@@ -6,6 +6,7 @@ import { Calendar, Bookmark, Plus, MapPin, ArrowRight, Sparkles, Compass } from 
 import { api } from "@/lib/api";
 import { TripSummary, Place } from "@/types";
 import { PlaceCard } from "@/components/places/PlaceCard";
+import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 
@@ -13,6 +14,8 @@ export default function TripsDashboardPage() {
   const [activeTab, setActiveTab] = useState<"trips" | "saved">("trips");
   const [trips, setTrips] = useState<TripSummary[]>([]);
   const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -134,6 +137,10 @@ export default function TripsDashboardPage() {
               <PlaceCard
                 key={place.id}
                 place={place}
+                onSelect={(p) => {
+                  setSelectedPlace(p);
+                  setModalOpen(true);
+                }}
                 onBookmarkChange={(pId, isSaved) => {
                   if (!isSaved) setSavedPlaces((prev) => prev.filter((p) => p.id !== pId));
                 }}
@@ -142,6 +149,12 @@ export default function TripsDashboardPage() {
           </div>
         )}
       </div>
+
+      <PlaceModal
+        place={selectedPlace}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
     </div>
   );
 }

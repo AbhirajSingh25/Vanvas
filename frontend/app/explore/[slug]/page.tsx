@@ -53,6 +53,10 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (!destLoading) return;
     const msgTimer = setInterval(() => {
       setLoadingMsgIdx((prev) => (prev + 1) % DISCOVERY_MESSAGES.length);
@@ -141,8 +145,16 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     setStaysLoading(true);
     setRentalsLoading(true);
 
+    const abortTimeout = setTimeout(() => {
+      setDestLoading(false);
+      setLoadError("Connection timed out. The Himalayan intelligence layer took too long to respond.");
+      setStaysLoading(false);
+      setRentalsLoading(false);
+    }, 15000);
+
     api.getDestinationDetail(slug)
       .then((data) => {
+        clearTimeout(abortTimeout);
         if (!data || !data.destination) {
           throw new Error("404: Sanctuary not found in index");
         }
@@ -189,6 +201,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
       })
       .catch((err) => {
+        clearTimeout(abortTimeout);
         console.error("Destination fetch error:", err);
         setLoadError(err.message || "Failed to load destination");
         setDestLoading(false);
