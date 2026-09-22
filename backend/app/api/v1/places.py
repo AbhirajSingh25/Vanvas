@@ -15,6 +15,32 @@ from app.core.rate_limiter import rate_limit
 router = APIRouter()
 scorer = RecommendationScorer()
 
+from sqlalchemy import or_
+
+def map_category_filter(cat: Optional[str]) -> List[str]:
+    if not cat or cat.lower() == "all":
+        return []
+    c = cat.lower().strip()
+    if c in ["food", "dining", "restaurant", "street_food", "local food"]:
+        return ["Local Food", "Cafés & Bakery", "Food"]
+    elif c in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
+        return ["Cafés & Bakery", "Cafe", "Bakery"]
+    elif c in ["attractions", "attraction", "sightseeing"]:
+        return ["Attractions", "Culture & Heritage", "Nature & Trails", "Adventure", "Adventure & Sport"]
+    elif c in ["spiritual", "temple", "monastery", "church"]:
+        return ["Culture & Heritage", "Spiritual", "Temple", "Monastery"]
+    elif c in ["nature", "trails", "nature & trails", "viewpoint", "waterfall"]:
+        return ["Nature & Trails", "Adventure", "Adventure & Sport"]
+    elif c in ["shopping", "market", "bazaar", "shops & markets", "markets & craft"]:
+        return ["Shops & Markets", "Markets & Craft", "Shopping"]
+    elif c in ["mobility", "transport", "rental", "rentals", "bike", "motorcycle"]:
+        return ["Mobility & Transport", "Transport", "Rentals"]
+    elif c in ["stay", "stays", "hotel", "hostel", "homestay", "stays & sanctuaries"]:
+        return ["Stays & Sanctuaries", "Stay", "Hotel", "Homestay"]
+    elif c in ["essentials", "medical", "pharmacy", "hospital", "essentials & medical"]:
+        return ["Essentials & Medical", "Essentials", "Medical"]
+    return [cat]
+
 @router.get("/nearby", response_model=List[PlaceResponse], dependencies=[Depends(rate_limit(max_requests=60, window_seconds=60))])
 async def get_nearby_places(
     lat: float = Query(32.2396, description="Current latitude"),
@@ -28,8 +54,10 @@ async def get_nearby_places(
 ):
     query = db.query(Place).filter(Place.is_active == True)
     
-    if category and category.lower() != "all":
-        query = query.filter(Place.category.ilike(f"%{category}%"))
+    cat_terms = map_category_filter(category)
+    if cat_terms:
+        conditions = [Place.category.ilike(f"%{term}%") for term in cat_terms]
+        query = query.filter(or_(*conditions))
     
     all_places = query.all()
     user_saved_ids = set()
@@ -149,7 +177,7 @@ async def get_nearby_places(
                     is_must_visit=lp.get("is_must_visit", False),
                     is_hidden_gem=lp.get("is_hidden_gem", False),
                     is_indoor=lp.get("is_indoor", False),
-                    is_saved=False,
+                    is_saved=lp.get("id") in user_saved_ids if user_saved_ids else False,
                     match_score=85.0,
                     source=lp.get("source", "openstreetmap"),
                     source_id=lp.get("source_id"),
@@ -238,7 +266,25 @@ def toggle_save_place(
 ):
     place = db.query(Place).filter(Place.id == place_id).first()
     if not place:
-        raise HTTPException(status_code=404, detail="Place not found")
+        # Dynamically link live POI to support saving arbitrary live discovery results
+        fallback_dest = db.query(Destination).first()
+        dest_id = fallback_dest.id if fallback_dest else "live"
+        dest_lat = fallback_dest.latitude if fallback_dest else 0.0
+        dest_lng = fallback_dest.longitude if fallback_dest else 0.0
+        clean_name = place_id.replace("osm-", "").replace("gp-", "").replace("live-", "").replace("-", " ").title()
+        place = Place(
+            id=place_id,
+            destination_id=dest_id,
+            name=clean_name,
+            slug=place_id.lower(),
+            category="Attractions",
+            description="Saved live point of interest.",
+            latitude=dest_lat,
+            longitude=dest_lng,
+            is_active=True
+        )
+        db.add(place)
+        db.flush()
 
     existing = db.query(SavedPlace).filter(
         SavedPlace.user_id == current_user.id,
@@ -267,6 +313,43 @@ def get_place_detail(
 ):
     place = db.query(Place).filter(Place.id == place_id).first()
     if not place:
+        # Handle live place IDs transparently
+        if place_id.startswith("osm-") or place_id.startswith("gp-") or place_id.startswith("live-"):
+            clean_name = place_id.replace("osm-", "").replace("gp-", "").replace("live-", "").replace("-", " ").title()
+            source = "google_places" if place_id.startswith("gp-") else "openstreetmap"
+            return PlaceResponse(
+                id=place_id,
+                destination_id="live",
+                category="Attractions",
+                name=clean_name,
+                slug=place_id.lower(),
+                description=f"Verified {source} live discovery landmark.",
+                address="Live Verified Location",
+                latitude=0.0,
+                longitude=0.0,
+                price_level=None,
+                approx_cost=None,
+                rating=None,
+                review_count=None,
+                opening_time=None,
+                closing_time=None,
+                hours_available=False,
+                is_open_now=None,
+                phone=None,
+                website=None,
+                recommended_duration_mins=60,
+                tags=f"Live,{source}",
+                image_url=None,
+                why_vanvas_recommends=None,
+                booking_url=None,
+                is_must_visit=False,
+                is_hidden_gem=False,
+                is_indoor=False,
+                is_saved=False,
+                action_links=[],
+                data_state="LIVE",
+                trust_source=source.upper(),
+            )
         raise HTTPException(status_code=404, detail="Place not found")
 
     is_saved = False

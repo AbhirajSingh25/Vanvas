@@ -543,7 +543,7 @@ def seed_database():
                     "opening_time": "10:00",
                     "closing_time": "20:00",
                     "tags": "Haveli,Folk Dance,Culture,Puppets,Ghat",
-                    "image_url": "/images/places/udaipur/categories/heritage.webp",
+                    "image_url": "/images/places/udaipur/bagore-ki-haveli.webp",
                     "why_vanvas_recommends": "The most authentic cultural evening performance in Rajasthan.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,

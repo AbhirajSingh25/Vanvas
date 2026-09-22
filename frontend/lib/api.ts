@@ -406,6 +406,47 @@ export const api = {
     });
   },
 
+  async geocodeLocation(query: string): Promise<{ name: string; display_name?: string; lat: number; lng: number } | null> {
+    try {
+      const res = await fetchApi<any>(`/search/unified?q=${encodeURIComponent(query)}`);
+      if (res && res.location) {
+        return {
+          name: res.location.name || query,
+          display_name: res.location.display_name || res.location.name || query,
+          lat: res.location.lat,
+          lng: res.location.lng,
+        };
+      }
+      const auto = await fetchApi<any[]>(`/destinations/search?q=${encodeURIComponent(query)}&limit=1`);
+      if (auto && auto.length > 0) {
+        return {
+          name: auto[0].name,
+          display_name: auto[0].display_name || auto[0].name,
+          lat: auto[0].lat,
+          lng: auto[0].lng,
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  async searchLocationAutocomplete(query: string): Promise<Array<{ name: string; display_name: string; lat: number; lng: number; state?: string }>> {
+    try {
+      const results = await fetchApi<any[]>(`/destinations/search?q=${encodeURIComponent(query)}&limit=6`);
+      return (results || []).map((r) => ({
+        name: r.name,
+        display_name: r.display_name || `${r.name}${r.state ? `, ${r.state}` : ""}`,
+        lat: r.lat,
+        lng: r.lng,
+        state: r.state,
+      }));
+    } catch {
+      return [];
+    }
+  },
+
   // Transport, Hotels & Rentals
   async getHotels(destId: string, style?: string, maxPrice?: number): Promise<Hotel[]> {
     const params = new URLSearchParams({ destination_id: destId });

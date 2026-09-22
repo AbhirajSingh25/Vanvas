@@ -307,10 +307,42 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "thiksey"
     ]
   },
+  "leh:himalayan-450-expedition": {
+    imageUrl: "/images/places/universal/transport.webp",
+    visualDescription: "Himalayan adventure motorcycle expedition traversing high mountain passes.",
+    category: "Mobility & Transport",
+    semanticTheme: "transport",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "himalayan-450-expedition",
+      "himalayan-450",
+      "scooter-and-motorcycle-rentals",
+      "motorcycle-rental",
+      "scooter-rental",
+      "leh-bike-rental"
+    ]
+  },
 
   // ==========================================
   // --- UDAIPUR LANDMARKS ---
   // ==========================================
+  "udaipur:bagore-ki-haveli": {
+    imageUrl: "/images/places/udaipur/bagore-ki-haveli.webp",
+    visualDescription: "Historic 18th-century noble mansion at Gangaur Ghat with ornate stone jharokhas and evening Dharohar folk dance.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "bagore-ki-haveli",
+      "bagore-ki-haveli-and-evening-folk-dance",
+      "bagore-ki-haveli-evening-folk-dance",
+      "bagore-haveli",
+      "dharohar-folk-dance",
+      "bagore"
+    ]
+  },
   "udaipur:city-palace-udaipur": {
     imageUrl: "/images/places/udaipur/city-palace-udaipur.webp",
     visualDescription: "Monumental whitewashed marble palace with mirrored domes rising over the eastern shore of Lake Pichola.",
@@ -1776,22 +1808,8 @@ export function resolvePlaceArtwork(
     }
   }
 
-  // --- LEVEL 4B: Curated Exact-Place Artwork (High-Confidence Alias & Distinctive Token Match) ---
+  // --- LEVEL 4B: Curated Exact-Place Artwork (Explicit Alias Matching with Semantic Safety) ---
   let bestExactMatch: { regKey: string; item: CuratedLandmarkEntry } | null = null;
-  let bestScore = 0;
-
-  // Comprehensive generic tokens to prevent false-positive landmark collisions
-  const genericTokens = new Set([
-    "aarti", "temple", "trail", "waterfall", "point", "viewpoint",
-    "cove", "crescent", "road", "lake", "palace", "fort", "cafe", "bakery",
-    "hill", "ridge", "view", "falls", "market", "bazaar", "shop", "beach",
-    "village", "quarter", "forest", "park", "shrine", "monastery", "meadow",
-    "gompa", "mountain", "ancient", "heritage", "pine", "scenic", "stream",
-    "house", "complex", "center", "centre", "and", "the", "near", "rd", "hall",
-    "stupa", "dam", "river", "sanctuary", "town", "valley", "cascade", "pool",
-    "retreat", "resort", "hotel", "villa", "lodge", "camp", "treehouse",
-    "walk", "promenade", "dome", "institute", "cultural", "woods", "stone"
-  ]);
 
   for (const [regKey, item] of Object.entries(EXACT_PLACE_REGISTRY)) {
     if (!isApprovedAsset(item.imageUrl)) {
@@ -1799,41 +1817,36 @@ export function resolvePlaceArtwork(
     }
     const [regDest, regPlace] = regKey.split(":");
     if (regDest === destNorm || destNorm.includes(regDest) || regDest.includes(destNorm)) {
-      let score = 0;
+      // Hard check: ensure semantic theme compatibility before assigning exact landmark asset
+      if (!areThemesCompatible(semanticTheme, item.semanticTheme)) {
+        continue;
+      }
+
       const aliases = item.aliases || [regPlace];
+      let matched = false;
 
       if (regPlace === placeNorm || aliases.includes(placeNorm)) {
-        score = 100;
+        matched = true;
       } else {
+        // High confidence containment: must match full canonical alias of significant length
         for (const al of aliases) {
-          if (al === placeNorm) {
-            score = Math.max(score, 100);
-          } else if (placeNorm.includes(al) && al.length >= 4) {
-            score = Math.max(score, 80 + al.length);
-          } else if (al.includes(placeNorm) && placeNorm.length >= 4) {
-            score = Math.max(score, 70 + placeNorm.length);
-          }
-        }
-
-        if (score < 70) {
-          const regToks = new Set(regPlace.split("-").filter(t => t.length > 2));
-          const placeToks = new Set(placeNorm.split("-").filter(t => t.length > 2));
-          const overlap = [...regToks].filter(t => placeToks.has(t));
-          const distinctive = overlap.filter(t => !genericTokens.has(t));
-          if (distinctive.length > 0) {
-            score = 50 + distinctive.reduce((acc, t) => acc + t.length, 0);
+          if (al.length >= 6) {
+            if (placeNorm === al || placeNorm.startsWith(`${al}-`) || placeNorm.endsWith(`-${al}`) || placeNorm.includes(`-${al}-`)) {
+              matched = true;
+              break;
+            }
           }
         }
       }
 
-      if (score > bestScore) {
-        bestScore = score;
+      if (matched) {
         bestExactMatch = { regKey, item };
+        break;
       }
     }
   }
 
-  if (bestExactMatch && bestScore >= 55 && isApprovedAsset(bestExactMatch.item.imageUrl)) {
+  if (bestExactMatch && isApprovedAsset(bestExactMatch.item.imageUrl)) {
     return {
       url: bestExactMatch.item.imageUrl,
       fallback_url: safeFallback,
