@@ -215,6 +215,63 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "chandrashila-top"
     ]
   },
+  "tungnath-chandrashila:chopta-meadows": {
+    imageUrl: "/images/places/tungnath-chandrashila/chopta-meadows.jpg",
+    visualDescription: "Lush rolling alpine Bugyal meadows framed by dense deodar and rhododendron forests at Chopta base camp (2,680m).",
+    category: "Nature & Trails",
+    semanticTheme: "nature",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "chopta-meadows",
+      "chopta",
+      "chopta-bugyal",
+      "chopta-base-camp",
+      "mini-switzerland-chopta"
+    ]
+  },
+  "tungnath-chandrashila:forest-trail": {
+    imageUrl: "/images/places/tungnath-chandrashila/forest-trail.jpg",
+    visualDescription: "Paved stone ascent passing through thick scarlet rhododendron and oak forests on the trail to Tungnath.",
+    category: "Nature & Trails",
+    semanticTheme: "trail",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "forest-trail",
+      "rhododendron-trail",
+      "tungnath-trail",
+      "chopta-forest-walk"
+    ]
+  },
+  "tungnath-chandrashila:mountain-stay": {
+    imageUrl: "/images/places/tungnath-chandrashila/mountain-stay.jpg",
+    visualDescription: "Rustic wooden and stone alpine stay and camp in the meadows of Chopta overlooking snowy ridges.",
+    category: "Stay",
+    semanticTheme: "stay",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "mountain-stay",
+      "chopta-homestay",
+      "alpine-camp-chopta",
+      "tungnath-homestay"
+    ]
+  },
+  "tungnath-chandrashila:local-cafe": {
+    imageUrl: "/images/places/tungnath-chandrashila/local-cafe.jpg",
+    visualDescription: "Cozy timber-framed mountain tea stall serving steaming ginger lemon chai and mountain snacks in Chopta.",
+    category: "Cafés & Bakery",
+    semanticTheme: "cafe",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "local-cafe",
+      "chopta-tea-stall",
+      "mountain-chai-dhaba",
+      "maggi-point-chopta"
+    ]
+  },
 
   // ==========================================
   // --- DELHI LANDMARKS ---

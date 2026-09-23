@@ -52,6 +52,58 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["chandrashila-summit", "chandrashila", "chandrashila-peak", "02-chandrashila-summit", "chandrasila", "chandrashila-top"]
         },
+        "tungnath-chandrashila:chopta-meadows": {
+            "image_url": "/images/places/tungnath-chandrashila/chopta-meadows.jpg",
+            "tier": "exact_place",
+            "place_name": "Chopta Alpine Meadows (Mini Switzerland)",
+            "destination": "Tungnath–Chandrashila Trek",
+            "category": "Nature & Trails",
+            "semantic_theme": "meadow",
+            "visual_description": "Lush green rolling Bugyals (alpine meadows) of Chopta framed by towering deodar forests and snow-clad Himalayan peaks.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["chopta-meadows", "chopta", "chopta-bugyal", "mini-switzerland-chopta"]
+        },
+        "tungnath-chandrashila:forest-trail": {
+            "image_url": "/images/places/tungnath-chandrashila/forest-trail.jpg",
+            "tier": "exact_place",
+            "place_name": "Rhododendron Forest Trail",
+            "destination": "Tungnath–Chandrashila Trek",
+            "category": "Nature & Trails",
+            "semantic_theme": "trek",
+            "visual_description": "Paved stone trekking trail weaving through dense oak and crimson blooming rhododendron forest starting from Chopta base.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["forest-trail", "rhododendron-trail", "chopta-tungnath-trail", "trek-trail"]
+        },
+        "tungnath-chandrashila:mountain-stay": {
+            "image_url": "/images/places/tungnath-chandrashila/mountain-stay.jpg",
+            "tier": "exact_place",
+            "place_name": "Chopta Eco Homestay & Camps",
+            "destination": "Tungnath–Chandrashila Trek",
+            "category": "Stay & Lodging",
+            "semantic_theme": "stay",
+            "visual_description": "Rustic alpine stone cottages and eco Swiss tents nestled in pine groves beneath stargazing Himalayan night skies.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["mountain-stay", "chopta-homestay", "chopta-camps", "chopta-stay"]
+        },
+        "tungnath-chandrashila:local-cafe": {
+            "image_url": "/images/places/tungnath-chandrashila/local-cafe.jpg",
+            "tier": "exact_place",
+            "place_name": "Chopta Maggi & Chai Dhaba",
+            "destination": "Tungnath–Chandrashila Trek",
+            "category": "Chai & Cafes",
+            "semantic_theme": "cafe",
+            "visual_description": "Steaming hot ginger-tulsi chai and mountain thukpa served at wooden alpine trailside tea stall overlooking valleys.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["local-cafe", "chopta-dhaba", "tungnath-tea-stall", "chai-dhaba", "pahadi-cafe"]
+        },
 
         # --- Delhi Landmarks ---
         "delhi:qutub-minar": {

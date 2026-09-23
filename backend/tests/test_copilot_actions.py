@@ -128,8 +128,10 @@ def test_place(db, test_destination):
             why_vanvas_recommends="Fresh sourdough and calm pine forest atmosphere.",
         )
         db.add(place)
-        db.commit()
-        db.refresh(place)
+    else:
+        place.destination_id = test_destination.id
+    db.commit()
+    db.refresh(place)
     return place
 
 
@@ -150,9 +152,16 @@ def test_trip(db, test_user_owner, test_destination):
             wake_up_preference="Normal",
         )
         db.add(trip)
-        db.flush()
+    else:
+        trip.destination_id = test_destination.id
+        trip.user_id = test_user_owner.id
+        trip.num_days = 3
+    db.commit()
+    db.refresh(trip)
 
-        # Add Day 1 and Day 2 Itineraries
+    # Ensure Day 1 and Day 2 Itineraries exist
+    it1 = db.query(Itinerary).filter(Itinerary.id == "it-action-day-1").first()
+    if not it1:
         it1 = Itinerary(
             id="it-action-day-1",
             trip_id=trip.id,
@@ -161,6 +170,10 @@ def test_trip(db, test_user_owner, test_destination):
             title="Day 1: Arrival & Exploration",
             theme="Scenic",
         )
+        db.add(it1)
+
+    it2 = db.query(Itinerary).filter(Itinerary.id == "it-action-day-2").first()
+    if not it2:
         it2 = Itinerary(
             id="it-action-day-2",
             trip_id=trip.id,
@@ -169,14 +182,15 @@ def test_trip(db, test_user_owner, test_destination):
             title="Day 2: Deep Valley Trail",
             theme="Nature",
         )
-        db.add(it1)
         db.add(it2)
-        db.flush()
+    db.commit()
 
-        # Add a locked item on Day 2
+    # Ensure locked item on Day 2 exists
+    locked_item = db.query(ItineraryItem).filter(ItineraryItem.id == "it-item-locked-1").first()
+    if not locked_item:
         locked_item = ItineraryItem(
             id="it-item-locked-1",
-            itinerary_id=it2.id,
+            itinerary_id="it-action-day-2",
             title="Sunrise Meditation at High Cliff",
             category="Spiritual",
             start_time="06:00",
@@ -187,7 +201,8 @@ def test_trip(db, test_user_owner, test_destination):
         )
         db.add(locked_item)
         db.commit()
-        db.refresh(trip)
+
+    db.refresh(trip)
     return trip
 
 

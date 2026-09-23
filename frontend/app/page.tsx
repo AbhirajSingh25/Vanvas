@@ -187,7 +187,7 @@ export default function HomePage() {
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#EFE5D2]/15 hover:bg-[#EFE5D2]/25 backdrop-blur-md border border-[#D8DED5]/30 text-[#EFE5D2] text-sm font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2"
             >
               <Compass className="w-4 h-4" />
-              <span>EXPLORE SANCTUARIES</span>
+              <span>EXPLORE DESTINATIONS</span>
             </Link>
           </div>
 
@@ -206,14 +206,13 @@ export default function HomePage() {
           <DevanagariHeading
             devanagari="कहाँ चलें?"
             english="Where will you wander?"
-            subtitle="Curated Indian sanctuaries presented as vintage illustrated travel posters."
+            subtitle="Curated Indian destinations presented as vintage illustrated travel posters."
           />
           <Link
             href="/explore"
             className="text-xs font-bold uppercase tracking-widest text-[#B65E3C] hover:text-[#9E4D2E] flex items-center gap-1.5 transition-colors self-start md:self-auto"
           >
-            <span>All 8 Sanctuaries</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>EXPLORE ALL DESTINATIONS →</span>
           </Link>
         </div>
 

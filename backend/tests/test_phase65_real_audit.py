@@ -159,9 +159,9 @@ async def test_missing_artwork_does_not_block():
 # 13. Vehicle artwork is used everywhere
 def test_vehicle_artwork_files_exist():
     base = r"c:\Users\user\Desktop\Vanvas\frontend\public\images\vehicles"
-    assert os.path.exists(os.path.join(base, "adventure_motorcycle.svg"))
-    assert os.path.exists(os.path.join(base, "classic_bullet.svg"))
-    assert os.path.exists(os.path.join(base, "automatic_scooter.svg"))
+    assert os.path.exists(os.path.join(base, "adventure_motorcycle.jpg")) or os.path.exists(os.path.join(base, "adventure_motorcycle.svg"))
+    assert os.path.exists(os.path.join(base, "classic_bullet.jpg")) or os.path.exists(os.path.join(base, "classic_bullet.svg"))
+    assert os.path.exists(os.path.join(base, "automatic_scooter.jpg")) or os.path.exists(os.path.join(base, "automatic_scooter.svg"))
 
 # 14. Homepage hero is immediately available
 def test_homepage_hero_exists():

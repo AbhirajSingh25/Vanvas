@@ -125,6 +125,21 @@ class DestinationIntelligenceService:
                 "source": "live_open_meteo"
             })
 
+        if not weather_snapshots:
+            weather_snapshots.append({
+                "id": f"ws-{uuid.uuid4().hex[:8]}",
+                "destination_id": f"dyn-{slug}",
+                "forecast_date": str(date.today()),
+                "temp_c": 18.0 if altitude > 1500 else 24.0,
+                "condition": "Partly Cloudy",
+                "is_rain": False,
+                "humidity": 45,
+                "wind_kph": 12.0,
+                "advisory": f"Estimated climate for {name} at {altitude}m elevation.",
+                "icon": "cloud-sun",
+                "source": "baseline_estimate"
+            })
+
         display_name = geo_data.get("display_name") or f"{name}, {state}, {country}"
 
         return {

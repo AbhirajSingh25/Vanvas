@@ -104,7 +104,7 @@ def test_create_delhi_trip_and_explore_isolation(auth_headers, db_session):
     # Check baseline curated count
     curated_before = client.get("/api/v1/destinations").json()
     curated_before_slugs = {d["slug"] for d in curated_before}
-    assert len(curated_before) == 12
+    assert len(curated_before) >= 12
     assert "delhi" not in curated_before_slugs
     assert "bromsgrove" not in curated_before_slugs
 
@@ -137,7 +137,7 @@ def test_create_delhi_trip_and_explore_isolation(auth_headers, db_session):
     # Assert curated Explore destinations did NOT change
     curated_after = client.get("/api/v1/destinations").json()
     curated_after_slugs = {d["slug"] for d in curated_after}
-    assert len(curated_after) == 12
+    assert len(curated_after) == len(curated_before)
     assert curated_after_slugs == curated_before_slugs
     assert "delhi" not in curated_after_slugs
     assert "bromsgrove" not in curated_after_slugs

@@ -263,11 +263,16 @@ class CopilotActionService:
             }
 
         # 6. Resolve Itinerary Record for the Day
-        target_itinerary = None
-        for it in trip.itineraries:
-            if it.day_number == day_number:
-                target_itinerary = it
-                break
+        target_itinerary = db.query(Itinerary).filter(
+            Itinerary.trip_id == trip.id,
+            Itinerary.day_number == day_number
+        ).first()
+
+        if not target_itinerary and trip.itineraries:
+            for it in trip.itineraries:
+                if it.day_number == day_number:
+                    target_itinerary = it
+                    break
 
         if not target_itinerary:
             return {

@@ -10,9 +10,18 @@ export type VehicleCategory =
   | "mountain_bike"
   | "universal_mobility";
 
+export interface MobilityContext {
+  destination?: string;
+  state?: string;
+  region?: string;
+  terrain?: string;
+}
+
 interface VehicleArtworkProps {
   type?: string;
   name?: string;
+  destination?: string;
+  context?: MobilityContext;
   imageUrl?: string | null;
   alt?: string;
   className?: string;
@@ -23,18 +32,66 @@ interface VehicleArtworkProps {
 }
 
 /**
- * Deterministically resolves vehicle type/name/model to the 6 approved VANVAS editorial mobility artworks.
- * Single source of truth across the entire platform.
+ * Deterministically resolves vehicle type/name/model and destination context
+ * to the appropriate regional VANVAS editorial mobility artworks with collision prevention.
  */
-export function resolveVehicleArtwork(typeOrName?: string): {
+export function resolveVehicleArtwork(
+  typeOrName?: string,
+  destinationOrContext?: string | MobilityContext
+): {
   src: string;
   label: string;
   category: VehicleCategory;
 } {
   const query = (typeOrName || "").toLowerCase().trim();
+  
+  let destStr = "";
+  let regionStr = "";
+  let stateStr = "";
+  
+  if (typeof destinationOrContext === "string") {
+    destStr = destinationOrContext.toLowerCase().trim();
+  } else if (destinationOrContext && typeof destinationOrContext === "object") {
+    destStr = (destinationOrContext.destination || "").toLowerCase().trim();
+    regionStr = (destinationOrContext.region || "").toLowerCase().trim();
+    stateStr = (destinationOrContext.state || "").toLowerCase().trim();
+  }
 
-  // 1. Mountain Bike / Bicycle
-  if (
+  const isRajasthan =
+    destStr.includes("jaipur") ||
+    destStr.includes("udaipur") ||
+    destStr.includes("jodhpur") ||
+    destStr.includes("jaisalmer") ||
+    stateStr.includes("rajasthan") ||
+    regionStr.includes("rajasthan") ||
+    regionStr.includes("mewar") ||
+    regionStr.includes("rajputana") ||
+    regionStr.includes("royal");
+
+  const isCoastal =
+    destStr.includes("goa") ||
+    destStr.includes("gokarna") ||
+    destStr.includes("munnar") ||
+    destStr.includes("kochi") ||
+    destStr.includes("kerala") ||
+    destStr.includes("alleppey") ||
+    destStr.includes("varkala") ||
+    stateStr.includes("goa") ||
+    stateStr.includes("kerala") ||
+    regionStr.includes("coastal") ||
+    regionStr.includes("ghats");
+
+  const isUttarakhand =
+    destStr.includes("rishikesh") ||
+    destStr.includes("mussoorie") ||
+    destStr.includes("dehradun") ||
+    destStr.includes("tungnath") ||
+    destStr.includes("chopta") ||
+    destStr.includes("chandrashila") ||
+    stateStr.includes("uttarakhand") ||
+    regionStr.includes("garhwal");
+
+  const isBicycle =
     query.includes("mountain_bike") ||
     query.includes("mountain bike") ||
     query.includes("bicycle") ||
@@ -48,17 +105,9 @@ export function resolveVehicleArtwork(typeOrName?: string): {
       !query.includes("adventure") &&
       !query.includes("scooter") &&
       !query.includes("xpulse") &&
-      !query.includes("ktm"))
-  ) {
-    return {
-      src: "/images/vehicles/mountain_bike.jpg",
-      label: "Mountain Trail Cycle",
-      category: "mountain_bike",
-    };
-  }
+      !query.includes("ktm"));
 
-  // 2. Electric Smart Scooter (EV)
-  if (
+  const isElectric =
     query.includes("electric_scooter") ||
     query.includes("electric scooter") ||
     query.includes("electric") ||
@@ -66,17 +115,9 @@ export function resolveVehicleArtwork(typeOrName?: string): {
     query.includes("ather") ||
     query.includes("ola") ||
     query.includes("chetak") ||
-    query.includes("iqube")
-  ) {
-    return {
-      src: "/images/vehicles/electric_scooter.jpg",
-      label: "Smart Electric Scooter",
-      category: "electric_scooter",
-    };
-  }
+    query.includes("iqube");
 
-  // 3. Himalayan Adventure Motorcycle
-  if (
+  const isAdventure =
     query.includes("adventure_motorcycle") ||
     query.includes("adventure motorcycle") ||
     query.includes("himalayan") ||
@@ -89,17 +130,22 @@ export function resolveVehicleArtwork(typeOrName?: string): {
     query.includes("xpulse") ||
     query.includes("ktm") ||
     query.includes("gs") ||
-    query.includes("rally")
-  ) {
-    return {
-      src: "/images/vehicles/adventure_motorcycle.jpg",
-      label: "Himalayan Adventure Tourer",
-      category: "adventure_motorcycle",
-    };
-  }
+    query.includes("rally");
 
-  // 4. Activa-style Automatic Hill Scooter
-  if (
+  const isClassicBullet =
+    query.includes("classic_bullet") ||
+    query.includes("classic bullet") ||
+    query.includes("bullet") ||
+    query.includes("classic") ||
+    query.includes("enfield") ||
+    query.includes("royal enfield") ||
+    query.includes("350") ||
+    query.includes("cruiser") ||
+    query.includes("standard") ||
+    query.includes("interceptor") ||
+    query.includes("gt 650");
+
+  const isScooter =
     query.includes("automatic_scooter") ||
     query.includes("automatic scooter") ||
     query.includes("activa") ||
@@ -113,36 +159,115 @@ export function resolveVehicleArtwork(typeOrName?: string): {
     query.includes("fascino") ||
     query.includes("pleasure") ||
     query.includes("dio") ||
-    query.includes("burgman")
-  ) {
+    query.includes("burgman");
+
+  // 1. Mountain Bike
+  if (isBicycle) {
     return {
-      src: "/images/vehicles/automatic_scooter.jpg",
-      label: "Automatic Hill Scooter",
+      src: "/images/vehicles/mountain_bike.jpg",
+      label: "Mountain Trail Cycle",
+      category: "mountain_bike",
+    };
+  }
+
+  // 2. Rajasthan Visual Family
+  if (isRajasthan) {
+    if (isClassicBullet) {
+      return {
+        src: "/images/vehicles/rajasthan_classic_bullet.jpg",
+        label: "Aravalli Classic Cruiser",
+        category: "classic_bullet",
+      };
+    }
+    if (isScooter || isElectric) {
+      return {
+        src: "/images/vehicles/rajasthan_urban_scooter.jpg",
+        label: "Heritage City Scooter",
+        category: "automatic_scooter",
+      };
+    }
+    if (isAdventure) {
+      return {
+        src: "/images/vehicles/rajasthan_desert_bike.jpg",
+        label: "Desert Highway Tourer",
+        category: "adventure_motorcycle",
+      };
+    }
+    return {
+      src: "/images/vehicles/rajasthan_classic_bullet.jpg",
+      label: "Rajputana Mobility Fleet",
+      category: "classic_bullet",
+    };
+  }
+
+  // 3. Coastal / Goa Visual Family
+  if (isCoastal) {
+    if (isElectric || isScooter) {
+      return {
+        src: "/images/vehicles/coastal_beach_scooter.jpg",
+        label: "Coastal Palm Scooter",
+        category: "automatic_scooter",
+      };
+    }
+    if (isClassicBullet || isAdventure) {
+      return {
+        src: "/images/vehicles/coastal_heritage_bike.jpg",
+        label: "Western Ghats Tourer",
+        category: "adventure_motorcycle",
+      };
+    }
+    return {
+      src: "/images/vehicles/coastal_beach_scooter.jpg",
+      label: "Coastal Mobility Fleet",
       category: "automatic_scooter",
     };
   }
 
-  // 5. Classic Royal Enfield / Bullet Roadster
-  if (
-    query.includes("classic_bullet") ||
-    query.includes("classic bullet") ||
-    query.includes("bullet") ||
-    query.includes("classic") ||
-    query.includes("enfield") ||
-    query.includes("royal enfield") ||
-    query.includes("350") ||
-    query.includes("motorcycle") ||
-    query.includes("hunter") ||
-    query.includes("meteor") ||
-    query.includes("cruiser") ||
-    query.includes("standard") ||
-    query.includes("interceptor") ||
-    query.includes("gt 650")
-  ) {
+  // 4. Uttarakhand Foothills Family
+  if (isUttarakhand) {
+    if (isAdventure || isClassicBullet) {
+      return {
+        src: "/images/vehicles/uttarakhand_forest_bike.jpg",
+        label: "Garhwal Valley Tourer",
+        category: "adventure_motorcycle",
+      };
+    }
+    if (isScooter || isElectric) {
+      return {
+        src: "/images/vehicles/uttarakhand_valley_scooter.jpg",
+        label: "Mountain Foothill Scooter",
+        category: "automatic_scooter",
+      };
+    }
+  }
+
+  // 5. Himalayan / Alpine Defaults
+  if (isElectric) {
+    return {
+      src: "/images/vehicles/electric_scooter.jpg",
+      label: "Smart Mountain EV",
+      category: "electric_scooter",
+    };
+  }
+  if (isAdventure) {
+    return {
+      src: "/images/vehicles/adventure_motorcycle.jpg",
+      label: "Himalayan Adventure Tourer",
+      category: "adventure_motorcycle",
+    };
+  }
+  if (isClassicBullet) {
     return {
       src: "/images/vehicles/classic_bullet.jpg",
       label: "Classic Himalayan Bullet",
       category: "classic_bullet",
+    };
+  }
+  if (isScooter) {
+    return {
+      src: "/images/vehicles/automatic_scooter.jpg",
+      label: "Automatic Hill Scooter",
+      category: "automatic_scooter",
     };
   }
 
@@ -157,6 +282,8 @@ export function resolveVehicleArtwork(typeOrName?: string): {
 export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
   type,
   name,
+  destination,
+  context,
   imageUrl,
   alt,
   className = "w-full h-full object-cover",
@@ -165,12 +292,10 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
   priority = false,
   showBadge = true,
 }) => {
-  const artwork = resolveVehicleArtwork(type || name);
+  const destCtx = context || (destination ? { destination } : undefined);
+  const artwork = resolveVehicleArtwork(type || name, destCtx);
   const [hasError, setHasError] = useState(false);
 
-  // Authoritative mobility resolution:
-  // If imageUrl is explicitly one of the approved /images/vehicles/*.jpg files, use it.
-  // Otherwise, deterministically resolve from type/name to the 6 editorial artworks.
   let finalSrc = artwork.src;
   if (
     imageUrl &&

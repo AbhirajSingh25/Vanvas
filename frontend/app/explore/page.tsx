@@ -26,7 +26,7 @@ export default function ExploreIndexPage() {
   }, []);
 
   const curatedJourneys = [
-    { id: "All", label: "All Sanctuaries", hindi: "सभी रास्ते", icon: Compass },
+    { id: "All", label: "All Destinations", hindi: "सभी रास्ते", icon: Compass },
     { id: "Himalayan", label: "Himalayan Escapes", hindi: "पहाड़ी रास्ते", icon: Mountain },
     { id: "Royal", label: "Desert & Heritage", hindi: "शाही राजस्थान", icon: Castle },
     { id: "Coastal", label: "Coastal & Ghats", hindi: "समुद्री किनारे", icon: Waves },
@@ -184,7 +184,7 @@ export default function ExploreIndexPage() {
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#EFE5D2]/15 hover:bg-[#EFE5D2]/25 backdrop-blur-md border border-[#D8DED5]/30 text-[#EFE5D2] text-sm font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2"
             >
               <Compass className="w-4 h-4" />
-              <span>EXPLORE SANCTUARIES</span>
+              <span>EXPLORE ALL DESTINATIONS →</span>
             </a>
           </div>
 
@@ -197,21 +197,21 @@ export default function ExploreIndexPage() {
         </div>
       </section>
 
-      {/* SECTION 2: SANCTUARY CATALOGUE & DISCOVERY GRID */}
+      {/* SECTION 2: DESTINATION CATALOGUE & DISCOVERY GRID */}
       <section id="sanctuaries" className="min-h-screen bg-[#EFE5D2] py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-12">
           {/* Editorial Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-[#E5D5BA]">
             <div className="space-y-3 max-w-2xl">
               <div className="flex items-center gap-2">
-                <TravelStamp label="SANCTUARY CATALOGUE" sub="2026 EDITION" variant="terracotta" />
+                <TravelStamp label="DESTINATION CATALOGUE" sub="2026 EDITION" variant="terracotta" />
                 <TravelStamp label="VANVAS JOURNAL" variant="forest" />
               </div>
 
               <DevanagariHeading
                 hindi="कहाँ चलें?"
                 english="Where the road takes you."
-                subtitle="Illustrated destination artwork for discovery. Switch to authentic photography when you step inside each sanctuary."
+                subtitle="Illustrated destination artwork for discovery. Switch to authentic photography when you step inside each destination."
                 size="lg"
               />
             </div>
@@ -324,7 +324,7 @@ export default function ExploreIndexPage() {
                 <div className="lg:col-span-4 flex flex-col justify-between space-y-6">
                   <JournalNote
                     tag="VANVAS EXPEDITION PHILOSOPHY"
-                    note="We intentionally don't flood you with 500 tourist traps. Each sanctuary contains 8-12 handpicked pine cafés, ancient stone temples, secret waterfalls and slow stays."
+                    note="We intentionally don't flood you with 500 tourist traps. Each destination contains handpicked pine cafés, ancient stone temples, secret waterfalls and slow stays."
                     date="HIMALAYAN BASE CAMP"
                     tapeColor="mustard"
                   />

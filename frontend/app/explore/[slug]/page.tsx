@@ -1015,6 +1015,12 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                         <VehicleArtwork
                           type={r.vehicle_type}
                           name={r.vehicle_name}
+                          destination={destination.name}
+                          context={{
+                            destination: destination.name,
+                            state: destination.state,
+                            region: destination.region,
+                          }}
                           imageUrl={r.image_url}
                           alt={r.vehicle_name}
                           className="w-full h-full object-cover"
