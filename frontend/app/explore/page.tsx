@@ -90,12 +90,19 @@ export default function ExploreIndexPage() {
       quote: "The winterline glow, colonial bookshops, oak forests, and misty ridge walks.",
       badge: "GARHWAL HILLS",
     },
+    "tungnath-chandrashila": {
+      hindi: "तुंगनाथ–चंद्रशिला",
+      alt: "4000m",
+      coords: "30°29′N",
+      quote: "Chopta base camp → World's highest Shiva shrine (3,680m) → 360° Chaukhamba sunrise summit (4,000m).",
+      badge: "GARHWAL TREK EXPEDITION",
+    },
   };
 
   const filtered = destinations.filter((d) => {
-    const isHim = ["manali", "rishikesh", "kasol", "dharamshala", "mussoorie"].includes(d.slug);
+    const isHim = ["manali", "rishikesh", "kasol", "dharamshala", "mussoorie", "spiti", "spiti-valley", "leh", "tungnath-chandrashila"].includes(d.slug);
     const isDes = ["jaipur", "udaipur"].includes(d.slug);
-    const isCoast = ["goa"].includes(d.slug);
+    const isCoast = ["goa", "munnar"].includes(d.slug);
 
     let matchCat = true;
     if (selectedCategory === "Himalayan") matchCat = isHim;

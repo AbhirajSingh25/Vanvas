@@ -181,6 +181,42 @@ export interface CuratedLandmarkEntry {
  */
 export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
   // ==========================================
+  // --- TUNGNATH CHANDRASHILA LANDMARKS ---
+  // ==========================================
+  "tungnath-chandrashila:tungnath-temple": {
+    imageUrl: "/images/places/tungnath-chandrashila/tungnath-temple.jpg",
+    visualDescription: "Ancient stone Nagara architecture Tungnath temple at 3,680m on high Himalayan alpine meadow ridge.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "tungnath-temple",
+      "tungnath",
+      "tunganath",
+      "01-tungnath-temple",
+      "tungnath-shiva-temple",
+      "highest-shiva-temple"
+    ]
+  },
+  "tungnath-chandrashila:chandrashila-summit": {
+    imageUrl: "/images/places/tungnath-chandrashila/chandrashila-summit.jpg",
+    visualDescription: "Dramatic 4,000m Chandrashila Moon Rock summit offering 360-degree panorama of Chaukhamba and Trishul peaks.",
+    category: "Nature & Trails",
+    semanticTheme: "viewpoint",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "chandrashila-summit",
+      "chandrashila",
+      "chandrashila-peak",
+      "02-chandrashila-summit",
+      "chandrasila",
+      "chandrashila-top"
+    ]
+  },
+
+  // ==========================================
   // --- DELHI LANDMARKS ---
   // ==========================================
   "delhi:qutub-minar": {

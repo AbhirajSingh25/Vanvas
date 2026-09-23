@@ -544,11 +544,12 @@ out center 60;"""
     NEGATIVE_NAME_TOKENS = [
         "school", "college", "vidyalaya", "academy", "post office", "police station", "thana", "chowki",
         "state bank", "hdfc", "icici", "axis bank", "punjab national", "canara bank", "union bank", "bank of",
-        "hospital", "clinic", "dental", "pharmacy", "chemist",
+        "standard chartered", "bank", "atm", "cash machine",
+        "hospital", "clinic", "dental", "pharmacy", "chemist", "dispensary", "nursing home",
         "hair salon", "beauty parlour", "gents parlour", "unisex salon", "tailor", "dry cleaner",
-        "car wash", "motor works", "auto service", "tyre", "puncture", "petrol pump",
+        "car wash", "motor works", "auto service", "tyre", "puncture", "petrol pump", "service station", "indian oil", "hp petrol", "bharat petroleum", "cng station",
         "law chambers", "advocate", "notary", "property dealer", "real estate", "consultancy",
-        "xerox", "photocopy", "coaching", "tuition"
+        "xerox", "photocopy", "coaching", "tuition", "hostel boys", "hostel girls"
     ]
 
     def _map_osm_category(self, tags: Dict[str, str]) -> str:
@@ -645,15 +646,17 @@ out center 60;"""
             amenity = tags.get("amenity", "").lower()
             shop = tags.get("shop", "").lower()
             office = tags.get("office", "").lower()
+            building = tags.get("building", "").lower()
             tourism = tags.get("tourism", "").lower()
             historic = tags.get("historic", "").lower()
 
-            # If it's not explicitly a major tourism or historic landmark, enforce negative checks
-            if tourism not in ["attraction", "viewpoint", "museum", "gallery"] and historic not in ["monument", "memorial", "castle", "fort", "palace", "temple", "ruins"]:
-                if amenity in self.EXCLUDED_AMENITY_TAGS or shop in self.EXCLUDED_SHOP_TAGS or office:
-                    return None
-                if any(neg in p_name_lower for neg in self.NEGATIVE_NAME_TOKENS):
-                    return None
+            # Discard explicitly excluded amenity or shop tags, office buildings, or civic name tokens
+            if amenity in self.EXCLUDED_AMENITY_TAGS or shop in self.EXCLUDED_SHOP_TAGS or office:
+                return None
+            if building in ["school", "college", "university", "kindergarten", "hospital", "clinic", "office", "commercial", "residential", "apartments"]:
+                return None
+            if any(neg in p_name_lower for neg in self.NEGATIVE_NAME_TOKENS):
+                return None
 
         # Support node lat/lon or way/relation center lat/lon
         p_lat = el.get("lat") or el.get("center", {}).get("lat", center_lat)

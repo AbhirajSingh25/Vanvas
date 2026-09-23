@@ -231,6 +231,18 @@ export const SEEDED_DESTINATION_PROFILES: Record<string, DestinationVisualProfil
     fallbackPath: "/images/destinations/fallbacks/valley.jpg",
     artDirectionPrompt: "Crescent bend of the sacred Ganges River, stone ghat steps, multi-layered temple spires, dawn river mist, soft brass lamp reflections, saffron and river blue-grey palette, no text.",
   },
+  "tungnath-chandrashila": {
+    slug: "tungnath-chandrashila",
+    name: "Tungnath–Chandrashila Trek",
+    hindiName: "तुंगनाथ–चंद्रशिला",
+    terrainType: "himalayan",
+    elevationMeters: 4000,
+    palette: { primary: "#173B32", secondary: "#3F4F42", accent: "#B49252", mist: "#D8DED5" },
+    illustrationPath: "/images/destinations/tungnath-chandrashila/illustration.jpg",
+    heroPath: "/images/destinations/tungnath-chandrashila/hero.jpg",
+    fallbackPath: "/images/destinations/fallbacks/himalayan.jpg",
+    artDirectionPrompt: "High-altitude Himalayan alpine meadows (bugyals), ancient stone Tungnath Temple at 3,680m with prayer flags, rocky ascent to 4,000m Chandrashila summit, dramatic 360-degree panorama of Chaukhamba and Trishul snow peaks, crisp alpine morning light, gouache texture, deep slate grey, alpine green, crisp snow white, no text.",
+  },
 };
 
 /**

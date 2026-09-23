@@ -264,6 +264,22 @@ def seed_database():
                 "best_time_to_visit": "September to May",
                 "weather_type": "Misty Green Slopes",
                 "is_featured": True
+            },
+            {
+                "name": "Tungnath–Chandrashila Trek",
+                "slug": "tungnath-chandrashila",
+                "hindi_name": "तुंगनाथ–चंद्रशिला",
+                "state": "Uttarakhand",
+                "region": "Garhwal Himalayas",
+                "tagline": "World's highest Shiva shrine, alpine rhododendron bugyals, and a 360° summit over Chaukhamba.",
+                "description": "An iconic Garhwal Himalayan trail ascending from the meadows of Chopta (2,680m) through alpine rhododendrons to the ancient stone Tungnath Temple (3,680m) and continuing 1.5 km to the Chandrashila Summit (4,000m) with sweeping views of Chaukhamba, Trishul, and Nanda Devi.",
+                "hero_image": "/images/destinations/tungnath-chandrashila/hero.jpg",
+                "latitude": 30.4886,
+                "longitude": 79.2173,
+                "altitude_meters": 4000,
+                "best_time_to_visit": "April to November",
+                "weather_type": "High Alpine Crisp Air",
+                "is_featured": True
             }
         ]
 
@@ -1417,6 +1433,50 @@ def seed_database():
                     "why_vanvas_recommends": "Spectacular rushing cascade framed by lush jungle flora.",
                     "is_must_visit": False,
                     "is_hidden_gem": True,
+                    "is_indoor": False
+                }
+            ],
+            "tungnath-chandrashila": [
+                {
+                    "name": "01 — Tungnath Temple",
+                    "slug": "tungnath-temple",
+                    "category": "Culture & Heritage",
+                    "description": "At 3,680m, Tungnath is the highest Shiva temple in the world and the third temple in the Panch Kedar circuit. Built in ancient North Indian Nagara stone architecture, the shrine is reached via a 3.5 km stone-paved trail from Chopta.",
+                    "address": "Tungnath Ridge, Rudraprayag District, Uttarakhand",
+                    "latitude": 30.4886,
+                    "longitude": 79.2173,
+                    "price_level": "Free",
+                    "approx_cost": 0.0,
+                    "rating": 4.9,
+                    "review_count": 920,
+                    "opening_time": "06:00",
+                    "closing_time": "19:00",
+                    "tags": "Highest Shiva Temple,Panch Kedar,Ancient Stone,Garhwal,Spiritual Trek",
+                    "image_url": "/images/places/tungnath-chandrashila/tungnath-temple.jpg",
+                    "why_vanvas_recommends": "One of the most sacred and visually dramatic shrines in the entire Garhwal Himalayas, framed by alpine meadows.",
+                    "is_must_visit": True,
+                    "is_hidden_gem": False,
+                    "is_indoor": False
+                },
+                {
+                    "name": "02 — Chandrashila Summit",
+                    "slug": "chandrashila-summit",
+                    "category": "Nature & Trails",
+                    "description": "Rising 1.5 km beyond Tungnath Temple to 4,000m (13,123 ft), the Chandrashila ('Moon Rock') summit offers an unmatched 360-degree panoramic vista of Himalayan giants including Chaukhamba, Trishul, Nanda Devi, Kedarnath, and Bandarpoonch.",
+                    "address": "Chandrashila Peak, Rudraprayag District, Uttarakhand",
+                    "latitude": 30.4930,
+                    "longitude": 79.2185,
+                    "price_level": "Free",
+                    "approx_cost": 0.0,
+                    "rating": 5.0,
+                    "review_count": 860,
+                    "opening_time": "04:30",
+                    "closing_time": "18:00",
+                    "tags": "Summit,360 View,Chaukhamba,Sunrise Point,Garhwal Himalayas,Trek Peak",
+                    "image_url": "/images/places/tungnath-chandrashila/chandrashila-summit.jpg",
+                    "why_vanvas_recommends": "Breathtaking 360° summit vista where the Chaukhamba massif towers directly in front at dawn.",
+                    "is_must_visit": True,
+                    "is_hidden_gem": False,
                     "is_indoor": False
                 }
             ]

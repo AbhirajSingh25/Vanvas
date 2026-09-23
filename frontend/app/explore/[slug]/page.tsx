@@ -584,16 +584,82 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           )}
         </div>
 
-        {/* CURATED PLACES (Shown only for Curated Destinations) */}
+        {/* CURATED PLACES / TREK EXPERIENCE (Shown only for Curated Destinations) */}
         {isCurated && places.length > 0 && (
           <div className="space-y-6">
+            {/* Trek Route Relationship Banner for Tungnath–Chandrashila */}
+            {destination.slug === "tungnath-chandrashila" && (
+              <div className="p-6 sm:p-8 rounded-3xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#173B32] shadow-xl space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
+                      THE EXPEDITION ROUTE • आधिकारिक उत्तराखंड पर्यटन मार्ग
+                    </span>
+                    <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
+                      Tungnath–Chandrashila Trek Route
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TravelStamp label="5 KM TOTAL ASCENT" elevation="4000M" variant="mustard" />
+                    <TravelStamp label="MODERATE TREK" variant="terracotta" />
+                  </div>
+                </div>
+
+                {/* Visual Route Flow Step Diagram */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 relative">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono uppercase font-bold text-[#B49252]">BASE CAMP</span>
+                      <span className="text-xs font-mono font-bold text-[#D8DED5]">2,680M</span>
+                    </div>
+                    <h4 className="text-lg font-serif font-bold text-[#FAF4E8]">Chopta Meadows</h4>
+                    <p className="text-xs text-[#D8DED5]/80 leading-relaxed font-light">
+                      Lush alpine meadows (bugyals) framed by dense deodar, pine and rhododendron forests. Starting point of the trek.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#B49252]/10 border border-[#B49252]/30 space-y-2 relative">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono uppercase font-bold text-[#B49252]">01 • 3.5 KM FROM CHOPTA</span>
+                      <span className="text-xs font-mono font-bold text-[#FAF4E8]">3,680M</span>
+                    </div>
+                    <h4 className="text-lg font-serif font-bold text-[#FAF4E8]">Tungnath Temple</h4>
+                    <p className="text-xs text-[#D8DED5]/80 leading-relaxed font-light">
+                      World&apos;s highest Shiva shrine (3rd Panch Kedar). Ancient Nagara stone architecture resting on an alpine ridge.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#B65E3C]/15 border border-[#B65E3C]/30 space-y-2 relative">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono uppercase font-bold text-[#B49252]">02 • 1.5 KM BEYOND TEMPLE</span>
+                      <span className="text-xs font-mono font-bold text-[#FAF4E8]">4,000M</span>
+                    </div>
+                    <h4 className="text-lg font-serif font-bold text-[#FAF4E8]">Chandrashila Summit</h4>
+                    <p className="text-xs text-[#D8DED5]/80 leading-relaxed font-light">
+                      &apos;Moon Rock&apos; crag peak offering an unparalleled 360° panorama of Chaukhamba, Trishul, and Nanda Devi peaks.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-black/20 text-xs text-[#D8DED5]/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#B49252]">Route Relationship:</span>
+                    <span>CHOPTA (Base) &rarr; TUNGNATH TEMPLE (~3.5 km) &rarr; CHANDRASHILA SUMMIT (~1.5 km beyond temple)</span>
+                  </div>
+                  <span className="font-mono text-[11px] text-[#B49252]">Best: April &ndash; Nov (Temple open)</span>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5D5BA] pb-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  चुनिंदा पड़ाव • Curated Sanctuaries
+                  {destination.slug === "tungnath-chandrashila" ? "THE EXPERIENCE • मुख्य पड़ाव" : "चुनिंदा पड़ाव • Curated Sanctuaries"}
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-                  Curated Trails, Cafés &amp; Local Landmarks ({filteredPlaces.length})
+                  {destination.slug === "tungnath-chandrashila"
+                    ? "Tungnath–Chandrashila Trek Landmarks"
+                    : `Curated Trails, Cafés & Local Landmarks (${filteredPlaces.length})`}
                 </h3>
               </div>
             </div>

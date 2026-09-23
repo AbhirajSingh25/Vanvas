@@ -177,6 +177,19 @@ SEED_DESTINATIONS: List[Dict[str, Any]] = [
         "slug": "munnar",
     },
     {
+        "name": "Tungnath–Chandrashila Trek",
+        "hindi_name": "तुंगनाथ–चंद्रशिला",
+        "state": "Uttarakhand",
+        "country": "India",
+        "region": "Garhwal Himalayas",
+        "lat": 30.4886,
+        "lng": 79.2173,
+        "altitude_meters": 4000,
+        "timezone": "Asia/Kolkata",
+        "type": "trek",
+        "slug": "tungnath-chandrashila",
+    },
+    {
         "name": "Meghalaya (Shillong)",
         "hindi_name": "मेघालय",
         "state": "Meghalaya",
@@ -407,7 +420,25 @@ from app.services.provider_health_tracker import health_tracker
 
 APPROVED_CURATED_SLUGS = {
     "manali", "rishikesh", "kasol", "dharamshala", "goa",
-    "jaipur", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar"
+    "jaipur", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar",
+    "tungnath-chandrashila"
+}
+
+DESTINATION_ALIASES: Dict[str, str] = {
+    "tungnath": "tungnath-chandrashila",
+    "tunganath": "tungnath-chandrashila",
+    "tungnath temple": "tungnath-chandrashila",
+    "chandrashila": "tungnath-chandrashila",
+    "chandrashila peak": "tungnath-chandrashila",
+    "chandrashila summit": "tungnath-chandrashila",
+    "tungnath chandrashila": "tungnath-chandrashila",
+    "tungnath-chandrashila": "tungnath-chandrashila",
+    "tungnath–chandrashila": "tungnath-chandrashila",
+    "tungnath-chandrashila trek": "tungnath-chandrashila",
+    "tungnath–chandrashila trek": "tungnath-chandrashila",
+    "chopta tungnath chandrashila": "tungnath-chandrashila",
+    "chopta-tungnath-chandrashila": "tungnath-chandrashila",
+    "chopta": "tungnath-chandrashila",
 }
 
 class LiveGeocodingProvider(GeocodingProvider):
@@ -420,6 +451,9 @@ class LiveGeocodingProvider(GeocodingProvider):
     def _clean_query(query: str) -> str:
         q = (query or "").strip()
         q = re.sub(r'^(dyn|dest)-', '', q, flags=re.IGNORECASE).strip()
+        normalized = q.lower().replace("–", "-").replace("—", "-").strip()
+        if normalized in DESTINATION_ALIASES:
+            return DESTINATION_ALIASES[normalized]
         return q
 
     def _score_place_type(self, place_type: str, name: str, query: str) -> int:
@@ -467,9 +501,11 @@ class LiveGeocodingProvider(GeocodingProvider):
         hindi_name: Optional[str] = None,
         source_id: Optional[str] = None,
         altitude_meters: int = 1000,
-        is_curated: bool = False
+        is_curated: bool = False,
+        slug: Optional[str] = None
     ) -> Dict[str, Any]:
-        slug = name.lower().replace(" ", "-").replace(",", "").replace("'", "").replace("&", "and")
+        if not slug:
+            slug = name.lower().replace(" ", "-").replace(",", "").replace("'", "").replace("&", "and").replace("–", "-").replace("—", "-")
         display_parts = [name]
         if state and state.lower() != name.lower():
             display_parts.append(state)
@@ -551,7 +587,8 @@ class LiveGeocodingProvider(GeocodingProvider):
                 source="curated" if is_cur else "seed",
                 hindi_name=dest.get("hindi_name"),
                 altitude_meters=dest.get("altitude_meters", 1000),
-                is_curated=is_cur
+                is_curated=is_cur,
+                slug=dest.get("slug")
             )
 
             if clean_q == d_slug or clean_q == d_name:
@@ -688,7 +725,8 @@ class LiveGeocodingProvider(GeocodingProvider):
                     source="curated" if is_cur else "seed",
                     hindi_name=dest.get("hindi_name"),
                     altitude_meters=dest.get("altitude_meters", 1000),
-                    is_curated=is_cur
+                    is_curated=is_cur,
+                    slug=dest.get("slug")
                 )
                 geo_cache.set(cache_key, res, ttl_seconds=600)
                 return res
@@ -707,7 +745,8 @@ class LiveGeocodingProvider(GeocodingProvider):
                     source="curated" if is_cur else "seed",
                     hindi_name=dest.get("hindi_name"),
                     altitude_meters=dest.get("altitude_meters", 1000),
-                    is_curated=is_cur
+                    is_curated=is_cur,
+                    slug=dest.get("slug")
                 )
                 geo_cache.set(cache_key, res, ttl_seconds=600)
                 return res

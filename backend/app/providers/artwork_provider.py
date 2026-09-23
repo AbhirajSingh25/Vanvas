@@ -25,6 +25,101 @@ class CuratedArtworkProvider(ArtworkProvider):
     """
 
     PLACE_ARTWORK_REGISTRY: Dict[str, Dict[str, Any]] = {
+        # --- Tungnath-Chandrashila Landmarks ---
+        "tungnath-chandrashila:tungnath-temple": {
+            "image_url": "/images/places/tungnath-chandrashila/tungnath-temple.jpg",
+            "tier": "exact_place",
+            "place_name": "01 — Tungnath Temple",
+            "destination": "Tungnath–Chandrashila Trek",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "visual_description": "Ancient stone Nagara architecture Tungnath temple at 3,680m on high Himalayan alpine meadow ridge.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["tungnath-temple", "tungnath", "tunganath", "01-tungnath-temple", "tungnath-shiva-temple", "highest-shiva-temple"]
+        },
+        "tungnath-chandrashila:chandrashila-summit": {
+            "image_url": "/images/places/tungnath-chandrashila/chandrashila-summit.jpg",
+            "tier": "exact_place",
+            "place_name": "02 — Chandrashila Summit",
+            "destination": "Tungnath–Chandrashila Trek",
+            "category": "Nature & Trails",
+            "semantic_theme": "viewpoint",
+            "visual_description": "Dramatic 4,000m Chandrashila Moon Rock summit offering 360-degree panorama of Chaukhamba and Trishul peaks.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["chandrashila-summit", "chandrashila", "chandrashila-peak", "02-chandrashila-summit", "chandrasila", "chandrashila-top"]
+        },
+
+        # --- Delhi Landmarks ---
+        "delhi:qutub-minar": {
+            "image_url": "/images/places/delhi/qutub-minar.webp",
+            "tier": "exact_place",
+            "place_name": "Qutub Minar Complex",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "Soaring 73-meter fluted red sandstone victory minaret tower with intricate Islamic calligraphy carvings.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["qutub-minar", "qutb-minar", "qutab-minar", "qutub-minar-complex", "qutub"]
+        },
+        "delhi:india-gate": {
+            "image_url": "/images/places/delhi/india-gate.webp",
+            "tier": "exact_place",
+            "place_name": "India Gate & Kartavya Path",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "Majestic 42-meter sandstone triumphal arch war memorial at Kartavya Path with evening illumination.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["india-gate", "all-india-war-memorial", "india-gate-delhi", "kartavya-path"]
+        },
+        "delhi:red-fort": {
+            "image_url": "/images/places/delhi/red-fort.webp",
+            "tier": "exact_place",
+            "place_name": "Red Fort (Lal Qila)",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "Monumental red sandstone Lahori Gate ramparts and Mughal domes of Lal Qila in Old Delhi.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["red-fort", "lal-qila", "lal-kila", "red-fort-delhi", "red-fort-complex"]
+        },
+        "delhi:lotus-temple": {
+            "image_url": "/images/places/delhi/lotus-temple.webp",
+            "tier": "exact_place",
+            "place_name": "Lotus Temple (Bahai House of Worship)",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "visual_description": "Architectural white marble lotus flower Bahai House of Worship with serene reflection ponds.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["lotus-temple", "bahai-lotus-temple", "bahai-house-of-worship", "lotus-temple-delhi"]
+        },
+        "delhi:chandni-chowk": {
+            "image_url": "/images/places/delhi/chandni-chowk.webp",
+            "tier": "exact_place",
+            "place_name": "Chandni Chowk Old Delhi Bazaar",
+            "destination": "Delhi",
+            "category": "Shops & Markets",
+            "semantic_theme": "shopping",
+            "visual_description": "Historic Old Delhi bazaar boulevard with Mughal-era haveli storefronts, spice markets, and street food.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["chandni-chowk", "chandani-chowk", "chandni-chowk-market", "old-delhi-bazaar"]
+        },
+
         # --- Jaipur Landmarks ---
         "jaipur:hawa-mahal": {
             "image_url": "/images/places/jaipur/hawa-mahal.webp",
@@ -1228,9 +1323,9 @@ class CuratedArtworkProvider(ArtworkProvider):
         cat_lower = (category_or_theme or "").lower()
         if any(w in cat_lower for w in ["beach", "coast", "sea", "ocean", "cove"]) or any(w in dest_lower for w in ["goa", "gokarna", "kerala", "andaman", "pondicherry"]):
             return "/images/destinations/fallbacks/coastal.jpg"
-        if any(w in cat_lower for w in ["desert", "fort", "sand", "dune"]) or any(w in dest_lower for w in ["jaipur", "jodhpur", "jaisalmer", "rajasthan", "bikaner", "pushkar"]):
+        if any(w in cat_lower for w in ["desert", "sand", "dune"]) or any(w in dest_lower for w in ["jaipur", "jodhpur", "jaisalmer", "rajasthan", "bikaner", "pushkar"]):
             return "/images/destinations/fallbacks/desert.jpg"
-        if any(w in cat_lower for w in ["ghat", "river", "temple", "spiritual", "aarti"]) or any(w in dest_lower for w in ["varanasi", "ayodhya", "rishikesh", "haridwar", "ujjain", "hampi"]):
+        if any(w in cat_lower for w in ["ghat", "river", "temple", "spiritual", "aarti", "monument", "heritage", "bazaar", "market", "metro", "city"]) or any(w in dest_lower for w in ["varanasi", "ayodhya", "rishikesh", "haridwar", "ujjain", "hampi", "delhi", "agra", "lucknow", "amritsar", "ncr"]):
             return "/images/destinations/fallbacks/valley.jpg"
         return "/images/destinations/fallbacks/himalayan.jpg"
 
