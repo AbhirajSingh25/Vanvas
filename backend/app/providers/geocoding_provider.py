@@ -125,8 +125,8 @@ SEED_DESTINATIONS: List[Dict[str, Any]] = [
         "slug": "spiti-valley",
     },
     {
-        "name": "Leh Ladakh",
-        "hindi_name": "लेह लद्दाख",
+        "name": "Leh",
+        "hindi_name": "लेह",
         "state": "Ladakh",
         "country": "India",
         "region": "Trans-Himalayas",
@@ -135,7 +135,7 @@ SEED_DESTINATIONS: List[Dict[str, Any]] = [
         "altitude_meters": 3500,
         "timezone": "Asia/Kolkata",
         "type": "city",
-        "slug": "leh-ladakh",
+        "slug": "leh",
     },
     {
         "name": "Kedarnath",

@@ -157,6 +157,7 @@ class DestinationBase(BaseModel):
     altitude_meters: Optional[int] = None
     best_time_to_visit: Optional[str] = None
     weather_type: Optional[str] = "Cool / Mountain"
+    hindi_name: Optional[str] = None
     is_featured: bool = False
 
 class DestinationResponse(DestinationBase):

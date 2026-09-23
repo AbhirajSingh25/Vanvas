@@ -12,6 +12,11 @@ import { useAuth } from "@/context/AuthContext";
 import confetti from "canvas-confetti";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
+import {
+  CANONICAL_DESTINATIONS,
+  CANONICAL_HINDI_NAMES,
+  getCanonicalHindiName,
+} from "@/lib/canonicalDestinations";
 
 function PlanTripContent() {
   const router = useRouter();
@@ -70,39 +75,8 @@ function PlanTripContent() {
     "Binding your bespoke VANVAS travel journal...",
   ];
 
-  const destHindiMap: Record<string, string> = {
-    manali: "मनाली",
-    rishikesh: "ऋषिकेश",
-    kasol: "कसोल",
-    dharamshala: "धर्मशाला",
-    goa: "गोवा",
-    jaipur: "जयपुर",
-    udaipur: "उदयपुर",
-    mussoorie: "मसूरी",
-    delhi: "दिल्ली",
-    pune: "पुणे",
-    kolkata: "कोलकाता",
-    ayodhya: "अयोध्या",
-    varanasi: "वाराणसी",
-    mumbai: "मुंबई",
-    bengaluru: "बेंगलुरु",
-    chennai: "चेन्नई",
-    kochi: "कोच्चि",
-    agra: "आगरा",
-    amritsar: "अमृतसर",
-    lucknow: "लखनऊ",
-  };
-
-  const fallbackDestinations: Destination[] = [
-    { id: "dest-manali", name: "Manali", slug: "manali", state: "Himachal Pradesh", region: "Himalayan", tagline: "Pine forests & high passes", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 32.2432, longitude: 77.1892, altitude_meters: 2050, weather_type: "Alpine Mist", is_featured: true, is_curated: true },
-    { id: "dest-mussoorie", name: "Mussoorie", slug: "mussoorie", state: "Uttarakhand", region: "Garhwal", tagline: "Queen of the Hills", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 30.4598, longitude: 78.0644, altitude_meters: 2005, weather_type: "Cool Mountain", is_featured: true, is_curated: true },
-    { id: "dest-rishikesh", name: "Rishikesh", slug: "rishikesh", state: "Uttarakhand", region: "Garhwal", tagline: "Ganga currents & ghats", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 30.0869, longitude: 78.2676, altitude_meters: 372, weather_type: "Temperate", is_featured: true, is_curated: true },
-    { id: "dest-kasol", name: "Kasol", slug: "kasol", state: "Himachal Pradesh", region: "Parvati Valley", tagline: "Emerald streams & deodar trails", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 32.0100, longitude: 77.3150, altitude_meters: 1580, weather_type: "Crisp Alpine", is_featured: true, is_curated: true },
-    { id: "dest-dharamshala", name: "Dharamshala", slug: "dharamshala", state: "Himachal Pradesh", region: "Kangra Valley", tagline: "Tibetan monasteries & mist", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 32.2190, longitude: 76.3234, altitude_meters: 1457, weather_type: "Mountain Spring", is_featured: true, is_curated: true },
-    { id: "dest-jaipur", name: "Jaipur", slug: "jaipur", state: "Rajasthan", region: "Mewar & Desert", tagline: "Pink havelis & royal forts", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 26.9124, longitude: 75.7873, altitude_meters: 431, weather_type: "Semi-Arid", is_featured: true, is_curated: true },
-    { id: "dest-goa", name: "Goa", slug: "goa", state: "Goa", region: "West Coast", tagline: "Golden palm trails & spice air", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 15.2993, longitude: 74.1240, altitude_meters: 10, weather_type: "Tropical Breeze", is_featured: true, is_curated: true },
-    { id: "dest-udaipur", name: "Udaipur", slug: "udaipur", state: "Rajasthan", region: "Mewar", tagline: "City of lakes & palaces", description: "", hero_image: "/images/destinations/fallbacks/himalayan.jpg", latitude: 24.5854, longitude: 73.7125, altitude_meters: 598, weather_type: "Warm Lake", is_featured: true, is_curated: true },
-  ];
+  const destHindiMap: Record<string, string> = CANONICAL_HINDI_NAMES;
+  const fallbackDestinations: Destination[] = CANONICAL_DESTINATIONS;
 
   // Resolve initial destination from query params or database
   useEffect(() => {

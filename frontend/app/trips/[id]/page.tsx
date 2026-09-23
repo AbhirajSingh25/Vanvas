@@ -19,6 +19,7 @@ import { ArrivalOptimizerCard } from "@/components/trip/ArrivalOptimizerCard";
 import { TripAssistantModal } from "@/components/copilot/TripAssistantModal";
 import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
+import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { TripInviteModal } from "@/components/trip/TripInviteModal";
 import { TripMembersSection } from "@/components/trip/TripMembersSection";
 
@@ -595,11 +596,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
               {trip.rental ? (
                 <div className="space-y-3">
-                  <img
-                    src={trip.rental.image_url || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600"}
-                    alt={trip.rental.vehicle_name}
-                    className="w-full h-48 rounded-2xl object-cover border border-[#E5D5BA]"
-                  />
+                  <div className="w-full h-48 rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
+                    <VehicleArtwork
+                      type={trip.rental.vehicle_type}
+                      name={trip.rental.vehicle_name}
+                      imageUrl={trip.rental.image_url}
+                      alt={trip.rental.vehicle_name}
+                    />
+                  </div>
                   <div className="flex items-center justify-between">
                     <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.rental.vehicle_name}</h4>
                     <span className="text-sm font-mono font-bold text-[#173B32]">₹{trip.rental.price_per_day} / day</span>

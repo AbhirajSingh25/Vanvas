@@ -16,27 +16,39 @@ interface VehicleArtworkProps {
   imageUrl?: string | null;
   alt?: string;
   className?: string;
-  aspectRatio?: "video" | "square" | "wide";
+  containerClassName?: string;
+  aspectRatio?: "video" | "square" | "wide" | "fill";
   priority?: boolean;
+  showBadge?: boolean;
 }
 
 /**
- * Resolves vehicle title/type to approved VANVAS editorial mobility artwork
+ * Deterministically resolves vehicle type/name/model to the 6 approved VANVAS editorial mobility artworks.
+ * Single source of truth across the entire platform.
  */
 export function resolveVehicleArtwork(typeOrName?: string): {
   src: string;
   label: string;
   category: VehicleCategory;
 } {
-  const query = (typeOrName || "").toLowerCase();
+  const query = (typeOrName || "").toLowerCase().trim();
 
   // 1. Mountain Bike / Bicycle
   if (
+    query.includes("mountain_bike") ||
+    query.includes("mountain bike") ||
     query.includes("bicycle") ||
     query.includes("cycle") ||
     query.includes("mtb") ||
-    query.includes("mountain bike") ||
-    (query.includes("bike") && !query.includes("motor") && !query.includes("bullet") && !query.includes("enfield") && !query.includes("himalayan"))
+    (query.includes("bike") &&
+      !query.includes("motor") &&
+      !query.includes("bullet") &&
+      !query.includes("enfield") &&
+      !query.includes("himalayan") &&
+      !query.includes("adventure") &&
+      !query.includes("scooter") &&
+      !query.includes("xpulse") &&
+      !query.includes("ktm"))
   ) {
     return {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -47,6 +59,8 @@ export function resolveVehicleArtwork(typeOrName?: string): {
 
   // 2. Electric Smart Scooter (EV)
   if (
+    query.includes("electric_scooter") ||
+    query.includes("electric scooter") ||
     query.includes("electric") ||
     query.includes("ev") ||
     query.includes("ather") ||
@@ -63,8 +77,11 @@ export function resolveVehicleArtwork(typeOrName?: string): {
 
   // 3. Himalayan Adventure Motorcycle
   if (
+    query.includes("adventure_motorcycle") ||
+    query.includes("adventure motorcycle") ||
     query.includes("himalayan") ||
     query.includes("adventure") ||
+    query.includes("adv") ||
     query.includes("450") ||
     query.includes("off-road") ||
     query.includes("offroad") ||
@@ -83,6 +100,8 @@ export function resolveVehicleArtwork(typeOrName?: string): {
 
   // 4. Activa-style Automatic Hill Scooter
   if (
+    query.includes("automatic_scooter") ||
+    query.includes("automatic scooter") ||
     query.includes("activa") ||
     query.includes("scooter") ||
     query.includes("automatic") ||
@@ -90,7 +109,11 @@ export function resolveVehicleArtwork(typeOrName?: string): {
     query.includes("access") ||
     query.includes("vespa") ||
     query.includes("moped") ||
-    query.includes("ntorq")
+    query.includes("ntorq") ||
+    query.includes("fascino") ||
+    query.includes("pleasure") ||
+    query.includes("dio") ||
+    query.includes("burgman")
   ) {
     return {
       src: "/images/vehicles/automatic_scooter.jpg",
@@ -101,13 +124,20 @@ export function resolveVehicleArtwork(typeOrName?: string): {
 
   // 5. Classic Royal Enfield / Bullet Roadster
   if (
+    query.includes("classic_bullet") ||
+    query.includes("classic bullet") ||
     query.includes("bullet") ||
     query.includes("classic") ||
     query.includes("enfield") ||
+    query.includes("royal enfield") ||
     query.includes("350") ||
     query.includes("motorcycle") ||
     query.includes("hunter") ||
-    query.includes("meteor")
+    query.includes("meteor") ||
+    query.includes("cruiser") ||
+    query.includes("standard") ||
+    query.includes("interceptor") ||
+    query.includes("gt 650")
   ) {
     return {
       src: "/images/vehicles/classic_bullet.jpg",
@@ -130,28 +160,41 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
   imageUrl,
   alt,
   className = "w-full h-full object-cover",
-  aspectRatio = "video",
+  containerClassName = "",
+  aspectRatio = "fill",
   priority = false,
+  showBadge = true,
 }) => {
   const artwork = resolveVehicleArtwork(type || name);
   const [hasError, setHasError] = useState(false);
 
-  const finalSrc = (!hasError && imageUrl && (imageUrl.startsWith("http") || imageUrl.startsWith("/")))
-    ? imageUrl
-    : (hasError ? "/images/vehicles/universal_mobility.jpg" : artwork.src);
+  // Authoritative mobility resolution:
+  // If imageUrl is explicitly one of the approved /images/vehicles/*.jpg files, use it.
+  // Otherwise, deterministically resolve from type/name to the 6 editorial artworks.
+  let finalSrc = artwork.src;
+  if (
+    imageUrl &&
+    imageUrl.startsWith("/images/vehicles/") &&
+    imageUrl.endsWith(".jpg")
+  ) {
+    finalSrc = imageUrl;
+  }
+  if (hasError) {
+    finalSrc = "/images/vehicles/universal_mobility.jpg";
+  }
 
   const aspectClass =
     aspectRatio === "video"
       ? "aspect-[16/10]"
       : aspectRatio === "square"
       ? "aspect-square"
-      : "aspect-[21/9]";
+      : aspectRatio === "wide"
+      ? "aspect-[21/9]"
+      : "w-full h-full";
 
   return (
     <div
-      className={`relative overflow-hidden bg-brand-sand-100 ${aspectClass} ${
-        className.includes("rounded") ? "" : "rounded-xl"
-      }`}
+      className={`relative overflow-hidden bg-brand-sand-100 ${aspectClass} ${containerClassName}`}
     >
       <Image
         src={finalSrc}
@@ -162,11 +205,11 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
         className={`transition-transform duration-700 hover:scale-105 ${className}`}
         onError={() => setHasError(true)}
       />
-      {/* Subtle Editorial Texture Badge */}
-      <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-md bg-[#0F2924]/85 backdrop-blur-md text-[#FAF4E8] text-[11px] font-sans tracking-wide uppercase font-medium shadow-sm border border-white/10">
-        VANVAS Mobility • {artwork.label}
-      </div>
+      {showBadge && (
+        <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded bg-[#0F2924]/85 backdrop-blur-md text-[#FAF4E8] text-[10px] font-sans tracking-wide uppercase font-medium shadow-sm border border-white/10 pointer-events-none">
+          VANVAS Mobility • {artwork.label}
+        </div>
+      )}
     </div>
   );
 };
-

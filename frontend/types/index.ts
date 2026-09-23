@@ -94,6 +94,7 @@ export interface Destination {
   id: string;
   name: string;
   slug: string;
+  hindi_name?: string;
   state: string;
   region: string;
   tagline: string;

@@ -124,6 +124,7 @@ class Destination(Base):
     altitude_meters = Column(Integer, nullable=True)
     best_time_to_visit = Column(String(255), nullable=True)
     weather_type = Column(String(100), default="Cool / Mountain")
+    hindi_name = Column(String(255), nullable=True)
     is_featured = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

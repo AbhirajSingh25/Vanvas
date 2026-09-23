@@ -448,6 +448,35 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "triund"
     ]
   },
+  "dharamshala:norbulingka-institute": {
+    imageUrl: "/images/places/dharamshala/norbulingka-institute.webp",
+    visualDescription: "Traditional Tibetan cultural academy and peaceful Japanese-style gardens preserving thangka painting and woodcraft.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "norbulingka-institute",
+      "norbulingka-tibetan-cultural-institute",
+      "norbulingka",
+      "norbulingka-cultural-institute"
+    ]
+  },
+  "dharamshala:illiterati-cafe": {
+    imageUrl: "/images/places/dharamshala/illiterati-cafe.webp",
+    visualDescription: "Cozy literary sanctuary with floor-to-ceiling wooden bookshelves and balcony views of the Dhauladhar valley.",
+    category: "Cafés & Bakery",
+    semanticTheme: "cafe",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "illiterati-cafe",
+      "illiterati-books-and-artisan-coffee",
+      "ulteriori-books-and-artisan-coffee",
+      "illiterati",
+      "ulteriori"
+    ]
+  },
 
   // ==========================================
   // --- VARANASI LANDMARKS ---

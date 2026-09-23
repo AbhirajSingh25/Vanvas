@@ -16,6 +16,7 @@ import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 import { DestinationSearchBar } from "@/components/search/DestinationSearchBar";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
+import { getCanonicalHindiName } from "@/lib/canonicalDestinations";
 
 export default function HomePage() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
@@ -115,17 +116,6 @@ export default function HomePage() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  const hindiNames: Record<string, string> = {
-    manali: "मनाली",
-    rishikesh: "ऋषिकेश",
-    kasol: "कसोल",
-    dharamshala: "धर्मशाला",
-    goa: "गोवा",
-    jaipur: "जयपुर",
-    udaipur: "उदयपुर",
-    mussoorie: "मसूरी",
-  };
 
   const featuredManali = destinations.find((d) => d.slug === "manali") || destinations[0];
   const remainingDestinations = destinations.filter((d) => d.slug !== featuredManali?.slug);
@@ -256,7 +246,7 @@ export default function HomePage() {
                   <div className="flex items-baseline gap-3">
                     <h3 className="text-3xl sm:text-5xl font-serif font-black">{featuredManali.name}</h3>
                     <span className="font-devanagari text-2xl sm:text-3xl text-[#B49252] font-bold">
-                      {hindiNames[featuredManali.slug] || "मनाली"}
+                      {featuredManali.hindi_name || getCanonicalHindiName(featuredManali.slug || featuredManali.name) || "मनाली"}
                     </span>
                   </div>
                   <p className="text-xs text-[#D8DED5] mt-1 italic font-serif">
@@ -300,7 +290,7 @@ export default function HomePage() {
                     <div className="flex items-baseline justify-between">
                       <h4 className="font-serif font-black text-xl">{dest.name}</h4>
                       <span className="font-devanagari text-sm text-[#B49252] font-semibold">
-                        {hindiNames[dest.slug] || ""}
+                        {dest.hindi_name || getCanonicalHindiName(dest.slug || dest.name)}
                       </span>
                     </div>
                   </div>

@@ -227,6 +227,32 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["triund-trek", "triund-high-ridge-himalayan-trek", "triund-trail", "triund"]
         },
+        "dharamshala:norbulingka-institute": {
+            "image_url": "/images/places/dharamshala/norbulingka-institute.webp",
+            "tier": "exact_place",
+            "place_name": "Norbulingka Tibetan Cultural Institute",
+            "destination": "Dharamshala",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "Traditional Tibetan cultural academy and peaceful Japanese-style gardens preserving thangka painting and woodcraft.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["norbulingka-institute", "norbulingka-tibetan-cultural-institute", "norbulingka", "norbulingka-cultural-institute"]
+        },
+        "dharamshala:illiterati-cafe": {
+            "image_url": "/images/places/dharamshala/illiterati-cafe.webp",
+            "tier": "exact_place",
+            "place_name": "Illiterati Books & Artisan Coffee",
+            "destination": "Dharamshala",
+            "category": "Cafés & Bakery",
+            "semantic_theme": "cafe",
+            "visual_description": "Cozy literary sanctuary with floor-to-ceiling wooden bookshelves and balcony views of the Dhauladhar valley.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["illiterati-cafe", "illiterati-books-and-artisan-coffee", "ulteriori-books-and-artisan-coffee", "illiterati", "ulteriori"]
+        },
 
         # --- Varanasi Landmarks ---
         "varanasi:dashashwamedh-ghat-aarti": {

@@ -43,6 +43,13 @@ def ensure_database_schema(eng=engine):
         existing_tables = set(inspector.get_table_names())
         
         with eng.connect() as conn:
+            # 1b. Check and migrate `destinations` table
+            if "destinations" in existing_tables:
+                dest_cols = {col["name"] for col in inspector.get_columns("destinations")}
+                if "hindi_name" not in dest_cols:
+                    conn.execute(text("ALTER TABLE destinations ADD COLUMN hindi_name VARCHAR(255) NULL"))
+                    logger.info("Migrated schema: added hindi_name to destinations table.")
+
             # 2. Check and migrate `users` table
             if "users" in existing_tables:
                 user_cols = {col["name"] for col in inspector.get_columns("users")}

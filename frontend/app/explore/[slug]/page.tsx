@@ -19,6 +19,7 @@ import { VanvasImage } from "@/components/ui/VanvasImage";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
+import { getCanonicalHindiName, findCanonicalDestination } from "@/lib/canonicalDestinations";
 
 const DISCOVERY_MESSAGES = [
   "VANVAS is gathering live travel information...",
@@ -276,11 +277,13 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
   const normKey = slug.toLowerCase().replace(/[^a-z]/g, "");
   const matchedMetaKey = Object.keys(destMetadata).find((k) => normKey.includes(k));
-  const meta = (matchedMetaKey ? destMetadata[matchedMetaKey] : null) || {
-    hindi: destination?.name || "यात्रा",
-    alt: `${destination?.altitude_meters || 550}M`,
-    quote: destination?.tagline || "Live travel discovery and verified coordinates.",
-    province: destination?.state ? destination.state.toUpperCase() : "LIVE DISCOVERY",
+  const canonicalDest = findCanonicalDestination(slug);
+  const canonicalHindi = destination?.hindi_name || getCanonicalHindiName(slug) || canonicalDest?.hindi_name || "";
+  const meta = {
+    hindi: canonicalHindi || (matchedMetaKey ? destMetadata[matchedMetaKey]?.hindi : null) || destination?.name || "यात्रा",
+    alt: `${destination?.altitude_meters || canonicalDest?.altitude_meters || 550}M`,
+    quote: destination?.tagline || canonicalDest?.tagline || "Live travel discovery and verified coordinates.",
+    province: destination?.state ? destination.state.toUpperCase() : (canonicalDest?.state ? canonicalDest.state.toUpperCase() : "LIVE DISCOVERY"),
   };
 
   const isCurated = destination ? destination.is_curated !== false : true;

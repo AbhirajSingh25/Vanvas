@@ -76,6 +76,7 @@ def seed_database():
             {
                 "name": "Manali",
                 "slug": "manali",
+                "hindi_name": "मनाली",
                 "state": "Himachal Pradesh",
                 "region": "Himalayan",
                 "tagline": "Pine-scented mountain air, riverside stone cafés, and high alpine trails.",
@@ -91,6 +92,7 @@ def seed_database():
             {
                 "name": "Rishikesh",
                 "slug": "rishikesh",
+                "hindi_name": "ऋषिकेश",
                 "state": "Uttarakhand",
                 "region": "Himalayan Foothills",
                 "tagline": "Turquoise Ganga currents, cliffside meditation, and rapid adventures.",
@@ -106,6 +108,7 @@ def seed_database():
             {
                 "name": "Kasol",
                 "slug": "kasol",
+                "hindi_name": "कसोल",
                 "state": "Himachal Pradesh",
                 "region": "Parvati Valley",
                 "tagline": "Mystic deodar canopies, roaring emerald waters, and bohemian trails.",
@@ -121,6 +124,7 @@ def seed_database():
             {
                 "name": "Dharamshala & McLeod Ganj",
                 "slug": "dharamshala",
+                "hindi_name": "धर्मशाला",
                 "state": "Himachal Pradesh",
                 "region": "Kangra Valley",
                 "tagline": "Prayer flags in the mist, Tibetan heritage, and the mighty Dhauladhar ridge.",
@@ -136,6 +140,7 @@ def seed_database():
             {
                 "name": "Goa",
                 "slug": "goa",
+                "hindi_name": "गोवा",
                 "state": "Goa",
                 "region": "Coastal Western Ghats",
                 "tagline": "Golden palms, Portuguese villas, beach shack sunsets, and spice farms.",
@@ -151,6 +156,7 @@ def seed_database():
             {
                 "name": "Jaipur",
                 "slug": "jaipur",
+                "hindi_name": "जयपुर",
                 "state": "Rajasthan",
                 "region": "Royal Heritage",
                 "tagline": "Terracotta ramparts, historic havelis, rich kachoris, and artisan crafts.",
@@ -166,6 +172,7 @@ def seed_database():
             {
                 "name": "Mussoorie",
                 "slug": "mussoorie",
+                "hindi_name": "मसूरी",
                 "state": "Uttarakhand",
                 "region": "Garhwal Hills",
                 "tagline": "Queen of the Hills, colonial bookshops, winterline sunsets, and oak trails.",
@@ -181,6 +188,7 @@ def seed_database():
             {
                 "name": "Udaipur",
                 "slug": "udaipur",
+                "hindi_name": "उदयपुर",
                 "state": "Rajasthan",
                 "region": "Mewar Lakes",
                 "tagline": "Shimmering lake waters, whitewashed palaces, and romantic rooftop evenings.",
@@ -196,6 +204,7 @@ def seed_database():
             {
                 "name": "Varanasi",
                 "slug": "varanasi",
+                "hindi_name": "वाराणसी",
                 "state": "Uttar Pradesh",
                 "region": "Ganga Riverfront",
                 "tagline": "Ancient eternal ghats, dawn boat reflections, sacred chanting, and silk lanes.",
@@ -211,6 +220,7 @@ def seed_database():
             {
                 "name": "Leh",
                 "slug": "leh",
+                "hindi_name": "लेह",
                 "state": "Ladakh",
                 "region": "Trans-Himalayan Cold Desert",
                 "tagline": "Barren moonscapes, thousand-year-old gompas, and world-highest motorable passes.",
@@ -226,6 +236,7 @@ def seed_database():
             {
                 "name": "Spiti Valley",
                 "slug": "spiti",
+                "hindi_name": "स्पीति घाटी",
                 "state": "Himachal Pradesh",
                 "region": "Cold Desert Valley",
                 "tagline": "The middle land between Tibet and India, cliffside monasteries, and fossil villages.",
@@ -241,6 +252,7 @@ def seed_database():
             {
                 "name": "Munnar",
                 "slug": "munnar",
+                "hindi_name": "मुन्नार",
                 "state": "Kerala",
                 "region": "Western Ghats Tea Hills",
                 "tagline": "Rolling emerald tea plantations, misty mountain gaps, and cardamom forests.",
@@ -1187,7 +1199,7 @@ def seed_database():
                     "opening_time": "09:00",
                     "closing_time": "17:30",
                     "tags": "Tibetan Culture,Artisan,Thangka,Gardens,Architecture",
-                    "image_url": "/images/places/dharamshala/categories/heritage.webp",
+                    "image_url": "/images/places/dharamshala/norbulingka-institute.webp",
                     "why_vanvas_recommends": "Meticulously maintained Japanese-Tibetan gardens showcasing living Himalayan arts.",
                     "is_must_visit": True,
                     "is_hidden_gem": True,
@@ -1208,7 +1220,7 @@ def seed_database():
                     "opening_time": "09:30",
                     "closing_time": "21:00",
                     "tags": "Books,Café,Coffee,Views,Cozy",
-                    "image_url": "/images/places/dharamshala/categories/cafe.webp",
+                    "image_url": "/images/places/dharamshala/illiterati-cafe.webp",
                     "why_vanvas_recommends": "The finest mountain library and reading space in the Western Himalayas.",
                     "is_must_visit": False,
                     "is_hidden_gem": True,
@@ -1401,7 +1413,7 @@ def seed_database():
                     "opening_time": "07:00",
                     "closing_time": "18:30",
                     "tags": "Waterfall,Jungle,Granite,Trek,Scenic",
-                    "image_url": "/images/places/munnar/categories/waterfall.webp",
+                    "image_url": "/images/places/munnar/attukal-waterfalls.webp",
                     "why_vanvas_recommends": "Spectacular rushing cascade framed by lush jungle flora.",
                     "is_must_visit": False,
                     "is_hidden_gem": True,
@@ -1664,7 +1676,7 @@ def seed_database():
                 db.delete(old_h)
         db.flush()
 
-        # 6. Seed Curated Rentals for all destinations
+        # 6. Seed Curated Rentals for destinations
         curated_rentals_by_dest = {
             "manali": [
                 {
@@ -1678,7 +1690,7 @@ def seed_database():
                     "longitude": 77.1880,
                     "opening_hours": "07:30 AM - 09:00 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/adventure_motorcycle.svg"
+                    "image_url": "/images/vehicles/adventure_motorcycle.jpg"
                 },
                 {
                     "provider_name": "Valley Scooters Hub",
@@ -1691,7 +1703,7 @@ def seed_database():
                     "longitude": 77.1760,
                     "opening_hours": "08:00 AM - 08:30 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.svg"
+                    "image_url": "/images/vehicles/automatic_scooter.jpg"
                 }
             ],
             "mussoorie": [
@@ -1706,7 +1718,7 @@ def seed_database():
                     "longitude": 78.0790,
                     "opening_hours": "08:00 AM - 08:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/classic_bullet.svg"
+                    "image_url": "/images/vehicles/classic_bullet.jpg"
                 }
             ],
             "udaipur": [
@@ -1721,7 +1733,7 @@ def seed_database():
                     "longitude": 73.6790,
                     "opening_hours": "08:00 AM - 09:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.svg"
+                    "image_url": "/images/vehicles/automatic_scooter.jpg"
                 }
             ],
             "leh": [
@@ -1736,7 +1748,136 @@ def seed_database():
                     "longitude": 77.5840,
                     "opening_hours": "07:00 AM - 09:00 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/adventure_motorcycle.svg"
+                    "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                }
+            ],
+            "rishikesh": [
+                {
+                    "provider_name": "Ganga Valley Two Wheelers",
+                    "vehicle_type": "Scooter",
+                    "vehicle_name": "Honda Activa 6G River Edition",
+                    "price_per_day": 500.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Tapovan Main Crossing, Rishikesh",
+                    "latitude": 30.1340,
+                    "longitude": 78.3240,
+                    "opening_hours": "07:00 AM - 09:00 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                },
+                {
+                    "provider_name": "Rishikesh Mountain Biking Hub",
+                    "vehicle_type": "Mountain Bike",
+                    "vehicle_name": "Trek Marlin 7 Trail MTB",
+                    "price_per_day": 400.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Lakshman Jhula Road, Rishikesh",
+                    "latitude": 30.1260,
+                    "longitude": 78.3270,
+                    "opening_hours": "06:30 AM - 08:30 PM",
+                    "rating": 4.9,
+                    "image_url": "/images/vehicles/mountain_bike.jpg"
+                }
+            ],
+            "dharamshala": [
+                {
+                    "provider_name": "Kangra Valley Riders",
+                    "vehicle_type": "Royal Enfield Classic 350",
+                    "vehicle_name": "Classic 350 Mountain Roadster",
+                    "price_per_day": 1200.0,
+                    "deposit_amount": 2000.0,
+                    "location": "Main Square, McLeod Ganj",
+                    "latitude": 32.2425,
+                    "longitude": 76.3215,
+                    "opening_hours": "07:30 AM - 08:30 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/classic_bullet.jpg"
+                },
+                {
+                    "provider_name": "Bhagsu Hill Scooter Rental",
+                    "vehicle_type": "Scooter",
+                    "vehicle_name": "Honda Activa 6G (Hill Climb)",
+                    "price_per_day": 550.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Bhagsu Taxi Stand, McLeod Ganj",
+                    "latitude": 32.2460,
+                    "longitude": 76.3320,
+                    "opening_hours": "08:00 AM - 08:00 PM",
+                    "rating": 4.7,
+                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                }
+            ],
+            "spiti": [
+                {
+                    "provider_name": "Spiti Moto Expeditions",
+                    "vehicle_type": "Royal Enfield Himalayan 450",
+                    "vehicle_name": "Himalayan 450 High Pass Tourer",
+                    "price_per_day": 1800.0,
+                    "deposit_amount": 3500.0,
+                    "location": "Kaza Main Market, Spiti",
+                    "latitude": 32.2270,
+                    "longitude": 78.0720,
+                    "opening_hours": "07:00 AM - 08:00 PM",
+                    "rating": 4.9,
+                    "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                }
+            ],
+            "munnar": [
+                {
+                    "provider_name": "Western Ghats Green Wheels",
+                    "vehicle_type": "Electric Scooter",
+                    "vehicle_name": "Ather 450X Tea Estate EV",
+                    "price_per_day": 600.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Munnar Town Center, Kerala",
+                    "latitude": 10.0880,
+                    "longitude": 77.0600,
+                    "opening_hours": "08:00 AM - 08:00 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/electric_scooter.jpg"
+                },
+                {
+                    "provider_name": "Munnar Tea Trail Cycles",
+                    "vehicle_type": "Mountain Bike",
+                    "vehicle_name": "Giant Talon Mountain Trail Cycle",
+                    "price_per_day": 350.0,
+                    "deposit_amount": 800.0,
+                    "location": "Mattupetty Road, Munnar",
+                    "latitude": 10.0920,
+                    "longitude": 77.0700,
+                    "opening_hours": "06:30 AM - 07:30 PM",
+                    "rating": 4.9,
+                    "image_url": "/images/vehicles/mountain_bike.jpg"
+                }
+            ],
+            "goa": [
+                {
+                    "provider_name": "Goa Beach Wheels",
+                    "vehicle_type": "Scooter",
+                    "vehicle_name": "Honda Activa 6G Coastal Edition",
+                    "price_per_day": 400.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Anjuna Beach Road, Goa",
+                    "latitude": 15.5800,
+                    "longitude": 73.7400,
+                    "opening_hours": "07:00 AM - 10:00 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                }
+            ],
+            "kasol": [
+                {
+                    "provider_name": "Parvati Valley Moto Hub",
+                    "vehicle_type": "Royal Enfield Classic 350",
+                    "vehicle_name": "Classic 350 Parvati Cruiser",
+                    "price_per_day": 1200.0,
+                    "deposit_amount": 2000.0,
+                    "location": "Old Kasol Bridge, Parvati Valley",
+                    "latitude": 32.0100,
+                    "longitude": 77.3150,
+                    "opening_hours": "08:00 AM - 08:30 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/classic_bullet.jpg"
                 }
             ]
         }
@@ -1749,6 +1890,25 @@ def seed_database():
                     if not existing_r:
                         r = RentalOption(destination_id=dest_obj.id, **r_data)
                         db.add(r)
+                    else:
+                        for k, v in r_data.items():
+                            setattr(existing_r, k, v)
+        db.flush()
+
+        # Clean up legacy rentals with stale/invalid image URLs
+        for old_r in db.query(RentalOption).all():
+            if old_r.image_url and (".svg" in old_r.image_url or "unsplash" in old_r.image_url):
+                if "himalayan" in old_r.vehicle_name.lower():
+                    old_r.image_url = "/images/vehicles/adventure_motorcycle.jpg"
+                elif "bullet" in old_r.vehicle_name.lower() or "classic" in old_r.vehicle_name.lower():
+                    old_r.image_url = "/images/vehicles/classic_bullet.jpg"
+                elif "activa" in old_r.vehicle_name.lower() or "scooter" in old_r.vehicle_name.lower() or "jupiter" in old_r.vehicle_name.lower():
+                    old_r.image_url = "/images/vehicles/automatic_scooter.jpg"
+                elif "bike" in old_r.vehicle_name.lower() or "cycle" in old_r.vehicle_name.lower():
+                    old_r.image_url = "/images/vehicles/mountain_bike.jpg"
+                else:
+                    old_r.image_url = "/images/vehicles/universal_mobility.jpg"
+        db.flush()
         db.flush()
 
         db.commit()
