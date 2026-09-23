@@ -529,7 +529,7 @@ export default function NearbyPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {places.map((place) => (
                 <PlaceCard
-                  key={place.id}
+                  key={`${searchCenter.name}-${place.id}`}
                   place={place}
                   destinationName={searchCenter.name}
                   onSelect={(p) => {

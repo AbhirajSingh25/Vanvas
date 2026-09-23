@@ -41,6 +41,55 @@ def map_category_filter(cat: Optional[str]) -> List[str]:
         return ["Essentials & Medical", "Essentials", "Medical"]
     return [cat]
 
+def calculate_travel_relevance_score(
+    name: str,
+    category: str,
+    dist_km: float,
+    is_must_visit: bool = False,
+    is_hidden_gem: bool = False,
+    rating: Optional[float] = None,
+    review_count: Optional[int] = None,
+    tags: str = "",
+    source: str = "vanvas_curated"
+) -> float:
+    """
+    Computes a deterministic travel discovery score combining:
+    + iconic landmark / historic / cultural significance
+    + travel category priority (Attractions, Cafes, Food, Nature, Heritage)
+    + genuine rating/review signals
+    + distance penalty
+    """
+    score = 45.0
+    if source == "vanvas_curated":
+        score += 12.0
+    if is_must_visit:
+        score += 15.0
+    if is_hidden_gem:
+        score += 10.0
+
+    name_l = (name or "").lower()
+    cat_l = (category or "").lower()
+
+    # Landmark & Heritage recognition signals
+    if any(k in name_l for k in ["fort", "palace", "qutub", "gate", "mahal", "temple", "mandir", "monument", "ghat", "falls", "waterfall", "lake", "viewpoint", "monastery", "church", "gurudwara"]):
+        score += 12.0
+    elif any(k in cat_l for k in ["culture", "heritage", "nature", "trails", "adventure"]):
+        score += 8.0
+    elif any(k in cat_l for k in ["café", "cafe", "bakery", "local food", "food"]):
+        score += 6.0
+
+    # Genuine Provider Rating Signals (if provided)
+    if rating is not None and rating >= 4.5:
+        score += 5.0
+    if review_count is not None and review_count >= 50:
+        score += 3.0
+
+    # Balanced distance penalty (prevents distant places from completely dominating, but ensures top landmarks outrank immediate mundane POIs)
+    dist_penalty = min(dist_km * 1.5, 25.0)
+    score -= dist_penalty
+
+    return max(10.0, min(100.0, round(score, 1)))
+
 @router.get("/nearby", response_model=List[PlaceResponse], dependencies=[Depends(rate_limit(max_requests=60, window_seconds=60))])
 async def get_nearby_places(
     lat: float = Query(32.2396, description="Current latitude"),
@@ -68,12 +117,16 @@ async def get_nearby_places(
     for p in all_places:
         dist = haversine_distance_km(lat, lng, p.latitude, p.longitude)
         if dist <= radius_km:
-            match_score = scorer.score_place(
-                place=p,
-                user_interests=["Nature", "Cafés", "Adventure", "Food"],
-                user_budget_tier="Balanced",
-                current_lat=lat,
-                current_lng=lng
+            match_score = calculate_travel_relevance_score(
+                name=p.name,
+                category=p.category or "Attractions",
+                dist_km=dist,
+                is_must_visit=p.is_must_visit or False,
+                is_hidden_gem=p.is_hidden_gem or False,
+                rating=p.rating,
+                review_count=p.review_count,
+                tags=p.tags or "",
+                source="vanvas_curated"
             )
             
             hours_eval = OperatingHoursEngine.evaluate_simple_hours(p.opening_time, p.closing_time, p.latitude, p.longitude)
@@ -117,7 +170,7 @@ async def get_nearby_places(
                 is_hidden_gem=p.is_hidden_gem or False,
                 is_indoor=p.is_indoor or False,
                 is_saved=p.id in user_saved_ids,
-                match_score=round(match_score * 100, 1),
+                match_score=match_score,
                 source="vanvas_curated",
                 source_id=p.id,
                 is_live=False,
@@ -149,6 +202,17 @@ async def get_nearby_places(
                         break
             if not is_dup:
                 dist = lp.get("distance_km") or haversine_distance_km(lat, lng, lp["latitude"], lp["longitude"])
+                lp_match_score = calculate_travel_relevance_score(
+                    name=lp["name"],
+                    category=lp.get("category", "Attractions"),
+                    dist_km=dist,
+                    is_must_visit=lp.get("is_must_visit", False),
+                    is_hidden_gem=lp.get("is_hidden_gem", False),
+                    rating=lp.get("rating"),
+                    review_count=lp.get("review_count"),
+                    tags=lp.get("tags", ""),
+                    source=lp.get("source", "openstreetmap")
+                )
                 nearby_results.append((dist, PlaceResponse(
                     id=lp.get("id", f"live-{lp.get('source_id', lp['name'])}"),
                     destination_id="live",
@@ -178,7 +242,7 @@ async def get_nearby_places(
                     is_hidden_gem=lp.get("is_hidden_gem", False),
                     is_indoor=lp.get("is_indoor", False),
                     is_saved=lp.get("id") in user_saved_ids if user_saved_ids else False,
-                    match_score=85.0,
+                    match_score=lp_match_score,
                     source=lp.get("source", "openstreetmap"),
                     source_id=lp.get("source_id"),
                     is_live=lp.get("is_live", True),

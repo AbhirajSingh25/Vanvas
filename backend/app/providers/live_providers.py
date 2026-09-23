@@ -164,6 +164,7 @@ class LivePlacesProvider(PlacesProvider):
             node["shop"="bakery"]({bbox_str});
             node["shop"="coffee"]({bbox_str});
             way["amenity"="cafe"]({bbox_str});
+            way["shop"="bakery"]({bbox_str});
             """
         elif cat_lower in ["food", "dining", "restaurant", "street_food", "local food"]:
             body = f"""
@@ -171,6 +172,7 @@ class LivePlacesProvider(PlacesProvider):
             node["amenity"="fast_food"]({bbox_str});
             node["amenity"="food_court"]({bbox_str});
             node["amenity"="dhaba"]({bbox_str});
+            node["amenity"="ice_cream"]({bbox_str});
             node["amenity"="pub"]({bbox_str});
             way["amenity"="restaurant"]({bbox_str});
             way["amenity"="food_court"]({bbox_str});
@@ -181,12 +183,17 @@ class LivePlacesProvider(PlacesProvider):
             node["tourism"="viewpoint"]({bbox_str});
             node["tourism"="museum"]({bbox_str});
             node["tourism"="gallery"]({bbox_str});
+            node["tourism"="theme_park"]({bbox_str});
             node["historic"="monument"]({bbox_str});
             node["historic"="memorial"]({bbox_str});
             node["historic"="fort"]({bbox_str});
             node["historic"="palace"]({bbox_str});
+            node["historic"="castle"]({bbox_str});
+            node["historic"="archaeological_site"]({bbox_str});
             way["tourism"="attraction"]({bbox_str});
             way["historic"="fort"]({bbox_str});
+            way["historic"="palace"]({bbox_str});
+            way["historic"="monument"]({bbox_str});
             """
         elif cat_lower in ["spiritual", "temple", "monastery", "church", "faith"]:
             body = f"""
@@ -197,25 +204,37 @@ class LivePlacesProvider(PlacesProvider):
             node["historic"="mosque"]({bbox_str});
             way["amenity"="place_of_worship"]({bbox_str});
             way["historic"="temple"]({bbox_str});
+            way["historic"="monastery"]({bbox_str});
             """
         elif cat_lower in ["nature", "trails", "nature & trails", "viewpoint", "waterfall"]:
             body = f"""
             node["natural"="waterfall"]({bbox_str});
             node["natural"="peak"]({bbox_str});
             node["natural"="spring"]({bbox_str});
+            node["natural"="beach"]({bbox_str});
+            node["natural"="cave_entrance"]({bbox_str});
             node["leisure"="park"]({bbox_str});
             node["leisure"="nature_reserve"]({bbox_str});
+            node["leisure"="garden"]({bbox_str});
             node["tourism"="viewpoint"]({bbox_str});
+            node["highway"="trail"]({bbox_str});
             way["leisure"="park"]({bbox_str});
             way["leisure"="nature_reserve"]({bbox_str});
+            way["natural"="waterfall"]({bbox_str});
+            way["natural"="beach"]({bbox_str});
+            way["natural"="water"]({bbox_str});
             """
         elif cat_lower in ["shopping", "market", "markets", "shops & markets", "craft"]:
             body = f"""
             node["shop"="supermarket"]({bbox_str});
-            node["shop"="convenience"]({bbox_str});
             node["shop"="department_store"]({bbox_str});
             node["shop"="clothes"]({bbox_str});
             node["shop"="mall"]({bbox_str});
+            node["shop"="craft"]({bbox_str});
+            node["shop"="gift"]({bbox_str});
+            node["shop"="souvenir"]({bbox_str});
+            node["shop"="spices"]({bbox_str});
+            node["shop"="tea"]({bbox_str});
             node["amenity"="marketplace"]({bbox_str});
             way["shop"="mall"]({bbox_str});
             way["amenity"="marketplace"]({bbox_str});
@@ -225,18 +244,18 @@ class LivePlacesProvider(PlacesProvider):
             node["amenity"="bicycle_rental"]({bbox_str});
             node["amenity"="motorcycle_rental"]({bbox_str});
             node["amenity"="car_rental"]({bbox_str});
-            node["amenity"="fuel"]({bbox_str});
             node["amenity"="bus_station"]({bbox_str});
-            node["amenity"="parking"]({bbox_str});
-            way["amenity"="parking"]({bbox_str});
+            way["amenity"="bus_station"]({bbox_str});
             """
         elif cat_lower in ["stay", "stays", "hotel", "hostel", "homestay", "stays & sanctuaries"]:
             body = f"""
             node["tourism"="hotel"]({bbox_str});
             node["tourism"="hostel"]({bbox_str});
             node["tourism"="guest_house"]({bbox_str});
+            node["tourism"="chalet"]({bbox_str});
             node["tourism"="motel"]({bbox_str});
             way["tourism"="hotel"]({bbox_str});
+            way["tourism"="hostel"]({bbox_str});
             """
         elif cat_lower in ["essentials", "medical", "hospital", "pharmacy", "essentials & medical"]:
             body = f"""
@@ -249,16 +268,19 @@ class LivePlacesProvider(PlacesProvider):
             way["amenity"="hospital"]({bbox_str});
             """
         else:
-            # Balanced general selection of real places
+            # Curated balanced travel discovery query (EXCLUDES schools, offices, police, post offices, generic shops)
             body = f"""
-            node["tourism"]({bbox_str});
-            node["amenity"]({bbox_str});
-            node["historic"]({bbox_str});
-            node["shop"]({bbox_str});
-            node["leisure"]({bbox_str});
-            way["tourism"]({bbox_str});
-            way["historic"]({bbox_str});
-            way["leisure"]({bbox_str});
+            node["tourism"~"attraction|viewpoint|museum|gallery|artwork|theme_park|zoo|camp_site"]({bbox_str});
+            node["historic"~"monument|memorial|castle|ruins|archaeological_site|temple|shrine|fort|palace|church|monastery|mosque|tomb|city_gate|yes"]({bbox_str});
+            node["amenity"~"cafe|restaurant|fast_food|food_court|dhaba|pub|bar|place_of_worship|ice_cream"]({bbox_str});
+            node["leisure"~"park|nature_reserve|garden|water_park"]({bbox_str});
+            node["natural"~"waterfall|beach|peak|spring|hot_spring|cave_entrance"]({bbox_str});
+            node["shop"~"mall|department_store|gift|craft|art|souvenir|tea|spices|books|clothes|bakery|pastry|coffee|confectionery"]({bbox_str});
+            way["tourism"~"attraction|viewpoint|museum|gallery|camp_site"]({bbox_str});
+            way["historic"~"monument|castle|ruins|archaeological_site|temple|fort|palace|church|monastery|mosque"]({bbox_str});
+            way["amenity"~"place_of_worship|restaurant|cafe|marketplace"]({bbox_str});
+            way["leisure"~"park|nature_reserve|garden"]({bbox_str});
+            way["natural"~"waterfall|beach|lake|water"]({bbox_str});
             """
         
         return f"""[out:json][timeout:8];
@@ -502,6 +524,33 @@ out center 60;"""
 
         return unique
 
+    EXCLUDED_AMENITY_TAGS = {
+        "school", "college", "university", "kindergarten", "driving_school", "language_school", "music_school",
+        "police", "post_office", "post_box", "bank", "atm", "bureau_de_change",
+        "hospital", "clinic", "pharmacy", "doctors", "dentist", "veterinary", "nursing_home",
+        "courthouse", "fire_station", "townhall", "prison", "government", "social_facility",
+        "car_rental", "car_wash", "car_repair", "fuel", "charging_station", "parking", "parking_space", "parking_entrance",
+        "waste_basket", "waste_disposal", "recycling", "toilets", "telephone", "vending_machine", "bench",
+        "grave_yard", "crematorium", "funeral_directors"
+    }
+
+    EXCLUDED_SHOP_TAGS = {
+        "hairdresser", "beauty", "barber", "laundry", "dry_cleaning", "tailor", "optician", "chemist", "medical_supply",
+        "hardware", "doityourself", "car", "car_repair", "car_parts", "motorcycle_repair", "tyres", "bicycle_repair",
+        "florist", "pet", "estate_agent", "travel_agency", "copyshop", "stationery", "storage", "plumber", "electrician", "kiosk",
+        "supermarket", "convenience", "grocery", "general"
+    }
+
+    NEGATIVE_NAME_TOKENS = [
+        "school", "college", "vidyalaya", "academy", "post office", "police station", "thana", "chowki",
+        "state bank", "hdfc", "icici", "axis bank", "punjab national", "canara bank", "union bank", "bank of",
+        "hospital", "clinic", "dental", "pharmacy", "chemist",
+        "hair salon", "beauty parlour", "gents parlour", "unisex salon", "tailor", "dry cleaner",
+        "car wash", "motor works", "auto service", "tyre", "puncture", "petrol pump",
+        "law chambers", "advocate", "notary", "property dealer", "real estate", "consultancy",
+        "xerox", "photocopy", "coaching", "tuition"
+    ]
+
     def _map_osm_category(self, tags: Dict[str, str]) -> str:
         amenity = tags.get("amenity", "").lower()
         tourism = tags.get("tourism", "").lower()
@@ -538,18 +587,18 @@ out center 60;"""
 
     def _category_image(self, category: str) -> str:
         images = {
-            "Cafés & Bakery": "/images/places/universal/cafe.webp",
-            "Local Food": "/images/places/universal/food.webp",
-            "Nature & Trails": "/images/places/universal/nature.webp",
-            "Culture & Heritage": "/images/places/universal/spiritual.webp",
-            "Adventure": "/images/places/universal/viewpoint.webp",
-            "Shops & Markets": "/images/places/universal/shopping.webp",
-            "Mobility & Transport": "/images/places/universal/transport.webp",
-            "Essentials & Medical": "/images/places/universal/medical.webp",
-            "Stays & Sanctuaries": "/images/places/universal/stay.webp",
-            "Attractions": "/images/places/universal/viewpoint.webp",
+            "Cafés & Bakery": "/images/nearby/cafe/cafe.webp",
+            "Local Food": "/images/nearby/local_food/local_food.webp",
+            "Nature & Trails": "/images/nearby/nature/nature.webp",
+            "Culture & Heritage": "/images/nearby/heritage/heritage.webp",
+            "Adventure": "/images/nearby/experience/experience.webp",
+            "Shops & Markets": "/images/nearby/market/market.webp",
+            "Mobility & Transport": "/images/nearby/universal/universal.webp",
+            "Essentials & Medical": "/images/nearby/universal/universal.webp",
+            "Stays & Sanctuaries": "/images/nearby/stay/stay.webp",
+            "Attractions": "/images/nearby/monument/monument.webp",
         }
-        return images.get(category, "/images/places/universal/nature.webp")
+        return images.get(category, "/images/nearby/universal/universal.webp")
 
     def _haversine(self, lat1: float, lng1: float, lat2: float, lng2: float) -> float:
         r = 6371.0
@@ -587,6 +636,25 @@ out center 60;"""
         if not p_name:
             return None
 
+        p_name_lower = p_name.lower().strip()
+        cat_lower = (category_filter or "").lower().strip()
+        is_essentials_query = cat_lower in ["essentials", "medical", "hospital", "pharmacy", "essentials & medical"]
+
+        # Travel Relevance Filter: Discard non-travel everyday facilities
+        if not is_essentials_query:
+            amenity = tags.get("amenity", "").lower()
+            shop = tags.get("shop", "").lower()
+            office = tags.get("office", "").lower()
+            tourism = tags.get("tourism", "").lower()
+            historic = tags.get("historic", "").lower()
+
+            # If it's not explicitly a major tourism or historic landmark, enforce negative checks
+            if tourism not in ["attraction", "viewpoint", "museum", "gallery"] and historic not in ["monument", "memorial", "castle", "fort", "palace", "temple", "ruins"]:
+                if amenity in self.EXCLUDED_AMENITY_TAGS or shop in self.EXCLUDED_SHOP_TAGS or office:
+                    return None
+                if any(neg in p_name_lower for neg in self.NEGATIVE_NAME_TOKENS):
+                    return None
+
         # Support node lat/lon or way/relation center lat/lon
         p_lat = el.get("lat") or el.get("center", {}).get("lat", center_lat)
         p_lng = el.get("lon") or el.get("center", {}).get("lon", center_lng)
@@ -596,7 +664,6 @@ out center 60;"""
         p_cat = self._map_osm_category(tags)
 
         if category_filter and category_filter.lower() != "all":
-            cat_lower = category_filter.lower()
             if cat_lower in ["food", "restaurant", "dining", "local food"] and p_cat not in ["Local Food", "Cafés & Bakery"]:
                 return None
             elif cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"] and p_cat != "Cafés & Bakery":

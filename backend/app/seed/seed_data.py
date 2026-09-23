@@ -1678,6 +1678,62 @@ def seed_database():
 
         # 6. Seed Curated Rentals for destinations
         curated_rentals_by_dest = {
+            "jaipur": [
+                {
+                    "provider_name": "Pink City Royal Enfield Rentals",
+                    "vehicle_type": "Royal Enfield Classic 350",
+                    "vehicle_name": "Classic 350 Rajput Cruiser",
+                    "price_per_day": 1100.0,
+                    "deposit_amount": 2000.0,
+                    "location": "MI Road, Jaipur, Rajasthan",
+                    "latitude": 26.9150,
+                    "longitude": 75.8050,
+                    "opening_hours": "07:30 AM - 09:00 PM",
+                    "rating": 4.9,
+                    "image_url": "/images/vehicles/classic_bullet.jpg"
+                },
+                {
+                    "provider_name": "Jaipur Heritage Scooter Hub",
+                    "vehicle_type": "Scooter",
+                    "vehicle_name": "Honda Activa 6G Pink City Edition",
+                    "price_per_day": 450.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Hawa Mahal Bazaar, Jaipur",
+                    "latitude": 26.9240,
+                    "longitude": 75.8270,
+                    "opening_hours": "08:00 AM - 08:30 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                }
+            ],
+            "varanasi": [
+                {
+                    "provider_name": "Kashi Heritage E-Mobility",
+                    "vehicle_type": "Electric Scooter",
+                    "vehicle_name": "Ather 450X Ghats Cruiser",
+                    "price_per_day": 500.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Godowlia Chowk, Varanasi, UP",
+                    "latitude": 25.3090,
+                    "longitude": 83.0060,
+                    "opening_hours": "07:00 AM - 09:00 PM",
+                    "rating": 4.9,
+                    "image_url": "/images/vehicles/electric_scooter.jpg"
+                },
+                {
+                    "provider_name": "Ganga Riverfront Scooter Hub",
+                    "vehicle_type": "Scooter",
+                    "vehicle_name": "Honda Activa 6G Banaras Edition",
+                    "price_per_day": 450.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Assi Ghat Road, Varanasi, UP",
+                    "latitude": 25.2920,
+                    "longitude": 83.0040,
+                    "opening_hours": "07:30 AM - 08:30 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                }
+            ],
             "manali": [
                 {
                     "provider_name": "Himalayan Riders Mobility",
@@ -1878,6 +1934,62 @@ def seed_database():
                     "opening_hours": "08:00 AM - 08:30 PM",
                     "rating": 4.8,
                     "image_url": "/images/vehicles/classic_bullet.jpg"
+                }
+            ],
+            "jaipur": [
+                {
+                    "provider_name": "Royal Rajputana Bike Rentals",
+                    "vehicle_type": "Royal Enfield Classic 350",
+                    "vehicle_name": "Classic 350 Heritage Cruiser",
+                    "price_per_day": 1100.0,
+                    "deposit_amount": 2000.0,
+                    "location": "MI Road, Near Panch Batti, Jaipur",
+                    "latitude": 26.9180,
+                    "longitude": 75.8050,
+                    "opening_hours": "07:30 AM - 09:30 PM",
+                    "rating": 4.9,
+                    "image_url": "/images/vehicles/classic_bullet.jpg"
+                },
+                {
+                    "provider_name": "Pink City Activa Rentals",
+                    "vehicle_type": "Scooter",
+                    "vehicle_name": "Honda Activa 6G City Explorer",
+                    "price_per_day": 450.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Jaipur Railway Station Circle",
+                    "latitude": 26.9195,
+                    "longitude": 75.7885,
+                    "opening_hours": "07:00 AM - 10:00 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                }
+            ],
+            "varanasi": [
+                {
+                    "provider_name": "Kashi Heritage E-Rides",
+                    "vehicle_type": "Electric Scooter",
+                    "vehicle_name": "Ather 450X Ghats EV Explorer",
+                    "price_per_day": 500.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Godowlia Chowk, Varanasi",
+                    "latitude": 25.3080,
+                    "longitude": 83.0060,
+                    "opening_hours": "06:30 AM - 09:30 PM",
+                    "rating": 4.9,
+                    "image_url": "/images/vehicles/electric_scooter.jpg"
+                },
+                {
+                    "provider_name": "Varanasi Ghat Cycle Tours",
+                    "vehicle_type": "Mountain Bike",
+                    "vehicle_name": "Hero Sprint Ghat Cruiser Cycle",
+                    "price_per_day": 250.0,
+                    "deposit_amount": 500.0,
+                    "location": "Assi Ghat Riverfront, Varanasi",
+                    "latitude": 25.2890,
+                    "longitude": 83.0070,
+                    "opening_hours": "06:00 AM - 08:30 PM",
+                    "rating": 4.8,
+                    "image_url": "/images/vehicles/mountain_bike.jpg"
                 }
             ]
         }

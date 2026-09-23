@@ -181,6 +181,101 @@ export interface CuratedLandmarkEntry {
  */
 export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
   // ==========================================
+  // --- DELHI LANDMARKS ---
+  // ==========================================
+  "delhi:qutub-minar": {
+    imageUrl: "/images/places/delhi/qutub-minar.webp",
+    visualDescription: "Soaring 73-meter fluted red sandstone victory minaret tower with intricate Islamic calligraphy carvings and Mehrauli arches.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "qutub-minar",
+      "qutb-minar",
+      "qutab-minar",
+      "qutub-minar-complex",
+      "qutub"
+    ]
+  },
+  "delhi:india-gate": {
+    imageUrl: "/images/places/delhi/india-gate.webp",
+    visualDescription: "Majestic 42-meter sandstone triumphal arch war memorial at Kartavya Path with evening illumination and reflecting pools.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "india-gate",
+      "all-india-war-memorial",
+      "india-gate-delhi",
+      "kartavya-path"
+    ]
+  },
+  "delhi:red-fort": {
+    imageUrl: "/images/places/delhi/red-fort.webp",
+    visualDescription: "Monumental red sandstone Lahori Gate ramparts and Mughal domes of Lal Qila in Old Delhi.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "red-fort",
+      "lal-qila",
+      "lal-kila",
+      "red-fort-delhi",
+      "red-fort-complex"
+    ]
+  },
+  "delhi:chandni-chowk": {
+    imageUrl: "/images/places/delhi/chandni-chowk.webp",
+    visualDescription: "Historic Old Delhi bazaar boulevard with Mughal-era haveli storefronts, spice markets, and jalebi vendors.",
+    category: "Shops & Markets",
+    semanticTheme: "shopping",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "chandni-chowk",
+      "chandani-chowk",
+      "chandni-chowk-market",
+      "old-delhi-bazaar"
+    ]
+  },
+  "delhi:lotus-temple": {
+    imageUrl: "/images/places/delhi/lotus-temple.webp",
+    visualDescription: "Architectural white marble lotus flower Bahai House of Worship with serene reflection ponds.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "lotus-temple",
+      "bahai-lotus-temple",
+      "bahai-house-of-worship",
+      "lotus-temple-delhi"
+    ]
+  },
+
+  // ==========================================
+  // --- AMRITSAR LANDMARKS ---
+  // ==========================================
+  "amritsar:golden-temple": {
+    imageUrl: "/images/places/amritsar/golden-temple.webp",
+    visualDescription: "Sri Harmandir Sahib gilded sanctum glowing in the sacred Amrit Sarovar lake with white marble parikrama.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "golden-temple",
+      "harmandir-sahib",
+      "sri-harmandir-sahib",
+      "darbar-sahib",
+      "golden-temple-amritsar"
+    ]
+  },
+
+  // ==========================================
   // --- JAIPUR LANDMARKS ---
   // ==========================================
   "jaipur:hawa-mahal": {
@@ -1445,6 +1540,26 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       transport: "/images/places/universal/transport.webp"
     }
   },
+  delhi: {
+    generic: "/images/places/delhi/india-gate.webp",
+    categories: {
+      stay: "/images/nearby/stay/stay.webp",
+      cafe: "/images/nearby/cafe/cafe.webp",
+      food: "/images/nearby/local_food/local_food.webp",
+      nature: "/images/nearby/nature/nature.webp",
+      trail: "/images/nearby/trail/trail.webp",
+      heritage: "/images/places/delhi/red-fort.webp",
+      spiritual: "/images/places/delhi/lotus-temple.webp",
+      viewpoint: "/images/places/delhi/qutub-minar.webp",
+      waterfall: "/images/nearby/waterfall/waterfall.webp",
+      lake: "/images/nearby/lake/lake.webp",
+      monastery: "/images/nearby/monastery/monastery.webp",
+      church: "/images/nearby/church/church.webp",
+      beach: "/images/nearby/beach/beach.webp",
+      shopping: "/images/places/delhi/chandni-chowk.webp",
+      transport: "/images/places/universal/transport.webp"
+    }
+  },
   spiti: {
     generic: "/images/destinations/spiti-valley/hero.jpg",
     categories: {
@@ -1731,27 +1846,27 @@ export function classifyCategoryTheme(
  */
 export function getUniversalFallback(semanticTheme: SemanticTheme): string {
   const themeMap: Record<SemanticTheme, string> = {
-    cafe: "/images/places/universal/cafe.webp",
-    food: "/images/places/universal/food.webp",
-    stay: "/images/places/universal/stay.webp",
-    monastery: "/images/places/universal/monastery.webp",
-    church: "/images/places/universal/church.webp",
-    spiritual: "/images/places/universal/spiritual.webp",
-    heritage: "/images/places/universal/heritage.webp",
-    trail: "/images/places/universal/nature.webp",
-    nature: "/images/places/universal/nature.webp",
-    waterfall: "/images/places/universal/waterfall.webp",
-    lake: "/images/places/universal/lake.webp",
-    beach: "/images/places/universal/beach.webp",
-    viewpoint: "/images/places/universal/viewpoint.webp",
-    shopping: "/images/places/universal/shopping.webp",
+    cafe: "/images/nearby/cafe/cafe.webp",
+    food: "/images/nearby/local_food/local_food.webp",
+    stay: "/images/nearby/stay/stay.webp",
+    monastery: "/images/nearby/monastery/monastery.webp",
+    church: "/images/nearby/church/church.webp",
+    spiritual: "/images/nearby/temple/temple.webp",
+    heritage: "/images/nearby/heritage/heritage.webp",
+    trail: "/images/nearby/trail/trail.webp",
+    nature: "/images/nearby/nature/nature.webp",
+    waterfall: "/images/nearby/waterfall/waterfall.webp",
+    lake: "/images/nearby/lake/lake.webp",
+    beach: "/images/nearby/beach/beach.webp",
+    viewpoint: "/images/nearby/viewpoint/viewpoint.webp",
+    shopping: "/images/nearby/market/market.webp",
     nightlife: "/images/places/universal/nightlife.webp",
-    activity: "/images/places/universal/viewpoint.webp",
+    activity: "/images/nearby/experience/experience.webp",
     transport: "/images/places/universal/transport.webp",
     medical: "/images/places/universal/medical.webp",
     service: "/images/places/universal/service.webp"
   };
-  return themeMap[semanticTheme] || "/images/places/universal/nature.webp";
+  return themeMap[semanticTheme] || "/images/nearby/universal/universal.webp";
 }
 
 export function areThemesCompatible(t1: SemanticTheme, t2: SemanticTheme): boolean {
@@ -1997,29 +2112,30 @@ export function resolvePlaceArtwork(
     };
   }
 
-  // --- LEVEL 7 & 8: Universal Semantic Category Artwork ---
+  // --- LEVEL 7 & 8: Dedicated Nearby / Universal Semantic Category Artwork ---
+  const isNearbyPack = universalSafe.startsWith("/images/nearby/");
   return {
     url: universalSafe,
-    fallback_url: "/images/destinations/fallbacks/himalayan.jpg",
-    source: "fallback",
-    source_type: "fallback",
-    provenance: "universal_fallback",
+    fallback_url: universalSafe,
+    source: "vanvas_nearby",
+    source_type: "category_photo",
+    provenance: isNearbyPack ? "destination_category" : "universal_fallback",
     semantic_category: semanticTheme,
-    exactness: "fallback",
-    attribution: "VANVAS Universal Semantic Category Visual",
+    exactness: "category_matched",
+    attribution: "VANVAS Curated Travel Atmosphere",
     alt_text: `${category} travel atmosphere`,
-    badge_label: "UNIVERSAL FALLBACK",
-    artworkKey: `universal:${semanticTheme}`,
+    badge_label: isNearbyPack ? "DESTINATION CATEGORY ART" : "UNIVERSAL FALLBACK",
+    artworkKey: `nearby:${semanticTheme}`,
     imageUrl: universalSafe,
-    fallbackUrl: "/images/destinations/fallbacks/himalayan.jpg",
-    tier: "universal_fallback",
+    fallbackUrl: universalSafe,
+    tier: "destination_category",
     placeName,
     destinationName,
     category,
     semanticTheme,
     isRealPhoto: false,
-    badgeLabel: "UNIVERSAL FALLBACK",
-    visualDescription: `Universal semantic category asset for ${semanticTheme}.`
+    badgeLabel: isNearbyPack ? "DESTINATION CATEGORY ART" : "UNIVERSAL FALLBACK",
+    visualDescription: `Authentic editorial visual for ${category}.`
   };
 }
 
