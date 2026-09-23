@@ -292,15 +292,22 @@ class StayMatchingService:
         target_lat = dest.latitude if dest else None
         target_lng = dest.longitude if dest else None
 
+        search_dest_name = dest_name
+        if "tungnath" in dest_slug or "chandrashila" in dest_slug:
+            search_dest_name = "Chopta, Uttarakhand"
+            # Base camp approach coordinates
+            target_lat = 30.4850
+            target_lng = 79.1790
+
         if target_lat is None or target_lng is None:
             try:
                 geocoder = ProviderFactory.get_geocoding_provider()
-                geo = await geocoder.geocode(dest_name)
+                geo = await geocoder.geocode(search_dest_name)
                 if geo:
                     target_lat = geo.get("lat")
                     target_lng = geo.get("lng")
             except Exception as e:
-                logger.warning(f"Geocoding failed for stay destination {dest_name}: {e}")
+                logger.warning(f"Geocoding failed for stay destination {search_dest_name}: {e}")
 
         # Default coordinate center if unavailable
         center_lat = target_lat or 28.6139
@@ -314,7 +321,7 @@ class StayMatchingService:
             stayingapi_adapter = StayingAPIStayCommerceAdapter()
             if stayingapi_adapter.is_configured:
                 raw_listings = await stayingapi_adapter.search_stay_listings_async(
-                    destination=dest_name,
+                    destination=search_dest_name,
                     lat=target_lat,
                     lng=target_lng,
                     check_in=check_in,
@@ -455,11 +462,12 @@ class StayMatchingService:
         # 3. Query OpenStreetMap Live Hotels Provider (OSM Overpass)
         try:
             hotels_provider = ProviderFactory.get_hotels_provider()
+            search_radius = 25.0 if ("tungnath" in dest_slug or "chandrashila" in dest_slug) else 15.0
             osm_stays = await hotels_provider.search_hotels(
-                destination=dest_name,
+                destination=search_dest_name,
                 lat=target_lat,
                 lng=target_lng,
-                radius_km=15.0
+                radius_km=search_radius
             )
             for ls in osm_stays:
                 norm = ls.get("name", "").lower().strip()

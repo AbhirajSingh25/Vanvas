@@ -299,6 +299,10 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
   let finalSrc = artwork.src;
   if (
     imageUrl &&
+    !imageUrl.startsWith("/images/vehicles/universal_mobility") &&
+    !imageUrl.startsWith("/images/vehicles/adventure_motorcycle") &&
+    !imageUrl.startsWith("/images/vehicles/classic_bullet") &&
+    !imageUrl.startsWith("/images/vehicles/automatic_scooter") &&
     imageUrl.startsWith("/images/vehicles/") &&
     imageUrl.endsWith(".jpg")
   ) {

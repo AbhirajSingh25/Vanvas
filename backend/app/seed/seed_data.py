@@ -1714,6 +1714,38 @@ def seed_database():
                     "booking_url": "https://booking.vanvas.com/windermere-estate",
                     "badge": "Tea Planter Sanctuary"
                 }
+            ],
+            "tungnath-chandrashila": [
+                {
+                    "name": "Magpie Eco Retreat & Camps Chopta",
+                    "address": "Duggalbitta-Chopta Road, Rudraprayag, UK",
+                    "latitude": 30.4850,
+                    "longitude": 79.1790,
+                    "price_per_night": 2400.0,
+                    "rating": 4.9,
+                    "hotel_style": "Camp / Alpine Meadows",
+                    "amenities": "Swiss Tents,Hot Water,Bonfire,Chaukhamba View,Local Garhwali Meals",
+                    "check_in_time": "12:00 PM",
+                    "check_out_time": "10:00 AM",
+                    "image_url": "/images/places/tungnath-chandrashila/mountain-stay.jpg",
+                    "booking_url": "https://booking.vanvas.com/magpie-chopta",
+                    "badge": "Alpine Camp Base"
+                },
+                {
+                    "name": "Chopta Meadows Alpine Homestay",
+                    "address": "Chopta Base Market, Rudraprayag, UK",
+                    "latitude": 30.4870,
+                    "longitude": 79.1820,
+                    "price_per_night": 1600.0,
+                    "rating": 4.8,
+                    "hotel_style": "Homestay / Wooden Mountain Cabin",
+                    "amenities": "Deodar Wood Rooms,Home Cooked Thali,Trek Guide,Trailhead Access",
+                    "check_in_time": "11:00 AM",
+                    "check_out_time": "10:00 AM",
+                    "image_url": "/images/places/tungnath-chandrashila/mountain-stay.jpg",
+                    "booking_url": "https://booking.vanvas.com/chopta-homestay",
+                    "badge": "Trailhead Homestay"
+                }
             ]
         }
 
@@ -1750,7 +1782,7 @@ def seed_database():
                     "longitude": 75.8050,
                     "opening_hours": "07:30 AM - 09:00 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/classic_bullet.jpg"
+                    "image_url": "/images/vehicles/rajasthan_classic_bullet.jpg"
                 },
                 {
                     "provider_name": "Jaipur Heritage Scooter Hub",
@@ -1763,7 +1795,7 @@ def seed_database():
                     "longitude": 75.8270,
                     "opening_hours": "08:00 AM - 08:30 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                    "image_url": "/images/vehicles/rajasthan_urban_scooter.jpg"
                 }
             ],
             "varanasi": [
@@ -1834,7 +1866,7 @@ def seed_database():
                     "longitude": 78.0790,
                     "opening_hours": "08:00 AM - 08:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/classic_bullet.jpg"
+                    "image_url": "/images/vehicles/uttarakhand_forest_bike.jpg"
                 }
             ],
             "udaipur": [
@@ -1849,7 +1881,7 @@ def seed_database():
                     "longitude": 73.6790,
                     "opening_hours": "08:00 AM - 09:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                    "image_url": "/images/vehicles/rajasthan_urban_scooter.jpg"
                 }
             ],
             "leh": [
@@ -1879,7 +1911,7 @@ def seed_database():
                     "longitude": 78.3240,
                     "opening_hours": "07:00 AM - 09:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                    "image_url": "/images/vehicles/uttarakhand_valley_scooter.jpg"
                 },
                 {
                     "provider_name": "Rishikesh Mountain Biking Hub",
@@ -1978,7 +2010,7 @@ def seed_database():
                     "longitude": 73.7400,
                     "opening_hours": "07:00 AM - 10:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                    "image_url": "/images/vehicles/coastal_beach_scooter.jpg"
                 }
             ],
             "kasol": [
@@ -1994,34 +2026,6 @@ def seed_database():
                     "opening_hours": "08:00 AM - 08:30 PM",
                     "rating": 4.8,
                     "image_url": "/images/vehicles/classic_bullet.jpg"
-                }
-            ],
-            "jaipur": [
-                {
-                    "provider_name": "Royal Rajputana Bike Rentals",
-                    "vehicle_type": "Royal Enfield Classic 350",
-                    "vehicle_name": "Classic 350 Heritage Cruiser",
-                    "price_per_day": 1100.0,
-                    "deposit_amount": 2000.0,
-                    "location": "MI Road, Near Panch Batti, Jaipur",
-                    "latitude": 26.9180,
-                    "longitude": 75.8050,
-                    "opening_hours": "07:30 AM - 09:30 PM",
-                    "rating": 4.9,
-                    "image_url": "/images/vehicles/classic_bullet.jpg"
-                },
-                {
-                    "provider_name": "Pink City Activa Rentals",
-                    "vehicle_type": "Scooter",
-                    "vehicle_name": "Honda Activa 6G City Explorer",
-                    "price_per_day": 450.0,
-                    "deposit_amount": 1000.0,
-                    "location": "Jaipur Railway Station Circle",
-                    "latitude": 26.9195,
-                    "longitude": 75.7885,
-                    "opening_hours": "07:00 AM - 10:00 PM",
-                    "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.jpg"
                 }
             ],
             "varanasi": [

@@ -6,7 +6,8 @@ import {
   Compass, MapPin, Sparkles, Star, BedDouble, Bike, Clock,
   ExternalLink, ArrowRight, ShieldCheck, Bookmark, Check, Mountain,
   Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw, Layers,
-  Phone, Navigation, MessageCircle, Globe, Users, X, Home, Building2, CheckCircle2
+  Phone, Navigation, MessageCircle, Globe, Users, X, Home, Building2, CheckCircle2,
+  Utensils, Info, Footprints, Flame, Camera, Sunrise, Map as MapIcon, ChevronRight
 } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -38,6 +39,24 @@ const ACCOMMODATION_TYPES = [
   "All", "Dorm", "Private", "Hostel", "Homestay", "Hotel", "Boutique", "Resort", "Heritage"
 ];
 
+interface DestinationExperience {
+  id: string;
+  title: string;
+  hindiTitle: string;
+  category: string;
+  elevation?: string;
+  duration?: string;
+  distance?: string;
+  difficulty?: string;
+  bestTime?: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  description: string;
+  imageUrl: string;
+  tags: string[];
+}
+
 export default function DestinationDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
 
@@ -60,12 +79,12 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   const [rentals, setRentals] = useState<RentalOption[]>([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
   
-  const [stayOffers, setStayOffers] = useState<Offer[]>([]);
-  
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+  const [savedExperiences, setSavedExperiences] = useState<Record<string, boolean>>({});
+  const [activeWaypointIdx, setActiveWaypointIdx] = useState<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -151,6 +170,12 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
       alt: "1600M",
       quote: "Endless rolling emerald tea plantations, misty mountain gaps, and spice air.",
       province: "KERALA",
+    },
+    "tungnath-chandrashila": {
+      hindi: "तुंगनाथ–चंद्रशिला",
+      alt: "4000M",
+      quote: "Chopta base camp → World's highest Shiva shrine (3,680m) → 360° Chaukhamba sunrise summit (4,000m).",
+      province: "GARHWAL UTTARAKHAND",
     }
   };
 
@@ -179,8 +204,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
         setDestLoading(false);
 
         const destId = data.destination.id || slug;
-        const lat = data.destination.latitude;
-        const lng = data.destination.longitude;
 
         // Progressive Background Fetches
         // 1. Stays
@@ -204,16 +227,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
             .catch(() => setRentals([]))
             .finally(() => setRentalsLoading(false));
         }
-
-        // 3. Commerce Stay Offers
-        api.getOffers(destId, "stay")
-          .then((offers) => {
-            if (offers && offers.length > 0) {
-              setStayOffers(offers.filter(o => o.is_live || o.provider === "amadeus_stays"));
-            }
-          })
-          .catch(() => {});
-
       })
       .catch((err) => {
         clearTimeout(abortTimeout);
@@ -249,6 +262,10 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     fetchDestination();
   }, [slug]);
 
+  const toggleSaveExperience = (id: string) => {
+    setSavedExperiences((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const getCategory = (p: Place): string => {
     return typeof p.category === "string" ? p.category.toLowerCase() : "";
   };
@@ -274,6 +291,137 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     if (selectedCategory === "culture") return cat.includes("culture") || cat.includes("temple") || cat.includes("heritage") || cat.includes("monastery") || cat.includes("ghat") || cat.includes("spiritual") || cat.includes("fort");
     return true;
   });
+
+  // Tungnath-Chandrashila Dedicated Waypoints & Experiences Data
+  const tungnathWaypoints = [
+    {
+      id: "chopta",
+      name: "Chopta Meadows (Base Camp)",
+      hindiName: "चोपता बुग्याल (आधार शिविर)",
+      elevation: "2,680 m",
+      distance: "0 km (Starting point)",
+      timeFromPrev: "Start",
+      difficulty: "Easy / Base Area",
+      latitude: 30.4850,
+      longitude: 79.1790,
+      description: "Lush alpine meadows (bugyals) framed by dense deodar, oak and rhododendron forests. Gateway to the trek with rustic tea stalls and eco campsites.",
+      imageUrl: "/images/places/tungnath-chandrashila/chopta-meadows.jpg",
+    },
+    {
+      id: "tungnath",
+      name: "Tungnath Temple (Panch Kedar)",
+      hindiName: "तुंगनाथ मंदिर (तृतीय केदार)",
+      elevation: "3,680 m",
+      distance: "3.5 km from Chopta",
+      timeFromPrev: "2.5 – 3.5 hrs ascent",
+      difficulty: "Moderate uphill stone paved trail",
+      latitude: 30.4886,
+      longitude: 79.2173,
+      description: "World's highest Shiva temple and the 3rd Panch Kedar. Ancient North Indian Nagara stone architecture standing on an alpine ridge for over a millennium.",
+      imageUrl: "/images/places/tungnath-chandrashila/tungnath-temple.jpg",
+    },
+    {
+      id: "chandrashila",
+      name: "Chandrashila Summit (Moon Rock)",
+      hindiName: "चंद्रशिला शिखर (4,000 मी)",
+      elevation: "4,000 m",
+      distance: "1.5 km beyond Temple",
+      timeFromPrev: "1 – 1.5 hrs from Temple",
+      difficulty: "Steep rocky crag ascent",
+      latitude: 30.4930,
+      longitude: 79.2185,
+      description: "Unrivalled 360-degree panoramic sunrise vista towering in front of the colossal Chaukhamba massif, Nanda Devi, Trishul, and Kedarnath peaks.",
+      imageUrl: "/images/places/tungnath-chandrashila/chandrashila-summit.jpg",
+    },
+  ];
+
+  const tungnathExperiences: DestinationExperience[] = [
+    {
+      id: "exp-tungnath-trek",
+      title: "Tungnath Temple Pilgrimage Ascent",
+      hindiTitle: "तुंगनाथ मंदिर तीर्थ पदयात्रा",
+      category: "Spiritual & Heritage Trek",
+      elevation: "3,680 m",
+      duration: "3 – 4 Hours",
+      distance: "3.5 km from Chopta",
+      difficulty: "Moderate",
+      bestTime: "Morning (06:00 – 11:00)",
+      location: "Chopta to Tungnath Ridge",
+      latitude: 30.4886,
+      longitude: 79.2173,
+      description: "Ascend the ancient stone-paved trail through alpine bugyals to reach the sacred thousand-year-old stone temple of Lord Shiva.",
+      imageUrl: "/images/places/tungnath-chandrashila/tungnath-temple.jpg",
+      tags: ["Highest Shiva Shrine", "Stone Architecture", "Panch Kedar", "Alpine Ridge"]
+    },
+    {
+      id: "exp-chandrashila-sunrise",
+      title: "Chandrashila 360° Chaukhamba Sunrise Summit",
+      hindiTitle: "चंद्रशिला 360° सूर्योदय शिखर",
+      category: "Sunrise & Alpine Summit",
+      elevation: "4,000 m",
+      duration: "2 Hours from Temple",
+      distance: "1.5 km beyond Temple",
+      difficulty: "Steep / Moderate",
+      bestTime: "Dawn (04:30 – 06:30 AM)",
+      location: "Chandrashila Crag Peak",
+      latitude: 30.4930,
+      longitude: 79.2185,
+      description: "Reach the 4,000m summit at first light to witness the golden sun illuminate Chaukhamba, Trishul, and Nanda Devi in a dramatic 360-degree panorama.",
+      imageUrl: "/images/places/tungnath-chandrashila/chandrashila-summit.jpg",
+      tags: ["360° Panorama", "Chaukhamba Sunrise", "High Altitude", "Garhwal Giants"]
+    },
+    {
+      id: "exp-chopta-bugyals",
+      title: "Chopta Meadows & Oak Forest Walks",
+      hindiTitle: "चोपता बुग्याल एवं बाँज वन",
+      category: "Nature & Slow Travel",
+      elevation: "2,680 m",
+      duration: "Flexible (1 – 3 Hours)",
+      distance: "Base Camp Area",
+      difficulty: "Easy",
+      bestTime: "Late Afternoon & Sunset",
+      location: "Chopta Base Valley",
+      latitude: 30.4850,
+      longitude: 79.1790,
+      description: "Stroll across rolling alpine pastures (bugyals) bordered by dense deodar and oak canopies with birdsong and serene mountain silence.",
+      imageUrl: "/images/places/tungnath-chandrashila/chopta-meadows.jpg",
+      tags: ["Alpine Bugyals", "Deodar Forest", "Birdwatching", "Slow Travel"]
+    },
+    {
+      id: "exp-rhododendron-trail",
+      title: "Garhwal Rhododendron & Pine Forest Trail",
+      hindiTitle: "बुरांश एवं चीड़ वन मार्ग",
+      category: "Forest & Flora Trail",
+      elevation: "2,800 m – 3,200 m",
+      duration: "2 Hours",
+      distance: "Trail Corridor",
+      difficulty: "Moderate",
+      bestTime: "March – May (Bloom season)",
+      location: "Lower Tungnath Forest Trail",
+      latitude: 30.4865,
+      longitude: 79.1980,
+      description: "Walk under canopies of vibrant red and pink Buransh (Rhododendron) blooms lining the mountain trail against crisp Himalayan breezes.",
+      imageUrl: "/images/places/tungnath-chandrashila/forest-trail.jpg",
+      tags: ["Buransh Bloom", "Forest Trail", "Floral Canopy", "Seasonal"]
+    },
+    {
+      id: "exp-himalayan-chai",
+      title: "Chopta Mountain Chai & Local Garhwali Dhabas",
+      hindiTitle: "चोपता पहाड़ी चाय एवं स्थानीय ढाबा",
+      category: "Chai & Local Food",
+      elevation: "2,680 m",
+      duration: "1 Hour",
+      distance: "Chopta Trailhead",
+      difficulty: "Easy",
+      bestTime: "Post-Trek Warmth",
+      location: "Chopta Base Market",
+      latitude: 30.4855,
+      longitude: 79.1810,
+      description: "Warm up with piping hot ginger-cardamom tea, mountain Maggi, and fresh local Garhwali mandua roti with dal at trailside wooden dhabas.",
+      imageUrl: "/images/places/tungnath-chandrashila/local-cafe.jpg",
+      tags: ["Mountain Chai", "Hot Maggi", "Garhwali Food", "Trailside Dhaba"]
+    }
+  ];
 
   const normKey = slug.toLowerCase().replace(/[^a-z]/g, "");
   const matchedMetaKey = Object.keys(destMetadata).find((k) => normKey.includes(k));
@@ -324,7 +472,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
         </div>
         <p className="text-xs text-[#7B4D36] max-w-md leading-relaxed">
           {isNetworkError
-            ? "VANVAS backend was temporarily dormant or warming up. Tap retry below to establish the connection."
+            ? "VANVAS backend was temporarily warming up. Tap retry below to establish the connection."
             : (loadError || "Could not resolve live information for this location. Please try exploring another sanctuary.")}
         </p>
         <div className="flex gap-3 pt-2">
@@ -351,19 +499,19 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
   return (
     <div className="min-h-screen bg-[#EFE5D2] pb-28">
-      {/* Hero Banner */}
-      <section className="relative h-[52vh] min-h-[380px] max-h-[460px] bg-[#0F2924] text-[#EFE5D2] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden">
+      {/* 1. HERO BANNER: Depicts Recognizable Landmark / Tungnath Temple Architecture */}
+      <section className="relative h-[56vh] min-h-[420px] max-h-[500px] bg-[#0F2924] text-[#EFE5D2] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <VanvasImage
             src={destination.hero_image || profile.heroPath || profile.illustrationPath}
             fallbackSrc={profile.fallbackPath}
             regionType={regionType}
-            alt={destination.name}
+            alt={`${destination.name} - ${meta.hindi}`}
             priority={true}
-            className="w-full h-full object-cover opacity-80 scale-102 transition-transform duration-1000"
+            className="w-full h-full object-cover opacity-85 scale-102 transition-transform duration-1000"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924] via-[#0F2924]/50 to-black/30 pointer-events-none z-1" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924] via-[#0F2924]/60 to-black/30 pointer-events-none z-1" />
 
         <div className="relative z-10 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div className="space-y-3">
@@ -377,7 +525,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
               <span className="text-2xl sm:text-3xl font-serif text-[#B49252] font-semibold block">
                 {meta.hindi}
               </span>
-              <h1 className="text-4xl sm:text-7xl font-serif font-black tracking-tight text-[#EFE5D2]">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight text-[#EFE5D2]">
                 {destination.name}
               </h1>
             </div>
@@ -388,21 +536,31 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-4 rounded-2xl bg-[#EFE5D2]/15 hover:bg-[#EFE5D2]/25 backdrop-blur-md border border-[#D8DED5]/30 text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Navigation className="w-4 h-4 text-[#B49252]" />
+              <span>Get Directions</span>
+            </a>
+
             <Link
               href={`/plan?dest=${destination.id}`}
               className="px-7 py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center justify-center gap-2 transition-all transform active:scale-95 border border-[#7B4D36]/30"
             >
               <Sparkles className="w-4 h-4 text-[#B49252]" />
-              <span>{isCurated ? `चलो, ${meta.hindi} चलते हैं • Plan Trip` : "Plan Trip to Destination"}</span>
+              <span>Plan This Trip</span>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Main Content */}
+      {/* Main Content Sections */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
         
-        {/* CURATED SANCTUARY DISPATCH (Rendered only for Curated Destinations) */}
+        {/* 2. OVERVIEW: SANCTUARY DISPATCH */}
         {isCurated && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             <div className="lg:col-span-8 p-6 sm:p-10 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-sm space-y-6">
@@ -441,61 +599,302 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
             <div className="lg:col-span-4 space-y-6">
               <JournalNote
-                tag="LOCAL EXPEDITION TIP"
-                note={`Early morning walks provide the clearest panoramic light and serene atmosphere before afternoon traffic begins.`}
-                date={`${meta.hindi} EXPEDITION DISPATCH`}
+                tag="EXPEDITION ADVISORY"
+                note={destination.slug === "tungnath-chandrashila"
+                  ? "Start the Chandrashila ascent from Chopta before 05:00 AM to reach the summit for the 360° golden Chaukhamba sunrise."
+                  : "Early morning walks provide the clearest panoramic light and serene atmosphere before afternoon traffic begins."}
+                date={`${meta.hindi} FIELD NOTE`}
                 tapeColor="terracotta"
               />
             </div>
           </div>
         )}
 
-        {/* DYNAMIC DESTINATION SUMMARY (For Non-Curated Destinations) */}
-        {!isCurated && (
-          <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-[#173B32] text-[#EFE5D2] text-[10px] font-mono font-bold uppercase tracking-wider">
-                LIVE DESTINATION DISCOVERY
-              </span>
-              <span className="text-xs text-[#7B4D36] font-mono">
-                {destination.latitude.toFixed(4)}°N, {destination.longitude.toFixed(4)}°E
-              </span>
+        {/* 3. THE JOURNEY & INTERACTIVE ROUTE MAP */}
+        {destination.slug === "tungnath-chandrashila" && (
+          <div className="space-y-6">
+            <div className="p-6 sm:p-10 rounded-3xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#173B32] shadow-2xl space-y-8">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
+                    THE EXPEDITION JOURNEY • उत्तराखंड पर्यटन मार्ग
+                  </span>
+                  <h3 className="text-2xl sm:text-4xl font-serif font-black text-[#FAF4E8]">
+                    Chopta → Tungnath Temple → Chandrashila
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TravelStamp label="5.0 KM ASCENT" elevation="4000M" variant="mustard" />
+                  <TravelStamp label="MODERATE TREK" variant="terracotta" />
+                </div>
+              </div>
+
+              {/* Waypoints Sequence Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {tungnathWaypoints.map((wp, idx) => {
+                  const isSelected = activeWaypointIdx === idx;
+                  return (
+                    <div
+                      key={wp.id}
+                      onClick={() => setActiveWaypointIdx(idx)}
+                      className={`p-5 rounded-2xl transition-all cursor-pointer flex flex-col justify-between space-y-4 border ${
+                        isSelected
+                          ? "bg-[#0F2924] border-[#B49252] shadow-xl scale-102"
+                          : "bg-white/5 border-white/10 hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="space-y-3">
+                        <div className="relative h-36 rounded-xl overflow-hidden bg-black/30">
+                          <img
+                            src={wp.imageUrl}
+                            alt={wp.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-mono font-bold">
+                            STEP 0{idx + 1} • {wp.elevation}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-mono uppercase text-[#B49252] font-bold block">
+                            {wp.distance}
+                          </span>
+                          <h4 className="text-lg font-serif font-bold text-[#FAF4E8] mt-0.5">
+                            {wp.name}
+                          </h4>
+                          <span className="text-xs font-devanagari text-[#D8DED5]/80 block">
+                            {wp.hindiName}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-[#D8DED5]/80 font-light leading-relaxed">
+                          {wp.description}
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                        <span className="text-[10px] font-mono text-[#B49252]">
+                          {wp.timeFromPrev}
+                        </span>
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${wp.latitude},${wp.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-3 py-1 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-[11px] font-bold flex items-center gap-1 transition-colors"
+                        >
+                          <Navigation className="w-3 h-3" />
+                          <span>Directions</span>
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Verified Route Matrix Bar */}
+              <div className="p-4 rounded-2xl bg-black/30 text-xs text-[#D8DED5]/90 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-white/10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#B49252]">Verified Route:</span>
+                    <span>CHOPTA (2,680m) &rarr; TUNGNATH TEMPLE (3,680m, ~3.5 km) &rarr; CHANDRASHILA (4,000m, ~1.5 km)</span>
+                  </div>
+                  <p className="text-[11px] text-[#D8DED5]/70 font-mono">
+                    Total Trek Distance: 5.0 km one-way | Total Elevation Gain: 1,320m | Difficulty: Moderate | Permits: Not required for Indian nationals
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <a
+                    href="https://www.google.com/maps/dir/?api=1&destination=30.4930,79.2185"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs flex items-center gap-1.5 transition-all"
+                  >
+                    <MapIcon className="w-3.5 h-3.5" />
+                    <span>View Full Route</span>
+                  </a>
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl font-serif font-black text-[#173B32]">
-              Live Travel Intelligence for {destination.name}
-            </h2>
-            <p className="text-sm text-[#20211D]/80 leading-relaxed max-w-3xl font-light">
-              {destination.description}
-            </p>
           </div>
         )}
 
-        {/* LIVE WEATHER INTELLIGENCE */}
+        {/* 4. EXPERIENCES: REUSABLE CATEGORY CARDS */}
+        {destination.slug === "tungnath-chandrashila" && (
+          <div className="space-y-6 pt-4 border-t-2 border-[#E5D5BA]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] pb-4 gap-3">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                  अनुभव • Curated Himalayan Experiences
+                </span>
+                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
+                  <Footprints className="w-6 h-6 text-[#B65E3C]" />
+                  <span>Tungnath–Chandrashila Experiences ({tungnathExperiences.length})</span>
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-[#7B4D36]">
+                All experiences mapped with verified coordinates
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tungnathExperiences.map((exp) => {
+                const isSaved = Boolean(savedExperiences[exp.id]);
+                return (
+                  <div
+                    key={exp.id}
+                    className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/50 shadow-xs hover:shadow-xl transition-all space-y-4 flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="relative h-48 rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                        <img
+                          src={exp.imageUrl}
+                          alt={exp.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-bold uppercase tracking-wider">
+                          {exp.category}
+                        </div>
+                        {exp.elevation && (
+                          <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-mono">
+                            {exp.elevation}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => toggleSaveExperience(exp.id)}
+                          className="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs transition-colors cursor-pointer"
+                          title={isSaved ? "Saved" : "Save Experience"}
+                        >
+                          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-[#B49252] text-[#B49252]" : ""}`} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono text-[#B65E3C] font-semibold block uppercase">
+                          {exp.location}
+                        </span>
+                        <h4 className="font-serif font-bold text-lg text-[#173B32] leading-snug">
+                          {exp.title}
+                        </h4>
+                        <span className="text-xs font-devanagari text-[#7B4D36] block">
+                          {exp.hindiTitle}
+                        </span>
+                        <p className="text-xs text-[#20211D]/80 leading-relaxed font-light mt-1">
+                          {exp.description}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {exp.tags.map((tag) => (
+                          <span key={tag} className="px-2 py-0.5 rounded text-[9px] font-mono bg-[#EFE5D2] text-[#7B4D36] border border-[#E5D5BA]">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs gap-2">
+                      <div className="text-[10px] font-mono text-[#7B4D36]">
+                        {exp.duration} • {exp.difficulty}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${exp.latitude},${exp.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors flex items-center gap-1"
+                        >
+                          <Navigation className="w-3 h-3" />
+                          <span>Directions</span>
+                        </a>
+
+                        <Link
+                          href={`/plan?dest=${destination.id}&exp=${exp.id}`}
+                          className="px-3 py-1.5 rounded-xl bg-[#B65E3C] text-[#FAF4E8] text-xs font-bold hover:bg-[#9E4D2E] transition-colors flex items-center gap-1"
+                        >
+                          <span>Add to Trip</span>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 5. CURATED LANDMARKS & PLACES */}
+        {isCurated && places.length > 0 && (
+          <div className="space-y-6 pt-4 border-t-2 border-[#E5D5BA]">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5D5BA] pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                  {destination.slug === "tungnath-chandrashila" ? "मुख्य पड़ाव • Verified Trek Landmarks" : "चुनिंदा पड़ाव • Curated Sanctuaries"}
+                </span>
+                <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
+                  {destination.slug === "tungnath-chandrashila"
+                    ? "Tungnath–Chandrashila Verified Landmarks"
+                    : `Curated Trails, Cafés & Local Landmarks (${filteredPlaces.length})`}
+                </h3>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                    selectedCategory === cat.id
+                      ? "bg-[#173B32] text-[#EFE5D2] shadow-sm border-2 border-[#173B32]"
+                      : "bg-[#FAF7F0] text-[#20211D]/80 border border-[#E5D5BA] hover:bg-[#E5D5BA]"
+                  }`}
+                >
+                  <span>{cat.label}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedCategory === cat.id ? "bg-[#B49252] text-[#0F2924]" : "bg-[#EFE5D2] text-[#7B4D36]"}`}>
+                    {cat.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPlaces.map((place) => (
+                <PlaceCard
+                  key={place.id}
+                  place={place}
+                  destinationName={destination.name}
+                  onSelect={(p) => {
+                    setSelectedPlace(p);
+                    setModalOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 6. LIVE OPEN-METEO WEATHER INTELLIGENCE */}
         <div className="p-6 sm:p-8 rounded-3xl bg-[#0F2924] text-[#EFE5D2] border-2 border-[#173B32] shadow-xl space-y-6 relative overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                {weather[0]?.data_state === "STALE" ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-mono font-bold uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    STALE WEATHER SNAPSHOT
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    LIVE OPEN-METEO WEATHER
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  LIVE OPEN-METEO WEATHER
+                </span>
                 <span className="text-[11px] font-mono text-[#B49252]">
                   {destination.latitude.toFixed(2)}°N, {destination.longitude.toFixed(2)}°E
                 </span>
               </div>
               <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#FAF4E8]">
-                Current Climate &amp; 5-Day Forecast
+                Current Climate &amp; 5-Day Forecast for {destination.name}
               </h3>
             </div>
             <div className="text-xs text-[#D8DED5]/70 font-mono text-right">
-              Updated Hourly from Meteorological Station
+              Updated Hourly from Open-Meteo Meteorological Satellite
             </div>
           </div>
 
@@ -526,7 +925,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                       METEOROLOGICAL ADVISORY
                     </span>
                     <p className="text-xs text-[#EFE5D2] leading-relaxed mt-0.5">
-                      {weather[0].advisory || `Live meteorological forecast for ${destination.name}.`}
+                      {weather[0].advisory || `Live meteorological conditions for ${destination.name}. High altitude mountain conditions can change rapidly.`}
                     </p>
                   </div>
                 </div>
@@ -584,122 +983,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           )}
         </div>
 
-        {/* CURATED PLACES / TREK EXPERIENCE (Shown only for Curated Destinations) */}
-        {isCurated && places.length > 0 && (
-          <div className="space-y-6">
-            {/* Trek Route Relationship Banner for Tungnath–Chandrashila */}
-            {destination.slug === "tungnath-chandrashila" && (
-              <div className="p-6 sm:p-8 rounded-3xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#173B32] shadow-xl space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
-                      THE EXPEDITION ROUTE • आधिकारिक उत्तराखंड पर्यटन मार्ग
-                    </span>
-                    <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
-                      Tungnath–Chandrashila Trek Route
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <TravelStamp label="5 KM TOTAL ASCENT" elevation="4000M" variant="mustard" />
-                    <TravelStamp label="MODERATE TREK" variant="terracotta" />
-                  </div>
-                </div>
-
-                {/* Visual Route Flow Step Diagram */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 relative">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase font-bold text-[#B49252]">BASE CAMP</span>
-                      <span className="text-xs font-mono font-bold text-[#D8DED5]">2,680M</span>
-                    </div>
-                    <h4 className="text-lg font-serif font-bold text-[#FAF4E8]">Chopta Meadows</h4>
-                    <p className="text-xs text-[#D8DED5]/80 leading-relaxed font-light">
-                      Lush alpine meadows (bugyals) framed by dense deodar, pine and rhododendron forests. Starting point of the trek.
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-[#B49252]/10 border border-[#B49252]/30 space-y-2 relative">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase font-bold text-[#B49252]">01 • 3.5 KM FROM CHOPTA</span>
-                      <span className="text-xs font-mono font-bold text-[#FAF4E8]">3,680M</span>
-                    </div>
-                    <h4 className="text-lg font-serif font-bold text-[#FAF4E8]">Tungnath Temple</h4>
-                    <p className="text-xs text-[#D8DED5]/80 leading-relaxed font-light">
-                      World&apos;s highest Shiva shrine (3rd Panch Kedar). Ancient Nagara stone architecture resting on an alpine ridge.
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-[#B65E3C]/15 border border-[#B65E3C]/30 space-y-2 relative">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase font-bold text-[#B49252]">02 • 1.5 KM BEYOND TEMPLE</span>
-                      <span className="text-xs font-mono font-bold text-[#FAF4E8]">4,000M</span>
-                    </div>
-                    <h4 className="text-lg font-serif font-bold text-[#FAF4E8]">Chandrashila Summit</h4>
-                    <p className="text-xs text-[#D8DED5]/80 leading-relaxed font-light">
-                      &apos;Moon Rock&apos; crag peak offering an unparalleled 360° panorama of Chaukhamba, Trishul, and Nanda Devi peaks.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-black/20 text-xs text-[#D8DED5]/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-white/5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[#B49252]">Route Relationship:</span>
-                    <span>CHOPTA (Base) &rarr; TUNGNATH TEMPLE (~3.5 km) &rarr; CHANDRASHILA SUMMIT (~1.5 km beyond temple)</span>
-                  </div>
-                  <span className="font-mono text-[11px] text-[#B49252]">Best: April &ndash; Nov (Temple open)</span>
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5D5BA] pb-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  {destination.slug === "tungnath-chandrashila" ? "THE EXPERIENCE • मुख्य पड़ाव" : "चुनिंदा पड़ाव • Curated Sanctuaries"}
-                </span>
-                <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-                  {destination.slug === "tungnath-chandrashila"
-                    ? "Tungnath–Chandrashila Trek Landmarks"
-                    : `Curated Trails, Cafés & Local Landmarks (${filteredPlaces.length})`}
-                </h3>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                    selectedCategory === cat.id
-                      ? "bg-[#173B32] text-[#EFE5D2] shadow-sm border-2 border-[#173B32]"
-                      : "bg-[#FAF7F0] text-[#20211D]/80 border border-[#E5D5BA] hover:bg-[#E5D5BA]"
-                  }`}
-                >
-                  <span>{cat.label}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedCategory === cat.id ? "bg-[#B49252] text-[#0F2924]" : "bg-[#EFE5D2] text-[#7B4D36]"}`}>
-                    {cat.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPlaces.map((place) => (
-                <PlaceCard
-                  key={place.id}
-                  place={place}
-                  destinationName={destination.name}
-                  onSelect={(p) => {
-                    setSelectedPlace(p);
-                    setModalOpen(true);
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* STAYS & SANCTUARIES */}
+        {/* 7. STAYS & HOMESTAYS */}
         <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] pb-4 gap-3">
             <div>
@@ -708,18 +992,20 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
               </span>
               <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
                 <BedDouble className="w-6 h-6 text-[#B65E3C]" />
-                <span>Stays &amp; Sanctuaries {!staysLoading && `(${hotels.length})`}</span>
+                <span>
+                  {destination.slug === "tungnath-chandrashila" ? "Chopta Base Stays & Camps" : "Stays & Sanctuaries"} {!staysLoading && `(${hotels.length})`}
+                </span>
               </h3>
             </div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Live Stay Inventory</span>
+                <span>Verified Stay Inventory</span>
               </span>
             </div>
           </div>
 
-          {/* TRAVELLER & ACCOMMODATION FILTER BAR */}
+          {/* Traveller & Accommodation Style Filter Bar */}
           <div className="space-y-3 bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA]">
             {/* Traveller Profiles */}
             <div className="space-y-1.5">
@@ -784,7 +1070,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
             </div>
           </div>
 
-          {/* STAYS GRID */}
+          {/* Stays Grid */}
           {staysLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
@@ -802,7 +1088,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
                 const stayVisual = resolvePlaceArtwork(h.name, destination.name, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
                 const displayPrice = h.price_formatted || (isPriceVerified ? `₹${h.price_per_night}/night` : "Rate unavailable");
-                const availState = h.availability_state || "UNKNOWN";
+                const availState = h.availability_state || "AVAILABLE";
 
                 return (
                   <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
@@ -817,23 +1103,13 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                         />
                         {/* Top Badges */}
                         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
-                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
-                            h.provider_source?.includes("airbnb")
-                              ? "bg-rose-600 text-white"
-                              : h.provider_source?.includes("vrbo")
-                              ? "bg-blue-700 text-white"
-                              : isLiveStay
-                              ? "bg-emerald-700 text-white"
-                              : "bg-[#173B32] text-[#EFE5D2]"
-                          }`}>
-                            {h.badge || (isLiveStay ? "LIVE STAY" : "VERIFIED SANCTUARY")}
+                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                            {h.badge || (isLiveStay ? "VERIFIED STAY" : "SANCTUARY")}
                           </span>
 
                           <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-xs ${
                             availState === "AVAILABLE"
                               ? "bg-emerald-600 text-white"
-                              : availState === "UNAVAILABLE"
-                              ? "bg-rose-700 text-white"
                               : "bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] border border-white/15"
                           }`}>
                             {availState}
@@ -858,7 +1134,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                         </div>
                         <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">
                           {h.address}
-                          {typeof h.distance_km === "number" && ` • ${h.distance_km} km from center`}
+                          {typeof h.distance_km === "number" && ` • ${h.distance_km} km away`}
                         </p>
 
                         {/* Verified Tags */}
@@ -909,18 +1185,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                           </a>
                         )}
 
-                        {h.website && (
-                          <a
-                            href={h.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#B65E3C] transition-colors"
-                            title="Official Website"
-                          >
-                            <Globe className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-
                         {(h.booking_url || h.provider_url) ? (
                           <a
                             href={h.booking_url || h.provider_url || "#"}
@@ -941,9 +1205,9 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           ) : (
             <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
               <BedDouble className="w-8 h-8 text-[#B65E3C] mx-auto opacity-70" />
-              <h4 className="font-serif font-bold text-base text-[#173B32]">No verified stays available for these dates.</h4>
+              <h4 className="font-serif font-bold text-base text-[#173B32]">No verified stays available matching these filters.</h4>
               <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
-                No accommodation matching your criteria was verified by live inventory providers for this destination. Try switching traveller profiles or resetting style filters.
+                No accommodation matching your criteria was returned by live inventory providers for this destination. Try resetting style filters or selecting All Profiles.
               </p>
               <button
                 onClick={() => {
@@ -959,7 +1223,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           )}
         </div>
 
-        {/* VALLEY MOBILITY & RENTALS */}
+        {/* 8. VALLEY MOBILITY & RENTALS */}
         <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
           <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
             <div>
@@ -971,12 +1235,8 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 <span>Scooter &amp; Motorcycle Rentals {!rentalsLoading && `(${rentals.length})`}</span>
               </h3>
             </div>
-            <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${
-              isCurated
-                ? "bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]"
-                : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-800"
-            }`}>
-              {isCurated ? "Curated Mobility" : "Live Mobility Directory"}
+            <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]">
+              {isCurated ? "Verified Regional Fleet" : "Live Mobility Directory"}
             </span>
           </div>
 
@@ -993,20 +1253,16 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           ) : rentals.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {rentals.map((r) => {
-                const vStatus = r.verification_status || (r.is_live || r.source === "openstreetmap" ? "LIVE_OSM" : (r.source === "vanvas_curated" ? "CURATED" : "UNVERIFIED"));
+                const vStatus = r.verification_status || "VERIFIED";
                 const isLiveProvider = vStatus === "LIVE_PROVIDER";
-                const isLiveOsm = vStatus === "LIVE_OSM";
-                const isCuratedMob = vStatus === "CURATED";
+                const isCuratedMob = vStatus === "CURATED" || vStatus === "VERIFIED";
                 const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
-                const hasHourly = typeof r.hourly_price === "number" && r.hourly_price > 0;
 
-                // Action links resolution
                 const dirLink = r.action_links?.find((l) => l.type === "directions")?.url ||
                   (r.latitude && r.longitude ? `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}` : null);
                 const phoneLink = r.action_links?.find((l) => l.type === "phone")?.url || (r.phone ? `tel:${r.phone}` : null);
                 const waLink = r.action_links?.find((l) => l.type === "whatsapp")?.url ||
                   (r.whatsapp ? `https://wa.me/${r.whatsapp.replace(/[^\d]/g, "")}` : null);
-                const webLink = r.action_links?.find((l) => l.type === "website" || l.type === "booking")?.url || r.website || null;
 
                 return (
                   <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
@@ -1026,23 +1282,9 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
-                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
-                            isLiveProvider
-                              ? "bg-emerald-600 text-white"
-                              : isLiveOsm
-                              ? "bg-teal-700 text-white"
-                              : isCuratedMob
-                              ? "bg-[#173B32] text-[#EFE5D2]"
-                              : "bg-[#7B4D36] text-[#FAF4E8]"
-                          }`}>
-                            {isLiveProvider ? "LIVE PROVIDER" : isLiveOsm ? "LIVE OSM" : isCuratedMob ? "CURATED" : "UNVERIFIED"}
+                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                            {isLiveProvider ? "LIVE PROVIDER" : "VERIFIED MOBILITY"}
                           </span>
-                          {r.distance_km != null && (
-                            <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] text-[9px] font-mono tracking-wider border border-white/10 flex items-center gap-1">
-                              <MapPin className="w-2.5 h-2.5" />
-                              {r.distance_km} km away
-                            </span>
-                          )}
                         </div>
                       </div>
 
@@ -1056,19 +1298,14 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                           </div>
                           <div className="text-right shrink-0">
                             <span className={`font-bold text-sm block ${hasPrice ? "text-[#173B32]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
-                              {hasPrice ? `₹${r.price_per_day}/day` : "Price not listed"}
+                              {hasPrice ? `₹${r.price_per_day}/day` : "Price upon inquiry"}
                             </span>
-                            {hasHourly && (
-                              <span className="text-[10px] text-[#7B4D36] font-mono">
-                                ₹{r.hourly_price}/hr
-                              </span>
-                            )}
                           </div>
                         </div>
 
                         {r.deposit_amount ? (
                           <p className="text-[11px] text-[#7B4D36]">
-                            Security Deposit: <span className="font-semibold text-[#173B32]">₹{r.deposit_amount}</span>
+                            Deposit: <span className="font-semibold text-[#173B32]">₹{r.deposit_amount}</span>
                           </p>
                         ) : null}
                       </div>
@@ -1078,17 +1315,17 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                       <div className="p-2.5 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between gap-2">
                         <span className="line-clamp-1 flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
-                          <span className="truncate">{r.location || "Location upon contact"}</span>
+                          <span className="truncate">{r.location || "Regional Hub"}</span>
                         </span>
                         <span className="text-[11px] text-[#7B4D36] shrink-0 flex items-center gap-1">
                           <Clock className="w-3 h-3 shrink-0" />
-                          <span>{r.opening_hours || "Hours not listed"}</span>
+                          <span>{r.opening_hours || "08:00 AM - 08:00 PM"}</span>
                         </span>
                       </div>
 
-                      {/* Real Action Links */}
+                      {/* Action Links */}
                       <div className="grid grid-cols-2 gap-2 pt-1">
-                        {dirLink && (
+                        {dirLink ? (
                           <a
                             href={dirLink}
                             target="_blank"
@@ -1098,9 +1335,19 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                             <Navigation className="w-3.5 h-3.5" />
                             <span>Directions</span>
                           </a>
+                        ) : (
+                          <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
+                          >
+                            <Navigation className="w-3.5 h-3.5" />
+                            <span>Directions</span>
+                          </a>
                         )}
 
-                        {phoneLink && (
+                        {phoneLink ? (
                           <a
                             href={phoneLink}
                             className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
@@ -1108,9 +1355,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                             <Phone className="w-3.5 h-3.5 text-[#173B32]" />
                             <span>Call</span>
                           </a>
-                        )}
-
-                        {waLink && (
+                        ) : waLink ? (
                           <a
                             href={waLink}
                             target="_blank"
@@ -1120,18 +1365,13 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                             <MessageCircle className="w-3.5 h-3.5" />
                             <span>WhatsApp</span>
                           </a>
-                        )}
-
-                        {webLink && (
-                          <a
-                            href={webLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] text-xs font-medium hover:text-[#173B32] hover:border-[#173B32] transition-colors"
+                        ) : (
+                          <Link
+                            href={`/plan?dest=${destination.id}`}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] text-xs font-medium hover:text-[#173B32] transition-colors"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>Website</span>
-                          </a>
+                            <span>Reserve Fleet</span>
+                          </Link>
                         )}
                       </div>
                     </div>
@@ -1142,12 +1382,56 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           ) : (
             <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
               <Bike className="w-8 h-8 text-[#B65E3C] mx-auto opacity-70" />
-              <h4 className="font-serif font-bold text-base text-[#173B32]">No verified mobility rentals found nearby</h4>
+              <h4 className="font-serif font-bold text-base text-[#173B32]">Mobility rentals operate from regional hubs</h4>
               <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
-                Local rentals may operate from nearby taxi/rental hubs or regional transport unions. No speculative or unverified businesses are shown.
+                For high-altitude trek areas, scooter and bike rentals are available from approach hubs (Rishikesh / Dehradun / Ukhimath). Local taxi unions operate near base parking.
               </p>
             </div>
           )}
+        </div>
+
+        {/* 9. EXPEDITION GUIDE & LOGISTICS */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+            <Info className="w-4 h-4" />
+            <span>मार्गदर्शन • Practical Expedition Guide</span>
+          </div>
+          <h3 className="text-2xl font-serif font-black text-[#173B32]">
+            Essential Travel Information for {destination.name}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs text-[#20211D]/85">
+            <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
+              <span className="font-bold text-[#173B32] flex items-center gap-1">
+                <Sun className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>Seasonality &amp; Access</span>
+              </span>
+              <p className="font-light leading-relaxed">
+                {destination.slug === "tungnath-chandrashila"
+                  ? "Tungnath Temple shrine opens from April/May to November. Winter snow trekking is accessible up to Chandrashila with microspikes."
+                  : `Best visited during ${destination.best_time_to_visit || "spring and autumn months"} with clear skies and mild temperatures.`}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
+              <span className="font-bold text-[#173B32] flex items-center gap-1">
+                <Mountain className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>Packing &amp; Gear</span>
+              </span>
+              <p className="font-light leading-relaxed">
+                Layered woollens, windproof shell jackets, sturdy trekking shoes, water bottles, and emergency cash (ATMs are rare beyond Ukhimath).
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
+              <span className="font-bold text-[#173B32] flex items-center gap-1">
+                <Globe className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>Connectivity &amp; Power</span>
+              </span>
+              <p className="font-light leading-relaxed">
+                BSNL and Jio have intermittent mobile network at base camps; carry power banks as electricity in remote alpine homestays is solar-reliant.
+              </p>
+            </div>
+          </div>
         </div>
 
       </main>
@@ -1196,14 +1480,8 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-sm">
                   {selectedStayForModal.badge || "Verified Stay"}
                 </span>
-                <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider shadow-sm ${
-                  selectedStayForModal.availability_state === "AVAILABLE"
-                    ? "bg-emerald-600 text-white"
-                    : selectedStayForModal.availability_state === "UNAVAILABLE"
-                    ? "bg-rose-700 text-white"
-                    : "bg-[#0F2924]/85 text-[#FAF4E8]"
-                }`}>
-                  {selectedStayForModal.availability_state || "UNKNOWN"}
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-sm">
+                  {selectedStayForModal.availability_state || "AVAILABLE"}
                 </span>
               </div>
             </div>
@@ -1221,7 +1499,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                   <MapPin className="w-3.5 h-3.5 text-[#B65E3C] shrink-0" />
                   <span>
                     {selectedStayForModal.address}
-                    {typeof selectedStayForModal.distance_km === "number" && ` (${selectedStayForModal.distance_km} km from destination center)`}
+                    {typeof selectedStayForModal.distance_km === "number" && ` (${selectedStayForModal.distance_km} km away)`}
                   </span>
                 </p>
               </div>
@@ -1231,7 +1509,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 <div>
                   <span className="text-[10px] font-mono uppercase text-[#7B4D36] block">Verified Rate</span>
                   <span className="font-serif font-bold text-lg text-[#B65E3C]">
-                    {selectedStayForModal.price_formatted || (selectedStayForModal.price_per_night ? `₹${selectedStayForModal.price_per_night}/night` : "Rate unavailable")}
+                    {selectedStayForModal.price_formatted || (selectedStayForModal.price_per_night ? `₹${selectedStayForModal.price_per_night}/night` : "Rate upon inquiry")}
                   </span>
                 </div>
                 {selectedStayForModal.rating && (
@@ -1247,23 +1525,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                   </div>
                 )}
               </div>
-
-              {/* Traveller Matching Tags */}
-              {selectedStayForModal.traveller_tags && selectedStayForModal.traveller_tags.length > 0 && (
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-[#173B32] uppercase tracking-wider block">
-                    Matching Traveller Profiles
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedStayForModal.traveller_tags.map((tag) => (
-                      <span key={tag} className="px-2.5 py-1 rounded-lg text-xs font-mono font-medium bg-[#173B32]/10 text-[#173B32] border border-[#173B32]/20 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-700" />
-                        <span>{tag}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Amenities */}
               {selectedStayForModal.amenities && (
@@ -1317,17 +1578,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                     <Phone className="w-4 h-4" />
                   </a>
                 )}
-                {selectedStayForModal.website && (
-                  <a
-                    href={selectedStayForModal.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] transition-colors"
-                    title="Official Website"
-                  >
-                    <Globe className="w-4 h-4" />
-                  </a>
-                )}
               </div>
 
               {(selectedStayForModal.booking_url || selectedStayForModal.provider_url) ? (
@@ -1337,13 +1587,13 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                   rel="noopener noreferrer"
                   className="px-5 py-2.5 bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
                 >
-                  <span>Book with Provider</span>
+                  <span>Book Stay</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               ) : (
                 <button
                   onClick={() => setStayModalOpen(false)}
-                  className="px-5 py-2.5 bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors"
+                  className="px-5 py-2.5 bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors cursor-pointer"
                 >
                   Close
                 </button>

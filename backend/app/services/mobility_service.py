@@ -103,7 +103,12 @@ class MobilityService:
                         if vehicle_type.lower() not in v.vehicle_type.lower() and vehicle_type.lower() not in (v.model or "").lower():
                             continue
 
-                    v_img = v.image_url or cls._resolve_category_artwork(v.vehicle_type, v.model)
+                    v_img = v.image_url or cls._resolve_category_artwork(
+                        vehicle_type=v.vehicle_type,
+                        vehicle_name=v.model,
+                        dest_name=dest.name if dest else prov.city,
+                        state=dest.state if dest else None,
+                    )
                     listings.append({
                         "id": f"mob-{prov.id}-{v.id}",
                         "destination_id": dest.id if dest else "near",
@@ -214,7 +219,12 @@ class MobilityService:
                     website=None,
                     phone=None,
                 )
-                cat_artwork = cls._resolve_category_artwork(r.vehicle_type, r.vehicle_name)
+                cat_artwork = cls._resolve_category_artwork(
+                    vehicle_type=r.vehicle_type,
+                    vehicle_name=r.vehicle_name,
+                    dest_name=dest.name if dest else None,
+                    state=dest.state if dest else None,
+                )
                 listings.append({
                     "id": r.id,
                     "destination_id": r.destination_id,
@@ -255,10 +265,45 @@ class MobilityService:
         return listings
 
     @classmethod
-    def _resolve_category_artwork(cls, vehicle_type: str, vehicle_name: Optional[str] = None) -> str:
+    def _resolve_category_artwork(
+        cls,
+        vehicle_type: str,
+        vehicle_name: Optional[str] = None,
+        dest_name: Optional[str] = None,
+        state: Optional[str] = None,
+    ) -> str:
         query = f"{vehicle_type} {vehicle_name or ''}".lower()
-        if "bicycle" in query or "bike" in query and "motor" not in query:
+        dest_str = f"{dest_name or ''} {state or ''}".lower()
+
+        is_rajasthan = any(k in dest_str for k in ["jaipur", "udaipur", "jodhpur", "jaisalmer", "rajasthan"])
+        is_coastal = any(k in dest_str for k in ["goa", "gokarna", "munnar", "kerala", "varkala", "coastal"])
+        is_uttarakhand = any(k in dest_str for k in ["rishikesh", "mussoorie", "dehradun", "tungnath", "chopta", "uttarakhand", "garhwal"])
+
+        if "bicycle" in query or ("bike" in query and "motor" not in query and "bullet" not in query and "himalayan" not in query and "adventure" not in query):
             return "/images/vehicles/mountain_bike.jpg"
+
+        if is_rajasthan:
+            if "bullet" in query or "enfield" in query or "classic" in query or "cruiser" in query:
+                return "/images/vehicles/rajasthan_classic_bullet.jpg"
+            if "scooter" in query or "activa" in query or "electric" in query or "ev" in query:
+                return "/images/vehicles/rajasthan_urban_scooter.jpg"
+            if "himalayan" in query or "adventure" in query or "adv" in query:
+                return "/images/vehicles/rajasthan_desert_bike.jpg"
+            return "/images/vehicles/rajasthan_classic_bullet.jpg"
+
+        if is_coastal:
+            if "scooter" in query or "activa" in query or "electric" in query or "ev" in query:
+                return "/images/vehicles/coastal_beach_scooter.jpg"
+            if "bullet" in query or "enfield" in query or "classic" in query or "adventure" in query:
+                return "/images/vehicles/coastal_heritage_bike.jpg"
+            return "/images/vehicles/coastal_palm_scooter.jpg"
+
+        if is_uttarakhand:
+            if "adventure" in query or "himalayan" in query or "bullet" in query or "enfield" in query:
+                return "/images/vehicles/uttarakhand_forest_bike.jpg"
+            if "scooter" in query or "activa" in query or "electric" in query:
+                return "/images/vehicles/uttarakhand_valley_scooter.jpg"
+
         if "electric" in query or "ev" in query or "ather" in query or "ola" in query:
             return "/images/vehicles/electric_scooter.jpg"
         if "himalayan" in query or "adventure" in query:
