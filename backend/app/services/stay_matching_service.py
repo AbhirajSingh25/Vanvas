@@ -30,7 +30,7 @@ class StayMatchingService:
     ]
 
     ALLOWED_ACCOMMODATION_TYPES = [
-        "Dorm", "Private", "Hostel", "Homestay", "Hotel", "Boutique", "Resort", "Heritage"
+        "Dorm", "Private", "Hostel", "Homestay", "Hotel", "Boutique", "Resort", "Heritage", "Camp"
     ]
 
     @staticmethod
@@ -53,7 +53,7 @@ class StayMatchingService:
         stars: Optional[float] = None,
     ) -> str:
         """
-        Classifies accommodation into one of: Dorm, Private, Hostel, Homestay, Hotel, Boutique, Resort, Heritage.
+        Classifies accommodation into one of: Dorm, Private, Hostel, Homestay, Hotel, Boutique, Resort, Heritage, Camp.
         Strict rule: Map into categories only when supported by genuine provider information.
         """
         p_type = (property_type or "").lower().strip()
@@ -81,7 +81,18 @@ class StayMatchingService:
         ):
             return "Hostel"
 
-        # 3. Heritage (Castle, Palace, Fort, Haveli, Heritage tags)
+        # 3. Camp / Campsite / Alpine Eco Camp / Tents / Glamping
+        if (
+            p_type in ["camp", "campsite", "camp_site", "tents", "glamping", "eco_camp"]
+            or tourism_tag in ["camp_site", "caravan_site"]
+            or "camp" in name_lower
+            or "campsite" in name_lower
+            or "tent" in name_lower
+            or "glamping" in name_lower
+        ):
+            return "Camp"
+
+        # 4. Heritage (Castle, Palace, Fort, Haveli, Heritage tags)
         if (
             p_type in ["heritage", "palace", "castle", "fort", "haveli"]
             or historic_tag in ["palace", "castle", "fort", "monument", "yes"]
@@ -91,7 +102,7 @@ class StayMatchingService:
         ):
             return "Heritage"
 
-        # 4. Resort
+        # 5. Resort
         if (
             p_type in ["resort", "eco_resort", "nature_resort"]
             or tag_dict.get("leisure") == "resort"
@@ -100,7 +111,7 @@ class StayMatchingService:
         ):
             return "Resort"
 
-        # 5. Boutique
+        # 6. Boutique
         if (
             p_type in ["boutique", "luxury_boutique", "chalet_boutique"]
             or (stars is not None and stars >= 4.0)
@@ -108,7 +119,7 @@ class StayMatchingService:
         ):
             return "Boutique"
 
-        # 6. Homestay / Guest House / B&B / Alpine Hut
+        # 7. Homestay / Guest House / B&B / Alpine Hut
         if (
             p_type in ["homestay", "guest_house", "bed_and_breakfast", "b&b", "chalet", "cottage", "alpine_hut", "wilderness_hut", "cabin"]
             or tourism_tag in ["guest_house", "bed_and_breakfast", "chalet", "alpine_hut", "wilderness_hut"]
@@ -119,7 +130,7 @@ class StayMatchingService:
         ):
             return "Homestay"
 
-        # 7. Private (Serviced Apartment, Private Villa, Private Room)
+        # 8. Private (Serviced Apartment, Private Villa, Private Room)
         if (
             p_type in ["apartment", "villa", "entire_home", "flat", "serviced_apartment"]
             or tourism_tag in ["apartment"]
@@ -128,7 +139,7 @@ class StayMatchingService:
         ):
             return "Private"
 
-        # 8. Standard Hotel Fallback
+        # 9. Standard Hotel Fallback
         return "Hotel"
 
     @classmethod
@@ -598,7 +609,7 @@ class StayMatchingService:
                         "price_per_night": h.price_per_night,
                         "price_formatted": cls.format_price(h.price_per_night, "INR"),
                         "currency": "INR",
-                        "availability_state": "AVAILABLE",
+                        "availability_state": "UPON INQUIRY",
                         "rating": h.rating,
                         "review_count": 120,
                         "hotel_style": h.hotel_style or "Boutique Sanctuary",
@@ -609,7 +620,7 @@ class StayMatchingService:
                         "check_out_time": h.check_out_time or "10:00 AM",
                         "image_url": resolved_img,
                         "booking_url": h.booking_url,
-                        "badge": h.badge or "Verified Sanctuary",
+                        "badge": h.badge or "CURATED STAY",
                         "phone": None,
                         "website": h.booking_url,
                         "source": "vanvas_curated",
@@ -621,7 +632,7 @@ class StayMatchingService:
                         "price_verified": h.price_per_night is not None,
                         "distance_km": dist_km,
                         "action_links": action_links,
-                        "data_state": "VERIFIED",
+                        "data_state": "CURATED",
                         "trust_source": "VANVAS_CURATED",
                     })
         except Exception as exc:
@@ -643,7 +654,12 @@ class StayMatchingService:
                 cand_acc = str(c.get("accommodation_type", "")).lower()
                 cand_style = str(c.get("hotel_style", "")).lower()
                 if req_style not in cand_acc and req_style not in cand_style:
-                    continue
+                    if req_style == "private" and ("apartment" in cand_acc or "villa" in cand_acc or "private" in cand_acc):
+                        pass
+                    elif req_style == "camp" and ("camp" in cand_acc or "tent" in cand_acc or "glamping" in cand_acc):
+                        pass
+                    else:
+                        continue
 
             # Filter by max_price if specified
             if max_price is not None:

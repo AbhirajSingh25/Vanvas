@@ -275,12 +275,37 @@ class MobilityService:
         query = f"{vehicle_type} {vehicle_name or ''}".lower()
         dest_str = f"{dest_name or ''} {state or ''}".lower()
 
+        is_varanasi = any(k in dest_str for k in ["varanasi", "kashi", "banaras"])
         is_rajasthan = any(k in dest_str for k in ["jaipur", "udaipur", "jodhpur", "jaisalmer", "rajasthan"])
-        is_coastal = any(k in dest_str for k in ["goa", "gokarna", "munnar", "kerala", "varkala", "coastal"])
+        is_kerala = any(k in dest_str for k in ["munnar", "kochi", "kerala", "alleppey", "wayanad", "varkala"])
+        is_goa = any(k in dest_str for k in ["goa", "gokarna"])
+        is_leh_spiti = any(k in dest_str for k in ["leh", "ladakh", "spiti", "kaza"])
+        is_himachal = any(k in dest_str for k in ["manali", "kasol", "shimla", "dharamshala", "bir", "jibhi", "himachal"])
         is_uttarakhand = any(k in dest_str for k in ["rishikesh", "mussoorie", "dehradun", "tungnath", "chopta", "uttarakhand", "garhwal"])
 
         if "bicycle" in query or ("bike" in query and "motor" not in query and "bullet" not in query and "himalayan" not in query and "adventure" not in query):
+            if is_varanasi:
+                return "/images/vehicles/varanasi_city_cycle.jpg"
             return "/images/vehicles/mountain_bike.jpg"
+
+        if is_varanasi:
+            if "scooter" in query or "activa" in query or "electric" in query or "ev" in query:
+                return "/images/vehicles/varanasi_oldcity_scooter.jpg"
+            return "/images/vehicles/varanasi_ghat_approach_scooter.jpg"
+
+        if is_kerala:
+            if "scooter" in query or "activa" in query or "electric" in query or "ev" in query:
+                return "/images/vehicles/kerala_tea_plantation_scooter.jpg"
+            if "bullet" in query or "enfield" in query or "classic" in query or "adventure" in query:
+                return "/images/vehicles/kerala_western_ghats_bike.jpg"
+            return "/images/vehicles/kerala_tea_plantation_scooter.jpg"
+
+        if is_goa:
+            if "scooter" in query or "activa" in query or "electric" in query or "ev" in query:
+                return "/images/vehicles/coastal_palm_scooter.jpg"
+            if "bullet" in query or "enfield" in query or "classic" in query or "adventure" in query:
+                return "/images/vehicles/coastal_heritage_bike.jpg"
+            return "/images/vehicles/coastal_beach_scooter.jpg"
 
         if is_rajasthan:
             if "bullet" in query or "enfield" in query or "classic" in query or "cruiser" in query:
@@ -289,14 +314,18 @@ class MobilityService:
                 return "/images/vehicles/rajasthan_urban_scooter.jpg"
             if "himalayan" in query or "adventure" in query or "adv" in query:
                 return "/images/vehicles/rajasthan_desert_bike.jpg"
-            return "/images/vehicles/rajasthan_classic_bullet.jpg"
+            return "/images/vehicles/rajasthan_urban_scooter.jpg"
 
-        if is_coastal:
-            if "scooter" in query or "activa" in query or "electric" in query or "ev" in query:
-                return "/images/vehicles/coastal_beach_scooter.jpg"
-            if "bullet" in query or "enfield" in query or "classic" in query or "adventure" in query:
-                return "/images/vehicles/coastal_heritage_bike.jpg"
-            return "/images/vehicles/coastal_palm_scooter.jpg"
+        if is_leh_spiti:
+            if "spiti" in dest_str or "kaza" in dest_str:
+                return "/images/vehicles/spiti_arid_adventure_bike.jpg"
+            return "/images/vehicles/leh_high_altitude_motorcycle.jpg"
+
+        if is_himachal:
+            if "adventure" in query or "himalayan" in query or "bullet" in query or "enfield" in query:
+                return "/images/vehicles/himachal_pine_forest_bike.jpg"
+            if "scooter" in query or "activa" in query or "electric" in query:
+                return "/images/vehicles/himachal_valley_scooter.jpg"
 
         if is_uttarakhand:
             if "adventure" in query or "himalayan" in query or "bullet" in query or "enfield" in query:

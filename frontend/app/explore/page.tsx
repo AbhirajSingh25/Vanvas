@@ -2,14 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Compass, MapPin, ArrowRight, Sparkles, Mountain, Search, Trees, Waves, Castle } from "lucide-react";
+import { Compass, ArrowRight, Sparkles, Mountain, Search, Waves, Castle } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
-import { MistOverlay } from "@/components/mist/MistOverlay";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
-import { DestinationSearchBar } from "@/components/search/DestinationSearchBar";
 import { TravelStamp } from "@/components/ui/TravelStamp";
-import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 import { JournalNote } from "@/components/ui/JournalNote";
 
 export default function ExploreIndexPage() {
@@ -90,6 +87,34 @@ export default function ExploreIndexPage() {
       quote: "The winterline glow, colonial bookshops, oak forests, and misty ridge walks.",
       badge: "GARHWAL HILLS",
     },
+    varanasi: {
+      hindi: "वाराणसी",
+      alt: "80m",
+      coords: "25°18′N",
+      quote: "Ancient eternal ghats, dawn boat rides, sacred chanting, and narrow silk lanes.",
+      badge: "GANGA RIVERFRONT",
+    },
+    leh: {
+      hindi: "लेह लद्दाख",
+      alt: "3500m",
+      coords: "34°09′N",
+      quote: "High mountain passes, turquoise lakes, prayer wheels, and stark moonscapes.",
+      badge: "TRANS-HIMALAYA",
+    },
+    spiti: {
+      hindi: "स्पीति घाटी",
+      alt: "3800m",
+      coords: "32°14′N",
+      quote: "Ancient gompas on rugged cliff edges, high altitude cold desert, and starry nights.",
+      badge: "COLD DESERT VALLEY",
+    },
+    munnar: {
+      hindi: "मुन्नार",
+      alt: "1600m",
+      coords: "10°05′N",
+      quote: "Endless rolling emerald tea plantations, misty mountain gaps, and cardamom spice air.",
+      badge: "WESTERN GHATS",
+    },
     "tungnath-chandrashila": {
       hindi: "तुंगनाथ–चंद्रशिला",
       alt: "4000m",
@@ -99,9 +124,14 @@ export default function ExploreIndexPage() {
     },
   };
 
-  const filtered = destinations.filter((d) => {
+  // Deduplicate destinations by slug so Tungnath-Chandrashila appears exactly once
+  const uniqueDestinations = destinations.filter(
+    (d, index, self) => index === self.findIndex((t) => t.slug === d.slug)
+  );
+
+  const filtered = uniqueDestinations.filter((d) => {
     const isHim = ["manali", "rishikesh", "kasol", "dharamshala", "mussoorie", "spiti", "spiti-valley", "leh", "tungnath-chandrashila"].includes(d.slug);
-    const isDes = ["jaipur", "udaipur"].includes(d.slug);
+    const isDes = ["jaipur", "udaipur", "varanasi"].includes(d.slug);
     const isCoast = ["goa", "munnar"].includes(d.slug);
 
     let matchCat = true;
@@ -118,100 +148,57 @@ export default function ExploreIndexPage() {
   });
 
   return (
-    <div className="relative overflow-hidden bg-[#EFE5D2]">
-      {/* SECTION 1: DEDICATED EXPLORE DISCOVERY HERO */}
-      <section className="relative bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-12 pb-16 sm:py-20 overflow-hidden border-b border-[#E5D5BA]/20">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0F2924] via-[#173B32] to-[#173B32]" />
-        
-        {/* Subtle Ambient Mist */}
-        <MistOverlay />
-
-        {/* Discovery Hero Editorial Panel */}
-        <div className="relative z-20 max-w-5xl mx-auto text-center space-y-6">
-          {/* Editorial Eyebrow Stamp */}
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <span className="text-[11px] font-mono font-bold tracking-widest text-[#B49252] uppercase bg-[#0F2924]/80 px-4 py-1.5 rounded-full border border-[#B49252]/40 shadow-sm">
-              EXPLORE • WHERE WILL YOU WANDER?
-            </span>
-          </div>
-
-          {/* Devanagari Sub-heading + Main Headline */}
-          <div className="space-y-2">
-            <span className="font-devanagari text-xl sm:text-2xl text-[#B49252] font-semibold tracking-wider block">
-              भारत के अनूठे रास्ते
-            </span>
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight leading-[1.08] text-[#FAF4E8]">
-              Explore India
-            </h1>
-          </div>
-
-          {/* Supporting Copy */}
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-[#D8DED5]/90 leading-relaxed font-light">
-            Curated destinations, local places and experiences worth travelling for.
-          </p>
-
-          {/* Live Destination, Place & Experience Search Bar */}
-          <div className="max-w-2xl mx-auto pt-2">
-            <DestinationSearchBar
-              placeholder="Search destinations, places & experiences (e.g. Tungnath, Jaipur, Goa)..."
-              className="shadow-2xl"
-            />
-          </div>
-
-          {/* Action CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <a
-              href="#catalogue"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase shadow-xl hover:shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-2 border border-[#7B4D36]/30 cursor-pointer"
-            >
-              <Compass className="w-4 h-4 text-[#B49252]" />
-              <span>EXPLORE ALL DESTINATIONS →</span>
-            </a>
-
-            <Link
-              href="/plan"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#EFE5D2]/15 hover:bg-[#EFE5D2]/25 backdrop-blur-md border border-[#D8DED5]/30 text-[#EFE5D2] text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4 text-[#B49252]" />
-              <span>PLAN A TRIP</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 2: DESTINATION CATALOGUE & DISCOVERY GRID */}
-      <section id="catalogue" className="min-h-screen bg-[#EFE5D2] py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-10">
-          {/* Editorial Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-[#E5D5BA]">
-            <div className="space-y-3 max-w-2xl">
-              <div className="flex items-center gap-2">
+    <div className="relative overflow-hidden bg-[#EFE5D2] min-h-screen">
+      {/* DESTINATION CATALOGUE & DISCOVERY VIEWPORT */}
+      <section id="catalogue" className="py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Compact Top Header & Search Toolbar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#E5D5BA]">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
                 <TravelStamp label="FEATURED DESTINATIONS" sub="CURATED DISCOVERY" variant="terracotta" />
                 <TravelStamp label="VANVAS REGISTRY" variant="forest" />
+                <span className="text-[11px] font-mono font-bold tracking-widest text-[#7B4D36] uppercase bg-[#FAF7F0] px-3 py-1 rounded-full border border-[#E5D5BA]">
+                  {uniqueDestinations.length > 0 ? `${uniqueDestinations.length} SANCTUARIES` : "SANCTUARIES"}
+                </span>
               </div>
 
-              <DevanagariHeading
-                hindi="कहाँ चलें?"
-                english="Featured Destinations"
-                subtitle="Illustrated destination artwork for discovery. Switch to authentic photography when you step inside each destination."
-                size="lg"
-              />
+              <div className="space-y-1">
+                <span className="font-devanagari text-lg sm:text-xl text-[#B65E3C] font-semibold block">
+                  कहाँ चलें? • अनूठे रास्ते
+                </span>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#173B32] tracking-tight">
+                  Featured Destinations
+                </h1>
+              </div>
+
+              <p className="text-xs sm:text-sm text-[#7B4D36] font-light leading-relaxed">
+                Curated destinations, local places and experiences worth travelling for. Switch to authentic photography inside each sanctuary.
+              </p>
             </div>
 
-            <div className="w-full md:w-96 space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#7B4D36] block">
-                खोजें • Filter Sanctuary Catalog
-              </span>
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7B4D36]/70" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Filter by name or state..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#FAF7F0] border-2 border-[#E5D5BA] focus:border-[#173B32] outline-none text-xs text-[#173B32] font-medium placeholder:text-[#7B4D36]/50 shadow-xs"
-                />
+            {/* Search and Action Toolbar */}
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="w-full sm:w-80">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7B4D36]/70" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search destinations, states, landmarks..."
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA] focus:border-[#173B32] outline-none text-xs text-[#173B32] font-medium placeholder:text-[#7B4D36]/50 shadow-xs"
+                  />
+                </div>
               </div>
+
+              <a
+                href="#all-destinations"
+                className="px-5 py-3 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+              >
+                <Compass className="w-4 h-4 text-[#B49252]" />
+                <span>EXPLORE ALL DESTINATIONS →</span>
+              </a>
             </div>
           </div>
 
@@ -224,7 +211,7 @@ export default function ExploreIndexPage() {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-5 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2.5 cursor-pointer ${
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2.5 cursor-pointer ${
                     isActive
                       ? "bg-[#173B32] text-[#EFE5D2] shadow-md scale-102 border-2 border-[#173B32]"
                       : "bg-[#FAF7F0] text-[#20211D]/80 border-2 border-[#E5D5BA] hover:bg-[#E5D5BA]"
@@ -247,7 +234,7 @@ export default function ExploreIndexPage() {
               <span className="text-xs font-serif italic text-[#7B4D36]">Unrolling illustrated expedition maps...</span>
             </div>
           ) : (
-            <div className="space-y-12">
+            <div id="all-destinations" className="space-y-12">
               {/* Top Featured Hero Card (First item) */}
               {filtered.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
