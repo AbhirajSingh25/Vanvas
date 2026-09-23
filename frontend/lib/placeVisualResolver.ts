@@ -979,6 +979,20 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "mattupetty"
     ]
   },
+  "munnar:attukal-waterfalls": {
+    imageUrl: "/images/places/munnar/attukal-waterfalls.webp",
+    visualDescription: "Dramatic multi-tier mountain jungle waterfall cascading over dark granite boulders.",
+    category: "Nature & Trails",
+    semanticTheme: "waterfall",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "attukal-waterfalls",
+      "attukal-cascading-waterfalls",
+      "attukal-falls",
+      "attukal"
+    ]
+  },
 
   // ==========================================
   // --- RISHIKESH LANDMARKS ---
@@ -1433,134 +1447,224 @@ export function classifyCategoryTheme(
   placeName: string = "",
   tags: string = ""
 ): SemanticTheme {
-  const text = `${category || ""} ${placeName || ""} ${tags || ""}`.toLowerCase();
+  const cat = (category || "").toLowerCase();
+  const name = (placeName || "").toLowerCase();
+  const text = `${cat} ${name} ${(tags || "").toLowerCase()}`;
 
-  // 1. Stays & Accommodation (NEVER temple, NEVER mountain, NEVER food)
-  if (
-    text.includes("hotel") ||
-    text.includes("resort") ||
-    text.includes("cottage") ||
-    text.includes("homestay") ||
-    text.includes("hostel") ||
-    text.includes("guesthouse") ||
-    text.includes("guest house") ||
-    text.includes("lodge") ||
-    text.includes("stay") ||
-    text.includes("accommodation") ||
-    text.includes("villa") ||
-    text.includes("inn") ||
-    text.includes("mudhouse") ||
-    text.includes("sanctuary retreat") ||
-    text.includes("boutique retreat") ||
-    text.includes("retreat") ||
-    text.includes("niwas") ||
-    text.includes("manor") ||
-    text.includes("camp") ||
-    text.includes("tent") ||
-    text.includes("bed & breakfast") ||
-    text.includes("b&b") ||
-    text.includes("residency") ||
-    (text.includes("haveli") && (text.includes("stay") || text.includes("hotel") || text.includes("sanctuary") || text.includes("heritage") || text.includes("jagat"))) ||
-    (text.includes("palace") && (text.includes("hotel") || text.includes("retreat") || text.includes("stay") || text.includes("lakeside") || text.includes("niwas") || text.includes("brijrama")))
-  ) {
+  // PRIORITY 1: Explicit Category Classification
+  if (cat.includes("café") || cat.includes("cafe") || cat.includes("bakery") || cat.includes("bakehouse") || cat.includes("coffee")) {
+    return "cafe";
+  }
+  if (cat.includes("food") || cat.includes("dining") || cat.includes("restaurant") || cat.includes("street food") || cat.includes("eatery") || cat.includes("cuisine")) {
+    return "food";
+  }
+  if (cat.includes("stay") || cat.includes("sanctuary") || cat.includes("sanctuaries") || cat.includes("accommodation") || cat.includes("hostel") || cat.includes("homestay") || cat.includes("resort") || cat.includes("hotel")) {
     return "stay";
   }
+  if (cat.includes("monastery") || cat.includes("gompa")) {
+    return "monastery";
+  }
+  if (cat.includes("church") || cat.includes("cathedral")) {
+    return "church";
+  }
+  if (cat.includes("spiritual") || cat.includes("temple") || cat.includes("aarti") || cat.includes("ghat")) {
+    return "spiritual";
+  }
+  if (cat.includes("waterfall") || cat.includes("cascade")) {
+    return "waterfall";
+  }
+  if (cat.includes("beach") || cat.includes("coastal")) {
+    return "beach";
+  }
+  if (cat.includes("shopping") || cat.includes("market") || cat.includes("bazaar")) {
+    return "shopping";
+  }
+  if (cat.includes("nightlife") || cat.includes("pub") || cat.includes("bar") || cat.includes("club")) {
+    return "nightlife";
+  }
+  if (cat.includes("transport") || cat.includes("mobility") || cat.includes("rental")) {
+    return "transport";
+  }
 
-  // 2. Strict Cafe & Bakery
+  // PRIORITY 2: Place Name & Tag Semantics (Cafés/Food must precede generic stay keywords like 'inn')
   if (
-    text.includes("cafe") ||
-    text.includes("café") ||
-    text.includes("coffee") ||
-    text.includes("bakery") ||
-    text.includes("bakehouse") ||
-    text.includes("tea house") ||
-    text.includes("espresso") ||
-    text.includes("german bakery") ||
-    text.includes("patisserie")
+    name.includes("cafe") ||
+    name.includes("café") ||
+    name.includes("coffee") ||
+    name.includes("bakery") ||
+    name.includes("bakehouse") ||
+    name.includes("tea house") ||
+    name.includes("espresso") ||
+    name.includes("german bakery") ||
+    name.includes("patisserie")
   ) {
     return "cafe";
   }
 
-  // 3. Strict Food & Restaurant & Street Food
   if (
-    text.includes("food") ||
-    text.includes("restaurant") ||
-    text.includes("dhaba") ||
-    text.includes("momo") ||
-    text.includes("tibetan food") ||
-    text.includes("dining") ||
-    text.includes("kitchen") ||
-    text.includes("eatery") ||
-    text.includes("street food") ||
-    text.includes("bhojanalaya") ||
-    text.includes("sweet") ||
-    text.includes("chaat") ||
-    text.includes("thukpa") ||
-    text.includes("lassi") ||
-    text.includes("rasoi") ||
-    text.includes("thali")
+    name.includes("restaurant") ||
+    name.includes("dhaba") ||
+    name.includes("momo") ||
+    name.includes("tibetan food") ||
+    name.includes("kitchen") ||
+    name.includes("eatery") ||
+    name.includes("bhojanalaya") ||
+    name.includes("sweet") ||
+    name.includes("chaat") ||
+    name.includes("thukpa") ||
+    name.includes("lassi") ||
+    name.includes("rasoi") ||
+    name.includes("thali")
   ) {
     return "food";
   }
 
-  // 4. Church
   if (
-    text.includes("church") ||
-    text.includes("cathedral") ||
-    text.includes("chapel") ||
-    text.includes("basilica")
+    name.includes("church") ||
+    name.includes("cathedral") ||
+    name.includes("chapel") ||
+    name.includes("basilica")
   ) {
     return "church";
   }
 
-  // 5. Monastery / Gompa
   if (
-    text.includes("monastery") ||
-    text.includes("gompa") ||
-    text.includes("stupa") ||
-    text.includes("tibetan temple") ||
-    text.includes("dzong") ||
-    text.includes("kye gompa") ||
-    text.includes("ki gompa")
+    name.includes("monastery") ||
+    name.includes("gompa") ||
+    name.includes("stupa") ||
+    name.includes("tibetan temple") ||
+    name.includes("dzong") ||
+    name.includes("kye gompa") ||
+    name.includes("ki gompa")
   ) {
     return "monastery";
   }
 
-  // 6. Waterfall / Cascade
   if (
-    text.includes("waterfall") ||
-    text.includes("falls") ||
-    text.includes("cascade")
+    name.includes("waterfall") ||
+    name.includes("falls") ||
+    name.includes("cascade")
   ) {
     return "waterfall";
   }
 
-  // 7. Lake / River / Water Body
   if (
-    text.includes("lake") ||
-    text.includes("tso") ||
-    text.includes("taal") ||
-    text.includes("tal") ||
-    text.includes("river") ||
-    text.includes("stream") ||
-    text.includes("pond") ||
-    text.includes("dam")
+    name.includes("lake") ||
+    name.includes("tso") ||
+    name.includes("taal") ||
+    name.includes("tal") ||
+    name.includes("river") ||
+    name.includes("stream") ||
+    name.includes("pond") ||
+    name.includes("dam")
   ) {
     return "lake";
   }
 
-  // 8. Beach / Coastal
   if (
-    text.includes("beach") ||
-    text.includes("coast") ||
-    text.includes("cove") ||
-    text.includes("shore") ||
-    text.includes("cliff beach")
+    name.includes("beach") ||
+    name.includes("coast") ||
+    name.includes("cove") ||
+    name.includes("shore")
   ) {
     return "beach";
   }
 
-  // 9. Trails & Trekking
+  if (
+    name.includes("temple") ||
+    name.includes("mandir") ||
+    name.includes("shrine") ||
+    name.includes("ashram") ||
+    name.includes("gurudwara") ||
+    name.includes("mosque") ||
+    name.includes("masjid") ||
+    name.includes("ghat") ||
+    name.includes("aarti") ||
+    name.includes("spiritual") ||
+    name.includes("jyotirlinga")
+  ) {
+    return "spiritual";
+  }
+
+  if (
+    name.includes("hotel") ||
+    name.includes("resort") ||
+    name.includes("homestay") ||
+    name.includes("hostel") ||
+    name.includes("guesthouse") ||
+    name.includes("guest house") ||
+    name.includes("sanctuary retreat") ||
+    name.includes("boutique stay") ||
+    name.includes("bed & breakfast") ||
+    name.includes("b&b") ||
+    name.includes("dorm") ||
+    name.includes("villa")
+  ) {
+    return "stay";
+  }
+
+  if (
+    name.includes("fort") ||
+    name.includes("palace") ||
+    name.includes("haveli") ||
+    name.includes("museum") ||
+    name.includes("monument") ||
+    name.includes("heritage") ||
+    name.includes("ruins") ||
+    name.includes("castle") ||
+    name.includes("latin quarter")
+  ) {
+    return "heritage";
+  }
+
+  if (
+    name.includes("market") ||
+    name.includes("bazaar") ||
+    name.includes("shop") ||
+    name.includes("store") ||
+    name.includes("boutique") ||
+    name.includes("souvenir") ||
+    name.includes("craft")
+  ) {
+    return "shopping";
+  }
+
+  if (
+    name.includes("rental") ||
+    name.includes("scooter") ||
+    name.includes("motorcycle") ||
+    name.includes("bike rental") ||
+    name.includes("taxi") ||
+    name.includes("transport") ||
+    name.includes("bus stand") ||
+    name.includes("railway") ||
+    name.includes("mobility")
+  ) {
+    return "transport";
+  }
+
+  if (
+    name.includes("hospital") ||
+    name.includes("clinic") ||
+    name.includes("pharmacy") ||
+    name.includes("doctor") ||
+    name.includes("medical")
+  ) {
+    return "medical";
+  }
+
+  if (
+    name.includes("viewpoint") ||
+    name.includes("view point") ||
+    name.includes("ridge") ||
+    name.includes("peak") ||
+    name.includes("tibba") ||
+    name.includes("top") ||
+    name.includes("scenic point")
+  ) {
+    return "viewpoint";
+  }
+
   if (
     text.includes("trail") ||
     text.includes("trek") ||
@@ -1573,94 +1677,6 @@ export function classifyCategoryTheme(
     return "trail";
   }
 
-  // 10. Temple / Ashram / Mosque / Spiritual
-  if (
-    text.includes("temple") ||
-    text.includes("mandir") ||
-    text.includes("shrine") ||
-    text.includes("ashram") ||
-    text.includes("gurudwara") ||
-    text.includes("mosque") ||
-    text.includes("masjid") ||
-    text.includes("ghat") ||
-    text.includes("aarti") ||
-    text.includes("spiritual") ||
-    text.includes("jyotirlinga")
-  ) {
-    return "spiritual";
-  }
-
-  // 11. Fort / Palace / Heritage / Haveli
-  if (
-    text.includes("fort") ||
-    text.includes("palace") ||
-    text.includes("haveli") ||
-    text.includes("museum") ||
-    text.includes("monument") ||
-    text.includes("heritage") ||
-    text.includes("ruins") ||
-    text.includes("castle") ||
-    text.includes("latin quarter")
-  ) {
-    return "heritage";
-  }
-
-  // 12. Shopping / Market / Bazaar
-  if (
-    text.includes("market") ||
-    text.includes("bazaar") ||
-    text.includes("shop") ||
-    text.includes("store") ||
-    text.includes("boutique") ||
-    text.includes("souvenir") ||
-    text.includes("craft")
-  ) {
-    return "shopping";
-  }
-
-  // 13. Mobility / Transport / Rentals
-  if (
-    text.includes("rental") ||
-    text.includes("scooter") ||
-    text.includes("motorcycle") ||
-    text.includes("bike") ||
-    text.includes("taxi") ||
-    text.includes("transport") ||
-    text.includes("bus stand") ||
-    text.includes("railway") ||
-    text.includes("mobility")
-  ) {
-    return "transport";
-  }
-
-  // 14. Medical / Essentials
-  if (
-    text.includes("hospital") ||
-    text.includes("clinic") ||
-    text.includes("pharmacy") ||
-    text.includes("doctor") ||
-    text.includes("medical") ||
-    text.includes("police") ||
-    text.includes("atm") ||
-    text.includes("essential")
-  ) {
-    return "medical";
-  }
-
-  // 15. Viewpoint / Scenic Ridge
-  if (
-    text.includes("viewpoint") ||
-    text.includes("view point") ||
-    text.includes("ridge") ||
-    text.includes("peak") ||
-    text.includes("tibba") ||
-    text.includes("top") ||
-    text.includes("scenic point")
-  ) {
-    return "viewpoint";
-  }
-
-  // 16. Nature / Forest / Sanctuary / Tea Estate
   if (
     text.includes("forest") ||
     text.includes("woods") ||

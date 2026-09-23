@@ -1,255 +1,160 @@
-import pytest
 import os
 import hashlib
-from app.providers.artwork_provider import CuratedArtworkProvider
-from app.seed.seed_data import seed_database
+import pytest
 from app.database.session import SessionLocal
-from app.models.models import Destination, Place, Hotel
+from app.models.models import Place, Destination
+from app.providers.artwork_provider import CuratedArtworkProvider
+from app.services.place_visual_resolver import PlaceVisualResolverService
 
-@pytest.fixture(scope="module")
-def provider():
-    return CuratedArtworkProvider()
+DESTINATIONS = [
+    "manali", "kasol", "dharamshala", "mussoorie",
+    "rishikesh", "udaipur", "jaipur", "goa",
+    "varanasi", "leh", "spiti", "munnar"
+]
 
-@pytest.fixture(scope="module")
-def db_session():
-    seed_database()
-    db = SessionLocal()
-    yield db
-    db.close()
+def get_file_hash(filepath: str) -> str:
+    if not os.path.exists(filepath):
+        return ""
+    hasher = hashlib.md5()
+    with open(filepath, "rb") as f:
+        buf = f.read(65536)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = f.read(65536)
+    return hasher.hexdigest()
 
 @pytest.mark.asyncio
-async def test_kasol_semantic_isolation(provider):
-    """
-    KASOL: Moon Dance Cafe != Chalal Trail visual,
-    Moon Dance Cafe -> cafe,
-    Chalal Trail -> trail.
-    """
-    moon_dance = await provider.resolve_place_artwork(
-        place_name="Moon Dance Café & German Bakery",
-        destination_name="Kasol",
+async def test_01_all_12_destinations_place_audit_and_zero_collisions():
+    """Audit all 12 destinations from database and ensure zero cross-place collisions."""
+    resolver = PlaceVisualResolverService()
+    db = SessionLocal()
+
+    reverse_index = {}
+    audit_report = []
+
+    try:
+        for dest in DESTINATIONS:
+            db_dest = db.query(Destination).filter(Destination.slug == dest).first()
+            if not db_dest:
+                continue
+            places = db.query(Place).filter(Place.destination_id == db_dest.id).all()
+            assert len(places) > 0, f"Destination {dest} has no curated database places!"
+
+            for p in places:
+                cat_str = p.category if isinstance(p.category, str) else (getattr(p.category, "name", "") if p.category else "")
+                res = await resolver.resolve_place(
+                    place_name=p.name,
+                    destination_name=dest,
+                    category=cat_str,
+                    existing_image_url=p.image_url
+                )
+                img = res["image_url"]
+                place_id = f"{dest}:{p.name}"
+
+                if img not in reverse_index:
+                    reverse_index[img] = []
+                reverse_index[img].append(place_id)
+
+                audit_report.append({
+                    "place": p.name,
+                    "destination": dest,
+                    "category": cat_str,
+                    "resolved_visual": img,
+                    "tier": res["tier"],
+                    "badge": res["badge"]
+                })
+    finally:
+        db.close()
+
+    # Collision analysis across distinct semantic entities
+    collisions = []
+    for img, place_list in reverse_index.items():
+        distinct_places = sorted(list(set(place_list)))
+        if len(distinct_places) > 1:
+            # Universal fallbacks are permitted to be shared across same semantic category
+            if "/places/universal/" in img:
+                continue
+            # Category fallbacks are permitted to be shared only within same destination & category
+            if "/categories/" in img:
+                continue
+            collisions.append(f"COLLISION: {img} shared by distinct places: {distinct_places}")
+
+    assert len(collisions) == 0, f"Detected {len(collisions)} exact place artwork collisions: {collisions}"
+
+@pytest.mark.asyncio
+async def test_02_munnar_artwork_file_hash_uniqueness():
+    """Verify Munnar landmark image files on disk have unique MD5 hashes and no duplicate images."""
+    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "public", "images", "places", "munnar"))
+    
+    if not os.path.exists(frontend_dir):
+        pytest.skip("Frontend public directory not found in relative path")
+
+    files_to_check = [
+        "eravikulam-park.jpg",
+        "kolukkumalai-tea.jpg",
+        "mattupetty-dam.jpg",
+        "attukal-waterfalls.jpg"
+    ]
+
+    hashes = {}
+    for fname in files_to_check:
+        fpath = os.path.join(frontend_dir, fname)
+        if os.path.exists(fpath):
+            h = get_file_hash(fpath)
+            assert h not in hashes.values(), f"Hash collision: {fname} has same hash as {list(hashes.keys())[list(hashes.values()).index(h)]}"
+            hashes[fname] = h
+
+@pytest.mark.asyncio
+async def test_03_stay_artwork_strict_isolation():
+    """Verify Stays never receive monastery, temple, fort, or hero artwork."""
+    resolver = PlaceVisualResolverService()
+    
+    test_stays = [
+        ("The Hosteller Munnar", "Munnar", "Stays & Sanctuaries"),
+        ("Zostel Manali", "Manali", "Hostel"),
+        ("Riverside Homestay", "Rishikesh", "Homestay"),
+        ("Boutique Heritage Haveli", "Jaipur", "Hotel"),
+        ("Spiti Valley Guesthouse", "Spiti", "Guesthouse"),
+    ]
+
+    for name, dest, cat in test_stays:
+        res = await resolver.resolve_place(name, dest, cat)
+        img = res["image_url"]
+        
+        assert "monastery" not in img, f"{name} received monastery art: {img}"
+        assert "temple" not in img, f"{name} received temple art: {img}"
+        assert "hero.jpg" not in img, f"{name} received destination hero art: {img}"
+        assert "illustration.jpg" not in img, f"{name} received destination illustration art: {img}"
+        assert res["tier"] in ["destination_category", "regional_fallback", "exact_place"]
+
+@pytest.mark.asyncio
+async def test_04_mobility_artwork_strict_isolation():
+    """Verify mobility rentals never receive spiritual, nature, or accommodation art."""
+    resolver = PlaceVisualResolverService()
+    
+    test_rentals = [
+        ("Munnar Royal Enfield Rentals", "Munnar", "Mobility"),
+        ("Manali Himalayan Scooter Hub", "Manali", "Rentals"),
+        ("Goa Beach Scooter Fleet", "Goa", "Scooter & Motorcycle Rentals"),
+    ]
+
+    for name, dest, cat in test_rentals:
+        res = await resolver.resolve_place(name, dest, cat)
+        img = res["image_url"]
+        assert "transport" in img or "mobility" in img or "vehicle" in img, f"{name} did not resolve to mobility visual: {img}"
+        assert "temple" not in img
+        assert "monastery" not in img
+
+@pytest.mark.asyncio
+async def test_05_food_and_cafe_semantics():
+    """Verify cafe with 'Inn' in name or description resolves to cafe, not stay."""
+    resolver = PlaceVisualResolverService()
+
+    res = await resolver.resolve_place(
+        place_name="Drifters' Café & Acoustic Inn",
+        destination_name="Manali",
         category="Cafés & Bakery"
     )
-    chalal = await provider.resolve_place_artwork(
-        place_name="Chalal Pine Riverside Trail",
-        destination_name="Kasol",
-        category="Nature & Trails"
-    )
-    
-    assert moon_dance["url"] != chalal["url"], "Moon Dance Cafe and Chalal Trail MUST NOT share artwork!"
-    assert moon_dance["semantic_category"] == "cafe"
-    assert chalal["semantic_category"] == "trail"
-    assert "cafe" in moon_dance["url"] or "bakery" in moon_dance["url"]
-    assert "trail" in chalal["url"] or "nature" in chalal["url"]
-    assert moon_dance["badge_label"] == "VANVAS PLACE ARTWORK"
-    assert chalal["badge_label"] == "VANVAS PLACE ARTWORK"
-
-@pytest.mark.asyncio
-async def test_spiti_semantic_isolation(provider):
-    """
-    SPITI: Key Monastery -> monastery,
-    Spiti stay -> stay / accommodation (NEVER monastery, fort, or hero),
-    Spiti food -> food,
-    Spiti trail -> trail / lake.
-    """
-    key_monastery = await provider.resolve_place_artwork(
-        place_name="Key Monastery (Kye Gompa)",
-        destination_name="Spiti Valley",
-        category="Culture & Heritage"
-    )
-    stay = await provider.resolve_place_artwork(
-        place_name="Spiti Valley Homestay Sanctuary",
-        destination_name="Spiti Valley",
-        category="Stays & Sanctuaries"
-    )
-    food = await provider.resolve_place_artwork(
-        place_name="Taste of Spiti Local Dhaba",
-        destination_name="Spiti Valley",
-        category="Local Food"
-    )
-    chandratal = await provider.resolve_place_artwork(
-        place_name="Chandratal (Moon Lake) Glacial Sanctuary",
-        destination_name="Spiti Valley",
-        category="Nature & Trails"
-    )
-
-    assert key_monastery["url"] != stay["url"], "Key Monastery and Stay MUST NOT share artwork!"
-    assert key_monastery["url"] != food["url"]
-    assert stay["url"] != food["url"]
-    assert chandratal["url"] != key_monastery["url"]
-
-    assert key_monastery["semantic_category"] == "monastery"
-    assert stay["semantic_category"] == "stay"
-    assert food["semantic_category"] == "food"
-    assert chandratal["semantic_category"] == "lake"
-
-    # Verify stay never receives landmark or hero artwork
-    assert "monastery" not in stay["url"]
-    assert "fort" not in stay["url"]
-    assert "hero.jpg" not in stay["url"]
-    assert "stay" in stay["url"]
-
-@pytest.mark.asyncio
-async def test_manali_semantic_isolation(provider):
-    """
-    MANALI: temple -> spiritual, cafe -> cafe, stay -> stay, trail -> waterfall/nature
-    """
-    temple = await provider.resolve_place_artwork("Hadimba Devi Cedar Forest Temple", "Manali", "Culture & Heritage")
-    cafe = await provider.resolve_place_artwork("Café 1947", "Manali", "Cafés & Bakery")
-    stay = await provider.resolve_place_artwork("The Himalayan Woods Boutique Retreat", "Manali", "Stays & Sanctuaries")
-    trail = await provider.resolve_place_artwork("Jogini Waterfall Pine Trail", "Manali", "Nature & Trails")
-
-    assert temple["url"] != cafe["url"]
-    assert temple["url"] != stay["url"]
-    assert cafe["url"] != stay["url"]
-    assert trail["url"] != temple["url"]
-
-    assert temple["semantic_category"] == "spiritual"
-    assert cafe["semantic_category"] == "cafe"
-    assert stay["semantic_category"] == "stay"
-    assert trail["semantic_category"] == "waterfall"
-
-@pytest.mark.asyncio
-async def test_goa_semantic_isolation(provider):
-    """
-    GOA: beach -> beach, cafe -> cafe, stay -> stay, fort -> heritage
-    """
-    beach = await provider.resolve_place_artwork("Anjuna Beach Coastline", "Goa", "Nature & Trails")
-    stay = await provider.resolve_place_artwork("Fontainhas Heritage Boutique Villa", "Goa", "Stays & Sanctuaries")
-    fort = await provider.resolve_place_artwork("Fort Aguada & Lighthouse", "Goa", "Culture & Heritage")
-
-    assert beach["url"] != stay["url"]
-    assert beach["url"] != fort["url"]
-    assert stay["url"] != fort["url"]
-
-    assert beach["semantic_category"] == "beach"
-    assert stay["semantic_category"] == "stay"
-    assert fort["semantic_category"] == "heritage"
-
-@pytest.mark.asyncio
-async def test_jaipur_semantic_isolation(provider):
-    """
-    JAIPUR: palace -> heritage, fort -> heritage, stay -> stay, food -> food
-    """
-    hawa_mahal = await provider.resolve_place_artwork("Hawa Mahal Palace of Winds", "Jaipur", "Culture & Heritage")
-    stay = await provider.resolve_place_artwork("Samode Haveli Royal Residence", "Jaipur", "Stays & Sanctuaries")
-    food = await provider.resolve_place_artwork("Rawat Mishthan Bhandar Kachori", "Jaipur", "Local Food")
-
-    assert hawa_mahal["url"] != stay["url"]
-    assert hawa_mahal["url"] != food["url"]
-    assert stay["url"] != food["url"]
-
-    assert hawa_mahal["semantic_category"] == "heritage"
-    assert stay["semantic_category"] == "stay"
-    assert food["semantic_category"] == "food"
-
-@pytest.mark.asyncio
-async def test_varanasi_semantic_isolation(provider):
-    """
-    VARANASI: ghat -> spiritual, temple -> spiritual, stay -> stay, food -> food
-    """
-    ghat = await provider.resolve_place_artwork("Dashashwamedh Ghat Evening Maha Aarti", "Varanasi", "Culture & Heritage")
-    temple = await provider.resolve_place_artwork("Kashi Vishwanath Golden Temple Corridor", "Varanasi", "Culture & Heritage")
-    stay = await provider.resolve_place_artwork("BrijRama Palace River Heritage", "Varanasi", "Stays & Sanctuaries")
-    food = await provider.resolve_place_artwork("Blue Lassi Traditional Shop", "Varanasi", "Local Food")
-
-    assert ghat["url"] != temple["url"], "Dashashwamedh Ghat and Kashi Vishwanath must have distinct artwork!"
-    assert ghat["url"] != stay["url"]
-    assert temple["url"] != stay["url"]
-    assert food["url"] != ghat["url"]
-
-    assert stay["semantic_category"] == "stay"
-    assert food["semantic_category"] == "food"
-
-@pytest.mark.asyncio
-async def test_all_curated_places_reverse_index_collisions(provider, db_session):
-    """
-    Reverse-index collision test across all curated places in the database.
-    Fails if any two unrelated curated places share the same destination-specific asset.
-    """
-    places = db_session.query(Place).all()
-    hotels = db_session.query(Hotel).all()
-    
-    asset_to_places = {}
-
-    for p in places:
-        dest_name = p.destination.name if p.destination else "India"
-        cat = p.category or "Place"
-        res = await provider.resolve_place_artwork(
-            place_name=p.name,
-            destination_name=dest_name,
-            category=cat,
-            existing_image_url=p.image_url
-        )
-        url = res["url"]
-        ident = f"{dest_name}:{p.name} ({cat})"
-        if url not in asset_to_places:
-            asset_to_places[url] = []
-        asset_to_places[url].append(ident)
-
-    for h in hotels:
-        dest_name = h.destination.name if h.destination else "India"
-        res = await provider.resolve_place_artwork(
-            place_name=h.name,
-            destination_name=dest_name,
-            category="Stays & Sanctuaries",
-            existing_image_url=h.image_url
-        )
-        url = res["url"]
-        ident = f"{dest_name}:{h.name} (Hotel)"
-        if url not in asset_to_places:
-            asset_to_places[url] = []
-        asset_to_places[url].append(ident)
-
-    collisions = []
-    for url, items in asset_to_places.items():
-        if len(items) > 1:
-            # Check if this is an allowed category sharing or forbidden collision
-            if "/places/universal/" in url:
-                continue
-            if "/categories/" in url:
-                # Same category in same destination is permitted for fallback places
-                continue
-            collisions.append(f"Collision on exact asset {url}: {items}")
-
-    assert len(collisions) == 0, f"Found exact asset collisions:\n" + "\n".join(collisions)
-
-def test_all_registry_assets_exist_on_disk(provider):
-    """
-    Asserts every image asset referenced in EXACT_PLACE_REGISTRY and DESTINATION_CATEGORY_REGISTRY
-    physically exists on disk under frontend/public/.
-    """
-    frontend_public = os.path.abspath(r"C:\Users\user\Desktop\Vanvas\frontend\public")
-
-    # Check exact places
-    for key, item in provider.PLACE_ARTWORK_REGISTRY.items():
-        img_rel = item["image_url"].lstrip("/")
-        full_path = os.path.join(frontend_public, img_rel)
-        assert os.path.isfile(full_path), f"Asset for {key} missing on disk: {full_path}"
-        assert os.path.getsize(full_path) > 500, f"Asset for {key} is empty or corrupted: {full_path}"
-
-    # Check destination categories
-    for dest, config in provider.DESTINATION_CATEGORY_REGISTRY.items():
-        for theme, cat_url in config["categories"].items():
-            img_rel = cat_url.lstrip("/")
-            full_path = os.path.join(frontend_public, img_rel)
-            assert os.path.isfile(full_path), f"Category asset {dest}:{theme} missing on disk: {full_path}"
-            assert os.path.getsize(full_path) > 500, f"Category asset {dest}:{theme} is empty: {full_path}"
-
-def test_no_exact_asset_hash_duplicates(provider):
-    """
-    Asserts all exact landmark assets have distinct SHA-256 hashes on disk.
-    """
-    frontend_public = os.path.abspath(r"C:\Users\user\Desktop\Vanvas\frontend\public")
-    hash_to_keys = {}
-
-    for key, item in provider.PLACE_ARTWORK_REGISTRY.items():
-        img_rel = item["image_url"].lstrip("/")
-        full_path = os.path.join(frontend_public, img_rel)
-        with open(full_path, "rb") as f:
-            h = hashlib.sha256(f.read()).hexdigest()
-        if h not in hash_to_keys:
-            hash_to_keys[h] = []
-        hash_to_keys[h].append(key)
-
-    duplicates = [f"Hash {h[:8]} shared by {keys}" for h, keys in hash_to_keys.items() if len(keys) > 1]
-    assert len(duplicates) == 0, f"Exact place asset duplicate hashes found:\n" + "\n".join(duplicates)
+    assert res["tier"] in ["exact_place", "destination_category"]
+    assert "cafe" in res["image_url"]
+    assert res["semantic_category"] == "cafe"

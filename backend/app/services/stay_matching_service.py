@@ -640,7 +640,7 @@ class StayMatchingService:
             # Filter by max_price if specified
             if max_price is not None:
                 p_night = c.get("price_per_night")
-                if p_night is not None and p_night > max_price:
+                if p_night is None or p_night > max_price:
                     continue
 
             filtered.append(c)

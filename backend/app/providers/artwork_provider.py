@@ -687,6 +687,17 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["mattupetty-dam", "mattupetty-dam-and-reflection-lake", "mattupetty-lake", "mattupetty"]
         },
+        "munnar:attukal-waterfalls": {
+            "image_url": "/images/places/munnar/attukal-waterfalls.webp",
+            "tier": "exact_place",
+            "place_name": "Attukal Cascading Waterfalls",
+            "destination": "Munnar",
+            "category": "Nature & Trails",
+            "semantic_theme": "waterfall",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["attukal-waterfalls", "attukal-cascading-waterfalls", "attukal-falls", "attukal"]
+        },
 
         # --- Rishikesh Landmarks ---
         "rishikesh:triveni-ghat": {
@@ -1106,38 +1117,65 @@ class CuratedArtworkProvider(ArtworkProvider):
         return f"{self._clean_str(destination)}:{self._clean_str(place)}"
 
     def _classify_category_theme(self, category: str = "", place_name: str = "", tags: str = "") -> str:
-        text = f"{(category or '').lower()} {(place_name or '').lower()} {(tags or '').lower()}"
+        cat = (category or "").lower()
+        name = (place_name or "").lower()
+        text = f"{cat} {name} {(tags or '').lower()}"
 
-        if any(w in text for w in ["hotel", "resort", "cottage", "homestay", "hostel", "guesthouse", "guest house", "lodge", "stay", "accommodation", "villa", "inn", "mudhouse", "sanctuary retreat", "boutique retreat", "retreat", "niwas", "manor", "residency", "camp", "tent", "bed & breakfast", "b&b"]) or ("haveli" in text and any(s in text for s in ["stay", "hotel", "room", "sanctuary", "heritage", "jagat"])) or ("palace" in text and any(s in text for s in ["hotel", "retreat", "resort", "stay", "lakeside", "niwas", "brijrama"])):
-            return "stay"
-        if any(w in text for w in ["cafe", "café", "coffee", "bakery", "bakehouse", "tea house", "espresso", "german bakery", "patisserie", "tibetan kitchen"]):
+        # PRIORITY 1: Explicit Category Classification
+        if any(w in cat for w in ["café", "cafe", "bakery", "bakehouse", "coffee"]):
             return "cafe"
-        if any(w in text for w in ["food", "restaurant", "dhaba", "momo", "tibetan food", "dining", "kitchen", "eatery", "street food", "bhojanalaya", "sweet", "chaat", "thukpa", "lassi", "rasoi", "thali"]):
+        if any(w in cat for w in ["food", "dining", "restaurant", "street food", "eatery", "cuisine"]):
             return "food"
-        if any(w in text for w in ["church", "cathedral", "chapel", "basilica"]):
-            return "church"
-        if any(w in text for w in ["monastery", "gompa", "stupa", "tibetan temple", "dzong", "kye gompa", "ki gompa"]):
+        if any(w in cat for w in ["stay", "sanctuary", "sanctuaries", "accommodation", "hostel", "homestay", "resort", "hotel"]):
+            return "stay"
+        if any(w in cat for w in ["monastery", "gompa"]):
             return "monastery"
-        if any(w in text for w in ["waterfall", "falls", "cascade"]):
+        if any(w in cat for w in ["church", "cathedral"]):
+            return "church"
+        if any(w in cat for w in ["spiritual", "temple", "aarti", "ghat"]):
+            return "spiritual"
+        if any(w in cat for w in ["waterfall", "cascade"]):
             return "waterfall"
-        if any(w in text for w in ["lake", "tso", "taal", "tal", "river", "stream", "pond", "dam"]):
-            return "lake"
-        if any(w in text for w in ["beach", "coast", "cove", "shore", "cliff beach"]):
+        if any(w in cat for w in ["beach", "coastal"]):
             return "beach"
+        if any(w in cat for w in ["shopping", "market", "bazaar"]):
+            return "shopping"
+        if any(w in cat for w in ["nightlife", "pub", "bar", "club"]):
+            return "nightlife"
+        if any(w in cat for w in ["transport", "mobility", "rental"]):
+            return "transport"
+
+        # PRIORITY 2: Place Name & Tag Semantics (Cafés/Food must precede generic stay keywords like 'inn')
+        if any(w in name for w in ["cafe", "café", "coffee", "bakery", "bakehouse", "tea house", "espresso", "german bakery", "patisserie"]):
+            return "cafe"
+        if any(w in name for w in ["restaurant", "dhaba", "momo", "tibetan food", "kitchen", "eatery", "bhojanalaya", "sweet", "chaat", "thukpa", "lassi", "rasoi", "thali"]):
+            return "food"
+        if any(w in name for w in ["church", "cathedral", "chapel", "basilica"]):
+            return "church"
+        if any(w in name for w in ["monastery", "gompa", "stupa", "tibetan temple", "dzong", "kye gompa", "ki gompa"]):
+            return "monastery"
+        if any(w in name for w in ["waterfall", "falls", "cascade"]):
+            return "waterfall"
+        if any(w in name for w in ["lake", "tso", "taal", "tal", "river", "stream", "pond", "dam"]):
+            return "lake"
+        if any(w in name for w in ["beach", "coast", "cove", "shore"]):
+            return "beach"
+        if any(w in name for w in ["temple", "mandir", "shrine", "ashram", "gurudwara", "mosque", "masjid", "ghat", "aarti", "spiritual", "jyotirlinga"]):
+            return "spiritual"
+        if any(w in name for w in ["hotel", "resort", "homestay", "hostel", "guesthouse", "guest house", "sanctuary retreat", "boutique stay", "bed & breakfast", "b&b", "dorm", "villa"]):
+            return "stay"
+        if any(w in name for w in ["fort", "palace", "haveli", "museum", "monument", "heritage", "ruins", "castle", "latin quarter"]):
+            return "heritage"
+        if any(w in name for w in ["market", "bazaar", "shop", "store", "boutique", "souvenir", "craft"]):
+            return "shopping"
+        if any(w in name for w in ["rental", "scooter", "motorcycle", "bike rental", "taxi", "transport", "bus stand", "railway", "mobility"]):
+            return "transport"
+        if any(w in name for w in ["hospital", "clinic", "pharmacy", "doctor", "medical"]):
+            return "medical"
+        if any(w in name for w in ["viewpoint", "view point", "ridge", "peak", "tibba", "top", "scenic point"]):
+            return "viewpoint"
         if any(w in text for w in ["trail", "trek", "walk", "hike", "promenade", "climb", "pass"]):
             return "trail"
-        if any(w in text for w in ["temple", "mandir", "shrine", "ashram", "gurudwara", "mosque", "masjid", "ghat", "aarti", "spiritual", "jyotirlinga"]):
-            return "spiritual"
-        if any(w in text for w in ["fort", "palace", "haveli", "museum", "monument", "heritage", "ruins", "castle", "latin quarter"]):
-            return "heritage"
-        if any(w in text for w in ["market", "bazaar", "shop", "store", "boutique", "souvenir", "craft"]):
-            return "shopping"
-        if any(w in text for w in ["rental", "scooter", "motorcycle", "bike", "taxi", "transport", "bus stand", "railway", "mobility"]):
-            return "transport"
-        if any(w in text for w in ["hospital", "clinic", "pharmacy", "doctor", "medical", "police", "atm", "essential"]):
-            return "medical"
-        if any(w in text for w in ["viewpoint", "view point", "ridge", "peak", "tibba", "top", "scenic point"]):
-            return "viewpoint"
         if any(w in text for w in ["forest", "woods", "pine", "deodar", "jungle", "park", "garden", "sanctuary", "tea", "plantation", "nature"]):
             return "nature"
         return "nature"
@@ -1149,7 +1187,10 @@ class CuratedArtworkProvider(ArtworkProvider):
         # 1. Stay/Accommodation must NEVER match non-stay
         if t1 == "stay" or t2 == "stay":
             return False
-        # 2. Food/Cafe must NEVER match spiritual/temple/monastery/church
+        # 2. Mobility/Transport must NEVER match non-transport
+        if t1 == "transport" or t2 == "transport":
+            return False
+        # 3. Food/Cafe must NEVER match spiritual/temple/monastery/church
         food_group = {"cafe", "food"}
         spirit_group = {"spiritual", "monastery", "church"}
         if (t1 in food_group and t2 in spirit_group) or (t1 in spirit_group and t2 in food_group):
@@ -1193,6 +1234,9 @@ class CuratedArtworkProvider(ArtworkProvider):
 
     @classmethod
     def detect_artwork_collisions(cls) -> List[str]:
+        """
+        Scans PLACE_ARTWORK_REGISTRY for identical image_url keys assigned across multiple distinct landmark entries.
+        """
         asset_map: Dict[str, List[str]] = {}
         warnings: List[str] = []
 
@@ -1298,28 +1342,29 @@ class CuratedArtworkProvider(ArtworkProvider):
         lookup_key = f"{dest_norm}:{place_norm}"
         if lookup_key in self.PLACE_ARTWORK_REGISTRY:
             item = self.PLACE_ARTWORK_REGISTRY[lookup_key]
-            return {
-                "url": item["image_url"],
-                "fallback_url": safe_fallback,
-                "source": item.get("source", "vanvas_curated"),
-                "source_type": item.get("source_type", "editorial_artwork"),
-                "provenance": "exact_place",
-                "semantic_category": item.get("semantic_theme", theme),
-                "exactness": "exact",
-                "attribution": item.get("attribution", "VANVAS Verified Editorial Asset"),
-                "alt_text": f"{place_name} in {destination_name}",
-                "badge_label": "VANVAS PLACE ARTWORK",
-                "artwork_key": lookup_key,
-                "image_url": item["image_url"],
-                "tier": "exact_place",
-                "place_name": place_name,
-                "destination": destination_name,
-                "category": category,
-                "is_real_photo": False,
-                "badge": "VANVAS PLACE ARTWORK",
-                "visual_description": item.get("visual_description"),
-                "metadata": item
-            }
+            if self._themes_compatible(theme, item.get("semantic_theme", "nature")):
+                return {
+                    "url": item["image_url"],
+                    "fallback_url": safe_fallback,
+                    "source": item.get("source", "vanvas_curated"),
+                    "source_type": item.get("source_type", "editorial_artwork"),
+                    "provenance": "exact_place",
+                    "semantic_category": item.get("semantic_theme", theme),
+                    "exactness": "exact",
+                    "attribution": item.get("attribution", "VANVAS Verified Editorial Asset"),
+                    "alt_text": f"{place_name} in {destination_name}",
+                    "badge_label": "VANVAS PLACE ARTWORK",
+                    "artwork_key": lookup_key,
+                    "image_url": item["image_url"],
+                    "tier": "exact_place",
+                    "place_name": place_name,
+                    "destination": destination_name,
+                    "category": category,
+                    "is_real_photo": False,
+                    "badge": "VANVAS PLACE ARTWORK",
+                    "visual_description": item.get("visual_description"),
+                    "metadata": item
+                }
 
         # LEVEL 4B: Alias / Distinctive token matching
         best_exact_match: Optional[Tuple[str, Dict[str, Any]]] = None
@@ -1337,6 +1382,9 @@ class CuratedArtworkProvider(ArtworkProvider):
         }
 
         for reg_key, item in self.PLACE_ARTWORK_REGISTRY.items():
+            if not self._themes_compatible(theme, item.get("semantic_theme", "nature")):
+                continue
+
             reg_dest, reg_place = reg_key.split(":")
             if reg_dest == dest_norm or reg_dest in dest_norm or dest_norm in reg_dest:
                 score = 0
@@ -1347,9 +1395,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                     for al in aliases:
                         if al == place_norm:
                             score = max(score, 100)
-                        elif al in place_norm and len(al) >= 4:
+                        elif al in place_norm and len(al) >= 6:
                             score = max(score, 80 + len(al))
-                        elif place_norm in al and len(place_norm) >= 4:
+                        elif place_norm in al and len(place_norm) >= 6:
                             score = max(score, 70 + len(place_norm))
 
                     if score < 70:
@@ -1364,7 +1412,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                     best_score = score
                     best_exact_match = (reg_key, item)
 
-        if best_exact_match and best_score >= 55:
+        if best_exact_match and best_score >= 60:
             reg_key, item = best_exact_match
             return {
                 "url": item["image_url"],

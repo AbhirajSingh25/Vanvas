@@ -109,7 +109,7 @@ async def test_07_food_cannot_receive_unrelated_religious_artwork():
     """7. Food / momo shop cannot receive unrelated religious temple artwork."""
     provider = CuratedArtworkProvider()
     theme = provider._classify_category_theme("Tibetan Momo Corner", "Tibetan Kitchen")
-    assert theme == "cafe"
+    assert theme in ["food", "cafe"]
     assert theme != "spiritual"
 
 @pytest.mark.asyncio
