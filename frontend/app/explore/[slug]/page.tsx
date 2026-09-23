@@ -119,6 +119,12 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
     transport: "Chopta base camp is reached by road from Rishikesh/Haridwar via Rudraprayag and Ukhimath. Beyond Chopta roadhead, no vehicular traffic exists: the 5 km trail to Tungnath (3.5 km) and Chandrashila (1.5 km) is trekking-only (ponies available up to the temple).",
     etiquette: "Tungnath is the 3rd Panch Kedar and world's highest Shiva shrine (3,680m). Remove shoes before temple precincts. Maintain silence on summit, carry your trash back down, and carry cash as ATMs end at Ukhimath.",
   },
+  rishikesh: {
+    seasonality: "September to May is ideal with pleasant temperatures (15–28°C) for yoga, rafting, and evening aartis. June to August monsoon swells the Ganga and rafting is suspended, but ashrams and spiritual energy remain vibrant.",
+    clothing: "Light breathable cotton clothing; modest attire covering shoulders and knees for ashrams and temples. Carry quick-dry clothes for rafting days at Shivpuri and Marine Drive launch points.",
+    transport: "Ram Jhula and Lakshman Jhula are best explored on foot. Shared autos connect the Haridwar bypass to Swarg Ashram. Rafting launch points at Shivpuri require a taxi or rented scooter.",
+    etiquette: "Rishikesh is a holy city: alcohol and non-vegetarian food are strictly prohibited within city limits. Maintain complete silence during the evening Ganga Aarti at Triveni Ghat and Parmarth Niketan. Dress modestly near ashrams.",
+  },
 };
 
 interface DestinationExperience {

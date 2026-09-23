@@ -766,7 +766,7 @@ def seed_database():
                     "opening_time": "06:00",
                     "closing_time": "23:00",
                     "tags": "Beach,Kayaking,Sunset,Palms,South Goa",
-                    "image_url": "/images/places/goa/categories/nature.webp",
+                    "image_url": "/images/places/goa/palolem-beach.webp",
                     "why_vanvas_recommends": "The ideal gentle swimming beach in Goa with serene dolphin spotting kayak trails.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -808,7 +808,7 @@ def seed_database():
                     "opening_time": "08:00",
                     "closing_time": "18:30",
                     "tags": "Fort,Laterite,Sunset,Ocean Views,Cliffs",
-                    "image_url": "/images/places/goa/categories/viewpoint.webp",
+                    "image_url": "/images/places/goa/chapora-fort.webp",
                     "why_vanvas_recommends": "Famous sunset cliff viewpoint overlooking the confluence of Chapora River and Arabian Sea.",
                     "is_must_visit": True,
                     "is_hidden_gem": False,
@@ -1574,7 +1574,7 @@ def seed_database():
                     "amenities": "River Terrace,Classical Sitar Evenings,Private Boat,Fine Dining",
                     "check_in_time": "02:00 PM",
                     "check_out_time": "12:00 PM",
-                    "image_url": "/images/places/varanasi/categories/stay.webp",
+                    "image_url": "/images/places/varanasi/brijrama-palace.webp",
                     "booking_url": "https://brijrama.com",
                     "badge": "Iconic Riverfront Sanctuary"
                 }

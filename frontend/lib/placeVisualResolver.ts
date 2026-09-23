@@ -1150,6 +1150,35 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "dudhsagar"
     ]
   },
+  "goa:palolem-beach-cove": {
+    imageUrl: "/images/places/goa/palolem-beach.webp",
+    visualDescription: "Tranquil 1.6 km semi-circular beach cove lined with leaning coconut palms and calm turquoise Arabian Sea waters.",
+    category: "Nature & Trails",
+    semanticTheme: "beach",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "palolem-beach-cove",
+      "palolem-beach",
+      "palolem-crescent-cove",
+      "palolem-beach-crescent-cove",
+      "palolem"
+    ]
+  },
+  "goa:chapora-fort-sunset": {
+    imageUrl: "/images/places/goa/chapora-fort.webp",
+    visualDescription: "Historic 1717 red laterite fort ramparts perched on high cliffs offering sweeping 360-degree ocean views over Vagator and Morjim beaches.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "chapora-fort-sunset",
+      "chapora-fort",
+      "chapora-fort-cliff-sunset",
+      "chapora"
+    ]
+  },
 
   // ==========================================
   // --- MUNNAR LANDMARKS ---
