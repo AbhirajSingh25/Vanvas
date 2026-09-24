@@ -24,6 +24,17 @@ from app.core.security import create_access_token, get_password_hash
 client = TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def mock_ai_chat():
+    with patch("app.providers.ai.gemini_provider.GeminiProvider.chat_with_tools", new_callable=AsyncMock) as mock_chat:
+        mock_chat.return_value = {
+            "text": "I have planned a serene mountain journey.",
+            "tool_calls": [],
+            "usage": {"latency_ms": 10.0}
+        }
+        yield mock_chat
+
+
 @pytest.fixture
 def db():
     session = SessionLocal()

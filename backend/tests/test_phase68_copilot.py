@@ -17,10 +17,22 @@ from app.database.session import SessionLocal
 from app.models.models import User, Trip, Destination, Place, UserPreference, Expense
 from app.providers.ai.dispatcher import AIToolDispatcher
 from app.providers.ai.tools import VANVAS_COPILOT_TOOLS
+from unittest.mock import AsyncMock, patch
 from app.services.copilot_context import build_copilot_context
 from app.providers.ai.gemini_provider import DisabledAIProvider, GeminiProvider
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def mock_ai_chat():
+    with patch("app.providers.ai.gemini_provider.GeminiProvider.chat_with_tools", new_callable=AsyncMock) as mock_chat:
+        mock_chat.return_value = {
+            "text": "Mussoorie retreat itinerary planned.",
+            "tool_calls": [],
+            "usage": {"latency_ms": 10.0}
+        }
+        yield mock_chat
 
 
 @pytest.fixture

@@ -25,10 +25,22 @@ from app.database.session import SessionLocal
 from app.models.models import (
     User, Destination, Place, Trip, TripMember, Itinerary, ItineraryItem, SavedPlace, Conversation, ConversationMessage
 )
+from unittest.mock import AsyncMock, patch
 from app.core.security import create_access_token, get_password_hash
 from app.services.copilot_actions import CopilotActionService
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def mock_ai_chat():
+    with patch("app.providers.ai.gemini_provider.GeminiProvider.chat_with_tools", new_callable=AsyncMock) as mock_chat:
+        mock_chat.return_value = {
+            "text": "Place saved to your mountain journal.",
+            "tool_calls": [],
+            "usage": {"latency_ms": 10.0}
+        }
+        yield mock_chat
 
 
 @pytest.fixture
