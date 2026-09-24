@@ -1393,6 +1393,791 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
         "Carry all empty water bottles and snack packets back to Karjat station."
       ]
     }
+  },
+
+  "hampta-pass": {
+    id: "hampta-pass",
+    slug: "hampta-pass",
+    title: "Hampta Pass & Chandratal Crossover",
+    hindiTitle: "हम्प्टा पास व चंद्रताल दर्रा अभियान",
+    region: "Pir Panjal to Spiti Crossover",
+    state: "Himachal Pradesh",
+    mountainRange: "Pir Panjal & Zanskar Range",
+    baseCamp: "Jobra (2,900 m) / Manali",
+    peakAltitudeMeters: 4287,
+    peakAltitudeFormatted: "4,287 m (14,065 ft)",
+    totalDistanceKm: 35,
+    durationDays: 5,
+    durationHours: "5 Days / 4 Nights",
+    difficulty: "Challenging",
+    bestSeason: "Mid-June to Mid-October (Summer Crossover)",
+    viewScore: "PANORAMIC",
+    approxBudgetPerPerson: 5500,
+    altitudeRiskIndicator: "High (AMS Risk)",
+    heroImage: "/images/destinations/manali/hero.jpg",
+    tagline: "The dramatic dramatic corridor from the lush green Kullu valley into the stark cold desert of Spiti.",
+    expeditionOverview: "A legendary Himalayan crossover trek transitioning from lush pine forests and hanging glaciers of Jobra and Balu Ka Ghera across the 4,287m Hampta Pass to the arid, moonscape landscape of Shea Goru and the emerald waters of Chandratal.",
+    destinationSlug: "manali",
+    routes: [
+      {
+        id: "route-jobra-chhatru",
+        name: "Route A: Jobra → Hampta Pass → Chhatru → Chandratal",
+        trailhead: "Jobra Dam Roadhead",
+        distanceKm: 35.0,
+        elevationGainMeters: 1400,
+        estimatedTime: "5 Days",
+        difficulty: "Challenging",
+        sceneryScore: "PANORAMIC",
+        sceneryDescription: "Glacial river crossings, hanging ice walls, jagged Spiti peaks, and blue glacial lake.",
+        crowdLevel: "Moderate",
+        waterPointsCount: 6,
+        teaStallsCount: 1,
+        technicalExposure: "Snow/Scree",
+        summary: "The full crossover traversing snow bridges, rocky boulders, and descending into the Chandra river valley.",
+        recommendedFor: "Fit trekkers seeking a classic dramatic terrain shift."
+      }
+    ],
+    waypoints: [
+      {
+        id: "wp-jobra",
+        name: "Jobra Hydro Trailhead",
+        hindiName: "जोबरा हाइड्रो आधार",
+        elevationMeters: 2900,
+        elevationFormatted: "2,900 m",
+        distanceFromStartKm: 0,
+        timeFromPrev: "Start",
+        terrainType: "Pine Woods & Riverbank",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: true,
+        latitude: 32.2530,
+        longitude: 77.2510,
+        isBaseCamp: true,
+        fieldNotes: "1-hour drive from Manali via 40 hairpin bends of the Allain Duhangan road.",
+        imageUrl: "/images/places/universal/nature.webp"
+      },
+      {
+        id: "wp-balu-ka-ghera",
+        name: "Balu Ka Ghera (Sand Bed Camp)",
+        hindiName: "बालू का घेरा",
+        elevationMeters: 3600,
+        elevationFormatted: "3,600 m",
+        distanceFromStartKm: 12.0,
+        timeFromPrev: "5 hrs",
+        terrainType: "Flat Glacial Sand & Streams",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: false,
+        latitude: 32.2710,
+        longitude: 77.3120,
+        fieldNotes: "Final base before pass push. Acclimatization walk essential to prevent AMS.",
+        imageUrl: "/images/places/universal/nature.webp"
+      },
+      {
+        id: "wp-hampta-summit",
+        name: "Hampta Pass Ridge",
+        hindiName: "हम्प्टा पास दर्रा (4,287 मी)",
+        elevationMeters: 4287,
+        elevationFormatted: "4,287 m",
+        distanceFromStartKm: 19.0,
+        timeFromPrev: "4.5 hrs from Balu",
+        terrainType: "Steep Snowfield & Scree Col",
+        waterAvailable: false,
+        shelterAvailable: false,
+        foodAvailable: false,
+        medicalHelp: false,
+        latitude: 32.2850,
+        longitude: 77.3620,
+        isSummit: true,
+        fieldNotes: "The iconic viewpoint dividing green Kullu and barren Lahaul-Spiti.",
+        imageUrl: "/images/places/universal/nature.webp"
+      }
+    ],
+    difficultyFactors: {
+      fitnessDemand: 7,
+      altitudeRisk: 8,
+      terrainTechnicality: 6,
+      steepnessGrade: 7,
+      exposureRisk: 6,
+      weatherVolatility: 8,
+      explanation: [
+        "Rapid elevation gain from 2,000m to over 4,200m in 48 hours.",
+        "Frigid, knee-deep glacial stream crossings at Shea Goru.",
+        "Steep loose scree descent into Lahaul."
+      ]
+    },
+    gearChecklist: [
+      {
+        id: "gear-hp-crampons",
+        name: "Microspikes & Trekking Poles",
+        category: "hardware",
+        priority: "ESSENTIAL",
+        studentAlternative: "Rent in Manali for ₹100/day",
+        buyApproxCost: 1600,
+        rentApproxCostPerDay: 100,
+        canBorrow: true,
+        canSkip: false,
+        packWeightGrams: 450
+      },
+      {
+        id: "gear-hp-thermals",
+        name: "Merino Wool Thermal Inners (Top + Bottom)",
+        category: "clothing",
+        priority: "ESSENTIAL",
+        studentAlternative: "Double synthetic thermal layers",
+        buyApproxCost: 1800,
+        rentApproxCostPerDay: 0,
+        canBorrow: true,
+        canSkip: false,
+        packWeightGrams: 300
+      }
+    ],
+    budget: {
+      baseTransportCost: 1200, // Manali to Jobra + Chhatru back to Manali via Atal Tunnel
+      foodPerDayCost: 550,
+      campStayCostPerNight: 600,
+      guideOptionalCostPerDay: 1500,
+      permitCost: 250,
+      gearRentalEstimate: 400,
+      emergencyBuffer: 800,
+      studentHacks: [
+        "Pool with 4-5 trekkers for the Chhatru to Manali 4x4 return cab.",
+        "Buy high-calorie dry fruits and energy bars in Old Manali market."
+      ]
+    },
+    fieldIntelligence: {
+      idealSeasonMonths: "July to September (when Chandratal road is open).",
+      winterAccess: "Closed November to May due to heavy avalanche snow on the pass.",
+      monsoonRisk: "Heavy rain on Manali side; completely rain-shadowed once crossing into Spiti.",
+      mobileNetwork: "Zero signal from Jobra until returning to Atal Tunnel south portal.",
+      nearestHospital: "Civil Hospital Manali (30 km) / Keylong District Hospital",
+      nearestAtm: "Manali Mall Road. Zero ATMs on trail.",
+      lastMotorablePoint: "Jobra Dam",
+      permitsRequired: "Forest Department entry permit.",
+      localGuideRule: "Mandatory licensed mountain guide.",
+      trailEtiquette: [
+        "Follow strict pack-in pack-out rule. Do not dump cans or wet wipes at Shea Goru.",
+        "Stay clipped into safety line during fast current river crossings."
+      ],
+      leaveNoTraceRules: [
+        "No open fires; use multi-fuel stoves only."
+      ]
+    }
+  },
+
+  "nag-tibba": {
+    id: "nag-tibba",
+    slug: "nag-tibba",
+    title: "Nag Tibba Weekend Summit",
+    hindiTitle: "नाग टिब्बा शिखर (सर्प देवता कगार)",
+    region: "Lesser Himalayas / Garhwal",
+    state: "Uttarakhand",
+    mountainRange: "Nag Tibba Range",
+    baseCamp: "Pantwari Village (1,400 m)",
+    peakAltitudeMeters: 3022,
+    peakAltitudeFormatted: "3,022 m (9,915 ft)",
+    totalDistanceKm: 16,
+    durationDays: 2,
+    durationHours: "Weekend (2 Days / 1 Night)",
+    difficulty: "Easy",
+    bestSeason: "October to April (Autumn to Snow Summit)",
+    viewScore: "HIGH",
+    approxBudgetPerPerson: 1400,
+    altitudeRiskIndicator: "Low",
+    heroImage: "/images/destinations/mussoorie/hero.jpg",
+    tagline: "The highest peak in the lesser Himalayas and North India's favorite weekend summit.",
+    expeditionOverview: "A rewarding 2-day trek through dense oak and rhododendron forests leading to the sacred Nag Devta temple and the 3,022m summit ridge with panoramic vistas of Bandarpoonch, Swargarohini, and Gangotri peaks.",
+    destinationSlug: "mussoorie",
+    routes: [
+      {
+        id: "route-pantwari",
+        name: "Route A: Pantwari Village Classic Ascent",
+        trailhead: "Pantwari Village (Mussoorie Corridor)",
+        distanceKm: 8.0,
+        elevationGainMeters: 1622,
+        estimatedTime: "5 hrs ascent",
+        difficulty: "Easy",
+        sceneryScore: "HIGH",
+        sceneryDescription: "Terraced mountain fields, oak woods, and high snow ridge.",
+        crowdLevel: "Popular",
+        waterPointsCount: 3,
+        teaStallsCount: 3,
+        technicalExposure: "None",
+        summary: "The most popular trail climbing steadily from Pantwari village past the goat village to Nag Tibba base camp.",
+        recommendedFor: "Beginners, college students, and weekenders from Delhi/NCR."
+      }
+    ],
+    waypoints: [
+      {
+        id: "wp-pantwari",
+        name: "Pantwari Base Trailhead",
+        hindiName: "पंतवाड़ी आधार",
+        elevationMeters: 1400,
+        elevationFormatted: "1,400 m",
+        distanceFromStartKm: 0,
+        timeFromPrev: "Start",
+        terrainType: "Terraced Fields & Earthen Path",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: true,
+        latitude: 30.5870,
+        longitude: 78.1150,
+        isBaseCamp: true,
+        fieldNotes: "3-hour drive from Dehradun Railway Station via Nainbagh.",
+        imageUrl: "/images/places/mussoorie/categories/nature.webp"
+      },
+      {
+        id: "wp-nag-base",
+        name: "Nag Tibba Base Camp (Khatian)",
+        hindiName: "नाग टिब्बा बेस कैंप",
+        elevationMeters: 2600,
+        elevationFormatted: "2,600 m",
+        distanceFromStartKm: 5.5,
+        timeFromPrev: "3.5 hrs",
+        terrainType: "Oak Meadow Clearing",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: false,
+        latitude: 30.5950,
+        longitude: 78.1320,
+        fieldNotes: "Popular camping spot. Bonfire and stargazing under crisp mountain sky.",
+        imageUrl: "/images/places/mussoorie/categories/nature.webp"
+      },
+      {
+        id: "wp-nag-summit",
+        name: "Nag Tibba Jhandi Summit",
+        hindiName: "नाग टिब्बा झंडी शिखर (3,022 मी)",
+        elevationMeters: 3022,
+        elevationFormatted: "3,022 m",
+        distanceFromStartKm: 8.0,
+        timeFromPrev: "1.5 hrs from Base",
+        terrainType: "Open High Ridge & Flag Post",
+        waterAvailable: false,
+        shelterAvailable: false,
+        foodAvailable: false,
+        medicalHelp: false,
+        latitude: 30.6010,
+        longitude: 78.1510,
+        isSummit: true,
+        fieldNotes: "180-degree view of Bandarpoonch (6,316m), Kalanag, and Gangotri ranges.",
+        imageUrl: "/images/destinations/mussoorie/hero.jpg"
+      }
+    ],
+    difficultyFactors: {
+      fitnessDemand: 4,
+      altitudeRisk: 2,
+      terrainTechnicality: 2,
+      steepnessGrade: 5,
+      exposureRisk: 2,
+      weatherVolatility: 4,
+      explanation: [
+        "Short duration with moderate gradient suitable for first-time backpackers.",
+        "Winter snow adds a fun, safe mountaineering element in Jan–Feb."
+      ]
+    },
+    gearChecklist: [
+      {
+        id: "gear-nt-shoes",
+        name: "Trekking Shoes with Good Grip",
+        category: "footwear",
+        priority: "ESSENTIAL",
+        studentAlternative: "Any sports shoe with intact rubber tread",
+        buyApproxCost: 1800,
+        rentApproxCostPerDay: 80,
+        canBorrow: true,
+        canSkip: false,
+        packWeightGrams: 800
+      }
+    ],
+    budget: {
+      baseTransportCost: 350, // Dehradun to Pantwari shared Sumo (₹150 each way)
+      foodPerDayCost: 350,
+      campStayCostPerNight: 400,
+      guideOptionalCostPerDay: 600,
+      permitCost: 0,
+      gearRentalEstimate: 100,
+      emergencyBuffer: 250,
+      studentHacks: [
+        "Take the 6:00 AM shared Jeep from Dehradun Hill Bus Station to Nainbagh (₹120), then local auto to Pantwari (₹30).",
+        "Total weekend cost can easily be kept under ₹1,500 all inclusive."
+      ]
+    },
+    fieldIntelligence: {
+      idealSeasonMonths: "October to April. Jan–Feb for snow walking.",
+      winterAccess: "Trail open year round.",
+      monsoonRisk: "Moderate rain in July–August. Trail can be slick.",
+      mobileNetwork: "Airtel and Jio work at the summit ridge; spotty at base.",
+      nearestHospital: "Primary Health Centre Nainbagh (12 km) / Dehradun Hospital (80 km)",
+      nearestAtm: "Nainbagh. Carry cash from Dehradun.",
+      lastMotorablePoint: "Pantwari Village",
+      permitsRequired: "None.",
+      localGuideRule: "Self-navigable.",
+      trailEtiquette: ["Do not litter around Nag Devta temple."],
+      leaveNoTraceRules: ["Pack out all trash."]
+    }
+  },
+
+  "brahmatal": {
+    id: "brahmatal",
+    slug: "brahmatal",
+    title: "Brahmatal Alpine Lake & Trishul Summit",
+    hindiTitle: "ब्रह्मताल अल्पाइन झील व त्रिशूल दर्शन",
+    region: "Garhwal Himalayas",
+    state: "Uttarakhand",
+    mountainRange: "Trishul & Nanda Ghunti Massif",
+    baseCamp: "Lohajung Village (2,300 m)",
+    peakAltitudeMeters: 3734,
+    peakAltitudeFormatted: "3,734 m (12,250 ft)",
+    totalDistanceKm: 22,
+    durationDays: 4,
+    durationHours: "4 Days / 3 Nights",
+    difficulty: "Moderate",
+    bestSeason: "December to March (Winter Snow & Frozen Lake)",
+    viewScore: "PANORAMIC",
+    approxBudgetPerPerson: 4500,
+    altitudeRiskIndicator: "Moderate (Acclimatization Recommended)",
+    heroImage: "/images/destinations/rishikesh/hero.jpg",
+    tagline: "Gaze right into the towering snow face of Mt. Trishul and Mt. Nanda Ghunti across frozen lake beds.",
+    expeditionOverview: "One of the most scenic winter treks in India, winding through centuries-old rhododendron and oak forests to the mythological frozen lake of Brahmatal with unmatched frontal views of Mt. Trishul (7,120m).",
+    destinationSlug: "tungnath-chandrashila",
+    routes: [
+      {
+        id: "route-lohajung-brahmatal",
+        name: "Route A: Lohajung → Bekaltal → Brahmatal → Summit Pass",
+        trailhead: "Lohajung Village Base",
+        distanceKm: 22.0,
+        elevationGainMeters: 1434,
+        estimatedTime: "4 Days",
+        difficulty: "Moderate",
+        sceneryScore: "PANORAMIC",
+        sceneryDescription: "Two alpine lakes (Bekaltal & Brahmatal), snow-covered meadows, and direct Himalayan mountain walls.",
+        crowdLevel: "Moderate",
+        waterPointsCount: 4,
+        teaStallsCount: 2,
+        technicalExposure: "Snow/Scree",
+        summary: "Gradual climb from Lohajung with night camping beside ancient alpine lakes.",
+        recommendedFor: "Trekkers looking for incredible mountain photography and winter camping."
+      }
+    ],
+    waypoints: [
+      {
+        id: "wp-lohajung",
+        name: "Lohajung Base Village",
+        hindiName: "लोहाजंग आधार",
+        elevationMeters: 2300,
+        elevationFormatted: "2,300 m",
+        distanceFromStartKm: 0,
+        timeFromPrev: "Start",
+        terrainType: "Himalayan Village Hub",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: true,
+        latitude: 30.1240,
+        longitude: 79.5890,
+        isBaseCamp: true,
+        fieldNotes: "Base for both Brahmatal and Roopkund treks. Homestays and gear rental available.",
+        imageUrl: "/images/places/universal/nature.webp"
+      },
+      {
+        id: "wp-brahmatal-lake",
+        name: "Brahmatal Frozen Lake",
+        hindiName: "ब्रह्मताल झील",
+        elevationMeters: 3400,
+        elevationFormatted: "3,400 m",
+        distanceFromStartKm: 14.0,
+        timeFromPrev: "5 hrs from Bekaltal",
+        terrainType: "Alpine Snow Basin",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: false,
+        latitude: 30.1520,
+        longitude: 79.6210,
+        fieldNotes: "Sacred lake where Lord Brahma is said to have meditated. Beautiful reflection of snow peaks.",
+        imageUrl: "/images/places/universal/nature.webp"
+      },
+      {
+        id: "wp-brahmatal-summit",
+        name: "Brahmatal Pass Summit Ridge",
+        hindiName: "ब्रह्मताल दर्रा (3,734 मी)",
+        elevationMeters: 3734,
+        elevationFormatted: "3,734 m",
+        distanceFromStartKm: 18.0,
+        timeFromPrev: "2.5 hrs",
+        terrainType: "Snow Ridge Col",
+        waterAvailable: false,
+        shelterAvailable: false,
+        foodAvailable: false,
+        medicalHelp: false,
+        latitude: 30.1650,
+        longitude: 79.6350,
+        isSummit: true,
+        fieldNotes: "Incredible closeup of Mt. Trishul (7,120m) and Nanda Ghunti (6,309m).",
+        imageUrl: "/images/places/universal/nature.webp"
+      }
+    ],
+    difficultyFactors: {
+      fitnessDemand: 6,
+      altitudeRisk: 6,
+      terrainTechnicality: 5,
+      steepnessGrade: 6,
+      exposureRisk: 5,
+      weatherVolatility: 7,
+      explanation: [
+        "Cold winter winds and temperatures dropping to -8°C at night.",
+        "Walking in snow requires steady cadence and gaiters."
+      ]
+    },
+    gearChecklist: [
+      {
+        id: "gear-bt-boots",
+        name: "Winter Waterproof Hiking Boots",
+        category: "footwear",
+        priority: "ESSENTIAL",
+        studentAlternative: "Trekking boots + gaiters",
+        buyApproxCost: 3200,
+        rentApproxCostPerDay: 150,
+        canBorrow: true,
+        canSkip: false,
+        packWeightGrams: 980
+      }
+    ],
+    budget: {
+      baseTransportCost: 900, // Rishikesh/Kathgodam to Lohajung shared Sumo
+      foodPerDayCost: 500,
+      campStayCostPerNight: 550,
+      guideOptionalCostPerDay: 1200,
+      permitCost: 200,
+      gearRentalEstimate: 300,
+      emergencyBuffer: 600,
+      studentHacks: [
+        "Take the direct morning bus from Kathgodam Railway Station or Rishikesh to Deval/Lohajung."
+      ]
+    },
+    fieldIntelligence: {
+      idealSeasonMonths: "December to March for snow; April–May for blooming rhododendrons.",
+      winterAccess: "Fully accessible with microspikes.",
+      monsoonRisk: "Landslides in Chamoli district in July–August. Avoid monsoon.",
+      mobileNetwork: "BSNL works at Lohajung; no connectivity at Brahmatal lake.",
+      nearestHospital: "CHC Tharali (35 km) / District Hospital Gopeshwar",
+      nearestAtm: "Tharali or Dewal. Carry cash from Haldwani/Rishikesh.",
+      lastMotorablePoint: "Lohajung",
+      permitsRequired: "Forest entry permit issued at Lohajung.",
+      localGuideRule: "Mandatory forest guide.",
+      trailEtiquette: ["Do not step onto thin lake ice.", "No loud music."],
+      leaveNoTraceRules: ["Pack out all non-biodegradable waste."]
+    }
+  },
+
+  "dayara-bugyal": {
+    id: "dayara-bugyal",
+    slug: "dayara-bugyal",
+    title: "Dayara Bugyal High Alpine Meadow",
+    hindiTitle: "दयारा बुग्याल अल्पाइन मखमली घास के मैदान",
+    region: "Uttarkashi / Garhwal",
+    state: "Uttarakhand",
+    mountainRange: "Gangotri & Bandarpoonch Massif",
+    baseCamp: "Barsu / Raithal Village (2,200 m)",
+    peakAltitudeMeters: 3675,
+    peakAltitudeFormatted: "3,675 m (12,057 ft)",
+    totalDistanceKm: 18,
+    durationDays: 3,
+    durationHours: "3 Days / 2 Nights",
+    difficulty: "Easy",
+    bestSeason: "May to Nov (Emerald Green) & Dec to Mar (Snow Skiing Slopes)",
+    viewScore: "PANORAMIC",
+    approxBudgetPerPerson: 3200,
+    altitudeRiskIndicator: "Low",
+    heroImage: "/images/destinations/manali/hero.jpg",
+    tagline: "India's most breathtaking alpine highland meadow stretching across 28 square kilometers.",
+    expeditionOverview: "A gentle, picture-perfect trek through oak and maple canopies opening onto the colossal rolling green (or snow-blanketed) meadows of Dayara Bugyal, with sweeping panoramic sights of Bandarpoonch (6,316m), Draupadi Ka Danda, and Srikanth peaks.",
+    destinationSlug: "mussoorie",
+    routes: [
+      {
+        id: "route-raithal-dayara",
+        name: "Route A: Raithal Village → Gui → Dayara Top",
+        trailhead: "Raithal Village (Uttarkashi)",
+        distanceKm: 9.0,
+        elevationGainMeters: 1475,
+        estimatedTime: "3 Days",
+        difficulty: "Easy",
+        sceneryScore: "PANORAMIC",
+        sceneryDescription: "Ancient shepherd stone huts at Gui and vast undulating meadows.",
+        crowdLevel: "Low",
+        waterPointsCount: 4,
+        teaStallsCount: 2,
+        technicalExposure: "None",
+        summary: "The most scenic and gentle approach passing traditional village homestays and quiet oak clearings.",
+        recommendedFor: "Beginners, families, and mountain photographers."
+      }
+    ],
+    waypoints: [
+      {
+        id: "wp-raithal",
+        name: "Raithal Heritage Village",
+        hindiName: "रैथल धरोहर गाँव",
+        elevationMeters: 2200,
+        elevationFormatted: "2,200 m",
+        distanceFromStartKm: 0,
+        timeFromPrev: "Start",
+        terrainType: "Ancient Wooden Village",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: true,
+        latitude: 30.8240,
+        longitude: 78.5910,
+        isBaseCamp: true,
+        fieldNotes: "Famous for the 500-year-old 4-storey wooden Sunhara castle house.",
+        imageUrl: "/images/places/universal/nature.webp"
+      },
+      {
+        id: "wp-gui",
+        name: "Gui Campsite (Shepherd Huts)",
+        hindiName: "गुई बुग्याल कैंप",
+        elevationMeters: 2950,
+        elevationFormatted: "2,950 m",
+        distanceFromStartKm: 4.5,
+        timeFromPrev: "3.5 hrs",
+        terrainType: "Oak Clearing with Forest Pond",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: false,
+        latitude: 30.8410,
+        longitude: 78.6120,
+        fieldNotes: "Charming stone gujjar huts with direct sunrise views of Bandarpoonch.",
+        imageUrl: "/images/places/universal/nature.webp"
+      },
+      {
+        id: "wp-dayara-top",
+        name: "Dayara Bugyal Bakaria Top",
+        hindiName: "दयारा बकारिया टॉप (3,675 मी)",
+        elevationMeters: 3675,
+        elevationFormatted: "3,675 m",
+        distanceFromStartKm: 9.0,
+        timeFromPrev: "2.5 hrs from Gui",
+        terrainType: "Infinite Rolling Alpine Meadow",
+        waterAvailable: true,
+        shelterAvailable: false,
+        foodAvailable: false,
+        medicalHelp: false,
+        latitude: 30.8620,
+        longitude: 78.6350,
+        isSummit: true,
+        fieldNotes: "360-degree panorama of Gangotri 1, 2, 3, Bandarpoonch, and Black Peak.",
+        imageUrl: "/images/destinations/manali/hero.jpg"
+      }
+    ],
+    difficultyFactors: {
+      fitnessDemand: 4,
+      altitudeRisk: 3,
+      terrainTechnicality: 2,
+      steepnessGrade: 4,
+      exposureRisk: 2,
+      weatherVolatility: 5,
+      explanation: [
+        "Well-graded gentle gradient with virtually zero technical difficulty.",
+        "Perfect introduction to high-altitude Himalayan camping."
+      ]
+    },
+    gearChecklist: [
+      {
+        id: "gear-db-shoes",
+        name: "Comfortable Hiking Shoes with Ankle Support",
+        category: "footwear",
+        priority: "ESSENTIAL",
+        studentAlternative: "Good traction running sneakers",
+        buyApproxCost: 2000,
+        rentApproxCostPerDay: 80,
+        canBorrow: true,
+        canSkip: false,
+        packWeightGrams: 850
+      }
+    ],
+    budget: {
+      baseTransportCost: 650, // Dehradun to Uttarkashi to Raithal
+      foodPerDayCost: 450,
+      campStayCostPerNight: 450,
+      guideOptionalCostPerDay: 800,
+      permitCost: 150,
+      gearRentalEstimate: 150,
+      emergencyBuffer: 400,
+      studentHacks: [
+        "Take the direct Uttarkashi bus from Dehradun (₹220), then local shared Jeep to Raithal (₹70)."
+      ]
+    },
+    fieldIntelligence: {
+      idealSeasonMonths: "May to November for green meadows; December to March for snow skiing.",
+      winterAccess: "Open and accessible in winter.",
+      monsoonRisk: "Heavy rain in July–August; but meadow turns vibrant with wildflowers.",
+      mobileNetwork: "Jio and Airtel work in Raithal village; spotty at Gui.",
+      nearestHospital: "District Hospital Uttarkashi (38 km)",
+      nearestAtm: "Bhatwari (12 km) or Uttarkashi.",
+      lastMotorablePoint: "Raithal Village",
+      permitsRequired: "Forest permit issued at Raithal checkpost.",
+      localGuideRule: "Recommended.",
+      trailEtiquette: ["Do not pluck meadow grass or wildflowers."],
+      leaveNoTraceRules: ["Pack out all trash."]
+    }
+  },
+
+  "beas-kund": {
+    id: "beas-kund",
+    slug: "beas-kund",
+    title: "Beas Kund Glacial Origin Trail",
+    hindiTitle: "ब्यास कुंड हिमानी उद्गम पदयात्रा",
+    region: "Kullu Valley",
+    state: "Himachal Pradesh",
+    mountainRange: "Dhauladhar & Pir Panjal Massif",
+    baseCamp: "Solang Valley / Dhundi (2,840 m)",
+    peakAltitudeMeters: 3810,
+    peakAltitudeFormatted: "3,810 m (12,500 ft)",
+    totalDistanceKm: 16,
+    durationDays: 2,
+    durationHours: "2 Days / 1 Night",
+    difficulty: "Moderate",
+    bestSeason: "May to October",
+    viewScore: "HIGH",
+    approxBudgetPerPerson: 1800,
+    altitudeRiskIndicator: "Low",
+    heroImage: "/images/destinations/manali/hero.jpg",
+    tagline: "Hike to the sacred glacial pond where sage Vyas meditated beneath Hanuman Tibba and Friendship Peak.",
+    expeditionOverview: "A high alpine day-and-weekend trail tracing the bubbling glacial birth of the mighty Beas River at 3,810m, surrounded by towering pyramid peaks including Mt. Hanuman Tibba (5,930m), Friendship Peak, and Ladakhi Peak.",
+    destinationSlug: "manali",
+    routes: [
+      {
+        id: "route-dhundi-beaskund",
+        name: "Route A: Dhundi → Bakarthach → Beas Kund",
+        trailhead: "Dhundi Bridge (Solang Valley)",
+        distanceKm: 8.0,
+        elevationGainMeters: 970,
+        estimatedTime: "5 hrs ascent",
+        difficulty: "Moderate",
+        sceneryScore: "HIGH",
+        sceneryDescription: "Glacial river valley, birch groves, boulder moraines, and sheer amphitheatre cliffs.",
+        crowdLevel: "Moderate",
+        waterPointsCount: 4,
+        teaStallsCount: 1,
+        technicalExposure: "Mild Scramble",
+        summary: "Climbs past the Atal Tunnel south portal and winds through Bakarthach meadow to the emerald glacial lake.",
+        recommendedFor: "Weekend adventurers and aspiring mountaineers based in Manali."
+      }
+    ],
+    waypoints: [
+      {
+        id: "wp-dhundi",
+        name: "Dhundi Trailhead",
+        hindiName: "धुंडी आधार",
+        elevationMeters: 2840,
+        elevationFormatted: "2,840 m",
+        distanceFromStartKm: 0,
+        timeFromPrev: "Start",
+        terrainType: "Riverbed & Birch Forest",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: true,
+        latitude: 32.3350,
+        longitude: 77.1210,
+        isBaseCamp: true,
+        fieldNotes: "30-minute taxi drive from Manali Mall Road past Solang Valley.",
+        imageUrl: "/images/destinations/manali/hero.jpg"
+      },
+      {
+        id: "wp-bakarthach",
+        name: "Bakarthach Shepherd Meadow",
+        hindiName: "बाकरथाच बुग्याल",
+        elevationMeters: 3300,
+        elevationFormatted: "3,300 m",
+        distanceFromStartKm: 4.5,
+        timeFromPrev: "2.5 hrs",
+        terrainType: "Alpine Grassland & Boulder Ridge",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: false,
+        latitude: 32.3510,
+        longitude: 77.1020,
+        fieldNotes: "Stunning campsite overlooking the seven glaciers of Hanuman Tibba.",
+        imageUrl: "/images/places/universal/nature.webp"
+      },
+      {
+        id: "wp-beas-kund",
+        name: "Beas Kund Glacial Pool",
+        hindiName: "ब्यास कुंड (3,810 मी)",
+        elevationMeters: 3810,
+        elevationFormatted: "3,810 m",
+        distanceFromStartKm: 8.0,
+        timeFromPrev: "2.5 hrs from Bakarthach",
+        terrainType: "Glacial Moraine & Alpine Lake",
+        waterAvailable: true,
+        shelterAvailable: false,
+        foodAvailable: false,
+        medicalHelp: false,
+        latitude: 32.3680,
+        longitude: 77.0850,
+        isSummit: true,
+        fieldNotes: "Pristine emerald lake fed by hanging glaciers. Sacred birthplace of River Beas.",
+        imageUrl: "/images/destinations/manali/hero.jpg"
+      }
+    ],
+    difficultyFactors: {
+      fitnessDemand: 5,
+      altitudeRisk: 4,
+      terrainTechnicality: 4,
+      steepnessGrade: 5,
+      exposureRisk: 3,
+      weatherVolatility: 6,
+      explanation: [
+        "Moderate boulder-hopping section before the final lake basin.",
+        "Rapid weather shifts around the Solang ridge in afternoon."
+      ]
+    },
+    gearChecklist: [
+      {
+        id: "gear-bk-shoes",
+        name: "Sturdy Hiking Shoes with Ankle Support",
+        category: "footwear",
+        priority: "ESSENTIAL",
+        studentAlternative: "Good trail running sneakers with grip",
+        buyApproxCost: 2200,
+        rentApproxCostPerDay: 100,
+        canBorrow: true,
+        canSkip: false,
+        packWeightGrams: 850
+      }
+    ],
+    budget: {
+      baseTransportCost: 400, // Manali to Dhundi auto/cab
+      foodPerDayCost: 400,
+      campStayCostPerNight: 500,
+      guideOptionalCostPerDay: 800,
+      permitCost: 100,
+      gearRentalEstimate: 100,
+      emergencyBuffer: 300,
+      studentHacks: [
+        "Take the electric local bus from Manali to Solang (₹25), then walk or share taxi to Dhundi."
+      ]
+    },
+    fieldIntelligence: {
+      idealSeasonMonths: "Mid-May to October. July offers lush green valley; October offers golden autumn.",
+      winterAccess: "Closed December to March due to deep avalanche snow in Dhundi gorge.",
+      monsoonRisk: "Stream crossing near Dhundi can swell during heavy rain.",
+      mobileNetwork: "Jio/Airtel work at Dhundi; zero signal at Beas Kund.",
+      nearestHospital: "Civil Hospital Manali (18 km)",
+      nearestAtm: "Solang Valley or Manali.",
+      lastMotorablePoint: "Dhundi",
+      permitsRequired: "Forest registration at Dhundi barrier.",
+      localGuideRule: "Self-navigable for experienced hikers.",
+      trailEtiquette: ["Do not swim in or pollute sacred Beas Kund pool."],
+      leaveNoTraceRules: ["Carry all trash back to Manali."]
+    }
   }
 };
 

@@ -401,11 +401,22 @@ function OneDayInner() {
         <div className="bg-[#FAF4E8] rounded-3xl border-2 border-[#D8CBB2] p-6 shadow-md space-y-6">
           {/* Header & View Switcher */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5D5BA] pb-4">
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-md bg-[#B65E3C] text-white text-[10px] font-mono font-bold uppercase">
                   ACTIVE ROAD TRIP
                 </span>
+                {currentPlan.feasibility && (
+                  <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${
+                    currentPlan.feasibility === "COMFORTABLE"
+                      ? "bg-emerald-800 text-emerald-100 border-emerald-600"
+                      : currentPlan.feasibility === "TIGHT"
+                      ? "bg-amber-800 text-amber-100 border-amber-600"
+                      : "bg-rose-900 text-rose-100 border-rose-700"
+                  }`}>
+                    FEASIBILITY: {currentPlan.feasibility}
+                  </span>
+                )}
                 <span className="text-xs font-mono text-[#7B4D36]">
                   {currentPlan.originCity} → {currentPlan.destinationArea}
                 </span>
@@ -413,6 +424,11 @@ function OneDayInner() {
               <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
                 {currentPlan.title}
               </h3>
+              {currentPlan.feasibilityReason && (
+                <p className="text-xs text-[#7B4D36] font-mono">
+                  ✓ Schedule Feasibility: {currentPlan.feasibilityReason}
+                </p>
+              )}
             </div>
 
             {/* View Switcher Tabs */}

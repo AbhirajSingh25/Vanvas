@@ -238,6 +238,36 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "bahai-temple"
     ]
   },
+  "delhi:humayuns-tomb": {
+    imageUrl: "/images/places/delhi/humayuns-tomb.webp",
+    visualDescription: "Mughal architecture Humayun's Tomb red sandstone and white marble grand dome mausoleum with charbagh geometric gardens in Delhi.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "humayuns-tomb",
+      "humayun-tomb",
+      "humayun-ka-maqbara",
+      "humayuns-tomb-delhi",
+      "humayun"
+    ]
+  },
+  "delhi:akshardham": {
+    imageUrl: "/images/places/delhi/akshardham.webp",
+    visualDescription: "Akshardham Temple Delhi monumental carved pink sandstone and white marble mandir with ornate domes and holy water pool reflection.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "akshardham",
+      "akshardham-temple",
+      "swaminarayan-akshardham",
+      "akshardham-delhi",
+      "delhi-akshardham"
+    ]
+  },
   "delhi:chandni-chowk": {
     imageUrl: "/images/places/delhi/chandni-chowk.jpg",
     visualDescription: "Vibrant and bustling historic Mughal-era marketplace renowned for authentic street food, spice markets, and centuries-old Havelis.",
@@ -250,6 +280,25 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "chandni-chawk",
       "old-delhi-market",
       "paranthe-wali-gali"
+    ]
+  },
+
+  // ==========================================
+  // --- MUMBAI LANDMARKS ---
+  // ==========================================
+  "mumbai:gateway-of-india": {
+    imageUrl: "/images/places/mumbai/gateway-of-india.webp",
+    visualDescription: "Gateway of India monumental 26-meter basalt triumphal arch landmark on the waterfront of Apollo Bunder Mumbai overlooking the Arabian Sea.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "gateway-of-india",
+      "gateway-of-india-mumbai",
+      "gateway-of-india-colaba",
+      "gateway-of-india-apollo-bunder",
+      "gateway"
     ]
   },
 
@@ -493,7 +542,7 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     ]
   },
   "leh:himalayan-450-expedition": {
-    imageUrl: "/images/places/universal/transport.webp",
+    imageUrl: "/images/nearby/rental/rental.webp",
     visualDescription: "Himalayan adventure motorcycle expedition traversing high mountain passes.",
     category: "Mobility & Transport",
     semanticTheme: "transport",
@@ -502,10 +551,8 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
     aliases: [
       "himalayan-450-expedition",
       "himalayan-450",
-      "scooter-and-motorcycle-rentals",
-      "motorcycle-rental",
-      "scooter-rental",
-      "leh-bike-rental"
+      "leh-himalayan-450",
+      "leh-himalayan-motorcycle-expedition"
     ]
   },
 
@@ -1474,7 +1521,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/jaipur/categories/church.webp",
       beach: "/images/places/jaipur/categories/beach.webp",
       shopping: "/images/places/jaipur/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   leh: {
@@ -1494,7 +1541,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/leh/categories/church.webp",
       beach: "/images/places/leh/categories/beach.webp",
       shopping: "/images/places/leh/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   udaipur: {
@@ -1514,7 +1561,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/udaipur/categories/church.webp",
       beach: "/images/places/udaipur/categories/beach.webp",
       shopping: "/images/places/udaipur/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   dharamshala: {
@@ -1534,7 +1581,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/dharamshala/categories/church.webp",
       beach: "/images/places/dharamshala/categories/beach.webp",
       shopping: "/images/places/dharamshala/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   varanasi: {
@@ -1554,7 +1601,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/varanasi/categories/church.webp",
       beach: "/images/places/varanasi/categories/beach.webp",
       shopping: "/images/places/varanasi/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   manali: {
@@ -1574,7 +1621,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/manali/categories/church.webp",
       beach: "/images/places/manali/categories/beach.webp",
       shopping: "/images/places/manali/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   kasol: {
@@ -1594,7 +1641,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/kasol/categories/church.webp",
       beach: "/images/places/kasol/categories/beach.webp",
       shopping: "/images/places/kasol/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   mussoorie: {
@@ -1614,7 +1661,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       monastery: "/images/places/mussoorie/categories/monastery.webp",
       beach: "/images/places/mussoorie/categories/beach.webp",
       shopping: "/images/places/mussoorie/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   goa: {
@@ -1634,7 +1681,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       lake: "/images/places/goa/categories/lake.webp",
       monastery: "/images/places/goa/categories/monastery.webp",
       shopping: "/images/places/goa/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   munnar: {
@@ -1654,7 +1701,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/munnar/categories/church.webp",
       beach: "/images/places/munnar/categories/beach.webp",
       shopping: "/images/places/munnar/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   rishikesh: {
@@ -1674,7 +1721,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/rishikesh/categories/church.webp",
       beach: "/images/places/rishikesh/categories/beach.webp",
       shopping: "/images/places/rishikesh/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   delhi: {
@@ -1694,7 +1741,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/nearby/church/church.webp",
       beach: "/images/nearby/beach/beach.webp",
       shopping: "/images/places/delhi/chandni-chowk.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   },
   spiti: {
@@ -1714,7 +1761,7 @@ export const DESTINATION_CATEGORY_REGISTRY: Record<
       church: "/images/places/spiti/categories/church.webp",
       beach: "/images/places/spiti/categories/beach.webp",
       shopping: "/images/places/spiti/categories/cafe.webp",
-      transport: "/images/places/universal/transport.webp"
+      transport: "/images/nearby/transport/transport.webp"
     }
   }
 };
@@ -1763,11 +1810,39 @@ export function classifyCategoryTheme(
   if (cat.includes("nightlife") || cat.includes("pub") || cat.includes("bar") || cat.includes("club")) {
     return "nightlife";
   }
-  if (cat.includes("transport") || cat.includes("mobility") || cat.includes("rental")) {
+  if (cat.includes("transport") || cat.includes("mobility") || cat.includes("rental") || cat.includes("fuel") || cat.includes("ev") || cat.includes("parking") || cat.includes("vehicle")) {
     return "transport";
+  }
+  if (cat.includes("medical") || cat.includes("health") || cat.includes("pharmacy") || cat.includes("clinic") || cat.includes("hospital") || cat.includes("chemist")) {
+    return "medical";
+  }
+  if (cat.includes("service") || cat.includes("convenience") || cat.includes("utility") || cat.includes("atm")) {
+    return "service";
   }
 
   // PRIORITY 2: Place Name & Tag Semantics (Cafés/Food must precede generic stay keywords like 'inn')
+  if (
+    name.includes("fuel") ||
+    name.includes("petrol") ||
+    name.includes("gas station") ||
+    name.includes("cng") ||
+    name.includes("diesel") ||
+    name.includes("ev charging") ||
+    name.includes("ev charge")
+  ) {
+    return "transport";
+  }
+
+  if (
+    name.includes("pharmacy") ||
+    name.includes("chemist") ||
+    name.includes("clinic") ||
+    name.includes("hospital") ||
+    name.includes("medical")
+  ) {
+    return "medical";
+  }
+
   if (
     name.includes("cafe") ||
     name.includes("café") ||
@@ -1984,29 +2059,60 @@ export function classifyCategoryTheme(
  */
 export function getUniversalFallback(themeOrCategory?: SemanticTheme | string, destination?: string): string {
   if (!themeOrCategory) return "/images/nearby/universal/universal.webp";
-  const themeMap: Record<SemanticTheme, string> = {
+  const themeMap: Record<string, string> = {
     cafe: "/images/nearby/cafe/cafe.webp",
-    food: "/images/nearby/local_food/local_food.webp",
+    coffee: "/images/nearby/coffee/coffee.webp",
+    bakery: "/images/nearby/bakery/bakery.webp",
+    food: "/images/nearby/restaurant/restaurant.webp",
+    restaurant: "/images/nearby/restaurant/restaurant.webp",
+    local_food: "/images/nearby/local_food/local_food.webp",
+    momo: "/images/nearby/momo/momo.webp",
     stay: "/images/nearby/stay/stay.webp",
+    hotel: "/images/nearby/hotel/hotel.webp",
+    hostel: "/images/nearby/hostel/hostel.webp",
+    homestay: "/images/nearby/homestay/homestay.webp",
     monastery: "/images/nearby/monastery/monastery.webp",
     church: "/images/nearby/church/church.webp",
     spiritual: "/images/nearby/temple/temple.webp",
+    temple: "/images/nearby/temple/temple.webp",
+    gurudwara: "/images/nearby/gurudwara/gurudwara.webp",
+    mosque: "/images/nearby/mosque/mosque.webp",
     heritage: "/images/nearby/heritage/heritage.webp",
+    fort: "/images/nearby/fort/fort.webp",
+    palace: "/images/nearby/palace/palace.webp",
+    museum: "/images/nearby/museum/museum.webp",
+    monument: "/images/nearby/monument/monument.webp",
     trail: "/images/nearby/trail/trail.webp",
     nature: "/images/nearby/nature/nature.webp",
     waterfall: "/images/nearby/waterfall/waterfall.webp",
     lake: "/images/nearby/lake/lake.webp",
     beach: "/images/nearby/beach/beach.webp",
     viewpoint: "/images/nearby/viewpoint/viewpoint.webp",
-    shopping: "/images/nearby/market/market.webp",
-    nightlife: "/images/places/universal/nightlife.webp",
+    park: "/images/nearby/park/park.webp",
+    shopping: "/images/nearby/shop/shop.webp",
+    shop: "/images/nearby/shop/shop.webp",
+    market: "/images/nearby/market/market.webp",
+    bazaar: "/images/nearby/bazaar/bazaar.webp",
+    mall: "/images/nearby/mall/mall.webp",
+    nightlife: "/images/nearby/nightlife/nightlife.webp",
     activity: "/images/nearby/experience/experience.webp",
-    transport: "/images/places/universal/transport.webp",
-    medical: "/images/places/universal/medical.webp",
-    service: "/images/places/universal/service.webp"
+    experience: "/images/nearby/experience/experience.webp",
+    transport: "/images/nearby/transport/transport.webp",
+    rental: "/images/nearby/rental/rental.webp",
+    parking: "/images/nearby/parking/parking.webp",
+    fuel: "/images/nearby/fuel/fuel.webp",
+    medical: "/images/nearby/hospital/hospital.webp",
+    hospital: "/images/nearby/hospital/hospital.webp",
+    pharmacy: "/images/nearby/pharmacy/pharmacy.webp",
+    service: "/images/nearby/convenience/convenience.webp",
+    convenience: "/images/nearby/convenience/convenience.webp",
+    hidden_gem: "/images/nearby/hidden_gem/hidden_gem.webp",
+    universal: "/images/nearby/universal/universal.webp"
   };
-  if (themeOrCategory in themeMap) {
-    return themeMap[themeOrCategory as SemanticTheme];
+
+  const norm = normalizeKey(themeOrCategory);
+  if (norm in themeMap) {
+    return themeMap[norm];
   }
   const inferred = classifyCategoryTheme(themeOrCategory, "", "");
   return themeMap[inferred] || "/images/nearby/universal/universal.webp";
@@ -2219,15 +2325,15 @@ export function resolvePlaceArtwork(
     const isRajasthanDest = destNorm.includes("jaipur") || destNorm.includes("udaipur") || destNorm.includes("jodhpur") || destNorm.includes("jaisalmer") || destNorm.includes("rajasthan");
 
     if (lowerPlace.includes("hostel") || lowerPlace.includes("dorm") || lowerCat.includes("hostel") || lowerCat.includes("dorm")) {
-      stayCategoryAsset = "/images/places/universal/hostel.webp";
+      stayCategoryAsset = "/images/nearby/hostel/hostel.webp";
     } else if (lowerPlace.includes("homestay") || lowerPlace.includes("guest house") || lowerPlace.includes("b&b") || lowerPlace.includes("cottage") || lowerCat.includes("homestay") || lowerCat.includes("guest house")) {
-      stayCategoryAsset = "/images/places/universal/homestay.webp";
+      stayCategoryAsset = "/images/nearby/homestay/homestay.webp";
+    } else if (lowerPlace.includes("hotel") || lowerCat.includes("hotel")) {
+      stayCategoryAsset = "/images/nearby/hotel/hotel.webp";
     } else if (lowerPlace.includes("resort") || lowerCat.includes("resort")) {
-      stayCategoryAsset = "/images/places/universal/resort.webp";
-    } else if (lowerPlace.includes("boutique") || lowerCat.includes("boutique")) {
-      stayCategoryAsset = "/images/places/universal/boutique.webp";
+      stayCategoryAsset = "/images/nearby/stay/stay.webp";
     } else if ((lowerPlace.includes("heritage") || lowerPlace.includes("haveli") || lowerPlace.includes("palace") || lowerCat.includes("heritage")) && isRajasthanDest) {
-      stayCategoryAsset = "/images/places/universal/heritage.webp";
+      stayCategoryAsset = "/images/nearby/heritage/heritage.webp";
     }
 
     return {
@@ -2258,7 +2364,18 @@ export function resolvePlaceArtwork(
   // --- HARD ISOLATION FOR CAFES & DINING: Never inherit mountain, fort, or desert landscape artwork ---
   if (semanticTheme === "cafe" || semanticTheme === "food") {
     const isCafe = semanticTheme === "cafe";
-    const dedicatedAsset = isCafe ? "/images/nearby/cafe/cafe.webp" : "/images/nearby/local_food/local_food.webp";
+    const lowerPlace = placeNorm.toLowerCase();
+    let dedicatedAsset = isCafe ? "/images/nearby/cafe/cafe.webp" : "/images/nearby/restaurant/restaurant.webp";
+    if (lowerPlace.includes("bakery") || lowerPlace.includes("bakehouse")) {
+      dedicatedAsset = "/images/nearby/bakery/bakery.webp";
+    } else if (lowerPlace.includes("coffee") || lowerPlace.includes("espresso")) {
+      dedicatedAsset = "/images/nearby/coffee/coffee.webp";
+    } else if (lowerPlace.includes("momo")) {
+      dedicatedAsset = "/images/nearby/momo/momo.webp";
+    } else if (!isCafe && (lowerPlace.includes("dhaba") || lowerPlace.includes("thali") || lowerPlace.includes("local"))) {
+      dedicatedAsset = "/images/nearby/local_food/local_food.webp";
+    }
+
     return {
       url: dedicatedAsset,
       fallback_url: dedicatedAsset,
@@ -2281,6 +2398,71 @@ export function resolvePlaceArtwork(
       isRealPhoto: false,
       badgeLabel: "DESTINATION CATEGORY ART",
       visualDescription: `Authentic ${isCafe ? "café and coffee" : "local culinary"} visual.`
+    };
+  }
+
+  // --- HARD ISOLATION FOR BUSINESSES / UTILITIES / SPECIFIC URBAN POIs ---
+  // (Shops, Pharmacy, Hospital, Fuel, Rentals, Parking, Transport, Nightlife)
+  const isGenericBusinessOrUtility =
+    semanticTheme === "shopping" ||
+    semanticTheme === "transport" ||
+    semanticTheme === "medical" ||
+    semanticTheme === "nightlife" ||
+    semanticTheme === "service";
+
+  if (isGenericBusinessOrUtility) {
+    const lowerPlace = placeNorm.toLowerCase();
+    let businessAsset = universalSafe;
+
+    if (semanticTheme === "shopping") {
+      if (lowerPlace.includes("mall")) businessAsset = "/images/nearby/mall/mall.webp";
+      else if (lowerPlace.includes("bazaar")) businessAsset = "/images/nearby/bazaar/bazaar.webp";
+      else if (lowerPlace.includes("market")) businessAsset = "/images/nearby/market/market.webp";
+      else businessAsset = "/images/nearby/shop/shop.webp";
+    } else if (semanticTheme === "transport") {
+      if (lowerPlace.includes("rental") || lowerPlace.includes("bike") || lowerPlace.includes("scooter") || lowerPlace.includes("car")) {
+        businessAsset = "/images/nearby/rental/rental.webp";
+      } else if (lowerPlace.includes("parking")) {
+        businessAsset = "/images/nearby/parking/parking.webp";
+      } else if (lowerPlace.includes("fuel") || lowerPlace.includes("petrol") || lowerPlace.includes("gas") || lowerPlace.includes("cng")) {
+        businessAsset = "/images/nearby/fuel/fuel.webp";
+      } else {
+        businessAsset = "/images/nearby/transport/transport.webp";
+      }
+    } else if (semanticTheme === "medical") {
+      if (lowerPlace.includes("pharmacy") || lowerPlace.includes("chemist") || lowerPlace.includes("meds") || lowerPlace.includes("drug")) {
+        businessAsset = "/images/nearby/pharmacy/pharmacy.webp";
+      } else {
+        businessAsset = "/images/nearby/hospital/hospital.webp";
+      }
+    } else if (semanticTheme === "service") {
+      businessAsset = "/images/nearby/convenience/convenience.webp";
+    } else if (semanticTheme === "nightlife") {
+      businessAsset = "/images/nearby/nightlife/nightlife.webp";
+    }
+
+    return {
+      url: businessAsset,
+      fallback_url: businessAsset,
+      source: "vanvas_nearby",
+      source_type: "category_photo",
+      provenance: "destination_category",
+      semantic_category: semanticTheme,
+      exactness: "category_matched",
+      attribution: `VANVAS Verified ${category} Visual`,
+      alt_text: `${placeName} ${category}`,
+      badge_label: "DESTINATION CATEGORY ART",
+      artworkKey: `nearby:${semanticTheme}`,
+      imageUrl: businessAsset,
+      fallbackUrl: businessAsset,
+      tier: "destination_category",
+      placeName,
+      destinationName,
+      category,
+      semanticTheme,
+      isRealPhoto: false,
+      badgeLabel: "DESTINATION CATEGORY ART",
+      visualDescription: `Authentic editorial visual for ${category}.`
     };
   }
 
@@ -2430,7 +2612,7 @@ export const LEGACY_UNIVERSAL_PATHS = {
   spiritual: "/images/places/universal/spiritual.webp",
   cafe: "/images/places/universal/cafe.webp",
   food: "/images/places/universal/food.webp",
-  transport: "/images/places/universal/transport.webp",
+  transport: "/images/nearby/transport/transport.webp",
   nightlife: "/images/places/universal/nightlife.webp",
   medical: "/images/places/universal/medical.webp",
   service: "/images/places/universal/service.webp"

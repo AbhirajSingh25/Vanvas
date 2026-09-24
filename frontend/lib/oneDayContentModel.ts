@@ -71,6 +71,8 @@ export interface OneDayPlan {
   returnTime: string;
   baseBudgetPerPerson: number;
   idealGroupSize: string; // e.g. "2 – 5 Friends"
+  feasibility: "COMFORTABLE" | "TIGHT" | "RUSHED";
+  feasibilityReason: string;
   stops: OneDayStop[];
   rentals: OneDayRentalDiscovery[];
   poiHighlights: OneDayPoiLayer[];
@@ -126,6 +128,8 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
     returnTime: "08:30 PM",
     baseBudgetPerPerson: 1100,
     idealGroupSize: "3 – 5 Friends",
+    feasibility: "COMFORTABLE",
+    feasibilityReason: "Early 6 AM departure beats Gurgaon toll traffic. 3.5 hrs leisurely exploration at Neemrana with return by 8:30 PM.",
     budgetBreakdown: {
       transportFuel: 450, // Car fuel split across 4
       foodSnacks: 400,
@@ -179,7 +183,7 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
         locationName: "NH-48 Highway Dhaba",
         distanceFromPrevKm: 45,
         localTip: "Start before 6:30 AM to bypass the Gurgaon toll choke point completely.",
-        imageUrl: "/images/places/universal/transport.webp"
+        imageUrl: "/images/nearby/transport/transport.webp"
       },
       {
         id: "del-stop-2",
@@ -247,7 +251,7 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
         locationName: "Delhi NCR Entry",
         distanceFromPrevKm: 45,
         localTip: "Re-enter city via Golf Course Extension to avoid bottleneck traffic.",
-        imageUrl: "/images/places/universal/transport.webp"
+        imageUrl: "/images/nearby/transport/transport.webp"
       }
     ]
   },
@@ -268,6 +272,8 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
     returnTime: "07:00 PM",
     baseBudgetPerPerson: 750,
     idealGroupSize: "2 – 4 Friends (2 Bikes / 1 Car)",
+    feasibility: "COMFORTABLE",
+    feasibilityReason: "Short 90 km round-trip distance allowing 3+ hours in Landour and sunset at George Everest before dark.",
     budgetBreakdown: {
       transportFuel: 250, // Scooter rental & petrol split
       foodSnacks: 350,
@@ -409,6 +415,8 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
     returnTime: "07:30 PM",
     baseBudgetPerPerson: 900,
     idealGroupSize: "3 – 5 Friends",
+    feasibility: "COMFORTABLE",
+    feasibilityReason: "Expressway connectivity enables fast 90-minute transit to Khandala ghats with full afternoon at the waterfalls.",
     budgetBreakdown: {
       transportFuel: 350,
       foodSnacks: 300,
@@ -519,7 +527,7 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
         locationName: "Navi Mumbai Expressway Exit",
         distanceFromPrevKm: 42,
         localTip: "Fastag required on expressway tolls.",
-        imageUrl: "/images/places/universal/transport.webp"
+        imageUrl: "/images/nearby/transport/transport.webp"
       }
     ]
   },
@@ -540,6 +548,8 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
     returnTime: "06:30 PM",
     baseBudgetPerPerson: 850,
     idealGroupSize: "3 – 5 Friends",
+    feasibility: "COMFORTABLE",
+    feasibilityReason: "Good 4-lane highway roads. Complete exploration of Abhaneri & Bhangarh before 5 PM ASI closing time.",
     budgetBreakdown: {
       transportFuel: 350,
       foodSnacks: 300,
@@ -634,6 +644,122 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
         distanceFromPrevKm: 45,
         localTip: "Stop at Jal Mahal promenade for the evening illuminated reflection view.",
         imageUrl: "/images/destinations/jaipur/hero.jpg"
+      }
+    ]
+  },
+
+  // Plan 5: From Bengaluru
+  {
+    id: "blr-nandi-lepakshi",
+    title: "Nandi Sunrise Curves + Lepakshi Hanging Pillar",
+    hindiTitle: "नंदी हिल्स सूर्योदय + लेपाक्षी लटकता खंभा",
+    tagline: "Dawn hilltop mist, Mysore masala dosa, and 16th-century Vijayanagara monolithic sculpture.",
+    originCity: "Bengaluru",
+    destinationArea: "Chikkaballapur & Lepakshi Corridor",
+    vibes: ["Road Trip", "History", "Food", "Friends", "Adventure"],
+    primaryTransport: "Car",
+    totalDistanceKm: 220,
+    totalTravelTime: "4 Hours total driving",
+    departureTime: "05:00 AM",
+    returnTime: "06:30 PM",
+    baseBudgetPerPerson: 950,
+    idealGroupSize: "3 – 5 Friends",
+    feasibility: "COMFORTABLE",
+    feasibilityReason: "5 AM start gets you to Nandi gate for 6 AM sunrise mist. 4-lane NH-44 highway all the way to Lepakshi.",
+    budgetBreakdown: {
+      transportFuel: 400,
+      foodSnacks: 350,
+      activityTickets: 100,
+      parkingTolls: 100,
+      miscEmergency: 0
+    },
+    studentHacks: [
+      "Start sharp at 5:00 AM from Hebbal flyover to catch Nandi sunrise gate opening without traffic.",
+      "Eat crispy Benne Dosa at Nandi Upachar highway food court (₹90) rather than tourist stalls."
+    ],
+    rentals: [
+      {
+        providerName: "Royal Brothers Bengaluru",
+        vehicleType: "Royal Enfield / Cruiser",
+        location: "Indiranagar & Hebbal",
+        approxRatePerDay: 900,
+        contactOrBookingTip: "Helmet provided; carry valid driving licence.",
+        fuelEstimate: 500,
+        helmetIncluded: true
+      }
+    ],
+    poiHighlights: [
+      { category: "dhaba", name: "Nandi Upachar / Indian Paratha Co.", location: "NH-44 Airport Highway", highwayOrLandmark: "Devenahalli Junction", note: "Hot filter coffee, crispy ghee podi dosas & parathas." },
+      { category: "fuel", name: "Shell Highway Express", location: "Airport Toll Bypass", highwayOrLandmark: "NH-44", note: "Clean rest stop, cafe & ATM." }
+    ],
+    stops: [
+      {
+        id: "blr-stop-1",
+        order: 1,
+        timeSlot: "05:00 AM – 06:45 AM",
+        period: "DAWN",
+        name: "Dawn Mountain Climb & Nandi Cloud Bed",
+        hindiName: "नंदी हिल्स सूर्योदय व बादल",
+        category: "sunset",
+        activityTitle: "Catch the Sunrise Above the Sea of Fog",
+        description: "Wind up the 30 hairpin curves to watch the sunrise emerge from a magical ocean of morning clouds.",
+        estimatedDuration: "1.7 Hours",
+        approxCostPerPerson: 80,
+        locationName: "Nandi Hills Viewpoint",
+        distanceFromPrevKm: 60,
+        localTip: "Pre-book Nandi Hills parking ticket on KSTDC portal on weekends.",
+        imageUrl: "/images/places/universal/viewpoint.webp"
+      },
+      {
+        id: "blr-stop-2",
+        order: 2,
+        timeSlot: "07:30 AM – 09:00 AM",
+        period: "MORNING",
+        name: "Mysore Masala Dosa & Filter Coffee Run",
+        hindiName: "मसाला डोसा व फ़िल्टर कॉफ़ी नाश्ता",
+        category: "food",
+        activityTitle: "Crispy Golden Dosas with Chutney",
+        description: "Recharge with piping hot filter coffee and ghee roast dosas at highway food stops.",
+        estimatedDuration: "1.5 Hours",
+        approxCostPerPerson: 160,
+        locationName: "NH-44 Highway Outlets",
+        distanceFromPrevKm: 25,
+        localTip: "Try the Davangere Benne Dosa.",
+        imageUrl: "/images/places/universal/food.webp"
+      },
+      {
+        id: "blr-stop-3",
+        order: 3,
+        timeSlot: "11:00 AM – 02:30 PM",
+        period: "MIDDAY",
+        name: "Lepakshi Veerabhadra Temple & Giant Monolithic Nandi",
+        hindiName: "लेपाक्षी वीरभद्र मंदिर व नंदी",
+        category: "heritage",
+        activityTitle: "Pass Paper Under the Hanging Pillar",
+        description: "Explore the 70-pillar architectural marvel, the multi-hooded Naga Linga, and India's largest single-granite Nandi bull.",
+        estimatedDuration: "3.5 Hours",
+        approxCostPerPerson: 100,
+        locationName: "Lepakshi Heritage Complex",
+        distanceFromPrevKm: 65,
+        localTip: "Temple priest or local guide explains the marvel of the floating pillar for ₹100.",
+        imageUrl: "/images/places/universal/heritage.webp"
+      },
+      {
+        id: "blr-stop-4",
+        order: 4,
+        timeSlot: "04:30 PM – 06:30 PM",
+        period: "NIGHT",
+        name: "Smooth Highway Cruise back to Bengaluru",
+        hindiName: "बेंगलुरु वापसी",
+        category: "food",
+        activityTitle: "Evening Coffee & Airport Expressway Return",
+        description: "Cruise down the wide 6-lane expressway back into North Bengaluru before evening gridlock.",
+        estimatedDuration: "2 Hours",
+        approxCostPerPerson: 150,
+        locationName: "Hebbal Flyover Entry",
+        distanceFromPrevKm: 70,
+        localTip: "Enter before 7 PM to bypass Hebbal traffic choke point.",
+        imageUrl: "/images/nearby/transport/transport.webp"
       }
     ]
   }

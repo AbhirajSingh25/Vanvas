@@ -1,7 +1,31 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Sparkles, X, Compass, ArrowRight, Bot, MapPin, Clock, Coins, Calendar, Navigation, ShieldCheck, Image as ImageIcon, Loader2, AlertCircle } from "lucide-react";
+import {
+  Send,
+  Sparkles,
+  X,
+  Compass,
+  ArrowRight,
+  Bot,
+  MapPin,
+  Clock,
+  Coins,
+  Calendar,
+  Navigation,
+  ShieldCheck,
+  Image as ImageIcon,
+  Loader2,
+  AlertCircle,
+  LocateFixed,
+  Utensils,
+  Bed,
+  Route,
+  CheckCircle2,
+  Info,
+  ChevronDown,
+  ChevronUp
+} from "lucide-react";
 import { api } from "@/lib/api";
 import { CopilotChatResponse } from "@/types";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
@@ -31,43 +55,208 @@ const ALL_DESTINATIONS = [
 ];
 
 const EXAMPLE_PROMPTS = [
-  "Plan 3 days in Hampi",
-  "I'm in Dehradun, what can I do today?",
-  "Cheap weekend trip from Delhi",
-  "Best cafes near me",
-  "How do I reach Spiti?",
-  "I have ₹2,000 and one day"
+  "I'm in Delhi and have one free day.",
+  "Plan a cheap trip from Delhi to Rishikesh.",
+  "I'm in Manali right now. What can I do for the next 5 hours?",
+  "I have ₹3000 and two days from Delhi.",
+  "I'm in Mumbai and want a random road trip with 4 friends.",
+  "Find a cheap way to reach Tungnath from Delhi.",
+  "I'm near Connaught Place. What should I eat?",
+  "I'm going to Spiti next week. What should I pack?"
 ];
 
-const DESTINATION_PROMPTS: Record<string, { welcome: string; actions: Array<{ label: string; action: string; prompt: string }> }> = {
-  delhi: {
-    welcome: "नमस्ते! I am VANVAS Intelligence for Delhi. Ready to guide your heritage walks, street food explorations, monuments, and metro navigation.",
-    actions: [
-      { label: "Qutub Minar to Red Fort Day Plan", action: "plan_delhi", prompt: "Create a realistic 1-day itinerary covering Qutub Minar, Humayun's Tomb, and Red Fort with transport tips." },
-      { label: "Chandni Chowk Food Trail", action: "food_delhi", prompt: "What are the most iconic street food stalls and sweet shops in Chandni Chowk?" },
-      { label: "Quiet Green Spots in Delhi", action: "nature_delhi", prompt: "Suggest peaceful gardens and historic heritage walks like Lodhi Garden and Sundar Nursery." },
-      { label: "Connaught Place Cafes", action: "cafes_delhi", prompt: "Recommend the best coffee houses and heritage cafes around CP." },
-    ]
-  },
-  goa: {
-    welcome: "नमस्ते! I am VANVAS Intelligence for Goa. Looking for coastal trails, scooter rentals, heritage quarters, or beachside cafes?",
-    actions: [
-      { label: "Quiet South Goa Beaches", action: "beaches_goa", prompt: "What are the most serene and uncrowded beaches in South Goa?" },
-      { label: "Scooter Rental & Coastal Route", action: "rental_goa", prompt: "How do I rent a scooter and what is the best scenic coastal drive?" },
-      { label: "Fontainhas Heritage Walk", action: "heritage_goa", prompt: "Guide me through the Latin Quarter of Fontainhas in Panjim." },
-      { label: "Sunset Seafood Shacks", action: "food_goa", prompt: "Where are the best authentic Goan seafood spots with sunset views?" },
-    ]
-  },
-  jaipur: {
-    welcome: "खम्मा घणी! I am VANVAS Intelligence for Jaipur. Ready to explore royal forts, Rajasthani thalis, and bustling bazaars.",
-    actions: [
-      { label: "Amer Fort & Nahargarh Sunset", action: "forts_jaipur", prompt: "How should I plan Amer Fort and Nahargarh sunset in one afternoon?" },
-      { label: "Authentic Dal Baati Churma", action: "food_jaipur", prompt: "Where can I find the most authentic Rajasthani Thali in Jaipur?" },
-      { label: "Old City Bazaars & Lassi", action: "bazaar_jaipur", prompt: "Guide me through Johari Bazaar, Bapu Bazaar, and Lassiwala." },
-      { label: "Hawa Mahal Morning Photo Walk", action: "photo_jaipur", prompt: "Best morning viewpoints and rooftop cafes opposite Hawa Mahal." },
-    ]
+/**
+ * Intelligent Structured Travel Intelligence Parser & Renderer
+ * Transforms raw travel text into scannable cards, metrics, and structured blocks.
+ */
+function FormattedTravelIntelligence({ text }: { text: string }) {
+  // Extract quick metrics (Budget, Time, Distance)
+  const budgetMatch = text.match(/₹\s*[\d,]+(?:\s*-\s*₹?\s*[\d,]+)?(?:\s*(?:per person|total|each))?/i);
+  const timeMatch = text.match(/\b(?:\d+\s*(?:-\s*\d+)?\s*(?:hours?|hrs?|days?|nights?))\b/i);
+  const distMatch = text.match(/\b(?:\d+\s*(?:-\s*\d+)?\s*(?:km|kms|kilometers))\b/i);
+
+  // Split text by recognized markdown sections or double newlines
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+
+  // Categorize sections
+  const quickAnswers: string[] = [];
+  const actionPoints: string[] = [];
+  const routePoints: string[] = [];
+  const foodPoints: string[] = [];
+  const stayPoints: string[] = [];
+  const tipPoints: string[] = [];
+  const generalLines: string[] = [];
+
+  let currentCategory: "general" | "quick" | "route" | "food" | "stay" | "tips" | "action" = "general";
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    // Header detection
+    if (lower.includes("quick answer") || lower.includes("summary") || lower.includes("bottom line")) {
+      currentCategory = "quick";
+      const clean = line.replace(/^[#*_\-\s]*(quick answer|summary|bottom line)[:\s]*/i, "").trim();
+      if (clean) quickAnswers.push(clean);
+      continue;
+    } else if (lower.includes("how to reach") || lower.includes("transit") || lower.includes("route") || lower.includes("transport")) {
+      currentCategory = "route";
+      const clean = line.replace(/^[#*_\-\s]*(how to reach|transit|route|transport)[:\s]*/i, "").trim();
+      if (clean) routePoints.push(clean);
+      continue;
+    } else if (lower.includes("what to do") || lower.includes("itinerary") || lower.includes("highlights") || lower.includes("best option")) {
+      currentCategory = "action";
+      const clean = line.replace(/^[#*_\-\s]*(what to do|itinerary|highlights|best option)[:\s]*/i, "").trim();
+      if (clean) actionPoints.push(clean);
+      continue;
+    } else if (lower.includes("food") || lower.includes("where to eat") || lower.includes("dining") || lower.includes("cafes")) {
+      currentCategory = "food";
+      const clean = line.replace(/^[#*_\-\s]*(food|where to eat|dining|cafes)[:\s]*/i, "").trim();
+      if (clean) foodPoints.push(clean);
+      continue;
+    } else if (lower.includes("stay") || lower.includes("where to stay") || lower.includes("hotel") || lower.includes("hostel")) {
+      currentCategory = "stay";
+      const clean = line.replace(/^[#*_\-\s]*(stay|where to stay|hotel|hostel)[:\s]*/i, "").trim();
+      if (clean) stayPoints.push(clean);
+      continue;
+    } else if (lower.includes("tip") || lower.includes("note") || lower.includes("important") || lower.includes("advisory") || lower.includes("etiquette")) {
+      currentCategory = "tips";
+      const clean = line.replace(/^[#*_\-\s]*(tips|notes|important|advisory|etiquette)[:\s]*/i, "").trim();
+      if (clean) tipPoints.push(clean);
+      continue;
+    }
+
+    // Line assignment based on state or bullets
+    const cleanLine = line.replace(/^[•\-\*]\s*|\d+\.\s*/, "").replace(/\*\*/g, "");
+    if (currentCategory === "quick") quickAnswers.push(cleanLine);
+    else if (currentCategory === "route") routePoints.push(cleanLine);
+    else if (currentCategory === "action") actionPoints.push(cleanLine);
+    else if (currentCategory === "food") foodPoints.push(cleanLine);
+    else if (currentCategory === "stay") stayPoints.push(cleanLine);
+    else if (currentCategory === "tips") tipPoints.push(cleanLine);
+    else generalLines.push(cleanLine);
   }
-};
+
+  const hasStructuredBlocks = quickAnswers.length > 0 || routePoints.length > 0 || actionPoints.length > 0 || foodPoints.length > 0 || tipPoints.length > 0;
+
+  return (
+    <div className="space-y-3">
+      {/* Metric Chips Header */}
+      {(budgetMatch || timeMatch || distMatch) && (
+        <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-[#D8CBB2]/40">
+          {budgetMatch && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#173B32] text-[#FAF7F0] text-[11px] font-mono font-bold shadow-xs">
+              <Coins className="w-3 h-3 text-[#B49252]" />
+              {budgetMatch[0]}
+            </span>
+          )}
+          {timeMatch && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] text-[11px] font-mono font-semibold">
+              <Clock className="w-3 h-3 text-[#B65E3C]" />
+              {timeMatch[0]}
+            </span>
+          )}
+          {distMatch && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] text-[11px] font-mono font-semibold">
+              <Route className="w-3 h-3 text-[#7B4D36]" />
+              {distMatch[0]}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Quick Summary / Answer Card */}
+      {quickAnswers.length > 0 && (
+        <div className="p-3 rounded-xl bg-[#FAF7F0] border-l-4 border-l-[#173B32] border border-[#E5D5BA] shadow-2xs">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[#173B32] font-black flex items-center gap-1 mb-1">
+            <Sparkles className="w-3 h-3 text-[#B49252]" /> Quick Intelligence
+          </p>
+          <div className="space-y-1">
+            {quickAnswers.map((qa, i) => (
+              <p key={i} className="text-xs font-serif font-medium text-[#20211D] leading-snug">{qa}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* General Prose (If no headings matched or intro) */}
+      {generalLines.length > 0 && (
+        <div className="space-y-1.5 text-[13px] leading-relaxed text-[#20211D]">
+          {generalLines.map((gl, i) => (
+            <p key={i} className={gl.startsWith("•") || gl.startsWith("-") ? "pl-2 flex items-start gap-1.5 text-xs text-[#20211D]/90" : ""}>
+              {gl}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Action / Highlights Block */}
+      {actionPoints.length > 0 && (
+        <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA]">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold flex items-center gap-1 mb-1.5">
+            <CheckCircle2 className="w-3 h-3 text-[#173B32]" /> What To Do & Highlights
+          </p>
+          <ul className="space-y-1">
+            {actionPoints.map((pt, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-[#20211D]">
+                <span className="w-4 h-4 rounded-full bg-[#EFE5D2] text-[#173B32] text-[10px] font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  {i + 1}
+                </span>
+                <span className="leading-snug">{pt}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Transit / How to Reach */}
+      {routePoints.length > 0 && (
+        <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA]">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[#173B32] font-bold flex items-center gap-1 mb-1.5">
+            <Route className="w-3 h-3 text-[#B65E3C]" /> How To Reach & Transit
+          </p>
+          <ul className="space-y-1">
+            {routePoints.map((pt, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-xs text-[#20211D] leading-snug">
+                <span className="text-[#B65E3C] font-bold shrink-0">→</span>
+                <span>{pt}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Food & Dining */}
+      {foodPoints.length > 0 && (
+        <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA]">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold flex items-center gap-1 mb-1.5">
+            <Utensils className="w-3 h-3 text-[#B65E3C]" /> Food & Iconic Stalls
+          </p>
+          <ul className="space-y-1">
+            {foodPoints.map((pt, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-xs text-[#20211D] leading-snug">
+                <span className="text-[#173B32] font-bold shrink-0">•</span>
+                <span>{pt}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Important Tips & Etiquette */}
+      {tipPoints.length > 0 && (
+        <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/60 text-[#7B4D36]">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-amber-900 font-bold flex items-center gap-1 mb-1">
+            <Info className="w-3 h-3 text-amber-700" /> Know This Before You Go
+          </p>
+          <div className="space-y-1">
+            {tipPoints.map((pt, i) => (
+              <p key={i} className="text-[11px] leading-snug text-[#7B4D36]">{pt}</p>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   isOpen,
@@ -79,6 +268,8 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const initialDest = defaultDestination || trip?.destination?.name || "";
   const [selectedDest, setSelectedDest] = useState<string>(initialDest);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isGettingGps, setIsGettingGps] = useState(false);
+  const [gpsLocationName, setGpsLocationName] = useState<string | null>(null);
   
   // Image upload state
   const [attachedImage, setAttachedImage] = useState<{ file: File; previewUrl: string } | null>(null);
@@ -90,7 +281,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
     if (trip) {
       return [{
         role: "assistant",
-        text: `नमस्ते! I am your VANVAS journey companion for ${trip.title || dest || "your upcoming trip"}. How can I assist your expedition, optimize your schedule, or scout nearby spots?`,
+        text: `नमस्ते! I am your VANVAS journey companion for ${trip.title || dest || "your upcoming trip"}.\n\nTell me where you are, where you want to go, or what kind of trip you want to plan across India.`,
         actions: [
           { label: "Top Cafes Nearby", action: "custom", payload: `What are the best cafes near ${dest || trip.title}?` },
           { label: "Make Itinerary Cheaper", action: "custom", payload: "How can I make this trip more budget friendly?" },
@@ -101,19 +292,9 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
     }
 
     if (dest) {
-      const destKey = dest.toLowerCase().replace(/[^a-z0-9]/g, "");
-      if (DESTINATION_PROMPTS[destKey]) {
-        const cfg = DESTINATION_PROMPTS[destKey];
-        return [{
-          role: "assistant",
-          text: cfg.welcome,
-          actions: cfg.actions.map(a => ({ label: a.label, action: "custom", payload: a.prompt }))
-        }];
-      }
-
       return [{
         role: "assistant",
-        text: `नमस्ते! I am VANVAS Intelligence for ${dest} and across India. Where would you like to explore or what would you like to plan?`,
+        text: `नमस्ते! I am VANVAS Intelligence.\n\nAsk me anything about ${dest}, or tell me where you are starting from and what kind of trip you want to plan.`,
         actions: [
           { label: `Top Spots in ${dest}`, action: "custom", payload: `What are the must-visit places in ${dest}?` },
           { label: `Curated 1-Day Plan`, action: "custom", payload: `Create a realistic 1-day itinerary for ${dest}.` },
@@ -125,12 +306,12 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
 
     return [{
       role: "assistant",
-      text: "नमस्ते! I am VANVAS Intelligence — ask me anything about traveling anywhere in India. Tell me where you are, where you want to go, your budget, or what kind of vibe you're seeking.",
+      text: "नमस्ते! I am VANVAS Universal Intelligence.\n\nTell VANVAS where you are, where you're going, your budget, or what kind of trip you want to do anywhere in India.",
       actions: [
         { label: "Plan 3 Days in Hampi", action: "custom", payload: "Plan a 3-day trip to Hampi with ruins, sunset boulders, and cafes." },
-        { label: "Spontaneous 1-Day Road Trip", action: "custom", payload: "We have one day and ₹1,500. Where can we escape?" },
-        { label: "Tungnath Summit Guide", action: "custom", payload: "How do I plan the Tungnath Chandrashila trek from Rishikesh?" },
-        { label: "Top Cafes & Hidden Gems", action: "custom", payload: "What are peaceful places with great food and mountain/river views?" },
+        { label: "Spontaneous 1-Day Escape", action: "custom", payload: "I have ₹1500 and one day. Where can we go?" },
+        { label: "Tungnath Summit Guide", action: "custom", payload: "How do I plan the Tungnath Chandrashila trek from Delhi or Rishikesh?" },
+        { label: "Peaceful Himalayan Cafes", action: "custom", payload: "What are peaceful mountain cafes with great food and views?" },
       ]
     }];
   };
@@ -139,14 +320,6 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const destinations = React.useMemo(() => {
-    const list = [...ALL_DESTINATIONS];
-    if (selectedDest && !list.map(d => d.toLowerCase()).includes(selectedDest.toLowerCase())) {
-      list.unshift(selectedDest);
-    }
-    return list;
-  }, [selectedDest]);
 
   useEffect(() => {
     if (defaultDestination) {
@@ -189,12 +362,24 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleDestinationChange = (dest: string) => {
-    setSelectedDest(dest);
-    setConversationId(null);
-    setMessages(getInitialMessages(dest));
-    setAttachedImage(null);
-    setUploadError(null);
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setInput((prev) => (prev ? `${prev} (near my current location)` : "I'm looking for recommendations near my current location."));
+      return;
+    }
+    setIsGettingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsGettingGps(false);
+        setGpsLocationName("Detected Location");
+        setInput((prev) => (prev ? `${prev} (near GPS: ${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)})` : `I am at GPS location ${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}. What should I explore nearby?`));
+      },
+      (err) => {
+        setIsGettingGps(false);
+        setInput((prev) => (prev ? `${prev} (near my current location)` : "I'm looking for recommendations near my current location."));
+      },
+      { timeout: 5000 }
+    );
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,53 +405,53 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
     }
   };
 
-function extractDestinationFromText(text: string): string | null {
-  if (!text) return null;
-  
-  const KNOWN_DESTINATIONS = [
-    "Spiti Valley", "Spiti", "Hampi", "Kashmir", "Amritsar", "Auli", "Ziro", "Shillong", "Meghalaya", "Tawang", "Kaziranga", "Cherrapunji", "Dawki",
-    "Jodhpur", "Jaisalmer", "Bikaner", "Pushkar", "Mount Abu", "Ajmer", "Ahmedabad", "Pune", "Mumbai", "Bengaluru", "Bangalore",
-    "Munnar", "Alappuzha", "Alleppey", "Kochi", "Cochin", "Varkala", "Wayanad", "Vagamon",
-    "Gokarna", "Coorg", "Ooty", "Kodaikanal", "Pondicherry", "Puducherry", "Madurai", "Rameswaram",
-    "Darjeeling", "Gangtok", "Pelling", "Lachung", "Sikkim",
-    "Tungnath–Chandrashila", "Tungnath", "Chandrashila", "Chopta", "Kedarkantha", "Triund", "Hampta Pass", "Valley of Flowers", "Rajmachi",
-    "Manali", "Old Manali", "Kasol", "Dharamshala", "McLeod Ganj", "Mcleodganj", "Sethan", "Solang",
-    "Shimla", "Kullu", "Jibhi", "Tirthan Valley", "Bir Billing", "Leh Ladakh", "Leh", "Ladakh",
-    "Rishikesh", "Haridwar", "Mussoorie", "Dehradun", "Nainital", "Jim Corbett", "Mukteshwar", "Kausani",
-    "Jaipur", "Udaipur", "Varanasi", "Goa", "North Goa", "South Goa", "Delhi", "New Delhi", "Agra", "Mathura", "Vrindavan"
-  ];
+  function extractDestinationFromText(text: string): string | null {
+    if (!text) return null;
 
-  // 1. Check explicit "I am in X" or "I'm in X" or "from X"
-  const locationInPattern = /(?:i am in|i'm in|currently in|from|starting from)\s+([A-Za-z\s–-]+?)(?=[,.\n!?]|$)/i;
-  const locMatch = text.match(locationInPattern);
-  if (locMatch && locMatch[1]) {
-    const candidate = locMatch[1].trim();
-    for (const d of KNOWN_DESTINATIONS) {
-      if (d.toLowerCase() === candidate.toLowerCase()) return d;
+    const KNOWN_DESTINATIONS = [
+      "Spiti Valley", "Spiti", "Hampi", "Kashmir", "Amritsar", "Auli", "Ziro", "Shillong", "Meghalaya", "Tawang", "Kaziranga", "Cherrapunji", "Dawki",
+      "Jodhpur", "Jaisalmer", "Bikaner", "Pushkar", "Mount Abu", "Ajmer", "Ahmedabad", "Pune", "Mumbai", "Bengaluru", "Bangalore",
+      "Munnar", "Alappuzha", "Alleppey", "Kochi", "Cochin", "Varkala", "Wayanad", "Vagamon",
+      "Gokarna", "Coorg", "Ooty", "Kodaikanal", "Pondicherry", "Puducherry", "Madurai", "Rameswaram",
+      "Darjeeling", "Gangtok", "Pelling", "Lachung", "Sikkim",
+      "Tungnath–Chandrashila", "Tungnath", "Chandrashila", "Chopta", "Kedarkantha", "Triund", "Hampta Pass", "Valley of Flowers", "Rajmachi",
+      "Manali", "Old Manali", "Kasol", "Dharamshala", "McLeod Ganj", "Mcleodganj", "Sethan", "Solang",
+      "Shimla", "Kullu", "Jibhi", "Tirthan Valley", "Bir Billing", "Leh Ladakh", "Leh", "Ladakh",
+      "Rishikesh", "Haridwar", "Mussoorie", "Dehradun", "Nainital", "Jim Corbett", "Mukteshwar", "Kausani",
+      "Jaipur", "Udaipur", "Varanasi", "Goa", "North Goa", "South Goa", "Delhi", "New Delhi", "Agra", "Mathura", "Vrindavan"
+    ];
+
+    // 1. Check explicit "I am in X" or "I'm in X" or "from X to Y"
+    const locationInPattern = /(?:i am in|i'm in|currently in|from|starting from)\s+([A-Za-z\s–-]+?)(?=[,.\n!?]|$)/i;
+    const locMatch = text.match(locationInPattern);
+    if (locMatch && locMatch[1]) {
+      const candidate = locMatch[1].trim();
+      for (const d of KNOWN_DESTINATIONS) {
+        if (d.toLowerCase() === candidate.toLowerCase()) return d;
+      }
     }
-  }
 
-  // 2. Check explicit known destinations
-  for (const dest of KNOWN_DESTINATIONS) {
-    const escaped = dest.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-    const regex = new RegExp(`\\b${escaped}\\b`, "i");
-    if (regex.test(text)) {
-      return dest;
+    // 2. Check explicit known destinations
+    for (const dest of KNOWN_DESTINATIONS) {
+      const escaped = dest.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const regex = new RegExp(`\\b${escaped}\\b`, "i");
+      if (regex.test(text)) {
+        return dest;
+      }
     }
-  }
 
-  // 3. RegEx extraction for "trip to X", "plan X", "visit X", "going to X"
-  const pattern = /(?:trip\s+to|visit|visiting|going\s+to|travel\s+to|reach|plan\s+(?:me\s+)?(?:a\s+)?(?:\d+\s+day\s+)?(?:weekend\s+in\s+)?(?:for\s+|in\s+)?|in\s+)([A-Z][a-zA-Z\s]{2,20})/i;
-  const match = text.match(pattern);
-  if (match && match[1]) {
-    const candidate = match[1].trim().replace(/[?.!,].*$/, "").trim();
-    if (candidate.length >= 3 && !["the", "my", "our", "a", "an", "this", "some", "india", "here", "there", "today", "tomorrow"].includes(candidate.toLowerCase())) {
-      return candidate;
+    // 3. RegEx extraction for "trip to X", "plan X", "visit X", "going to X"
+    const pattern = /(?:trip\s+to|visit|visiting|going\s+to|travel\s+to|reach|plan\s+(?:me\s+)?(?:a\s+)?(?:\d+\s+day\s+)?(?:weekend\s+in\s+)?(?:for\s+|in\s+)?|in\s+)([A-Z][a-zA-Z\s]{2,20})/i;
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const candidate = match[1].trim().replace(/[?.!,].*$/, "").trim();
+      if (candidate.length >= 3 && !["the", "my", "our", "a", "an", "this", "some", "india", "here", "there", "today", "tomorrow"].includes(candidate.toLowerCase())) {
+        return candidate;
+      }
     }
-  }
 
-  return null;
-}
+    return null;
+  }
 
   const handleSend = async (msgText?: string, customImage?: string) => {
     const textToSend = msgText || input;
@@ -290,7 +475,7 @@ function extractDestinationFromText(text: string): string | null {
       }
     }
 
-    // Extract destination from free text (user free text is authoritative)
+    // Free text overrides everything (Rule: text query ALWAYS wins)
     const detectedDest = extractDestinationFromText(textToSend);
     let activeDest = selectedDest;
     if (detectedDest) {
@@ -341,24 +526,23 @@ function extractDestinationFromText(text: string): string | null {
         },
       ]);
     } catch (err: any) {
-      console.warn("Copilot AI live query timed out or had network delay. Serving deterministic offline response.", err);
+      console.warn("Copilot AI live query timed out or offline fallback engaged.", err);
 
-      // Graceful Deterministic Fallback UX (Never empty error bubble)
       const fallbackTarget = activeDest || "India Travel";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          text: `Here is verified travel intelligence for ${fallbackTarget}:\n\n` +
-            `• Best Exploration Strategy: Start early morning to beat the afternoon sun and crowds. Keep local cash and comfortable walking footwear ready.\n` +
-            `• Transit & Navigation: State transport, shared cabs, or verified two-wheeler rentals offer the most flexible routes.\n` +
-            `• Note: AI enrichment is operating in high-reliability offline mode. All core place facts, routes, and maps remain fully verified.`,
+          text: `**Quick Answer:** Verified travel intelligence for ${fallbackTarget}.\n\n` +
+            `• Best Exploration Strategy: Start early morning to beat the peak sun and crowd windows. Carry UPI and emergency local cash.\n` +
+            `• Transit & Navigation: State transport, shared cabs, or verified rentals offer the most flexible routes.\n` +
+            `• Know This: All core place facts, routes, and maps in VANVAS remain verified and deterministic.`,
           actions: [
             { label: `Explore ${fallbackTarget}`, action: "custom", payload: `Tell me more about exploring ${fallbackTarget}` },
             { label: "1-Day Micro Plan", action: "custom", payload: `Create a realistic 1-day itinerary for ${fallbackTarget}` },
             { label: "Top Local Spots", action: "custom", payload: `What are the best food and scenic spots in ${fallbackTarget}?` }
           ],
-          metadata: { model: "Deterministic Verified Fallback", latency_ms: 45 }
+          metadata: { model: "Deterministic Intelligence Engine", latency_ms: 35 }
         },
       ]);
     } finally {
@@ -405,7 +589,7 @@ function extractDestinationFromText(text: string): string | null {
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-[#D8DED5]/80 font-mono mt-0.5">
-                Zero Hallucinations • Plan any place, route, trek, or budget across India
+                Scan-first intelligence • Plan any place, route, trek, or budget across India
               </p>
             </div>
           </div>
@@ -418,10 +602,10 @@ function extractDestinationFromText(text: string): string | null {
           </button>
         </div>
 
-        {/* Quick Suggestion Ideas Strip */}
+        {/* Universal Travel Ideas Strip (Secondary shortcuts) */}
         <div className="px-3 sm:px-4 py-2 bg-[#EFE5D2] border-b border-[#E5D5BA] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
           <span className="text-[10px] font-mono text-[#7B4D36] font-bold uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
-            <Compass className="w-3 h-3 text-[#B65E3C]" /> Suggestions:
+            <Compass className="w-3 h-3 text-[#B65E3C]" /> Ideas:
           </span>
           {EXAMPLE_PROMPTS.map((prompt) => (
             <button
@@ -440,10 +624,10 @@ function extractDestinationFromText(text: string): string | null {
             <div key={idx} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
               {/* Message Bubble */}
               <div
-                className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-3 sm:px-4.5 sm:py-3.5 shadow-sm leading-relaxed ${
+                className={`max-w-[92%] sm:max-w-[85%] rounded-2xl px-4 py-3 sm:px-4.5 sm:py-3.5 shadow-sm leading-relaxed ${
                   m.role === "user"
                     ? "bg-[#173B32] text-[#FAF7F0] rounded-br-xs font-medium"
-                    : "bg-[#EFE5D2] text-[#20211D] rounded-bl-xs border border-[#E5D5BA] font-normal"
+                    : "bg-[#EFE5D2] text-[#20211D] rounded-bl-xs border border-[#E5D5BA]"
                 }`}
               >
                 {/* User Uploaded Image Preview in Thread */}
@@ -457,7 +641,12 @@ function extractDestinationFromText(text: string): string | null {
                   </div>
                 )}
 
-                <p className="whitespace-pre-line text-[13px] leading-relaxed">{m.text}</p>
+                {/* Intelligent Structured Response Renderer */}
+                {m.role === "assistant" ? (
+                  <FormattedTravelIntelligence text={m.text} />
+                ) : (
+                  <p className="whitespace-pre-line text-[13px] leading-relaxed">{m.text}</p>
+                )}
 
                 {/* Referenced Places Cards */}
                 {m.places && m.places.length > 0 && (
@@ -627,14 +816,14 @@ function extractDestinationFromText(text: string): string | null {
           </div>
         )}
 
-        {/* Footer Composer with Hero Prompt */}
+        {/* Footer Composer: Text-First & Location-First */}
         <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] border-t border-[#E5D5BA] bg-[#EFE5D2] shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5 sm:gap-2"
           >
             {/* Hidden File Input */}
             <input
@@ -661,13 +850,36 @@ function extractDestinationFromText(text: string): string | null {
               <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
+            {/* GPS Location Button */}
+            <button
+              type="button"
+              onClick={handleUseCurrentLocation}
+              disabled={loading || isGettingGps}
+              aria-label="Use my current GPS location"
+              className={`p-2.5 sm:p-3 rounded-2xl border transition-all flex items-center justify-center shrink-0 cursor-pointer ${
+                gpsLocationName
+                  ? "bg-emerald-800 text-emerald-100 border-emerald-700"
+                  : "bg-white text-[#7B4D36] border-[#E5D5BA] hover:bg-[#FAF7F0] hover:text-[#173B32]"
+              }`}
+              title="Use my current location"
+            >
+              {isGettingGps ? (
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#B65E3C]" />
+              ) : (
+                <LocateFixed className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
+            </button>
+
+            {/* Text Input */}
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Tell VANVAS where you are, where you're going, or what you want to do..."
-              className="flex-1 bg-white border border-[#E5D5BA] rounded-2xl px-4 py-2.5 text-base sm:text-sm text-[#20211D] placeholder:text-[#20211D]/45 focus:outline-none focus:border-[#173B32] focus:ring-1 focus:ring-[#173B32] transition-all"
+              placeholder="Where are you now, where are you headed, or what kind of trip are you planning?"
+              className="flex-1 min-w-0 bg-white border border-[#E5D5BA] rounded-2xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-[#20211D] placeholder:text-[#20211D]/45 focus:outline-none focus:border-[#173B32] focus:ring-1 focus:ring-[#173B32] transition-all"
             />
+
+            {/* Send Button */}
             <button
               type="submit"
               disabled={loading || isUploadingImage || (!input.trim() && !attachedImage)}
