@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { Analytics } from "@vercel/analytics/react";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -50,6 +51,7 @@ export default function RootLayout({
           <main className="flex-1 pb-16 md:pb-0">{children}</main>
           <Footer />
           <MobileNav />
+          <Analytics />
         </AuthProvider>
       </body>
     </html>
