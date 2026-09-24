@@ -17,103 +17,23 @@ import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 import { DestinationSearchBar } from "@/components/search/DestinationSearchBar";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
-import { getCanonicalHindiName } from "@/lib/canonicalDestinations";
+import { getCanonicalHindiName, CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 
 export default function HomePage() {
-  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api.getDestinations(false)
-      .then((data) => setDestinations(data))
+      .then((data) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setDestinations(data);
+        } else {
+          setDestinations(CANONICAL_DESTINATIONS);
+        }
+      })
       .catch(() => {
-        // Fallback list
-        setDestinations([
-          {
-            id: "manali",
-            name: "Manali",
-            slug: "manali",
-            state: "Himachal Pradesh",
-            region: "Himalayan",
-            tagline: "Into the pine and mist.",
-            description: "Pine-scented mountain air, riverside stone cafés, and high alpine passes.",
-            latitude: 32.2396,
-            longitude: 77.1887,
-            altitude_meters: 2050,
-            is_featured: true,
-            places_count: 14,
-          },
-          {
-            id: "rishikesh",
-            name: "Rishikesh",
-            slug: "rishikesh",
-            state: "Uttarakhand",
-            region: "Himalayan Foothills",
-            tagline: "Where sacred waters meet the rapids.",
-            description: "Turquoise Ganga currents, cliffside meditation, and riverside ghat aartis.",
-            latitude: 30.0869,
-            longitude: 78.2676,
-            altitude_meters: 372,
-            is_featured: true,
-            places_count: 12,
-          },
-          {
-            id: "kasol",
-            name: "Kasol",
-            slug: "kasol",
-            state: "Himachal Pradesh",
-            region: "Parvati Valley",
-            tagline: "Deodar canopies and bohemian trails.",
-            description: "A tranquil haven in Parvati Valley famous for Israeli bakeries and pine forest hikes.",
-            latitude: 32.0100,
-            longitude: 77.3150,
-            altitude_meters: 1580,
-            is_featured: true,
-            places_count: 10,
-          },
-          {
-            id: "dharamshala",
-            name: "Dharamshala",
-            slug: "dharamshala",
-            state: "Himachal Pradesh",
-            region: "Kangra Valley",
-            tagline: "Prayer flags in the shadow of Dhauladhar.",
-            description: "Home of the Dalai Lama, surrounded by cedar forests and dramatic peaks.",
-            latitude: 32.2190,
-            longitude: 76.3234,
-            altitude_meters: 1457,
-            is_featured: true,
-            places_count: 11,
-          },
-          {
-            id: "jaipur",
-            name: "Jaipur",
-            slug: "jaipur",
-            state: "Rajasthan",
-            region: "Royal Heritage",
-            tagline: "Terracotta ramparts and royal havelis.",
-            description: "Hill forts overlooking bustling bazaars of blue pottery and rich kachoris.",
-            latitude: 26.9124,
-            longitude: 75.7873,
-            altitude_meters: 431,
-            is_featured: true,
-            places_count: 10,
-          },
-          {
-            id: "goa",
-            name: "Goa",
-            slug: "goa",
-            state: "Goa",
-            region: "Coastal Western Ghats",
-            tagline: "Golden palms and sleepy river villages.",
-            description: "Beyond crowded strips lie Portuguese villas, spice farms, and cliff sunsets.",
-            latitude: 15.2993,
-            longitude: 74.1240,
-            altitude_meters: 10,
-            is_featured: true,
-            places_count: 12,
-          },
-        ]);
+        setDestinations(CANONICAL_DESTINATIONS);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -337,7 +257,7 @@ export default function HomePage() {
             href="/explore"
             className="text-xs font-bold uppercase tracking-widest text-[#B65E3C] hover:text-[#9E4D2E] flex items-center gap-1.5 transition-colors self-start md:self-auto"
           >
-            <span>EXPLORE ALL SANCTUARIES (सभी तीर्थ खोजें) →</span>
+            <span>EXPLORE ALL SANCTUARIES (सभी तीर्थ व अभयारण्य खोजें) →</span>
           </Link>
         </div>
 
