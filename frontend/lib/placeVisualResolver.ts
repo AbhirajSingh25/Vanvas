@@ -181,6 +181,175 @@ export interface CuratedLandmarkEntry {
  */
 export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
   // ==========================================
+  // --- DELHI LANDMARKS ---
+  // ==========================================
+  "delhi:qutub-minar": {
+    imageUrl: "/images/places/delhi/qutub-minar.jpg",
+    visualDescription: "The iconic 73-meter fluted red sandstone and marble minaret built in 1192, a UNESCO World Heritage site in Mehrauli.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "qutub-minar",
+      "qutb-minar",
+      "qutub-minar-complex",
+      "qutab-minar",
+      "qutub"
+    ]
+  },
+  "delhi:red-fort": {
+    imageUrl: "/images/places/delhi/red-fort.jpg",
+    visualDescription: "Historic red sandstone fortress of the Mughal emperors in Old Delhi, overlooking the Yamuna river.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "red-fort",
+      "lal-qila",
+      "lal-qila-delhi",
+      "delhi-red-fort"
+    ]
+  },
+  "delhi:india-gate": {
+    imageUrl: "/images/places/delhi/india-gate.jpg",
+    visualDescription: "Prominent 42-meter triumphal arch war memorial standing at the eastern edge of Kartavya Path in Central Delhi.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "india-gate",
+      "all-india-war-memorial",
+      "kartavya-path"
+    ]
+  },
+  "delhi:lotus-temple": {
+    imageUrl: "/images/places/delhi/lotus-temple.jpg",
+    visualDescription: "Stunning flowerlike Bahá'í House of Worship composed of 27 freestanding marble-clad petals surrounded by nine ponds in Kalkaji.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "lotus-temple",
+      "bahai-lotus-temple",
+      "bahai-temple"
+    ]
+  },
+  "delhi:chandni-chowk": {
+    imageUrl: "/images/places/delhi/chandni-chowk.jpg",
+    visualDescription: "Vibrant and bustling historic Mughal-era marketplace renowned for authentic street food, spice markets, and centuries-old Havelis.",
+    category: "Shops & Markets",
+    semanticTheme: "shopping",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "chandni-chowk",
+      "chandni-chawk",
+      "old-delhi-market",
+      "paranthe-wali-gali"
+    ]
+  },
+  "delhi:humayuns-tomb": {
+    imageUrl: "/images/places/delhi/red-fort.jpg",
+    visualDescription: "Splendid Mughal garden tomb of Emperor Humayun, precursor to the Taj Mahal with red sandstone and white marble dome.",
+    category: "Culture & Heritage",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "humayuns-tomb",
+      "humayun-tomb",
+      "maqbara-e-humayun"
+    ]
+  },
+  "delhi:akshardham": {
+    imageUrl: "/images/places/delhi/lotus-temple.jpg",
+    visualDescription: "Grand Hindu temple complex showcasing traditional Indian architecture, stone carvings, and spiritual gardens.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "akshardham",
+      "akshardham-temple",
+      "swaminarayan-akshardham"
+    ]
+  },
+  "delhi:jama-masjid": {
+    imageUrl: "/images/places/delhi/red-fort.jpg",
+    visualDescription: "One of India's largest and most historic Mughal mosques built by Shah Jahan in Old Delhi.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "jama-masjid",
+      "masjid-e-jahan-numa"
+    ]
+  },
+  "delhi:gurudwara-bangla-sahib": {
+    imageUrl: "/images/places/delhi/lotus-temple.jpg",
+    visualDescription: "Prominent Sikh house of worship in Connaught Place with golden dome and sacred Sarovar pool.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "gurudwara-bangla-sahib",
+      "bangla-sahib",
+      "bangla-sahib-gurudwara"
+    ]
+  },
+  "delhi:lodhi-garden": {
+    imageUrl: "/images/places/delhi/india-gate.jpg",
+    visualDescription: "Historic 90-acre city park containing the architectural tombs of Mohammed Shah and Sikandar Lodi.",
+    category: "Nature & Trails",
+    semanticTheme: "nature",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "lodhi-garden",
+      "lodhi-gardens",
+      "lodi-garden"
+    ]
+  },
+  "delhi:connaught-place": {
+    imageUrl: "/images/places/delhi/chandni-chowk.jpg",
+    visualDescription: "Georgian-style colonnaded commercial center and cultural hub in Central Delhi.",
+    category: "Shops & Markets",
+    semanticTheme: "shopping",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "connaught-place",
+      "cp",
+      "rajiv-chowk"
+    ]
+  },
+
+  // ==========================================
+  // --- AMRITSAR LANDMARKS ---
+  // ==========================================
+  "amritsar:golden-temple": {
+    imageUrl: "/images/places/amritsar/golden-temple.jpg",
+    visualDescription: "The holiest Gurdwara of Sikhism (Harmandir Sahib) with glistening gold sanctum in the sacred Amrit Sarovar tank.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "golden-temple",
+      "harmandir-sahib",
+      "sri-harmandir-sahib",
+      "amritsar-golden-temple",
+      "darbar-sahib"
+    ]
+  },
+
+  // ==========================================
   // --- TUNGNATH CHANDRASHILA LANDMARKS ---
   // ==========================================
   "tungnath-chandrashila:tungnath-temple": {
@@ -270,101 +439,6 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "chopta-tea-stall",
       "mountain-chai-dhaba",
       "maggi-point-chopta"
-    ]
-  },
-
-  // ==========================================
-  // --- DELHI LANDMARKS ---
-  // ==========================================
-  "delhi:qutub-minar": {
-    imageUrl: "/images/places/delhi/qutub-minar.webp",
-    visualDescription: "Soaring 73-meter fluted red sandstone victory minaret tower with intricate Islamic calligraphy carvings and Mehrauli arches.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: [
-      "qutub-minar",
-      "qutb-minar",
-      "qutab-minar",
-      "qutub-minar-complex",
-      "qutub"
-    ]
-  },
-  "delhi:india-gate": {
-    imageUrl: "/images/places/delhi/india-gate.webp",
-    visualDescription: "Majestic 42-meter sandstone triumphal arch war memorial at Kartavya Path with evening illumination and reflecting pools.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: [
-      "india-gate",
-      "all-india-war-memorial",
-      "india-gate-delhi",
-      "kartavya-path"
-    ]
-  },
-  "delhi:red-fort": {
-    imageUrl: "/images/places/delhi/red-fort.webp",
-    visualDescription: "Monumental red sandstone Lahori Gate ramparts and Mughal domes of Lal Qila in Old Delhi.",
-    category: "Culture & Heritage",
-    semanticTheme: "heritage",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: [
-      "red-fort",
-      "lal-qila",
-      "lal-kila",
-      "red-fort-delhi",
-      "red-fort-complex"
-    ]
-  },
-  "delhi:chandni-chowk": {
-    imageUrl: "/images/places/delhi/chandni-chowk.webp",
-    visualDescription: "Historic Old Delhi bazaar boulevard with Mughal-era haveli storefronts, spice markets, and jalebi vendors.",
-    category: "Shops & Markets",
-    semanticTheme: "shopping",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: [
-      "chandni-chowk",
-      "chandani-chowk",
-      "chandni-chowk-market",
-      "old-delhi-bazaar"
-    ]
-  },
-  "delhi:lotus-temple": {
-    imageUrl: "/images/places/delhi/lotus-temple.webp",
-    visualDescription: "Architectural white marble lotus flower Bahai House of Worship with serene reflection ponds.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: [
-      "lotus-temple",
-      "bahai-lotus-temple",
-      "bahai-house-of-worship",
-      "lotus-temple-delhi"
-    ]
-  },
-
-  // ==========================================
-  // --- AMRITSAR LANDMARKS ---
-  // ==========================================
-  "amritsar:golden-temple": {
-    imageUrl: "/images/places/amritsar/golden-temple.webp",
-    visualDescription: "Sri Harmandir Sahib gilded sanctum glowing in the sacred Amrit Sarovar lake with white marble parikrama.",
-    category: "Culture & Heritage",
-    semanticTheme: "spiritual",
-    sourceType: "editorial_artwork",
-    source: "vanvas_curated",
-    aliases: [
-      "golden-temple",
-      "harmandir-sahib",
-      "sri-harmandir-sahib",
-      "darbar-sahib",
-      "golden-temple-amritsar"
     ]
   },
 

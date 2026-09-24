@@ -196,7 +196,8 @@ async def create_trip(
         activity_intensity=trip_in.activity_intensity,
         interests=trip_in.interests,
         hotel=hotel,
-        rental=rental
+        rental=rental,
+        planning_mode=getattr(trip_in, "planning_mode", "multi_day") or "multi_day"
     )
 
     for day_dict in generated_days:

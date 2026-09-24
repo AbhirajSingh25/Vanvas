@@ -25,6 +25,166 @@ class CuratedArtworkProvider(ArtworkProvider):
     """
 
     PLACE_ARTWORK_REGISTRY: Dict[str, Dict[str, Any]] = {
+        # --- Delhi Landmarks ---
+        "delhi:qutub-minar": {
+            "image_url": "/images/places/delhi/qutub-minar.jpg",
+            "tier": "exact_place",
+            "place_name": "Qutub Minar",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "The iconic 73-meter fluted red sandstone and marble minaret built in 1192, a UNESCO World Heritage site in Mehrauli.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["qutub-minar", "qutb-minar", "qutub-minar-complex", "qutab-minar", "qutub"]
+        },
+        "delhi:red-fort": {
+            "image_url": "/images/places/delhi/red-fort.jpg",
+            "tier": "exact_place",
+            "place_name": "Red Fort (Lal Qila)",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "Historic red sandstone fortress of the Mughal emperors in Old Delhi, overlooking the Yamuna river.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["red-fort", "lal-qila", "lal-qila-delhi", "delhi-red-fort"]
+        },
+        "delhi:india-gate": {
+            "image_url": "/images/places/delhi/india-gate.jpg",
+            "tier": "exact_place",
+            "place_name": "India Gate",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "Prominent 42-meter triumphal arch war memorial standing at the eastern edge of Kartavya Path in Central Delhi.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["india-gate", "all-india-war-memorial", "kartavya-path"]
+        },
+        "delhi:lotus-temple": {
+            "image_url": "/images/places/delhi/lotus-temple.jpg",
+            "tier": "exact_place",
+            "place_name": "Lotus Temple (Bahá'í House of Worship)",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "visual_description": "Stunning flowerlike Bahá'í House of Worship composed of 27 freestanding marble-clad petals surrounded by nine ponds in Kalkaji.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["lotus-temple", "bahai-lotus-temple", "bahai-temple"]
+        },
+        "delhi:chandni-chowk": {
+            "image_url": "/images/places/delhi/chandni-chowk.jpg",
+            "tier": "exact_place",
+            "place_name": "Chandni Chowk",
+            "destination": "Delhi",
+            "category": "Shops & Markets",
+            "semantic_theme": "shopping",
+            "visual_description": "Vibrant and bustling historic Mughal-era marketplace renowned for authentic street food, spice markets, and centuries-old Havelis.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["chandni-chowk", "chandni-chawk", "old-delhi-market", "paranthe-wali-gali"]
+        },
+        "delhi:humayuns-tomb": {
+            "image_url": "/images/places/delhi/red-fort.jpg",
+            "tier": "exact_place",
+            "place_name": "Humayun's Tomb",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "heritage",
+            "visual_description": "Splendid Mughal garden tomb of Emperor Humayun, precursor to the Taj Mahal with red sandstone and white marble dome.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["humayuns-tomb", "humayun-tomb", "maqbara-e-humayun"]
+        },
+        "delhi:akshardham": {
+            "image_url": "/images/places/delhi/lotus-temple.jpg",
+            "tier": "exact_place",
+            "place_name": "Swaminarayan Akshardham",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "visual_description": "Grand Hindu temple complex showcasing traditional Indian architecture, stone carvings, and spiritual gardens.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["akshardham", "akshardham-temple", "swaminarayan-akshardham"]
+        },
+        "delhi:jama-masjid": {
+            "image_url": "/images/places/delhi/red-fort.jpg",
+            "tier": "exact_place",
+            "place_name": "Jama Masjid",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "visual_description": "One of India's largest and most historic Mughal mosques built by Shah Jahan in Old Delhi.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["jama-masjid", "masjid-e-jahan-numa"]
+        },
+        "delhi:gurudwara-bangla-sahib": {
+            "image_url": "/images/places/delhi/lotus-temple.jpg",
+            "tier": "exact_place",
+            "place_name": "Gurudwara Bangla Sahib",
+            "destination": "Delhi",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "visual_description": "Prominent Sikh house of worship in Connaught Place with golden dome and sacred Sarovar pool.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["gurudwara-bangla-sahib", "bangla-sahib", "bangla-sahib-gurudwara"]
+        },
+        "delhi:lodhi-garden": {
+            "image_url": "/images/places/delhi/india-gate.jpg",
+            "tier": "exact_place",
+            "place_name": "Lodhi Garden",
+            "destination": "Delhi",
+            "category": "Nature & Trails",
+            "semantic_theme": "nature",
+            "visual_description": "Historic 90-acre city park containing the architectural tombs of Mohammed Shah and Sikandar Lodi.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["lodhi-garden", "lodhi-gardens", "lodi-garden"]
+        },
+        "delhi:connaught-place": {
+            "image_url": "/images/places/delhi/chandni-chowk.jpg",
+            "tier": "exact_place",
+            "place_name": "Connaught Place",
+            "destination": "Delhi",
+            "category": "Shops & Markets",
+            "semantic_theme": "shopping",
+            "visual_description": "Georgian-style colonnaded commercial center and cultural hub in Central Delhi.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["connaught-place", "cp", "rajiv-chowk"]
+        },
+
+        # --- Amritsar Landmarks ---
+        "amritsar:golden-temple": {
+            "image_url": "/images/places/amritsar/golden-temple.jpg",
+            "tier": "exact_place",
+            "place_name": "Golden Temple (Harmandir Sahib)",
+            "destination": "Amritsar",
+            "category": "Culture & Heritage",
+            "semantic_theme": "spiritual",
+            "visual_description": "The holiest Gurdwara of Sikhism (Harmandir Sahib) with glistening gold sanctum in the sacred Amrit Sarovar tank.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": ["golden-temple", "harmandir-sahib", "sri-harmandir-sahib", "amritsar-golden-temple", "darbar-sahib"]
+        },
+
         # --- Tungnath-Chandrashila Landmarks ---
         "tungnath-chandrashila:tungnath-temple": {
             "image_url": "/images/places/tungnath-chandrashila/tungnath-temple.jpg",
@@ -1021,6 +1181,46 @@ class CuratedArtworkProvider(ArtworkProvider):
     }
 
     DESTINATION_CATEGORY_REGISTRY: Dict[str, Dict[str, Any]] = {
+        "delhi": {
+            "generic": "/images/places/delhi/india-gate.jpg",
+            "categories": {
+                "stay": "/images/places/universal/stay.webp",
+                "cafe": "/images/places/universal/cafe.webp",
+                "food": "/images/places/universal/food.webp",
+                "nature": "/images/places/delhi/india-gate.jpg",
+                "trail": "/images/places/delhi/india-gate.jpg",
+                "heritage": "/images/places/delhi/red-fort.jpg",
+                "spiritual": "/images/places/delhi/lotus-temple.jpg",
+                "viewpoint": "/images/places/delhi/qutub-minar.jpg",
+                "waterfall": "/images/places/universal/waterfall.webp",
+                "lake": "/images/places/universal/lake.webp",
+                "monastery": "/images/places/universal/monastery.webp",
+                "church": "/images/places/universal/church.webp",
+                "beach": "/images/places/universal/beach.webp",
+                "shopping": "/images/places/delhi/chandni-chowk.jpg",
+                "transport": "/images/places/universal/transport.webp"
+            }
+        },
+        "amritsar": {
+            "generic": "/images/places/amritsar/golden-temple.jpg",
+            "categories": {
+                "stay": "/images/places/universal/stay.webp",
+                "cafe": "/images/places/universal/cafe.webp",
+                "food": "/images/places/universal/food.webp",
+                "nature": "/images/places/universal/nature.webp",
+                "trail": "/images/places/universal/nature.webp",
+                "heritage": "/images/places/amritsar/golden-temple.jpg",
+                "spiritual": "/images/places/amritsar/golden-temple.jpg",
+                "viewpoint": "/images/places/universal/viewpoint.webp",
+                "waterfall": "/images/places/universal/waterfall.webp",
+                "lake": "/images/places/universal/lake.webp",
+                "monastery": "/images/places/universal/monastery.webp",
+                "church": "/images/places/universal/church.webp",
+                "beach": "/images/places/universal/beach.webp",
+                "shopping": "/images/places/universal/shopping.webp",
+                "transport": "/images/places/universal/transport.webp"
+            }
+        },
         "jaipur": {
             "generic": "/images/destinations/jaipur/hero.jpg",
             "categories": {

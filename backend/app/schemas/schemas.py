@@ -465,6 +465,7 @@ class TripCreateRequest(BaseModel):
     activity_intensity: str = "Balanced"  # Relaxed, Balanced, Packed
     interests: List[str] = ["Nature", "Cafés", "Adventure", "Food"]
     origin_city: Optional[str] = "Delhi"
+    planning_mode: Optional[str] = "multi_day"  # one_day, weekend, multi_day, trek, relaxed, adventure
 
 class TripSummaryResponse(BaseModel):
     id: str

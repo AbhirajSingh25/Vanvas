@@ -59,9 +59,9 @@ export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({ tripId, isOpen, onCl
             <div>
               <div className="flex items-center gap-2">
                 <TravelStamp label="पहुँच गए • I'M HERE" variant="terracotta" />
-                <span className="text-xs text-[#D8DED5]/80 font-mono">08:17 AM ARRIVAL</span>
+                <span className="text-xs text-[#D8DED5]/80 font-mono">LIVE TRIP CONTEXT</span>
               </div>
-              <h2 className="text-xl font-serif font-black tracking-tight mt-1">You Just Stepped Off The Bus.</h2>
+              <h2 className="text-xl font-serif font-black tracking-tight mt-1">You Just Arrived At Your Destination.</h2>
             </div>
           </div>
           <button onClick={onClose} aria-label="Close" className="p-2 rounded-full text-[#D8DED5] hover:bg-[#173B32]">
@@ -74,14 +74,14 @@ export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({ tripId, isOpen, onCl
           {loading ? (
             <div className="py-16 flex flex-col items-center justify-center space-y-3 text-[#173B32]">
               <div className="w-9 h-9 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-serif italic text-[#7B4D36]">Analyzing arrival time, hotel check-in &amp; nearest chai dhabas...</p>
+              <p className="text-xs font-serif italic text-[#7B4D36]">Analyzing arrival time, hotel check-in &amp; nearest local food spots...</p>
             </div>
           ) : data ? (
             <>
               {/* Timing & Hotel Status Pill */}
               <div className="p-4 rounded-2xl bg-[#EFE5D2] border-2 border-[#E5D5BA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] text-[#7B4D36] font-bold uppercase tracking-wider">Current Mountain Hub</div>
+                  <div className="text-[10px] text-[#7B4D36] font-bold uppercase tracking-wider">Current Destination Hub</div>
                   <div className="font-serif font-black text-[#173B32] text-lg">{data.current_location_name}</div>
                 </div>
                 {data.hotel_info && (

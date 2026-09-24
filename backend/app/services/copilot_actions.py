@@ -17,7 +17,13 @@ from app.models.models import User, Trip, TripMember, Place, Destination, SavedP
 
 logger = logging.getLogger("vanvas.services.copilot_actions")
 
-ALLOWLISTED_ACTIONS = {"save_place", "add_place_to_itinerary"}
+ALLOWLISTED_ACTIONS = {
+    "save_place",
+    "add_place_to_itinerary",
+    "remove_place_from_itinerary",
+    "adjust_trip_pace_or_budget",
+    "change_trip_dates"
+}
 
 
 class CopilotActionService:
@@ -61,6 +67,12 @@ class CopilotActionService:
                 return cls._execute_save_place(db=db, user=user, payload=payload)
             elif clean_action == "add_place_to_itinerary":
                 return cls._execute_add_place_to_itinerary(db=db, user=user, payload=payload)
+            elif clean_action == "remove_place_from_itinerary":
+                return cls._execute_remove_place_from_itinerary(db=db, user=user, payload=payload)
+            elif clean_action == "adjust_trip_pace_or_budget":
+                return cls._execute_adjust_trip_pace_or_budget(db=db, user=user, payload=payload)
+            elif clean_action == "change_trip_dates":
+                return cls._execute_change_trip_dates(db=db, user=user, payload=payload)
             else:
                 return {
                     "success": False,
@@ -358,3 +370,244 @@ class CopilotActionService:
             "itinerary_item_id": new_item.id,
             "message": f"Added '{place.name}' to Day {day_number} of '{trip.title}'.",
         }
+
+    @classmethod
+    def _execute_remove_place_from_itinerary(
+        cls,
+        db: Session,
+        user: User,
+        payload: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Removes an itinerary item by ID, or by place_id / place_name on an authorized trip.
+        """
+        trip_id = str(payload.get("trip_id") or "").strip()
+        item_id = payload.get("item_id") or payload.get("itinerary_item_id")
+        place_identifier = payload.get("place_id") or payload.get("place_name")
+
+        if not trip_id:
+            return {
+                "success": False,
+                "action": "remove_place_from_itinerary",
+                "error_code": "MISSING_TRIP_ID",
+                "message": "Missing required parameter 'trip_id'.",
+            }
+
+        trip = db.query(Trip).filter(Trip.id == trip_id).first()
+        if not trip:
+            return {
+                "success": False,
+                "action": "remove_place_from_itinerary",
+                "error_code": "TRIP_NOT_FOUND",
+                "message": f"Trip '{trip_id}' not found.",
+            }
+
+        # Authorization
+        is_creator = (trip.user_id == user.id)
+        is_member = bool(db.query(TripMember).filter(
+            TripMember.trip_id == trip.id, TripMember.user_id == user.id
+        ).first())
+        is_admin = (getattr(user, "role", "") == "admin")
+
+        if not is_creator and not is_member and not is_admin:
+            return {
+                "success": False,
+                "action": "remove_place_from_itinerary",
+                "error_code": "TRIP_NOT_AUTHORIZED",
+                "message": "You are not authorized to modify this trip.",
+            }
+
+        # Locate target item
+        target_item = None
+        if item_id:
+            target_item = db.query(ItineraryItem).join(Itinerary).filter(
+                Itinerary.trip_id == trip.id,
+                ItineraryItem.id == item_id
+            ).first()
+
+        if not target_item and place_identifier:
+            query = db.query(ItineraryItem).join(Itinerary).filter(
+                Itinerary.trip_id == trip.id
+            )
+            # Try by place_id or matching title
+            match = query.filter(
+                (ItineraryItem.place_id == str(place_identifier)) |
+                (ItineraryItem.title.ilike(f"%{place_identifier}%"))
+            ).first()
+            if match:
+                target_item = match
+
+        if not target_item:
+            return {
+                "success": False,
+                "action": "remove_place_from_itinerary",
+                "error_code": "ITEM_NOT_FOUND",
+                "message": f"Could not find matching itinerary item to remove from '{trip.title}'.",
+            }
+
+        item_title = target_item.title
+        day_num = target_item.itinerary.day_number if target_item.itinerary else 1
+        db.delete(target_item)
+        db.commit()
+
+        logger.info(f"User {user.id} removed item '{item_title}' from Day {day_num} of trip {trip.id}")
+
+        return {
+            "success": True,
+            "action": "remove_place_from_itinerary",
+            "trip_id": trip.id,
+            "day": day_num,
+            "removed_title": item_title,
+            "message": f"Removed '{item_title}' from Day {day_num} of '{trip.title}'.",
+        }
+
+    @classmethod
+    def _execute_adjust_trip_pace_or_budget(
+        cls,
+        db: Session,
+        user: User,
+        payload: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Adjusts trip pacing, travel style, or budget on an authorized trip.
+        """
+        trip_id = str(payload.get("trip_id") or "").strip()
+        new_style = payload.get("travel_style")
+        new_intensity = payload.get("activity_intensity") or payload.get("pace")
+        new_budget = payload.get("budget")
+
+        if not trip_id:
+            return {
+                "success": False,
+                "action": "adjust_trip_pace_or_budget",
+                "error_code": "MISSING_TRIP_ID",
+                "message": "Missing required parameter 'trip_id'.",
+            }
+
+        trip = db.query(Trip).filter(Trip.id == trip_id).first()
+        if not trip:
+            return {
+                "success": False,
+                "action": "adjust_trip_pace_or_budget",
+                "error_code": "TRIP_NOT_FOUND",
+                "message": f"Trip '{trip_id}' not found.",
+            }
+
+        # Authorization
+        is_creator = (trip.user_id == user.id)
+        is_member = bool(db.query(TripMember).filter(
+            TripMember.trip_id == trip.id, TripMember.user_id == user.id
+        ).first())
+        if not is_creator and not is_member and getattr(user, "role", "") != "admin":
+            return {
+                "success": False,
+                "action": "adjust_trip_pace_or_budget",
+                "error_code": "TRIP_NOT_AUTHORIZED",
+                "message": "You are not authorized to modify this trip.",
+            }
+
+        changes = []
+        if new_style and new_style.title() in ["Budget", "Balanced", "Comfort", "Premium", "Luxury"]:
+            trip.travel_style = new_style.title()
+            changes.append(f"travel style to '{trip.travel_style}'")
+
+        if new_intensity and new_intensity.title() in ["Relaxed", "Balanced", "Packed", "Slow", "Moderate", "Fast"]:
+            val = "Relaxed" if new_intensity.title() == "Slow" else ("Packed" if new_intensity.title() == "Fast" else "Balanced")
+            trip.activity_intensity = val
+            changes.append(f"pace to '{trip.activity_intensity}'")
+
+        if new_budget is not None:
+            try:
+                b_val = float(new_budget)
+                if b_val > 0:
+                    trip.budget = b_val
+                    changes.append(f"budget to ₹{int(b_val):,}")
+            except (ValueError, TypeError):
+                pass
+
+        if not changes:
+            return {
+                "success": False,
+                "action": "adjust_trip_pace_or_budget",
+                "error_code": "NO_VALID_UPDATES",
+                "message": "No valid pace, style, or budget updates provided.",
+            }
+
+        db.commit()
+        db.refresh(trip)
+
+        logger.info(f"User {user.id} updated trip {trip.id}: {', '.join(changes)}")
+
+        return {
+            "success": True,
+            "action": "adjust_trip_pace_or_budget",
+            "trip_id": trip.id,
+            "travel_style": trip.travel_style,
+            "activity_intensity": trip.activity_intensity,
+            "budget": trip.budget,
+            "message": f"Updated '{trip.title}': {', '.join(changes)}.",
+        }
+
+    @classmethod
+    def _execute_change_trip_dates(
+        cls,
+        db: Session,
+        user: User,
+        payload: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Adjusts trip dates or duration.
+        """
+        trip_id = str(payload.get("trip_id") or "").strip()
+        num_days = payload.get("num_days") or payload.get("days")
+
+        if not trip_id:
+            return {
+                "success": False,
+                "action": "change_trip_dates",
+                "error_code": "MISSING_TRIP_ID",
+                "message": "Missing required parameter 'trip_id'.",
+            }
+
+        trip = db.query(Trip).filter(Trip.id == trip_id).first()
+        if not trip:
+            return {
+                "success": False,
+                "action": "change_trip_dates",
+                "error_code": "TRIP_NOT_FOUND",
+                "message": f"Trip '{trip_id}' not found.",
+            }
+
+        is_creator = (trip.user_id == user.id)
+        if not is_creator and getattr(user, "role", "") != "admin":
+            return {
+                "success": False,
+                "action": "change_trip_dates",
+                "error_code": "TRIP_NOT_AUTHORIZED",
+                "message": "You are not authorized to modify this trip.",
+            }
+
+        if num_days:
+            try:
+                days_int = int(num_days)
+                if 1 <= days_int <= 30:
+                    trip.num_days = days_int
+                    db.commit()
+                    db.refresh(trip)
+                    return {
+                        "success": True,
+                        "action": "change_trip_dates",
+                        "trip_id": trip.id,
+                        "num_days": trip.num_days,
+                        "message": f"Updated duration of '{trip.title}' to {trip.num_days} days.",
+                    }
+            except Exception:
+                pass
+
+        return {
+            "success": False,
+            "action": "change_trip_dates",
+            "error_code": "INVALID_DURATION",
+            "message": "Invalid duration specified.",
+        }
+

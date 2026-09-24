@@ -380,8 +380,37 @@ class GeminiProvider(AIProvider):
                 continue  # Supplied via systemInstruction field instead
             gemini_role = "model" if role == "assistant" else "user"
             content_text = (msg.get("content") or "").strip()
-            if content_text:  # Skip empty messages — Gemini rejects empty parts
-                contents.append({"role": gemini_role, "parts": [{"text": content_text}]})
+            parts = []
+            if content_text:
+                parts.append({"text": content_text})
+
+            # Multimodal vision support for user images
+            image_b64 = msg.get("image_base64")
+            image_mime = msg.get("image_mime_type") or "image/jpeg"
+            if image_b64:
+                parts.append({
+                    "inlineData": {
+                        "mimeType": image_mime,
+                        "data": image_b64
+                    }
+                })
+            elif msg.get("image_url"):
+                img_url = msg.get("image_url")
+                if "/api/v1/copilot/image/" in img_url or "/api/v1/auth/profile/avatar/file/" in img_url:
+                    from app.services.storage_service import StorageService
+                    import base64
+                    key_part = img_url.split("/file/")[-1] if "/file/" in img_url else img_url.split("/image/")[-1]
+                    file_bytes, mime = StorageService.read_local_file(key_part)
+                    if file_bytes:
+                        parts.append({
+                            "inlineData": {
+                                "mimeType": mime or "image/jpeg",
+                                "data": base64.b64encode(file_bytes).decode("utf-8")
+                            }
+                        })
+
+            if parts:
+                contents.append({"role": gemini_role, "parts": parts})
 
         executed_tool_calls = []
         total_prompt_tokens = 0

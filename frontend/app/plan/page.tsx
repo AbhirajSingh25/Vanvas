@@ -109,6 +109,63 @@ function PlanTripContent() {
     }
     return "Balanced";
   });
+
+  type PlanningMode = "one_day" | "weekend" | "multi_day" | "trek" | "relaxed" | "adventure";
+  const [planningMode, setPlanningMode] = useState<PlanningMode>(() => {
+    const dSlug = initialDest.toLowerCase();
+    if (dSlug.includes("tungnath") || urlExp.includes("trek")) return "trek";
+    if (urlDays === "1") return "one_day";
+    if (urlDays === "2") return "weekend";
+    return "multi_day";
+  });
+
+  const handleModeSelect = (mode: PlanningMode) => {
+    setPlanningMode(mode);
+    const today = new Date();
+    if (mode === "one_day") {
+      setStartDate(today.toISOString().split("T")[0]);
+      setEndDate(today.toISOString().split("T")[0]);
+      setActivityIntensity("Balanced");
+    } else if (mode === "weekend") {
+      const d1 = new Date();
+      const d2 = new Date();
+      d2.setDate(d1.getDate() + 1);
+      setStartDate(d1.toISOString().split("T")[0]);
+      setEndDate(d2.toISOString().split("T")[0]);
+      setActivityIntensity("Balanced");
+    } else if (mode === "trek") {
+      const d1 = new Date();
+      const d2 = new Date();
+      d2.setDate(d1.getDate() + 2);
+      setStartDate(d1.toISOString().split("T")[0]);
+      setEndDate(d2.toISOString().split("T")[0]);
+      setActivityIntensity("Balanced");
+      setSelectedInterests((prev) => Array.from(new Set([...prev, "Nature", "Adventure"])));
+    } else if (mode === "relaxed") {
+      const d1 = new Date();
+      const d2 = new Date();
+      d2.setDate(d1.getDate() + 3);
+      setStartDate(d1.toISOString().split("T")[0]);
+      setEndDate(d2.toISOString().split("T")[0]);
+      setActivityIntensity("Relaxed");
+    } else if (mode === "adventure") {
+      const d1 = new Date();
+      const d2 = new Date();
+      d2.setDate(d1.getDate() + 3);
+      setStartDate(d1.toISOString().split("T")[0]);
+      setEndDate(d2.toISOString().split("T")[0]);
+      setActivityIntensity("Packed");
+      setSelectedInterests((prev) => Array.from(new Set([...prev, "Adventure", "Nature"])));
+    } else {
+      const d1 = new Date();
+      const d2 = new Date();
+      d2.setDate(d1.getDate() + 2);
+      setStartDate(d1.toISOString().split("T")[0]);
+      setEndDate(d2.toISOString().split("T")[0]);
+      setActivityIntensity("Balanced");
+    }
+  };
+
   const [wakeUpPref, setWakeUpPref] = useState<string>("Normal");
   const [activityIntensity, setActivityIntensity] = useState<string>("Balanced");
 
@@ -286,6 +343,7 @@ function PlanTripContent() {
         wake_up_preference: wakeUpPref,
         activity_intensity: activityIntensity,
         interests: selectedInterests,
+        planning_mode: planningMode,
       });
 
       clearInterval(interval);
@@ -492,21 +550,61 @@ function PlanTripContent() {
             </div>
           )}
 
-          {/* STEP 2: DATES (कितने दिन?) */}
+          {/* STEP 2: PLANNING MODE & DATES (योजना मोड और तारीखें) */}
           {step === 2 && (
             <div className="space-y-6 relative z-10 animate-fadeIn">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">कितने दिन?</span>
+                  <span className="text-2xl font-serif font-black text-[#B65E3C]">योजना मोड</span>
                   <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 2</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
-                  When are you setting off?
+                  How would you like to travel?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">VANVAS automatically calculates your total journey days.</p>
+                <p className="text-xs text-[#7B4D36] mt-1">Select your expedition pace &amp; planning archetype.</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Planning Mode Selector Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                {[
+                  { id: "one_day", title: "One-Day Return", hindi: "एक दिवसीय", desc: "Dawn-to-dusk loop with zero rush", days: "1 Day" },
+                  { id: "weekend", title: "Weekend Escape", hindi: "सप्ताहांत यात्रा", desc: "2-Day curated sanctuary weekend", days: "2 Days" },
+                  { id: "multi_day", title: "Multi-Day Expedition", hindi: "विस्तृत यात्रा", desc: "Deep exploratory regional route", days: "3+ Days" },
+                  { id: "trek", title: "Trek Expedition", hindi: "ट्रेक अभियान", desc: "Trailheads, elevation & camps", days: "Trail Focus" },
+                  { id: "relaxed", title: "Slow & Relaxed", hindi: "सुकून भरा सफ़र", desc: "Unrushed cafes & hammocks", days: "Low Density" },
+                  { id: "adventure", title: "High Adventure", hindi: "साहसिक सफ़र", desc: "Packed summits, rafting & action", days: "High Intensity" },
+                ].map((m) => {
+                  const isSelected = planningMode === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => handleModeSelect(m.id as any)}
+                      className={`p-3.5 rounded-2xl border-2 text-left transition-all flex flex-col justify-between min-h-[95px] relative ${
+                        isSelected
+                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                          : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[10px] font-serif opacity-80">{m.hindi}</span>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                          isSelected ? "bg-[#B49252] text-[#173B32]" : "bg-[#E5D5BA] text-[#173B32]"
+                        }`}>
+                          {m.days}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="font-serif font-bold text-sm leading-tight mt-1">{m.title}</div>
+                        <div className="text-[11px] opacity-80 mt-0.5 line-clamp-1">{m.desc}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Date Pickers */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="p-4 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-1">
                   <label className="text-xs font-bold text-[#173B32] uppercase tracking-wider block flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-[#B65E3C]" />

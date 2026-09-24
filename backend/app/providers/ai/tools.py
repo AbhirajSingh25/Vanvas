@@ -217,6 +217,72 @@ VANVAS_COPILOT_TOOLS: List[Dict[str, Any]] = [
         }
     },
     {
+        "name": "remove_place_from_itinerary",
+        "description": "Remove an activity, spot, or place from the user's active trip itinerary schedule.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "trip_id": {
+                    "type": "string",
+                    "description": "The active authorized trip ID."
+                },
+                "place_name": {
+                    "type": "string",
+                    "description": "Name or title of the place to remove (e.g. 'Hadimba Temple', 'Cafe 1947')."
+                },
+                "place_id": {
+                    "type": "string",
+                    "description": "Optional canonical place ID to remove."
+                }
+            },
+            "required": ["trip_id"]
+        }
+    },
+    {
+        "name": "adjust_trip_pace_or_budget",
+        "description": "Adjust trip pacing (Relaxed/Slow vs Packed/Fast), travel style (Budget vs Luxury), or total budget.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "trip_id": {
+                    "type": "string",
+                    "description": "The active authorized trip ID."
+                },
+                "activity_intensity": {
+                    "type": "string",
+                    "description": "Pace or intensity: 'Relaxed', 'Balanced', 'Packed'."
+                },
+                "travel_style": {
+                    "type": "string",
+                    "description": "Style: 'Budget', 'Balanced', 'Comfort', 'Premium', 'Luxury'."
+                },
+                "budget": {
+                    "type": "number",
+                    "description": "New total trip budget in INR."
+                }
+            },
+            "required": ["trip_id"]
+        }
+    },
+    {
+        "name": "change_trip_dates",
+        "description": "Adjust total days or duration of the active authorized trip.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "trip_id": {
+                    "type": "string",
+                    "description": "The active authorized trip ID."
+                },
+                "num_days": {
+                    "type": "integer",
+                    "description": "New trip duration in days (e.g. 1 for one-day, 2 for weekend, 3, 5)."
+                }
+            },
+            "required": ["trip_id", "num_days"]
+        }
+    },
+    {
         "name": "search_stays",
         "description": "Search verified curated and live accommodations in a destination with truthful pricing and provenance status.",
         "parameters": {

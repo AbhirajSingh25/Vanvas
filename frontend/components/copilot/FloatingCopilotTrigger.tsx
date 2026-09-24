@@ -39,7 +39,7 @@ export const FloatingCopilotTrigger: React.FC<FloatingCopilotTriggerProps> = ({
             </span>
           </div>
           <span className="text-[8px] font-mono text-[#D8DED5]/70 mt-0.5 tracking-wider uppercase">
-            Mountain AI
+            Travel AI
           </span>
         </div>
 

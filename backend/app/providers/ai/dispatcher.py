@@ -44,6 +44,9 @@ class AIToolDispatcher:
             "get_budget_summary": self._get_budget_summary,
             "save_place": self._save_place,
             "add_place_to_itinerary": self._add_place_to_itinerary,
+            "remove_place_from_itinerary": self._remove_place_from_itinerary,
+            "adjust_trip_pace_or_budget": self._adjust_trip_pace_or_budget,
+            "change_trip_dates": self._change_trip_dates,
             "search_stays": self._search_stays,
             "search_transport": self._search_transport,
             "search_rentals": self._search_rentals,
@@ -616,6 +619,30 @@ class AIToolDispatcher:
             db=self.db,
             user=self.user,
             action_name="add_place_to_itinerary",
+            payload=args,
+        )
+
+    async def _remove_place_from_itinerary(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        return CopilotActionService.execute_action(
+            db=self.db,
+            user=self.user,
+            action_name="remove_place_from_itinerary",
+            payload=args,
+        )
+
+    async def _adjust_trip_pace_or_budget(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        return CopilotActionService.execute_action(
+            db=self.db,
+            user=self.user,
+            action_name="adjust_trip_pace_or_budget",
+            payload=args,
+        )
+
+    async def _change_trip_dates(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        return CopilotActionService.execute_action(
+            db=self.db,
+            user=self.user,
+            action_name="change_trip_dates",
             payload=args,
         )
 

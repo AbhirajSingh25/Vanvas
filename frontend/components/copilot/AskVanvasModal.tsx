@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Sparkles, X, Compass, ArrowRight, Bot, MapPin, Clock, Coins, Calendar, Navigation, ShieldCheck, Mountain } from "lucide-react";
+import { Send, Sparkles, X, Compass, ArrowRight, Bot, MapPin, Clock, Coins, Calendar, Navigation, ShieldCheck, Image as ImageIcon, Loader2, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { CopilotChatResponse } from "@/types";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
@@ -10,48 +10,127 @@ interface AskVanvasModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultDestination?: string;
+  tripId?: string;
+  trip?: any;
 }
 
 interface MessageItem {
   role: "user" | "assistant";
   text: string;
+  imageUrl?: string;
   actions?: Array<{ label: string; action: string; payload?: any }>;
   places?: any[];
   plan?: any;
   metadata?: any;
 }
 
+const ALL_DESTINATIONS = [
+  "Delhi", "Goa", "Jaipur", "Udaipur", "Varanasi", "Manali",
+  "Mussoorie", "Rishikesh", "Dharamshala", "Kasol", "Leh Ladakh",
+  "Spiti Valley", "Munnar", "Amritsar", "Tungnath–Chandrashila"
+];
+
+const DESTINATION_PROMPTS: Record<string, { welcome: string; actions: Array<{ label: string; action: string; prompt: string }> }> = {
+  delhi: {
+    welcome: "नमस्ते! I am VANVAS Intelligence for Delhi. Ready to guide your heritage walks, street food explorations, monuments, and metro navigation.",
+    actions: [
+      { label: "Qutub Minar to Red Fort Day Plan", action: "plan_delhi", prompt: "Create a realistic 1-day itinerary covering Qutub Minar, Humayun's Tomb, and Red Fort with transport tips." },
+      { label: "Chandni Chowk Food Trail", action: "food_delhi", prompt: "What are the most iconic street food stalls and sweet shops in Chandni Chowk?" },
+      { label: "Quiet Green Spots in Delhi", action: "nature_delhi", prompt: "Suggest peaceful gardens and historic heritage walks like Lodhi Garden and Sundar Nursery." },
+      { label: "Connaught Place Cafes", action: "cafes_delhi", prompt: "Recommend the best coffee houses and heritage cafes around CP." },
+    ]
+  },
+  goa: {
+    welcome: "नमस्ते! I am VANVAS Intelligence for Goa. Looking for coastal trails, scooter rentals, heritage quarters, or beachside cafes?",
+    actions: [
+      { label: "Quiet South Goa Beaches", action: "beaches_goa", prompt: "What are the most serene and uncrowded beaches in South Goa?" },
+      { label: "Scooter Rental & Coastal Route", action: "rental_goa", prompt: "How do I rent a scooter and what is the best scenic coastal drive?" },
+      { label: "Fontainhas Heritage Walk", action: "heritage_goa", prompt: "Guide me through the Latin Quarter of Fontainhas in Panjim." },
+      { label: "Sunset Seafood Shacks", action: "food_goa", prompt: "Where are the best authentic Goan seafood spots with sunset views?" },
+    ]
+  },
+  jaipur: {
+    welcome: "खम्मा घणी! I am VANVAS Intelligence for Jaipur. Ready to explore royal forts, Rajasthani thalis, and bustling bazaars.",
+    actions: [
+      { label: "Amer Fort & Nahargarh Sunset", action: "forts_jaipur", prompt: "How should I plan Amer Fort and Nahargarh sunset in one afternoon?" },
+      { label: "Authentic Dal Baati Churma", action: "food_jaipur", prompt: "Where can I find the most authentic Rajasthani Thali in Jaipur?" },
+      { label: "Old City Bazaars & Lassi", action: "bazaar_jaipur", prompt: "Guide me through Johari Bazaar, Bapu Bazaar, and Lassiwala." },
+      { label: "Hawa Mahal Morning Photo Walk", action: "photo_jaipur", prompt: "Best morning viewpoints and rooftop cafes opposite Hawa Mahal." },
+    ]
+  }
+};
+
 export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   isOpen,
   onClose,
   defaultDestination,
+  tripId,
+  trip,
 }) => {
-  const [selectedDest, setSelectedDest] = useState<string>(defaultDestination || "Mussoorie");
+  const initialDest = defaultDestination || trip?.destination?.name || "Delhi";
+  const [selectedDest, setSelectedDest] = useState<string>(initialDest);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<MessageItem[]>([
-    {
+  
+  // Image upload state
+  const [attachedImage, setAttachedImage] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getInitialMessages = (dest: string): MessageItem[] => {
+    const destKey = dest.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (trip) {
+      return [{
+        role: "assistant",
+        text: `नमस्ते! I am your VANVAS journey companion for ${trip.title || dest}. How can I assist your expedition, optimize your schedule, or scout nearby spots?`,
+        actions: [
+          { label: "Top Cafes Nearby", action: "custom", payload: `What are the best cafes near ${dest}?` },
+          { label: "Make Itinerary Cheaper", action: "custom", payload: "How can I make this trip more budget friendly?" },
+          { label: "3-Hour Micro Plan", action: "custom", payload: `Give me a quick 3-hour plan for ${dest}.` },
+          { label: "Local Transport Options", action: "custom", payload: `What are the best mobility options to move around ${dest}?` },
+        ]
+      }];
+    }
+
+    if (DESTINATION_PROMPTS[destKey]) {
+      const cfg = DESTINATION_PROMPTS[destKey];
+      return [{
+        role: "assistant",
+        text: cfg.welcome,
+        actions: cfg.actions.map(a => ({ label: a.label, action: "custom", payload: a.prompt }))
+      }];
+    }
+
+    return [{
       role: "assistant",
-      text: `नमस्ते! I am VANVAS Intelligence, powered by Google Gemini reasoning over verified travel knowledge across India. Where would you like to explore?`,
+      text: `नमस्ते! I am VANVAS Intelligence, powered by Google Gemini reasoning over verified travel facts for ${dest} and across India. Where would you like to explore?`,
       actions: [
-        { label: "Top Cafes in Mussoorie", action: "explore_mussoorie" },
-        { label: "Manali 3-Day Itinerary", action: "plan_manali" },
-        { label: "Leh Altitude & Weather", action: "weather_leh" },
-        { label: "Rishikesh Quiet Stays", action: "stays_rishikesh" },
-      ],
-    },
-  ]);
+        { label: `Top Spots in ${dest}`, action: "custom", payload: `What are the must-visit places in ${dest}?` },
+        { label: `Curated 1-Day Plan`, action: "custom", payload: `Create a realistic 1-day itinerary for ${dest}.` },
+        { label: `Local Food & Stalls`, action: "custom", payload: `What is the most famous local food in ${dest}?` },
+        { label: `Transport & Mobility`, action: "custom", payload: `How do I easily get around ${dest}?` },
+      ]
+    }];
+  };
+
+  const [messages, setMessages] = useState<MessageItem[]>(() => getInitialMessages(initialDest));
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const baseDestinations = ["Mussoorie", "Manali", "Rishikesh", "Dharamshala", "Leh Ladakh", "Spiti Valley", "Goa", "Jaipur"];
-  const destinations = selectedDest && !baseDestinations.map(d => d.toLowerCase()).includes(selectedDest.toLowerCase())
-    ? [selectedDest, ...baseDestinations]
-    : baseDestinations;
+  const destinations = React.useMemo(() => {
+    const list = [...ALL_DESTINATIONS];
+    if (selectedDest && !list.map(d => d.toLowerCase()).includes(selectedDest.toLowerCase())) {
+      list.unshift(selectedDest);
+    }
+    return list;
+  }, [selectedDest]);
 
   useEffect(() => {
     if (defaultDestination) {
       setSelectedDest(defaultDestination);
+      setMessages(getInitialMessages(defaultDestination));
+      setConversationId(null);
     }
   }, [defaultDestination, isOpen]);
 
@@ -88,20 +167,80 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSend = async (msgText?: string) => {
-    const textToSend = msgText || input;
-    if (!textToSend.trim() || loading) return;
+  const handleDestinationChange = (dest: string) => {
+    setSelectedDest(dest);
+    setConversationId(null);
+    setMessages(getInitialMessages(dest));
+    setAttachedImage(null);
+    setUploadError(null);
+  };
 
-    const newMessages: MessageItem[] = [...messages, { role: "user", text: textToSend }];
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("Image must be smaller than 10MB");
+      return;
+    }
+    setUploadError(null);
+    const previewUrl = URL.createObjectURL(file);
+    setAttachedImage({ file, previewUrl });
+  };
+
+  const handleRemoveImage = () => {
+    if (attachedImage) {
+      URL.revokeObjectURL(attachedImage.previewUrl);
+    }
+    setAttachedImage(null);
+    setUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSend = async (msgText?: string, customImage?: string) => {
+    const textToSend = msgText || input;
+    if ((!textToSend.trim() && !attachedImage) || loading) return;
+
+    let uploadedUrl: string | undefined = customImage;
+
+    // Handle Image Upload if attached
+    if (attachedImage && !uploadedUrl) {
+      setIsUploadingImage(true);
+      try {
+        const uploadRes = await api.uploadCopilotImage(attachedImage.file);
+        uploadedUrl = uploadRes.image_url;
+      } catch (err: any) {
+        console.error("Image upload failed:", err);
+        setUploadError("Could not upload image. Please try again.");
+        setIsUploadingImage(false);
+        return;
+      } finally {
+        setIsUploadingImage(false);
+      }
+    }
+
+    const newMessages: MessageItem[] = [
+      ...messages,
+      {
+        role: "user",
+        text: textToSend || "Analyze this image for travel recommendations.",
+        imageUrl: uploadedUrl || attachedImage?.previewUrl
+      }
+    ];
+
     setMessages(newMessages);
     if (!msgText) setInput("");
+    handleRemoveImage();
     setLoading(true);
 
     try {
       const res: CopilotChatResponse = await api.copilotChat({
-        message: textToSend,
+        message: textToSend || "Analyze this attached image for destination/place guidance.",
         conversation_id: conversationId || undefined,
+        trip_id: tripId || trip?.id || undefined,
         destination_slug: selectedDest.toLowerCase().replace(/\s+/g, "-"),
+        image_url: uploadedUrl,
       });
 
       if (res.conversation_id) {
@@ -112,7 +251,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         ...prev,
         {
           role: "assistant",
-          text: res.message || "I have analyzed your expedition query.",
+          text: res.message || "I have analyzed your travel query.",
           actions: res.actions?.map((a: any) => ({
             label: a.title || a.label,
             action: a.action_type || a.action,
@@ -138,22 +277,8 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   };
 
   const handleActionClick = (action: string, label: string, payload?: any) => {
-    if (action === "explore_mussoorie") {
-      setSelectedDest("Mussoorie");
-      setConversationId(null);
-      handleSend("What are the best cafes and heritage viewpoints in Mussoorie?");
-    } else if (action === "plan_manali") {
-      setSelectedDest("Manali");
-      setConversationId(null);
-      handleSend("Give me a curated plan for 3 days in Manali with verified spots");
-    } else if (action === "weather_leh") {
-      setSelectedDest("Leh Ladakh");
-      setConversationId(null);
-      handleSend("What is the current weather forecast and acclimatization advice for Leh?");
-    } else if (action === "stays_rishikesh") {
-      setSelectedDest("Rishikesh");
-      setConversationId(null);
-      handleSend("Recommend quiet scenic riverside spots in Rishikesh");
+    if (payload && typeof payload === "string") {
+      handleSend(payload);
     } else {
       handleSend(label);
     }
@@ -181,13 +306,16 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-serif font-bold text-base sm:text-lg text-[#FAF7F0]">Ask VANVAS</h3>
+                <h3 className="font-serif font-bold text-base sm:text-lg text-[#FAF7F0]">
+                  Ask VANVAS
+                  {selectedDest ? ` • ${selectedDest}` : ""}
+                </h3>
                 <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#173B32] border border-[#B49252]/40 text-[#B49252] font-semibold">
-                  GEMINI INTELLIGENCE
+                  GEMINI TRAVEL AI
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-[#D8DED5]/80 font-mono mt-0.5">
-                Zero Hallucinations • Real-Time Himalayan Reasoning
+                Zero Hallucinations • Real-Time India Travel Reasoning
               </p>
             </div>
           </div>
@@ -203,14 +331,14 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         {/* Destination Switcher Bar */}
         <div className="px-3 sm:px-4 py-2 bg-[#EFE5D2] border-b border-[#E5D5BA] flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
           <span className="text-[11px] font-mono text-[#7B4D36] font-bold flex items-center gap-1 shrink-0">
-            <Mountain className="w-3 h-3 text-[#B65E3C]" /> Valley:
+            <MapPin className="w-3 h-3 text-[#B65E3C]" /> Explore:
           </span>
           {destinations.map((dest) => (
             <button
               key={dest}
-              onClick={() => setSelectedDest(dest)}
+              onClick={() => handleDestinationChange(dest)}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all shrink-0 cursor-pointer ${
-                selectedDest === dest
+                selectedDest.toLowerCase() === dest.toLowerCase()
                   ? "bg-[#173B32] text-[#FAF7F0] shadow-2xs"
                   : "bg-[#FAF7F0] text-[#20211D]/80 hover:bg-[#D8CBB2] border border-[#E5D5BA]"
               }`}
@@ -220,7 +348,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
           ))}
         </div>
 
-        {/* Message Thread (Independently Scrollable with min-h-0) */}
+        {/* Message Thread */}
         <div className="flex-1 min-h-0 p-3.5 sm:p-5 overflow-y-auto space-y-3.5 sm:space-y-4 text-sm bg-[#FAF7F0] overscroll-contain">
           {messages.map((m, idx) => (
             <div key={idx} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
@@ -232,74 +360,83 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
                     : "bg-[#EFE5D2] text-[#20211D] rounded-bl-xs border border-[#E5D5BA] font-normal"
                 }`}
               >
+                {/* User Uploaded Image Preview in Thread */}
+                {m.imageUrl && (
+                  <div className="mb-2.5 overflow-hidden rounded-xl border border-white/20 shadow-sm max-w-[240px]">
+                    <img
+                      src={m.imageUrl}
+                      alt="Uploaded query visual"
+                      className="w-full h-36 object-cover"
+                    />
+                  </div>
+                )}
+
                 <p className="whitespace-pre-line text-[13px] leading-relaxed">{m.text}</p>
 
                 {/* Referenced Places Cards */}
                 {m.places && m.places.length > 0 && (
                   <div className="mt-3.5 pt-3 border-t border-[#D8CBB2]/60 space-y-2">
                     <p className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">
-                      Verified Destination Spots ({m.places.length})
+                      Verified Travel Spots ({m.places.length})
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {m.places.map((place: any, pIdx: number) => (
-                        <div 
-                          key={pIdx} 
-                          className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] shadow-2xs hover:border-[#173B32] transition-colors relative"
-                        >
-                          {(() => {
-                            const visual = resolvePlaceArtwork(
-                              place.name,
-                              defaultDestination || place.destination || "",
-                              place.category || "Sight",
-                              place.image_url,
-                              place.is_live,
-                              place.source
-                            );
-                            return (
-                              <img 
-                                src={visual.imageUrl} 
-                                alt={place.name} 
-                                className="w-12 h-12 rounded-lg object-cover border border-[#E5D5BA]"
-                                onError={(e: any) => { 
-                                  if (visual.fallbackUrl && e.currentTarget.src !== visual.fallbackUrl) {
-                                    e.currentTarget.src = visual.fallbackUrl;
-                                  }
-                                }}
-                              />
-                            );
-                          })()}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <p className="text-xs font-serif font-bold text-[#173B32] truncate">{place.name}</p>
-                              {place.is_open_now === true ? (
-                                <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded shrink-0">Open</span>
-                              ) : place.is_open_now === false ? (
-                                <span className="text-[9px] font-mono font-bold text-[#7B4D36] bg-[#EFE5D2] px-1.5 py-0.2 rounded shrink-0">Closed</span>
-                              ) : null}
+                      {m.places.map((place: any, pIdx: number) => {
+                        const visual = resolvePlaceArtwork(
+                          place.name || place.place_name,
+                          selectedDest || place.destination || "",
+                          place.category || "Sight",
+                          place.image_url,
+                          place.is_live,
+                          place.source
+                        );
+                        return (
+                          <div 
+                            key={pIdx} 
+                            className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] shadow-2xs hover:border-[#173B32] transition-colors relative"
+                          >
+                            <img 
+                              src={visual.imageUrl} 
+                              alt={place.name} 
+                              className="w-12 h-12 rounded-lg object-cover border border-[#E5D5BA]"
+                              onError={(e: any) => { 
+                                if (visual.fallbackUrl && e.currentTarget.src !== visual.fallbackUrl) {
+                                  e.currentTarget.src = visual.fallbackUrl;
+                                }
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1">
+                                <p className="text-xs font-serif font-bold text-[#173B32] truncate">{place.name}</p>
+                                {place.is_open_now === true ? (
+                                  <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded shrink-0">Open</span>
+                                ) : place.is_open_now === false ? (
+                                  <span className="text-[9px] font-mono font-bold text-[#7B4D36] bg-[#EFE5D2] px-1.5 py-0.2 rounded shrink-0">Closed</span>
+                                ) : null}
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[10px] text-[#7B4D36] font-mono mt-0.5">
+                                <span className="capitalize">{place.category || "Spot"}</span>
+                                {place.distance_km !== undefined && (
+                                  <span>• {place.distance_km} km</span>
+                                )}
+                                {place.approx_cost ? (
+                                  <span>• ₹{place.approx_cost}</span>
+                                ) : null}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-[#7B4D36] font-mono mt-0.5">
-                              <span className="capitalize">{place.category || "Spot"}</span>
-                              {place.distance_km !== undefined && (
-                                <span>• {place.distance_km} km</span>
-                              )}
-                              {place.approx_cost ? (
-                                <span>• ₹{place.approx_cost}</span>
-                              ) : null}
-                            </div>
+                            {place.latitude && place.longitude && (
+                              <a
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#173B32] hover:text-[#B65E3C] p-1 shrink-0"
+                                title="Directions"
+                              >
+                                <Navigation className="w-3.5 h-3.5" />
+                              </a>
+                            )}
                           </div>
-                          {place.latitude && place.longitude && (
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#173B32] hover:text-[#B65E3C] p-1 shrink-0"
-                              title="Directions"
-                            >
-                              <Navigation className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -310,7 +447,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs font-bold font-serif text-[#173B32] flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-[#B65E3C]" />
-                        {m.plan.headline || "Himalayan Itinerary"}
+                        {m.plan.headline || "Curated Micro-Itinerary"}
                       </span>
                       <span className="text-[10px] font-mono text-[#7B4D36] px-2 py-0.5 rounded-full bg-[#EFE5D2]">
                         {m.plan.duration_hours || 3} Hours
@@ -368,13 +505,41 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
           {loading && (
             <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-[#EFE5D2] text-xs text-[#7B4D36] border border-[#E5D5BA] animate-pulse w-fit">
               <Sparkles className="w-4 h-4 text-[#B65E3C] animate-spin" />
-              <span className="font-serif italic font-medium">Scouting mountain coordinates &amp; verified spots...</span>
+              <span className="font-serif italic font-medium">Scouting verified spots &amp; routes for {selectedDest}...</span>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Footer Composer (Fixed at Bottom, Above Mobile Safe Area) */}
+        {/* Upload Thumbnail Banner */}
+        {attachedImage && (
+          <div className="px-4 py-2 bg-[#E5D5BA]/50 border-t border-[#E5D5BA] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img src={attachedImage.previewUrl} alt="Upload preview" className="w-10 h-10 object-cover rounded-lg border border-[#173B32]/30" />
+              <div className="text-xs font-mono text-[#173B32]">
+                <p className="font-bold truncate max-w-[200px]">{attachedImage.file.name}</p>
+                <p className="text-[10px] text-[#7B4D36]">Ready to submit with message</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemoveImage}
+              className="p-1 rounded-full text-[#7B4D36] hover:bg-[#D8CBB2] transition-colors"
+              title="Remove image"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {uploadError && (
+          <div className="px-4 py-1.5 bg-rose-100 text-rose-800 text-xs font-mono flex items-center gap-1.5 border-t border-rose-200">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+        )}
+
+        {/* Footer Composer */}
         <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] border-t border-[#E5D5BA] bg-[#EFE5D2] shrink-0">
           <form
             onSubmit={(e) => {
@@ -383,20 +548,49 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
             }}
             className="flex items-center gap-2"
           >
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+            />
+
+            {/* Attach Image Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading || isUploadingImage}
+              aria-label="Upload visual photo or ticket"
+              className={`p-2.5 sm:p-3 rounded-2xl border transition-all flex items-center justify-center shrink-0 cursor-pointer ${
+                attachedImage 
+                  ? "bg-[#173B32] text-[#B49252] border-[#173B32]" 
+                  : "bg-white text-[#7B4D36] border-[#E5D5BA] hover:bg-[#FAF7F0] hover:text-[#173B32]"
+              }`}
+              title="Attach photo of landmark, menu, or ticket"
+            >
+              <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask anything about ${selectedDest}... (e.g. Best chai spot with sunset view?)`}
+              placeholder={`Ask anything about ${selectedDest}... (e.g. Best chai spot, Metro route, 1-day plan)`}
               className="flex-1 bg-white border border-[#E5D5BA] rounded-2xl px-4 py-2.5 text-base sm:text-sm text-[#20211D] placeholder:text-[#20211D]/45 focus:outline-none focus:border-[#173B32] focus:ring-1 focus:ring-[#173B32] transition-all"
             />
             <button
               type="submit"
-              disabled={loading || !input.trim()}
+              disabled={loading || isUploadingImage || (!input.trim() && !attachedImage)}
               className="p-3 rounded-2xl bg-[#173B32] hover:bg-[#B65E3C] text-[#FAF7F0] disabled:opacity-40 transition-all shadow-sm cursor-pointer active:scale-95 flex items-center justify-center shrink-0"
               aria-label="Send Message"
             >
-              <Send className="w-4 h-4 text-[#B49252]" />
+              {loading || isUploadingImage ? (
+                <Loader2 className="w-4 h-4 text-[#B49252] animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 text-[#B49252]" />
+              )}
             </button>
           </form>
         </div>

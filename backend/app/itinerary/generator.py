@@ -23,19 +23,20 @@ class ItineraryEngine:
         interests: List[str],
         hotel: Optional[Hotel] = None,
         rental: Optional[RentalOption] = None,
+        planning_mode: str = "multi_day",
     ) -> List[Dict[str, Any]]:
         num_days = max(1, (end_date - start_date).days + 1)
         dest_slug = (destination.slug or "").lower().strip()
-        is_trek_destination = dest_slug == "tungnath-chandrashila" or "trek" in dest_slug
+        is_trek_destination = planning_mode == "trek" or dest_slug == "tungnath-chandrashila" or "trek" in dest_slug
         
-        # Determine items per day based on intensity and duration
+        # Determine items per day based on intensity, mode, and duration
         if is_trek_destination:
             items_per_day = 3 if activity_intensity == "Relaxed" else 4
-        elif num_days == 1:
+        elif planning_mode == "one_day" or num_days == 1:
             items_per_day = 3 if activity_intensity == "Relaxed" else 4
-        elif activity_intensity == "Relaxed":
+        elif planning_mode in ["relaxed", "slow_travel"] or activity_intensity == "Relaxed":
             items_per_day = 3
-        elif activity_intensity == "Packed":
+        elif activity_intensity == "Packed" or planning_mode == "adventure":
             items_per_day = 5
         else:
             items_per_day = 4

@@ -6,9 +6,10 @@ Authenticated persistent conversational travel intelligence backed by Gemini Fre
 import time
 import json
 import logging
+import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -22,6 +23,7 @@ from app.services.copilot_context import (
     CopilotContextEngine,
     extract_session_decisions,
 )
+from app.services.storage_service import StorageService
 from app.core.rate_limiter import rate_limit
 
 logger = logging.getLogger("vanvas.api.copilot")
@@ -33,7 +35,65 @@ class CopilotChatRequest(BaseModel):
     conversation_id: Optional[str] = Field(None, description="Optional active conversation ID for persistent multi-turn session")
     trip_id: Optional[str] = Field(None, description="Optional active trip ID for contextual reasoning")
     destination_slug: Optional[str] = Field(None, description="Optional destination slug")
+    image_url: Optional[str] = Field(None, description="Optional persistent URL of an uploaded image")
+    image_base64: Optional[str] = Field(None, description="Optional base64 image data")
+    image_mime_type: Optional[str] = Field("image/jpeg", description="MIME type for image")
     context: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Optional client state")
+
+
+class ImageUploadResponse(BaseModel):
+    image_url: str
+    message: str
+
+
+@router.post("/upload-image", response_model=ImageUploadResponse)
+async def upload_copilot_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Upload an image for Ask VANVAS reasoning (e.g. photo of monument, menu, trail map, ticket).
+    Returns persistent public URL.
+    """
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image exceeds maximum allowable size of 10MB.")
+
+    mime_type = file.content_type or "image/jpeg"
+    ext = ".jpg"
+    if "png" in mime_type:
+        ext = ".png"
+    elif "webp" in mime_type:
+        ext = ".webp"
+
+    unique_key = f"chat/{current_user.id}/{uuid.uuid4().hex}{ext}"
+    try:
+        url = StorageService.upload_chat_image(storage_key=unique_key, file_bytes=content, content_type=mime_type)
+        return ImageUploadResponse(image_url=url, message="Image uploaded successfully.")
+    except Exception as e:
+        logger.error(f"Chat image upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
+
+
+@router.get("/image/{key_path:path}")
+def serve_copilot_image(key_path: str):
+    """Serves locally stored chat images."""
+    if ".." in key_path or key_path.startswith("/") or key_path.startswith("\\"):
+        raise HTTPException(status_code=400, detail="Invalid file path.")
+
+    file_bytes, mime_type = StorageService.read_local_file(f"chat/{key_path}" if not key_path.startswith("chat/") else key_path)
+    if file_bytes is None:
+        raise HTTPException(status_code=404, detail="Image not found.")
+
+    return Response(
+        content=file_bytes,
+        media_type=mime_type or "image/jpeg",
+        headers={
+            "Cache-Control": "public, max-age=86400, immutable",
+            "X-Content-Type-Options": "nosniff",
+        }
+    )
+
 
 
 class CopilotChatResponse(BaseModel):
@@ -126,10 +186,15 @@ async def copilot_chat(
         )
 
     # 4. Persist User Message
+    user_metadata = {}
+    if req.image_url:
+        user_metadata["image_url"] = req.image_url
+
     user_msg = ConversationMessage(
         conversation_id=conv.id,
         role="user",
         content=clean_msg,
+        metadata_json=json.dumps(user_metadata) if user_metadata else None,
     )
     db.add(user_msg)
     conv.updated_at = datetime.now(timezone.utc)
@@ -156,8 +221,18 @@ async def copilot_chat(
         content = rm.get("content", "")
         messages_for_ai.append({"role": role, "content": content})
 
+    active_user_turn = {
+        "role": "user",
+        "content": clean_msg,
+        "image_url": req.image_url,
+        "image_base64": req.image_base64,
+        "image_mime_type": req.image_mime_type,
+    }
+
     if not messages_for_ai or messages_for_ai[-1].get("content") != clean_msg:
-        messages_for_ai.append({"role": "user", "content": clean_msg})
+        messages_for_ai.append(active_user_turn)
+    else:
+        messages_for_ai[-1] = active_user_turn
 
     # 7. Execute AI reasoning with registered tools
     try:

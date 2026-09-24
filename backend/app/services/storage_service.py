@@ -210,8 +210,34 @@ class StorageService:
             return False
 
     @classmethod
-    def read_local_avatar(cls, storage_key: str) -> tuple[Optional[bytes], Optional[str]]:
-        """Reads avatar bytes and content type from local uploads directory."""
+    def upload_chat_image(
+        cls,
+        storage_key: str,
+        file_bytes: bytes,
+        content_type: str = "image/jpeg"
+    ) -> str:
+        """
+        Uploads image attached to Copilot / Ask VANVAS conversation.
+        Returns persistent accessible URL.
+        """
+        provider = cls.get_effective_provider()
+        if provider == "cloudinary" and (settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET):
+            return cls._upload_cloudinary(file_bytes=file_bytes, storage_key=storage_key)
+        if provider == "s3" and (settings.S3_BUCKET_NAME and settings.S3_ACCESS_KEY_ID and settings.S3_SECRET_ACCESS_KEY):
+            return cls._upload_s3(file_bytes=file_bytes, storage_key=storage_key, content_type=content_type)
+        
+        # Local Persistent Storage
+        clean_key = Path(storage_key).as_posix().lstrip("/").replace("..", "")
+        upload_dir = Path(settings.STORAGE_UPLOAD_DIR)
+        target_path = upload_dir / clean_key
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_bytes(file_bytes)
+        logger.info(f"Chat image saved to local storage: {target_path}")
+        return f"/api/v1/copilot/image/{clean_key}"
+
+    @classmethod
+    def read_local_file(cls, storage_key: str) -> tuple[Optional[bytes], Optional[str]]:
+        """Reads image bytes and mime type for any storage key."""
         clean_key = Path(storage_key).as_posix().lstrip("/").replace("..", "")
         upload_dir = Path(settings.STORAGE_UPLOAD_DIR)
         target_path = upload_dir / clean_key
@@ -223,5 +249,11 @@ class StorageService:
                 ".jpeg": "image/jpeg",
                 ".png": "image/png"
             }
-            return target_path.read_bytes(), mime_map.get(ext, "image/webp")
+            return target_path.read_bytes(), mime_map.get(ext, "image/jpeg")
         return None, None
+
+    @classmethod
+    def read_local_avatar(cls, storage_key: str) -> tuple[Optional[bytes], Optional[str]]:
+        """Reads avatar bytes and mime type from local storage."""
+        return cls.read_local_file(storage_key)
+

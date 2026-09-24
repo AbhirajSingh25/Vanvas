@@ -317,6 +317,7 @@ export const api = {
     activity_intensity: string;
     interests: string[];
     origin_city?: string;
+    planning_mode?: string;
   }): Promise<Trip> {
     return fetchApi("/trips", {
       method: "POST",
@@ -564,6 +565,15 @@ export const api = {
   },
 
   // AI Copilot
+  async uploadCopilotImage(file: File): Promise<{ image_url: string; message: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetchApi("/copilot/upload-image", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
   async copilotChat(params: {
     message: string;
     conversation_id?: string;
@@ -571,6 +581,9 @@ export const api = {
     destination_slug?: string;
     action_type?: string;
     current_time?: string;
+    image_url?: string;
+    image_base64?: string;
+    image_mime_type?: string;
   }): Promise<CopilotChatResponse> {
     return fetchApi("/copilot/chat", {
       method: "POST",

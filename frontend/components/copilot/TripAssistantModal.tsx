@@ -42,11 +42,11 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
   const [messages, setMessages] = useState<MessageItem[]>([
     {
       role: "assistant",
-      text: `नमस्ते! I'm your VANVAS expedition copilot for ${resolvedDest}. How can I assist your mountain journey today?`,
+      text: `नमस्ते! I'm your VANVAS expedition copilot for ${resolvedDest}. How can I assist your journey today?`,
       actions: [
         { label: "कहाँ खाएं? • Where to eat?", action: "find_food" },
         { label: "3-Hour Micro Plan", action: "quick_plan" },
-        { label: "Trail Weather", action: "check_weather" },
+        { label: "Live Weather & Advice", action: "check_weather" },
         { label: "Quiet Cafes Nearby", action: "quiet_cafes" },
       ],
     },
