@@ -78,6 +78,24 @@ export const CANONICAL_DESTINATIONS: CanonicalDestination[] = [
     is_curated: true,
   },
   {
+    id: "dest-kainchi-dham",
+    name: "Kainchi Dham",
+    slug: "kainchi-dham",
+    hindi_name: "कैंची धाम",
+    state: "Uttarakhand",
+    region: "Kumaon Hills",
+    tagline: "Neem Karoli Baba's sacred riverside ashram nestled in pine-scented Kumaoni valleys.",
+    description: "Established in 1962 by the revered mystic Neem Karoli Baba, Kainchi Dham sits between two scenic mountain hills in Nainital district. Renowned worldwide as a sanctuary of immense spiritual peace, chanting, and selfless service.",
+    hero_image: "/images/destinations/kainchi-dham/hero.jpg",
+    latitude: 29.4239,
+    longitude: 79.5165,
+    altitude_meters: 1400,
+    best_time_to_visit: "Round the Year (Best: March to June & Sept to Nov)",
+    weather_type: "Pleasant Mountain River Breeze",
+    is_featured: true,
+    is_curated: true,
+  },
+  {
     id: "dest-kasol",
     name: "Kasol",
     slug: "kasol",
@@ -303,6 +321,10 @@ export const CANONICAL_HINDI_NAMES: Record<string, string> = {
   amritsar: "अमृतसर",
   lucknow: "लखनऊ",
   gokarna: "गोकर्ण",
+  "kainchi-dham": "कैंची धाम",
+  "kainchi dham": "कैंची धाम",
+  kainchi: "कैंची धाम",
+  "neem karoli baba ashram": "नीम करौली बाबा आश्रम",
 };
 
 /**

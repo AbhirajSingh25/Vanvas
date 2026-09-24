@@ -140,6 +140,13 @@ export default function ExploreIndexPage() {
       quote: "Chopta base camp → World's highest Shiva shrine (3,680m) → 360° Chaukhamba sunrise summit (4,000m).",
       badge: "GARHWAL TREK EXPEDITION",
     },
+    "kainchi-dham": {
+      hindi: "कैंची धाम",
+      alt: "1400m",
+      coords: "29°25′N",
+      quote: "Neem Karoli Baba's sacred riverside ashram nestled in pine-scented Kumaoni valleys.",
+      badge: "KUMAON SANCTUARY",
+    },
   };
 
   // Deduplicate destinations by slug so Tungnath-Chandrashila appears exactly once

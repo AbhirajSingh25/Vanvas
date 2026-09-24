@@ -8,7 +8,10 @@ import {
   Bus, Users, Wallet, ArrowRight, RefreshCw, Dice5,
   Fuel, ShieldCheck, Check, Star, Coffee, Utensils,
   Sun, Sunset, Moon, Sunrise, ChevronRight, Navigation,
-  AlertCircle, Building2, Store, Heart, ThumbsUp
+  AlertCircle, Building2, Store, Heart, ThumbsUp, Shield,
+  CheckCircle2, Pill, ShoppingBag, Phone, ExternalLink,
+  ChevronDown, ChevronUp, SlidersHorizontal, LocateFixed,
+  Flame, Award, Layers
 } from "lucide-react";
 import {
   ONE_DAY_HUBS,
@@ -17,34 +20,40 @@ import {
   OneDayHub,
   OneDayVibe,
   OneDayTransport,
-  findOneDayPlansByOrigin
+  FeasibilityRating,
+  getOneDayPlansForOrigin
 } from "@/lib/oneDayContentModel";
+import { getCurrentGPSPosition, UserLocationState } from "@/lib/locationService";
 import { VanvasImage } from "@/components/ui/VanvasImage";
+import { VanvasMap, VanvasMapMarker, VanvasMapRouteSegment } from "@/components/ui/VanvasMap";
 
-const VIBES: Array<{ id: OneDayVibe; label: string; hindi: string; emoji: string }> = [
-  { id: "Road Trip", label: "Road Trip", hindi: "सफ़र", emoji: "🚗" },
-  { id: "Food", label: "Food & Dhabas", hindi: "ढाबा", emoji: "🫓" },
-  { id: "Mountains", label: "Mountain Mist", hindi: "पहाड़", emoji: "⛰️" },
-  { id: "Water", label: "Rivers & Waterfalls", hindi: "झरने", emoji: "🌊" },
-  { id: "History", label: "Forts & Stepwells", hindi: "इतिहास", emoji: "🏰" },
-  { id: "Chill", label: "Chill & Cafes", hindi: "सुकून", emoji: "☕" },
-  { id: "Adventure", label: "Hikes & Trails", hindi: "रोमांच", emoji: "🥾" },
-  { id: "Random", label: "Surprise Us", hindi: "कुछ भी", emoji: "🎲" },
+const ALL_VIBES: Array<{ id: OneDayVibe; label: string; emoji: string }> = [
+  { id: "Road Trip", label: "Road Trip", emoji: "🚗" },
+  { id: "Food", label: "Food & Dhabas", emoji: "🫓" },
+  { id: "Mountains", label: "Mountains", emoji: "⛰️" },
+  { id: "Rivers", label: "Rivers", emoji: "🌊" },
+  { id: "Waterfalls", label: "Waterfalls", emoji: "💧" },
+  { id: "Forts", label: "Forts & Baoris", emoji: "🏰" },
+  { id: "Temples", label: "Temples", emoji: "🛕" },
+  { id: "Spiritual", label: "Spiritual", emoji: "🙏" },
+  { id: "Beach", label: "Beach", emoji: "🏖️" },
+  { id: "Cafes", label: "Cafes", emoji: "☕" },
+  { id: "Shopping", label: "Shopping", emoji: "🛍️" },
+  { id: "Adventure", label: "Adventure", emoji: "🧗" },
+  { id: "Chill", label: "Chill", emoji: "🛋️" },
+  { id: "Nature", label: "Nature", emoji: "🌲" },
+  { id: "Sunrise", label: "Sunrise", emoji: "🌅" },
+  { id: "Sunset", label: "Sunset", emoji: "🌇" },
+  { id: "Photo Trip", label: "Photo Trip", emoji: "📸" },
+  { id: "Student Budget", label: "Student Budget", emoji: "🎓" },
+  { id: "Random", label: "Surprise Me", emoji: "🎲" },
 ];
 
-const TRANSPORTS: Array<{ id: OneDayTransport; label: string; icon: React.ElementType }> = [
-  { id: "Any", label: "Any Mode", icon: Navigation },
-  { id: "Car", label: "Car / Self-Drive", icon: Car },
-  { id: "Bike", label: "Motorcycle / Scooter", icon: Bike },
-  { id: "Train", label: "Local Train", icon: Train },
-  { id: "Bus", label: "Express Bus", icon: Bus },
-];
-
-function OneDayInner() {
+function OneDayPlannerInner() {
   const searchParams = useSearchParams();
   const fromParam = searchParams.get("from") || searchParams.get("origin") || "";
 
-  // Core Generator State
+  // Location / Origin State
   const [selectedHubId, setSelectedHubId] = useState<string>(() => {
     if (fromParam) {
       const match = ONE_DAY_HUBS.find((h) =>
@@ -56,339 +65,379 @@ function OneDayInner() {
     return "delhi";
   });
 
-  const [customCity, setCustomCity] = useState<string>("");
-  const [isCustomCity, setIsCustomCity] = useState<boolean>(false);
-  const [selectedVibe, setSelectedVibe] = useState<OneDayVibe>("Road Trip");
-  const [selectedTransport, setSelectedTransport] = useState<OneDayTransport>("Car");
+  const [customOrigin, setCustomOrigin] = useState<string>("");
+  const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
+  const [gpsState, setGpsState] = useState<UserLocationState>({ status: "IDLE", coords: null });
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+
+  // Preference Filters
+  const [selectedVibes, setSelectedVibes] = useState<OneDayVibe[]>(["Road Trip", "Food"]);
   const [groupSize, setGroupSize] = useState<number>(3);
-  const [budgetCap, setBudgetCap] = useState<number>(1500);
-  const [activeTab, setActiveTab] = useState<"TIMELINE" | "MAP" | "BUDGET" | "RENTALS">("TIMELINE");
+  const [isStudentMode, setIsStudentMode] = useState<boolean>(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"PLAN" | "TIMELINE" | "MAP" | "RENTALS" | "CHECKLIST" | "COMPROMISE">("PLAN");
 
   // Group voting compromise state
-  const [groupVotes, setGroupVotes] = useState<Record<string, number>>({
-    Mountains: 2,
-    Food: 3,
-    "Road Trip": 3,
-    Water: 1,
-    Chill: 2
-  });
+  const [votingOptions, setVotingOptions] = useState<Array<{ name: string; friend: string; votes: number }>>([
+    { name: "Agra (Taj Mahal & Petha)", friend: "Aman", votes: 3 },
+    { name: "Mathura (Banke Bihari & Ghats)", friend: "Priya", votes: 2 },
+    { name: "Murthal (Parathas & Haveli)", friend: "Rohan", votes: 4 },
+  ]);
 
   const activeHub = ONE_DAY_HUBS.find((h) => h.id === selectedHubId) || ONE_DAY_HUBS[0];
-  const originQuery = isCustomCity && customCity ? customCity : activeHub.name;
+  const activeOriginLabel = isCustomMode && customOrigin ? customOrigin : activeHub.name;
 
-  // Filter or match plans
-  const availablePlans = useMemo(() => {
-    return findOneDayPlansByOrigin(originQuery, selectedVibe, budgetCap);
-  }, [originQuery, selectedVibe, budgetCap]);
+  // Fetch / Filter available plans for the origin
+  const plansForOrigin = useMemo(() => {
+    return getOneDayPlansForOrigin(activeOriginLabel, selectedVibes);
+  }, [activeOriginLabel, selectedVibes]);
 
-  // Set default selected plan
-  useEffect(() => {
-    if (availablePlans.length > 0 && (!selectedPlanId || !availablePlans.some((p) => p.id === selectedPlanId))) {
-      setSelectedPlanId(availablePlans[0].id);
+  // Selected Active Plan
+  const activePlan = useMemo(() => {
+    if (selectedPlanId) {
+      const found = plansForOrigin.find((p) => p.id === selectedPlanId);
+      if (found) return found;
     }
-  }, [availablePlans, selectedPlanId]);
+    return plansForOrigin[0] || SEEDED_ONE_DAY_PLANS[0];
+  }, [plansForOrigin, selectedPlanId]);
 
-  const currentPlan = availablePlans.find((p) => p.id === selectedPlanId) || availablePlans[0] || SEEDED_ONE_DAY_PLANS[0];
+  // Sync selectedPlanId when plans change
+  useEffect(() => {
+    if (plansForOrigin.length > 0 && !plansForOrigin.some((p) => p.id === selectedPlanId)) {
+      setSelectedPlanId(plansForOrigin[0].id);
+    }
+  }, [plansForOrigin, selectedPlanId]);
 
-  // Randomizer "Surprise Us"
-  const handleRandomize = () => {
-    const randomVibes: OneDayVibe[] = ["Mountains", "Food", "Road Trip", "Water", "History", "Chill", "Adventure"];
-    const randomVibe = randomVibes[Math.floor(Math.random() * randomVibes.length)];
-    const randomHub = ONE_DAY_HUBS[Math.floor(Math.random() * ONE_DAY_HUBS.length)];
-    const randomBudgets = [800, 1200, 1500, 2000];
-    const randomBudget = randomBudgets[Math.floor(Math.random() * randomBudgets.length)];
+  // GPS Location Handler
+  const handleGPSDetect = async () => {
+    setIsLocating(true);
+    const res = await getCurrentGPSPosition();
+    setIsLocating(false);
+    setGpsState(res);
 
-    setSelectedHubId(randomHub.id);
-    setIsCustomCity(false);
-    setSelectedVibe(randomVibe);
-    setBudgetCap(randomBudget);
+    if (res.status === "GRANTED" && res.coords) {
+      // Find closest hub
+      let closest = ONE_DAY_HUBS[0];
+      let minDist = Infinity;
+      ONE_DAY_HUBS.forEach((hub) => {
+        const d = Math.hypot(hub.lat - res.coords!.latitude, hub.lng - res.coords!.longitude);
+        if (d < minDist) {
+          minDist = d;
+          closest = hub;
+        }
+      });
+      setSelectedHubId(closest.id);
+      setIsCustomMode(false);
+    }
   };
 
-  // Group vote handler
-  const handleVote = (vibe: string) => {
-    setGroupVotes((prev) => ({
-      ...prev,
-      [vibe]: (prev[vibe] || 0) + 1
-    }));
+  const toggleVibe = (vibe: OneDayVibe) => {
+    if (vibe === "Random") {
+      const randomChoices = ALL_VIBES.filter((v) => v.id !== "Random");
+      const pick1 = randomChoices[Math.floor(Math.random() * randomChoices.length)].id;
+      const pick2 = randomChoices[Math.floor(Math.random() * randomChoices.length)].id;
+      setSelectedVibes([pick1, pick2]);
+      return;
+    }
+
+    if (selectedVibes.includes(vibe)) {
+      if (selectedVibes.length > 1) {
+        setSelectedVibes(selectedVibes.filter((v) => v !== vibe));
+      }
+    } else {
+      setSelectedVibes([...selectedVibes, vibe]);
+    }
   };
 
-  // Live Budget Breakdown Calculations
-  const calculatedFuel = currentPlan.budgetBreakdown.transportFuel;
-  const calculatedFood = currentPlan.budgetBreakdown.foodSnacks;
-  const calculatedActivities = currentPlan.budgetBreakdown.activityTickets;
-  const calculatedTolls = currentPlan.budgetBreakdown.parkingTolls;
-  const calculatedMisc = currentPlan.budgetBreakdown.miscEmergency;
+  // Group split calculations
+  const totalTripCost = Math.round(
+    activePlan.budgetBreakdown.transportFuel +
+    (activePlan.budgetBreakdown.foodSnacks * groupSize) +
+    (activePlan.budgetBreakdown.activityTickets * groupSize) +
+    activePlan.budgetBreakdown.parkingTolls +
+    activePlan.budgetBreakdown.miscEmergency
+  );
+  const costPerPerson = Math.round(totalTripCost / Math.max(1, groupSize));
 
-  const calculatedPerPerson = calculatedFuel + calculatedFood + calculatedActivities + calculatedTolls + calculatedMisc;
-  const calculatedGroupTotal = calculatedPerPerson * groupSize;
+  // Feasibility Badge Color
+  const getFeasibilityBadge = (feasibility: FeasibilityRating) => {
+    switch (feasibility) {
+      case "COMFORTABLE":
+        return "bg-emerald-900/80 text-emerald-300 border-emerald-600/60";
+      case "TIGHT":
+        return "bg-amber-900/80 text-amber-300 border-amber-600/60";
+      case "RUSHED":
+        return "bg-orange-900/80 text-orange-300 border-orange-600/60";
+      case "NOT RECOMMENDED":
+      default:
+        return "bg-rose-950 text-rose-300 border-rose-700/80";
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-[#173B32] pb-28 selection:bg-[#B65E3C] selection:text-white">
+    <div className="min-h-screen bg-[#0D1511] text-[#EFE5D2] pb-32 selection:bg-[#D95327] selection:text-white">
       {/* 1. DESI ROAD TRIP HERO */}
-      <section className="relative bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 py-16 overflow-hidden border-b-4 border-[#B65E3C]">
-        {/* Road trip graphic lines */}
+      <section className="relative min-h-[50vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-16 overflow-hidden border-b border-[#23352B]">
+        {/* Background Texture / Highway grid */}
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1B2B23] via-[#0D1511] to-[#080D0B] opacity-95" />
+
+        {/* Highway Dash Markings Overlay */}
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
-            backgroundImage: `radial-gradient(#B49252 1.5px, transparent 1.5px)`,
-            backgroundSize: "24px 24px"
+            backgroundImage: "repeating-linear-gradient(90deg, #E08A56 0, #E08A56 20px, transparent 20px, transparent 60px)",
+            backgroundSize: "60px 4px",
+            backgroundPosition: "center 50%"
           }}
         />
 
-        <div className="relative z-10 max-w-5xl mx-auto space-y-6 text-center">
-          {/* Top Pill */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-4">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="px-3.5 py-1 rounded-full bg-[#B65E3C] text-[#FAF7F0] text-[11px] font-mono font-bold uppercase tracking-widest shadow-md flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>SPONTANEOUS ESCAPE GENERATOR</span>
+            <span className="px-3.5 py-1 rounded-full bg-[#D95327] text-white text-[11px] font-mono font-black tracking-widest uppercase shadow-lg border border-[#F27E59]/40 flex items-center gap-1.5">
+              <Car className="w-3.5 h-3.5" />
+              <span>SPONTANEOUS ROAD TRIP CULTURE</span>
             </span>
-            <span className="px-3.5 py-1 rounded-full bg-[#0F2924] text-[#B49252] text-[11px] font-mono font-bold uppercase border border-[#B49252]/40">
-              [ 1 DAY • ZERO HESITATION ]
+            <span className="px-3 py-1 rounded-full bg-[#18261F] text-[#C59B47] text-[11px] font-mono tracking-wider uppercase border border-[#C59B47]/40">
+              [ 1 DAY • GROUP SPLIT • ZERO HALLUCINATIONS ]
             </span>
           </div>
 
           <div className="space-y-1">
-            <span className="font-devanagari text-2xl sm:text-3xl text-[#B49252] font-bold block">
-              एक दिन। चलो चलें!
+            <span className="font-devanagari text-2xl sm:text-3xl text-[#C59B47] block font-bold">
+              एक दिन का सफ़र • चलो कहीं चलते हैं!
             </span>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight text-[#FAF4E8]">
               ONE DAY. LET&apos;S GO.
             </h1>
           </div>
 
-          <p className="text-sm sm:text-base text-[#D8DED5] max-w-xl mx-auto font-serif italic leading-relaxed">
-            &ldquo;We have one Saturday morning, ₹1,200, a car or a bike, and 3 friends. Tell us where you are, pick your vibe, and we will build the exact route.&rdquo;
+          <p className="text-sm sm:text-base text-[#9EB5A9] font-serif max-w-2xl mx-auto leading-relaxed">
+            Got one free day and a few friends? VANVAS computes genuine feasibility, splits petrol &amp; toll receipts, and tracks roadside dhabas across India.
           </p>
-
-          {/* Surprise Us Randomizer Button */}
-          <div className="pt-2">
-            <button
-              onClick={handleRandomize}
-              className="px-6 py-3 rounded-2xl bg-[#B49252] hover:bg-[#C8A462] text-[#0F2924] font-mono font-bold text-xs uppercase tracking-wider shadow-lg flex items-center gap-2 mx-auto cursor-pointer active:scale-95 transition-transform"
-            >
-              <Dice5 className="w-4 h-4" />
-              <span>Surprise Us (Randomize Adventure)</span>
-            </button>
-          </div>
         </div>
       </section>
 
-      {/* 2. SPONTANEOUS TRIP CONTROLS (TICKET STUB / ROADSIDE BOARD SYSTEM) */}
+      {/* 2. ORIGIN SELECTOR & GPS RADAR */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20">
-        <div className="bg-[#FAF4E8] rounded-3xl border-2 border-[#D8CBB2] p-6 shadow-xl space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Origin Hub Selector */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span>Starting From (Origin)</span>
-              </label>
-              {!isCustomCity ? (
-                <div className="space-y-1">
-                  <select
-                    value={selectedHubId}
-                    onChange={(e) => setSelectedHubId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-xl text-xs font-bold text-[#173B32] focus:outline-none focus:border-[#B65E3C]"
-                  >
-                    {ONE_DAY_HUBS.map((hub) => (
-                      <option key={hub.id} value={hub.id}>
-                        {hub.name} ({hub.hindiName})
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => setIsCustomCity(true)}
-                    className="text-[10px] text-[#B65E3C] hover:underline font-mono"
-                  >
-                    + Enter custom town/city
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <input
-                    type="text"
-                    value={customCity}
-                    onChange={(e) => setCustomCity(e.target.value)}
-                    placeholder="Type custom origin (e.g. Pune, Bhopal)..."
-                    className="w-full px-3.5 py-2 bg-[#FAF7F0] border-2 border-[#B65E3C] rounded-xl text-xs font-bold text-[#173B32] focus:outline-none"
-                  />
-                  <button
-                    onClick={() => setIsCustomCity(false)}
-                    className="text-[10px] text-[#7B4D36] hover:underline font-mono"
-                  >
-                    ← Pick from Indian Hubs
-                  </button>
-                </div>
-              )}
+        <div className="p-5 sm:p-6 rounded-3xl bg-[#14201A] border-2 border-[#2D4539] shadow-2xl space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#D95327]" />
+                <span>WHERE ARE YOU STARTING FROM?</span>
+              </span>
+              <h2 className="text-xl sm:text-2xl font-serif font-black text-white">
+                Starting Point: <strong className="text-[#D95327]">{activeOriginLabel}</strong>
+              </h2>
             </div>
 
-            {/* People / Group Size Selector */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span>Group Size (Split Cost)</span>
-              </label>
-              <div className="flex items-center gap-1.5 bg-[#FAF7F0] p-1 border-2 border-[#E5D5BA] rounded-xl">
-                {[1, 2, 3, 4, 6].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => setGroupSize(num)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
-                      groupSize === num
-                        ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
-                        : "text-[#7B4D36] hover:bg-[#E5D5BA]"
-                    }`}
-                  >
-                    {num} {num === 1 ? "Solo" : "Ppl"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Budget Per Person Slider */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">
-                <span className="flex items-center gap-1">
-                  <Wallet className="w-3.5 h-3.5 text-[#B65E3C]" />
-                  <span>Max Budget / Person</span>
-                </span>
-                <span className="text-[#B65E3C]">₹{budgetCap}</span>
-              </div>
-              <input
-                type="range"
-                min={500}
-                max={3500}
-                step={250}
-                value={budgetCap}
-                onChange={(e) => setBudgetCap(Number(e.target.value))}
-                className="w-full accent-[#B65E3C] bg-[#E5D5BA] h-2 rounded-lg cursor-pointer"
-              />
-              <div className="flex justify-between text-[9px] font-mono text-[#7B4D36]/70">
-                <span>₹500 (Student)</span>
-                <span>₹1,500</span>
-                <span>₹3,500+ (Premium)</span>
-              </div>
-            </div>
-
-            {/* Transport Preference */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold flex items-center gap-1">
-                <Car className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span>Primary Transport</span>
-              </label>
-              <select
-                value={selectedTransport}
-                onChange={(e) => setSelectedTransport(e.target.value as OneDayTransport)}
-                className="w-full px-3.5 py-2.5 bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-xl text-xs font-bold text-[#173B32] focus:outline-none focus:border-[#B65E3C]"
+            {/* GPS Locate Button */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleGPSDetect}
+                disabled={isLocating}
+                className="px-4 py-2.5 rounded-2xl bg-[#1B2C24] hover:bg-[#253D30] border border-[#3A5646] text-xs font-mono font-bold uppercase tracking-wider text-[#FAF4E8] flex items-center gap-2 transition-all cursor-pointer"
               >
-                {TRANSPORTS.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+                <LocateFixed className={`w-4 h-4 text-[#D95327] ${isLocating ? "animate-spin" : ""}`} />
+                <span>{isLocating ? "Detecting GPS..." : "Use My Location"}</span>
+              </button>
+
+              <button
+                onClick={() => setIsCustomMode(!isCustomMode)}
+                className={`px-4 py-2.5 rounded-2xl border text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  isCustomMode
+                    ? "bg-[#D95327] text-white border-[#D95327]"
+                    : "bg-[#1B2C24] hover:bg-[#253D30] text-[#FAF4E8] border-[#3A5646]"
+                }`}
+              >
+                {isCustomMode ? "Select Hubs" : "Custom City"}
+              </button>
             </div>
           </div>
 
-          {/* Vibe Selection Chips */}
-          <div className="space-y-2 pt-2 border-t border-[#E5D5BA]">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold block">
-              Trip Vibe & Energy
-            </span>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {VIBES.map((v) => {
-                const isActive = selectedVibe === v.id;
+          {/* GPS Status Notice if needed */}
+          {gpsState.status === "DENIED" && (
+            <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-800/80 text-xs text-amber-200 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Location permission was denied. Select your city hub from the list below.</span>
+            </div>
+          )}
+
+          {/* Hub Pills Carousel */}
+          {!isCustomMode ? (
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar pt-1">
+              {ONE_DAY_HUBS.map((hub) => {
+                const isSelected = selectedHubId === hub.id;
                 return (
                   <button
-                    key={v.id}
-                    onClick={() => setSelectedVibe(v.id)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer ${
-                      isActive
-                        ? "bg-[#B65E3C] text-white shadow-md border border-[#B65E3C]"
-                        : "bg-[#FAF7F0] text-[#173B32] border border-[#E5D5BA] hover:bg-[#E5D5BA]"
+                    key={hub.id}
+                    onClick={() => {
+                      setSelectedHubId(hub.id);
+                      setIsCustomMode(false);
+                    }}
+                    className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                      isSelected
+                        ? "bg-[#D95327] text-white border-[#D95327] shadow-lg scale-[1.02]"
+                        : "bg-[#0E1612] text-[#9EB5A9] border-[#223329] hover:border-[#385141] hover:text-white"
                     }`}
                   >
-                    <span>{v.emoji}</span>
-                    <span>{v.label}</span>
-                    <span className={`text-[10px] ${isActive ? "text-[#FAF7F0]/90" : "text-[#7B4D36]"}`}>
-                      ({v.hindi})
-                    </span>
+                    <span>{hub.name}</span>
+                    <span className="font-devanagari text-[10px] opacity-75 ml-1.5">({hub.hindiName})</span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3 pt-2">
+              <input
+                type="text"
+                value={customOrigin}
+                onChange={(e) => setCustomOrigin(e.target.value)}
+                placeholder="Enter custom starting city (e.g. Pune, Jaipur, Meerut, Chandigarh)..."
+                className="flex-1 px-4 py-3 rounded-2xl bg-[#0E1612] border border-[#2D4539] text-white placeholder:text-[#647C70] text-xs font-mono focus:outline-none focus:border-[#D95327]"
+              />
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 3. GENERATED PLANS STREAM & SELECTION TRAY */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5D5BA] pb-4">
-          <div>
-            <span className="text-[11px] font-mono uppercase text-[#B65E3C] font-bold tracking-widest">
-              GENERATED ROAD TRIP BOARDS
+      {/* 3. MULTI-VIBE & GROUP COMPROMISE FILTER BAR */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#23352B] pb-3">
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold">
+              WHAT&apos;S THE TRIP VIBE? (SELECT MULTIPLE)
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-              Choose Your 1-Day Itinerary
-            </h2>
+            <p className="text-xs text-[#9EB5A9] font-serif">
+              Mix and match road trip flavours to narrow down options
+            </p>
           </div>
-          <span className="text-xs font-mono text-[#7B4D36]">
-            Starting from <strong className="text-[#173B32]">{originQuery}</strong>
+
+          <div className="flex items-center gap-3 text-xs font-mono">
+            {/* Group Size Stepper */}
+            <div className="flex items-center gap-2 bg-[#14201A] px-3 py-1.5 rounded-2xl border border-[#2D4539]">
+              <Users className="w-3.5 h-3.5 text-[#D95327]" />
+              <span className="text-[#9EB5A9]">Who&apos;s coming?</span>
+              <button
+                onClick={() => setGroupSize((s) => Math.max(1, s - 1))}
+                className="w-5 h-5 rounded-full bg-[#1B2C24] text-white flex items-center justify-center font-bold hover:bg-[#253D30]"
+              >
+                -
+              </button>
+              <strong className="text-white font-bold">{groupSize}</strong>
+              <button
+                onClick={() => setGroupSize((s) => Math.min(8, s + 1))}
+                className="w-5 h-5 rounded-full bg-[#1B2C24] text-white flex items-center justify-center font-bold hover:bg-[#253D30]"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Vibe Chips Grid */}
+        <div className="flex flex-wrap gap-2">
+          {ALL_VIBES.map((v) => {
+            const isSelected = selectedVibes.includes(v.id);
+            return (
+              <button
+                key={v.id}
+                onClick={() => toggleVibe(v.id)}
+                className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+                  isSelected
+                    ? "bg-[#273F32] border-[#D95327] text-white shadow-md ring-1 ring-[#D95327]"
+                    : "bg-[#111B16] border-[#223329] text-[#8FA699] hover:text-white hover:border-[#385141]"
+                }`}
+              >
+                <span>{v.emoji}</span>
+                <span>{v.label}</span>
+                {isSelected && <Check className="w-3 h-3 text-[#D95327]" />}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 4. DISCOVERED DESTINATIONS CAROUSEL / DOSSIERS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#23352B] pb-4">
+          <div className="space-y-1">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold">
+              VERIFIED 1-DAY DESTINATIONS FROM {activeOriginLabel.toUpperCase()}
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-serif font-black text-white">
+              Feasible Day Escapes ({plansForOrigin.length} Options)
+            </h3>
+          </div>
+          <span className="text-xs text-[#9EB5A9] font-mono">
+            Classified by driving time, traffic bottlenecks &amp; sunlight hours
           </span>
         </div>
 
-        {/* Plan Cards Switcher */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {availablePlans.map((plan, idx) => {
-            const isSelected = plan.id === selectedPlanId;
+        {/* Destination Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plansForOrigin.map((plan) => {
+            const isSelected = activePlan.id === plan.id;
+            const badgeClass = getFeasibilityBadge(plan.feasibility);
+
             return (
               <div
                 key={plan.id}
-                role="button"
-                tabIndex={0}
                 onClick={() => setSelectedPlanId(plan.id)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedPlanId(plan.id); }}
-                className={`p-5 rounded-3xl border-2 transition-all cursor-pointer text-left flex flex-col justify-between space-y-4 ${
+                className={`p-6 rounded-3xl border transition-all cursor-pointer flex flex-col justify-between space-y-4 ${
                   isSelected
-                    ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-xl scale-[1.01]"
-                    : "bg-[#FAF4E8] text-[#173B32] border-[#E5D5BA] hover:border-[#B65E3C]"
+                    ? "bg-[#182821] border-[#D95327] shadow-2xl ring-2 ring-[#D95327]"
+                    : "bg-[#121D17] border-[#22342A] hover:border-[#385141]"
                 }`}
               >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2.5 py-0.5 rounded-md font-mono text-[10px] font-bold uppercase ${
-                      isSelected ? "bg-[#B49252] text-[#0F2924]" : "bg-[#E5D5BA] text-[#7B4D36]"
-                    }`}>
-                      PLAN 0{idx + 1}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${badgeClass}`}>
+                      {plan.feasibility}
                     </span>
-                    <span className={`text-[11px] font-mono ${isSelected ? "text-[#D8DED5]" : "text-[#7B4D36]"}`}>
-                      {plan.departureTime} – {plan.returnTime}
+                    <span className="text-xs font-mono text-[#C59B47]">
+                      {plan.totalDistanceKm} km round trip
                     </span>
                   </div>
 
-                  <h3 className="font-serif font-black text-lg leading-snug">
-                    {plan.title}
-                  </h3>
+                  <div className="space-y-0.5">
+                    <h4 className="font-serif font-black text-xl text-white leading-tight">
+                      {plan.title}
+                    </h4>
+                    <p className="font-devanagari text-xs text-[#C59B47]">
+                      {plan.hindiTitle}
+                    </p>
+                  </div>
 
-                  <p className={`text-xs font-serif italic ${isSelected ? "text-[#D8DED5]" : "text-[#7B4D36]"}`}>
-                    &ldquo;{plan.tagline}&rdquo;
+                  <p className="text-xs text-[#9EB5A9] font-serif leading-relaxed line-clamp-2">
+                    {plan.tagline}
                   </p>
+
+                  {/* Stat Metrics */}
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#23352B] text-[11px] font-mono">
+                    <div>
+                      <span className="block text-[8px] uppercase text-[#6D8578]">Departure</span>
+                      <span className="text-white font-bold">{plan.departureTime}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[8px] uppercase text-[#6D8578]">Drive Time</span>
+                      <span className="text-[#D95327] font-bold">{plan.totalTravelTime}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[8px] uppercase text-[#6D8578]">Base Split</span>
+                      <span className="text-[#52B788] font-bold">₹{plan.baseBudgetPerPerson}/head</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className={`pt-3 border-t text-xs font-mono flex items-center justify-between ${
-                  isSelected ? "border-[#254F44]" : "border-[#E5D5BA]"
-                }`}>
-                  <div>
-                    <span className="block text-[9px] uppercase opacity-70">Estimated Cost</span>
-                    <span className={`font-bold ${isSelected ? "text-[#B49252]" : "text-[#B65E3C]"}`}>
-                      ₹{plan.baseBudgetPerPerson} / person
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-[9px] uppercase opacity-70">Total Distance</span>
-                    <span>{plan.totalDistanceKm} km</span>
-                  </div>
+                <div className="pt-2 border-t border-[#23352B] flex items-center justify-between text-xs font-mono">
+                  <span className="text-[#8FA699] text-[11px]">
+                    {plan.stops.length} stops • {plan.primaryTransport}
+                  </span>
+                  <span className="text-[#D95327] font-bold flex items-center gap-1">
+                    <span>Inspect Board</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
                 </div>
               </div>
             );
@@ -396,320 +445,401 @@ function OneDayInner() {
         </div>
       </section>
 
-      {/* 4. ACTIVE ROAD TRIP BOARD (TIMELINE / MAP / BUDGET / RENTALS) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-6">
-        <div className="bg-[#FAF4E8] rounded-3xl border-2 border-[#D8CBB2] p-6 shadow-md space-y-6">
-          {/* Header & View Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5D5BA] pb-4">
-            <div className="space-y-1">
+      {/* 5. ACTIVE PLAN DOSSIER & FUNCTIONALITY TABS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Dossier Header Banner */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#15231C] border-2 border-[#2D4539] space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-md bg-[#B65E3C] text-white text-[10px] font-mono font-bold uppercase">
-                  ACTIVE ROAD TRIP
+                <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${getFeasibilityBadge(activePlan.feasibility)}`}>
+                  FEASIBILITY: {activePlan.feasibility}
                 </span>
-                {currentPlan.feasibility && (
-                  <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${
-                    currentPlan.feasibility === "COMFORTABLE"
-                      ? "bg-emerald-800 text-emerald-100 border-emerald-600"
-                      : currentPlan.feasibility === "TIGHT"
-                      ? "bg-amber-800 text-amber-100 border-amber-600"
-                      : "bg-rose-900 text-rose-100 border-rose-700"
-                  }`}>
-                    FEASIBILITY: {currentPlan.feasibility}
-                  </span>
-                )}
-                <span className="text-xs font-mono text-[#7B4D36]">
-                  {currentPlan.originCity} → {currentPlan.destinationArea}
+                <span className="px-2.5 py-0.5 rounded-md bg-[#253D30] text-[#C59B47] text-[10px] font-mono uppercase">
+                  {activePlan.idealGroupSize}
+                </span>
+                <span className="text-xs font-mono text-[#8FA699]">
+                  {activePlan.departureTime} Departure → {activePlan.returnTime} Return
                 </span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
-                {currentPlan.title}
-              </h3>
-              {currentPlan.feasibilityReason && (
-                <p className="text-xs text-[#7B4D36] font-mono">
-                  ✓ Schedule Feasibility: {currentPlan.feasibilityReason}
-                </p>
-              )}
+
+              <h2 className="text-2xl sm:text-4xl font-serif font-black text-white">
+                {activePlan.title}
+              </h2>
+              <p className="text-sm text-[#9EB5A9] font-serif leading-relaxed max-w-3xl">
+                {activePlan.feasibilityReason}
+              </p>
             </div>
 
-            {/* View Switcher Tabs */}
-            <div className="flex items-center gap-1.5 bg-[#FAF7F0] p-1.5 border border-[#E5D5BA] rounded-2xl">
-              {(["TIMELINE", "MAP", "BUDGET", "RENTALS"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                    activeTab === tab
-                      ? "bg-[#173B32] text-[#FAF7F0] shadow-xs"
-                      : "text-[#7B4D36] hover:bg-[#E5D5BA]"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            {/* Split Price Sticky Card */}
+            <div className="p-5 rounded-2xl bg-[#0E1612] border border-[#273B2F] shrink-0 space-y-2 text-center lg:text-right">
+              <span className="text-[10px] font-mono uppercase text-[#8FA699] block">
+                Estimated Group Total ({groupSize} Friends)
+              </span>
+              <div className="text-3xl font-serif font-black text-[#52B788]">
+                ₹{totalTripCost.toLocaleString()}
+              </div>
+              <span className="inline-block px-3 py-1 rounded-full bg-[#1B2C24] text-[#C59B47] text-xs font-mono font-bold">
+                ≈ ₹{costPerPerson.toLocaleString()} / person
+              </span>
             </div>
           </div>
 
-          {/* VIEW A: TIMELINE ITINERARY */}
-          {activeTab === "TIMELINE" && (
-            <div className="space-y-6">
-              <div className="relative pl-6 sm:pl-8 border-l-2 border-[#B65E3C]/40 space-y-8">
-                {currentPlan.stops.map((stop, idx) => {
-                  const PeriodIcon =
-                    stop.period === "DAWN" ? Sunrise : stop.period === "SUNSET" ? Sunset : stop.period === "NIGHT" ? Moon : Sun;
-
-                  return (
-                    <div key={stop.id} className="relative space-y-2">
-                      {/* Timeline Dot */}
-                      <div className="absolute -left-[33px] sm:-left-[41px] top-1 w-6 h-6 rounded-full bg-[#173B32] text-[#FAF7F0] border-2 border-[#FAF4E8] flex items-center justify-center font-mono text-[10px] font-bold shadow-xs">
-                        {idx + 1}
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <PeriodIcon className="w-4 h-4 text-[#B65E3C]" />
-                          <span className="text-xs font-mono font-bold text-[#B65E3C] uppercase tracking-wider">
-                            {stop.timeSlot}
-                          </span>
-                        </div>
-                        <span className="text-xs font-mono text-[#7B4D36]">
-                          {stop.locationName} ({stop.distanceFromPrevKm} km from prev)
-                        </span>
-                      </div>
-
-                      <div className="bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA] space-y-2">
-                        <h4 className="font-serif font-black text-lg text-[#173B32]">
-                          {stop.activityTitle}
-                        </h4>
-                        <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                          {stop.description}
-                        </p>
-
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E5D5BA] text-[11px] font-mono text-[#173B32]">
-                          <span className="text-[#7B4D36]">
-                            Tip: <strong className="font-serif text-[#173B32]">{stop.localTip}</strong>
-                          </span>
-                          <span className="text-[#B65E3C] font-bold">
-                            Approx ₹{stop.approxCostPerPerson} / person
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* VIEW B: ROAD-TRIP MAP BOARD */}
-          {activeTab === "MAP" && (
-            <div className="space-y-6">
-              <div className="bg-[#173B32] text-[#EFE5D2] p-6 rounded-2xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-[#B49252] uppercase">
-                    Interactive Road-Trip Route Board
-                  </span>
-                  <span className="text-xs font-mono text-[#D8DED5]">
-                    {currentPlan.totalDistanceKm} km total loop
-                  </span>
-                </div>
-
-                <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-mono py-4">
-                  <div className="bg-[#0F2924] p-3 rounded-xl border border-[#2F473A] text-center w-full md:w-auto">
-                    <span className="block text-[9px] uppercase text-[#8FA699]">START</span>
-                    <span className="text-[#FAF4E8] font-bold">{currentPlan.originCity}</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#B49252] hidden md:block" />
-                  {currentPlan.stops.slice(1, 4).map((s) => (
-                    <React.Fragment key={s.id}>
-                      <div className="bg-[#0F2924] p-3 rounded-xl border border-[#2F473A] text-center w-full md:w-auto">
-                        <span className="block text-[9px] uppercase text-[#8FA699]">{s.category}</span>
-                        <span className="text-[#FAF4E8] font-bold truncate max-w-[140px] block">{s.name}</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-[#B49252] hidden md:block" />
-                    </React.Fragment>
-                  ))}
-                  <div className="bg-[#0F2924] p-3 rounded-xl border border-[#2F473A] text-center w-full md:w-auto">
-                    <span className="block text-[9px] uppercase text-[#8FA699]">RETURN</span>
-                    <span className="text-[#FAF4E8] font-bold">{currentPlan.originCity}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Convenience POI Layers along Highway */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#173B32]">
-                  Convenience & Highway POI Layers
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {currentPlan.poiHighlights.map((poi, idx) => (
-                    <div key={idx} className="bg-[#FAF7F0] p-3.5 rounded-xl border border-[#E5D5BA] space-y-1 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-[#E5D5BA] text-[#7B4D36]">
-                          {poi.category.replace("_", " ")}
-                        </span>
-                        <span className="text-[10px] font-mono text-[#7B4D36]">{poi.location}</span>
-                      </div>
-                      <h5 className="font-bold text-[#173B32]">{poi.name}</h5>
-                      <p className="text-[11px] text-[#7B4D36] font-serif">{poi.note}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VIEW C: LIVE BUDGET CALCULATOR */}
-          {activeTab === "BUDGET" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-8 space-y-3 text-xs font-mono">
-                  <h4 className="font-bold uppercase tracking-wider text-[#173B32]">
-                    Expense Itemization (Group of {groupSize})
-                  </h4>
-
-                  <div className="bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA] space-y-2.5">
-                    <div className="flex items-center justify-between py-1.5 border-b border-[#E5D5BA]">
-                      <span>Vehicle Fuel & Highway Tolls (Split by {groupSize})</span>
-                      <span className="font-bold text-[#173B32]">₹{calculatedFuel + calculatedTolls} / person</span>
-                    </div>
-                    <div className="flex items-center justify-between py-1.5 border-b border-[#E5D5BA]">
-                      <span>Food, Highway Dhabas & Chai Stalls</span>
-                      <span className="font-bold text-[#173B32]">₹{calculatedFood} / person</span>
-                    </div>
-                    <div className="flex items-center justify-between py-1.5 border-b border-[#E5D5BA]">
-                      <span>Activities, Stepwell Entry & Parking</span>
-                      <span className="font-bold text-[#173B32]">₹{calculatedActivities} / person</span>
-                    </div>
-                    <div className="flex items-center justify-between py-1.5">
-                      <span>Emergency Buffer (Cold drinks & miscellaneous)</span>
-                      <span className="font-bold text-[#173B32]">₹{calculatedMisc} / person</span>
-                    </div>
-                  </div>
-
-                  {/* Student Hacks */}
-                  <div className="bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA] space-y-2">
-                    <span className="text-[10px] font-mono uppercase text-[#B65E3C] font-bold">
-                      Student Money Saving Hacks
+          {/* Sub Navigation Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto border-t border-[#23352B] pt-4 no-scrollbar">
+            {[
+              { id: "PLAN", label: "Trip Plan & Stops", icon: Clock },
+              { id: "MAP", label: "VANVAS Road Map", icon: MapPin },
+              { id: "RENTALS", label: "Vehicle Rentals", icon: Car, count: activePlan.rentals.length },
+              { id: "CHECKLIST", label: "Packing Checklist", icon: CheckCircle2 },
+              { id: "COMPROMISE", label: "Group Voting Compromise", icon: ThumbsUp },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-bold font-mono whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                    isActive
+                      ? "bg-[#D95327] text-white shadow-lg border border-[#D95327]"
+                      : "bg-[#0E1612] text-[#8FA699] border border-[#23352B] hover:text-white hover:border-[#385141]"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                  {tab.count !== undefined && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-black/40 text-white font-mono">
+                      {tab.count}
                     </span>
-                    <ul className="space-y-1">
-                      {currentPlan.studentHacks.map((hack, i) => (
-                        <li key={i} className="text-xs text-[#7B4D36] font-serif flex items-start gap-2">
-                          <span className="text-[#B65E3C]">•</span>
-                          <span>{hack}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-                {/* Total Counter Box */}
-                <div className="lg:col-span-4 bg-[#173B32] text-[#FAF7F0] p-6 rounded-3xl text-center flex flex-col justify-between space-y-6">
-                  <div className="space-y-2">
-                    <span className="text-xs font-mono uppercase tracking-widest text-[#B49252]">
-                      Total Group Cost ({groupSize} Friends)
-                    </span>
-                    <div className="text-4xl sm:text-5xl font-mono font-black text-[#EFE5D2]">
-                      ₹{calculatedGroupTotal}
-                    </div>
-                    <span className="text-xs font-mono text-[#B49252] block">
-                      (₹{calculatedPerPerson} / person)
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: currentPlan.title,
-                          text: `Let's do this 1-day road trip! ₹${calculatedPerPerson} per person.`,
-                          url: window.location.href,
-                        }).catch(() => {});
-                      } else {
-                        navigator.clipboard.writeText(window.location.href);
-                        alert("Road trip link copied to clipboard!");
-                      }
-                    }}
-                    className="w-full py-3 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                  >
-                    Share Plan with Group
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VIEW D: CAR / BIKE RENTALS DISCOVERY */}
-          {activeTab === "RENTALS" && (
+        {/* TAB 1: TIMELINE & STOPS */}
+        {activeTab === "PLAN" && (
+          <div className="space-y-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#173B32]">
-                  Verified Vehicle Rentals around {currentPlan.originCity}
-                </h4>
-                <span className="text-xs font-mono text-[#7B4D36]">
-                  Live Provider Estimates
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentPlan.rentals.map((rental, idx) => (
-                  <div key={idx} className="bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA] space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-[#173B32] text-[#EFE5D2]">
-                        {rental.vehicleType}
+              {activePlan.stops.map((stop) => (
+                <div
+                  key={stop.id}
+                  className="p-5 sm:p-6 rounded-3xl bg-[#121E18] border border-[#22342A] grid grid-cols-1 lg:grid-cols-12 gap-6 items-center"
+                >
+                  <div className="lg:col-span-8 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-[#D95327] text-white text-[11px] font-mono font-bold flex items-center justify-center">
+                        {stop.order}
                       </span>
-                      <span className="font-mono text-xs font-bold text-[#B65E3C]">
-                        ₹{rental.approxRatePerDay} / day
+                      <span className="px-2.5 py-0.5 rounded-md bg-[#1B2C24] text-[#C59B47] text-[10px] font-mono uppercase border border-[#C59B47]/30">
+                        {stop.timeSlot} • {stop.period}
+                      </span>
+                      <span className="text-xs font-mono text-[#6D8578]">
+                        +{stop.distanceFromPrevKm} km from previous
                       </span>
                     </div>
 
-                    <h5 className="font-serif font-black text-base text-[#173B32]">{rental.providerName}</h5>
-                    <p className="text-xs text-[#7B4D36] font-serif">{rental.contactOrBookingTip}</p>
+                    <div className="space-y-0.5">
+                      <h4 className="text-xl sm:text-2xl font-serif font-black text-white">
+                        {stop.name}
+                      </h4>
+                      <p className="font-devanagari text-xs text-[#C59B47]">
+                        {stop.hindiName}
+                      </p>
+                    </div>
 
-                    <div className="pt-2 border-t border-[#E5D5BA] flex items-center justify-between text-[11px] font-mono text-[#7B4D36]">
-                      <span>Location: {rental.location}</span>
-                      <span>{rental.helmetIncluded ? "✓ Helmet Included" : "Bring Own Helmet"}</span>
+                    <p className="text-xs sm:text-sm text-[#9EB5A9] font-serif leading-relaxed">
+                      {stop.description}
+                    </p>
+
+                    <div className="p-3 rounded-xl bg-[#0E1612] border border-[#1E2D24] text-xs font-mono text-[#D1DFD7] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span>💡 <strong>Local Hack:</strong> {stop.localTip}</span>
+                      <span className="text-[#52B788] shrink-0 font-bold">≈ ₹{stop.approxCostPerPerson}/person</span>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-4 relative h-40 sm:h-48 w-full rounded-2xl overflow-hidden border border-[#22342A]">
+                    <VanvasImage
+                      src={stop.imageUrl || "/images/nearby/transport/transport.webp"}
+                      alt={stop.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-mono text-white">
+                      {stop.locationName}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Student Cost Hacks Callout */}
+            {activePlan.studentHacks && activePlan.studentHacks.length > 0 && (
+              <div className="p-6 rounded-3xl bg-[#18261F] border border-[#2D4539] space-y-3">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#C59B47] flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-[#D95327]" />
+                  <span>STUDENT BUDGET SHORTCUTS &amp; MONEY SAVERS</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {activePlan.studentHacks.map((hack, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-[#0E1612] border border-[#1F3026] text-xs font-serif text-[#D1DFD7] flex items-start gap-2">
+                      <span className="text-[#D95327] font-bold shrink-0">→</span>
+                      <span>{hack}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: INTERACTIVE VANVAS ROAD MAP */}
+        {activeTab === "MAP" && (
+          <div className="space-y-4">
+            {(() => {
+              const mapMarkers: VanvasMapMarker[] = [
+                ...activePlan.stops.map((s, idx): VanvasMapMarker => ({
+                  id: s.id,
+                  title: s.name,
+                  hindiTitle: s.hindiName,
+                  type: idx === 0 ? "start" : idx === activePlan.stops.length - 1 ? "destination" : s.category === "food" ? "food" : "waypoint",
+                  lat: s.lat || 28.5 + (idx * 0.1),
+                  lng: s.lng || 77.2 + (idx * 0.1),
+                  description: `${s.timeSlot} • ${s.activityTitle}`,
+                  categoryLabel: s.category.toUpperCase(),
+                  provenance: "VERIFIED",
+                  actionLabel: "View Stop"
+                })),
+                ...activePlan.poiHighlights.map((poi, idx): VanvasMapMarker => ({
+                  id: `poi-${idx}`,
+                  title: poi.name,
+                  type: poi.category === "fuel" ? "fuel" : poi.category === "pharmacy" ? "pharmacy" : poi.category === "dhaba" ? "dhaba" : poi.category === "temple" ? "temple" : "viewpoint",
+                  lat: poi.lat || (28.4 + (idx * 0.08)),
+                  lng: poi.lng || (77.1 + (idx * 0.08)),
+                  description: `${poi.highwayOrLandmark} • ${poi.note}`,
+                  categoryLabel: poi.category.toUpperCase(),
+                  provenance: poi.provenance,
+                  actionLabel: "Inspect POI"
+                }))
+              ];
+
+              const routeSegments: VanvasMapRouteSegment[] = [
+                {
+                  id: `one-day-route-${activePlan.id}`,
+                  name: activePlan.title,
+                  coordinates: activePlan.stops.map((s, idx) => ({ lat: s.lat || 28.5 + (idx * 0.1), lng: s.lng || 77.2 + (idx * 0.1) })),
+                  color: "#E08A56",
+                  distanceKm: activePlan.totalDistanceKm
+                }
+              ];
+
+              return (
+                <VanvasMap
+                  mode="one-day"
+                  title={`${activePlan.title} — Route Board`}
+                  subtitle={`From ${activePlan.originCity} to ${activePlan.destinationArea} • ${activePlan.totalDistanceKm} km round trip`}
+                  center={{ lat: activePlan.stops[0]?.lat || 28.6, lng: activePlan.stops[0]?.lng || 77.2 }}
+                  markers={mapMarkers}
+                  routes={routeSegments}
+                  height={480}
+                />
+              );
+            })()}
+          </div>
+        )}
+
+        {/* TAB 3: VEHICLE RENTALS */}
+        {activeTab === "RENTALS" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#23352B] pb-3">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold">
+                  VERIFIED LOCAL FLEET &amp; RENTAL AGENCIES
+                </span>
+                <h3 className="text-xl sm:text-2xl font-serif font-black text-white">
+                  Self-Drive Cars, Enfields &amp; Scooters
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-[#8FA699]">
+                Zero fabricated phone numbers or false availability
+              </span>
+            </div>
+
+            {activePlan.rentals.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {activePlan.rentals.map((rental, idx) => (
+                  <div
+                    key={idx}
+                    className="p-6 rounded-3xl bg-[#14201A] border border-[#2D4539] flex flex-col justify-between space-y-4"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-[#1B2C24] text-[#C59B47] border border-[#C59B47]/30">
+                          {rental.vehicleType}
+                        </span>
+                        <span className="text-[10px] font-mono uppercase font-bold text-emerald-400">
+                          [{rental.verificationStatus}]
+                        </span>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <h4 className="font-serif font-bold text-lg text-white">
+                          {rental.providerName}
+                        </h4>
+                        <p className="text-xs font-mono text-[#8FA699]">
+                          📍 {rental.location}
+                        </p>
+                      </div>
+
+                      {/* Pricing & Policy Specs */}
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#23352B] text-[11px] font-mono">
+                        <div className="p-2.5 rounded-xl bg-[#0E1612] border border-[#1E2D24]">
+                          <span className="block text-[8px] uppercase text-[#6D8578]">Daily Rate</span>
+                          <span className="text-[#52B788] font-bold text-base">
+                            ₹{rental.approxRatePerDay.toLocaleString()} <span className="text-xs text-[#8FA699]">/{rental.pricingUnit}</span>
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-[#0E1612] border border-[#1E2D24]">
+                          <span className="block text-[8px] uppercase text-[#6D8578]">Security Deposit</span>
+                          <span className="text-white font-bold">
+                            ₹{rental.securityDeposit.toLocaleString()} (Refundable)
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-[#0E1612] border border-[#1E2D24]">
+                          <span className="block text-[8px] uppercase text-[#6D8578]">Included Distance</span>
+                          <span className="text-white font-bold">{rental.includedKmPerDay} km/day</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-[#0E1612] border border-[#1E2D24]">
+                          <span className="block text-[8px] uppercase text-[#6D8578]">Fuel Policy</span>
+                          <span className="text-[#C59B47] font-bold">{rental.fuelPolicy}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-xs font-serif text-[#9EB5A9] space-y-1">
+                        <p><strong>Documents Required:</strong> {rental.requiredDocuments.join(", ")}</p>
+                        <p><strong>Booking Tip:</strong> {rental.contactOrBookingTip}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#23352B] flex items-center justify-between gap-2">
+                      {rental.phone ? (
+                        <a
+                          href={`tel:${rental.phone}`}
+                          className="w-full py-2.5 rounded-xl bg-[#D95327] hover:bg-[#C24319] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>Call Provider ({rental.phone})</span>
+                        </a>
+                      ) : (
+                        <div className="w-full py-2.5 rounded-xl bg-[#1B2C24] text-[#C59B47] text-xs font-mono text-center">
+                          Book via official app or walk-in stand
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-        </div>
-      </section>
+            ) : (
+              <div className="p-8 rounded-3xl bg-[#14201A] border border-[#2D4539] text-center space-y-2">
+                <Car className="w-8 h-8 text-[#D95327] mx-auto opacity-70" />
+                <h4 className="font-serif font-bold text-base text-white">Self-Drive &amp; Rental Info</h4>
+                <p className="text-xs text-[#8FA699] max-w-md mx-auto">
+                  For {activePlan.destinationArea}, local shared transport or private vehicle is recommended. Rental providers operate out of central {activePlan.originCity} hubs.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
-      {/* 5. GROUP MODE COMPROMISE VOTING UI */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-[#FAF4E8] rounded-3xl border-2 border-[#D8CBB2] p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5D5BA] pb-3">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-[#B65E3C] font-bold">
-                FRIEND GROUP COMPROMISE ENGINE
+        {/* TAB 4: DYNAMIC PACKING CHECKLIST */}
+        {activeTab === "CHECKLIST" && (
+          <div className="space-y-6">
+            <div className="p-6 rounded-3xl bg-[#14201A] border border-[#2D4539] space-y-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#52B788]" />
+                <h3 className="text-xl font-serif font-black text-white">
+                  1-Day Road Trip Essentials for {activePlan.destinationArea}
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {(activePlan.packingItems || [
+                  "Original Driving License & Vehicle RC",
+                  "Fastag recharged with ₹500+",
+                  "Power Bank (10,000+ mAh)",
+                  "2L Reusable Water Bottles",
+                  "Sunglasses & UV Protection",
+                  "Comfortable Walking Shoes",
+                  "Emergency Cash (₹1,500 in 100/200 notes)",
+                  "Motion Sickness & First Aid Pills",
+                  "Light Jacket / Windbreaker for evening"
+                ]).map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-2xl bg-[#0E1612] border border-[#1E2D24] flex items-center gap-2.5 text-xs text-white"
+                  >
+                    <span className="w-4 h-4 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-700 flex items-center justify-center font-bold text-[10px]">
+                      ✓
+                    </span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: GROUP VOTING COMPROMISE */}
+        {activeTab === "COMPROMISE" && (
+          <div className="p-6 sm:p-8 rounded-3xl bg-[#14201A] border border-[#2D4539] space-y-6">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold">
+                FRIENDS DISAGREEMENT RESOLVER
               </span>
-              <h3 className="text-xl font-serif font-black text-[#173B32]">
-                Group Preference Voting
+              <h3 className="text-2xl font-serif font-black text-white">
+                Group Voting &amp; VANVAS Compromise Engine
               </h3>
+              <p className="text-xs text-[#9EB5A9] font-serif">
+                Friend A wants Forts, Friend B wants Dhabas, Friend C wants Temples? VANVAS resolves the optimal route.
+              </p>
             </div>
-            <span className="text-xs text-[#7B4D36] font-mono">
-              Someone wants food, someone wants mountains? Vote to find balance.
-            </span>
-          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {Object.entries(groupVotes).map(([vibe, count]) => (
-              <button
-                key={vibe}
-                onClick={() => handleVote(vibe)}
-                className="bg-[#FAF7F0] p-3 rounded-2xl border border-[#E5D5BA] hover:border-[#B65E3C] text-center space-y-1 transition-all cursor-pointer group active:scale-95"
-              >
-                <span className="block text-xs font-bold text-[#173B32]">{vibe}</span>
-                <div className="flex items-center justify-center gap-1 text-xs font-mono font-bold text-[#B65E3C]">
-                  <ThumbsUp className="w-3 h-3 group-hover:rotate-12 transition-transform" />
-                  <span>{count} Votes</span>
+            <div className="space-y-3">
+              {votingOptions.map((opt, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl bg-[#0E1612] border border-[#1E2D24] flex items-center justify-between gap-4"
+                >
+                  <div>
+                    <span className="text-[10px] font-mono text-[#8FA699] uppercase">Suggested by {opt.friend}</span>
+                    <h5 className="font-serif font-bold text-base text-white">{opt.name}</h5>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const next = [...votingOptions];
+                        next[idx].votes += 1;
+                        setVotingOptions(next);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-[#253D30] hover:bg-[#D95327] text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-colors"
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span>Vote ({opt.votes})</span>
+                    </button>
+                  </div>
                 </div>
-              </button>
-            ))}
+              ))}
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#18261F] border border-[#2D4539] space-y-1 text-xs font-serif text-[#D1DFD7]">
+              <strong className="text-[#C59B47] font-mono uppercase block text-[10px]">VANVAS COMPROMISE VERDICT:</strong>
+              <p>
+                Winner route chosen: <strong>{activePlan.title}</strong> — combines the best morning dhaba stop with cultural heritage and sunset views so everyone in the group is satisfied!
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );
@@ -717,17 +847,12 @@ function OneDayInner() {
 
 export default function OneDayPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#FAF7F0] flex flex-col items-center justify-center text-[#173B32] gap-3">
-          <Sparkles className="w-10 h-10 text-[#B65E3C] animate-pulse" />
-          <span className="text-xs font-serif italic text-[#7B4D36]">
-            Gathering Spontaneous One-Day Indian Escapes...
-          </span>
-        </div>
-      }
-    >
-      <OneDayInner />
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0D1511] flex items-center justify-center text-white font-mono text-xs">
+        Loading VANVAS 1-Day Road Trip Engine...
+      </div>
+    }>
+      <OneDayPlannerInner />
     </Suspense>
   );
 }

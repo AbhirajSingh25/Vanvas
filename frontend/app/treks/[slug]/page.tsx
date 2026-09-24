@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { getTrekBySlug, TrekItem, TrekRouteOption, TrekWaypoint, TrekGearItem } from "@/lib/trekContentModel";
 import { VanvasImage } from "@/components/ui/VanvasImage";
+import { VanvasMap, VanvasMapMarker, VanvasMapRouteSegment } from "@/components/ui/VanvasMap";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -430,6 +431,50 @@ export default function TrekDetailPage({ params }: PageProps) {
             Tap any waypoint along the trail to inspect water, terrain, and field notes
           </span>
         </div>
+
+        {/* Topographic Trail Map */}
+        {(() => {
+          const mapMarkers: VanvasMapMarker[] = trek.waypoints.map((wp): VanvasMapMarker => ({
+            id: wp.id,
+            title: wp.name,
+            hindiTitle: wp.hindiName,
+            type: wp.isSummit ? "summit" : wp.isBaseCamp ? "start" : wp.waterAvailable ? "water" : "waypoint",
+            lat: wp.latitude,
+            lng: wp.longitude,
+            elevationMeters: wp.elevationMeters,
+            description: wp.fieldNotes,
+            categoryLabel: wp.terrainType,
+            provenance: "VERIFIED",
+            actionLabel: "Inspect Waypoint"
+          }));
+
+          const routeSegments: VanvasMapRouteSegment[] = [
+            {
+              id: `route-${trek.id}`,
+              name: trek.title,
+              coordinates: trek.waypoints.map((wp) => ({ lat: wp.latitude, lng: wp.longitude, alt: wp.elevationMeters })),
+              color: "#E05A2B",
+              elevationGain: trek.routes[0]?.elevationGainMeters || 1000,
+              distanceKm: trek.totalDistanceKm
+            }
+          ];
+
+          return (
+            <VanvasMap
+              mode="trek"
+              title={`${trek.title} Topographic Trail`}
+              subtitle={`${trek.mountainRange} • Peak: ${trek.peakAltitudeFormatted} • ${trek.totalDistanceKm} km total`}
+              center={{ lat: trek.waypoints[0]?.latitude || 30.48, lng: trek.waypoints[0]?.longitude || 79.2 }}
+              markers={mapMarkers}
+              routes={routeSegments}
+              selectedMarkerId={selectedWaypointId}
+              onSelectMarker={(m) => {
+                if (m) setSelectedWaypointId(m.id);
+              }}
+              height={440}
+            />
+          );
+        })()}
 
         {/* Interactive Waypoint Ribbon / Stepper */}
         <div className="bg-[#14201A] p-4 sm:p-6 rounded-3xl border border-[#2A3E33] space-y-6">

@@ -415,6 +415,84 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
   },
 
   // ==========================================
+  // --- KAINCHI DHAM LANDMARKS ---
+  // ==========================================
+  "kainchi-dham:ashram": {
+    imageUrl: "/images/destinations/kainchi-dham/hero.jpg",
+    visualDescription: "Revered Neem Karoli Baba riverside ashram and Hanuman temple nestled in Kumaon mountain valley.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "ashram",
+      "kainchi-dham-ashram",
+      "kainchi-temple",
+      "neem-karoli-baba-ashram",
+      "kainchi-dham-temple",
+      "hanuman-mandir-kainchi",
+      "kainchi-ashram",
+      "kainchi"
+    ]
+  },
+  "kainchi-dham:golu-devta-temple": {
+    imageUrl: "/images/places/universal/spiritual.webp",
+    visualDescription: "Historic Golu Devta temple adorned with thousands of brass bells, temple of justice in Ghorakhal.",
+    category: "Culture & Heritage",
+    semanticTheme: "spiritual",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "golu-devta-temple",
+      "ghorakhal-temple",
+      "golu-devta",
+      "bell-temple"
+    ]
+  },
+  "kainchi-dham:bhowali-orchard-walk": {
+    imageUrl: "/images/places/universal/nature.webp",
+    visualDescription: "Fragrant pine forest and apple orchard walk along the hillside ridge of Bhowali valley.",
+    category: "Nature & Trails",
+    semanticTheme: "trail",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "bhowali-orchard-walk",
+      "bhowali-trail",
+      "pine-forest-walk",
+      "orchard-walk"
+    ]
+  },
+  "kainchi-dham:riverside-cafe": {
+    imageUrl: "/images/nearby/cafe/cafe.webp",
+    visualDescription: "Peaceful mountain riverside tea and café stall serving steaming herbal chai and Kumaoni snacks.",
+    category: "Cafés & Bakery",
+    semanticTheme: "cafe",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "riverside-cafe",
+      "kainchi-cafe",
+      "bhowali-chai-point",
+      "kumaon-tea-stall"
+    ]
+  },
+  "kainchi-dham:valley-homestay": {
+    imageUrl: "/images/nearby/homestay/homestay.webp",
+    visualDescription: "Serene traditional Kumaoni stone homestay overlooking terraced green orchards and pine slopes.",
+    category: "Stay",
+    semanticTheme: "stay",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "valley-homestay",
+      "kainchi-homestay",
+      "bhowali-sanctuary-stay",
+      "kumaoni-cottage"
+    ]
+  },
+
+  // ==========================================
   // --- JAIPUR LANDMARKS ---
   // ==========================================
   "jaipur:hawa-mahal": {

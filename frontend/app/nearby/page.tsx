@@ -14,6 +14,8 @@ import { PlaceCard } from "@/components/places/PlaceCard";
 import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
+import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
+import { Layers, LayoutGrid } from "lucide-react";
 
 type LocationStatus = "idle" | "locating" | "located" | "denied" | "error" | "unsupported";
 
@@ -71,6 +73,7 @@ function NearbyInner() {
   const [category, setCategory] = useState<string>("all");
   const [radiusKm, setRadiusKm] = useState<number>(5);
   const [sortBy, setSortBy] = useState<string>("distance");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [searchCenter, setSearchCenter] = useState<SearchCenter>(() => {
     const destParam = searchParams.get("dest") || searchParams.get("destination") || searchParams.get("city");
     const latParam = searchParams.get("lat");
@@ -583,28 +586,101 @@ function NearbyInner() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center justify-between text-xs text-[#7B4D36]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#7B4D36]">
               <span>
-                Showing <strong className="text-[#173B32]">{visiblePlaces.length}</strong> of <strong className="text-[#173B32]">{places.length}</strong> location-aware landmarks & venues
+                Showing <strong className="text-[#173B32]">{visiblePlaces.length}</strong> of <strong className="text-[#173B32]">{places.length}</strong> location-aware landmarks & venues around {searchCenter.name}
               </span>
-              <span className="font-mono text-[11px] text-[#536B52]">
-                Sorted by {sortBy.replace("_", " ")}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[11px] text-[#536B52]">
+                  Sorted by {sortBy.replace("_", " ")}
+                </span>
+                <div className="flex items-center gap-1 bg-[#FAF7F0] p-1 rounded-xl border border-[#E5D5BA]">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("grid")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      viewMode === "grid"
+                        ? "bg-[#173B32] text-[#EFE5D2] shadow-2xs"
+                        : "text-[#7B4D36] hover:bg-[#E5D5BA]"
+                    }`}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span>Grid</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("map")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      viewMode === "map"
+                        ? "bg-[#173B32] text-[#EFE5D2] shadow-2xs"
+                        : "text-[#7B4D36] hover:bg-[#E5D5BA]"
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Living Map</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visiblePlaces.map((place) => (
-                <PlaceCard
-                  key={`${searchCenter.name}-${place.id}`}
-                  place={place}
-                  destinationName={searchCenter.name}
-                  onSelect={(p) => {
-                    setSelectedPlace(p);
-                    setModalOpen(true);
+            {viewMode === "map" ? (
+              <div className="space-y-4">
+                <VanvasMap
+                  mode="nearby"
+                  center={{ lat: searchCenter.lat, lng: searchCenter.lng }}
+                  zoom={14}
+                  title={`Living Radar — ${searchCenter.name}`}
+                  subtitle={`Showing ${places.length} verified places within ${radiusKm} km radius`}
+                  markers={places.map((p, idx): VanvasMapMarker => {
+                    const cat = p.category?.toLowerCase() || "";
+                    let mType: VanvasMapMarker["type"] = "waypoint";
+                    if (cat.includes("coffee") || cat.includes("cafe")) mType = "cafe";
+                    else if (cat.includes("food") || cat.includes("dining") || cat.includes("restaurant")) mType = "food";
+                    else if (cat.includes("dhaba")) mType = "dhaba";
+                    else if (cat.includes("spiritual") || cat.includes("temple")) mType = "temple";
+                    else if (cat.includes("nature") || cat.includes("trail") || cat.includes("attraction")) mType = "viewpoint";
+                    else if (cat.includes("mobility") || cat.includes("bike") || cat.includes("rental")) mType = "rental";
+                    else if (cat.includes("essential") || cat.includes("medical") || cat.includes("hospital")) mType = "emergency";
+                    else if (cat.includes("shopping")) mType = "shop";
+
+                    return {
+                      id: p.id,
+                      title: p.name,
+                      type: mType,
+                      lat: p.latitude || (searchCenter.lat + Math.sin(idx * 0.9) * (radiusKm * 0.007)),
+                      lng: p.longitude || (searchCenter.lng + Math.cos(idx * 0.9) * (radiusKm * 0.007)),
+                      description: p.description,
+                      categoryLabel: p.category,
+                      provenance: "VERIFIED",
+                      actionLabel: "View Place Dossier"
+                    };
+                  })}
+                  onSelectMarker={(marker) => {
+                    if (!marker) return;
+                    const matched = places.find((p) => p.id === marker.id);
+                    if (matched) {
+                      setSelectedPlace(matched);
+                      setModalOpen(true);
+                    }
                   }}
+                  className="shadow-xl"
                 />
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {visiblePlaces.map((place) => (
+                  <PlaceCard
+                    key={`${searchCenter.name}-${place.id}`}
+                    place={place}
+                    destinationName={searchCenter.name}
+                    onSelect={(p) => {
+                      setSelectedPlace(p);
+                      setModalOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Progressive Discovery Load More Button */}
             {visibleCount < places.length && (

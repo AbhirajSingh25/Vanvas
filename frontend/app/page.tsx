@@ -293,29 +293,32 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Card 4: LIVING NEARBY DISCOVERY */}
+          {/* Card 4: ASK VANVAS TRAVEL COPILOT */}
           <Link
-            href="/nearby"
-            className="group bg-[#FAF4E8] rounded-3xl p-6 border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+            href="/copilot"
+            onClick={(e) => {
+              // If floating copilot trigger exists or opened via modal
+            }}
+            className="group bg-[#FAF4E8] rounded-3xl p-6 border-2 border-[#D8CBB2] hover:border-[#B49252] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
           >
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shadow-md">
-                <MapPin className="w-6 h-6 text-[#B49252]" />
+              <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#FAF4E8] flex items-center justify-center shadow-md">
+                <Sparkles className="w-6 h-6 text-[#B49252]" />
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#7B4D36] font-bold">
-                  LAYER 04 • LIVING MAP
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
+                  LAYER 04 • UNIVERSAL COPILOT
                 </span>
-                <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
-                  Nearby Places
+                <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B49252] transition-colors">
+                  Ask VANVAS
                 </h3>
               </div>
               <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                Understand what&apos;s around you right now. Cafes, local street food, vehicle rentals, temples & medical essentials.
+                Universal travel intelligence for any place in India. Instant budget plans, timing advice, routes & zero-hallucination guidance.
               </p>
             </div>
             <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
-              <span>Explore Nearby</span>
+              <span>Ask Anywhere</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
@@ -328,13 +331,13 @@ export default function HomePage() {
           <DevanagariHeading
             devanagari="कहाँ चलें?"
             english="Where will you wander?"
-            subtitle="Curated Indian destinations presented as vintage illustrated travel posters."
+            subtitle="Curated Indian sanctuaries & heritage routes presented as vintage illustrated travel posters."
           />
           <Link
             href="/explore"
             className="text-xs font-bold uppercase tracking-widest text-[#B65E3C] hover:text-[#9E4D2E] flex items-center gap-1.5 transition-colors self-start md:self-auto"
           >
-            <span>EXPLORE ALL DESTINATIONS →</span>
+            <span>EXPLORE ALL SANCTUARIES (सभी तीर्थ खोजें) →</span>
           </Link>
         </div>
 

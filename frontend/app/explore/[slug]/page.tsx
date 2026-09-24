@@ -18,6 +18,7 @@ import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { JournalNote } from "@/components/ui/JournalNote";
 import { VanvasImage } from "@/components/ui/VanvasImage";
+import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
@@ -133,6 +134,12 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
     transport: "Ram Jhula and Lakshman Jhula are best explored on foot. Shared autos connect the Haridwar bypass to Swarg Ashram. Rafting launch points at Shivpuri require a taxi or rented scooter.",
     etiquette: "Rishikesh is a holy city: alcohol and non-vegetarian food are strictly prohibited within city limits. Maintain complete silence during the evening Ganga Aarti at Triveni Ghat and Parmarth Niketan. Dress modestly near ashrams.",
   },
+  "kainchi-dham": {
+    seasonality: "Open year-round with ideal weather from March to June and September to November (14–26°C). June 15th marks the grand annual Kainchi Bhandara (Pratishtha Divas) attracting thousands of devotees. Winters (Dec–Feb) are crisp and cold (2–12°C).",
+    clothing: "Modest and respectful attire covering shoulders and knees for the sacred ashram. Light woollens or shawl for evenings and mornings throughout the year; warm jackets and thermal layers required in winter.",
+    transport: "Located on the Nainital-Almora National Highway (NH-109), 17 km from Nainital and 9 km from Bhowali. Kathgodam is the nearest railway station (37 km / 1.5 hrs by taxi/bus). Pantnagar is the nearest airport (70 km). Shared sumos and local buses ply continuously between Kathgodam, Haldwani, Bhowali, and Kainchi.",
+    etiquette: "Maintain absolute reverence, silence, and peace inside Neem Karoli Baba's ashram precincts. Photography is strictly prohibited inside the inner sanctum and Baba's room. Footwear must be deposited at the cloakroom before crossing the wooden bridge over the river.",
+  },
   delhi: {
     seasonality: "October to March offers pleasant, cool weather for exploring heritage monuments and open-air bazaars. May–June experiences extreme heat (40–45°C).",
     clothing: "Comfortable cottons in summer; warm jackets and sweaters for chilly winter mornings/nights. Modest attire covering shoulders and knees for religious sites.",
@@ -181,6 +188,7 @@ export default function DestinationDetailPage() {
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [savedExperiences, setSavedExperiences] = useState<Record<string, boolean>>({});
   const [activeWaypointIdx, setActiveWaypointIdx] = useState<number>(0);
+  const [expandedGuide, setExpandedGuide] = useState<"seasonality" | "clothing" | "transport" | "etiquette" | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -272,6 +280,12 @@ export default function DestinationDetailPage() {
       alt: "4000M",
       quote: "Chopta base camp → World's highest Shiva shrine (3,680m) → 360° Chaukhamba sunrise summit (4,000m).",
       province: "GARHWAL UTTARAKHAND",
+    },
+    "kainchi-dham": {
+      hindi: "कैंची धाम",
+      alt: "1400M",
+      quote: "Neem Karoli Baba's sacred riverside ashram nestled in pine-scented Kumaoni valleys.",
+      province: "KUMAON UTTARAKHAND",
     }
   };
 
@@ -679,6 +693,83 @@ export default function DestinationDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* VANVAS Interactive Sanctuary Map */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#E5D5BA] pb-3">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#B65E3C]">
+                    सफ़र का नक्शा • VANVAS CARTOGRAPHY
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-serif font-black text-[#173B32]">
+                    Sanctuary Geography &amp; Coordinates
+                  </h3>
+                </div>
+                <span className="text-xs font-mono text-[#7B4D36]">
+                  Topographic map layer with verified places and terrain coordinates
+                </span>
+              </div>
+
+              {(() => {
+                const mapMarkers: VanvasMapMarker[] = [
+                  {
+                    id: `dest-${destination.id || slug}`,
+                    title: destination.name,
+                    hindiTitle: meta.hindi,
+                    type: "destination",
+                    lat: destination.latitude,
+                    lng: destination.longitude,
+                    elevationMeters: destination.altitude_meters,
+                    description: destination.tagline || destination.description,
+                    categoryLabel: "Sanctuary Hub",
+                    provenance: "VERIFIED"
+                  },
+                  ...places.slice(0, 10).map((p): VanvasMapMarker => {
+                    const cat = getCategory(p);
+                    let mType: VanvasMapMarker["type"] = "waypoint";
+                    if (cat.includes("temple") || cat.includes("spiritual") || cat.includes("monastery")) mType = "temple";
+                    else if (cat.includes("cafe") || cat.includes("bakery")) mType = "cafe";
+                    else if (cat.includes("food") || cat.includes("dhaba")) mType = "food";
+                    else if (cat.includes("viewpoint") || cat.includes("scenic")) mType = "viewpoint";
+                    else if (cat.includes("trail") || cat.includes("waterfall")) mType = "waypoint";
+                    else if (cat.includes("shop") || cat.includes("bazaar")) mType = "shop";
+
+                    return {
+                      id: p.id,
+                      title: p.name,
+                      type: mType,
+                      lat: p.latitude || destination.latitude + (Math.sin(p.name.length) * 0.04),
+                      lng: p.longitude || destination.longitude + (Math.cos(p.name.length) * 0.04),
+                      elevationMeters: destination.altitude_meters,
+                      description: p.description,
+                      categoryLabel: p.category,
+                      provenance: "DATABASE",
+                      actionLabel: "View Place Dossier"
+                    };
+                  })
+                ];
+
+                return (
+                  <VanvasMap
+                    mode="core"
+                    title={`${destination.name} Sanctuary Map`}
+                    subtitle={`${meta.hindi} • Coordinates ${destination.latitude.toFixed(2)}°N, ${destination.longitude.toFixed(2)}°E • ${destination.altitude_meters}m`}
+                    center={{ lat: destination.latitude, lng: destination.longitude }}
+                    markers={mapMarkers}
+                    height={400}
+                    onSelectMarker={(m) => {
+                      if (m && m.type !== "destination") {
+                        const foundP = places.find((p) => p.id === m.id);
+                        if (foundP) {
+                          setSelectedPlace(foundP);
+                          setModalOpen(true);
+                        }
+                      }
+                    }}
+                  />
+                );
+              })()}
+            </div>
 
             {/* Live Open-Meteo Weather Intelligence */}
             <div className="p-6 sm:p-8 rounded-3xl bg-[#0F2924] text-[#EFE5D2] border-2 border-[#173B32] shadow-xl space-y-6 relative overflow-hidden">
@@ -1380,11 +1471,17 @@ export default function DestinationDetailPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Module 1: Seasonality & Timing */}
-                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col justify-between space-y-4">
+                <div
+                  onClick={() => setExpandedGuide("seasonality")}
+                  className="p-5 rounded-2xl bg-[#EFE5D2] hover:bg-[#EAE0CB] border border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between space-y-4 cursor-pointer group shadow-2xs hover:shadow-md"
+                >
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
-                      <Sun className="w-4 h-4 text-[#B65E3C]" />
-                      <span>Seasonality &amp; Timing</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
+                        <Sun className="w-4 h-4 text-[#B65E3C]" />
+                        <span>Seasonality &amp; Timing</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-[#B65E3C] group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <ul className="space-y-2 text-xs text-[#20211D]/85">
                       {seasonalityPoints.slice(0, 3).map((pt, i) => (
@@ -1395,17 +1492,24 @@ export default function DestinationDetailPage() {
                       ))}
                     </ul>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono text-[#7B4D36]">
-                    <strong>Peak Window:</strong> {destination.best_time_to_visit || "Year-Round"}
+                  <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-[10px] font-mono text-[#7B4D36]">
+                    <span>Peak: <strong>{destination.best_time_to_visit || "Year-Round"}</strong></span>
+                    <span className="text-[#B65E3C] font-bold group-hover:underline">Expand Guide →</span>
                   </div>
                 </div>
 
                 {/* Module 2: Packing & Clothing */}
-                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col justify-between space-y-4">
+                <div
+                  onClick={() => setExpandedGuide("clothing")}
+                  className="p-5 rounded-2xl bg-[#EFE5D2] hover:bg-[#EAE0CB] border border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between space-y-4 cursor-pointer group shadow-2xs hover:shadow-md"
+                >
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
-                      <Mountain className="w-4 h-4 text-[#B65E3C]" />
-                      <span>Packing &amp; Clothing</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
+                        <Mountain className="w-4 h-4 text-[#B65E3C]" />
+                        <span>Packing &amp; Clothing</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-[#B65E3C] group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <ul className="space-y-2 text-xs text-[#20211D]/85">
                       {clothingPoints.slice(0, 3).map((pt, i) => (
@@ -1416,17 +1520,24 @@ export default function DestinationDetailPage() {
                       ))}
                     </ul>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono text-[#7B4D36]">
-                    <strong>Footwear:</strong> Supportive walking shoes required
+                  <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-[10px] font-mono text-[#7B4D36]">
+                    <span>Layers: <strong>Seasonal Pack</strong></span>
+                    <span className="text-[#B65E3C] font-bold group-hover:underline">Expand Guide →</span>
                   </div>
                 </div>
 
                 {/* Module 3: Transport & Transit */}
-                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col justify-between space-y-4">
+                <div
+                  onClick={() => setExpandedGuide("transport")}
+                  className="p-5 rounded-2xl bg-[#EFE5D2] hover:bg-[#EAE0CB] border border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between space-y-4 cursor-pointer group shadow-2xs hover:shadow-md"
+                >
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
-                      <Navigation className="w-4 h-4 text-[#B65E3C]" />
-                      <span>Transport &amp; Transit</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
+                        <Navigation className="w-4 h-4 text-[#B65E3C]" />
+                        <span>Transport &amp; Transit</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-[#B65E3C] group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <ul className="space-y-2 text-xs text-[#20211D]/85">
                       {transportPoints.slice(0, 3).map((pt, i) => (
@@ -1437,17 +1548,24 @@ export default function DestinationDetailPage() {
                       ))}
                     </ul>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono text-[#7B4D36]">
-                    <strong>Navigation:</strong> Walk heritage lanes, cab for outer hubs
+                  <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-[10px] font-mono text-[#7B4D36]">
+                    <span>Mobility: <strong>Walk &amp; Local Transit</strong></span>
+                    <span className="text-[#B65E3C] font-bold group-hover:underline">Expand Guide →</span>
                   </div>
                 </div>
 
                 {/* Module 4: Etiquette & Local Tips */}
-                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col justify-between space-y-4">
+                <div
+                  onClick={() => setExpandedGuide("etiquette")}
+                  className="p-5 rounded-2xl bg-[#EFE5D2] hover:bg-[#EAE0CB] border border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between space-y-4 cursor-pointer group shadow-2xs hover:shadow-md"
+                >
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
-                      <Globe className="w-4 h-4 text-[#B65E3C]" />
-                      <span>Etiquette &amp; Tips</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
+                        <Globe className="w-4 h-4 text-[#B65E3C]" />
+                        <span>Etiquette &amp; Tips</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-[#B65E3C] group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <ul className="space-y-2 text-xs text-[#20211D]/85">
                       {etiquettePoints.slice(0, 3).map((pt, i) => (
@@ -1458,11 +1576,123 @@ export default function DestinationDetailPage() {
                       ))}
                     </ul>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono text-[#B65E3C] font-bold">
-                    <strong>Notice:</strong> Zero single-use plastic zone
+                  <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-[10px] font-mono text-[#7B4D36]">
+                    <span>Sanctuary: <strong>Zero Plastic</strong></span>
+                    <span className="text-[#B65E3C] font-bold group-hover:underline">Expand Guide →</span>
                   </div>
                 </div>
               </div>
+
+              {/* Detailed Expanded Field Guide Modal */}
+              {expandedGuide && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                  <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+                    <div className="flex items-start justify-between gap-4 border-b border-[#E5D5BA] pb-4">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#B65E3C]">
+                          {destination.name} • COMPREHENSIVE FIELD INTELLIGENCE
+                        </span>
+                        <h4 className="text-2xl font-serif font-black text-[#173B32] capitalize">
+                          {expandedGuide === "seasonality" && "Seasonality, Climate & Crowds"}
+                          {expandedGuide === "clothing" && "Packing, Clothing & Footwear"}
+                          {expandedGuide === "transport" && "Transport, Transit & Mobility"}
+                          {expandedGuide === "etiquette" && "Sanctuary Etiquette & Local Wisdom"}
+                        </h4>
+                      </div>
+                      <button
+                        onClick={() => setExpandedGuide(null)}
+                        className="p-2 rounded-full hover:bg-black/10 text-[#7B4D36] transition-colors cursor-pointer"
+                        aria-label="Close modal"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 text-xs sm:text-sm text-[#20211D]/90 font-serif leading-relaxed">
+                      {expandedGuide === "seasonality" && (
+                        <div className="space-y-4">
+                          <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-2">
+                            <span className="font-mono font-bold uppercase text-[10px] text-[#B65E3C] block">Peak Windows &amp; Best Timing</span>
+                            <p>{rawGuide?.seasonality || destination.best_time_to_visit}</p>
+                          </div>
+                          <div className="space-y-2 text-xs font-sans text-[#20211D]">
+                            <p className="font-bold text-[#173B32]">Key Seasonal Observations:</p>
+                            {seasonalityPoints.map((pt, i) => (
+                              <div key={i} className="flex items-start gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                <span>{pt}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {expandedGuide === "clothing" && (
+                        <div className="space-y-4">
+                          <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-2">
+                            <span className="font-mono font-bold uppercase text-[10px] text-[#B65E3C] block">Clothing Strategy &amp; Footwear</span>
+                            <p>{rawGuide?.clothing || "Layered clothing recommended for changing mountain and valley temperatures."}</p>
+                          </div>
+                          <div className="space-y-2 text-xs font-sans text-[#20211D]">
+                            <p className="font-bold text-[#173B32]">Recommended Attire &amp; Gear Checklist:</p>
+                            {clothingPoints.map((pt, i) => (
+                              <div key={i} className="flex items-start gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                <span>{pt}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {expandedGuide === "transport" && (
+                        <div className="space-y-4">
+                          <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-2">
+                            <span className="font-mono font-bold uppercase text-[10px] text-[#B65E3C] block">Getting There &amp; Moving Around</span>
+                            <p>{rawGuide?.transport || "Local transit, shared taxis, and walking trails."}</p>
+                          </div>
+                          <div className="space-y-2 text-xs font-sans text-[#20211D]">
+                            <p className="font-bold text-[#173B32]">Transit Insights &amp; Mobility Guidelines:</p>
+                            {transportPoints.map((pt, i) => (
+                              <div key={i} className="flex items-start gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                <span>{pt}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {expandedGuide === "etiquette" && (
+                        <div className="space-y-4">
+                          <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-2">
+                            <span className="font-mono font-bold uppercase text-[10px] text-[#B65E3C] block">Cultural Respect &amp; Environmental Care</span>
+                            <p>{rawGuide?.etiquette || "Preserve cultural sanctity, remove footwear at sacred spaces, and adhere to zero plastic waste."}</p>
+                          </div>
+                          <div className="space-y-2 text-xs font-sans text-[#20211D]">
+                            <p className="font-bold text-[#173B32]">Local Sanctuary Codes of Conduct:</p>
+                            {etiquettePoints.map((pt, i) => (
+                              <div key={i} className="flex items-start gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                <span>{pt}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-4 border-t border-[#E5D5BA] flex justify-end">
+                      <button
+                        onClick={() => setExpandedGuide(null)}
+                        className="px-6 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        Done Reading
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()}
