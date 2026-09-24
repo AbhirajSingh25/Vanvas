@@ -192,8 +192,8 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
           </button>
 
           {/* Badges & Title */}
-          <div className="absolute bottom-4 left-5 right-5 text-[#EFE5D2]">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
+          <div className="absolute bottom-3 left-4 right-4 sm:bottom-4 sm:left-5 sm:right-5 text-[#EFE5D2]">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] text-[10px] font-bold uppercase tracking-wider border border-[#536B52]">
                 {safeCategory}
               </span>
@@ -248,7 +248,7 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
         </div>
 
         {/* Content Body: Journal Page */}
-        <div className="p-6 overflow-y-auto space-y-5 text-sm">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-sm">
           {/* Stale data warning banner if applicable */}
           {isStale && (
             <div className="p-3 rounded-2xl bg-amber-50 border border-amber-300/80 text-amber-900 flex items-start gap-2.5 text-xs">

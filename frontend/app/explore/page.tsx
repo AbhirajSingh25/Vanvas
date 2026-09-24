@@ -150,7 +150,7 @@ export default function ExploreIndexPage() {
   return (
     <div className="relative overflow-hidden bg-[#EFE5D2] min-h-screen">
       {/* DESTINATION CATALOGUE & DISCOVERY VIEWPORT */}
-      <section id="catalogue" className="py-8 px-4 sm:px-6 lg:px-8">
+      <section id="catalogue" className="pt-6 pb-32 sm:py-8 px-3 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Compact Top Header & Search Toolbar */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#E5D5BA]">

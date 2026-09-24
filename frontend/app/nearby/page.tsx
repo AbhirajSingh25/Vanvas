@@ -220,7 +220,7 @@ export default function NearbyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#EFE5D2] py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#EFE5D2] pt-6 pb-32 sm:py-12 px-3 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header Strip */}
