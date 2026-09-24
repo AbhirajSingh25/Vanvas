@@ -2,24 +2,41 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Compass, ArrowRight, Sparkles, Mountain, Search, Waves, Castle } from "lucide-react";
+import { Compass, ArrowRight, Sparkles, Mountain, Search, Waves, Castle, RefreshCw, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { JournalNote } from "@/components/ui/JournalNote";
+import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 
 export default function ExploreIndexPage() {
-  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadDestinations = () => {
+    setLoading(true);
+    setLoadError(null);
+    api.getDestinations(false)
+      .then((data) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setDestinations(data);
+        } else {
+          setDestinations(CANONICAL_DESTINATIONS);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch remote destinations, serving canonical registry:", err);
+        setDestinations(CANONICAL_DESTINATIONS);
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    api.getDestinations(false)
-      .then((data) => setDestinations(data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+    loadDestinations();
   }, []);
 
   const curatedJourneys = [
@@ -139,10 +156,14 @@ export default function ExploreIndexPage() {
     else if (selectedCategory === "Royal") matchCat = isDes;
     else if (selectedCategory === "Coastal") matchCat = isCoast;
 
+    const s = search.toLowerCase().trim();
+    if (!s) return matchCat;
+
     const matchSearch =
-      d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.state.toLowerCase().includes(search.toLowerCase()) ||
-      (destDetails[d.slug]?.hindi || "").includes(search);
+      (d.name || "").toLowerCase().includes(s) ||
+      (d.state || "").toLowerCase().includes(s) ||
+      (d.region || "").toLowerCase().includes(s) ||
+      (destDetails[d.slug]?.hindi || (d as any).hindi_name || "").includes(s);
 
     return matchCat && matchSearch;
   });
@@ -232,10 +253,46 @@ export default function ExploreIndexPage() {
           </div>
 
           {/* Destination Editorial Showcase Grid */}
-          {loading ? (
+          {loading && destinations.length === 0 ? (
             <div className="py-24 flex flex-col items-center justify-center text-[#173B32] gap-3">
               <div className="w-10 h-10 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
               <span className="text-xs font-serif italic text-[#7B4D36]">Unrolling illustrated expedition maps...</span>
+            </div>
+          ) : loadError && destinations.length === 0 ? (
+            <div className="py-16 text-center space-y-4 max-w-md mx-auto bg-[#FAF7F0] p-8 rounded-3xl border-2 border-[#E5D5BA]">
+              <AlertCircle className="w-10 h-10 text-[#B65E3C] mx-auto" />
+              <h3 className="text-xl font-serif font-black text-[#173B32]">
+                VANVAS couldn&rsquo;t load destinations right now.
+              </h3>
+              <p className="text-xs text-[#7B4D36]">
+                The server might be waking up or temporarily unreachable.
+              </p>
+              <button
+                onClick={loadDestinations}
+                className="px-6 py-2.5 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#204E43] transition-all flex items-center gap-2 mx-auto cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Retry</span>
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-16 text-center space-y-4 max-w-md mx-auto bg-[#FAF7F0] p-8 rounded-3xl border-2 border-[#E5D5BA]">
+              <Compass className="w-10 h-10 text-[#7B4D36] mx-auto opacity-60" />
+              <h3 className="text-lg font-serif font-black text-[#173B32]">
+                No sanctuaries match your criteria
+              </h3>
+              <p className="text-xs text-[#7B4D36]">
+                Try adjusting your search query or choosing another journey route.
+              </p>
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setSelectedCategory("All");
+                }}
+                className="px-5 py-2.5 rounded-xl bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#9E4D2E] transition-all cursor-pointer"
+              >
+                Reset Filters
+              </button>
             </div>
           ) : (
             <div id="all-destinations" className="space-y-12">
@@ -251,7 +308,7 @@ export default function ExploreIndexPage() {
                       <DestinationArtwork
                         destination={filtered[0].slug}
                         title={filtered[0].name}
-                        hindiName={destDetails[filtered[0].slug]?.hindi || "यात्रा"}
+                        hindiName={destDetails[filtered[0].slug]?.hindi || (filtered[0] as any).hindi_name || "यात्रा"}
                         subtitle={filtered[0].state}
                         elevation={destDetails[filtered[0].slug]?.alt}
                         coordinates={destDetails[filtered[0].slug]?.coords}
@@ -268,7 +325,7 @@ export default function ExploreIndexPage() {
                             variant="terracotta"
                           />
                           <span className="text-xs font-mono text-[#7B4D36]">
-                            {destDetails[filtered[0].slug]?.coords}
+                            {destDetails[filtered[0].slug]?.coords || "SANCTUARY"}
                           </span>
                         </div>
 
@@ -276,10 +333,10 @@ export default function ExploreIndexPage() {
                           {filtered[0].name}
                         </h3>
                         <div className="text-sm font-serif text-[#B65E3C] font-semibold">
-                          {destDetails[filtered[0].slug]?.hindi} • {filtered[0].state}
+                          {destDetails[filtered[0].slug]?.hindi || (filtered[0] as any).hindi_name} • {filtered[0].state}
                         </div>
 
-                        <p className="text-xs text-[#20211D]/80 leading-relaxed font-light">
+                        <p className="text-xs text-[#20211D]/80 leading-relaxed font-light line-clamp-3">
                           {filtered[0].description}
                         </p>
 
@@ -335,7 +392,7 @@ export default function ExploreIndexPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filtered.slice(1).map((dest) => (
                   <Link
-                    key={dest.id}
+                    key={dest.id || dest.slug}
                     href={`/explore/${dest.slug}`}
                     className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-4 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
                   >
@@ -344,7 +401,7 @@ export default function ExploreIndexPage() {
                       <DestinationArtwork
                         destination={dest.slug}
                         title={dest.name}
-                        hindiName={destDetails[dest.slug]?.hindi || "सफ़र"}
+                        hindiName={destDetails[dest.slug]?.hindi || (dest as any).hindi_name || "सफ़र"}
                         subtitle={dest.state}
                         elevation={destDetails[dest.slug]?.alt}
                         coordinates={destDetails[dest.slug]?.coords}

@@ -262,7 +262,8 @@ export const api = {
     const params = new URLSearchParams();
     if (featuredOnly) params.append("featured_only", "true");
     if (search) params.append("search", search);
-    const res = await fetchApi<Destination[]>(`/destinations?${params.toString()}`, { signal });
+    const qs = params.toString();
+    const res = await fetchApi<Destination[]>(qs ? `/destinations?${qs}` : "/destinations", { signal });
     if (res && res.length > 0) {
       setCached(cacheKey, res, 180000);
     }
