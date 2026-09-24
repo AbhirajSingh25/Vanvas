@@ -540,9 +540,10 @@ async def upload_avatar(
             content_type="image/webp"
         )
     except StorageServiceException as e:
+        status_code = status.HTTP_503_SERVICE_UNAVAILABLE if ("NOT_CONFIGURED" in e.code or "DISABLED" in e.code) else status.HTTP_500_INTERNAL_SERVER_ERROR
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            status_code=status_code,
+            detail=e.message or str(e)
         )
 
     # Clean up old avatar if exists

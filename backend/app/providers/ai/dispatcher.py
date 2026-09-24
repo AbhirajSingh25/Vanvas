@@ -110,8 +110,8 @@ class AIToolDispatcher:
             "total_curated_places": places_count,
             "must_visit_highlights": [p.name for p in top_places],
             "coordinates": {"lat": dest.latitude, "lng": dest.longitude},
-            "is_curated": True,
-            "is_dynamic": False
+            "is_curated": bool(dest.is_featured),
+            "is_dynamic": not bool(dest.is_featured)
         }
 
     async def _get_place(self, args: Dict[str, Any]) -> Dict[str, Any]:

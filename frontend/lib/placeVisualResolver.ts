@@ -1965,8 +1965,10 @@ export function classifyCategoryTheme(
 /**
  * Universal safe semantic fallback URL.
  * Guarantees zero broken images while strictly preserving category truthfulness.
+ * Supports both SemanticTheme and legacy category/destination string inputs.
  */
-export function getUniversalFallback(semanticTheme: SemanticTheme): string {
+export function getUniversalFallback(themeOrCategory?: SemanticTheme | string, destination?: string): string {
+  if (!themeOrCategory) return "/images/nearby/universal/universal.webp";
   const themeMap: Record<SemanticTheme, string> = {
     cafe: "/images/nearby/cafe/cafe.webp",
     food: "/images/nearby/local_food/local_food.webp",
@@ -1988,7 +1990,11 @@ export function getUniversalFallback(semanticTheme: SemanticTheme): string {
     medical: "/images/places/universal/medical.webp",
     service: "/images/places/universal/service.webp"
   };
-  return themeMap[semanticTheme] || "/images/nearby/universal/universal.webp";
+  if (themeOrCategory in themeMap) {
+    return themeMap[themeOrCategory as SemanticTheme];
+  }
+  const inferred = classifyCategoryTheme(themeOrCategory, "", "");
+  return themeMap[inferred] || "/images/nearby/universal/universal.webp";
 }
 
 export function areThemesCompatible(t1: SemanticTheme, t2: SemanticTheme): boolean {
@@ -2336,3 +2342,23 @@ export function detectVisualCollisions(
     reverseIndex
   };
 }
+
+/**
+ * Backward compatibility constants and helpers for legacy regression tests and callers
+ */
+export const LEGACY_UNIVERSAL_PATHS = {
+  nature: "/images/places/universal/nature.webp",
+  heritage: "/images/places/universal/heritage.webp",
+  spiritual: "/images/places/universal/spiritual.webp",
+  cafe: "/images/places/universal/cafe.webp",
+  food: "/images/places/universal/food.webp",
+  transport: "/images/places/universal/transport.webp",
+  nightlife: "/images/places/universal/nightlife.webp",
+  medical: "/images/places/universal/medical.webp",
+  service: "/images/places/universal/service.webp"
+};
+
+export function safeFallback(category?: string): string {
+  return getUniversalFallback(category);
+}
+

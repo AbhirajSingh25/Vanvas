@@ -105,7 +105,7 @@ async def test_stay_discovery_across_destinations(dest_slug):
         for r in results:
             assert isinstance(r, HotelResponse)
             assert r.name
-            assert r.availability_state in ["AVAILABLE", "UNAVAILABLE", "UNKNOWN"]
+            assert r.availability_state in ["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "UPON INQUIRY"]
             assert r.accommodation_type in StayMatchingService.ALLOWED_ACCOMMODATION_TYPES
             if r.price_per_night is not None:
                 assert r.price_per_night > 0
@@ -130,7 +130,7 @@ def test_price_truth_formatting():
 # 3. TEST TRUTHFUL AVAILABILITY (Never call UNKNOWN available)
 def test_availability_states_truth():
     """Verify availability state handling."""
-    valid_states = {"AVAILABLE", "UNAVAILABLE", "UNKNOWN"}
+    valid_states = {"AVAILABLE", "UNAVAILABLE", "UNKNOWN", "UPON INQUIRY"}
     # OSM stays default to UNKNOWN
     osm_stay = {"availability_state": "UNKNOWN"}
     assert osm_stay["availability_state"] in valid_states

@@ -513,6 +513,8 @@ class StayMatchingService:
                 )
 
                 price_val = ls.get("price_per_night")
+                if price_val is not None and price_val <= 0:
+                    price_val = None
                 price_fmt = cls.format_price(price_val, "INR")
 
                 seen_names.add(norm)

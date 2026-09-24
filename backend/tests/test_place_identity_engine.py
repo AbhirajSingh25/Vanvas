@@ -145,12 +145,12 @@ def test_12_homepage_manali_artwork_exists():
     assert os.path.exists(hero_path), f"Manali hero missing at {hero_path}"
 
 def test_13_vehicle_artwork_bespoke_svgs():
-    """Test 13: Vehicle artwork SVGs exist and are in active vehicles directory."""
+    """Test 13: Bespoke vehicle artwork assets exist and are in active vehicles directory."""
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    vehicles = ["adventure_motorcycle.svg", "automatic_scooter.svg", "classic_bullet.svg"]
+    vehicles = ["adventure_motorcycle.jpg", "automatic_scooter.jpg", "classic_bullet.jpg"]
     for v in vehicles:
         v_path = os.path.join(base_dir, f"frontend/public/images/vehicles/{v}")
-        assert os.path.exists(v_path), f"Vehicle SVG missing: {v_path}"
+        assert os.path.exists(v_path), f"Vehicle artwork missing: {v_path}"
 
 def test_14_place_images_exist_on_disk():
     """Test 14: Registered WebP assets exist in frontend/public/images/places/."""

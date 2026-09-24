@@ -164,8 +164,8 @@ async def get_destination_detail(
         
         return {
             "destination": dest,
-            "is_curated": True,
-            "is_dynamic": False,
+            "is_curated": bool(dest.is_featured),
+            "is_dynamic": not bool(dest.is_featured),
             "places": places,
             "hotels": hotels,
             "rentals": rentals,
