@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Compass, MapPin, Sparkles, ArrowRight, Clock, CloudRain,
-  Wallet, Users, Coffee, BedDouble, Navigation, Sun, Check, ExternalLink
+  Wallet, Users, Coffee, BedDouble, Navigation, Sun, Check, ExternalLink,
+  Mountain, Footprints
 } from "lucide-react";
 import { MistOverlay } from "@/components/mist/MistOverlay";
 import { Logo } from "@/components/brand/Logo";
@@ -197,6 +198,127 @@ export default function HomePage() {
               Leave Delhi at night. Wake up somewhere in the pines.
             </span>
           </div>
+        </div>
+      </section>
+
+      {/* SECTION 1B: CHOOSE YOUR WAY TO TRAVEL (4 DISTINCT EXPERIENCE MODES) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#D8CBB2] pb-6">
+          <DevanagariHeading
+            devanagari="अपनी यात्रा चुनें"
+            english="Choose Your Way to Travel"
+            subtitle="Four dedicated visual environments built for different travel mentalities."
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Card 1: CORE EXPLORER'S DESK */}
+          <Link
+            href="/explore"
+            className="group bg-[#FAF4E8] rounded-3xl p-6 border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shadow-md">
+                <Compass className="w-6 h-6 text-[#B49252]" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#7B4D36] font-bold">
+                  LAYER 01 • EXPLORER&apos;S DESK
+                </span>
+                <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
+                  Explore India
+                </h3>
+              </div>
+              <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
+                Discover curated sanctuaries, river ghats, royal palaces, tea plantations, and hidden mountain valleys across India.
+              </p>
+            </div>
+            <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
+              <span>Explore Catalogue</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Card 2: TREK EXPEDITION MODE */}
+          <Link
+            href="/treks"
+            className="group bg-[#111A16] text-[#EFE5D2] rounded-3xl p-6 border-2 border-[#2C3E35] hover:border-[#E05A2B] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#E05A2B] text-white flex items-center justify-center shadow-md">
+                <Mountain className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
+                  LAYER 02 • FIELD JOURNAL
+                </span>
+                <h3 className="text-2xl font-serif font-black text-white group-hover:text-[#E05A2B] transition-colors">
+                  Trek Mode
+                </h3>
+              </div>
+              <p className="text-xs text-[#A6BAAE] font-serif leading-relaxed">
+                Understand the mountain before you climb it. Elevation graphs, route comparisons, gear checklists & live trail cockpit.
+              </p>
+            </div>
+            <div className="pt-3 border-t border-[#25372D] flex items-center justify-between text-xs font-bold text-[#E05A2B]">
+              <span>Find Your Mountain</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Card 3: ONE-DAY ROUND TRIP */}
+          <Link
+            href="/one-day"
+            className="group bg-[#FFF9F0] rounded-3xl p-6 border-2 border-[#E5D5BA] hover:border-[#B65E3C] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#B65E3C] text-white flex items-center justify-center shadow-md">
+                <Clock className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#B65E3C] font-bold">
+                  LAYER 03 • SPONTANEOUS ESCAPE
+                </span>
+                <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
+                  One-Day Trips
+                </h3>
+              </div>
+              <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
+                &ldquo;We have one day. Let&apos;s go.&rdquo; Spontaneous road trips, friend group budget splitting, timeline boards & rental discovery.
+              </p>
+            </div>
+            <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#B65E3C]">
+              <span>Plan 1-Day Escape</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Card 4: LIVING NEARBY DISCOVERY */}
+          <Link
+            href="/nearby"
+            className="group bg-[#FAF4E8] rounded-3xl p-6 border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shadow-md">
+                <MapPin className="w-6 h-6 text-[#B49252]" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#7B4D36] font-bold">
+                  LAYER 04 • LIVING MAP
+                </span>
+                <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
+                  Nearby Places
+                </h3>
+              </div>
+              <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
+                Understand what&apos;s around you right now. Cafes, local street food, vehicle rentals, temples & medical essentials.
+              </p>
+            </div>
+            <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
+              <span>Explore Nearby</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
         </div>
       </section>
 

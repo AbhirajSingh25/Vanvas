@@ -2123,13 +2123,13 @@ export function resolvePlaceArtwork(
   // --- LEVEL 4B: Curated Exact-Place Artwork (Explicit Alias Matching with Semantic Safety) ---
   let bestExactMatch: { regKey: string; item: CuratedLandmarkEntry } | null = null;
 
+  // Pass 1: Destination-scoped alias matching
   for (const [regKey, item] of Object.entries(EXACT_PLACE_REGISTRY)) {
     if (!isApprovedAsset(item.imageUrl)) {
       continue;
     }
     const [regDest, regPlace] = regKey.split(":");
     if (regDest === destNorm || destNorm.includes(regDest) || regDest.includes(destNorm) || !destNorm) {
-      // Hard check: ensure semantic theme compatibility before assigning exact landmark asset
       if (!areThemesCompatible(semanticTheme, item.semanticTheme)) {
         continue;
       }
@@ -2140,7 +2140,34 @@ export function resolvePlaceArtwork(
       if (regPlace === placeNorm || aliases.includes(placeNorm)) {
         matched = true;
       } else {
-        // High confidence containment: must match full canonical alias of significant length
+        for (const al of aliases) {
+          if (al.length >= 4) {
+            if (placeNorm === al || placeNorm.startsWith(`${al}-`) || placeNorm.endsWith(`-${al}`) || placeNorm.includes(`-${al}-`)) {
+              matched = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (matched) {
+        bestExactMatch = { regKey, item };
+        break;
+      }
+    }
+  }
+
+  // Pass 2: Global Famous Landmark entity override (Specific famous entity always wins over category)
+  if (!bestExactMatch) {
+    for (const [regKey, item] of Object.entries(EXACT_PLACE_REGISTRY)) {
+      if (!isApprovedAsset(item.imageUrl)) continue;
+      const [, regPlace] = regKey.split(":");
+      const aliases = item.aliases || [regPlace];
+      let matched = false;
+
+      if (regPlace === placeNorm || aliases.includes(placeNorm)) {
+        matched = true;
+      } else {
         for (const al of aliases) {
           if (al.length >= 5) {
             if (placeNorm === al || placeNorm.startsWith(`${al}-`) || placeNorm.endsWith(`-${al}`) || placeNorm.includes(`-${al}-`)) {
@@ -2151,7 +2178,7 @@ export function resolvePlaceArtwork(
         }
       }
 
-      if (matched) {
+      if (matched && areThemesCompatible(semanticTheme, item.semanticTheme)) {
         bestExactMatch = { regKey, item };
         break;
       }
@@ -2168,7 +2195,7 @@ export function resolvePlaceArtwork(
       semantic_category: bestExactMatch.item.semanticTheme,
       exactness: "exact",
       attribution: bestExactMatch.item.attribution || "VANVAS Verified Editorial Asset",
-      alt_text: `${placeName} in ${destinationName}`,
+      alt_text: `${placeName} in ${destinationName || "India"}`,
       badge_label: "VANVAS PLACE ARTWORK",
       artworkKey: bestExactMatch.regKey,
       imageUrl: bestExactMatch.item.imageUrl,
@@ -2184,9 +2211,9 @@ export function resolvePlaceArtwork(
     };
   }
 
-  // --- HARD ISOLATION FOR STAYS: Never inherit generic non-stay or desert landmark artwork ---
+  // --- HARD ISOLATION FOR STAYS: Never inherit generic non-stay or mountain/desert landmark artwork ---
   if (semanticTheme === "stay") {
-    let stayCategoryAsset = destConfig?.categories.stay || "/images/nearby/stay/stay.webp";
+    let stayCategoryAsset = "/images/nearby/stay/stay.webp";
     const lowerPlace = placeNorm.toLowerCase();
     const lowerCat = category.toLowerCase();
     const isRajasthanDest = destNorm.includes("jaipur") || destNorm.includes("udaipur") || destNorm.includes("jodhpur") || destNorm.includes("jaisalmer") || destNorm.includes("rajasthan");
@@ -2212,7 +2239,7 @@ export function resolvePlaceArtwork(
       semantic_category: "stay",
       exactness: "category_matched",
       attribution: `VANVAS Verified ${destinationName} Stay Sanctuary`,
-      alt_text: `${placeName} accommodation in ${destinationName}`,
+      alt_text: `${placeName} accommodation in ${destinationName || "India"}`,
       badge_label: "DESTINATION CATEGORY ART",
       artworkKey: `${matchedDestKey || "universal"}:stay`,
       imageUrl: stayCategoryAsset,
@@ -2224,12 +2251,47 @@ export function resolvePlaceArtwork(
       semanticTheme: "stay",
       isRealPhoto: false,
       badgeLabel: "DESTINATION CATEGORY ART",
-      visualDescription: `Serene stay and hospitality sanctuary in ${destinationName}.`
+      visualDescription: `Serene stay and hospitality sanctuary in ${destinationName || "India"}.`
+    };
+  }
+
+  // --- HARD ISOLATION FOR CAFES & DINING: Never inherit mountain, fort, or desert landscape artwork ---
+  if (semanticTheme === "cafe" || semanticTheme === "food") {
+    const isCafe = semanticTheme === "cafe";
+    const dedicatedAsset = isCafe ? "/images/nearby/cafe/cafe.webp" : "/images/nearby/local_food/local_food.webp";
+    return {
+      url: dedicatedAsset,
+      fallback_url: dedicatedAsset,
+      source: "vanvas_nearby",
+      source_type: "category_photo",
+      provenance: "destination_category",
+      semantic_category: semanticTheme,
+      exactness: "category_matched",
+      attribution: `VANVAS Verified ${isCafe ? "Café & Coffee Atmosphere" : "Local Dining Sanctuary"}`,
+      alt_text: `${placeName} ${isCafe ? "cafe" : "dining"} atmosphere`,
+      badge_label: "DESTINATION CATEGORY ART",
+      artworkKey: `nearby:${semanticTheme}`,
+      imageUrl: dedicatedAsset,
+      fallbackUrl: dedicatedAsset,
+      tier: "destination_category",
+      placeName,
+      destinationName,
+      category,
+      semanticTheme,
+      isRealPhoto: false,
+      badgeLabel: "DESTINATION CATEGORY ART",
+      visualDescription: `Authentic ${isCafe ? "café and coffee" : "local culinary"} visual.`
     };
   }
 
   // --- LEVEL 6: Place-Type / Category-Specific Destination Artwork ---
-  if (destConfig && destConfig.categories[semanticTheme] && isApprovedAsset(destConfig.categories[semanticTheme])) {
+  if (
+    destConfig &&
+    destConfig.categories[semanticTheme] &&
+    isApprovedAsset(destConfig.categories[semanticTheme]) &&
+    !destConfig.categories[semanticTheme]!.includes("hero") &&
+    !destConfig.categories[semanticTheme]!.includes("viewpoint")
+  ) {
     const categoryUrl = destConfig.categories[semanticTheme]!;
     return {
       url: categoryUrl,

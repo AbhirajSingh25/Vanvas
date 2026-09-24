@@ -7,7 +7,8 @@ import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/context/AuthContext";
 import {
   Compass, Calendar, MapPin, Sparkles, Menu, X, SlidersHorizontal,
-  User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield
+  User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield,
+  Mountain, Clock
 } from "lucide-react";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
@@ -42,6 +43,8 @@ export const Header: React.FC = () => {
 
   const navLinks = [
     { name: "Explore", devanagari: "खोज", href: "/explore", icon: Compass },
+    { name: "Treks", devanagari: "पदयात्रा", href: "/treks", icon: Mountain },
+    { name: "One Day", devanagari: "एक दिवसीय", href: "/one-day", icon: Clock },
     { name: "Trips", devanagari: "यात्रा", href: "/trips", icon: Calendar },
     { name: "Plan", devanagari: "योजना", href: "/plan", icon: Sparkles },
     { name: "Nearby", devanagari: "आस-पास", href: "/nearby", icon: MapPin },

@@ -143,7 +143,7 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
 
 import { useParams } from "next/navigation";
 
-type OperationalMode = "overview" | "trek" | "oneday" | "places" | "stays" | "mobility";
+type OperationalMode = "overview" | "places" | "stays" | "mobility";
 
 export default function DestinationDetailPage() {
   const routeParams = useParams();
@@ -559,8 +559,6 @@ export default function DestinationDetailPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
           {[
             { id: "overview", label: "Overview", devanagari: "सफ़रनामा", icon: Compass },
-            { id: "trek", label: "Trek Expedition", devanagari: "पदयात्रा", icon: Footprints, count: trekInfo?.hasTrek ? `${trekInfo.peakAltitude}` : "N/A" },
-            { id: "oneday", label: "1-Day Round Trip", devanagari: "एक दिवसीय", icon: Clock, count: dayTrip ? `${dayTrip.estimatedHours.split(" ")[0]}H` : "12H" },
             { id: "places", label: "Curated Places", devanagari: "पड़ाव", icon: Sparkles, count: places.length },
             { id: "stays", label: "Stays & Sanctuaries", devanagari: "आशियाना", icon: BedDouble, count: hotels.length },
             { id: "mobility", label: "Valley Mobility", devanagari: "सवारी", icon: Bike, count: rentals.length },
@@ -650,32 +648,32 @@ export default function DestinationDetailPage() {
                     tapeColor="terracotta"
                   />
 
-                  {/* Mode Jump Buttons */}
+                  {/* Contextual Experience Bridges */}
                   <div className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-3 text-xs">
                     <span className="font-bold uppercase tracking-wider text-[#173B32] block">
-                      Explore Sanctuary Modes
+                      Dedicated Expeditions
                     </span>
                     <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setActiveMode("trek")}
-                        className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-bold text-left flex items-center justify-between transition-colors"
+                      <Link
+                        href={`/treks?destination=${destination.slug}`}
+                        className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#173B32] hover:text-[#FAF7F0] text-[#173B32] font-bold text-left flex items-center justify-between transition-all group cursor-pointer"
                       >
                         <span className="flex items-center gap-1.5">
-                          <Footprints className="w-3.5 h-3.5 text-[#B65E3C]" />
+                          <Footprints className="w-3.5 h-3.5 text-[#B65E3C] group-hover:text-[#B49252]" />
                           <span>Trek Mode</span>
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setActiveMode("oneday")}
-                        className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-bold text-left flex items-center justify-between transition-colors"
+                        <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                      </Link>
+                      <Link
+                        href={`/one-day?from=${destination.slug}`}
+                        className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#173B32] hover:text-[#FAF7F0] text-[#173B32] font-bold text-left flex items-center justify-between transition-all group cursor-pointer"
                       >
                         <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-[#B65E3C]" />
-                          <span>1-Day Trip</span>
+                          <Clock className="w-3.5 h-3.5 text-[#B65E3C] group-hover:text-[#B49252]" />
+                          <span>1-Day Escape</span>
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
+                        <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -788,268 +786,58 @@ export default function DestinationDetailPage() {
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        {/* MODE: TREK EXPEDITION */}
-        {activeMode === "trek" && (
-          <div className="space-y-8 animate-fadeIn">
-            {trekInfo && trekInfo.hasTrek ? (
-              <div className="p-6 sm:p-10 rounded-3xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#173B32] shadow-2xl space-y-8">
-                {/* Trek Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
-                        TREK EXPEDITION MODE • हिमालयी पदयात्रा
-                      </span>
-                      <TravelStamp label={trekInfo.difficulty.toUpperCase()} variant="terracotta" />
-                    </div>
-                    <h3 className="text-2xl sm:text-4xl font-serif font-black text-[#FAF4E8]">
-                      {trekInfo.title}
-                    </h3>
-                    <span className="text-sm font-devanagari text-[#B49252] block">
-                      {trekInfo.hindiTitle}
+            {/* Contextual Experience Bridges: Trek Mode & One-Day Escape */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              {/* Contextual Trek CTA */}
+              <div className="p-6 sm:p-8 rounded-3xl bg-[#111A16] text-[#EFE5D2] border-2 border-[#2C3E35] flex flex-col justify-between space-y-6 shadow-xl">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-md bg-[#E05A2B] text-white text-[10px] font-mono font-bold uppercase">
+                      HIGH ALTITUDE TRAILS
                     </span>
-                    <p className="text-xs sm:text-sm text-[#D8DED5]/90 max-w-2xl font-light leading-relaxed pt-1">
-                      {trekInfo.trailSummary}
-                    </p>
+                    <span className="text-[11px] font-mono text-[#B49252]">TOP-LEVEL EXPEDITION DESK</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    <TravelStamp label={trekInfo.distance} elevation={trekInfo.peakAltitude} variant="mustard" />
-                    <TravelStamp label={trekInfo.duration} variant="forest" />
-                  </div>
-                </div>
-
-                {/* Waypoints Sequence Cards */}
-                <div className="space-y-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#B49252] block">
-                    Verified Trail Waypoints &amp; Checkpoints ({trekInfo.waypoints.length} Stages)
-                  </span>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {trekInfo.waypoints.map((wp, idx) => {
-                      const isSelected = activeWaypointIdx === idx;
-                      return (
-                        <div
-                          key={wp.id}
-                          onClick={() => setActiveWaypointIdx(idx)}
-                          className={`p-5 rounded-2xl transition-all cursor-pointer flex flex-col justify-between space-y-4 border ${
-                            isSelected
-                              ? "bg-[#0F2924] border-[#B49252] shadow-xl scale-[1.02]"
-                              : "bg-white/5 border-white/10 hover:bg-white/10"
-                          }`}
-                        >
-                          <div className="space-y-3">
-                            <div className="relative h-40 rounded-xl overflow-hidden bg-black/30 w-full">
-                              <img
-                                src={wp.imageUrl}
-                                alt={wp.name}
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-mono font-bold">
-                                STAGE 0{idx + 1} • {wp.elevation}
-                              </div>
-                            </div>
-
-                            <div>
-                              <span className="text-[10px] font-mono uppercase text-[#B49252] font-bold block">
-                                {wp.distance}
-                              </span>
-                              <h4 className="text-base sm:text-lg font-serif font-bold text-[#FAF4E8] mt-0.5 leading-snug">
-                                {wp.name}
-                              </h4>
-                              <span className="text-xs font-devanagari text-[#D8DED5]/80 block">
-                                {wp.hindiName}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-[#D8DED5]/80 font-light leading-relaxed">
-                              {wp.description}
-                            </p>
-                          </div>
-
-                          <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                            <span className="text-[10px] font-mono text-[#B49252]">
-                              {wp.timeFromPrev}
-                            </span>
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${wp.latitude},${wp.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="px-3 py-1 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-[11px] font-bold flex items-center gap-1 transition-colors"
-                            >
-                              <Navigation className="w-3 h-3" />
-                              <span>GPS Pin</span>
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Practical Guidance & Approach Matrix */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div className="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-2 text-xs">
-                    <span className="font-bold text-[#B49252] uppercase tracking-wider block">
-                      Approach &amp; Base Transit
-                    </span>
-                    <p className="text-[#D8DED5]/85 leading-relaxed font-light">
-                      {trekInfo.approachTransport}
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-2 text-xs">
-                    <span className="font-bold text-[#B49252] uppercase tracking-wider block">
-                      Essential Packing &amp; Gear Checklist
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {trekInfo.packingChecklist.map((item) => (
-                        <span key={item} className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono text-[#FAF4E8]">
-                          ✓ {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-8 sm:p-12 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-4 max-w-2xl mx-auto">
-                <Footprints className="w-12 h-12 text-[#B65E3C] mx-auto opacity-70" />
-                <div className="space-y-1">
-                  <h3 className="font-serif font-black text-2xl text-[#173B32]">
-                    {trekInfo?.nonTrekNotice?.heading || "Wilderness Trek Not Applicable"}
+                  <h3 className="text-2xl font-serif font-black text-white">
+                    Trek This Region
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#7B4D36] leading-relaxed">
-                    {trekInfo?.nonTrekNotice?.explanation || `${destination.name} is an urban / heritage sanctuary best explored through walking heritage quarters, palace corridors, and food trails rather than wilderness mountain trekking.`}
+                  <p className="text-xs text-[#A6BAAE] font-serif leading-relaxed">
+                    Access dedicated topographic route comparisons, elevation graphs, gear planners, and live trail cockpit for trails around {destination.name}.
                   </p>
                 </div>
-                <div className="pt-2 flex justify-center">
-                  <button
-                    onClick={() => setActiveMode("oneday")}
-                    className="px-6 py-3 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#9E4D2E] transition-all flex items-center gap-2 shadow-md"
-                  >
-                    <Clock className="w-4 h-4 text-[#B49252]" />
-                    <span>Switch to 1-Day Same-Day Journey →</span>
-                  </button>
-                </div>
+                <Link
+                  href={`/treks?destination=${destination.slug || slug}`}
+                  className="px-6 py-3.5 rounded-2xl bg-[#E05A2B] hover:bg-[#C8491D] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+                >
+                  <Mountain className="w-4 h-4" />
+                  <span>Launch Trek Mode →</span>
+                </Link>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* MODE: ONE-DAY ROUND TRIP */}
-        {activeMode === "oneday" && (
-          <div className="space-y-8 animate-fadeIn">
-            {dayTrip ? (
-              <div className="p-6 sm:p-10 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-sm space-y-8">
-                {/* 1-Day Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5D5BA] pb-6">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono uppercase tracking-widest text-[#B65E3C] font-bold">
-                        ONE-DAY ROUND TRIP • एक दिवसीय समग्र यात्रा
-                      </span>
-                      <TravelStamp label={dayTrip.estimatedHours} variant="terracotta" />
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-                      {dayTrip.title}
-                    </h3>
-                    <span className="text-sm font-devanagari text-[#B65E3C] block">
-                      {dayTrip.hindiTitle}
+              {/* Contextual One-Day Escape CTA */}
+              <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF4E8] border-2 border-[#E5D5BA] flex flex-col justify-between space-y-6 shadow-md">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-md bg-[#B65E3C] text-white text-[10px] font-mono font-bold uppercase">
+                      SPONTANEOUS ROAD TRIP
                     </span>
-                    <p className="text-xs sm:text-sm text-[#20211D]/80 max-w-2xl font-light leading-relaxed">
-                      {dayTrip.tagline}
-                    </p>
+                    <span className="text-[11px] font-mono text-[#7B4D36]">WE HAVE 1 DAY. LET&apos;S GO.</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    <TravelStamp label={dayTrip.totalDistance} variant="forest" />
-                    <Link
-                      href={`/plan?dest=${destination.id || slug}&days=1`}
-                      className="px-4 py-2 rounded-xl bg-[#173B32] text-[#EFE5D2] font-bold text-xs hover:bg-[#20453B] transition-colors flex items-center gap-1.5 shadow-xs"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
-                      <span>Customize Day</span>
-                    </Link>
-                  </div>
+                  <h3 className="text-2xl font-serif font-black text-[#173B32]">
+                    Plan a 1-Day Escape
+                  </h3>
+                  <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
+                    Generate instant group road trips, split fuel & meal costs with friends, discover vehicle rentals, and view timeline boards starting from {destination.name}.
+                  </p>
                 </div>
-
-                {/* Itinerary Time Blocks */}
-                <div className="space-y-4">
-                  {dayTrip.blocks.map((block, idx) => (
-                    <div
-                      key={idx}
-                      className="p-5 rounded-2xl bg-[#EFE5D2]/70 border border-[#E5D5BA] hover:border-[#173B32]/40 transition-all flex flex-col md:flex-row md:items-start justify-between gap-4"
-                    >
-                      <div className="space-y-1.5 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] font-mono text-[10px] font-bold">
-                            {block.time}
-                          </span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#B65E3C]">
-                            {block.period} • {block.duration}
-                          </span>
-                        </div>
-
-                        <h4 className="text-base sm:text-lg font-serif font-bold text-[#173B32]">
-                          {block.title}
-                        </h4>
-                        <span className="text-xs font-devanagari text-[#7B4D36] block">
-                          {block.hindiTitle}
-                        </span>
-
-                        <p className="text-xs text-[#20211D]/85 leading-relaxed font-light pt-1">
-                          {block.activity}
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-2 pt-2 text-[11px]">
-                          <span className="p-1.5 rounded-lg bg-white border border-[#E5D5BA] text-[#173B32] font-semibold flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-[#B65E3C]" />
-                            <span>{block.location}</span>
-                          </span>
-                          <span className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] italic font-serif">
-                            ★ {block.highlight}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="md:w-64 p-3 rounded-xl bg-white border border-[#E5D5BA] space-y-1 text-xs shrink-0">
-                        <span className="font-bold text-[#173B32] text-[10px] uppercase tracking-wider block">
-                          VANVAS Transit Tip
-                        </span>
-                        <p className="text-[11px] text-[#7B4D36] leading-relaxed">
-                          {block.tips}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Transit Context Footer */}
-                <div className="p-4 rounded-2xl bg-[#173B32] text-[#EFE5D2] text-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-[#B49252]">Transit Logistics:</span>
-                    <p className="text-[#D8DED5]/90 font-light">{dayTrip.transitContext}</p>
-                  </div>
-                  <Link
-                    href={`/plan?dest=${destination.id || slug}`}
-                    className="px-4 py-2 rounded-xl bg-[#B65E3C] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shrink-0 hover:bg-[#9E4D2E] transition-colors"
-                  >
-                    Launch Full Itinerary
-                  </Link>
-                </div>
+                <Link
+                  href={`/one-day?from=${destination.slug || slug}`}
+                  className="px-6 py-3.5 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+                >
+                  <Clock className="w-4 h-4 text-[#B49252]" />
+                  <span>Plan 1-Day Road Trip →</span>
+                </Link>
               </div>
-            ) : (
-              <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-3">
-                <Clock className="w-10 h-10 text-[#B65E3C] mx-auto opacity-70" />
-                <h4 className="font-serif font-bold text-lg text-[#173B32]">Generating Curated 1-Day Itinerary for {destination.name}...</h4>
-                <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
-                  Our travel intelligence layer is synthesizing dawn sights, local breakfast, midday heritage, and evening sunset for {destination.name}.
-                </p>
-              </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -1553,63 +1341,126 @@ export default function DestinationDetailPage() {
           </div>
         )}
 
-        {/* 9. PRACTICAL EXPEDITION GUIDE (DESTINATION ISOLATED) */}
+        {/* 9. PRACTICAL EXPEDITION GUIDE (STRUCTURED SCANNABLE MODULES) */}
         {(() => {
-          const guide = DESTINATION_TRAVEL_GUIDES[destination.slug] || DESTINATION_TRAVEL_GUIDES[destination.slug.toLowerCase()] || {
-            seasonality: `Best visited during ${destination.best_time_to_visit || "spring and autumn months"} with clear skies and comfortable regional weather.`,
-            clothing: "Comfortable, climate-appropriate clothing, sun protection, and sturdy walking shoes suitable for exploring local streets and regional terrain.",
-            transport: `Local transport, walking, and regional taxis provide convenient access to major attractions in ${destination.name}.`,
-            etiquette: `Respect local customs and traditions at sacred and heritage sites throughout ${destination.name}. Remove footwear where required.`
-          };
+          const rawGuide = DESTINATION_TRAVEL_GUIDES[destination.slug] || DESTINATION_TRAVEL_GUIDES[destination.slug.toLowerCase()];
+
+          const seasonalityPoints = rawGuide
+            ? rawGuide.seasonality.split(". ").filter(Boolean).map((s) => s.trim().endsWith(".") ? s.trim() : `${s.trim()}.`)
+            : [`Best visited during ${destination.best_time_to_visit || "spring & autumn"} with clear skies.`, "Winter and monsoon seasons require checking local weather advisories."];
+
+          const clothingPoints = rawGuide
+            ? rawGuide.clothing.split(". ").filter(Boolean).map((s) => s.trim().endsWith(".") ? s.trim() : `${s.trim()}.`)
+            : ["Light breathable cottons for daytime exploration.", "Sturdy walking shoes with rubber grip for stone streets.", "Modest clothing covering knees and shoulders for temple visits."];
+
+          const transportPoints = rawGuide
+            ? rawGuide.transport.split(". ").filter(Boolean).map((s) => s.trim().endsWith(".") ? s.trim() : `${s.trim()}.`)
+            : [`Walking and local auto-rickshaws are ideal in ${destination.name}.`, "Agree on taxi or auto rates before boarding.", "Rent two-wheelers with valid driving license and helmets."];
+
+          const etiquettePoints = rawGuide
+            ? rawGuide.etiquette.split(". ").filter(Boolean).map((s) => s.trim().endsWith(".") ? s.trim() : `${s.trim()}.`)
+            : [`Remove footwear outside temples and sanctums in ${destination.name}.`, "Respect local cultural privacy; ask before taking portraits.", "Strictly zero plastic littering in nature sanctuaries."];
 
           return (
-            <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                <Info className="w-4 h-4" />
-                <span>मार्गदर्शन • Practical Expedition Guide</span>
+            <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5D5BA] pb-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                    <Info className="w-4 h-4" />
+                    <span>मार्गदर्शन • Practical Expedition Guide</span>
+                  </div>
+                  <h3 className="text-2xl font-serif font-black text-[#173B32]">
+                    Essential Field Intelligence for {destination.name}
+                  </h3>
+                </div>
+                <span className="text-[11px] font-mono text-[#7B4D36]">
+                  Scan → Understand → Expand
+                </span>
               </div>
-              <h3 className="text-2xl font-serif font-black text-[#173B32]">
-                Essential Travel Information for {destination.name}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 text-xs text-[#20211D]/85">
-                <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
-                  <span className="font-bold text-[#173B32] flex items-center gap-1">
-                    <Sun className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    <span>Seasonality &amp; Timing</span>
-                  </span>
-                  <p className="font-light leading-relaxed">
-                    {guide.seasonality}
-                  </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Module 1: Seasonality & Timing */}
+                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
+                      <Sun className="w-4 h-4 text-[#B65E3C]" />
+                      <span>Seasonality &amp; Timing</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-[#20211D]/85">
+                      {seasonalityPoints.slice(0, 3).map((pt, i) => (
+                        <li key={i} className="flex items-start gap-2 leading-relaxed">
+                          <span className="text-[#B65E3C] font-bold mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono text-[#7B4D36]">
+                    <strong>Peak Window:</strong> {destination.best_time_to_visit || "Year-Round"}
+                  </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
-                  <span className="font-bold text-[#173B32] flex items-center gap-1">
-                    <Mountain className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    <span>Packing &amp; Clothing</span>
-                  </span>
-                  <p className="font-light leading-relaxed">
-                    {guide.clothing}
-                  </p>
+                {/* Module 2: Packing & Clothing */}
+                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
+                      <Mountain className="w-4 h-4 text-[#B65E3C]" />
+                      <span>Packing &amp; Clothing</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-[#20211D]/85">
+                      {clothingPoints.slice(0, 3).map((pt, i) => (
+                        <li key={i} className="flex items-start gap-2 leading-relaxed">
+                          <span className="text-[#B65E3C] font-bold mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono text-[#7B4D36]">
+                    <strong>Footwear:</strong> Supportive walking shoes required
+                  </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
-                  <span className="font-bold text-[#173B32] flex items-center gap-1">
-                    <Navigation className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    <span>Transport &amp; Transit</span>
-                  </span>
-                  <p className="font-light leading-relaxed">
-                    {guide.transport}
-                  </p>
+                {/* Module 3: Transport & Transit */}
+                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
+                      <Navigation className="w-4 h-4 text-[#B65E3C]" />
+                      <span>Transport &amp; Transit</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-[#20211D]/85">
+                      {transportPoints.slice(0, 3).map((pt, i) => (
+                        <li key={i} className="flex items-start gap-2 leading-relaxed">
+                          <span className="text-[#B65E3C] font-bold mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono text-[#7B4D36]">
+                    <strong>Navigation:</strong> Walk heritage lanes, cab for outer hubs
+                  </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
-                  <span className="font-bold text-[#173B32] flex items-center gap-1">
-                    <Globe className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    <span>Etiquette &amp; Tips</span>
-                  </span>
-                  <p className="font-light leading-relaxed">
-                    {guide.etiquette}
-                  </p>
+                {/* Module 4: Etiquette & Local Tips */}
+                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
+                      <Globe className="w-4 h-4 text-[#B65E3C]" />
+                      <span>Etiquette &amp; Tips</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-[#20211D]/85">
+                      {etiquettePoints.slice(0, 3).map((pt, i) => (
+                        <li key={i} className="flex items-start gap-2 leading-relaxed">
+                          <span className="text-[#B65E3C] font-bold mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[10px] font-mono text-[#B65E3C] font-bold">
+                    <strong>Notice:</strong> Zero single-use plastic zone
+                  </div>
                 </div>
               </div>
             </div>
