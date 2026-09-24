@@ -21,12 +21,19 @@ import {
 function PlanTripContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawInitial = searchParams?.get("dest") || "manali";
+  const hasExplicitDest = Boolean(searchParams?.get("dest") || searchParams?.get("destination"));
+  const rawInitial = searchParams?.get("dest") || searchParams?.get("destination") || "manali";
   const initialDest = rawInitial.replace(/^(dyn|dest)-/, "").trim() || "manali";
+  const urlCategory = searchParams?.get("category") || "";
+  const urlExp = searchParams?.get("exp") || "";
+  const urlStyle = searchParams?.get("style") || "";
+  const urlBudget = searchParams?.get("budget") || "";
+  const urlDays = searchParams?.get("days") || "";
+  const urlCompanion = searchParams?.get("companion") || "";
   const { user } = useAuth();
 
-  // Step Tracker (1 to 9)
-  const [step, setStep] = useState(1);
+  // Step Tracker: If user explicitly came from a destination page with a selected destination, start at Step 2 (Dates)
+  const [step, setStep] = useState(() => (hasExplicitDest ? 2 : 1));
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loadingDestinations, setLoadingDestinations] = useState(true);
 
@@ -45,21 +52,63 @@ function PlanTripContent() {
   });
   const [endDate, setEndDate] = useState<string>(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 2);
+    const addDays = urlDays ? Math.max(1, parseInt(urlDays, 10)) - 1 : 2;
+    d.setDate(d.getDate() + (isNaN(addDays) ? 2 : addDays));
     return d.toISOString().split("T")[0];
   });
-  const [budget, setBudget] = useState<number>(10000);
-  const [customBudget, setCustomBudget] = useState<string>("");
-  const [companionType, setCompanionType] = useState<string>("Solo");
-  const [travellersCount, setTravellersCount] = useState<number>(1);
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([
-    "Nature",
-    "Cafés",
-    "Adventure",
-    "Local Food",
-    "Hidden places",
-  ]);
-  const [travelStyle, setTravelStyle] = useState<string>("Balanced");
+  const [budget, setBudget] = useState<number>(() => {
+    if (urlBudget && !isNaN(parseFloat(urlBudget))) {
+      return parseFloat(urlBudget);
+    }
+    return 10000;
+  });
+  const [customBudget, setCustomBudget] = useState<string>(() => {
+    if (urlBudget && ![5000, 8000, 10000, 15000, 25000, 40000].includes(parseFloat(urlBudget))) {
+      return urlBudget;
+    }
+    return "";
+  });
+  const [companionType, setCompanionType] = useState<string>(() => {
+    if (urlCompanion) {
+      const match = ["Solo", "Couple", "Friends", "Family"].find(
+        (c) => c.toLowerCase() === urlCompanion.toLowerCase()
+      );
+      if (match) return match;
+    }
+    return "Solo";
+  });
+  const [travellersCount, setTravellersCount] = useState<number>(() => {
+    if (urlCompanion?.toLowerCase() === "couple") return 2;
+    if (urlCompanion?.toLowerCase() === "friends") return 3;
+    if (urlCompanion?.toLowerCase() === "family") return 4;
+    return 1;
+  });
+
+  const getInitialInterests = (): string[] => {
+    const defaultInterests = ["Nature", "Cafés", "Adventure", "Local Food", "Hidden places"];
+    const dSlug = initialDest.toLowerCase();
+    if (dSlug.includes("tungnath") || dSlug.includes("spiti") || dSlug.includes("leh") || urlExp.includes("trek") || urlExp.includes("sunrise")) {
+      return ["Nature", "Adventure", "Hidden places", "Photography"];
+    }
+    if (dSlug.includes("varanasi") || dSlug.includes("jaipur") || dSlug.includes("udaipur") || urlCategory.toLowerCase().includes("royal")) {
+      return ["Culture", "Local Food", "Photography", "Hidden places"];
+    }
+    if (dSlug.includes("goa") || dSlug.includes("munnar") || urlCategory.toLowerCase().includes("coastal")) {
+      return ["Nature", "Cafés", "Relaxation", "Local Food"];
+    }
+    return defaultInterests;
+  };
+
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(getInitialInterests);
+  const [travelStyle, setTravelStyle] = useState<string>(() => {
+    if (urlStyle) {
+      const match = ["Budget", "Balanced", "Comfort", "Premium"].find(
+        (s) => s.toLowerCase() === urlStyle.toLowerCase()
+      );
+      if (match) return match;
+    }
+    return "Balanced";
+  });
   const [wakeUpPref, setWakeUpPref] = useState<string>("Normal");
   const [activityIntensity, setActivityIntensity] = useState<string>("Balanced");
 

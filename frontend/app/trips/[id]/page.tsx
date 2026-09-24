@@ -136,6 +136,26 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const handleCopilotTriggerAction = async (actionType: string, payload?: any) => {
+    if (actionType === "view_quick_plan") {
+      setQuickPlanOpen(true);
+    } else if (actionType === "replan" || actionType === "dynamic_replan") {
+      setReplanOpen(true);
+    } else if (actionType === "im_here") {
+      setImHereOpen(true);
+    } else if (actionType === "expense" || actionType === "log_expense") {
+      setExpenseModalOpen(true);
+    } else if (actionType === "invite" || actionType === "share_trip") {
+      setInviteModalOpen(true);
+    } else if (actionType === "refresh_itinerary" || actionType === "add_place_to_itinerary") {
+      await loadTripData();
+      setNotificationMsg("Itinerary updated with new stop.");
+      setTimeout(() => setNotificationMsg(null), 4000);
+    } else if (actionType === "switch_tab" && payload?.tab) {
+      handleTabChange(payload.tab);
+    }
+  };
+
   const handleReplanSuccess = (updatedTrip: Trip, msg: string) => {
     setTrip(updatedTrip);
     setNotificationMsg(msg);
@@ -879,6 +899,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         isOpen={copilotOpen}
         onClose={() => setCopilotOpen(false)}
         trip={trip}
+        onTriggerAction={handleCopilotTriggerAction}
       />
 
       <TripInviteModal

@@ -142,18 +142,36 @@ export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
     }
   };
 
-  const handleActionClick = (action: string, label: string, payload?: any) => {
-    if (action === "view_quick_plan" && payload && onTriggerAction) {
+  const handleActionClick = async (action: string, label: string, payload?: any) => {
+    if (action === "view_quick_plan" && onTriggerAction) {
       onTriggerAction("view_quick_plan", payload);
+      onClose();
+    } else if ((action === "replan" || action === "dynamic_replan") && onTriggerAction) {
+      onTriggerAction("replan", payload);
+      onClose();
+    } else if (action === "im_here" && onTriggerAction) {
+      onTriggerAction("im_here", payload);
+      onClose();
+    } else if ((action === "expense" || action === "log_expense") && onTriggerAction) {
+      onTriggerAction("expense", payload);
+      onClose();
+    } else if ((action === "invite" || action === "share_trip") && onTriggerAction) {
+      onTriggerAction("invite", payload);
       onClose();
     } else if (action === "quick_plan") {
       handleSend("Generate a 3-hour quick plan for me");
     } else if (action === "find_food") {
-      handleSend("Recommend top local cafes and food places nearby");
+      handleSend("Recommend top local cafes and food places nearby along my route");
     } else if (action === "check_weather") {
       handleSend("What is the current mountain weather and forecast?");
     } else if (action === "quiet_cafes") {
       handleSend("Find quiet scenic spots or cafes to relax");
+    } else if (action === "make_cheaper" || action === "budget_friendly") {
+      handleSend("Give me budget-friendly recommendations and cheaper options for this trip");
+    } else if (action === "slower_pace" || action === "relaxed_pace") {
+      handleSend("Give me a slower, more relaxed version of today's plan with fewer stops");
+    } else if (action === "add_food_experiences") {
+      handleSend("Add authentic local food and tea stops to this trip");
     } else if (onTriggerAction) {
       onTriggerAction(action, payload);
       onClose();

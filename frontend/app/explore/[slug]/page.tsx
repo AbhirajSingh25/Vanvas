@@ -1591,6 +1591,32 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           );
         })()}
 
+        {/* 10. EXPEDITION PLANNING ENTRY POINT (NEXT STEP CONTINUITY) */}
+        <div className="p-8 sm:p-12 rounded-3xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#173B32] shadow-2xl space-y-6 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-3 max-w-2xl text-center md:text-left">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+              <TravelStamp label="सफ़र का अगला पड़ाव" sub="EXPEDITION BLUEPRINT" variant="mustard" />
+              <TravelStamp label={meta.hindi} variant="terracotta" />
+            </div>
+            <h3 className="text-3xl sm:text-4xl font-serif font-black text-[#FAF4E8]">
+              Ready to explore {destination.name}?
+            </h3>
+            <p className="text-xs sm:text-sm text-[#D8DED5]/85 leading-relaxed font-light">
+              We&rsquo;ll cluster your stops to eliminate hill driving, match verified cafés with sunset viewpoints, and balance your budget across stays and local dhabas.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
+            <Link
+              href={`/plan?dest=${destination.id || slug}`}
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center justify-center gap-2 transition-all transform active:scale-95 border border-[#7B4D36]/30 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-[#B49252]" />
+              <span>Plan {destination.name} Trip →</span>
+            </Link>
+          </div>
+        </div>
+
       </main>
 
       {/* Place Detail Modal */}

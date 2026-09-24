@@ -195,13 +195,13 @@ export default function ExploreIndexPage() {
               <Link
                 href={
                   filtered.length > 0 && (search.trim() || selectedCategory !== "All")
-                    ? `/plan?dest=${encodeURIComponent(filtered[0].slug)}`
+                    ? `/plan?dest=${encodeURIComponent(filtered[0].slug)}&category=${encodeURIComponent(selectedCategory)}`
                     : "/plan"
                 }
                 className="px-5 py-3 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
               >
                 <Compass className="w-4 h-4 text-[#B49252]" />
-                <span>FIND MY ESCAPE →</span>
+                <span>{selectedCategory !== "All" ? `Plan ${selectedCategory} Escape →` : "FIND MY ESCAPE →"}</span>
               </Link>
             </div>
           </div>
