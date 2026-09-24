@@ -106,6 +106,22 @@ def seed_database():
                 "is_featured": True
             },
             {
+                "name": "Tungnath–Chandrashila Trek",
+                "slug": "tungnath-chandrashila",
+                "hindi_name": "तुंगनाथ–चंद्रशिला",
+                "state": "Uttarakhand",
+                "region": "Garhwal Himalayas",
+                "tagline": "World's highest Shiva shrine, alpine rhododendron bugyals, and a 360° summit over Chaukhamba.",
+                "description": "An iconic Garhwal Himalayan trail ascending from the meadows of Chopta (2,680m) through alpine rhododendrons to the ancient stone Tungnath Temple (3,680m) and continuing 1.5 km to the Chandrashila Summit (4,000m) with sweeping views of Chaukhamba, Trishul, and Nanda Devi.",
+                "hero_image": "/images/destinations/tungnath-chandrashila/hero.jpg",
+                "latitude": 30.4886,
+                "longitude": 79.2173,
+                "altitude_meters": 4000,
+                "best_time_to_visit": "April to November",
+                "weather_type": "High Alpine Crisp Air",
+                "is_featured": True
+            },
+            {
                 "name": "Kasol",
                 "slug": "kasol",
                 "hindi_name": "कसोल",
@@ -263,22 +279,6 @@ def seed_database():
                 "altitude_meters": 1600,
                 "best_time_to_visit": "September to May",
                 "weather_type": "Misty Green Slopes",
-                "is_featured": True
-            },
-            {
-                "name": "Tungnath–Chandrashila Trek",
-                "slug": "tungnath-chandrashila",
-                "hindi_name": "तुंगनाथ–चंद्रशिला",
-                "state": "Uttarakhand",
-                "region": "Garhwal Himalayas",
-                "tagline": "World's highest Shiva shrine, alpine rhododendron bugyals, and a 360° summit over Chaukhamba.",
-                "description": "An iconic Garhwal Himalayan trail ascending from the meadows of Chopta (2,680m) through alpine rhododendrons to the ancient stone Tungnath Temple (3,680m) and continuing 1.5 km to the Chandrashila Summit (4,000m) with sweeping views of Chaukhamba, Trishul, and Nanda Devi.",
-                "hero_image": "/images/destinations/tungnath-chandrashila/hero.jpg",
-                "latitude": 30.4886,
-                "longitude": 79.2173,
-                "altitude_meters": 4000,
-                "best_time_to_visit": "April to November",
-                "weather_type": "High Alpine Crisp Air",
                 "is_featured": True
             }
         ]

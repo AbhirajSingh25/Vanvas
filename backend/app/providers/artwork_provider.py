@@ -549,6 +549,28 @@ class CuratedArtworkProvider(ArtworkProvider):
             "attribution": "VANVAS Verified Editorial Asset",
             "aliases": ["sarnath", "sarnath-stupa", "sarnath-sacred-deer-park-and-dhamek-stupa", "dhamek-stupa"]
         },
+        "varanasi:brijrama-palace": {
+            "image_url": "/images/places/varanasi/brijrama-palace.webp",
+            "tier": "exact_place",
+            "place_name": "BrijRama Palace River Heritage",
+            "destination": "Varanasi",
+            "category": "Stay",
+            "semantic_theme": "stay",
+            "visual_description": "Historic 18th-century Maratha riverside palace hotel directly on Darbhanga Ghat Varanasi with sandstone bastions overlooking the holy Ganges.",
+            "source": "vanvas_curated",
+            "source_type": "editorial_artwork",
+            "attribution": "VANVAS Verified Editorial Asset",
+            "aliases": [
+                "brijrama-palace",
+                "brijrama-palace-river-heritage",
+                "brijrama",
+                "brijrama-palace-varanasi",
+                "brijrama-palace-heritage-hotel",
+                "brij-rama-palace",
+                "brij-rama-palace-river-heritage",
+                "brijrama-palace-heritage"
+            ]
+        },
 
         # --- Manali Landmarks ---
         "manali:hadimba-temple": {
@@ -1605,34 +1627,6 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "visual_description": f"Verified photograph of {place_name}."
             }
 
-        # HARD ISOLATION FOR STAYS: Never inherit landmark artwork
-        if theme == "stay":
-            stay_asset = (dest_config["categories"].get("stay") if dest_config else None) or universal_fallback
-            tier_name = "destination_category" if dest_config else "regional_fallback"
-            badge_name = "DESTINATION CATEGORY ART" if dest_config else "REGIONAL ART"
-            return {
-                "url": stay_asset,
-                "fallback_url": universal_fallback,
-                "source": "vanvas_curated",
-                "source_type": "category_photo",
-                "provenance": tier_name,
-                "semantic_category": "stay",
-                "exactness": "category_matched" if dest_config else "fallback",
-                "attribution": f"VANVAS Curated {destination_name} Stay Sanctuary",
-                "alt_text": f"{place_name} accommodation in {destination_name}",
-                "badge_label": badge_name,
-                "artwork_key": f"{matched_dest or 'universal'}:stay",
-                "image_url": stay_asset,
-                "tier": tier_name,
-                "place_name": place_name,
-                "destination": destination_name,
-                "category": category,
-                "is_real_photo": False,
-                "badge": badge_name,
-                "visual_description": f"Serene stay and hospitality sanctuary in {destination_name}.",
-                "metadata": {"destination": matched_dest, "theme": "stay", "category_theme": "stay"}
-            }
-
         # LEVEL 4: Curated Exact Place Match
         lookup_key = f"{dest_norm}:{place_norm}"
         if lookup_key in self.PLACE_ARTWORK_REGISTRY:
@@ -1730,6 +1724,34 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "badge": "VANVAS PLACE ARTWORK",
                 "visual_description": item.get("visual_description"),
                 "metadata": item
+            }
+
+        # HARD ISOLATION FOR STAYS: Never inherit generic non-stay or desert landmark artwork
+        if theme == "stay":
+            stay_asset = (dest_config["categories"].get("stay") if dest_config else None) or universal_fallback
+            tier_name = "destination_category" if dest_config else "regional_fallback"
+            badge_name = "DESTINATION CATEGORY ART" if dest_config else "REGIONAL ART"
+            return {
+                "url": stay_asset,
+                "fallback_url": universal_fallback,
+                "source": "vanvas_curated",
+                "source_type": "category_photo",
+                "provenance": tier_name,
+                "semantic_category": "stay",
+                "exactness": "category_matched" if dest_config else "fallback",
+                "attribution": f"VANVAS Curated {destination_name} Stay Sanctuary",
+                "alt_text": f"{place_name} accommodation in {destination_name}",
+                "badge_label": badge_name,
+                "artwork_key": f"{matched_dest or 'universal'}:stay",
+                "image_url": stay_asset,
+                "tier": tier_name,
+                "place_name": place_name,
+                "destination": destination_name,
+                "category": category,
+                "is_real_photo": False,
+                "badge": badge_name,
+                "visual_description": f"Serene stay and hospitality sanctuary in {destination_name}.",
+                "metadata": {"destination": matched_dest, "theme": "stay", "category_theme": "stay"}
             }
 
         # LEVEL 6: Destination-Specific Category Visual

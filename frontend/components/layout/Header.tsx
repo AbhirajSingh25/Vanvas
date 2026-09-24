@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
+import { resolveAvatarUrl } from "@/lib/api";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -54,6 +55,8 @@ export const Header: React.FC = () => {
     }
     return name.charAt(0).toUpperCase();
   };
+
+  const resolvedAvatar = resolveAvatarUrl(user?.avatar_url);
 
   return (
     <>
@@ -110,9 +113,9 @@ export const Header: React.FC = () => {
                   aria-haspopup="true"
                 >
                   <div className="w-6 h-6 rounded-full bg-[#173B32] group-hover:bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-[10px] transition-colors border border-[#B49252]/40 overflow-hidden">
-                    {user.avatar_url ? (
+                    {resolvedAvatar ? (
                       <img
-                        src={user.avatar_url}
+                        src={resolvedAvatar}
                         alt={user.full_name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -252,9 +255,9 @@ export const Header: React.FC = () => {
               <div className="p-3 bg-[#FAF7F0] rounded-2xl border border-[#D8CBB2] space-y-2">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-xs overflow-hidden border border-[#B49252]/40">
-                    {user.avatar_url ? (
+                    {resolvedAvatar ? (
                       <img
-                        src={user.avatar_url}
+                        src={resolvedAvatar}
                         alt={user.full_name}
                         className="w-full h-full object-cover"
                         onError={(e) => {

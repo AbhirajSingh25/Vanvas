@@ -7,7 +7,8 @@ import {
   ExternalLink, ArrowRight, ShieldCheck, Bookmark, Check, Mountain,
   Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw, Layers,
   Phone, Navigation, MessageCircle, Globe, Users, X, Home, Building2, CheckCircle2,
-  Utensils, Info, Footprints, Flame, Camera, Sunrise, Map as MapIcon, ChevronRight
+  Utensils, Info, Footprints, Flame, Camera, Sunrise, Map as MapIcon, ChevronRight,
+  Route, Shield, ArrowDown
 } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -21,6 +22,13 @@ import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
 import { getCanonicalHindiName, findCanonicalDestination } from "@/lib/canonicalDestinations";
+import {
+  DESTINATION_TREK_REGISTRY,
+  DEFAULT_NON_TREK_NOTICE,
+  DESTINATION_DAY_TRIPS,
+  DestinationTrekInfo,
+  DestinationDayTrip
+} from "@/lib/destinationContentModel";
 
 const DISCOVERY_MESSAGES = [
   "VANVAS is gathering live travel information...",
@@ -125,25 +133,15 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
     transport: "Ram Jhula and Lakshman Jhula are best explored on foot. Shared autos connect the Haridwar bypass to Swarg Ashram. Rafting launch points at Shivpuri require a taxi or rented scooter.",
     etiquette: "Rishikesh is a holy city: alcohol and non-vegetarian food are strictly prohibited within city limits. Maintain complete silence during the evening Ganga Aarti at Triveni Ghat and Parmarth Niketan. Dress modestly near ashrams.",
   },
+  delhi: {
+    seasonality: "October to March offers pleasant, cool weather for exploring heritage monuments and open-air bazaars. May–June experiences extreme heat (40–45°C).",
+    clothing: "Comfortable cottons in summer; warm jackets and sweaters for chilly winter mornings/nights. Modest attire covering shoulders and knees for religious sites.",
+    transport: "Delhi Metro provides the fastest, most reliable transit across the National Capital Region. Auto-rickshaws and cabs connect metro gates to local monuments.",
+    etiquette: "Remove footwear and cover your head before entering Gurudwaras (e.g. Bangla Sahib) and Mosques (e.g. Jama Masjid).",
+  },
 };
 
-interface DestinationExperience {
-  id: string;
-  title: string;
-  hindiTitle: string;
-  category: string;
-  elevation?: string;
-  duration?: string;
-  distance?: string;
-  difficulty?: string;
-  bestTime?: string;
-  location: string;
-  latitude: number;
-  longitude: number;
-  description: string;
-  imageUrl: string;
-  tags: string[];
-}
+type OperationalMode = "overview" | "trek" | "oneday" | "places" | "stays" | "mobility";
 
 export default function DestinationDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -167,9 +165,15 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   const [rentals, setRentals] = useState<RentalOption[]>([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
   
+  // Operational Modes
+  const [activeMode, setActiveMode] = useState<OperationalMode>("overview");
+  
+  // Places Filtering & Progressive Discovery
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [placesVisibleCount, setPlacesVisibleCount] = useState<number>(6);
+  
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [savedExperiences, setSavedExperiences] = useState<Record<string, boolean>>({});
   const [activeWaypointIdx, setActiveWaypointIdx] = useState<number>(0);
@@ -380,139 +384,8 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
     return true;
   });
 
-  // Tungnath-Chandrashila Dedicated Waypoints & Experiences Data
-  const tungnathWaypoints = [
-    {
-      id: "chopta",
-      name: "Chopta Meadows (Base Camp)",
-      hindiName: "चोपता बुग्याल (आधार शिविर)",
-      elevation: "2,680 m",
-      distance: "0 km (Starting point)",
-      timeFromPrev: "Start",
-      difficulty: "Easy / Base Area",
-      latitude: 30.4850,
-      longitude: 79.1790,
-      description: "Lush alpine meadows (bugyals) framed by dense deodar, oak and rhododendron forests. Gateway to the trek with rustic tea stalls and eco campsites.",
-      imageUrl: "/images/places/tungnath-chandrashila/chopta-meadows.jpg",
-    },
-    {
-      id: "tungnath",
-      name: "Tungnath Temple (Panch Kedar)",
-      hindiName: "तुंगनाथ मंदिर (तृतीय केदार)",
-      elevation: "3,680 m",
-      distance: "3.5 km from Chopta",
-      timeFromPrev: "2.5 – 3.5 hrs ascent",
-      difficulty: "Moderate uphill stone paved trail",
-      latitude: 30.4886,
-      longitude: 79.2173,
-      description: "World's highest Shiva temple and the 3rd Panch Kedar. Ancient North Indian Nagara stone architecture standing on an alpine ridge for over a millennium.",
-      imageUrl: "/images/places/tungnath-chandrashila/tungnath-temple.jpg",
-    },
-    {
-      id: "chandrashila",
-      name: "Chandrashila Summit (Moon Rock)",
-      hindiName: "चंद्रशिला शिखर (4,000 मी)",
-      elevation: "4,000 m",
-      distance: "1.5 km beyond Temple",
-      timeFromPrev: "1 – 1.5 hrs from Temple",
-      difficulty: "Steep rocky crag ascent",
-      latitude: 30.4930,
-      longitude: 79.2185,
-      description: "Unrivalled 360-degree panoramic sunrise vista towering in front of the colossal Chaukhamba massif, Nanda Devi, Trishul, and Kedarnath peaks.",
-      imageUrl: "/images/places/tungnath-chandrashila/chandrashila-summit.jpg",
-    },
-  ];
-
-  const tungnathExperiences: DestinationExperience[] = [
-    {
-      id: "exp-tungnath-trek",
-      title: "Tungnath Temple Pilgrimage Ascent",
-      hindiTitle: "तुंगनाथ मंदिर तीर्थ पदयात्रा",
-      category: "Spiritual & Heritage Trek",
-      elevation: "3,680 m",
-      duration: "3 – 4 Hours",
-      distance: "3.5 km from Chopta",
-      difficulty: "Moderate",
-      bestTime: "Morning (06:00 – 11:00)",
-      location: "Chopta to Tungnath Ridge",
-      latitude: 30.4886,
-      longitude: 79.2173,
-      description: "Ascend the ancient stone-paved trail through alpine bugyals to reach the sacred thousand-year-old stone temple of Lord Shiva.",
-      imageUrl: "/images/places/tungnath-chandrashila/tungnath-temple.jpg",
-      tags: ["Highest Shiva Shrine", "Stone Architecture", "Panch Kedar", "Alpine Ridge"]
-    },
-    {
-      id: "exp-chandrashila-sunrise",
-      title: "Chandrashila 360° Chaukhamba Sunrise Summit",
-      hindiTitle: "चंद्रशिला 360° सूर्योदय शिखर",
-      category: "Sunrise & Alpine Summit",
-      elevation: "4,000 m",
-      duration: "2 Hours from Temple",
-      distance: "1.5 km beyond Temple",
-      difficulty: "Steep / Moderate",
-      bestTime: "Dawn (04:30 – 06:30 AM)",
-      location: "Chandrashila Crag Peak",
-      latitude: 30.4930,
-      longitude: 79.2185,
-      description: "Reach the 4,000m summit at first light to witness the golden sun illuminate Chaukhamba, Trishul, and Nanda Devi in a dramatic 360-degree panorama.",
-      imageUrl: "/images/places/tungnath-chandrashila/chandrashila-summit.jpg",
-      tags: ["360° Panorama", "Chaukhamba Sunrise", "High Altitude", "Garhwal Giants"]
-    },
-    {
-      id: "exp-chopta-bugyals",
-      title: "Chopta Meadows & Oak Forest Walks",
-      hindiTitle: "चोपता बुग्याल एवं बाँज वन",
-      category: "Nature & Slow Travel",
-      elevation: "2,680 m",
-      duration: "Flexible (1 – 3 Hours)",
-      distance: "Base Camp Area",
-      difficulty: "Easy",
-      bestTime: "Late Afternoon & Sunset",
-      location: "Chopta Base Valley",
-      latitude: 30.4850,
-      longitude: 79.1790,
-      description: "Stroll across rolling alpine pastures (bugyals) bordered by dense deodar and oak canopies with birdsong and serene mountain silence.",
-      imageUrl: "/images/places/tungnath-chandrashila/chopta-meadows.jpg",
-      tags: ["Alpine Bugyals", "Deodar Forest", "Birdwatching", "Slow Travel"]
-    },
-    {
-      id: "exp-rhododendron-trail",
-      title: "Garhwal Rhododendron & Pine Forest Trail",
-      hindiTitle: "बुरांश एवं चीड़ वन मार्ग",
-      category: "Forest & Flora Trail",
-      elevation: "2,800 m – 3,200 m",
-      duration: "2 Hours",
-      distance: "Trail Corridor",
-      difficulty: "Moderate",
-      bestTime: "March – May (Bloom season)",
-      location: "Lower Tungnath Forest Trail",
-      latitude: 30.4865,
-      longitude: 79.1980,
-      description: "Walk under canopies of vibrant red and pink Buransh (Rhododendron) blooms lining the mountain trail against crisp Himalayan breezes.",
-      imageUrl: "/images/places/tungnath-chandrashila/forest-trail.jpg",
-      tags: ["Buransh Bloom", "Forest Trail", "Floral Canopy", "Seasonal"]
-    },
-    {
-      id: "exp-himalayan-chai",
-      title: "Chopta Mountain Chai & Local Garhwali Dhabas",
-      hindiTitle: "चोपता पहाड़ी चाय एवं स्थानीय ढाबा",
-      category: "Chai & Local Food",
-      elevation: "2,680 m",
-      duration: "1 Hour",
-      distance: "Chopta Trailhead",
-      difficulty: "Easy",
-      bestTime: "Post-Trek Warmth",
-      location: "Chopta Base Market",
-      latitude: 30.4855,
-      longitude: 79.1810,
-      description: "Warm up with piping hot ginger-cardamom tea, mountain Maggi, and fresh local Garhwali mandua roti with dal at trailside wooden dhabas.",
-      imageUrl: "/images/places/tungnath-chandrashila/local-cafe.jpg",
-      tags: ["Mountain Chai", "Hot Maggi", "Garhwali Food", "Trailside Dhaba"]
-    }
-  ];
-
-  const normKey = slug.toLowerCase().replace(/[^a-z]/g, "");
-  const matchedMetaKey = Object.keys(destMetadata).find((k) => normKey.includes(k));
+  const normKey = slug.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const matchedMetaKey = Object.keys(destMetadata).find((k) => normKey.includes(k.replace(/[^a-z0-9]/g, "")));
   const canonicalDest = findCanonicalDestination(slug);
   const canonicalHindi = destination?.hindi_name || getCanonicalHindiName(slug) || canonicalDest?.hindi_name || "";
   const meta = {
@@ -523,6 +396,18 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   };
 
   const isCurated = destination ? destination.is_curated !== false : true;
+
+  // Resolve Trek Information for destination
+  const trekInfo: DestinationTrekInfo | undefined =
+    DESTINATION_TREK_REGISTRY[slug] ||
+    DESTINATION_TREK_REGISTRY[slug.toLowerCase()] ||
+    DEFAULT_NON_TREK_NOTICE[slug] ||
+    DEFAULT_NON_TREK_NOTICE[slug.toLowerCase()];
+
+  // Resolve 1-Day Round Trip Information for destination
+  const dayTrip: DestinationDayTrip | undefined =
+    DESTINATION_DAY_TRIPS[slug] ||
+    DESTINATION_DAY_TRIPS[slug.toLowerCase()];
 
   if (!mounted || destLoading) {
     return (
@@ -587,7 +472,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
 
   return (
     <div className="min-h-screen bg-[#EFE5D2] pb-28">
-      {/* 1. HERO BANNER: Depicts Recognizable Landmark / Tungnath Temple Architecture */}
+      {/* 1. HERO BANNER */}
       <section className="relative h-[56vh] min-h-[420px] max-h-[500px] bg-[#0F2924] text-[#EFE5D2] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <VanvasImage
@@ -635,7 +520,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
             </a>
 
             <Link
-              href={`/plan?dest=${destination.id}`}
+              href={`/plan?dest=${destination.id || slug}`}
               className="px-7 py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center justify-center gap-2 transition-all transform active:scale-95 border border-[#7B4D36]/30"
             >
               <Sparkles className="w-4 h-4 text-[#B49252]" />
@@ -645,402 +530,531 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
         </div>
       </section>
 
-      {/* Main Content Sections */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
-        
-        {/* 2. OVERVIEW: SANCTUARY DISPATCH */}
-        {isCurated && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-8 p-6 sm:p-10 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-sm space-y-6">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                <Compass className="w-4 h-4" />
-                <span>सफ़रनामा • Sanctuary Dispatch</span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-                Why wander into {destination.name}?
-              </h2>
-
-              <p className="text-sm text-[#20211D]/85 leading-relaxed font-light">
-                {destination.description}
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-[#E5D5BA] text-xs">
-                <div className="p-3 rounded-xl bg-[#EFE5D2] space-y-0.5">
-                  <span className="text-[10px] uppercase font-bold text-[#7B4D36]">Best Season</span>
-                  <p className="font-bold text-[#173B32]">{destination.best_time_to_visit || "Year-round"}</p>
-                </div>
-                <div className="p-3 rounded-xl bg-[#EFE5D2] space-y-0.5">
-                  <span className="text-[10px] uppercase font-bold text-[#7B4D36]">Climate</span>
-                  <p className="font-bold text-[#173B32]">{destination.weather_type}</p>
-                </div>
-                <div className="p-3 rounded-xl bg-[#EFE5D2] space-y-0.5">
-                  <span className="text-[10px] uppercase font-bold text-[#7B4D36]">Elevation</span>
-                  <p className="font-bold text-[#173B32]">{destination.altitude_meters}m</p>
-                </div>
-                <div className="p-3 rounded-xl bg-[#EFE5D2] space-y-0.5">
-                  <span className="text-[10px] uppercase font-bold text-[#7B4D36]">Coordinates</span>
-                  <p className="font-bold text-[#173B32] font-mono">{destination.latitude.toFixed(2)}°N, {destination.longitude.toFixed(2)}°E</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-4 space-y-6">
-              <JournalNote
-                tag="EXPEDITION ADVISORY"
-                note={destination.slug === "tungnath-chandrashila"
-                  ? "Start the Chandrashila ascent from Chopta before 05:00 AM to reach the summit for the 360° golden Chaukhamba sunrise."
-                  : "Early morning walks provide the clearest panoramic light and serene atmosphere before afternoon traffic begins."}
-                date={`${meta.hindi} FIELD NOTE`}
-                tapeColor="terracotta"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* 3. THE JOURNEY & INTERACTIVE ROUTE MAP */}
-        {destination.slug === "tungnath-chandrashila" && (
-          <div className="space-y-6">
-            <div className="p-6 sm:p-10 rounded-3xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#173B32] shadow-2xl space-y-8">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-                <div className="space-y-1">
-                  <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
-                    THE EXPEDITION JOURNEY • उत्तराखंड पर्यटन मार्ग
+      {/* 2. DESTINATION OPERATIONAL MODES TAB BAR */}
+      <div className="sticky top-20 z-30 bg-[#FAF7F0]/95 backdrop-blur-md border-y border-[#E5D5BA] py-3 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
+          {[
+            { id: "overview", label: "Overview", devanagari: "सफ़रनामा", icon: Compass },
+            { id: "trek", label: "Trek Expedition", devanagari: "पदयात्रा", icon: Footprints, count: trekInfo?.hasTrek ? `${trekInfo.peakAltitude}` : "N/A" },
+            { id: "oneday", label: "1-Day Round Trip", devanagari: "एक दिवसीय", icon: Clock, count: dayTrip ? `${dayTrip.estimatedHours.split(" ")[0]}H` : "12H" },
+            { id: "places", label: "Curated Places", devanagari: "पड़ाव", icon: Sparkles, count: places.length },
+            { id: "stays", label: "Stays & Sanctuaries", devanagari: "आशियाना", icon: BedDouble, count: hotels.length },
+            { id: "mobility", label: "Valley Mobility", devanagari: "सवारी", icon: Bike, count: rentals.length },
+          ].map((mode) => {
+            const Icon = mode.icon;
+            const isActive = activeMode === mode.id;
+            return (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => {
+                  setActiveMode(mode.id as OperationalMode);
+                  window.scrollTo({ top: 400, behavior: "smooth" });
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                  isActive
+                    ? "bg-[#173B32] text-[#EFE5D2] shadow-sm border-2 border-[#173B32] scale-[1.02]"
+                    : "bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA]"
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#B49252]" : "text-[#B65E3C]"}`} />
+                <span>{mode.label}</span>
+                <span className={`text-[10px] ${isActive ? "text-[#B49252]" : "text-[#7B4D36]"} opacity-80`}>
+                  ({mode.devanagari})
+                </span>
+                {mode.count !== undefined && (
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${isActive ? "bg-[#B49252] text-[#0F2924]" : "bg-[#FAF7F0] text-[#7B4D36]"}`}>
+                    {mode.count}
                   </span>
-                  <h3 className="text-2xl sm:text-4xl font-serif font-black text-[#FAF4E8]">
-                    Chopta → Tungnath Temple → Chandrashila
-                  </h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TravelStamp label="5.0 KM ASCENT" elevation="4000M" variant="mustard" />
-                  <TravelStamp label="MODERATE TREK" variant="terracotta" />
-                </div>
-              </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-              {/* Waypoints Sequence Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {tungnathWaypoints.map((wp, idx) => {
-                  const isSelected = activeWaypointIdx === idx;
-                  return (
-                    <div
-                      key={wp.id}
-                      onClick={() => setActiveWaypointIdx(idx)}
-                      className={`p-5 rounded-2xl transition-all cursor-pointer flex flex-col justify-between space-y-4 border ${
-                        isSelected
-                          ? "bg-[#0F2924] border-[#B49252] shadow-xl scale-102"
-                          : "bg-white/5 border-white/10 hover:bg-white/10"
-                      }`}
-                    >
-                      <div className="space-y-3">
-                        <div className="relative h-36 rounded-xl overflow-hidden bg-black/30">
-                          <img
-                            src={wp.imageUrl}
-                            alt={wp.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-mono font-bold">
-                            STEP 0{idx + 1} • {wp.elevation}
-                          </div>
-                        </div>
+      {/* Main Content Sections */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+        
+        {/* MODE: OVERVIEW */}
+        {activeMode === "overview" && (
+          <div className="space-y-12 animate-fadeIn">
+            {/* Sanctuary Dispatch Overview */}
+            {isCurated && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="lg:col-span-8 p-6 sm:p-10 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-sm space-y-6">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                    <Compass className="w-4 h-4" />
+                    <span>सफ़रनामा • Sanctuary Dispatch</span>
+                  </div>
 
-                        <div>
-                          <span className="text-[10px] font-mono uppercase text-[#B49252] font-bold block">
-                            {wp.distance}
-                          </span>
-                          <h4 className="text-lg font-serif font-bold text-[#FAF4E8] mt-0.5">
-                            {wp.name}
-                          </h4>
-                          <span className="text-xs font-devanagari text-[#D8DED5]/80 block">
-                            {wp.hindiName}
-                          </span>
-                        </div>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
+                    Why wander into {destination.name}?
+                  </h2>
 
-                        <p className="text-xs text-[#D8DED5]/80 font-light leading-relaxed">
-                          {wp.description}
-                        </p>
-                      </div>
+                  <p className="text-sm text-[#20211D]/85 leading-relaxed font-light">
+                    {destination.description}
+                  </p>
 
-                      <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                        <span className="text-[10px] font-mono text-[#B49252]">
-                          {wp.timeFromPrev}
-                        </span>
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${wp.latitude},${wp.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-3 py-1 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-[11px] font-bold flex items-center gap-1 transition-colors"
-                        >
-                          <Navigation className="w-3 h-3" />
-                          <span>Directions</span>
-                        </a>
-                      </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-[#E5D5BA] text-xs">
+                    <div className="p-3 rounded-xl bg-[#EFE5D2] space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-[#7B4D36]">Best Season</span>
+                      <p className="font-bold text-[#173B32]">{destination.best_time_to_visit || "Year-round"}</p>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="p-3 rounded-xl bg-[#EFE5D2] space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-[#7B4D36]">Climate</span>
+                      <p className="font-bold text-[#173B32]">{destination.weather_type}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#EFE5D2] space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-[#7B4D36]">Elevation</span>
+                      <p className="font-bold text-[#173B32]">{destination.altitude_meters}m</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#EFE5D2] space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-[#7B4D36]">Coordinates</span>
+                      <p className="font-bold text-[#173B32] font-mono">{destination.latitude.toFixed(2)}°N, {destination.longitude.toFixed(2)}°E</p>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Verified Route Matrix Bar */}
-              <div className="p-4 rounded-2xl bg-black/30 text-xs text-[#D8DED5]/90 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-white/10">
+                <div className="lg:col-span-4 space-y-6">
+                  <JournalNote
+                    tag="EXPEDITION ADVISORY"
+                    note={destination.slug === "tungnath-chandrashila"
+                      ? "Start the Chandrashila ascent from Chopta before 05:00 AM to reach the summit for the 360° golden Chaukhamba sunrise."
+                      : "Early morning walks provide the clearest panoramic light and serene atmosphere before afternoon traffic begins."}
+                    date={`${meta.hindi} FIELD NOTE`}
+                    tapeColor="terracotta"
+                  />
+
+                  {/* Mode Jump Buttons */}
+                  <div className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-3 text-xs">
+                    <span className="font-bold uppercase tracking-wider text-[#173B32] block">
+                      Explore Sanctuary Modes
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setActiveMode("trek")}
+                        className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-bold text-left flex items-center justify-between transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Footprints className="w-3.5 h-3.5 text-[#B65E3C]" />
+                          <span>Trek Mode</span>
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setActiveMode("oneday")}
+                        className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-bold text-left flex items-center justify-between transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-[#B65E3C]" />
+                          <span>1-Day Trip</span>
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Live Open-Meteo Weather Intelligence */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-[#0F2924] text-[#EFE5D2] border-2 border-[#173B32] shadow-xl space-y-6 relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-[#B49252]">Verified Route:</span>
-                    <span>CHOPTA (2,680m) &rarr; TUNGNATH TEMPLE (3,680m, ~3.5 km) &rarr; CHANDRASHILA (4,000m, ~1.5 km)</span>
-                  </div>
-                  <p className="text-[11px] text-[#D8DED5]/70 font-mono">
-                    Total Trek Distance: 5.0 km one-way | Total Elevation Gain: 1,320m | Difficulty: Moderate | Permits: Not required for Indian nationals
-                  </p>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <a
-                    href="https://www.google.com/maps/dir/?api=1&destination=30.4930,79.2185"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs flex items-center gap-1.5 transition-all"
-                  >
-                    <MapIcon className="w-3.5 h-3.5" />
-                    <span>View Full Route</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 4. LIVE OPEN-METEO WEATHER INTELLIGENCE */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#0F2924] text-[#EFE5D2] border-2 border-[#173B32] shadow-xl space-y-6 relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  LIVE OPEN-METEO WEATHER
-                </span>
-                <span className="text-[11px] font-mono text-[#B49252]">
-                  {destination.latitude.toFixed(2)}°N, {destination.longitude.toFixed(2)}°E
-                </span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#FAF4E8]">
-                Current Climate &amp; 5-Day Forecast for {destination.name}
-              </h3>
-            </div>
-            <div className="text-xs text-[#D8DED5]/70 font-mono text-right">
-              Updated Hourly from Open-Meteo Meteorological Satellite
-            </div>
-          </div>
-
-          {weather.length > 0 ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                <div className="md:col-span-4 flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="text-4xl sm:text-5xl font-serif font-black text-[#FAF4E8]">
-                    {Math.round(weather[0].temp_c)}°<span className="text-lg text-[#B49252]">C</span>
-                  </div>
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-[#FAF4E8] block">{weather[0].condition}</span>
-                    <span className="text-[11px] text-[#D8DED5]/80 font-mono">
-                      Wind: {weather[0].wind_kph} km/h • Humidity: {weather[0].humidity}%
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      LIVE OPEN-METEO WEATHER
                     </span>
-                    {weather[0].is_rain && (
-                      <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-blue-500/30 text-blue-200 font-mono">
-                        Rain Advisory Active
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="md:col-span-8 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
-                  <Sun className="w-5 h-5 text-[#B49252] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
-                      METEOROLOGICAL ADVISORY
+                    <span className="text-[11px] font-mono text-[#B49252]">
+                      {destination.latitude.toFixed(2)}°N, {destination.longitude.toFixed(2)}°E
                     </span>
-                    <p className="text-xs text-[#EFE5D2] leading-relaxed mt-0.5">
-                      {weather[0].advisory || `Live meteorological conditions for ${destination.name}. High altitude mountain conditions can change rapidly.`}
-                    </p>
                   </div>
+                  <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#FAF4E8]">
+                    Current Climate &amp; 5-Day Forecast for {destination.name}
+                  </h3>
+                </div>
+                <div className="text-xs text-[#D8DED5]/70 font-mono text-right">
+                  Updated Hourly from Open-Meteo Meteorological Satellite
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
-                {weather.slice(0, 5).map((w, idx) => {
-                  let dayName = idx === 0 ? "Today" : `Day ${idx + 1}`;
-                  let dateStr = w.forecast_date || "";
-                  try {
-                    const parts = (w.forecast_date || "").split("T")[0].split("-");
-                    if (parts.length === 3) {
-                      const yr = parseInt(parts[0], 10);
-                      const mIdx = parseInt(parts[1], 10) - 1;
-                      const dy = parseInt(parts[2], 10);
-                      const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                      const dayOfWeekNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                      const dt = new Date(yr, mIdx, dy);
-                      if (idx > 0) dayName = dayOfWeekNames[dt.getDay()] || dayName;
-                      dateStr = `${mNames[mIdx] || ""} ${dy}`;
-                    }
-                  } catch (e) {
-                    // keep default
-                  }
-
-                  return (
-                    <div
-                      key={w.id || idx}
-                      className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-2 hover:bg-white/10 transition-colors"
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-[#FAF4E8]">{dayName}</span>
-                        <span className="text-[10px] font-mono text-[#D8DED5]/70">{dateStr}</span>
+              {weather.length > 0 ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    <div className="md:col-span-4 flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+                      <div className="text-4xl sm:text-5xl font-serif font-black text-[#FAF4E8]">
+                        {Math.round(weather[0].temp_c)}°<span className="text-lg text-[#B49252]">C</span>
                       </div>
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-lg font-serif font-bold text-[#FAF4E8]">
-                          {Math.round(w.temp_c)}°C
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-bold text-[#FAF4E8] block">{weather[0].condition}</span>
+                        <span className="text-[11px] text-[#D8DED5]/80 font-mono">
+                          Wind: {weather[0].wind_kph} km/h • Humidity: {weather[0].humidity}%
                         </span>
-                        <span className="text-[11px] font-mono text-[#B49252]">
-                          {w.is_rain ? "Rain" : "Clear"}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-[#D8DED5]/80 line-clamp-1">
-                        {w.condition}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 rounded-2xl bg-white/5 text-xs text-[#D8DED5]/80">
-              Fetching meteorological satellite data for {destination.name}...
-            </div>
-          )}
-        </div>
-
-        {/* 5. EXPERIENCES: REUSABLE CATEGORY CARDS */}
-        {destination.slug === "tungnath-chandrashila" && (
-          <div className="space-y-6 pt-4 border-t-2 border-[#E5D5BA]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] pb-4 gap-3">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  अनुभव • Curated Himalayan Experiences
-                </span>
-                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
-                  <Footprints className="w-6 h-6 text-[#B65E3C]" />
-                  <span>Tungnath–Chandrashila Experiences ({tungnathExperiences.length})</span>
-                </h3>
-              </div>
-              <span className="text-xs font-mono text-[#7B4D36]">
-                All experiences mapped with verified coordinates
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tungnathExperiences.map((exp) => {
-                const isSaved = Boolean(savedExperiences[exp.id]);
-                return (
-                  <div
-                    key={exp.id}
-                    className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/50 shadow-xs hover:shadow-xl transition-all space-y-4 flex flex-col justify-between"
-                  >
-                    <div className="space-y-3">
-                      <div className="relative h-48 rounded-2xl overflow-hidden bg-[#E5D5BA]">
-                        <img
-                          src={exp.imageUrl}
-                          alt={exp.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-bold uppercase tracking-wider">
-                          {exp.category}
-                        </div>
-                        {exp.elevation && (
-                          <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-mono">
-                            {exp.elevation}
-                          </div>
+                        {weather[0].is_rain && (
+                          <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-blue-500/30 text-blue-200 font-mono">
+                            Rain Advisory Active
+                          </span>
                         )}
-                        <button
-                          onClick={() => toggleSaveExperience(exp.id)}
-                          className="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs transition-colors cursor-pointer"
-                          title={isSaved ? "Saved" : "Save Experience"}
-                        >
-                          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-[#B49252] text-[#B49252]" : ""}`} />
-                        </button>
                       </div>
+                    </div>
 
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-mono text-[#B65E3C] font-semibold block uppercase">
-                          {exp.location}
+                    <div className="md:col-span-8 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
+                      <Sun className="w-5 h-5 text-[#B49252] shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
+                          METEOROLOGICAL ADVISORY
                         </span>
-                        <h4 className="font-serif font-bold text-lg text-[#173B32] leading-snug">
-                          {exp.title}
-                        </h4>
-                        <span className="text-xs font-devanagari text-[#7B4D36] block">
-                          {exp.hindiTitle}
-                        </span>
-                        <p className="text-xs text-[#20211D]/80 leading-relaxed font-light mt-1">
-                          {exp.description}
+                        <p className="text-xs text-[#EFE5D2] leading-relaxed mt-0.5">
+                          {weather[0].advisory || `Live meteorological conditions for ${destination.name}. High altitude mountain conditions can change rapidly.`}
                         </p>
                       </div>
-
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {exp.tags.map((tag) => (
-                          <span key={tag} className="px-2 py-0.5 rounded text-[9px] font-mono bg-[#EFE5D2] text-[#7B4D36] border border-[#E5D5BA]">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs gap-2">
-                      <div className="text-[10px] font-mono text-[#7B4D36]">
-                        {exp.duration} • {exp.difficulty}
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${exp.latitude},${exp.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors flex items-center gap-1"
-                        >
-                          <Navigation className="w-3 h-3" />
-                          <span>Directions</span>
-                        </a>
-
-                        <Link
-                          href={`/plan?dest=${destination.id}&exp=${exp.id}`}
-                          className="px-3 py-1.5 rounded-xl bg-[#B65E3C] text-[#FAF4E8] text-xs font-bold hover:bg-[#9E4D2E] transition-colors flex items-center gap-1"
-                        >
-                          <span>Add to Trip</span>
-                        </Link>
-                      </div>
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
+                    {weather.slice(0, 5).map((w, idx) => {
+                      let dayName = idx === 0 ? "Today" : `Day ${idx + 1}`;
+                      let dateStr = w.forecast_date || "";
+                      try {
+                        const parts = (w.forecast_date || "").split("T")[0].split("-");
+                        if (parts.length === 3) {
+                          const yr = parseInt(parts[0], 10);
+                          const mIdx = parseInt(parts[1], 10) - 1;
+                          const dy = parseInt(parts[2], 10);
+                          const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                          const dayOfWeekNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                          const dt = new Date(yr, mIdx, dy);
+                          if (idx > 0) dayName = dayOfWeekNames[dt.getDay()] || dayName;
+                          dateStr = `${mNames[mIdx] || ""} ${dy}`;
+                        }
+                      } catch {
+                        // fallback
+                      }
+
+                      return (
+                        <div
+                          key={w.id || idx}
+                          className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-2 hover:bg-white/10 transition-colors"
+                        >
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-[#FAF4E8]">{dayName}</span>
+                            <span className="text-[10px] font-mono text-[#D8DED5]/70">{dateStr}</span>
+                          </div>
+                          <div className="flex items-baseline justify-between">
+                            <span className="text-lg font-serif font-bold text-[#FAF4E8]">
+                              {Math.round(w.temp_c)}°C
+                            </span>
+                            <span className="text-[11px] font-mono text-[#B49252]">
+                              {w.is_rain ? "Rain" : "Clear"}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-[#D8DED5]/80 line-clamp-1">
+                            {w.condition}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-white/5 text-xs text-[#D8DED5]/80">
+                  Fetching meteorological satellite data for {destination.name}...
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* 6. CURATED LANDMARKS & PLACES */}
-        {isCurated && places.length > 0 && (
-          <div className="space-y-6 pt-4 border-t-2 border-[#E5D5BA]">
+        {/* MODE: TREK EXPEDITION */}
+        {activeMode === "trek" && (
+          <div className="space-y-8 animate-fadeIn">
+            {trekInfo && trekInfo.hasTrek ? (
+              <div className="p-6 sm:p-10 rounded-3xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#173B32] shadow-2xl space-y-8">
+                {/* Trek Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
+                        TREK EXPEDITION MODE • हिमालयी पदयात्रा
+                      </span>
+                      <TravelStamp label={trekInfo.difficulty.toUpperCase()} variant="terracotta" />
+                    </div>
+                    <h3 className="text-2xl sm:text-4xl font-serif font-black text-[#FAF4E8]">
+                      {trekInfo.title}
+                    </h3>
+                    <span className="text-sm font-devanagari text-[#B49252] block">
+                      {trekInfo.hindiTitle}
+                    </span>
+                    <p className="text-xs sm:text-sm text-[#D8DED5]/90 max-w-2xl font-light leading-relaxed pt-1">
+                      {trekInfo.trailSummary}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <TravelStamp label={trekInfo.distance} elevation={trekInfo.peakAltitude} variant="mustard" />
+                    <TravelStamp label={trekInfo.duration} variant="forest" />
+                  </div>
+                </div>
+
+                {/* Waypoints Sequence Cards */}
+                <div className="space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#B49252] block">
+                    Verified Trail Waypoints &amp; Checkpoints ({trekInfo.waypoints.length} Stages)
+                  </span>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {trekInfo.waypoints.map((wp, idx) => {
+                      const isSelected = activeWaypointIdx === idx;
+                      return (
+                        <div
+                          key={wp.id}
+                          onClick={() => setActiveWaypointIdx(idx)}
+                          className={`p-5 rounded-2xl transition-all cursor-pointer flex flex-col justify-between space-y-4 border ${
+                            isSelected
+                              ? "bg-[#0F2924] border-[#B49252] shadow-xl scale-[1.02]"
+                              : "bg-white/5 border-white/10 hover:bg-white/10"
+                          }`}
+                        >
+                          <div className="space-y-3">
+                            <div className="relative h-40 rounded-xl overflow-hidden bg-black/30 w-full">
+                              <img
+                                src={wp.imageUrl}
+                                alt={wp.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-mono font-bold">
+                                STAGE 0{idx + 1} • {wp.elevation}
+                              </div>
+                            </div>
+
+                            <div>
+                              <span className="text-[10px] font-mono uppercase text-[#B49252] font-bold block">
+                                {wp.distance}
+                              </span>
+                              <h4 className="text-base sm:text-lg font-serif font-bold text-[#FAF4E8] mt-0.5 leading-snug">
+                                {wp.name}
+                              </h4>
+                              <span className="text-xs font-devanagari text-[#D8DED5]/80 block">
+                                {wp.hindiName}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-[#D8DED5]/80 font-light leading-relaxed">
+                              {wp.description}
+                            </p>
+                          </div>
+
+                          <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                            <span className="text-[10px] font-mono text-[#B49252]">
+                              {wp.timeFromPrev}
+                            </span>
+                            <a
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${wp.latitude},${wp.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="px-3 py-1 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-[11px] font-bold flex items-center gap-1 transition-colors"
+                            >
+                              <Navigation className="w-3 h-3" />
+                              <span>GPS Pin</span>
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Practical Guidance & Approach Matrix */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-2 text-xs">
+                    <span className="font-bold text-[#B49252] uppercase tracking-wider block">
+                      Approach &amp; Base Transit
+                    </span>
+                    <p className="text-[#D8DED5]/85 leading-relaxed font-light">
+                      {trekInfo.approachTransport}
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-2 text-xs">
+                    <span className="font-bold text-[#B49252] uppercase tracking-wider block">
+                      Essential Packing &amp; Gear Checklist
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {trekInfo.packingChecklist.map((item) => (
+                        <span key={item} className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono text-[#FAF4E8]">
+                          ✓ {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 sm:p-12 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-4 max-w-2xl mx-auto">
+                <Footprints className="w-12 h-12 text-[#B65E3C] mx-auto opacity-70" />
+                <div className="space-y-1">
+                  <h3 className="font-serif font-black text-2xl text-[#173B32]">
+                    {trekInfo?.nonTrekNotice?.heading || "Wilderness Trek Not Applicable"}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#7B4D36] leading-relaxed">
+                    {trekInfo?.nonTrekNotice?.explanation || `${destination.name} is an urban / heritage sanctuary best explored through walking heritage quarters, palace corridors, and food trails rather than wilderness mountain trekking.`}
+                  </p>
+                </div>
+                <div className="pt-2 flex justify-center">
+                  <button
+                    onClick={() => setActiveMode("oneday")}
+                    className="px-6 py-3 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#9E4D2E] transition-all flex items-center gap-2 shadow-md"
+                  >
+                    <Clock className="w-4 h-4 text-[#B49252]" />
+                    <span>Switch to 1-Day Same-Day Journey →</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MODE: ONE-DAY ROUND TRIP */}
+        {activeMode === "oneday" && (
+          <div className="space-y-8 animate-fadeIn">
+            {dayTrip ? (
+              <div className="p-6 sm:p-10 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-sm space-y-8">
+                {/* 1-Day Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5D5BA] pb-6">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono uppercase tracking-widest text-[#B65E3C] font-bold">
+                        ONE-DAY ROUND TRIP • एक दिवसीय समग्र यात्रा
+                      </span>
+                      <TravelStamp label={dayTrip.estimatedHours} variant="terracotta" />
+                    </div>
+                    <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
+                      {dayTrip.title}
+                    </h3>
+                    <span className="text-sm font-devanagari text-[#B65E3C] block">
+                      {dayTrip.hindiTitle}
+                    </span>
+                    <p className="text-xs sm:text-sm text-[#20211D]/80 max-w-2xl font-light leading-relaxed">
+                      {dayTrip.tagline}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <TravelStamp label={dayTrip.totalDistance} variant="forest" />
+                    <Link
+                      href={`/plan?dest=${destination.id || slug}&days=1`}
+                      className="px-4 py-2 rounded-xl bg-[#173B32] text-[#EFE5D2] font-bold text-xs hover:bg-[#20453B] transition-colors flex items-center gap-1.5 shadow-xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                      <span>Customize Day</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Itinerary Time Blocks */}
+                <div className="space-y-4">
+                  {dayTrip.blocks.map((block, idx) => (
+                    <div
+                      key={idx}
+                      className="p-5 rounded-2xl bg-[#EFE5D2]/70 border border-[#E5D5BA] hover:border-[#173B32]/40 transition-all flex flex-col md:flex-row md:items-start justify-between gap-4"
+                    >
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] font-mono text-[10px] font-bold">
+                            {block.time}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#B65E3C]">
+                            {block.period} • {block.duration}
+                          </span>
+                        </div>
+
+                        <h4 className="text-base sm:text-lg font-serif font-bold text-[#173B32]">
+                          {block.title}
+                        </h4>
+                        <span className="text-xs font-devanagari text-[#7B4D36] block">
+                          {block.hindiTitle}
+                        </span>
+
+                        <p className="text-xs text-[#20211D]/85 leading-relaxed font-light pt-1">
+                          {block.activity}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-2 text-[11px]">
+                          <span className="p-1.5 rounded-lg bg-white border border-[#E5D5BA] text-[#173B32] font-semibold flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-[#B65E3C]" />
+                            <span>{block.location}</span>
+                          </span>
+                          <span className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] italic font-serif">
+                            ★ {block.highlight}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="md:w-64 p-3 rounded-xl bg-white border border-[#E5D5BA] space-y-1 text-xs shrink-0">
+                        <span className="font-bold text-[#173B32] text-[10px] uppercase tracking-wider block">
+                          VANVAS Transit Tip
+                        </span>
+                        <p className="text-[11px] text-[#7B4D36] leading-relaxed">
+                          {block.tips}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Transit Context Footer */}
+                <div className="p-4 rounded-2xl bg-[#173B32] text-[#EFE5D2] text-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-[#B49252]">Transit Logistics:</span>
+                    <p className="text-[#D8DED5]/90 font-light">{dayTrip.transitContext}</p>
+                  </div>
+                  <Link
+                    href={`/plan?dest=${destination.id || slug}`}
+                    className="px-4 py-2 rounded-xl bg-[#B65E3C] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shrink-0 hover:bg-[#9E4D2E] transition-colors"
+                  >
+                    Launch Full Itinerary
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-3">
+                <Clock className="w-10 h-10 text-[#B65E3C] mx-auto opacity-70" />
+                <h4 className="font-serif font-bold text-lg text-[#173B32]">Generating Curated 1-Day Itinerary for {destination.name}...</h4>
+                <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
+                  Our travel intelligence layer is synthesizing dawn sights, local breakfast, midday heritage, and evening sunset for {destination.name}.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MODE: CURATED PLACES (Progressive Discovery) */}
+        {(activeMode === "places" || activeMode === "overview") && isCurated && places.length > 0 && (
+          <div className="space-y-6 pt-4 border-t-2 border-[#E5D5BA] animate-fadeIn">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5D5BA] pb-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  {destination.slug === "tungnath-chandrashila" ? "मुख्य पड़ाव • Verified Trek Landmarks" : "चुनिंदा पड़ाव • Curated Sanctuaries"}
+                  चुनिंदा पड़ाव • Curated Sanctuaries
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-                  {destination.slug === "tungnath-chandrashila"
-                    ? "Tungnath–Chandrashila Verified Landmarks"
-                    : `Curated Trails, Cafés & Local Landmarks (${filteredPlaces.length})`}
+                  Curated Trails, Cafés &amp; Local Landmarks ({filteredPlaces.length})
                 </h3>
               </div>
+              <span className="text-xs font-mono text-[#7B4D36]">
+                Showing {Math.min(placesVisibleCount, filteredPlaces.length)} of {filteredPlaces.length} places
+              </span>
             </div>
 
+            {/* Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
               {categories.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
+                  onClick={() => {
+                    setSelectedCategory(cat.id);
+                    setPlacesVisibleCount(6);
+                  }}
                   className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
                     selectedCategory === cat.id
                       ? "bg-[#173B32] text-[#EFE5D2] shadow-sm border-2 border-[#173B32]"
@@ -1055,8 +1069,9 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
               ))}
             </div>
 
+            {/* Places Grid with Normalized Frames */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPlaces.map((place) => (
+              {filteredPlaces.slice(0, placesVisibleCount).map((place) => (
                 <PlaceCard
                   key={place.id}
                   place={place}
@@ -1068,467 +1083,453 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
                 />
               ))}
             </div>
+
+            {/* Progressive Discovery: Load More Button */}
+            {filteredPlaces.length > placesVisibleCount && (
+              <div className="pt-6 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setPlacesVisibleCount((prev) => prev + 6)}
+                  className="px-6 py-3 rounded-2xl bg-[#FAF7F0] hover:bg-[#E5D5BA] border-2 border-[#E5D5BA] hover:border-[#173B32] text-[#173B32] font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                >
+                  <ArrowDown className="w-4 h-4 text-[#B65E3C]" />
+                  <span>Show More Places ({filteredPlaces.length - placesVisibleCount} Remaining)</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
-        {/* 7. STAYS & HOMESTAYS */}
-        <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] pb-4 gap-3">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                आशियाना • Verified Stays &amp; Sanctuaries
-              </span>
-              <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
-                <BedDouble className="w-6 h-6 text-[#B65E3C]" />
-                <span>
-                  {destination.slug === "tungnath-chandrashila" ? "Chopta Base Stays & Camps" : "Stays & Sanctuaries"} {!staysLoading && `(${hotels.length})`}
-                </span>
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                <span>Sanctuary Accommodations</span>
-              </span>
-            </div>
-          </div>
 
-          {/* Traveller & Accommodation Style Filter Bar */}
-          <div className="space-y-3 bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA]">
-            {/* Traveller Profiles */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-[#7B4D36]">
-                <span className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <Users className="w-3.5 h-3.5 text-[#B65E3C]" />
-                  <span>Traveller Profile</span>
+        {/* MODE: STAYS & SANCTUARIES */}
+        {(activeMode === "stays" || activeMode === "overview") && (
+          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA] animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] pb-4 gap-3">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                  आशियाना • Verified Stays &amp; Sanctuaries
                 </span>
-                <span className="text-[10px] font-mono opacity-70">
-                  {selectedTravellerProfile === "All" ? "All Profiles" : `${selectedTravellerProfile} Verified`}
-                </span>
+                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
+                  <BedDouble className="w-6 h-6 text-[#B65E3C]" />
+                  <span>
+                    Stays &amp; Sanctuaries {!staysLoading && `(${hotels.length})`}
+                  </span>
+                </h3>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {TRAVELLER_PROFILES.map((profile) => {
-                  const isActive = selectedTravellerProfile === profile;
-                  return (
-                    <button
-                      key={profile}
-                      onClick={() => handleTravellerProfileChange(profile)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                        isActive
-                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs scale-[1.02]"
-                          : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]/80"
-                      }`}
-                    >
-                      {profile}
-                    </button>
-                  );
-                })}
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  <span>Sanctuary Accommodations</span>
+                </span>
               </div>
             </div>
 
-            {/* Accommodation Preferences */}
-            <div className="space-y-1.5 pt-2 border-t border-[#E5D5BA]/60">
-              <div className="flex items-center justify-between text-xs text-[#7B4D36]">
-                <span className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <Building2 className="w-3.5 h-3.5 text-[#B65E3C]" />
-                  <span>Accommodation Style</span>
-                </span>
-                <span className="text-[10px] font-mono opacity-70">
-                  {selectedStayType === "All" ? "All Styles" : selectedStayType}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {ACCOMMODATION_TYPES.map((type) => {
-                  const isActive = selectedStayType === type;
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => handleStayTypeChange(type)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                        isActive
-                          ? "bg-[#B65E3C] text-[#FAF4E8] shadow-xs scale-[1.02]"
-                          : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]/80"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Stays Grid */}
-          {staysLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] animate-pulse space-y-4">
-                  <div className="h-44 bg-[#E5D5BA]/60 rounded-2xl" />
-                  <div className="h-5 bg-[#E5D5BA]/80 rounded w-2/3" />
-                  <div className="h-3 bg-[#E5D5BA]/50 rounded w-1/2" />
+            {/* Traveller & Accommodation Style Filter Bar */}
+            <div className="space-y-3 bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA]">
+              {/* Traveller Profiles */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-[#7B4D36]">
+                  <span className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                    <Users className="w-3.5 h-3.5 text-[#B65E3C]" />
+                    <span>Traveller Profile</span>
+                  </span>
+                  <span className="text-[10px] font-mono opacity-70">
+                    {selectedTravellerProfile === "All" ? "All Profiles" : `${selectedTravellerProfile} Verified`}
+                  </span>
                 </div>
-              ))}
-            </div>
-          ) : hotels.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {hotels.map((h) => {
-                const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
-                const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
-                const stayVisual = resolvePlaceArtwork(h.name, destination.name, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
-                const displayPrice = h.price_formatted || (isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry");
-                const badgeLabel = isLiveStay ? (h.badge || "VERIFIED LIVE STAY") : "CURATED STAY";
-                const availState = isLiveStay ? (h.availability_state || "AVAILABLE") : (h.availability_state === "AVAILABLE" ? "UPON INQUIRY" : (h.availability_state || "UPON INQUIRY"));
-
-                return (
-                  <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      {/* Visual Header */}
-                      <div className="relative h-48 rounded-2xl overflow-hidden bg-[#E5D5BA]">
-                        <VanvasImage
-                          src={stayVisual.imageUrl}
-                          fallbackSrc={stayVisual.fallbackUrl}
-                          alt={`${h.name} in ${destination.name}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {/* Top Badges */}
-                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
-                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
-                            {badgeLabel}
-                          </span>
-
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-xs ${
-                            availState === "AVAILABLE"
-                              ? "bg-emerald-600 text-white"
-                              : "bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] border border-white/15"
-                          }`}>
-                            {availState}
-                          </span>
-                        </div>
-
-                        {/* Bottom Category Tag */}
-                        <div className="absolute bottom-2.5 left-2.5">
-                          <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-medium border border-white/10">
-                            {h.accommodation_type || h.hotel_style || "Stay Sanctuary"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Content Details */}
-                      <div>
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{h.name}</h4>
-                          <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
-                            {displayPrice}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">
-                          {h.address}
-                          {typeof h.distance_km === "number" && ` • ${h.distance_km} km away`}
-                        </p>
-
-                        {/* Verified Tags */}
-                        {h.traveller_tags && h.traveller_tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {h.traveller_tags.slice(0, 3).map((tag) => (
-                              <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-[#EFE5D2] text-[#7B4D36] border border-[#E5D5BA]">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action Toolbar */}
-                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52] gap-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {TRAVELLER_PROFILES.map((profile) => {
+                    const isActive = selectedTravellerProfile === profile;
+                    return (
                       <button
-                        onClick={() => {
-                          setSelectedStayForModal(h);
-                          setStayModalOpen(true);
-                        }}
-                        className="px-2.5 py-1.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-semibold text-xs hover:bg-[#EFE5D2] hover:border-[#173B32] transition-colors cursor-pointer"
+                        key={profile}
+                        onClick={() => handleTravellerProfileChange(profile)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-[#173B32] text-[#EFE5D2] shadow-xs scale-[1.02]"
+                            : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]/80"
+                        }`}
                       >
-                        View Property
+                        {profile}
                       </button>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {h.latitude && h.longitude && (
-                          <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#B65E3C] transition-colors"
-                            title="Get directions"
-                          >
-                            <MapPin className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-
-                        {h.phone && (
-                          <a
-                            href={`tel:${h.phone}`}
-                            className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-emerald-700 hover:border-emerald-700 transition-colors"
-                            title={`Call ${h.phone}`}
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-
-                        {h.availability_state === "UNAVAILABLE" ? (
-                          <span className="px-3 py-1.5 bg-neutral-200 text-neutral-600 rounded-xl font-bold text-[11px] uppercase tracking-wider">
-                            Unavailable
-                          </span>
-                        ) : (h.booking_url || h.provider_url) ? (
-                          <a
-                            href={h.booking_url || h.provider_url || "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
-                          >
-                            <span>{h.availability_state === "AVAILABLE" ? "Book Direct" : "Check Availability"}</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : h.phone ? (
-                          <a
-                            href={`tel:${h.phone}`}
-                            className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
-                          >
-                            <span>Contact Provider</span>
-                            <Phone className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          <span className="px-2.5 py-1 text-[11px] font-mono text-[#7B4D36] bg-[#EFE5D2] rounded-lg border border-[#E5D5BA]">
-                            Upon Inquiry
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
-              <BedDouble className="w-8 h-8 text-[#B65E3C] mx-auto opacity-70" />
-              <h4 className="font-serif font-bold text-base text-[#173B32]">No verified stays available matching these filters.</h4>
-              <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
-                No accommodation matching your criteria was returned by live inventory providers for this destination. Try resetting style filters or selecting All Profiles.
-              </p>
-              <button
-                onClick={() => {
-                  setSelectedTravellerProfile("All");
-                  setSelectedStayType("All");
-                  fetchFilteredStays("All", "All");
-                }}
-                className="mt-2 px-4 py-1.5 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold hover:bg-[#B65E3C] transition-colors cursor-pointer"
-              >
-                Reset All Filters
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 8. VALLEY MOBILITY & RENTALS */}
-        <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA]">
-          <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                सवारी • Valley Mobility &amp; Rentals
-              </span>
-              <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
-                <Bike className="w-6 h-6 text-[#B65E3C]" />
-                <span>
-                  {destination.slug === "tungnath-chandrashila" ? "Approach Transit & Trailhead Mobility" : "Scooter & Motorcycle Rentals"} {!rentalsLoading && `(${rentals.length})`}
-                </span>
-              </h3>
-            </div>
-            <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]">
-              {destination.slug === "tungnath-chandrashila" ? "Trek Sanctuary Route" : (isCurated ? "Verified Regional Fleet" : "Live Mobility Directory")}
-            </span>
-          </div>
-
-          {rentalsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] animate-pulse space-y-4">
-                  <div className="h-44 bg-[#E5D5BA]/60 rounded-2xl" />
-                  <div className="h-5 bg-[#E5D5BA]/80 rounded w-2/3" />
-                  <div className="h-3 bg-[#E5D5BA]/50 rounded w-1/2" />
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
+
+              {/* Accommodation Preferences */}
+              <div className="space-y-1.5 pt-2 border-t border-[#E5D5BA]/60">
+                <div className="flex items-center justify-between text-xs text-[#7B4D36]">
+                  <span className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                    <Building2 className="w-3.5 h-3.5 text-[#B65E3C]" />
+                    <span>Accommodation Style</span>
+                  </span>
+                  <span className="text-[10px] font-mono opacity-70">
+                    {selectedStayType === "All" ? "All Styles" : selectedStayType}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {ACCOMMODATION_TYPES.map((type) => {
+                    const isActive = selectedStayType === type;
+                    return (
+                      <button
+                        key={type}
+                        onClick={() => handleStayTypeChange(type)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-[#B65E3C] text-[#FAF4E8] shadow-xs scale-[1.02]"
+                            : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]/80"
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          ) : rentals.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {rentals.map((r) => {
-                const vStatus = r.verification_status || "VERIFIED";
-                const isLiveProvider = vStatus === "LIVE_PROVIDER";
-                const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
 
-                const dirLink = r.action_links?.find((l) => l.type === "directions")?.url ||
-                  (r.latitude && r.longitude ? `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}` : null);
-                const phoneLink = r.action_links?.find((l) => l.type === "phone")?.url || (r.phone ? `tel:${r.phone}` : null);
-                const waLink = r.action_links?.find((l) => l.type === "whatsapp")?.url ||
-                  (r.whatsapp ? `https://wa.me/${r.whatsapp.replace(/[^\d]/g, "")}` : null);
+            {/* Stays Grid with Normalized Image Frame */}
+            {staysLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] animate-pulse space-y-4">
+                    <div className="h-44 bg-[#E5D5BA]/60 rounded-2xl" />
+                    <div className="h-5 bg-[#E5D5BA]/80 rounded w-2/3" />
+                    <div className="h-3 bg-[#E5D5BA]/50 rounded w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : hotels.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {hotels.map((h) => {
+                  const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
+                  const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
+                  const stayVisual = resolvePlaceArtwork(h.name, destination.name, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
+                  const displayPrice = h.price_formatted || (isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry");
+                  const badgeLabel = isLiveStay ? (h.badge || "VERIFIED LIVE STAY") : "CURATED STAY";
+                  const availState = isLiveStay ? (h.availability_state || "AVAILABLE") : (h.availability_state === "AVAILABLE" ? "UPON INQUIRY" : (h.availability_state || "UPON INQUIRY"));
 
-                return (
-                  <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="relative h-44 rounded-2xl overflow-hidden bg-[#E5D5BA]">
-                        <VehicleArtwork
-                          type={r.vehicle_type}
-                          name={r.vehicle_name}
-                          destination={destination.name}
-                          context={{
-                            destination: destination.name,
-                            state: destination.state,
-                            region: destination.region,
-                          }}
-                          imageUrl={r.image_url}
-                          alt={r.vehicle_name}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
-                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
-                            {isLiveProvider ? "LIVE PROVIDER" : "VERIFIED MOBILITY"}
-                          </span>
-                        </div>
-                      </div>
+                  return (
+                    <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        {/* Visual Header with Normalized Aspect Ratio */}
+                        <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                          <VanvasImage
+                            src={stayVisual.imageUrl}
+                            fallbackSrc={stayVisual.fallbackUrl}
+                            alt={`${h.name} in ${destination.name}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {/* Top Badges */}
+                          <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
+                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                              {badgeLabel}
+                            </span>
 
-                      <div className="space-y-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{r.vehicle_name}</h4>
-                            <p className="text-[11px] font-medium text-[#7B4D36]">
-                              {r.provider_name}
-                            </p>
+                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-xs ${
+                              availState === "AVAILABLE"
+                                ? "bg-emerald-600 text-white"
+                                : "bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] border border-white/15"
+                            }`}>
+                              {availState}
+                            </span>
                           </div>
-                          <div className="text-right shrink-0">
-                            <span className={`font-bold text-sm block ${hasPrice ? "text-[#173B32]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
-                              {hasPrice ? `₹${r.price_per_day}/day` : "Price upon inquiry"}
+
+                          {/* Bottom Category Tag */}
+                          <div className="absolute bottom-2.5 left-2.5">
+                            <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-medium border border-white/10">
+                              {h.accommodation_type || h.hotel_style || "Stay Sanctuary"}
                             </span>
                           </div>
                         </div>
 
-                        {r.deposit_amount ? (
-                          <p className="text-[11px] text-[#7B4D36]">
-                            Deposit: <span className="font-semibold text-[#173B32]">₹{r.deposit_amount}</span>
+                        {/* Content Details */}
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{h.name}</h4>
+                            <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
+                              {displayPrice}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">
+                            {h.address}
+                            {typeof h.distance_km === "number" && ` • ${h.distance_km} km away`}
                           </p>
-                        ) : null}
+
+                          {/* Verified Tags */}
+                          {h.traveller_tags && h.traveller_tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {h.traveller_tags.slice(0, 3).map((tag) => (
+                                <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-[#EFE5D2] text-[#7B4D36] border border-[#E5D5BA]">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action Toolbar */}
+                      <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52] gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedStayForModal(h);
+                            setStayModalOpen(true);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-semibold text-xs hover:bg-[#EFE5D2] hover:border-[#173B32] transition-colors cursor-pointer"
+                        >
+                          View Property
+                        </button>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {h.latitude && h.longitude && (
+                            <a
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#B65E3C] transition-colors"
+                              title="Get directions"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+
+                          {h.phone && (
+                            <a
+                              href={`tel:${h.phone}`}
+                              className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-emerald-700 hover:border-emerald-700 transition-colors"
+                              title={`Call ${h.phone}`}
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+
+                          {h.availability_state === "UNAVAILABLE" ? (
+                            <span className="px-3 py-1.5 bg-neutral-200 text-neutral-600 rounded-xl font-bold text-[11px] uppercase tracking-wider">
+                              Unavailable
+                            </span>
+                          ) : (h.booking_url || h.provider_url) ? (
+                            <a
+                              href={h.booking_url || h.provider_url || "#"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
+                            >
+                              <span>{h.availability_state === "AVAILABLE" ? "Book Direct" : "Check Availability"}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : h.phone ? (
+                            <a
+                              href={`tel:${h.phone}`}
+                              className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
+                            >
+                              <span>Contact Provider</span>
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                          ) : (
+                            <span className="px-2.5 py-1 text-[11px] font-mono text-[#7B4D36] bg-[#EFE5D2] rounded-lg border border-[#E5D5BA]">
+                              Upon Inquiry
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
+                <BedDouble className="w-8 h-8 text-[#B65E3C] mx-auto opacity-70" />
+                <h4 className="font-serif font-bold text-base text-[#173B32]">No verified stays available matching these filters.</h4>
+                <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
+                  Try resetting style filters or selecting All Profiles.
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedTravellerProfile("All");
+                    setSelectedStayType("All");
+                    fetchFilteredStays("All", "All");
+                  }}
+                  className="mt-2 px-4 py-1.5 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold hover:bg-[#B65E3C] transition-colors cursor-pointer"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-                    <div className="space-y-3 pt-2">
-                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between gap-2">
-                        <span className="line-clamp-1 flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
-                          <span className="truncate">{r.location || "Regional Hub"}</span>
-                        </span>
-                        <span className="text-[11px] text-[#7B4D36] shrink-0 flex items-center gap-1">
-                          <Clock className="w-3 h-3 shrink-0" />
-                          <span>{r.opening_hours || "08:00 AM - 08:00 PM"}</span>
-                        </span>
-                      </div>
+        {/* MODE: MOBILITY & APPROACH RENTALS */}
+        {(activeMode === "mobility" || activeMode === "overview") && (
+          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA] animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                  सवारी • Valley Mobility &amp; Rentals
+                </span>
+                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
+                  <Bike className="w-6 h-6 text-[#B65E3C]" />
+                  <span>
+                    Approach Transit &amp; Fleet {!rentalsLoading && `(${rentals.length})`}
+                  </span>
+                </h3>
+              </div>
+              <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]">
+                Verified Mobility Fleet
+              </span>
+            </div>
 
-                      {/* Action Links */}
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        {dirLink ? (
-                          <a
-                            href={dirLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
-                          >
-                            <Navigation className="w-3.5 h-3.5" />
-                            <span>Directions</span>
-                          </a>
-                        ) : (
-                          <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
-                          >
-                            <Navigation className="w-3.5 h-3.5" />
-                            <span>Directions</span>
-                          </a>
-                        )}
-
-                        {phoneLink ? (
-                          <a
-                            href={phoneLink}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
-                          >
-                            <Phone className="w-3.5 h-3.5 text-[#173B32]" />
-                            <span>Call</span>
-                          </a>
-                        ) : waLink ? (
-                          <a
-                            href={waLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-2xs"
-                          >
-                            <MessageCircle className="w-3.5 h-3.5" />
-                            <span>WhatsApp</span>
-                          </a>
-                        ) : (
-                          <Link
-                            href={`/plan?dest=${destination.id}`}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] text-xs font-medium hover:text-[#173B32] transition-colors"
-                          >
-                            <span>Reserve Fleet</span>
-                          </Link>
-                        )}
-                      </div>
-                    </div>
+            {rentalsLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] animate-pulse space-y-4">
+                    <div className="h-44 bg-[#E5D5BA]/60 rounded-2xl" />
+                    <div className="h-5 bg-[#E5D5BA]/80 rounded w-2/3" />
+                    <div className="h-3 bg-[#E5D5BA]/50 rounded w-1/2" />
                   </div>
-                );
-              })}
-            </div>
-          ) : destination.slug === "tungnath-chandrashila" ? (
-            <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                <Footprints className="w-4 h-4" />
-                <span>पैदल तीर्थ मार्ग • Pilgrimage Approach &amp; Base Roadhead</span>
+                ))}
               </div>
-              <h4 className="font-serif font-black text-xl sm:text-2xl text-[#173B32]">
-                Tungnath–Chandrashila Approach Transport &amp; Trail Mobility
-              </h4>
-              <p className="text-xs text-[#20211D]/85 leading-relaxed font-light">
-                Tungnath Temple and Chandrashila Summit are located within the sacred Kedarnath Wildlife Sanctuary and are strictly pedestrian trekking sanctuaries. No motorbikes, scooters, or private vehicles are permitted on the walking trail beyond the Chopta roadhead base camp (2,680m).
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs">
-                <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
-                  <span className="font-bold text-[#173B32] block text-sm">Approach Hubs &amp; Fleet</span>
-                  <p className="text-[#7B4D36] font-light leading-relaxed">
-                    Motorcycle/scooter rentals and private taxis are hired from gateway valley hubs: Rishikesh (210 km), Haridwar (230 km), or Dehradun via Rudraprayag and Ukhimath.
-                  </p>
-                </div>
-                <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
-                  <span className="font-bold text-[#173B32] block text-sm">Chopta Base Roadhead Parking</span>
-                  <p className="text-[#7B4D36] font-light leading-relaxed">
-                    Vehicles are parked securely at Chopta roadhead parking lot. Local taxi unions operate regular return transfers to Ukhimath, Guptkashi, and Gopeshwar.
-                  </p>
-                </div>
-                <div className="p-4 rounded-2xl bg-[#EFE5D2] space-y-1.5 border border-[#E5D5BA]">
-                  <span className="font-bold text-[#173B32] block text-sm">Trailhead Horse &amp; Porter Service</span>
-                  <p className="text-[#7B4D36] font-light leading-relaxed">
-                    For pilgrims requiring ascent assistance, registered horse and pony operators are available at the Chopta trailhead up to Tungnath Temple shrine.
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
-              <Bike className="w-8 h-8 text-[#B65E3C] mx-auto opacity-70" />
-              <h4 className="font-serif font-bold text-base text-[#173B32]">Mobility rentals operate from regional hubs</h4>
-              <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
-                Scooter and bike rentals are available from regional hubs and local operator stands. Check back shortly for updated local listings.
-              </p>
-            </div>
-          )}
-        </div>
+            ) : rentals.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rentals.map((r) => {
+                  const vStatus = r.verification_status || "VERIFIED";
+                  const isLiveProvider = vStatus === "LIVE_PROVIDER";
+                  const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
 
-        {/* 9. EXPEDITION GUIDE & LOGISTICS (DESTINATION ISOLATED) */}
+                  const dirLink = r.action_links?.find((l) => l.type === "directions")?.url ||
+                    (r.latitude && r.longitude ? `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}` : null);
+                  const phoneLink = r.action_links?.find((l) => l.type === "phone")?.url || (r.phone ? `tel:${r.phone}` : null);
+                  const waLink = r.action_links?.find((l) => l.type === "whatsapp")?.url ||
+                    (r.whatsapp ? `https://wa.me/${r.whatsapp.replace(/[^\d]/g, "")}` : null);
+
+                  return (
+                    <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                          <VehicleArtwork
+                            type={r.vehicle_type}
+                            name={r.vehicle_name}
+                            destination={destination.name}
+                            context={{
+                              destination: destination.name,
+                              state: destination.state,
+                              region: destination.region,
+                            }}
+                            imageUrl={r.image_url}
+                            alt={r.vehicle_name}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                              {isLiveProvider ? "LIVE PROVIDER" : "VERIFIED MOBILITY"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{r.vehicle_name}</h4>
+                              <p className="text-[11px] font-medium text-[#7B4D36]">
+                                {r.provider_name}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className={`font-bold text-sm block ${hasPrice ? "text-[#173B32]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
+                                {hasPrice ? `₹${r.price_per_day}/day` : "Price upon inquiry"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {r.deposit_amount ? (
+                            <p className="text-[11px] text-[#7B4D36]">
+                              Deposit: <span className="font-semibold text-[#173B32]">₹{r.deposit_amount}</span>
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 pt-2">
+                        <div className="p-2.5 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between gap-2">
+                          <span className="line-clamp-1 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
+                            <span className="truncate">{r.location || "Regional Hub"}</span>
+                          </span>
+                          <span className="text-[11px] text-[#7B4D36] shrink-0 flex items-center gap-1">
+                            <Clock className="w-3 h-3 shrink-0" />
+                            <span>{r.opening_hours || "08:00 AM - 08:00 PM"}</span>
+                          </span>
+                        </div>
+
+                        {/* Action Links */}
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          {dirLink ? (
+                            <a
+                              href={dirLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
+                            >
+                              <Navigation className="w-3.5 h-3.5" />
+                              <span>Directions</span>
+                            </a>
+                          ) : (
+                            <a
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
+                            >
+                              <Navigation className="w-3.5 h-3.5" />
+                              <span>Directions</span>
+                            </a>
+                          )}
+
+                          {phoneLink ? (
+                            <a
+                              href={phoneLink}
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-[#173B32]" />
+                              <span>Call</span>
+                            </a>
+                          ) : waLink ? (
+                            <a
+                              href={waLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-2xs"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>WhatsApp</span>
+                            </a>
+                          ) : (
+                            <Link
+                              href={`/plan?dest=${destination.id}`}
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] text-xs font-medium hover:text-[#173B32] transition-colors"
+                            >
+                              <span>Reserve Fleet</span>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
+                <Bike className="w-8 h-8 text-[#B65E3C] mx-auto opacity-70" />
+                <h4 className="font-serif font-bold text-base text-[#173B32]">Mobility fleet operates from regional hubs</h4>
+                <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
+                  Scooter and motorcycle rentals operate out of central valley hubs and local provider stands.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 9. PRACTICAL EXPEDITION GUIDE (DESTINATION ISOLATED) */}
         {(() => {
           const guide = DESTINATION_TRAVEL_GUIDES[destination.slug] || DESTINATION_TRAVEL_GUIDES[destination.slug.toLowerCase()] || {
             seasonality: `Best visited during ${destination.best_time_to_visit || "spring and autumn months"} with clear skies and comfortable regional weather.`,
@@ -1591,7 +1592,7 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
           );
         })()}
 
-        {/* 10. EXPEDITION PLANNING ENTRY POINT (NEXT STEP CONTINUITY) */}
+        {/* 10. EXPEDITION PLANNING ENTRY POINT */}
         <div className="p-8 sm:p-12 rounded-3xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#173B32] shadow-2xl space-y-6 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-3 max-w-2xl text-center md:text-left">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
@@ -1631,8 +1632,8 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
       {stayModalOpen && selectedStayForModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4 max-h-[90vh] flex flex-col justify-between">
-            {/* Header Visual */}
-            <div className="relative h-56 bg-[#E5D5BA] shrink-0">
+            {/* Header Visual with Normalized Aspect Ratio */}
+            <div className="relative aspect-[16/10] w-full bg-[#E5D5BA] shrink-0">
               {(() => {
                 const stayVisual = resolvePlaceArtwork(
                   selectedStayForModal.name,

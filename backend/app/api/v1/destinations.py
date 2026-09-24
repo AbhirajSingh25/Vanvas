@@ -133,6 +133,12 @@ def get_destinations(
             "rentals_count": len(d.rentals)
         }
         results.append(d_dict)
+
+    CANONICAL_SLUG_ORDER = [
+        "manali", "rishikesh", "tungnath-chandrashila", "kasol", "dharamshala",
+        "goa", "jaipur", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar"
+    ]
+    results.sort(key=lambda d: CANONICAL_SLUG_ORDER.index(d["slug"]) if d["slug"] in CANONICAL_SLUG_ORDER else 999)
     return results
 
 

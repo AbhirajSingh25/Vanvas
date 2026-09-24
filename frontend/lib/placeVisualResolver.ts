@@ -737,6 +737,24 @@ export const EXACT_PLACE_REGISTRY: Record<string, CuratedLandmarkEntry> = {
       "dhamek-stupa"
     ]
   },
+  "varanasi:brijrama-palace": {
+    imageUrl: "/images/places/varanasi/brijrama-palace.webp",
+    visualDescription: "Historic 18th-century Maratha riverside palace hotel directly on Darbhanga Ghat Varanasi with sandstone bastions overlooking the holy Ganges.",
+    category: "Stay",
+    semanticTheme: "stay",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "brijrama-palace",
+      "brijrama-palace-river-heritage",
+      "brijrama",
+      "brijrama-palace-varanasi",
+      "brijrama-palace-heritage-hotel",
+      "brij-rama-palace",
+      "brij-rama-palace-river-heritage",
+      "brijrama-palace-heritage"
+    ]
+  },
 
   // ==========================================
   // --- MANALI LANDMARKS ---
@@ -2071,49 +2089,6 @@ export function resolvePlaceArtwork(
     };
   }
 
-  // --- HARD ISOLATION FOR STAYS: Never inherit landmark artwork ---
-  if (semanticTheme === "stay") {
-    let stayCategoryAsset = destConfig?.categories.stay || universalSafe;
-    const lowerPlace = placeNorm.toLowerCase();
-    const lowerCat = category.toLowerCase();
-
-    if (lowerPlace.includes("hostel") || lowerPlace.includes("dorm") || lowerCat.includes("hostel") || lowerCat.includes("dorm")) {
-      stayCategoryAsset = "/images/places/universal/hostel.webp";
-    } else if (lowerPlace.includes("homestay") || lowerPlace.includes("guest house") || lowerPlace.includes("b&b") || lowerPlace.includes("cottage") || lowerCat.includes("homestay") || lowerCat.includes("guest house")) {
-      stayCategoryAsset = "/images/places/universal/homestay.webp";
-    } else if (lowerPlace.includes("resort") || lowerCat.includes("resort")) {
-      stayCategoryAsset = "/images/places/universal/resort.webp";
-    } else if (lowerPlace.includes("boutique") || lowerCat.includes("boutique")) {
-      stayCategoryAsset = "/images/places/universal/boutique.webp";
-    } else if (lowerPlace.includes("heritage") || lowerPlace.includes("haveli") || lowerPlace.includes("palace") || lowerCat.includes("heritage")) {
-      stayCategoryAsset = "/images/places/universal/heritage.webp";
-    }
-
-    return {
-      url: stayCategoryAsset,
-      fallback_url: universalSafe,
-      source: "vanvas_curated",
-      source_type: "category_photo",
-      provenance: "destination_category",
-      semantic_category: "stay",
-      exactness: "category_matched",
-      attribution: `VANVAS Verified ${destinationName} Stay Sanctuary`,
-      alt_text: `${placeName} accommodation in ${destinationName}`,
-      badge_label: "DESTINATION CATEGORY ART",
-      artworkKey: `${matchedDestKey || "universal"}:stay`,
-      imageUrl: stayCategoryAsset,
-      fallbackUrl: universalSafe,
-      tier: "destination_category",
-      placeName,
-      destinationName,
-      category,
-      semanticTheme: "stay",
-      isRealPhoto: false,
-      badgeLabel: "DESTINATION CATEGORY ART",
-      visualDescription: `Serene stay and hospitality sanctuary in ${destinationName}.`
-    };
-  }
-
   // --- LEVEL 4: Curated Exact-Place Artwork (Direct Key Lookup) ---
   const lookupKey = `${destNorm}:${placeNorm}`;
   if (EXACT_PLACE_REGISTRY[lookupKey]) {
@@ -2153,7 +2128,7 @@ export function resolvePlaceArtwork(
       continue;
     }
     const [regDest, regPlace] = regKey.split(":");
-    if (regDest === destNorm || destNorm.includes(regDest) || regDest.includes(destNorm)) {
+    if (regDest === destNorm || destNorm.includes(regDest) || regDest.includes(destNorm) || !destNorm) {
       // Hard check: ensure semantic theme compatibility before assigning exact landmark asset
       if (!areThemesCompatible(semanticTheme, item.semanticTheme)) {
         continue;
@@ -2167,7 +2142,7 @@ export function resolvePlaceArtwork(
       } else {
         // High confidence containment: must match full canonical alias of significant length
         for (const al of aliases) {
-          if (al.length >= 6) {
+          if (al.length >= 5) {
             if (placeNorm === al || placeNorm.startsWith(`${al}-`) || placeNorm.endsWith(`-${al}`) || placeNorm.includes(`-${al}-`)) {
               matched = true;
               break;
@@ -2206,6 +2181,50 @@ export function resolvePlaceArtwork(
       isRealPhoto: false,
       badgeLabel: "VANVAS PLACE ARTWORK",
       visualDescription: bestExactMatch.item.visualDescription
+    };
+  }
+
+  // --- HARD ISOLATION FOR STAYS: Never inherit generic non-stay or desert landmark artwork ---
+  if (semanticTheme === "stay") {
+    let stayCategoryAsset = destConfig?.categories.stay || "/images/nearby/stay/stay.webp";
+    const lowerPlace = placeNorm.toLowerCase();
+    const lowerCat = category.toLowerCase();
+    const isRajasthanDest = destNorm.includes("jaipur") || destNorm.includes("udaipur") || destNorm.includes("jodhpur") || destNorm.includes("jaisalmer") || destNorm.includes("rajasthan");
+
+    if (lowerPlace.includes("hostel") || lowerPlace.includes("dorm") || lowerCat.includes("hostel") || lowerCat.includes("dorm")) {
+      stayCategoryAsset = "/images/places/universal/hostel.webp";
+    } else if (lowerPlace.includes("homestay") || lowerPlace.includes("guest house") || lowerPlace.includes("b&b") || lowerPlace.includes("cottage") || lowerCat.includes("homestay") || lowerCat.includes("guest house")) {
+      stayCategoryAsset = "/images/places/universal/homestay.webp";
+    } else if (lowerPlace.includes("resort") || lowerCat.includes("resort")) {
+      stayCategoryAsset = "/images/places/universal/resort.webp";
+    } else if (lowerPlace.includes("boutique") || lowerCat.includes("boutique")) {
+      stayCategoryAsset = "/images/places/universal/boutique.webp";
+    } else if ((lowerPlace.includes("heritage") || lowerPlace.includes("haveli") || lowerPlace.includes("palace") || lowerCat.includes("heritage")) && isRajasthanDest) {
+      stayCategoryAsset = "/images/places/universal/heritage.webp";
+    }
+
+    return {
+      url: stayCategoryAsset,
+      fallback_url: "/images/nearby/stay/stay.webp",
+      source: "vanvas_curated",
+      source_type: "category_photo",
+      provenance: "destination_category",
+      semantic_category: "stay",
+      exactness: "category_matched",
+      attribution: `VANVAS Verified ${destinationName} Stay Sanctuary`,
+      alt_text: `${placeName} accommodation in ${destinationName}`,
+      badge_label: "DESTINATION CATEGORY ART",
+      artworkKey: `${matchedDestKey || "universal"}:stay`,
+      imageUrl: stayCategoryAsset,
+      fallbackUrl: "/images/nearby/stay/stay.webp",
+      tier: "destination_category",
+      placeName,
+      destinationName,
+      category,
+      semanticTheme: "stay",
+      isRealPhoto: false,
+      badgeLabel: "DESTINATION CATEGORY ART",
+      visualDescription: `Serene stay and hospitality sanctuary in ${destinationName}.`
     };
   }
 

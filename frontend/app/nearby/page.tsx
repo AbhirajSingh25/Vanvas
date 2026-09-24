@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
-  MapPin, Utensils, Coffee, Compass, Bike, Fuel, Cross,
-  Building2, ShoppingBag, ShieldAlert, ArrowUpDown, Star, Clock, Sparkles,
-  Search, Navigation, RefreshCw, AlertCircle, CheckCircle2, SlidersHorizontal,
-  Landmark, Trees, BedDouble, ChevronDown, X
+  MapPin, Utensils, Coffee, Compass, Bike,
+  ShoppingBag, ShieldAlert,
+  Search, Navigation, RefreshCw, AlertCircle, CheckCircle2,
+  Landmark, Trees, BedDouble, X
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Place } from "@/types";
@@ -26,16 +27,17 @@ interface SearchCenter {
 
 const PRESET_HUBS: SearchCenter[] = [
   { name: "Manali (Mall Road)", hindi: "मनाली मॉल रोड", lat: 32.2396, lng: 77.1887 },
-  { name: "Connaught Place, Delhi", hindi: "कनॉट प्लेस दिल्ली", lat: 28.6315, lng: 77.2167 },
-  { name: "Old Manali (Bridge)", hindi: "ओल्ड मनाली पुल", lat: 32.2532, lng: 77.1750 },
   { name: "Rishikesh (Lakshman Jhula)", hindi: "ऋषिकेश लक्ष्मण झूला", lat: 30.1280, lng: 78.3270 },
+  { name: "Tungnath (Chopta Base)", hindi: "तुंगनाथ चोपता", lat: 30.4878, lng: 79.2156 },
+  { name: "Jaipur (Old City)", hindi: "जयपुर परकोटा", lat: 26.9124, lng: 75.7873 },
+  { name: "Udaipur (Lake Pichola)", hindi: "उदयपुर पिछोला", lat: 24.5854, lng: 73.7125 },
+  { name: "Varanasi (Dashashwamedh Ghat)", hindi: "दशाश्वमेध घाट", lat: 25.3076, lng: 83.0104 },
+  { name: "Goa (Anjuna Headland)", hindi: "अंजुना तट", lat: 15.5833, lng: 73.7439 },
+  { name: "Connaught Place, Delhi", hindi: "कनॉट प्लेस दिल्ली", lat: 28.6315, lng: 77.2167 },
+  { name: "Mussoorie (Mall Road)", hindi: "मसूरी मॉल रोड", lat: 30.4598, lng: 78.0644 },
   { name: "Kasol (Parvati Valley)", hindi: "कसोल बाज़ार", lat: 32.0100, lng: 77.3150 },
   { name: "Leh (Main Bazaar)", hindi: "लेह मुख्य बाज़ार", lat: 34.1642, lng: 77.5848 },
   { name: "Dharamshala (McLeod Ganj)", hindi: "मैकलोडगंज चौक", lat: 32.2426, lng: 76.3213 },
-  { name: "Udaipur (Lake Pichola)", hindi: "उदयपुर पिछोला", lat: 24.5854, lng: 73.7125 },
-  { name: "Jaipur (Old City)", hindi: "जयपुर परकोटा", lat: 26.9124, lng: 75.7873 },
-  { name: "Varanasi (Dashashwamedh Ghat)", hindi: "दशाश्वमेध घाट", lat: 25.3076, lng: 83.0104 },
-  { name: "Goa (Anjuna Headland)", hindi: "अंजुना तट", lat: 15.5833, lng: 73.7439 },
   { name: "Dehradun (Clock Tower)", hindi: "देहरादून घंटाघर", lat: 30.3256, lng: 78.0437 },
 ];
 
@@ -60,12 +62,43 @@ const RADII = [
   { value: 25, label: "25 km" },
 ];
 
-export default function NearbyPage() {
+const INITIAL_VISIBLE_COUNT = 9;
+
+function NearbyInner() {
+  const searchParams = useSearchParams();
   const [places, setPlaces] = useState<Place[]>([]);
+  const [visibleCount, setVisibleCount] = useState<number>(INITIAL_VISIBLE_COUNT);
   const [category, setCategory] = useState<string>("all");
   const [radiusKm, setRadiusKm] = useState<number>(5);
   const [sortBy, setSortBy] = useState<string>("distance");
-  const [searchCenter, setSearchCenter] = useState<SearchCenter>(PRESET_HUBS[0]);
+  const [searchCenter, setSearchCenter] = useState<SearchCenter>(() => {
+    const destParam = searchParams.get("dest") || searchParams.get("destination") || searchParams.get("city");
+    const latParam = searchParams.get("lat");
+    const lngParam = searchParams.get("lng");
+    const nameParam = searchParams.get("name");
+
+    if (latParam && lngParam) {
+      const parsedLat = parseFloat(latParam);
+      const parsedLng = parseFloat(lngParam);
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        return {
+          name: nameParam || `${parsedLat.toFixed(2)}°, ${parsedLng.toFixed(2)}°`,
+          hindi: nameParam || "स्थान",
+          lat: parsedLat,
+          lng: parsedLng,
+        };
+      }
+    }
+
+    if (destParam) {
+      const clean = destParam.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const found = PRESET_HUBS.find((h) => h.name.toLowerCase().replace(/[^a-z0-9]/g, "").includes(clean));
+      if (found) return found;
+    }
+
+    return PRESET_HUBS[0];
+  });
+
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [locationError, setLocationError] = useState<string>("");
   
@@ -81,6 +114,36 @@ export default function NearbyPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Sync with search params changes
+  useEffect(() => {
+    const destParam = searchParams.get("dest") || searchParams.get("destination") || searchParams.get("city");
+    const latParam = searchParams.get("lat");
+    const lngParam = searchParams.get("lng");
+    const nameParam = searchParams.get("name");
+
+    if (latParam && lngParam) {
+      const parsedLat = parseFloat(latParam);
+      const parsedLng = parseFloat(lngParam);
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        setSearchCenter({
+          name: nameParam || `${parsedLat.toFixed(2)}°, ${parsedLng.toFixed(2)}°`,
+          hindi: nameParam || "स्थान",
+          lat: parsedLat,
+          lng: parsedLng,
+        });
+        return;
+      }
+    }
+
+    if (destParam) {
+      const clean = destParam.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const found = PRESET_HUBS.find((h) => h.name.toLowerCase().replace(/[^a-z0-9]/g, "").includes(clean));
+      if (found) {
+        setSearchCenter(found);
+      }
+    }
+  }, [searchParams]);
 
   // Browser Geolocation
   const requestCurrentLocation = useCallback(() => {
@@ -143,6 +206,7 @@ export default function NearbyPage() {
         sortBy
       );
       setPlaces(data || []);
+      setVisibleCount(INITIAL_VISIBLE_COUNT);
     } catch (err: any) {
       console.error("Failed to load nearby places:", err);
       setPlaces([]);
@@ -218,6 +282,8 @@ export default function NearbyPage() {
       setIsSearchingLocation(false);
     }
   };
+
+  const visiblePlaces = places.slice(0, visibleCount);
 
   return (
     <div className="min-h-screen bg-[#EFE5D2] pt-6 pb-32 sm:py-12 px-3 sm:px-6 lg:px-8">
@@ -516,10 +582,10 @@ export default function NearbyPage() {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-between text-xs text-[#7B4D36]">
               <span>
-                Showing <strong className="text-[#173B32]">{places.length}</strong> location-aware landmarks & venues
+                Showing <strong className="text-[#173B32]">{visiblePlaces.length}</strong> of <strong className="text-[#173B32]">{places.length}</strong> location-aware landmarks & venues
               </span>
               <span className="font-mono text-[11px] text-[#536B52]">
                 Sorted by {sortBy.replace("_", " ")}
@@ -527,7 +593,7 @@ export default function NearbyPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {places.map((place) => (
+              {visiblePlaces.map((place) => (
                 <PlaceCard
                   key={`${searchCenter.name}-${place.id}`}
                   place={place}
@@ -539,6 +605,21 @@ export default function NearbyPage() {
                 />
               ))}
             </div>
+
+            {/* Progressive Discovery Load More Button */}
+            {visibleCount < places.length && (
+              <div className="flex flex-col items-center justify-center pt-6 pb-4 gap-2">
+                <button
+                  onClick={() => setVisibleCount((prev) => Math.min(prev + 9, places.length))}
+                  className="px-8 py-3 rounded-2xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#20453B] hover:shadow-lg transition-all cursor-pointer flex items-center gap-2 border border-[#536B52]"
+                >
+                  <span>Show More Places ({places.length - visibleCount} remaining)</span>
+                </button>
+                <p className="text-[11px] text-[#7B4D36] font-serif italic">
+                  Revealing verified places progressively around {searchCenter.name}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -554,3 +635,16 @@ export default function NearbyPage() {
   );
 }
 
+export default function NearbyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#EFE5D2] flex items-center justify-center">
+          <div className="w-10 h-10 border-3 border-[#173B32] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <NearbyInner />
+    </Suspense>
+  );
+}

@@ -145,7 +145,7 @@ async def copilot_chat(
         # Link trip or destination if provided and not previously set
         if req.trip_id and not conv.trip_id:
             conv.trip_id = req.trip_id
-        if req.destination_slug and not conv.destination_slug:
+        if req.destination_slug:
             conv.destination_slug = req.destination_slug
     elif req.trip_id:
         # Look for user's recent conversation for this trip

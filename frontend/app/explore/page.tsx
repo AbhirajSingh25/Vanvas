@@ -16,6 +16,7 @@ export default function ExploreIndexPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [visibleDestCount, setVisibleDestCount] = useState<number>(10);
 
   const loadDestinations = () => {
     setLoading(true);
@@ -390,7 +391,7 @@ export default function ExploreIndexPage() {
 
               {/* Asymmetrical Destination Posters Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filtered.slice(1).map((dest) => (
+                {filtered.slice(1, visibleDestCount).map((dest) => (
                   <Link
                     key={dest.id || dest.slug}
                     href={`/explore/${dest.slug}`}
@@ -444,6 +445,20 @@ export default function ExploreIndexPage() {
                   </Link>
                 ))}
               </div>
+
+              {/* Progressive Discovery: Load More Sanctuaries */}
+              {filtered.length > visibleDestCount && (
+                <div className="pt-6 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleDestCount((prev) => prev + 6)}
+                    className="px-6 py-3 rounded-2xl bg-[#FAF7F0] hover:bg-[#E5D5BA] border-2 border-[#E5D5BA] hover:border-[#173B32] text-[#173B32] font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                  >
+                    <Compass className="w-4 h-4 text-[#B65E3C]" />
+                    <span>Show More Sanctuaries ({filtered.length - visibleDestCount} Remaining)</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

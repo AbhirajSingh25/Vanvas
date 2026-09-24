@@ -19,6 +19,21 @@ function getApiBaseUrl(): string {
 
 const API_BASE_URL = getApiBaseUrl();
 
+export function resolveAvatarUrl(avatarUrl?: string | null): string | undefined {
+  if (!avatarUrl) return undefined;
+  if (
+    avatarUrl.startsWith("http://") ||
+    avatarUrl.startsWith("https://") ||
+    avatarUrl.startsWith("data:") ||
+    avatarUrl.startsWith("blob:")
+  ) {
+    return avatarUrl;
+  }
+  const base = getApiBaseUrl().replace(/\/api\/v1\/?$/, "");
+  const cleanPath = avatarUrl.startsWith("/") ? avatarUrl : `/${avatarUrl}`;
+  return `${base}${cleanPath}`;
+}
+
 // Short-lived in-memory caches for snappy search & destinations
 const memoryCache = new Map<string, { data: any; expiry: number }>();
 

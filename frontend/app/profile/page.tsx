@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { api } from "@/lib/api";
+import { api, resolveAvatarUrl } from "@/lib/api";
 import { UserStats, Place, TripSummary } from "@/types";
 import {
   User as UserIcon, Settings as SettingsIcon, Bookmark, Calendar,
@@ -212,10 +212,10 @@ function ProfileContent() {
               {/* Avatar with gold ring & initials fallback */}
               <div className="relative">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold border-3 border-[#B49252] shadow-inner overflow-hidden">
-                  {user?.avatar_url && !avatarLoadFailed ? (
+                  {resolveAvatarUrl(user?.avatar_url) && !avatarLoadFailed ? (
                     <img
-                      src={user.avatar_url}
-                      alt={user.full_name}
+                      src={resolveAvatarUrl(user?.avatar_url)}
+                      alt={user?.full_name || "Profile"}
                       className="w-full h-full object-cover"
                       onError={() => setAvatarLoadFailed(true)}
                     />
@@ -619,10 +619,10 @@ function ProfileContent() {
                         alt="Selected Preview"
                         className="w-full h-full object-cover"
                       />
-                    ) : !removeAvatarRequested && user?.avatar_url ? (
+                    ) : !removeAvatarRequested && resolveAvatarUrl(user?.avatar_url) ? (
                       <img
-                        src={user.avatar_url}
-                        alt={user.full_name}
+                        src={resolveAvatarUrl(user?.avatar_url)}
+                        alt={user?.full_name || "Profile"}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.currentTarget.style.display = "none";

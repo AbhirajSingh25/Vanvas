@@ -198,6 +198,42 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
     }
   };
 
+function extractDestinationFromText(text: string): string | null {
+  if (!text) return null;
+  
+  const KNOWN_DESTINATIONS = [
+    "Spiti Valley", "Spiti", "Hampi", "Kashmir", "Amritsar", "Auli", "Ziro",
+    "Jodhpur", "Jaisalmer", "Bikaner", "Pushkar", "Mount Abu", "Ajmer",
+    "Munnar", "Alappuzha", "Alleppey", "Kochi", "Cochin", "Varkala", "Wayanad",
+    "Gokarna", "Coorg", "Ooty", "Kodaikanal", "Pondicherry", "Puducherry",
+    "Darjeeling", "Gangtok", "Shillong", "Kaziranga", "Tawang",
+    "Tungnath–Chandrashila", "Tungnath", "Chandrashila", "Chopta",
+    "Manali", "Old Manali", "Kasol", "Dharamshala", "McLeod Ganj", "Mcleodganj",
+    "Shimla", "Kullu", "Jibhi", "Tirthan Valley", "Bir Billing", "Leh Ladakh", "Leh", "Ladakh",
+    "Rishikesh", "Haridwar", "Mussoorie", "Dehradun", "Nainital", "Jim Corbett",
+    "Jaipur", "Udaipur", "Varanasi", "Goa", "North Goa", "South Goa", "Delhi", "New Delhi", "Agra"
+  ];
+
+  for (const dest of KNOWN_DESTINATIONS) {
+    const escaped = dest.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const regex = new RegExp(`\\b${escaped}\\b`, "i");
+    if (regex.test(text)) {
+      return dest;
+    }
+  }
+
+  const pattern = /(?:trip\s+to|visit|visiting|going\s+to|travel\s+to|reach|plan\s+(?:me\s+)?(?:a\s+)?(?:\d+\s+day\s+)?(?:weekend\s+in\s+)?(?:for\s+|in\s+)?|in\s+)([A-Z][a-zA-Z\s]{2,20})/i;
+  const match = text.match(pattern);
+  if (match && match[1]) {
+    const candidate = match[1].trim().replace(/[?.!,].*$/, "").trim();
+    if (candidate.length >= 3 && !["the", "my", "our", "a", "an", "this", "some", "india", "here", "there"].includes(candidate.toLowerCase())) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
   const handleSend = async (msgText?: string, customImage?: string) => {
     const textToSend = msgText || input;
     if ((!textToSend.trim() && !attachedImage) || loading) return;
@@ -220,6 +256,14 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
       }
     }
 
+    // Extract destination from free text (user free text is authoritative)
+    const detectedDest = extractDestinationFromText(textToSend);
+    let activeDest = selectedDest;
+    if (detectedDest && detectedDest.toLowerCase() !== selectedDest.toLowerCase()) {
+      activeDest = detectedDest;
+      setSelectedDest(detectedDest);
+    }
+
     const newMessages: MessageItem[] = [
       ...messages,
       {
@@ -239,7 +283,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         message: textToSend || "Analyze this attached image for destination/place guidance.",
         conversation_id: conversationId || undefined,
         trip_id: tripId || trip?.id || undefined,
-        destination_slug: selectedDest.toLowerCase().replace(/\s+/g, "-"),
+        destination_slug: activeDest.toLowerCase().replace(/\s+/g, "-"),
         image_url: uploadedUrl,
       });
 
@@ -331,7 +375,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         {/* Destination Switcher Bar */}
         <div className="px-3 sm:px-4 py-2 bg-[#EFE5D2] border-b border-[#E5D5BA] flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
           <span className="text-[11px] font-mono text-[#7B4D36] font-bold flex items-center gap-1 shrink-0">
-            <MapPin className="w-3 h-3 text-[#B65E3C]" /> Explore:
+            <MapPin className="w-3 h-3 text-[#B65E3C]" /> Shortcuts:
           </span>
           {destinations.map((dest) => (
             <button
@@ -577,7 +621,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask anything about ${selectedDest}... (e.g. Best chai spot, Metro route, 1-day plan)`}
+              placeholder={`Ask about ${selectedDest} or type any destination in India (e.g. "3-day trip to Spiti Valley", "Hampi")...`}
               className="flex-1 bg-white border border-[#E5D5BA] rounded-2xl px-4 py-2.5 text-base sm:text-sm text-[#20211D] placeholder:text-[#20211D]/45 focus:outline-none focus:border-[#173B32] focus:ring-1 focus:ring-[#173B32] transition-all"
             />
             <button
