@@ -141,10 +141,14 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
   },
 };
 
+import { useParams } from "next/navigation";
+
 type OperationalMode = "overview" | "trek" | "oneday" | "places" | "stays" | "mobility";
 
-export default function DestinationDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
+export default function DestinationDetailPage() {
+  const routeParams = useParams();
+  const slug = (Array.isArray(routeParams?.slug) ? routeParams.slug[0] : (routeParams?.slug as string)) || "";
+
 
   const [mounted, setMounted] = useState(false);
   const [destination, setDestination] = useState<Destination | null>(null);
@@ -398,11 +402,31 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ sl
   const isCurated = destination ? destination.is_curated !== false : true;
 
   // Resolve Trek Information for destination
-  const trekInfo: DestinationTrekInfo | undefined =
+  const trekInfo: DestinationTrekInfo =
     DESTINATION_TREK_REGISTRY[slug] ||
     DESTINATION_TREK_REGISTRY[slug.toLowerCase()] ||
     DEFAULT_NON_TREK_NOTICE[slug] ||
-    DEFAULT_NON_TREK_NOTICE[slug.toLowerCase()];
+    DEFAULT_NON_TREK_NOTICE[slug.toLowerCase()] || {
+      hasTrek: false,
+      title: `Trekking Not Applicable in ${destination?.name || slug}`,
+      hindiTitle: `${meta.hindi} में पदयात्रा मार्ग लागू नहीं`,
+      trailSummary: `${destination?.name || slug} is a cultural and heritage sanctuary best explored through local discovery rather than wilderness mountain trekking.`,
+      baseCamp: destination?.name || slug,
+      elevationGain: "N/A",
+      peakAltitude: meta.alt,
+      distance: "N/A",
+      duration: "N/A",
+      difficulty: "Easy",
+      bestSeason: destination?.best_time_to_visit || "All Seasons",
+      approachTransport: "Local transport and heritage walks.",
+      packingChecklist: [],
+      waypoints: [],
+      nonTrekNotice: {
+        heading: "Heritage Sanctuary — Wilderness Trek Unavailable",
+        explanation: `${destination?.name || slug} is best experienced via walking heritage quarters, local food trails, and cultural landmarks. Use our 1-Day Same-Day Journey for a complete itinerary.`,
+        alternativeMode: "oneday",
+      },
+    };
 
   // Resolve 1-Day Round Trip Information for destination
   const dayTrip: DestinationDayTrip | undefined =

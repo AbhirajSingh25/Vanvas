@@ -22,7 +22,8 @@ def seed_database():
                 hashed_password=get_password_hash("vanvas123"),
                 full_name="VANVAS Admin Team",
                 role="admin",
-                avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+                avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+                email_verified_at=datetime.now(timezone.utc)
             )
             db.add(admin_user)
 
@@ -33,7 +34,8 @@ def seed_database():
                 hashed_password=get_password_hash("vanvas123"),
                 full_name="Aarav Sharma",
                 role="traveller",
-                avatar_url="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150"
+                avatar_url="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
+                email_verified_at=datetime.now(timezone.utc)
             )
             db.add(demo_user)
             db.flush()

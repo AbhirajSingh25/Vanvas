@@ -416,7 +416,7 @@ class GeminiProvider(AIProvider):
         total_prompt_tokens = 0
         total_completion_tokens = 0
 
-        async with httpx.AsyncClient(timeout=35.0) as client:
+        async with httpx.AsyncClient(timeout=8.0) as client:
             for turn in range(max_turns):
                 payload: Dict[str, Any] = {
                     "contents": contents,
@@ -431,7 +431,7 @@ class GeminiProvider(AIProvider):
                     res = await client.post(url, json=payload)
                     if res.status_code in [503, 429]:
                         logger.warning(f"Gemini API returned status {res.status_code}. Retrying once after backoff...")
-                        await asyncio.sleep(2.0)
+                        await asyncio.sleep(1.0)
                         res = await client.post(url, json=payload)
 
                     if res.status_code == 429:
