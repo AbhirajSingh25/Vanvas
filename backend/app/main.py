@@ -11,12 +11,23 @@ from app.api.v1 import (
     transport_hotels_rentals, copilot, checklist, admin, search, artwork, reviews, bookings, mobility
 )
 
+import logging
+
+logger = logging.getLogger("vanvas.main")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure database schema is up-to-date and all tables/columns exist
-    ensure_database_schema(engine)
+    try:
+        ensure_database_schema(engine)
+    except Exception as e:
+        logger.warning(f"Database schema initialization deferred or encountered an error: {e}")
+
     # Seed database with authentic Indian mountain travel data
-    seed_database()
+    try:
+        seed_database()
+    except Exception as e:
+        logger.warning(f"Database seeding deferred or encountered an error: {e}")
     yield
 
 
