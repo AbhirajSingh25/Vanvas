@@ -149,15 +149,19 @@ export default function ExploreIndexPage() {
     },
   };
 
-  // Deduplicate destinations by slug so Tungnath-Chandrashila appears exactly once
+  // Deduplicate destinations by slug so each appears exactly once
   const uniqueDestinations = destinations.filter(
     (d, index, self) => index === self.findIndex((t) => t.slug === d.slug)
   );
 
   const filtered = uniqueDestinations.filter((d) => {
-    const isHim = ["manali", "rishikesh", "kasol", "dharamshala", "mussoorie", "spiti", "spiti-valley", "leh", "tungnath-chandrashila"].includes(d.slug);
-    const isDes = ["jaipur", "udaipur", "varanasi"].includes(d.slug);
-    const isCoast = ["goa", "munnar"].includes(d.slug);
+    const isHim = [
+      "manali", "rishikesh", "kasol", "dharamshala", "mussoorie",
+      "spiti", "spiti-valley", "leh", "tungnath-chandrashila", "kainchi-dham",
+      "dehradun", "lansdowne", "morni-hills"
+    ].includes(d.slug);
+    const isDes = ["jaipur", "udaipur", "varanasi", "neemrana", "alwar-siliserh", "sariska-bhangarh", "agra", "mathura-vrindavan", "murthal"].includes(d.slug);
+    const isCoast = ["goa", "munnar", "damdama-sohna", "chandigarh"].includes(d.slug);
 
     let matchCat = true;
     if (selectedCategory === "Himalayan") matchCat = isHim;

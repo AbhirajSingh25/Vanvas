@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
-  Compass, MapPin, Mountain, Navigation, ZoomIn, ZoomOut,
-  Maximize2, Minimize2, Layers, Crosshair, Coffee, Droplets,
+  Compass, MapPin, Navigation, ZoomIn, ZoomOut,
+  Maximize2, Minimize2, Layers, Crosshair, Coffee,
   AlertTriangle, Shield, Utensils, Home, ShoppingBag, Fuel,
   Pill, Car, Footprints, Sparkles, Check, Info, ChevronRight, X,
   Clock, Phone, Navigation2, ExternalLink, Bookmark, HelpCircle,
-  Tent, Heart, Building2, Store, Plus, RotateCcw, Wine, Bus
+  Tent, Heart, Building2, Store, Plus, RotateCcw, Wine, Bus, Mountain
 } from "lucide-react";
 import { getCurrentGPSPosition, GeoCoordinate } from "@/lib/locationService";
+import "leaflet/dist/leaflet.css";
 
 export type VanvasMapMode = "core" | "trek" | "one-day" | "nearby" | "copilot";
 
@@ -98,16 +99,69 @@ export interface VanvasMapProps {
   enableFullscreen?: boolean;
 }
 
-const COMMON_CITIES = [
-  { name: "Delhi NCR", lat: 28.6139, lng: 77.2090 },
-  { name: "Dehradun", lat: 30.3165, lng: 78.0322 },
-  { name: "Rishikesh", lat: 30.0869, lng: 78.2676 },
-  { name: "Nainital / Kainchi", lat: 29.4239, lng: 79.5165 },
-  { name: "Manali", lat: 32.2396, lng: 77.1887 },
-  { name: "Jaipur", lat: 26.9124, lng: 75.7873 },
-  { name: "Chandigarh", lat: 30.7333, lng: 76.7794 },
-  { name: "Mumbai", lat: 19.0760, lng: 72.8777 },
-];
+const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string; iconBg: string }> = {
+  food: { bg: "bg-[#2A1D15]", border: "border-[#D95327]", text: "text-[#F58252]", iconBg: "#D95327" },
+  dhaba: { bg: "bg-[#2A1D15]", border: "border-[#D95327]", text: "text-[#F58252]", iconBg: "#D95327" },
+  cafe: { bg: "bg-[#2A2218]", border: "border-[#C59B47]", text: "text-[#E6C678]", iconBg: "#C59B47" },
+  fuel: { bg: "bg-[#2E1815]", border: "border-[#E63946]", text: "text-[#FF6B6B]", iconBg: "#E63946" },
+  medical: { bg: "bg-[#142A24]", border: "border-[#2A9D8F]", text: "text-[#48CAE4]", iconBg: "#2A9D8F" },
+  hospital: { bg: "bg-[#142A24]", border: "border-[#2A9D8F]", text: "text-[#48CAE4]", iconBg: "#2A9D8F" },
+  pharmacy: { bg: "bg-[#142A24]", border: "border-[#2A9D8F]", text: "text-[#48CAE4]", iconBg: "#2A9D8F" },
+  stay: { bg: "bg-[#18232C]", border: "border-[#457B9D]", text: "text-[#A8DADC]", iconBg: "#457B9D" },
+  camp: { bg: "bg-[#18232C]", border: "border-[#457B9D]", text: "text-[#A8DADC]", iconBg: "#457B9D" },
+  rental: { bg: "bg-[#251B2E]", border: "border-[#9D4EDD]", text: "text-[#C77DFF]", iconBg: "#9D4EDD" },
+  viewpoint: { bg: "bg-[#16271E]", border: "border-[#52B788]", text: "text-[#74C69D]", iconBg: "#52B788" },
+  summit: { bg: "bg-[#16271E]", border: "border-[#52B788]", text: "text-[#74C69D]", iconBg: "#52B788" },
+  temple: { bg: "bg-[#2D1F16]", border: "border-[#F4A261]", text: "text-[#F4A261]", iconBg: "#E76F51" },
+  landmark: { bg: "bg-[#2D1F16]", border: "border-[#C59B47]", text: "text-[#E6C678]", iconBg: "#C59B47" },
+  start: { bg: "bg-[#12241A]", border: "border-[#2D6A4F]", text: "text-[#52B788]", iconBg: "#2D6A4F" },
+  origin: { bg: "bg-[#12241A]", border: "border-[#2D6A4F]", text: "text-[#52B788]", iconBg: "#2D6A4F" },
+  destination: { bg: "bg-[#301614]", border: "border-[#E63946]", text: "text-[#FF758F]", iconBg: "#E63946" },
+  danger: { bg: "bg-[#331111]", border: "border-[#FF0055]", text: "text-[#FF5470]", iconBg: "#FF0055" },
+  liquor: { bg: "bg-[#231A26]", border: "border-[#A06CD5]", text: "text-[#C8B6FF]", iconBg: "#7209B7" },
+};
+
+function getCategoryIcon(type: string) {
+  switch (type) {
+    case "food":
+    case "dhaba":
+      return Utensils;
+    case "cafe":
+      return Coffee;
+    case "fuel":
+      return Fuel;
+    case "medical":
+    case "hospital":
+    case "pharmacy":
+    case "emergency":
+      return Pill;
+    case "stay":
+    case "camp":
+      return Home;
+    case "rental":
+      return Car;
+    case "viewpoint":
+    case "summit":
+      return Mountain;
+    case "temple":
+      return Building2;
+    case "market":
+    case "shop":
+    case "convenience":
+      return ShoppingBag;
+    case "liquor":
+      return Wine;
+    case "danger":
+      return AlertTriangle;
+    case "start":
+    case "origin":
+      return Compass;
+    case "destination":
+      return MapPin;
+    default:
+      return MapPin;
+  }
+}
 
 export const VanvasMap: React.FC<VanvasMapProps> = ({
   mode = "core",
@@ -124,27 +178,22 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
   showElevationProfile = false,
   showLegend = true,
   showControls = true,
-  height = 460,
+  height = 480,
   enableFullscreen = true,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [currentZoom, setCurrentZoom] = useState(zoom);
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const leafletMapRef = useRef<any>(null);
+  const leafletMarkersRef = useRef<any[]>([]);
+  const leafletPolylinesRef = useRef<any[]>([]);
+
   const [activeMarker, setActiveMarker] = useState<VanvasMapMarker | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [userLocation, setUserLocation] = useState<GeoCoordinate | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [showManualLocationModal, setShowManualLocationModal] = useState(false);
-  const [manualCityInput, setManualCityInput] = useState("");
-  const [savedMarkers, setSavedMarkers] = useState<Set<string>>(new Set());
-
-  // Active layer filter state
   const [activeLayers, setActiveLayers] = useState<Set<string>>(new Set(["all"]));
+  const [mapReady, setMapReady] = useState(false);
 
-  // Sync selectedMarkerId prop with activeMarker
+  // Sync external selectedMarkerId
   useEffect(() => {
     if (selectedMarkerId) {
       const found = markers.find((m) => m.id === selectedMarkerId);
@@ -152,56 +201,25 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
     }
   }, [selectedMarkerId, markers]);
 
-  // Compute bounding box for map normalization
-  const bounds = useMemo(() => {
-    const allCoords: Array<{ lat: number; lng: number }> = [];
-    markers.forEach((m) => allCoords.push({ lat: m.lat, lng: m.lng }));
-    routes.forEach((r) => r.coordinates.forEach((c) => allCoords.push({ lat: c.lat, lng: c.lng })));
-    if (center) allCoords.push(center);
-    if (userLocation) allCoords.push({ lat: userLocation.latitude, lng: userLocation.longitude });
+  const handleSelectMarker = useCallback((marker: VanvasMapMarker | null) => {
+    setActiveMarker(marker);
+    if (onSelectMarker) onSelectMarker(marker);
+  }, [onSelectMarker]);
 
-    if (allCoords.length === 0) {
-      return { minLat: 30.0, maxLat: 31.0, minLng: 78.0, maxLng: 79.5 };
+  // Compute default center if not passed
+  const effectiveCenter = useMemo(() => {
+    if (center && !isNaN(center.lat) && !isNaN(center.lng)) return center;
+    if (markers.length > 0 && !isNaN(markers[0].lat) && !isNaN(markers[0].lng)) {
+      return { lat: markers[0].lat, lng: markers[0].lng };
     }
+    return { lat: 28.6139, lng: 77.2090 }; // Delhi default
+  }, [center, markers]);
 
-    let minLat = Infinity;
-    let maxLat = -Infinity;
-    let minLng = Infinity;
-    let maxLng = -Infinity;
-
-    allCoords.forEach((c) => {
-      if (c.lat < minLat) minLat = c.lat;
-      if (c.lat > maxLat) maxLat = c.lat;
-      if (c.lng < minLng) minLng = c.lng;
-      if (c.lng > maxLng) maxLng = c.lng;
-    });
-
-    const latPad = Math.max(0.015, (maxLat - minLat) * 0.22);
-    const lngPad = Math.max(0.015, (maxLng - minLng) * 0.22);
-
-    return {
-      minLat: minLat - latPad,
-      maxLat: maxLat + latPad,
-      minLng: minLng - lngPad,
-      maxLng: maxLng + lngPad,
-    };
-  }, [markers, routes, center, userLocation]);
-
-  // Coordinate projection from GPS to SVG viewBox coordinates [0..850, 0..520]
-  const project = (lat: number, lng: number) => {
-    const latSpan = bounds.maxLat - bounds.minLat || 1;
-    const lngSpan = bounds.maxLng - bounds.minLng || 1;
-    const x = ((lng - bounds.minLng) / lngSpan) * 730 + 60;
-    const y = ((bounds.maxLat - lat) / latSpan) * 410 + 55;
-    return { x, y };
-  };
-
+  // Layer filter handler
   const toggleLayer = (layer: string) => {
     setActiveLayers((prev) => {
       const next = new Set(prev);
-      if (layer === "all") {
-        return new Set(["all"]);
-      }
+      if (layer === "all") return new Set(["all"]);
       next.delete("all");
       if (next.has(layer)) {
         next.delete(layer);
@@ -213,733 +231,396 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
     });
   };
 
-  // Filter markers based on active layers
   const filteredMarkers = useMemo(() => {
     if (activeLayers.has("all")) return markers;
     return markers.filter((m) => {
       if (activeLayers.has("food") && ["food", "dhaba", "cafe"].includes(m.type)) return true;
       if (activeLayers.has("fuel") && m.type === "fuel") return true;
       if (activeLayers.has("medical") && ["hospital", "pharmacy", "emergency"].includes(m.type)) return true;
-      if (activeLayers.has("shops") && ["market", "convenience", "shop"].includes(m.type)) return true;
-      if (activeLayers.has("parking") && m.type === "parking") return true;
       if (activeLayers.has("stays") && ["stay", "camp"].includes(m.type)) return true;
       if (activeLayers.has("rentals") && m.type === "rental") return true;
-      if (activeLayers.has("toilets") && m.type === "restroom") return true;
-      if (activeLayers.has("viewpoints") && ["viewpoint", "summit"].includes(m.type)) return true;
+      if (activeLayers.has("views") && ["viewpoint", "summit"].includes(m.type)) return true;
       if (activeLayers.has("temples") && m.type === "temple") return true;
-      if (activeLayers.has("liquor") && m.type === "liquor") return true;
-      if (activeLayers.has("water") && m.type === "water") return true;
-      if (activeLayers.has("danger") && m.type === "danger") return true;
+      if (activeLayers.has("landmarks") && ["landmark", "heritage", "fort"].includes(m.type)) return true;
       return false;
     });
   }, [markers, activeLayers]);
 
-  // SVG route path generator with gentle curved or segmented aesthetic
-  const routePaths = useMemo(() => {
-    return routes.map((route) => {
-      if (route.coordinates.length < 2) return { ...route, d: "" };
-      const pts = route.coordinates.map((c) => {
-        const { x, y } = project(c.lat, c.lng);
-        return `${x},${y}`;
-      });
-      return {
-        ...route,
-        d: `M ${pts.join(" L ")}`,
-      };
-    });
-  }, [routes, bounds]);
+  // Initialize Leaflet map instance
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    if (typeof window === "undefined") return;
 
-  // Pan / Drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
-  };
+    let isMounted = true;
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setPanOffset({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
-  };
+    async function initMap() {
+      const L = (await import("leaflet")).default;
+      if (!isMounted || !mapContainerRef.current) return;
 
-  const handleMouseUp = () => setIsDragging(false);
-
-  const handleLocateMe = async () => {
-    setIsLocating(true);
-    setLocationError(null);
-    try {
-      const res = await getCurrentGPSPosition({ enableHighAccuracy: true, timeout: 6000 });
-      setIsLocating(false);
-      if (res.status === "GRANTED" && res.coords) {
-        setUserLocation(res.coords);
-      } else {
-        setLocationError(res.errorMessage || "Location unavailable.");
-        setShowManualLocationModal(true);
+      // Clean up previous instance
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
       }
-    } catch {
-      setIsLocating(false);
-      setLocationError("Location unavailable. Please enter location manually.");
-      setShowManualLocationModal(true);
+
+      const map = L.map(mapContainerRef.current, {
+        center: [effectiveCenter.lat, effectiveCenter.lng],
+        zoom: zoom,
+        zoomControl: false,
+        touchExtend: true,
+        tapHold: true,
+        scrollWheelZoom: true,
+        dragging: true,
+        touchZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
+      } as any);
+
+      // CartoDB Positron / Voyager Tile Layer with warm editorial tone
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org">OSM</a>',
+        maxZoom: 19,
+        subdomains: "abcd",
+      }).addTo(map);
+
+      leafletMapRef.current = map;
+      setMapReady(true);
+    }
+
+    initMap();
+
+    return () => {
+      isMounted = false;
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update Markers & Polylines when data or filteredMarkers changes
+  useEffect(() => {
+    if (!leafletMapRef.current || !mapReady) return;
+    const map = leafletMapRef.current;
+
+    (async () => {
+      const L = (await import("leaflet")).default;
+
+      // Clear existing markers
+      leafletMarkersRef.current.forEach((m) => m.remove());
+      leafletMarkersRef.current = [];
+
+      // Clear existing polylines
+      leafletPolylinesRef.current.forEach((p) => p.remove());
+      leafletPolylinesRef.current = [];
+
+      // Render Routes
+      routes.forEach((route) => {
+        if (route.coordinates.length < 2) return;
+        const latLngs = route.coordinates.map((c) => [c.lat, c.lng]);
+        const polyline = L.polyline(latLngs as any, {
+          color: route.color || "#D95327",
+          weight: 4,
+          opacity: 0.85,
+          dashArray: route.dashed ? "6, 8" : undefined,
+          lineJoin: "round",
+        }).addTo(map);
+
+        polyline.bindTooltip(
+          `<strong>${route.name}</strong>${route.distanceKm ? ` • ${route.distanceKm} km` : ""}`,
+          { className: "vanvas-map-tooltip", direction: "top" }
+        );
+
+        leafletPolylinesRef.current.push(polyline);
+      });
+
+      // Render Markers
+      const boundsArr: any[] = [];
+
+      filteredMarkers.forEach((m) => {
+        if (isNaN(m.lat) || isNaN(m.lng)) return;
+        boundsArr.push([m.lat, m.lng]);
+
+        const catConfig = CATEGORY_COLORS[m.type] || CATEGORY_COLORS.food;
+        const isSelected = activeMarker?.id === m.id;
+
+        const customIcon = L.divIcon({
+          className: "vanvas-custom-marker-wrapper",
+          html: `
+            <div style="
+              width: ${isSelected ? "38px" : "30px"};
+              height: ${isSelected ? "38px" : "30px"};
+              border-radius: 50%;
+              background: ${isSelected ? "#D95327" : "#14201A"};
+              border: 2px solid ${isSelected ? "#FAF4E8" : catConfig.iconBg};
+              box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              color: white;
+              font-family: monospace;
+              font-weight: bold;
+              font-size: 11px;
+            ">
+              <span style="font-size: ${isSelected ? "14px" : "12px"};">📍</span>
+            </div>
+          `,
+          iconSize: [isSelected ? 38 : 30, isSelected ? 38 : 30],
+          iconAnchor: [isSelected ? 19 : 15, isSelected ? 19 : 15],
+        });
+
+        const marker = L.marker([m.lat, m.lng], { icon: customIcon }).addTo(map);
+
+        marker.on("click", () => {
+          handleSelectMarker(m);
+        });
+
+        marker.bindTooltip(
+          `<div style="font-family: serif; font-weight: bold; font-size: 12px; color: #FAF4E8;">${m.title}</div>
+           ${m.categoryLabel ? `<div style="font-family: monospace; font-size: 9px; color: #C59B47; text-transform: uppercase;">${m.categoryLabel}</div>` : ""}`,
+          { className: "vanvas-map-tooltip", direction: "top", offset: [0, -10] }
+        );
+
+        leafletMarkersRef.current.push(marker);
+      });
+
+      // Fit bounds if multiple points
+      if (boundsArr.length > 1) {
+        map.fitBounds(boundsArr, { padding: [40, 40], maxZoom: 14 });
+      } else if (boundsArr.length === 1) {
+        map.setView(boundsArr[0], zoom);
+      }
+    })();
+  }, [filteredMarkers, routes, activeMarker, mapReady, handleSelectMarker, zoom]);
+
+  // GPS Locate Action
+  const handleGPSLocate = async () => {
+    setIsLocating(true);
+    const pos = await getCurrentGPSPosition();
+    setIsLocating(false);
+
+    if (pos.status === "GRANTED" && pos.coords && leafletMapRef.current) {
+      setUserLocation(pos.coords);
+      leafletMapRef.current.flyTo([pos.coords.latitude, pos.coords.longitude], 14, { duration: 1.2 });
     }
   };
 
-  const setManualLocation = (city: { name: string; lat: number; lng: number }) => {
-    setUserLocation({
-      latitude: city.lat,
-      longitude: city.lng,
-      timestamp: Date.now(),
-    });
-    setShowManualLocationModal(false);
-    setLocationError(null);
+  const handleZoomIn = () => {
+    if (leafletMapRef.current) leafletMapRef.current.zoomIn();
   };
 
-  const resetView = () => {
-    setPanOffset({ x: 0, y: 0 });
-    setCurrentZoom(zoom);
+  const handleZoomOut = () => {
+    if (leafletMapRef.current) leafletMapRef.current.zoomOut();
   };
 
-  const toggleSaveMarker = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSavedMarkers((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  // Mode Theme Styling Constants
-  const theme = useMemo(() => {
-    switch (mode) {
-      case "trek":
-        return {
-          bg: "bg-[#0B1410]",
-          cardBg: "bg-[#111F18]",
-          border: "border-[#243B30]",
-          gridStroke: "#162820",
-          contourStroke: "#1F382B",
-          textColor: "text-[#FAF4E8]",
-          mutedText: "text-[#8EA598]",
-          accent: "#E05A2B",
-          secondaryAccent: "#B49252",
-          badgeBg: "bg-[#1A2E24] text-[#B49252] border-[#B49252]/40",
-          routeStroke: "#E05A2B",
-          routeSecondary: "#B49252",
-          compassColor: "#B49252",
-          paperTexture: "opacity-15 bg-[radial-gradient(#E05A2B_1px,transparent_0)]",
-        };
-      case "one-day":
-        return {
-          bg: "bg-[#0F1714]",
-          cardBg: "bg-[#16241E]",
-          border: "border-[#2B4035]",
-          gridStroke: "#1B2C24",
-          contourStroke: "#243D31",
-          textColor: "text-[#FAF4E8]",
-          mutedText: "text-[#9EB5A9]",
-          accent: "#E08A56",
-          secondaryAccent: "#C59B47",
-          badgeBg: "bg-[#253D30] text-[#E08A56] border-[#D95327]/40",
-          routeStroke: "#E08A56",
-          routeSecondary: "#52B788",
-          compassColor: "#E08A56",
-          paperTexture: "opacity-10 bg-[radial-gradient(#E08A56_1px,transparent_0)]",
-        };
-      case "nearby":
-        return {
-          bg: "bg-[#F7F4EB]",
-          cardBg: "bg-[#EFE8DC]",
-          border: "border-[#D6C8B2]",
-          gridStroke: "#E6DCBE",
-          contourStroke: "#D8CDB2",
-          textColor: "text-[#1C2822]",
-          mutedText: "text-[#627267]",
-          accent: "#B65E3C",
-          secondaryAccent: "#173B32",
-          badgeBg: "bg-[#173B32] text-[#FAF7F0] border-[#173B32]",
-          routeStroke: "#173B32",
-          routeSecondary: "#B65E3C",
-          compassColor: "#173B32",
-          paperTexture: "opacity-25 bg-[radial-gradient(#173B32_1px,transparent_0)]",
-        };
-      case "core":
-      default:
-        return {
-          bg: "bg-[#F8F5EE]",
-          cardBg: "bg-[#F0EAE0]",
-          border: "border-[#D8C8B0]",
-          gridStroke: "#E8DEC8",
-          contourStroke: "#DACDB2",
-          textColor: "text-[#23201C]",
-          mutedText: "text-[#6C6356]",
-          accent: "#B85434",
-          secondaryAccent: "#1A3D34",
-          badgeBg: "bg-[#1A3D34] text-[#FAF6F0] border-[#1A3D34]",
-          routeStroke: "#B85434",
-          routeSecondary: "#1A3D34",
-          compassColor: "#1A3D34",
-          paperTexture: "opacity-20 bg-[radial-gradient(#7B4D36_1px,transparent_0)]",
-        };
+  const handleResetView = () => {
+    if (leafletMapRef.current) {
+      leafletMapRef.current.setView([effectiveCenter.lat, effectiveCenter.lng], zoom, { duration: 0.8 });
     }
-  }, [mode]);
-
-  // Marker Icon Renderer
-  const renderMarkerIcon = (m: VanvasMapMarker, isSelected: boolean) => {
-    const isDark = mode === "trek" || mode === "one-day";
-    let bg = isDark ? "bg-[#1A2E24] text-[#FAF4E8]" : "bg-[#FAF6EE] text-[#173B32]";
-    let border = isDark ? "border-[#3A5646]" : "border-[#C8B89E]";
-    let icon = <MapPin className="w-3.5 h-3.5" />;
-
-    switch (m.type) {
-      case "start":
-      case "origin":
-        bg = "bg-emerald-600 text-white";
-        border = "border-emerald-400";
-        icon = <Footprints className="w-3.5 h-3.5" />;
-        break;
-      case "summit":
-        bg = "bg-amber-500 text-stone-900";
-        border = "border-amber-300";
-        icon = <Mountain className="w-4 h-4 font-bold" />;
-        break;
-      case "temple":
-        bg = "bg-[#B49252] text-white";
-        border = "border-amber-200";
-        icon = <Building2 className="w-3.5 h-3.5" />;
-        break;
-      case "cafe":
-        bg = isDark ? "bg-[#3D2C1E] text-amber-300" : "bg-[#F3E8D6] text-[#7B4D36]";
-        icon = <Coffee className="w-3.5 h-3.5" />;
-        break;
-      case "food":
-      case "dhaba":
-        bg = isDark ? "bg-[#3A2218] text-orange-300" : "bg-[#F8E2D6] text-[#B65E3C]";
-        icon = <Utensils className="w-3.5 h-3.5" />;
-        break;
-      case "water":
-        bg = "bg-sky-600 text-white";
-        border = "border-sky-300";
-        icon = <Droplets className="w-3.5 h-3.5" />;
-        break;
-      case "danger":
-        bg = "bg-rose-600 text-white";
-        border = "border-rose-400";
-        icon = <AlertTriangle className="w-3.5 h-3.5" />;
-        break;
-      case "emergency":
-      case "hospital":
-        bg = "bg-red-700 text-white";
-        border = "border-red-400";
-        icon = <Shield className="w-3.5 h-3.5" />;
-        break;
-      case "pharmacy":
-        bg = "bg-teal-700 text-white";
-        border = "border-teal-300";
-        icon = <Pill className="w-3.5 h-3.5" />;
-        break;
-      case "fuel":
-        bg = "bg-amber-600 text-white";
-        border = "border-amber-400";
-        icon = <Fuel className="w-3.5 h-3.5" />;
-        break;
-      case "rental":
-        bg = "bg-blue-600 text-white";
-        border = "border-blue-300";
-        icon = <Car className="w-3.5 h-3.5" />;
-        break;
-      case "stay":
-      case "camp":
-        bg = isDark ? "bg-[#21352A] text-emerald-300" : "bg-[#E2ECE6] text-[#173B32]";
-        icon = <Tent className="w-3.5 h-3.5" />;
-        break;
-      case "market":
-      case "shop":
-      case "convenience":
-        bg = isDark ? "bg-[#2C2B38] text-purple-300" : "bg-[#EFE8F5] text-purple-900";
-        icon = <Store className="w-3.5 h-3.5" />;
-        break;
-      case "liquor":
-        bg = "bg-amber-800 text-amber-100";
-        border = "border-amber-500";
-        icon = <Wine className="w-3.5 h-3.5" />;
-        break;
-      case "transit":
-        bg = "bg-indigo-600 text-white";
-        border = "border-indigo-300";
-        icon = <Bus className="w-3.5 h-3.5" />;
-        break;
-      case "viewpoint":
-        bg = "bg-violet-700 text-white";
-        border = "border-violet-300";
-        icon = <Compass className="w-3.5 h-3.5" />;
-        break;
-      default:
-        break;
-    }
-
-    return (
-      <div
-        className={`relative flex items-center justify-center rounded-full border shadow-md transition-transform ${bg} ${border} ${
-          isSelected ? "scale-135 ring-4 ring-amber-400/70 z-30" : "hover:scale-115 z-10"
-        }`}
-        style={{ width: isSelected ? 34 : 26, height: isSelected ? 34 : 26 }}
-      >
-        {icon}
-      </div>
-    );
   };
 
   return (
     <div
-      ref={containerRef}
-      className={`relative overflow-hidden rounded-3xl border ${theme.border} ${theme.bg} ${className} ${
-        isFullscreen ? "fixed inset-0 z-50 rounded-none h-screen w-screen" : ""
-      }`}
+      className={`relative w-full rounded-3xl overflow-hidden border-2 border-[#2D4539] bg-[#0E1612] shadow-2xl flex flex-col ${
+        isFullscreen ? "fixed inset-0 z-50 rounded-none border-0 h-screen" : ""
+      } ${className}`}
       style={{ height: isFullscreen ? "100vh" : height }}
     >
-      {/* Background Vintage Paper Texture Layer */}
-      <div className={`absolute inset-0 pointer-events-none ${theme.paperTexture} bg-[size:18px_18px]`} />
-
-      {/* Header Bar with Mode Title & Coordinates */}
-      <div className="absolute top-3.5 left-4 right-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-        <div className="flex items-center gap-2 pointer-events-auto bg-[#173B32]/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-[#D8CBB2]/30 shadow-lg text-[#FAF4E8]">
-          <Compass className="w-4 h-4 text-[#B49252] animate-spin-slow" />
-          <div>
-            <span className="text-[11px] font-mono font-bold tracking-wider uppercase block leading-none">
-              {title || (mode === "trek" ? "EXPEDITION FIELD MAP" : mode === "one-day" ? "DESI HIGHWAY MAP" : "VANVAS SANCTUARY RADAR")}
+      {/* Header Bar */}
+      <div className="px-5 py-3.5 bg-[#14201A] border-b border-[#23352B] flex flex-wrap items-center justify-between gap-3 shrink-0 z-10">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#52B788] animate-pulse" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold">
+              VANVAS UNIVERSAL ROAD &amp; TRAIL MAP ENGINE
             </span>
-            {subtitle && (
-              <span className="text-[9px] text-[#D8DED5]/80 font-serif block leading-tight">
-                {subtitle}
-              </span>
-            )}
           </div>
+          {title && <h3 className="font-serif font-black text-white text-base leading-tight">{title}</h3>}
+          {subtitle && <p className="text-xs text-[#9EB5A9] font-serif">{subtitle}</p>}
         </div>
 
-        {/* Layer Filters Strip */}
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pointer-events-auto p-1 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 scrollbar-none">
-          <button
-            onClick={() => toggleLayer("all")}
-            className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition-all ${
-              activeLayers.has("all") ? "bg-[#B65E3C] text-white shadow-md" : "text-stone-300 hover:text-white"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => toggleLayer("food")}
-            className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition-all flex items-center gap-1 ${
-              activeLayers.has("food") ? "bg-amber-600 text-white" : "text-stone-300 hover:text-white"
-            }`}
-          >
-            <Utensils className="w-3 h-3" /> Food
-          </button>
-          <button
-            onClick={() => toggleLayer("fuel")}
-            className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition-all flex items-center gap-1 ${
-              activeLayers.has("fuel") ? "bg-amber-500 text-stone-900" : "text-stone-300 hover:text-white"
-            }`}
-          >
-            <Fuel className="w-3 h-3" /> Fuel
-          </button>
-          <button
-            onClick={() => toggleLayer("medical")}
-            className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition-all flex items-center gap-1 ${
-              activeLayers.has("medical") ? "bg-red-600 text-white" : "text-stone-300 hover:text-white"
-            }`}
-          >
-            <Shield className="w-3 h-3" /> Medical
-          </button>
-          <button
-            onClick={() => toggleLayer("stays")}
-            className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition-all flex items-center gap-1 ${
-              activeLayers.has("stays") ? "bg-emerald-600 text-white" : "text-stone-300 hover:text-white"
-            }`}
-          >
-            <Tent className="w-3 h-3" /> Stays
-          </button>
-          <button
-            onClick={() => toggleLayer("rentals")}
-            className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition-all flex items-center gap-1 ${
-              activeLayers.has("rentals") ? "bg-blue-600 text-white" : "text-stone-300 hover:text-white"
-            }`}
-          >
-            <Car className="w-3 h-3" /> Rentals
-          </button>
-          <button
-            onClick={() => toggleLayer("viewpoints")}
-            className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition-all flex items-center gap-1 ${
-              activeLayers.has("viewpoints") ? "bg-violet-600 text-white" : "text-stone-300 hover:text-white"
-            }`}
-          >
-            <Mountain className="w-3 h-3" /> Views
-          </button>
-        </div>
-      </div>
-
-      {/* Main SVG Interactive Map Canvas */}
-      <div
-        className="w-full h-full cursor-grab active:cursor-grabbing select-none"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        <svg
-          viewBox="0 0 850 520"
-          className="w-full h-full"
-          style={{
-            transform: `scale(${currentZoom / 12}) translate(${panOffset.x / (currentZoom / 12)}px, ${
-              panOffset.y / (currentZoom / 12)
-            }px)`,
-            transformOrigin: "center center",
-            transition: isDragging ? "none" : "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-          }}
-        >
-          <defs>
-            {/* Indian Journal Contour Pattern */}
-            <pattern id="contour-pattern" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path
-                d="M0,30 Q15,10 30,30 T60,30 M0,50 Q20,35 40,50 T60,50 M0,10 Q25,25 50,10"
-                fill="none"
-                stroke={theme.contourStroke}
-                strokeWidth="0.75"
-                strokeDasharray="2,2"
-              />
-            </pattern>
-            {/* Vintage Grid */}
-            <pattern id="grid-pattern" width="80" height="80" patternUnits="userSpaceOnUse">
-              <path d="M 80 0 L 0 0 0 80" fill="none" stroke={theme.gridStroke} strokeWidth="0.5" opacity="0.6" />
-            </pattern>
-          </defs>
-
-          {/* Background Grid and Contour Fill */}
-          <rect width="850" height="520" fill="url(#grid-pattern)" />
-          <rect width="850" height="520" fill="url(#contour-pattern)" />
-
-          {/* Compass Rose Illustrated Symbol */}
-          <g transform="translate(780, 70)" opacity="0.35">
-            <circle r="30" fill="none" stroke={theme.compassColor} strokeWidth="1" strokeDasharray="3,3" />
-            <line x1="0" y1="-32" x2="0" y2="32" stroke={theme.compassColor} strokeWidth="1.5" />
-            <line x1="-32" y1="0" x2="32" y2="0" stroke={theme.compassColor} strokeWidth="1.5" />
-            <polygon points="0,-32 -5,-10 5,-10" fill={theme.compassColor} />
-            <text x="-4" y="-36" fill={theme.compassColor} fontSize="9" fontWeight="bold" fontFamily="monospace">N</text>
-          </g>
-
-          {/* Topographic Elevation Rings for Trek mode */}
-          {mode === "trek" && (
-            <g opacity="0.4">
-              <ellipse cx="420" cy="240" rx="280" ry="170" fill="none" stroke="#254234" strokeWidth="1" strokeDasharray="4,4" />
-              <ellipse cx="440" cy="230" rx="200" ry="120" fill="none" stroke="#2E5240" strokeWidth="1.2" strokeDasharray="3,3" />
-              <ellipse cx="460" cy="210" rx="120" ry="70" fill="none" stroke="#3A6650" strokeWidth="1.5" />
-              <text x="490" y="200" fill="#B49252" fontSize="9" fontFamily="monospace">4,000m CHANDRASHILA</text>
-            </g>
-          )}
-
-          {/* Render Routes */}
-          {routePaths.map((r) => (
-            <g key={r.id}>
-              {/* Route Shadow / Buffer */}
-              <path
-                d={r.d}
-                fill="none"
-                stroke={theme.border}
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.4"
-              />
-              {/* Main Hand-Drawn Route Stroke */}
-              <path
-                d={r.d}
-                fill="none"
-                stroke={r.color || theme.routeStroke}
-                strokeWidth="3.5"
-                strokeDasharray={r.dashed ? "6,4" : undefined}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </g>
-          ))}
-
-          {/* Current User GPS Location Ring */}
-          {userLocation && (
-            <g>
-              {(() => {
-                const { x, y } = project(userLocation.latitude, userLocation.longitude);
-                return (
-                  <g transform={`translate(${x}, ${y})`}>
-                    <circle r="18" fill="#3B82F6" opacity="0.25" className="animate-ping" />
-                    <circle r="8" fill="#2563EB" stroke="#FFFFFF" strokeWidth="2.5" />
-                    <text x="12" y="4" fill="#2563EB" fontSize="10" fontWeight="bold" fontFamily="monospace">
-                      YOU (GPS)
-                    </text>
-                  </g>
-                );
-              })()}
-            </g>
-          )}
-
-          {/* Render Markers */}
-          {filteredMarkers.map((m) => {
-            const { x, y } = project(m.lat, m.lng);
-            const isSelected = activeMarker?.id === m.id;
-
+        {/* Layer Filters */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {[
+            { id: "all", label: "All POIs" },
+            { id: "food", label: "Food & Dhabas" },
+            { id: "fuel", label: "Fuel Pumps" },
+            { id: "medical", label: "Medical / Meds" },
+            { id: "stays", label: "Stays & Camps" },
+            { id: "rentals", label: "Rentals" },
+            { id: "views", label: "Viewpoints" },
+            { id: "temples", label: "Temples" },
+            { id: "landmarks", label: "Landmarks" },
+          ].map((layer) => {
+            const isActive = activeLayers.has(layer.id);
             return (
-              <g
-                key={m.id}
-                transform={`translate(${x}, ${y})`}
-                className="cursor-pointer group"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveMarker(m);
-                  if (onSelectMarker) onSelectMarker(m);
-                }}
+              <button
+                key={layer.id}
+                onClick={() => toggleLayer(layer.id)}
+                className={`px-3 py-1 rounded-xl text-[10px] font-mono font-bold whitespace-nowrap uppercase transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#D95327] text-white shadow-md border border-[#D95327]"
+                    : "bg-[#0E1612] text-[#8FA699] border border-[#23352B] hover:text-white hover:border-[#385141]"
+                }`}
               >
-                {/* Marker HTML Overlay */}
-                <foreignObject x="-17" y="-17" width="34" height="34" className="overflow-visible">
-                  {renderMarkerIcon(m, isSelected)}
-                </foreignObject>
-
-                {/* Marker Text Label */}
-                <text
-                  x="0"
-                  y="24"
-                  textAnchor="middle"
-                  fill={mode === "trek" || mode === "one-day" ? "#FAF4E8" : "#173B32"}
-                  fontSize="10"
-                  fontWeight="bold"
-                  fontFamily="serif"
-                  className="pointer-events-none drop-shadow-sm select-none"
-                >
-                  {m.title}
-                </text>
-                {m.elevationMeters && (
-                  <text
-                    x="0"
-                    y="34"
-                    textAnchor="middle"
-                    fill="#B49252"
-                    fontSize="8"
-                    fontFamily="monospace"
-                    className="pointer-events-none select-none"
-                  >
-                    {m.elevationMeters}m
-                  </text>
-                )}
-              </g>
+                {layer.label}
+              </button>
             );
           })}
-        </svg>
+        </div>
       </div>
 
-      {/* Interactive Controls Overlay */}
-      {showControls && (
-        <div className="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
-          <button
-            onClick={() => setCurrentZoom((z) => Math.min(20, z + 1))}
-            aria-label="Zoom in"
-            className="w-10 h-10 rounded-2xl bg-[#173B32] text-[#FAF4E8] hover:bg-[#B65E3C] border border-[#D8CBB2]/40 shadow-lg flex items-center justify-center transition-all active:scale-95"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentZoom((z) => Math.max(6, z - 1))}
-            aria-label="Zoom out"
-            className="w-10 h-10 rounded-2xl bg-[#173B32] text-[#FAF4E8] hover:bg-[#B65E3C] border border-[#D8CBB2]/40 shadow-lg flex items-center justify-center transition-all active:scale-95"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleLocateMe}
-            disabled={isLocating}
-            aria-label="Locate me GPS"
-            className="w-10 h-10 rounded-2xl bg-[#173B32] text-[#FAF4E8] hover:bg-[#B65E3C] border border-[#D8CBB2]/40 shadow-lg flex items-center justify-center transition-all active:scale-95"
-          >
-            <Crosshair className={`w-4 h-4 ${isLocating ? "animate-spin text-amber-400" : ""}`} />
-          </button>
-          <button
-            onClick={resetView}
-            aria-label="Reset route view"
-            className="w-10 h-10 rounded-2xl bg-[#173B32] text-[#FAF4E8] hover:bg-[#B65E3C] border border-[#D8CBB2]/40 shadow-lg flex items-center justify-center transition-all active:scale-95"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-          {enableFullscreen && (
-            <button
-              onClick={() => setIsFullscreen((f) => !f)}
-              aria-label="Toggle fullscreen"
-              className="w-10 h-10 rounded-2xl bg-[#173B32] text-[#FAF4E8] hover:bg-[#B65E3C] border border-[#D8CBB2]/40 shadow-lg flex items-center justify-center transition-all active:scale-95"
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
-          )}
-        </div>
-      )}
+      {/* Map Interactive Canvas */}
+      <div className="relative flex-1 w-full h-full overflow-hidden" style={{ touchAction: "none" }}>
+        <div
+          ref={mapContainerRef}
+          className="w-full h-full"
+          style={{
+            minHeight: "100%",
+            touchAction: "pan-x pan-y",
+          }}
+        />
 
-      {/* Selected Marker Inspector Card (Bottom / Modal Sheet) */}
-      {activeMarker && (
-        <div className="absolute bottom-4 left-4 right-16 sm:right-auto sm:max-w-md z-30 animate-slide-up">
-          <div className="bg-[#FAF4E8] text-[#173B32] rounded-3xl p-5 border-2 border-[#173B32] shadow-2xl space-y-3 relative">
+        {/* Map Control Buttons */}
+        {showControls && (
+          <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
             <button
-              onClick={() => {
-                setActiveMarker(null);
-                if (onSelectMarker) onSelectMarker(null);
-              }}
-              className="absolute top-4 right-4 p-1 rounded-full bg-[#173B32]/10 hover:bg-[#173B32]/20 text-[#173B32] transition-colors"
+              onClick={handleZoomIn}
+              className="w-9 h-9 rounded-2xl bg-[#14201A]/90 backdrop-blur-md border border-[#2D4539] text-white hover:bg-[#253D30] flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              title="Zoom In"
             >
-              <X className="w-4 h-4" />
+              <ZoomIn className="w-4 h-4 text-[#EFE5D2]" />
             </button>
+            <button
+              onClick={handleZoomOut}
+              className="w-9 h-9 rounded-2xl bg-[#14201A]/90 backdrop-blur-md border border-[#2D4539] text-white hover:bg-[#253D30] flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-4 h-4 text-[#EFE5D2]" />
+            </button>
+            <button
+              onClick={handleGPSLocate}
+              disabled={isLocating}
+              className="w-9 h-9 rounded-2xl bg-[#14201A]/90 backdrop-blur-md border border-[#2D4539] text-[#52B788] hover:bg-[#253D30] flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              title="My GPS Location"
+            >
+              <Crosshair className={`w-4 h-4 ${isLocating ? "animate-spin text-[#D95327]" : ""}`} />
+            </button>
+            <button
+              onClick={handleResetView}
+              className="w-9 h-9 rounded-2xl bg-[#14201A]/90 backdrop-blur-md border border-[#2D4539] text-white hover:bg-[#253D30] flex items-center justify-center shadow-lg transition-all cursor-pointer"
+              title="Reset View"
+            >
+              <RotateCcw className="w-4 h-4 text-[#C59B47]" />
+            </button>
+            {enableFullscreen && (
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="w-9 h-9 rounded-2xl bg-[#14201A]/90 backdrop-blur-md border border-[#2D4539] text-white hover:bg-[#253D30] flex items-center justify-center shadow-lg transition-all cursor-pointer"
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+            )}
+          </div>
+        )}
 
-            {/* Header Badge */}
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-[#173B32] text-[#FAF4E8] text-[9px] font-mono uppercase font-bold tracking-wider">
-                {activeMarker.categoryLabel || activeMarker.type}
-              </span>
-              {activeMarker.provenance && (
-                <span className="px-2 py-0.5 rounded-full bg-[#B49252]/20 text-[#7B4D36] text-[9px] font-mono font-bold">
-                  {activeMarker.provenance}
-                </span>
-              )}
-              {activeMarker.elevationMeters && (
-                <span className="text-[10px] font-mono text-[#7B4D36]">
-                  {activeMarker.elevationMeters}m Alt
-                </span>
-              )}
+        {/* Selected Marker Detail Card Overlay */}
+        {activeMarker && (
+          <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-md z-30 p-5 rounded-3xl bg-[#14201A]/95 backdrop-blur-xl border-2 border-[#D95327] shadow-2xl space-y-3 animate-in fade-in slide-in-from-bottom-3 duration-300">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-[#253D30] text-[#C59B47] text-[9px] font-mono uppercase font-bold">
+                    {activeMarker.categoryLabel || activeMarker.type.toUpperCase()}
+                  </span>
+                  {activeMarker.provenance && (
+                    <span className="text-[9px] font-mono text-emerald-400 font-bold uppercase">
+                      [{activeMarker.provenance}]
+                    </span>
+                  )}
+                </div>
+                <h4 className="font-serif font-black text-lg text-white leading-snug">
+                  {activeMarker.title}
+                </h4>
+                {activeMarker.hindiTitle && (
+                  <p className="font-devanagari text-xs text-[#C59B47]">
+                    {activeMarker.hindiTitle}
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={() => handleSelectMarker(null)}
+                className="w-7 h-7 rounded-full bg-[#1F2F26] text-[#9EB5A9] hover:text-white flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Title & Hindi */}
-            <div>
-              <h4 className="text-lg font-serif font-black text-[#173B32] leading-tight">
-                {activeMarker.title}
-              </h4>
-              {activeMarker.hindiTitle && (
-                <span className="font-devanagari text-sm text-[#B49252] font-bold">
-                  {activeMarker.hindiTitle}
-                </span>
-              )}
-            </div>
-
-            {/* Description */}
             {activeMarker.description && (
-              <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
+              <p className="text-xs text-[#9EB5A9] font-serif leading-relaxed">
                 {activeMarker.description}
               </p>
             )}
 
-            {/* Metadata Chips: Distance, Time, Price */}
-            <div className="flex flex-wrap gap-2 text-[10px] font-mono text-[#173B32]">
-              {activeMarker.distanceFormatted && (
-                <span className="px-2 py-1 rounded-lg bg-[#EFE5D2] flex items-center gap-1">
-                  <Navigation2 className="w-3 h-3 text-[#B65E3C]" /> {activeMarker.distanceFormatted}
-                </span>
-              )}
-              {activeMarker.travelTime && (
-                <span className="px-2 py-1 rounded-lg bg-[#EFE5D2] flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-[#173B32]" /> {activeMarker.travelTime}
-                </span>
-              )}
-              {activeMarker.priceRange && (
-                <span className="px-2 py-1 rounded-lg bg-[#EFE5D2] font-bold text-[#B65E3C]">
-                  {activeMarker.priceRange}
-                </span>
-              )}
-            </div>
-
-            {/* Trek Field Intelligence Extra Notes */}
-            {activeMarker.fieldWarning && (
-              <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-900 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                <span>{activeMarker.fieldWarning}</span>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="pt-2 border-t border-[#D8CBB2] flex items-center gap-2">
+            {/* Actions */}
+            <div className="pt-2 border-t border-[#23352B] flex items-center gap-2 flex-wrap">
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${activeMarker.lat},${activeMarker.lng}`}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${activeMarker.lat},${activeMarker.lng}`}
                 target="_blank"
-                rel="noreferrer"
-                className="flex-1 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-[#B65E3C] transition-colors"
+                rel="noopener noreferrer"
+                className="flex-1 py-2 px-3 rounded-xl bg-[#D95327] hover:bg-[#C24319] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
               >
-                <Navigation className="w-3.5 h-3.5" />
-                <span>Navigate</span>
+                <Navigation2 className="w-3.5 h-3.5" />
+                <span>Get Directions</span>
               </a>
 
-              <button
-                onClick={(e) => toggleSaveMarker(activeMarker.id, e)}
-                className={`p-2 rounded-xl border transition-colors ${
-                  savedMarkers.has(activeMarker.id)
-                    ? "bg-[#B65E3C] text-white border-[#B65E3C]"
-                    : "bg-[#EFE5D2] text-[#173B32] border-[#D8CBB2] hover:bg-[#D8CBB2]"
-                }`}
-                title="Save marker"
-              >
-                <Bookmark className="w-4 h-4" />
-              </button>
+              {activeMarker.phone && (
+                <a
+                  href={`tel:${activeMarker.phone}`}
+                  className="py-2 px-3 rounded-xl bg-[#1B2C24] hover:bg-[#253D30] text-emerald-300 text-xs font-mono font-bold flex items-center gap-1 border border-[#3E6550]"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Call</span>
+                </a>
+              )}
 
               {onAskVanvas && (
                 <button
-                  onClick={() => onAskVanvas(`Tell me more about ${activeMarker.title} and practical tips to visit.`)}
-                  className="px-3 py-2 rounded-xl bg-[#B49252] text-white text-xs font-bold font-mono uppercase flex items-center gap-1 hover:bg-[#96773B] transition-colors"
+                  onClick={() => onAskVanvas(`Tell me more about ${activeMarker.title} at coordinates ${activeMarker.lat}, ${activeMarker.lng}`)}
+                  className="py-2 px-3 rounded-xl bg-[#1B2C24] hover:bg-[#253D30] text-[#C59B47] text-xs font-mono font-bold flex items-center gap-1 border border-[#C59B47]/40"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Ask</span>
+                  <span>Ask VANVAS</span>
                 </button>
               )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Manual Location Fallback Modal */}
-      {showManualLocationModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#FAF4E8] text-[#173B32] rounded-3xl max-w-md w-full p-6 border-2 border-[#173B32] shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-[#B65E3C]" />
-                <h3 className="text-xl font-serif font-black">Select Your Location</h3>
-              </div>
-              <button
-                onClick={() => setShowManualLocationModal(false)}
-                className="p-1 rounded-full hover:bg-black/10 text-stone-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-[#7B4D36] font-serif">
-              {locationError || "GPS is unavailable. Choose your departure or current city to center your map and road trip routes."}
-            </p>
-
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              {COMMON_CITIES.map((city) => (
-                <button
-                  key={city.name}
-                  onClick={() => setManualLocation(city)}
-                  className="p-3 rounded-2xl bg-[#EFE5D2] hover:bg-[#173B32] hover:text-[#FAF4E8] text-xs font-mono font-bold text-left transition-all border border-[#D8CBB2]"
-                >
-                  📍 {city.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  setManualLocation({ name: "Delhi NCR", lat: 28.6139, lng: 77.2090 });
-                }}
-                className="w-full py-2.5 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold font-mono uppercase tracking-wider"
-              >
-                Default to Delhi NCR
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <style jsx global>{`
+        .vanvas-map-tooltip {
+          background-color: #14201A !important;
+          border: 1px solid #2D4539 !important;
+          color: #FAF4E8 !important;
+          border-radius: 12px !important;
+          padding: 6px 10px !important;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.7) !important;
+        }
+        .vanvas-map-tooltip::before {
+          border-top-color: #14201A !important;
+        }
+        .leaflet-container {
+          background-color: #0E1612 !important;
+          font-family: inherit;
+        }
+      `}</style>
     </div>
   );
 };
+
 export default VanvasMap;

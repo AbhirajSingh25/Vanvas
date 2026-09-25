@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useState, useMemo, useEffect, Suspense, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Compass, MapPin, Sparkles, Clock, Car, Bike, Train,
@@ -11,7 +11,8 @@ import {
   AlertCircle, Building2, Store, Heart, ThumbsUp, Shield,
   CheckCircle2, Pill, ShoppingBag, Phone, ExternalLink,
   ChevronDown, ChevronUp, SlidersHorizontal, LocateFixed,
-  Flame, Award, Layers, Wine, Eye, HelpCircle
+  Flame, Award, Layers, Wine, Eye, HelpCircle, Navigation2,
+  Calendar, Share2, Ticket, CheckSquare, X
 } from "lucide-react";
 import {
   ONE_DAY_HUBS,
@@ -52,8 +53,10 @@ const ALL_VIBES: Array<{ id: OneDayVibe; label: string; emoji: string }> = [
 type ChecklistAction = "HAVE" | "BUY" | "BORROW" | "RENT" | "SKIP";
 
 function OneDayPlannerInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const fromParam = searchParams.get("from") || searchParams.get("origin") || "";
+  const dossierRef = useRef<HTMLDivElement>(null);
 
   // Location / Origin State
   const [selectedHubId, setSelectedHubId] = useState<string>(() => {
@@ -79,6 +82,10 @@ function OneDayPlannerInner() {
   const [groupSize, setGroupSize] = useState<number>(3);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"PLAN" | "MAP" | "RENTALS" | "CHECKLIST" | "COMPROMISE">("PLAN");
+
+  // Trip Modal / Drawer for OPEN TRIP
+  const [tripModalOpen, setTripModalOpen] = useState(false);
+  const [isPlanningLoading, setIsPlanningLoading] = useState(false);
 
   // Checklist Interactive State
   const [checklistStatus, setChecklistStatus] = useState<Record<string, ChecklistAction>>({});
@@ -127,7 +134,6 @@ function OneDayPlannerInner() {
       let minDist = Infinity;
 
       ONE_DAY_HUBS.forEach((hub) => {
-        // Approximate distance calculation in km
         const d = Math.hypot((hub.lat - res.coords!.latitude) * 111, (hub.lng - res.coords!.longitude) * 90);
         if (d < minDist) {
           minDist = d;
@@ -135,13 +141,11 @@ function OneDayPlannerInner() {
         }
       });
 
-      // If within 150 km of a known hub, auto-attach to that hub
       if (minDist <= 150) {
         setSelectedHubId(closest.id);
         setIsCustomMode(false);
         setGpsDetectedCity(closest.name);
       } else {
-        // Outside curated hubs
         setIsOutsideHubs(true);
         setGpsDetectedCity(`GPS Location (${res.coords.latitude.toFixed(2)}°N, ${res.coords.longitude.toFixed(2)}°E)`);
         setCustomOrigin(`GPS Point (${res.coords.latitude.toFixed(2)}°N)`);
@@ -181,15 +185,46 @@ function OneDayPlannerInner() {
   const getFeasibilityBadge = (feasibility: FeasibilityRating) => {
     switch (feasibility) {
       case "COMFORTABLE":
-        return "bg-emerald-900/80 text-emerald-300 border-emerald-600/60";
+        return "bg-emerald-900/90 text-emerald-300 border-emerald-600";
       case "TIGHT":
-        return "bg-amber-900/80 text-amber-300 border-amber-600/60";
+        return "bg-amber-900/90 text-amber-300 border-amber-600";
       case "RUSHED":
-        return "bg-orange-900/80 text-orange-300 border-orange-600/60";
+        return "bg-orange-900/90 text-orange-300 border-orange-600";
       case "NOT RECOMMENDED":
       default:
-        return "bg-rose-950 text-rose-300 border-rose-700/80";
+        return "bg-rose-950 text-rose-300 border-rose-700";
     }
+  };
+
+  // Real Navigation / Directions Flow (Phase 6)
+  const handleGetDirections = (plan: OneDayPlan) => {
+    const destinationCoord = plan.stops[plan.stops.length - 1] || plan.stops[0];
+    let originQuery = activeOriginLabel;
+    if (gpsState.status === "GRANTED" && gpsState.coords) {
+      originQuery = `${gpsState.coords.latitude},${gpsState.coords.longitude}`;
+    }
+
+    const destQuery = destinationCoord.lat && destinationCoord.lng
+      ? `${destinationCoord.lat},${destinationCoord.lng}`
+      : encodeURIComponent(`${plan.destinationArea}, India`);
+
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originQuery)}&destination=${destQuery}&travelmode=driving`;
+    window.open(mapsUrl, "_blank", "noopener,noreferrer");
+  };
+
+  // Real Plan This Trip Action (Phase 6)
+  const handlePlanThisTrip = (plan: OneDayPlan) => {
+    setIsPlanningLoading(true);
+    // Save selected itinerary session to storage for plan handoff
+    if (typeof window !== "undefined") {
+      localStorage.setItem("vanvas_prefill_destination", plan.destinationArea);
+      localStorage.setItem("vanvas_prefill_origin", activeOriginLabel);
+      localStorage.setItem("vanvas_prefill_oneday", JSON.stringify(plan));
+    }
+    setTimeout(() => {
+      setIsPlanningLoading(false);
+      router.push(`/plan?dest=${encodeURIComponent(plan.destinationArea)}&mode=one-day`);
+    }, 400);
   };
 
   // Dynamic Checklist Generator
@@ -205,7 +240,6 @@ function OneDayPlannerInner() {
       { id: "offline", name: "Offline Route & Destination Map Downloaded", category: "Navigation", required: false },
     ];
 
-    // Contextual items based on destination and vibes
     const extraItems: Array<{ id: string; name: string; category: string; required: boolean }> = [];
 
     if (activePlan.vibes.includes("Mountains") || activePlan.destinationArea.toLowerCase().includes("dehradun") || activePlan.destinationArea.toLowerCase().includes("morni") || activePlan.destinationArea.toLowerCase().includes("lansdowne")) {
@@ -237,56 +271,66 @@ function OneDayPlannerInner() {
   }, [activePlan]);
 
   return (
-    <div className="min-h-screen bg-[#0D1511] text-[#EFE5D2] pb-32 selection:bg-[#D95327] selection:text-white">
-      {/* 1. DESI ROAD TRIP HERO */}
-      <section className="relative min-h-[46vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-16 overflow-hidden border-b border-[#23352B]">
-        {/* Background Texture / Highway grid */}
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1B2B23] via-[#0D1511] to-[#080D0B] opacity-95" />
-
-        {/* Highway Dash Markings Overlay */}
+    <div className="min-h-screen bg-[#0C1410] text-[#EFE5D2] pb-32 selection:bg-[#D95327] selection:text-white">
+      {/* 1. THE INDIAN ROAD TRIP DESK — DISTINCT VISUAL IDENTITY */}
+      <section className="relative min-h-[50vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-20 overflow-hidden border-b-2 border-[#2D4539] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1B2B23] via-[#0E1713] to-[#070D0A]">
+        {/* Road Atlas Grid & Stamped Journey Pattern */}
         <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
+          className="absolute inset-0 opacity-15 pointer-events-none"
           style={{
-            backgroundImage: "repeating-linear-gradient(90deg, #E08A56 0, #E08A56 20px, transparent 20px, transparent 60px)",
-            backgroundSize: "60px 4px",
-            backgroundPosition: "center 50%"
+            backgroundImage: "radial-gradient(#C59B47 1px, transparent 1px), radial-gradient(#D95327 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+            backgroundPosition: "0 0, 16px 16px",
           }}
         />
 
-        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-4">
+        {/* Vintage Highway Route Marker Stamp Overlay */}
+        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-6">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="px-3.5 py-1 rounded-full bg-[#D95327] text-white text-[11px] font-mono font-black tracking-widest uppercase shadow-lg border border-[#F27E59]/40 flex items-center gap-1.5">
-              <Car className="w-3.5 h-3.5" />
-              <span>SPONTANEOUS ROAD TRIP CULTURE</span>
+            <span className="px-4 py-1.5 rounded-full bg-[#D95327] text-white text-[11px] font-mono font-black tracking-widest uppercase shadow-xl border border-[#F27E59]/40 flex items-center gap-2">
+              <Compass className="w-4 h-4 text-[#FAF4E8]" />
+              <span>THE INDIAN ROAD TRIP DESK</span>
             </span>
-            <span className="px-3 py-1 rounded-full bg-[#18261F] text-[#C59B47] text-[11px] font-mono tracking-wider uppercase border border-[#C59B47]/40">
-              [ 1 DAY • GROUP SPLIT • ZERO HALLUCINATIONS ]
+            <span className="px-3.5 py-1.5 rounded-full bg-[#18261F] text-[#C59B47] text-[11px] font-mono font-bold tracking-wider uppercase border border-[#C59B47]/40 shadow-md">
+              [ 1 DAY CORRIDORS • HIGHWAY DHABAS • ZERO HALLUCINATIONS ]
             </span>
           </div>
 
-          <div className="space-y-1">
-            <span className="font-devanagari text-2xl sm:text-3xl text-[#C59B47] block font-bold">
+          <div className="space-y-2">
+            <span className="font-devanagari text-2xl sm:text-4xl text-[#C59B47] block font-bold drop-shadow-md">
               एक दिन का सफ़र • चलो कहीं चलते हैं!
             </span>
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight text-[#FAF4E8]">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight text-[#FAF4E8] drop-shadow-xl">
               ONE DAY. LET&apos;S GO.
             </h1>
           </div>
 
-          <p className="text-sm sm:text-base text-[#9EB5A9] font-serif max-w-2xl mx-auto leading-relaxed">
-            Got one free day and a few friends? VANVAS computes genuine feasibility, splits petrol &amp; toll receipts, and tracks roadside dhabas across India.
+          {/* Road Corridor Tags Spine */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            {["GT ROAD NH-44", "YAMUNA EXPRESSWAY", "NH-48 JAIPUR HIGHWAY", "DOON FOOTHILL SPINE", "SHIVALIK RIDGE"].map((corridor) => (
+              <span
+                key={corridor}
+                className="px-3 py-1 rounded-md bg-[#132019] border border-[#2D4539] text-[10px] font-mono font-bold text-[#A6C5B4] uppercase tracking-wider shadow-sm"
+              >
+                🛣️ {corridor}
+              </span>
+            ))}
+          </div>
+
+          <p className="text-sm sm:text-base text-[#9EB5A9] font-serif max-w-2xl mx-auto leading-relaxed pt-2">
+            Spontaneous, authentic day escapes across India with true driving feasibility, verified toll &amp; petrol splits, and roadside dhaba milestones.
           </p>
         </div>
       </section>
 
-      {/* 2. ORIGIN SELECTOR & PROMINENT GPS BUTTON */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20">
-        <div className="p-5 sm:p-6 rounded-3xl bg-[#14201A] border-2 border-[#2D4539] shadow-2xl space-y-4">
+      {/* 2. ORIGIN SELECTOR & GPS ROAD LOG */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+        <div className="p-6 sm:p-7 rounded-3xl bg-[#14201A] border-2 border-[#2D4539] shadow-2xl space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-[#D95327]" />
-                <span>WHERE ARE YOU STARTING FROM?</span>
+                <span>EXPEDITION STARTING ORIGIN</span>
               </span>
               <h2 className="text-xl sm:text-2xl font-serif font-black text-white flex items-center gap-2">
                 <span>Starting Point:</span>
@@ -302,7 +346,7 @@ function OneDayPlannerInner() {
                 className="px-4 py-2.5 rounded-2xl bg-[#D95327] hover:bg-[#C24319] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-md cursor-pointer active:scale-95"
               >
                 <LocateFixed className={`w-4 h-4 text-white ${isLocating ? "animate-spin" : ""}`} />
-                <span>{isLocating ? "Detecting GPS..." : "USE MY LOCATION"}</span>
+                <span>{isLocating ? "Detecting GPS..." : "USE MY CURRENT LOCATION"}</span>
               </button>
 
               <button
@@ -323,39 +367,18 @@ function OneDayPlannerInner() {
 
           {/* GPS Detected Banner */}
           {gpsDetectedCity && (
-            <div className="p-3 rounded-2xl bg-[#1B2F24] border border-[#3E6550] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-emerald-200">
+            <div className="p-3.5 rounded-2xl bg-[#1B2F24] border border-[#3E6550] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-emerald-200">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>📍 <strong>DETECTED FROM GPS:</strong> {gpsDetectedCity}</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                <span>📍 <strong>GPS POSITION ATTACHED:</strong> {gpsDetectedCity}</span>
               </div>
               <span className="text-[11px] text-[#A6C5B4]">
-                Refreshed 1-day road trip destinations from your location
+                Auto-computed shortest road corridors from your position
               </span>
             </div>
           )}
 
-          {/* Outside Curated Hubs Fallback */}
-          {isOutsideHubs && (
-            <div className="p-4 rounded-2xl bg-amber-950/80 border border-amber-700/80 text-xs font-serif text-amber-200 space-y-2">
-              <div className="flex items-center gap-2 font-mono font-bold uppercase text-amber-300">
-                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>You&apos;re outside our curated hubs</span>
-              </div>
-              <p>
-                VANVAS has resolved your starting coordinates. You can use this location as a custom starting point or pick the nearest regional hub below.
-              </p>
-            </div>
-          )}
-
-          {/* GPS Status Notice if Denied */}
-          {gpsState.status === "DENIED" && (
-            <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-800/80 text-xs text-amber-200 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>Location permission was denied. Select your city hub from the list below.</span>
-            </div>
-          )}
-
-          {/* Hub Pills Carousel */}
+          {/* Hub Pills */}
           {!isCustomMode ? (
             <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar pt-1">
               {ONE_DAY_HUBS.map((hub) => {
@@ -395,15 +418,15 @@ function OneDayPlannerInner() {
         </div>
       </section>
 
-      {/* 3. MULTI-VIBE & GROUP COMPROMISE FILTER BAR */}
+      {/* 3. VIBE & GROUP COMPANION FILTER BAR */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#23352B] pb-3">
           <div className="space-y-0.5">
             <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold">
-              WHAT&apos;S THE TRIP VIBE? (SELECT MULTIPLE)
+              ROAD TRIP MOOD &amp; VIBES (SELECT MULTIPLE)
             </span>
             <p className="text-xs text-[#9EB5A9] font-serif">
-              Mix and match road trip flavours to narrow down options
+              Mix and match road trip themes to compute matched itineraries
             </p>
           </div>
 
@@ -452,19 +475,19 @@ function OneDayPlannerInner() {
         </div>
       </section>
 
-      {/* 4. DISCOVERY-FIRST DESTINATIONS GRID ("WHERE CAN WE GO TODAY?") */}
+      {/* 4. DESTINATION ROAD CARDS GRID (INDIAN ROAD TRIP TICKET STYLE) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#23352B] pb-4">
           <div className="space-y-1">
             <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold">
-              WHERE CAN WE GO TODAY? • {activeOriginLabel.toUpperCase()} ESCAPES
+              ONE-DAY ESCAPES • FROM {activeOriginLabel.toUpperCase()}
             </span>
             <h3 className="text-2xl sm:text-3xl font-serif font-black text-white">
-              Feasible Day Destinations ({plansForOrigin.length} Available)
+              Verified Day Destinations ({plansForOrigin.length} Available)
             </h3>
           </div>
           <span className="text-xs text-[#9EB5A9] font-mono">
-            Showing all verified 1-day road trip corridors
+            Every card contains real landmarks, accurate drive timings &amp; split calculations
           </span>
         </div>
 
@@ -477,51 +500,54 @@ function OneDayPlannerInner() {
             return (
               <div
                 key={plan.id}
-                className={`rounded-3xl border transition-all flex flex-col justify-between overflow-hidden ${
+                className={`rounded-3xl border transition-all flex flex-col justify-between overflow-hidden relative ${
                   isSelected
-                    ? "bg-[#182821] border-[#D95327] shadow-2xl ring-2 ring-[#D95327]"
+                    ? "bg-[#16251E] border-[#D95327] shadow-2xl ring-2 ring-[#D95327]"
                     : "bg-[#121D17] border-[#22342A] hover:border-[#385141]"
                 }`}
               >
-                {/* Hero Artwork Preview */}
-                <div className="relative h-44 w-full overflow-hidden bg-[#0A100D]">
+                {/* Hero Artwork Preview with Destination-Specific Asset */}
+                <div className="relative h-48 w-full overflow-hidden bg-[#0A100D]">
                   <VanvasImage
-                    src={plan.heroImage || plan.stops[0]?.imageUrl || "/images/places/universal/nature.webp"}
+                    src={plan.heroImage || plan.stops[0]?.imageUrl || "/artworks/fallback_valley.jpg"}
                     alt={plan.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#121D17] via-transparent to-black/30 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#121D17] via-transparent to-black/40 pointer-events-none" />
 
-                  {/* Floating Badges */}
+                  {/* Stamped Badges */}
                   <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${badgeClass}`}>
+                    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-black uppercase border ${badgeClass}`}>
                       {plan.feasibility}
                     </span>
-                    <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[#C59B47] text-[10px] font-mono">
+                    <span className="px-2.5 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[#C59B47] text-[10px] font-mono font-bold">
                       {plan.vibes[0]}
                     </span>
                   </div>
 
                   <div className="absolute top-3 right-3">
-                    <span className="px-2.5 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-white text-xs font-mono font-bold">
+                    <span className="px-3 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[#FAF4E8] text-xs font-mono font-bold border border-[#2D4539]">
                       {plan.totalDistanceKm} km
                     </span>
                   </div>
 
-                  <div className="absolute bottom-2 left-3 right-3">
-                    <h4 className="font-serif font-black text-xl text-white leading-tight drop-shadow-md">
-                      {plan.destinationArea}
-                    </h4>
-                    <span className="font-devanagari text-xs text-[#C59B47] drop-shadow-sm">
-                      {plan.hindiTitle}
-                    </span>
+                  {/* Departure / Return Spine Badge */}
+                  <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-2">
+                    <div>
+                      <h4 className="font-serif font-black text-2xl text-white leading-tight drop-shadow-lg">
+                        {plan.destinationArea}
+                      </h4>
+                      <span className="font-devanagari text-xs text-[#C59B47] drop-shadow-md">
+                        {plan.hindiTitle}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Card Body */}
-                <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                {/* Card Body — Road Trip Metrics */}
+                <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
                   <div className="space-y-2">
-                    <div className="text-xs font-bold text-[#EFE5D2]">
+                    <div className="text-xs font-bold text-[#FAF4E8] line-clamp-1">
                       {plan.title}
                     </div>
 
@@ -529,49 +555,69 @@ function OneDayPlannerInner() {
                       {plan.tagline}
                     </p>
 
-                    {/* Stat Metrics Grid */}
+                    {/* Indian Road Trip Metrics Spine */}
                     <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#23352B] text-[11px] font-mono">
-                      <div>
-                        <span className="block text-[8px] uppercase text-[#6D8578]">Departure</span>
-                        <span className="text-white font-bold">{plan.departureTime}</span>
+                      <div className="p-2 rounded-xl bg-[#0E1612] border border-[#1E2D24]">
+                        <span className="block text-[8px] uppercase text-[#6D8578]">Leave / Return</span>
+                        <span className="text-white font-bold">{plan.departureTime.split(" ")[0]} → {plan.returnTime.split(" ")[0]}</span>
                       </div>
-                      <div>
+                      <div className="p-2 rounded-xl bg-[#0E1612] border border-[#1E2D24]">
                         <span className="block text-[8px] uppercase text-[#6D8578]">Drive Time</span>
-                        <span className="text-[#D95327] font-bold">{plan.totalTravelTime}</span>
+                        <span className="text-[#D95327] font-bold">{plan.totalTravelTime.split(" ")[0]} hrs</span>
                       </div>
-                      <div>
-                        <span className="block text-[8px] uppercase text-[#6D8578]">Base Split</span>
-                        <span className="text-[#52B788] font-bold">₹{plan.baseBudgetPerPerson}/head</span>
+                      <div className="p-2 rounded-xl bg-[#0E1612] border border-[#1E2D24]">
+                        <span className="block text-[8px] uppercase text-[#6D8578]">Per Person</span>
+                        <span className="text-[#52B788] font-bold">₹{plan.baseBudgetPerPerson}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="pt-3 border-t border-[#23352B] flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedPlanId(plan.id);
-                        setActiveTab("PLAN");
-                        window.scrollTo({ top: 900, behavior: "smooth" });
-                      }}
-                      className="flex-1 py-2 rounded-xl bg-[#D95327] hover:bg-[#C24319] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <span>Open Trip</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                  {/* Four Working Action Buttons (Phase 6) */}
+                  <div className="pt-3 border-t border-[#23352B] flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedPlanId(plan.id);
+                          setTripModalOpen(true);
+                        }}
+                        className="flex-1 py-2.5 rounded-xl bg-[#D95327] hover:bg-[#C24319] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-md"
+                      >
+                        <Ticket className="w-3.5 h-3.5" />
+                        <span>OPEN TRIP</span>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        setSelectedPlanId(plan.id);
-                        setActiveTab("MAP");
-                        window.scrollTo({ top: 900, behavior: "smooth" });
-                      }}
-                      className="px-3 py-2 rounded-xl bg-[#1B2C24] hover:bg-[#253D30] text-[#FAF4E8] text-xs font-mono font-bold flex items-center gap-1.5 border border-[#3A5646] transition-colors cursor-pointer"
-                      title="View on Map"
-                    >
-                      <MapPin className="w-3.5 h-3.5 text-[#C59B47]" />
-                      <span>Map</span>
-                    </button>
+                      <button
+                        onClick={() => {
+                          setSelectedPlanId(plan.id);
+                          setActiveTab("MAP");
+                          dossierRef.current?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="px-3.5 py-2.5 rounded-xl bg-[#1B2C24] hover:bg-[#253D30] text-[#FAF4E8] text-xs font-mono font-bold flex items-center gap-1.5 border border-[#3A5646] transition-colors cursor-pointer"
+                        title="View Interactive Map"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-[#C59B47]" />
+                        <span>MAP</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleGetDirections(plan)}
+                        className="flex-1 py-2 rounded-xl bg-[#14201A] hover:bg-[#1E3027] text-[#52B788] text-xs font-mono font-bold uppercase flex items-center justify-center gap-1.5 border border-[#2D4539] transition-colors cursor-pointer"
+                      >
+                        <Navigation2 className="w-3 h-3 text-[#52B788]" />
+                        <span>GET DIRECTIONS</span>
+                      </button>
+
+                      <button
+                        onClick={() => handlePlanThisTrip(plan)}
+                        disabled={isPlanningLoading}
+                        className="flex-1 py-2 rounded-xl bg-[#1B2C24] hover:bg-[#253D30] text-[#C59B47] text-xs font-mono font-bold uppercase flex items-center justify-center gap-1.5 border border-[#C59B47]/40 transition-colors cursor-pointer"
+                      >
+                        <Calendar className="w-3 h-3 text-[#C59B47]" />
+                        <span>PLAN THIS TRIP</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -581,20 +627,20 @@ function OneDayPlannerInner() {
       </section>
 
       {/* 5. ACTIVE PLAN DOSSIER & FUNCTIONALITY TABS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <section ref={dossierRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Dossier Header Banner */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#15231C] border-2 border-[#2D4539] space-y-6">
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#15231C] border-2 border-[#2D4539] space-y-6 shadow-2xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${getFeasibilityBadge(activePlan.feasibility)}`}>
                   FEASIBILITY: {activePlan.feasibility}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-md bg-[#253D30] text-[#C59B47] text-[10px] font-mono uppercase">
+                <span className="px-2.5 py-0.5 rounded-md bg-[#253D30] text-[#C59B47] text-[10px] font-mono uppercase font-bold">
                   {activePlan.idealGroupSize}
                 </span>
                 <span className="text-xs font-mono text-[#8FA699]">
-                  {activePlan.departureTime} Departure → {activePlan.returnTime} Return
+                  Departure: {activePlan.departureTime} → Return: {activePlan.returnTime}
                 </span>
               </div>
 
@@ -661,7 +707,7 @@ function OneDayPlannerInner() {
               {activePlan.stops.map((stop) => (
                 <div
                   key={stop.id}
-                  className="p-5 sm:p-6 rounded-3xl bg-[#121E18] border border-[#22342A] grid grid-cols-1 lg:grid-cols-12 gap-6 items-center"
+                  className="p-5 sm:p-6 rounded-3xl bg-[#121E18] border border-[#22342A] grid grid-cols-1 lg:grid-cols-12 gap-6 items-center shadow-lg"
                 >
                   <div className="lg:col-span-8 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -697,7 +743,7 @@ function OneDayPlannerInner() {
 
                   <div className="lg:col-span-4 relative h-40 sm:h-48 w-full rounded-2xl overflow-hidden border border-[#22342A]">
                     <VanvasImage
-                      src={stop.imageUrl || "/images/nearby/transport/transport.webp"}
+                      src={stop.imageUrl || activePlan.heroImage || "/artworks/fallback_valley.jpg"}
                       alt={stop.name}
                       className="w-full h-full object-cover"
                     />
@@ -729,7 +775,7 @@ function OneDayPlannerInner() {
           </div>
         )}
 
-        {/* TAB 2: INTERACTIVE VANVAS ROAD MAP */}
+        {/* TAB 2: INTERACTIVE UNIVERSAL VANVAS ROAD MAP ENGINE */}
         {activeTab === "MAP" && (
           <div className="space-y-4">
             {(() => {
@@ -764,7 +810,7 @@ function OneDayPlannerInner() {
                   id: `one-day-route-${activePlan.id}`,
                   name: activePlan.title,
                   coordinates: activePlan.stops.map((s, idx) => ({ lat: s.lat || 28.5 + (idx * 0.1), lng: s.lng || 77.2 + (idx * 0.1) })),
-                  color: "#E08A56",
+                  color: "#D95327",
                   distanceKm: activePlan.totalDistanceKm
                 }
               ];
@@ -772,12 +818,12 @@ function OneDayPlannerInner() {
               return (
                 <VanvasMap
                   mode="one-day"
-                  title={`${activePlan.title} — VANVAS Road Map`}
+                  title={`${activePlan.title} — Road Map Engine`}
                   subtitle={`From ${activePlan.originCity} to ${activePlan.destinationArea} • ${activePlan.totalDistanceKm} km round trip`}
                   center={{ lat: activePlan.stops[0]?.lat || 28.6, lng: activePlan.stops[0]?.lng || 77.2 }}
                   markers={mapMarkers}
                   routes={routeSegments}
-                  height={500}
+                  height={540}
                 />
               );
             })()}
@@ -797,7 +843,7 @@ function OneDayPlannerInner() {
                 </h3>
               </div>
               <span className="text-xs font-mono text-[#8FA699]">
-                Zero fabricated phone numbers or false availability
+                Zero fabricated numbers or phantom providers
               </span>
             </div>
 
@@ -806,7 +852,7 @@ function OneDayPlannerInner() {
                 {activePlan.rentals.map((rental, idx) => (
                   <div
                     key={idx}
-                    className="p-6 rounded-3xl bg-[#14201A] border border-[#2D4539] flex flex-col justify-between space-y-4"
+                    className="p-6 rounded-3xl bg-[#14201A] border border-[#2D4539] flex flex-col justify-between space-y-4 shadow-md"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
@@ -829,7 +875,7 @@ function OneDayPlannerInner() {
                         </p>
                       </div>
 
-                      {/* Pricing & Policy Specs */}
+                      {/* Pricing Specs */}
                       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#23352B] text-[11px] font-mono">
                         <div className="p-2.5 rounded-xl bg-[#0E1612] border border-[#1E2D24]">
                           <span className="block text-[8px] uppercase text-[#6D8578]">Daily Rate</span>
@@ -870,7 +916,7 @@ function OneDayPlannerInner() {
                         </a>
                       ) : (
                         <div className="w-full py-2.5 rounded-xl bg-[#1B2C24] text-[#C59B47] text-xs font-mono text-center">
-                          Book via official website / walk-in stand
+                          Book via verified station counter
                         </div>
                       )}
                     </div>
@@ -889,15 +935,15 @@ function OneDayPlannerInner() {
           </div>
         )}
 
-        {/* TAB 4: DYNAMIC WHAT TO CARRY CHECKLIST */}
+        {/* TAB 4: WHAT TO CARRY CHECKLIST */}
         {activeTab === "CHECKLIST" && (
           <div className="space-y-6">
-            <div className="p-6 sm:p-8 rounded-3xl bg-[#14201A] border border-[#2D4539] space-y-6">
+            <div className="p-6 sm:p-8 rounded-3xl bg-[#14201A] border border-[#2D4539] space-y-6 shadow-2xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#23352B] pb-4">
                 <div className="space-y-1">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-[#52B788]" />
-                    <span>WHAT TO CARRY • DYNAMIC CHECKLIST</span>
+                    <span>WHAT TO CARRY • EXPEDITION LOGBOOK CHECKLIST</span>
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-white">
                     Packing Board for {activePlan.destinationArea}
@@ -971,9 +1017,9 @@ function OneDayPlannerInner() {
           </div>
         )}
 
-        {/* TAB 5: GROUP VOTING COMPROMISE */}
+        {/* TAB 5: GROUP COMPROMISE */}
         {activeTab === "COMPROMISE" && (
-          <div className="p-6 sm:p-8 rounded-3xl bg-[#14201A] border border-[#2D4539] space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl bg-[#14201A] border border-[#2D4539] space-y-6 shadow-2xl">
             <div className="space-y-1">
               <span className="text-[10px] font-mono uppercase tracking-widest text-[#C59B47] font-bold">
                 FRIENDS DISAGREEMENT RESOLVER
@@ -982,7 +1028,7 @@ function OneDayPlannerInner() {
                 Group Voting &amp; VANVAS Compromise Engine
               </h3>
               <p className="text-xs text-[#9EB5A9] font-serif">
-                Friend A wants Forts, Friend B wants Dhabas, Friend C wants Temples? VANVAS resolves the optimal route.
+                Friend A wants Forts, Friend B wants Dhabas, Friend C wants Temples? VANVAS computes the optimal compromise.
               </p>
             </div>
 
@@ -1022,6 +1068,108 @@ function OneDayPlannerInner() {
           </div>
         )}
       </section>
+
+      {/* 6. FULL OPEN TRIP MODAL DIALOG (PHASE 6) */}
+      {tripModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#121E18] border-2 border-[#D95327] shadow-2xl p-6 sm:p-8 space-y-6 text-[#EFE5D2]">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-[#23352B] pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-md bg-[#D95327] text-white text-[10px] font-mono font-bold uppercase">
+                    ONE-DAY EXPEDITION DOSSIER
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-md bg-[#1B2C24] text-[#C59B47] text-[10px] font-mono uppercase border border-[#C59B47]/40">
+                    {activePlan.totalDistanceKm} KM ROUND TRIP
+                  </span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-serif font-black text-white">
+                  {activePlan.title}
+                </h3>
+                <p className="font-devanagari text-sm text-[#C59B47]">
+                  {activePlan.hindiTitle}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setTripModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-[#1A2C23] hover:bg-[#253D30] text-[#9EB5A9] hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Metrics Overview Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+              <div className="p-3.5 rounded-2xl bg-[#0E1612] border border-[#1E2D24]">
+                <span className="block text-[9px] uppercase text-[#6D8578]">Origin → Destination</span>
+                <span className="text-white font-bold">{activePlan.originCity} → {activePlan.destinationArea}</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-[#0E1612] border border-[#1E2D24]">
+                <span className="block text-[9px] uppercase text-[#6D8578]">Timeline</span>
+                <span className="text-white font-bold">{activePlan.departureTime} – {activePlan.returnTime}</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-[#0E1612] border border-[#1E2D24]">
+                <span className="block text-[9px] uppercase text-[#6D8578]">Total Driving Time</span>
+                <span className="text-[#D95327] font-bold">{activePlan.totalTravelTime}</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-[#0E1612] border border-[#1E2D24]">
+                <span className="block text-[9px] uppercase text-[#6D8578]">Estimated Cost Split</span>
+                <span className="text-[#52B788] font-bold">₹{costPerPerson}/person ({groupSize} friends)</span>
+              </div>
+            </div>
+
+            {/* Stops Timeline */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-mono uppercase text-[#C59B47] font-bold tracking-wider">
+                Full Road Stop Schedule ({activePlan.stops.length} Milestones)
+              </h4>
+              <div className="space-y-3">
+                {activePlan.stops.map((stop) => (
+                  <div key={stop.id} className="p-4 rounded-2xl bg-[#0E1612] border border-[#1E2D24] flex items-start gap-4">
+                    <span className="w-6 h-6 rounded-full bg-[#D95327] text-white text-[11px] font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {stop.order}
+                    </span>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <strong className="text-sm font-serif text-white">{stop.name}</strong>
+                        <span className="text-xs font-mono text-[#C59B47]">{stop.timeSlot}</span>
+                      </div>
+                      <p className="text-xs text-[#9EB5A9] font-serif">{stop.description}</p>
+                      <div className="text-[11px] font-mono text-[#52B788]">
+                        💡 {stop.localTip}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-4 border-t border-[#23352B] flex flex-wrap items-center justify-end gap-3">
+              <button
+                onClick={() => handleGetDirections(activePlan)}
+                className="px-4 py-2.5 rounded-xl bg-[#14201A] hover:bg-[#1E3027] text-[#52B788] text-xs font-mono font-bold uppercase flex items-center gap-1.5 border border-[#2D4539] transition-colors cursor-pointer"
+              >
+                <Navigation2 className="w-3.5 h-3.5" />
+                <span>Start GPS Navigation</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setTripModalOpen(false);
+                  handlePlanThisTrip(activePlan);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-[#D95327] hover:bg-[#C24319] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shadow-lg"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Plan This Full Trip</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1029,8 +1177,8 @@ function OneDayPlannerInner() {
 export default function OneDayPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0D1511] flex items-center justify-center text-white font-mono text-xs">
-        Loading VANVAS 1-Day Road Trip Engine...
+      <div className="min-h-screen bg-[#0C1410] flex items-center justify-center text-white font-mono text-xs">
+        Loading The Indian Road Trip Desk...
       </div>
     }>
       <OneDayPlannerInner />
