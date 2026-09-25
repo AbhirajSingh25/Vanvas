@@ -535,26 +535,48 @@ export default function TrekDetailPage({ params }: PageProps) {
               </p>
 
               {/* Waypoint Facility Indicators */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-[11px] font-mono">
-                <div className="bg-[#14201A] p-2 rounded-lg border border-[#203026]">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 text-[11px] font-mono">
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
                   <span className="block text-[9px] uppercase text-[#6D8578]">Elevation</span>
                   <span className="text-[#FAF4E8] font-bold">{activeWaypoint.elevationFormatted}</span>
                 </div>
-                <div className="bg-[#14201A] p-2 rounded-lg border border-[#203026]">
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
+                  <span className="block text-[9px] uppercase text-[#6D8578]">Distance from Start</span>
+                  <span className="text-[#E05A2B] font-bold">{activeWaypoint.distanceFromStartKm} km</span>
+                </div>
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
+                  <span className="block text-[9px] uppercase text-[#6D8578]">Distance to Next</span>
+                  <span className="text-[#B49252] font-bold">{activeWaypoint.distanceToNext || "Summit Reach"}</span>
+                </div>
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
                   <span className="block text-[9px] uppercase text-[#6D8578]">Ascent Time</span>
                   <span className="text-[#FAF4E8]">{activeWaypoint.timeFromPrev}</span>
                 </div>
-                <div className="bg-[#14201A] p-2 rounded-lg border border-[#203026]">
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
                   <span className="block text-[9px] uppercase text-[#6D8578]">Water Spring</span>
                   <span className={activeWaypoint.waterAvailable ? "text-emerald-400 font-bold" : "text-amber-400"}>
-                    {activeWaypoint.waterAvailable ? "✓ Spring Active" : "✕ No Water"}
+                    {activeWaypoint.waterAvailable ? "✓ Spring Active" : "✕ Carry Water"}
                   </span>
                 </div>
-                <div className="bg-[#14201A] p-2 rounded-lg border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Food Stalls</span>
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
+                  <span className="block text-[9px] uppercase text-[#6D8578]">Food & Stalls</span>
                   <span className={activeWaypoint.foodAvailable ? "text-emerald-400 font-bold" : "text-[#6D8578]"}>
-                    {activeWaypoint.foodAvailable ? "✓ Chai / Maggi" : "✕ None"}
+                    {activeWaypoint.foodAvailable ? "✓ Chai / Maggi" : "✕ Self-Contained"}
                   </span>
+                </div>
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
+                  <span className="block text-[9px] uppercase text-[#6D8578]">Shelter / Camps</span>
+                  <span className={activeWaypoint.shelterAvailable ? "text-emerald-400 font-bold" : "text-[#6D8578]"}>
+                    {activeWaypoint.shelterAvailable ? "✓ Alpine Shelter" : "✕ Open Ridge"}
+                  </span>
+                </div>
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
+                  <span className="block text-[9px] uppercase text-[#6D8578]">Mobile Signal</span>
+                  <span className="text-[#A6BAAE] font-bold">{activeWaypoint.signalNote || "No Signal"}</span>
+                </div>
+                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
+                  <span className="block text-[9px] uppercase text-[#6D8578]">Terrain Difficulty</span>
+                  <span className="text-[#E05A2B] font-bold">{activeWaypoint.difficulty || activeWaypoint.terrainType}</span>
                 </div>
               </div>
             </div>

@@ -279,6 +279,42 @@ def extract_session_decisions(message_text: str) -> Dict[str, Any]:
     return decisions
 
 
+DESTINATION_KEYWORD_MAP = {
+    "dehradun": "dehradun",
+    "delhi": "delhi",
+    "kainchi dham": "kainchi-dham",
+    "kainchi": "kainchi-dham",
+    "tungnath": "tungnath-chandrashila",
+    "chandrashila": "tungnath-chandrashila",
+    "chopta": "tungnath-chandrashila",
+    "manali": "manali",
+    "rishikesh": "rishikesh",
+    "kasol": "kasol",
+    "dharamshala": "dharamshala",
+    "mcleodganj": "dharamshala",
+    "mumbai": "mumbai",
+    "jaipur": "jaipur",
+    "goa": "goa",
+    "leh": "leh",
+    "ladakh": "leh",
+    "spiti": "spiti",
+    "munnar": "munnar",
+    "varanasi": "varanasi",
+    "udaipur": "udaipur",
+    "mussoorie": "mussoorie",
+}
+
+def extract_explicit_destination(text: str) -> Optional[str]:
+    """Deterministically extracts explicit destination signal from text."""
+    if not text or not isinstance(text, str):
+        return None
+    lower = text.lower()
+    for kw, slug in DESTINATION_KEYWORD_MAP.items():
+        if re.search(rf"\b{re.escape(kw)}\b", lower):
+            return slug
+    return None
+
+
 def merge_session_decisions(existing: Dict[str, Any], new_decisions: Dict[str, Any]) -> Dict[str, Any]:
     """
     Safely merges new session decisions into existing decisions.

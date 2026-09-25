@@ -22,6 +22,7 @@ from app.providers.ai.dispatcher import AIToolDispatcher
 from app.services.copilot_context import (
     CopilotContextEngine,
     extract_session_decisions,
+    extract_explicit_destination,
 )
 from app.services.storage_service import StorageService
 from app.core.rate_limiter import rate_limit
@@ -175,7 +176,13 @@ async def copilot_chat(
         db.add(conv)
         db.flush()
 
-    # 3. Extract & Merge Session Decisions
+    # 3. Extract & Merge Session Decisions + Location Override
+    explicit_dest = extract_explicit_destination(clean_msg)
+    if explicit_dest:
+        conv.destination_slug = explicit_dest
+    elif req.destination_slug:
+        conv.destination_slug = req.destination_slug
+
     new_decisions = extract_session_decisions(clean_msg)
     if new_decisions:
         CopilotContextEngine.update_conversation_decisions(
@@ -206,7 +213,7 @@ async def copilot_chat(
         user=current_user,
         conversation_id=conv.id,
         trip_id=req.trip_id or conv.trip_id,
-        destination_slug=req.destination_slug or conv.destination_slug,
+        destination_slug=explicit_dest or req.destination_slug or conv.destination_slug,
     )
 
     # 6. Initialize AI Provider & Tool Dispatcher

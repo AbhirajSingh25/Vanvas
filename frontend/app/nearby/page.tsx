@@ -31,6 +31,7 @@ const PRESET_HUBS: SearchCenter[] = [
   { name: "Manali (Mall Road)", hindi: "मनाली मॉल रोड", lat: 32.2396, lng: 77.1887 },
   { name: "Rishikesh (Lakshman Jhula)", hindi: "ऋषिकेश लक्ष्मण झूला", lat: 30.1280, lng: 78.3270 },
   { name: "Tungnath (Chopta Base)", hindi: "तुंगनाथ चोपता", lat: 30.4878, lng: 79.2156 },
+  { name: "Kainchi Dham (Ashram Gate)", hindi: "कैंची धाम आश्रम", lat: 29.4239, lng: 79.5165 },
   { name: "Jaipur (Old City)", hindi: "जयपुर परकोटा", lat: 26.9124, lng: 75.7873 },
   { name: "Udaipur (Lake Pichola)", hindi: "उदयपुर पिछोला", lat: 24.5854, lng: 73.7125 },
   { name: "Varanasi (Dashashwamedh Ghat)", hindi: "दशाश्वमेध घाट", lat: 25.3076, lng: 83.0104 },

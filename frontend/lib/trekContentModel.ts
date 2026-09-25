@@ -15,12 +15,15 @@ export interface TrekWaypoint {
   elevationMeters: number;
   elevationFormatted: string;
   distanceFromStartKm: number;
+  distanceToNext?: string;
   timeFromPrev: string;
   terrainType: string;
   waterAvailable: boolean;
   shelterAvailable: boolean;
   foodAvailable: boolean;
   medicalHelp: boolean;
+  signalNote?: string;
+  difficulty?: string;
   latitude: number;
   longitude: number;
   fieldNotes: string;
@@ -196,16 +199,40 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
         elevationMeters: 2680,
         elevationFormatted: "2,680 m",
         distanceFromStartKm: 0,
+        distanceToNext: "1.0 km to Forest Trail",
         timeFromPrev: "Start",
         terrainType: "Meadows & Deodar Forest",
         waterAvailable: true,
         shelterAvailable: true,
         foodAvailable: true,
         medicalHelp: true,
+        signalNote: "Jio & Airtel 4G available at roadhead",
+        difficulty: "Easy (Paved start)",
         latitude: 30.4850,
         longitude: 79.1790,
         isBaseCamp: true,
         fieldNotes: "Base roadhead. Stock water, cash, and high-energy snacks here. No ATMs ahead.",
+        imageUrl: "/images/places/tungnath-chandrashila/chopta-meadows.jpg"
+      },
+      {
+        id: "wp-forest",
+        name: "Forest Trail (Buransh Woods)",
+        hindiName: "रोडोडेंड्रोन वन मार्ग",
+        elevationMeters: 2890,
+        elevationFormatted: "2,890 m",
+        distanceFromStartKm: 1.0,
+        distanceToNext: "0.8 km to Bhringi Nala",
+        timeFromPrev: "35 mins",
+        terrainType: "Rhododendron & Oak Canopy",
+        waterAvailable: true,
+        shelterAvailable: true,
+        foodAvailable: true,
+        medicalHelp: false,
+        signalNote: "Intermittent 3G signal",
+        difficulty: "Moderate uphill stone path",
+        latitude: 30.4858,
+        longitude: 79.1890,
+        fieldNotes: "Dense deodar and blooming buransh canopy. Shaded path with stone switchbacks.",
         imageUrl: "/images/places/tungnath-chandrashila/chopta-meadows.jpg"
       },
       {
@@ -215,15 +242,18 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
         elevationMeters: 3100,
         elevationFormatted: "3,100 m",
         distanceFromStartKm: 1.8,
-        timeFromPrev: "1 hr",
-        terrainType: "Rhododendron Canopy & Flagstones",
+        distanceToNext: "1.7 km to Tungnath Temple",
+        timeFromPrev: "45 mins",
+        terrainType: "Tree Line Boundary & Grasslands",
         waterAvailable: true,
         shelterAvailable: true,
         foodAvailable: true,
         medicalHelp: false,
+        signalNote: "Weak / No Cellular Signal",
+        difficulty: "Moderate continuous incline",
         latitude: 30.4868,
         longitude: 79.1980,
-        fieldNotes: "Tree line boundary. Rhododendrons bloom red and pink from March to May.",
+        fieldNotes: "Tree line boundary. Rhododendrons bloom red and pink from March to May. Tea stall operating.",
         imageUrl: "/images/places/tungnath-chandrashila/chopta-meadows.jpg"
       },
       {
@@ -233,15 +263,18 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
         elevationMeters: 3680,
         elevationFormatted: "3,680 m",
         distanceFromStartKm: 3.5,
+        distanceToNext: "1.5 km to Chandrashila Peak",
         timeFromPrev: "1.5 hrs",
         terrainType: "Alpine Tundra & Ancient Stone",
         waterAvailable: true,
         shelterAvailable: true,
         foodAvailable: true,
         medicalHelp: false,
+        signalNote: "No mobile network (Emergency radio only)",
+        difficulty: "Moderate high-altitude stone steps",
         latitude: 30.4886,
         longitude: 79.2173,
-        fieldNotes: "Highest Shiva shrine on earth. Rest for 20 mins to acclimatize before final summit pitch.",
+        fieldNotes: "Highest Shiva shrine on earth (3,680m). Rest for 20 mins to acclimatize before final summit pitch.",
         imageUrl: "/images/places/tungnath-chandrashila/tungnath-temple.jpg"
       },
       {
@@ -251,12 +284,15 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
         elevationMeters: 4000,
         elevationFormatted: "4,000 m",
         distanceFromStartKm: 5.0,
+        distanceToNext: "Summit Endpoint",
         timeFromPrev: "1 – 1.2 hrs",
         terrainType: "Rocky Crag & Exposed Ridge",
         waterAvailable: false,
         shelterAvailable: false,
         foodAvailable: false,
         medicalHelp: false,
+        signalNote: "Occasional line-of-sight signal on clear days",
+        difficulty: "Steep rocky crag ascent",
         latitude: 30.4930,
         longitude: 79.2185,
         isSummit: true,
