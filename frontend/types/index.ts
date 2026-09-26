@@ -125,6 +125,7 @@ export interface Place {
   id: string;
   destination_id: string;
   category?: string;
+  subcategory?: string;
   name: string;
   slug: string;
   description: string;
@@ -132,16 +133,20 @@ export interface Place {
   latitude: number;
   longitude: number;
   price_level?: string;
+  price_range?: string;
   approx_cost?: number;
   rating?: number;
   review_count?: number;
   opening_time?: string;
   closing_time?: string;
+  opening_hours?: string;
   phone?: string;
   website?: string;
+  google_maps_url?: string;
   recommended_duration_mins?: number;
   tags: string;
   image_url?: string;
+  photo_url?: string;
   why_vanvas_recommends?: string;
   booking_url?: string;
   is_must_visit: boolean;
@@ -150,14 +155,22 @@ export interface Place {
   is_saved?: boolean;
   match_score?: number;
   source?: "google_places" | "openstreetmap" | "vanvas_curated" | "vanvas_fallback" | string;
+  source_provider?: string;
   source_id?: string;
+  source_url?: string;
   is_live?: boolean;
   distance_km?: number;
   hours_available?: boolean;
   is_open_now?: boolean | null;
+  open_now?: boolean | null;
+  business_status?: string;
   action_links?: ActionLink[];
-  data_state?: string;
+  data_state?: "LIVE" | "VERIFIED" | "CURATED" | "STALE" | "UNAVAILABLE" | string;
   trust_source?: string;
+  last_verified_at?: string;
+  menu_url?: string | null;
+  menu_source?: string | null;
+  menu_available?: boolean | null;
 }
 
 export interface DestinationSearchResult {
@@ -203,28 +216,37 @@ export interface Hotel {
   id: string;
   destination_id: string;
   name: string;
+  property_name?: string;
   address: string;
   latitude: number;
   longitude: number;
   price_per_night?: number | null;
+  total_price?: number | null;
   price_formatted?: string | null;
   currency?: string;
+  taxes?: number | null;
+  available?: boolean | null;
   availability_state?: "AVAILABLE" | "UNAVAILABLE" | "UNKNOWN" | string;
   rating?: number | null;
   review_count?: number | null;
   hotel_style?: string;
   accommodation_type?: string;
+  property_type?: string;
+  room_type?: string;
   traveller_tags?: string[];
   amenities?: string;
   check_in_time?: string;
   check_out_time?: string;
   image_url?: string;
+  photos?: string[];
   booking_url?: string;
   badge?: string;
   phone?: string;
   website?: string;
   source?: "vanvas_curated" | "openstreetmap" | "google_places" | string;
+  source_provider?: string;
   source_id?: string;
+  source_url?: string;
   provider_source?: string | null;
   provider_listing_id?: string | null;
   provider_url?: string | null;
@@ -232,8 +254,9 @@ export interface Hotel {
   price_verified?: boolean;
   distance_km?: number;
   action_links?: ActionLink[];
-  data_state?: string;
+  data_state?: "LIVE" | "VERIFIED" | "CURATED" | "STALE" | "UNAVAILABLE" | string;
   trust_source?: string;
+  last_verified_at?: string;
 }
 
 export interface RentalOption {
@@ -242,10 +265,14 @@ export interface RentalOption {
   provider_name: string;
   vehicle_type: string;
   vehicle_name: string;
+  brand?: string;
+  model?: string;
+  price_per_hour?: number | null;
   price_per_day?: number | null;
-  hourly_price?: number | null;
+  deposit?: number | null;
   deposit_amount?: number | null;
   location: string;
+  address?: string;
   latitude: number;
   longitude: number;
   opening_hours?: string;
@@ -256,15 +283,19 @@ export interface RentalOption {
   phone?: string;
   whatsapp?: string;
   website?: string;
+  google_maps_url?: string;
   source?: "vanvas_curated" | "openstreetmap" | "google_places" | "provider_direct" | string;
+  source_provider?: string;
   source_id?: string;
+  source_url?: string;
   is_live?: boolean;
   inventory_verified?: boolean;
   verification_status?: "LIVE_PROVIDER" | "LIVE_OSM" | "CURATED" | "UNVERIFIED" | "UNAVAILABLE" | string;
   distance_km?: number;
   action_links?: ActionLink[];
-  data_state?: string;
+  data_state?: "LIVE" | "VERIFIED" | "CURATED" | "STALE" | "UNAVAILABLE" | string;
   trust_source?: string;
+  last_verified_at?: string;
 }
 
 

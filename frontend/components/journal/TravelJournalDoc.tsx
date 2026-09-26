@@ -334,7 +334,7 @@ export const TravelJournalDoc: React.FC<TravelJournalDocProps> = ({
                 <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
                 <div className="pt-2 border-t border-[#D8CBB2] flex justify-between text-xs font-mono font-medium text-[#173B32]">
                   <span>Check-in: {trip.hotel.check_in_time}</span>
-                  <span>₹{trip.hotel.price_per_night}/night</span>
+                  <span>{trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night}/night` : "Check availability"}</span>
                 </div>
               </div>
             )}
@@ -357,7 +357,7 @@ export const TravelJournalDoc: React.FC<TravelJournalDocProps> = ({
                 <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name} • Deposit: ₹{trip.rental.deposit_amount}</p>
                 <div className="pt-2 border-t border-[#D8CBB2] flex justify-between text-xs font-mono font-medium text-[#173B32]">
                   <span>Pickup: {trip.rental.location}</span>
-                  <span>₹{trip.rental.price_per_day}/day</span>
+                  <span>{trip.rental.price_per_day ? `₹${trip.rental.price_per_day}/day` : "Price on enquiry"}</span>
                 </div>
               </div>
             )}

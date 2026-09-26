@@ -347,14 +347,38 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
                 Verified Outbound Actions
               </span>
               <span className="text-[9px] font-mono text-[#536B52]">
-                {isLive ? "Live Provider Coordinates" : "VANVAS Ground Truth"}
+                {place.source_provider ? `Source: ${place.source_provider}` : (isLive ? "Live Provider" : "VANVAS Verified")}
               </span>
             </div>
+
+            {/* Menu Discovery (For Food/Cafe/Restaurant) */}
+            {(safeCategory.toLowerCase().includes("food") || safeCategory.toLowerCase().includes("caf") || safeCategory.toLowerCase().includes("restaurant")) && (
+              <div className="p-2.5 rounded-xl bg-[#EFE5D2]/70 border border-[#E5D5BA] flex items-center justify-between text-xs">
+                {place.menu_available && place.menu_url ? (
+                  <a
+                    href={place.menu_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold flex items-center gap-1.5 shadow-2xs transition-all"
+                  >
+                    <span>📜 View Official Menu</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <span className="text-[#7B4D36] italic text-xs">
+                    Menu not published online
+                  </span>
+                )}
+                <span className="text-[10px] font-mono text-[#536B52]">
+                  {place.menu_source ? `via ${place.menu_source}` : "Direct Contact"}
+                </span>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-2">
               {place.latitude && place.longitude ? (
                 <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
+                  href={place.google_maps_url || `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all"
@@ -372,7 +396,7 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
                   className="px-3 py-1.5 rounded-xl bg-[#FAF7F0] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA] text-xs font-semibold flex items-center gap-1.5 transition-all"
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-[#B65E3C]" />
-                  <span>Official Website</span>
+                  <span>Website</span>
                 </a>
               ) : null}
 

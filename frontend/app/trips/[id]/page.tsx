@@ -402,7 +402,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
                     <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
                       <span>Check-in: {trip.hotel.check_in_time}</span>
-                      <span>₹{trip.hotel.price_per_night}/night</span>
+                      <span>{trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night}/night` : "Check availability"}</span>
                     </div>
                   </div>
                 )}
@@ -420,7 +420,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name}</p>
                     <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
                       <span>{trip.rental.location}</span>
-                      <span>₹{trip.rental.price_per_day}/day</span>
+                      <span>{trip.rental.price_per_day ? `₹${trip.rental.price_per_day}/day` : "Price on enquiry"}</span>
                     </div>
                   </div>
                 )}
@@ -591,7 +591,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   />
                   <div className="flex items-center justify-between">
                     <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.hotel.name}</h4>
-                    <span className="text-sm font-mono font-bold text-[#B65E3C]">₹{trip.hotel.price_per_night} / night</span>
+                    <span className="text-sm font-mono font-bold text-[#B65E3C]">
+                      {trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night} / night` : "Check availability"}
+                    </span>
                   </div>
                   <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
                   <div className="p-3 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-xs space-y-1">
@@ -626,7 +628,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                   <div className="flex items-center justify-between">
                     <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.rental.vehicle_name}</h4>
-                    <span className="text-sm font-mono font-bold text-[#173B32]">₹{trip.rental.price_per_day} / day</span>
+                    <span className="text-sm font-mono font-bold text-[#173B32]">
+                      {trip.rental.price_per_day ? `₹${trip.rental.price_per_day} / day` : "Price on enquiry"}
+                    </span>
                   </div>
                   <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name} • Deposit: ₹{trip.rental.deposit_amount}</p>
                   <div className="p-3 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-xs space-y-1">

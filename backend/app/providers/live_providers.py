@@ -2,6 +2,7 @@ import httpx
 import math
 import logging
 import time
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
 from app.providers.base import (
@@ -118,12 +119,16 @@ from app.core.cache import places_cache
 
 import unicodedata
 
+import unicodedata
+from typing import Tuple, Set
+
 class LivePlacesProvider(PlacesProvider):
     """
     Genuine Location-Aware Live Places Provider.
     Discovers live nearby attractions, cafes, restaurants, heritage sites,
-    mobility services, shops, and essentials using OpenStreetMap Overpass API & Google Places (when configured),
-    with multi-tier curated fallback and strict data-source transparency.
+    mobility services, shops, essentials, and stays using Google Places API (New) with field masks
+    (when GOOGLE_PLACES_API_KEY is configured) and OpenStreetMap Overpass / Photon fallback,
+    with multi-tier curated fallback and strict data provenance transparency.
     """
     OVERPASS_ENDPOINTS = [
         "https://lz4.overpass-api.de/api/interpreter",
@@ -133,8 +138,42 @@ class LivePlacesProvider(PlacesProvider):
         "https://overpass.kumi.systems/api/interpreter",
     ]
 
+    GOOGLE_FIELD_MASK = (
+        "places.id,places.displayName,places.formattedAddress,places.location,"
+        "places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,"
+        "places.googleMapsUri,places.regularOpeningHours,places.currentOpeningHours,"
+        "places.businessStatus,places.rating,places.userRatingCount,places.priceLevel,"
+        "places.priceRange,places.photos,places.types"
+    )
+
+    CATEGORY_MAP_GOOGLE = {
+        "restaurant": ["restaurant", "indian_restaurant", "fast_food_restaurant"],
+        "cafe": ["cafe", "coffee_shop"],
+        "bakery": ["bakery"],
+        "street_food": ["restaurant", "meal_takeaway", "fast_food_restaurant"],
+        "local_food": ["restaurant", "indian_restaurant", "meal_takeaway"],
+        "shop": ["store", "clothing_store", "grocery_store", "supermarket"],
+        "market": ["market", "shopping_mall", "supermarket"],
+        "souvenir": ["gift_shop", "store"],
+        "craft": ["home_goods_store", "art_gallery", "store"],
+        "attraction": ["tourist_attraction", "amusement_park", "museum"],
+        "viewpoint": ["national_park", "park", "tourist_attraction"],
+        "temple": ["hindu_temple", "place_of_worship", "church", "mosque"],
+        "heritage": ["historical_landmark", "museum", "tourist_attraction"],
+        "fuel": ["gas_station"],
+        "pharmacy": ["pharmacy", "drugstore"],
+        "hospital": ["hospital", "doctor"],
+        "atm": ["atm", "bank"],
+        "bike_rental": ["car_rental", "transit_station"],
+        "scooter_rental": ["car_rental", "transit_station"],
+        "car_rental": ["car_rental"],
+        "hotel": ["hotel", "lodging", "resort_hotel"],
+        "hostel": ["hostel", "lodging"],
+        "homestay": ["bed_and_breakfast", "guest_house", "lodging"],
+    }
+
     def __init__(self, api_key: str = ""):
-        self.api_key = api_key or getattr(settings, "GOOGLE_PLACES_API_KEY", "")
+        self.api_key = api_key or getattr(settings, "GOOGLE_PLACES_API_KEY", "") or getattr(settings, "PLACES_API_KEY", "")
         self.headers = {
             "User-Agent": "VANVAS-Travel-Operating-System/2.0 (expedition@vanvas.com)"
         }
@@ -147,11 +186,160 @@ class LivePlacesProvider(PlacesProvider):
             self._geocoder = LiveGeocodingProvider()
         return self._geocoder
 
+    def _has_valid_google_key(self) -> bool:
+        return bool(self.api_key and len(self.api_key) > 10 and not self.api_key.startswith("your_"))
+
     def _calculate_bbox(self, lat: float, lng: float, radius_km: float) -> Tuple[float, float, float, float]:
         lat_delta = radius_km / 111.0
         cos_lat = max(math.cos(math.radians(lat)), 0.01)
         lng_delta = radius_km / (111.0 * cos_lat)
         return (lat - lat_delta, lng - lng_delta, lat + lat_delta, lng + lng_delta)
+
+    def _discover_menu(self, website_url: Optional[str]) -> Tuple[Optional[str], Optional[str], bool]:
+        """
+        Phase 6: Menu Discovery without fabrication or scraping.
+        1. Check official websiteUri.
+        2. Detect if menu page/link exists.
+        3. If a menu URL exists, return (url, "OFFICIAL_WEBSITE", True).
+        4. If no menu exists, return (None, None, False).
+        """
+        if not website_url or not isinstance(website_url, str):
+            return None, None, False
+
+        clean_url = website_url.strip()
+        if not (clean_url.startswith("http://") or clean_url.startswith("https://")):
+            return None, None, False
+
+        lower_url = clean_url.lower()
+        if "/menu" in lower_url or "menu." in lower_url or "food-menu" in lower_url or "dining-menu" in lower_url:
+            return clean_url, "OFFICIAL_WEBSITE", True
+
+        return None, None, False
+
+    def _map_google_types_to_category(self, types: List[str], requested_cat: Optional[str] = None) -> Tuple[str, Optional[str]]:
+        t_set = set(types or [])
+        if requested_cat:
+            req_l = requested_cat.lower().strip()
+            if req_l in ["restaurant", "food", "dining", "street_food", "local_food", "local food"]:
+                return "Local Food", "Restaurant"
+            elif req_l in ["cafe", "coffee", "cafes", "bakery", "cafés & bakery"]:
+                return "Cafés & Bakery", "Café"
+            elif req_l in ["attraction", "attractions", "sightseeing"]:
+                return "Attractions", "Landmark"
+            elif req_l in ["viewpoint", "nature", "trails"]:
+                return "Nature & Trails", "Viewpoint"
+            elif req_l in ["temple", "spiritual", "heritage", "church", "monastery"]:
+                return "Culture & Heritage", "Temple"
+            elif req_l in ["shop", "market", "souvenir", "craft", "shopping"]:
+                return "Shops & Markets", "Market"
+            elif req_l in ["fuel", "pharmacy", "hospital", "atm", "essentials", "medical"]:
+                return "Essentials & Medical", "Pharmacy" if "pharmacy" in req_l else "Service"
+            elif req_l in ["bike_rental", "scooter_rental", "car_rental", "mobility", "transport"]:
+                return "Mobility & Transport", "Rental"
+            elif req_l in ["hotel", "hostel", "homestay", "stay", "stays"]:
+                return "Stays & Sanctuaries", "Hotel"
+
+        if t_set & {"cafe", "coffee_shop", "bakery"}:
+            return "Cafés & Bakery", "Café"
+        elif t_set & {"restaurant", "indian_restaurant", "meal_takeaway", "fast_food_restaurant", "bar"}:
+            return "Local Food", "Restaurant"
+        elif t_set & {"hindu_temple", "place_of_worship", "church", "mosque", "historical_landmark", "museum"}:
+            return "Culture & Heritage", "Heritage Site"
+        elif t_set & {"national_park", "park", "campground", "natural_feature"}:
+            return "Nature & Trails", "Nature"
+        elif t_set & {"tourist_attraction", "amusement_park"}:
+            return "Attractions", "Attraction"
+        elif t_set & {"store", "market", "shopping_mall", "supermarket", "gift_shop", "clothing_store"}:
+            return "Shops & Markets", "Shop"
+        elif t_set & {"gas_station", "pharmacy", "hospital", "doctor", "atm", "bank"}:
+            return "Essentials & Medical", "Essential"
+        elif t_set & {"car_rental", "transit_station"}:
+            return "Mobility & Transport", "Transport"
+        elif t_set & {"hotel", "lodging", "resort_hotel", "hostel", "bed_and_breakfast", "guest_house"}:
+            return "Stays & Sanctuaries", "Stay"
+
+        return "Attractions", "Point of Interest"
+
+    def _map_osm_category(self, tags: Dict[str, Any]) -> str:
+        amenity = str(tags.get("amenity", "")).lower()
+        tourism = str(tags.get("tourism", "")).lower()
+        historic = str(tags.get("historic", "")).lower()
+        natural = str(tags.get("natural", "")).lower()
+        shop = str(tags.get("shop", "")).lower()
+        leisure = str(tags.get("leisure", "")).lower()
+
+        if amenity in ["cafe", "coffee_shop"] or shop in ["bakery", "coffee"]:
+            return "Cafés & Bakery"
+        if amenity in ["restaurant", "fast_food", "food_court", "dhaba", "ice_cream", "pub", "bar"]:
+            return "Local Food"
+        if tourism in ["attraction", "museum", "gallery", "theme_park"] or historic in ["monument", "memorial", "fort", "palace"]:
+            return "Attractions"
+        if amenity == "place_of_worship" or historic in ["temple", "monastery", "church", "mosque"]:
+            return "Culture & Heritage"
+        if natural in ["waterfall", "peak", "spring", "cave_entrance"] or leisure in ["park", "nature_reserve", "garden"] or tourism == "viewpoint":
+            return "Nature & Trails"
+        if shop or tourism == "marketplace":
+            return "Shops & Markets"
+        if amenity in ["pharmacy", "hospital", "clinic", "fuel", "atm", "bank"]:
+            return "Essentials & Medical"
+        if tourism in ["hotel", "guest_house", "motel", "hostel", "chalet", "apartment"]:
+            return "Stays & Sanctuaries"
+        return "Attractions"
+
+    def _parse_osm_element(self, element: Dict[str, Any], center_lat: float, center_lng: float) -> Optional[Dict[str, Any]]:
+        tags = element.get("tags", {})
+        name = tags.get("name")
+        if not name:
+            return None
+        
+        lat = element.get("lat") or element.get("center", {}).get("lat")
+        lng = element.get("lon") or element.get("center", {}).get("lon")
+        if lat is None or lng is None:
+            return None
+            
+        category = self._map_osm_category(tags)
+        dist = round(self._haversine(center_lat, center_lng, float(lat), float(lng)), 2)
+        osm_id = str(element.get("id", ""))
+        
+        addr_parts = [tags.get("addr:housenumber"), tags.get("addr:street"), tags.get("addr:suburb"), tags.get("addr:city")]
+        address = ", ".join([p for p in addr_parts if p]) or f"{dist} km from search location"
+        
+        return {
+            "id": f"osm-{osm_id}",
+            "name": name,
+            "category": category,
+            "subcategory": tags.get("amenity") or tags.get("tourism") or tags.get("shop") or category,
+            "description": tags.get("description") or f"Verified {category.lower()} in the area.",
+            "address": address,
+            "latitude": float(lat),
+            "longitude": float(lng),
+            "rating": None,
+            "review_count": None,
+            "price_level": None,
+            "price_range": None,
+            "approx_cost": None,
+            "opening_time": None,
+            "closing_time": None,
+            "opening_hours": tags.get("opening_hours"),
+            "hours_available": bool(tags.get("opening_hours")),
+            "open_now": None,
+            "phone": tags.get("phone") or tags.get("contact:phone"),
+            "website": tags.get("website") or tags.get("contact:website"),
+            "google_maps_url": None,
+            "photo_url": None,
+            "source": "openstreetmap",
+            "source_provider": "openstreetmap",
+            "source_id": osm_id,
+            "source_url": f"https://www.openstreetmap.org/node/{osm_id}",
+            "is_live": True,
+            "distance_km": dist,
+            "data_state": "LIVE",
+            "trust_source": "OPENSTREETMAP",
+            "last_verified_at": datetime.now(timezone.utc).isoformat(),
+            "menu_url": None,
+            "menu_source": None,
+            "menu_available": False,
+        }
 
     def _build_overpass_query(self, south: float, west: float, north: float, east: float, category: Optional[str] = None) -> str:
         cat_lower = (category or "").lower().strip()
@@ -166,7 +354,7 @@ class LivePlacesProvider(PlacesProvider):
             way["amenity"="cafe"]({bbox_str});
             way["shop"="bakery"]({bbox_str});
             """
-        elif cat_lower in ["food", "dining", "restaurant", "street_food", "local food"]:
+        elif cat_lower in ["food", "dining", "restaurant", "street_food", "local_food", "local food"]:
             body = f"""
             node["amenity"="restaurant"]({bbox_str});
             node["amenity"="fast_food"]({bbox_str});
@@ -195,7 +383,7 @@ class LivePlacesProvider(PlacesProvider):
             way["historic"="palace"]({bbox_str});
             way["historic"="monument"]({bbox_str});
             """
-        elif cat_lower in ["spiritual", "temple", "monastery", "church", "faith"]:
+        elif cat_lower in ["spiritual", "temple", "monastery", "church", "faith", "heritage"]:
             body = f"""
             node["amenity"="place_of_worship"]({bbox_str});
             node["historic"="temple"]({bbox_str});
@@ -224,7 +412,7 @@ class LivePlacesProvider(PlacesProvider):
             way["natural"="beach"]({bbox_str});
             way["natural"="water"]({bbox_str});
             """
-        elif cat_lower in ["shopping", "market", "markets", "shops & markets", "craft"]:
+        elif cat_lower in ["shopping", "market", "markets", "shops & markets", "craft", "shop", "souvenir"]:
             body = f"""
             node["shop"="supermarket"]({bbox_str});
             node["shop"="department_store"]({bbox_str});
@@ -239,7 +427,7 @@ class LivePlacesProvider(PlacesProvider):
             way["shop"="mall"]({bbox_str});
             way["amenity"="marketplace"]({bbox_str});
             """
-        elif cat_lower in ["mobility", "transport", "rental", "rentals", "bike", "motorcycle"]:
+        elif cat_lower in ["mobility", "transport", "rental", "rentals", "bike", "motorcycle", "bike_rental", "scooter_rental", "car_rental"]:
             body = f"""
             node["amenity"="bicycle_rental"]({bbox_str});
             node["amenity"="motorcycle_rental"]({bbox_str});
@@ -257,18 +445,17 @@ class LivePlacesProvider(PlacesProvider):
             way["tourism"="hotel"]({bbox_str});
             way["tourism"="hostel"]({bbox_str});
             """
-        elif cat_lower in ["essentials", "medical", "hospital", "pharmacy", "essentials & medical"]:
+        elif cat_lower in ["essentials", "medical", "hospital", "pharmacy", "fuel", "atm", "essentials & medical"]:
             body = f"""
             node["amenity"="pharmacy"]({bbox_str});
             node["amenity"="hospital"]({bbox_str});
             node["amenity"="clinic"]({bbox_str});
             node["amenity"="bank"]({bbox_str});
             node["amenity"="atm"]({bbox_str});
-            node["amenity"="police"]({bbox_str});
+            node["amenity"="fuel"]({bbox_str});
             way["amenity"="hospital"]({bbox_str});
             """
         else:
-            # Curated balanced travel discovery query (EXCLUDES schools, offices, police, post offices, generic shops)
             body = f"""
             node["tourism"~"attraction|viewpoint|museum|gallery|artwork|theme_park|zoo|camp_site"]({bbox_str});
             node["historic"~"monument|memorial|castle|ruins|archaeological_site|temple|shrine|fort|palace|church|monastery|mosque|tomb|city_gate|yes"]({bbox_str});
@@ -293,7 +480,7 @@ out center 60;"""
         """Executes an Overpass QL query across primary and backup endpoints with robust timeout."""
         for endpoint in self.OVERPASS_ENDPOINTS:
             try:
-                async with httpx.AsyncClient(timeout=6.0, headers=self.headers) as client:
+                async with httpx.AsyncClient(timeout=5.5, headers=self.headers) as client:
                     res = await client.post(endpoint, data={"data": query_str})
                     if res.status_code == 200:
                         data = res.json()
@@ -310,21 +497,21 @@ out center 60;"""
             cat_lower = (category or "").lower().strip()
             if cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
                 terms = ["cafe", "bakery", "coffee"]
-            elif cat_lower in ["food", "dining", "restaurant", "street_food", "local food"]:
+            elif cat_lower in ["food", "dining", "restaurant", "street_food", "local_food", "local food"]:
                 terms = ["restaurant", "dhaba", "food"]
-            elif cat_lower in ["attractions", "sightseeing"]:
+            elif cat_lower in ["attractions", "sightseeing", "attraction"]:
                 terms = ["monument", "museum", "fort", "palace"]
-            elif cat_lower in ["spiritual", "temple", "faith"]:
+            elif cat_lower in ["spiritual", "temple", "faith", "heritage"]:
                 terms = ["temple", "mandir", "church", "mosque", "ashram"]
-            elif cat_lower in ["nature", "trails", "nature & trails"]:
+            elif cat_lower in ["nature", "trails", "nature & trails", "viewpoint"]:
                 terms = ["park", "garden", "lake", "waterfall"]
-            elif cat_lower in ["shopping", "market", "markets"]:
+            elif cat_lower in ["shopping", "market", "markets", "shop", "souvenir", "craft"]:
                 terms = ["market", "bazaar", "mall", "store"]
-            elif cat_lower in ["mobility", "transport", "rental"]:
+            elif cat_lower in ["mobility", "transport", "rental", "bike_rental", "scooter_rental", "car_rental"]:
                 terms = ["fuel", "parking", "station", "rental"]
-            elif cat_lower in ["stay", "hotel", "hostel"]:
+            elif cat_lower in ["stay", "hotel", "hostel", "homestay"]:
                 terms = ["hotel", "resort", "homestay", "hostel"]
-            elif cat_lower in ["essentials", "medical"]:
+            elif cat_lower in ["essentials", "medical", "pharmacy", "hospital", "fuel", "atm"]:
                 terms = ["hospital", "pharmacy", "bank", "atm"]
             else:
                 terms = ["restaurant", "cafe", "temple", "park", "hotel", "market", "monument"]
@@ -361,23 +548,6 @@ out center 60;"""
                                 tags = {osm_key: osm_val, "name": p_name}
                                 p_cat = self._map_osm_category(tags)
 
-                                if category and category.lower() != "all":
-                                    cat_l = category.lower()
-                                    if cat_l in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"] and p_cat != "Cafés & Bakery":
-                                        continue
-                                    elif cat_l in ["food", "restaurant", "dining", "local food"] and p_cat not in ["Local Food", "Cafés & Bakery"]:
-                                        continue
-                                    elif cat_l in ["attractions", "things to do", "attraction"] and p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails", "Adventure"]:
-                                        continue
-                                    elif cat_l in ["shopping", "market", "markets", "shops & markets"] and p_cat != "Shops & Markets":
-                                        continue
-                                    elif cat_l in ["mobility", "transport", "rentals"] and p_cat != "Mobility & Transport":
-                                        continue
-                                    elif cat_l in ["essentials", "medical", "hospital"] and p_cat != "Essentials & Medical":
-                                        continue
-                                    elif cat_l in ["culture", "heritage", "spiritual", "temple", "church"] and p_cat != "Culture & Heritage":
-                                        continue
-
                                 addr_parts = [props.get("housenumber"), props.get("street"), props.get("district"), props.get("city"), props.get("state")]
                                 addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from search location"
 
@@ -396,34 +566,47 @@ out center 60;"""
                                     "id": f"osm-{osm_id}",
                                     "name": p_name,
                                     "category": p_cat,
+                                    "subcategory": osm_val or p_cat,
                                     "description": f"Verified {p_cat.lower()} located in {props.get('city') or props.get('state') or 'the area'}.",
                                     "address": addr,
                                     "latitude": p_lat,
                                     "longitude": p_lng,
                                     "price_level": None,
+                                    "price_range": None,
                                     "approx_cost": None,
                                     "rating": None,
                                     "review_count": None,
                                     "opening_time": None,
                                     "closing_time": None,
+                                    "opening_hours": None,
                                     "hours_available": False,
                                     "is_open_now": None,
+                                    "open_now": None,
+                                    "business_status": "OPERATIONAL",
                                     "phone": None,
                                     "website": None,
+                                    "google_maps_url": f"https://www.google.com/maps/dir/?api=1&destination={p_lat:.6f},{p_lng:.6f}",
                                     "recommended_duration_mins": 60,
                                     "tags": f"{p_cat},OpenStreetMap",
                                     "image_url": self._category_image(p_cat),
+                                    "photo_url": None,
                                     "why_vanvas_recommends": None,
                                     "is_must_visit": False,
                                     "is_hidden_gem": False,
                                     "is_indoor": p_cat in ["Cafés & Bakery", "Essentials & Medical", "Shops & Markets"],
                                     "source": "openstreetmap",
+                                    "source_provider": "openstreetmap",
                                     "source_id": osm_id,
+                                    "source_url": f"https://www.openstreetmap.org/node/{osm_id}",
                                     "is_live": True,
                                     "distance_km": dist,
                                     "action_links": action_links,
                                     "data_state": "LIVE",
                                     "trust_source": "OPENSTREETMAP",
+                                    "last_verified_at": datetime.now(timezone.utc).isoformat(),
+                                    "menu_url": None,
+                                    "menu_source": None,
+                                    "menu_available": False,
                                 })
                                 seen_ids.add(osm_id)
                     except Exception as e:
@@ -453,19 +636,16 @@ out center 60;"""
         if not p1_name or not p2_name:
             return False
         
-        # Exact normalized string match
         n1 = self._normalize_name(p1_name)
         n2 = self._normalize_name(p2_name)
         if n1 and n2 and n1 == n2:
             return True
 
-        # Check token containment if geographically close
         if p1_lat is not None and p1_lng is not None and p2_lat is not None and p2_lng is not None:
             dist = self._haversine(p1_lat, p1_lng, p2_lat, p2_lng)
             if dist <= max_distance_km:
                 if n1 and n2 and (n1 in n2 or n2 in n1):
                     return True
-                # Token overlap check (Jaccard similarity >= 0.5)
                 tokens1 = set(n1.split())
                 tokens2 = set(n2.split())
                 if tokens1 and tokens2:
@@ -478,7 +658,6 @@ out center 60;"""
         unique: List[Dict[str, Any]] = []
         seen_source_ids: Set[str] = set()
 
-        # Build set of normalized names & coordinates from excluded curated places
         curated_ref: List[Tuple[str, Optional[float], Optional[float]]] = []
         if excluded_curated:
             for cp in excluded_curated:
@@ -488,7 +667,7 @@ out center 60;"""
                 curated_ref.append((c_name, c_lat, c_lng))
 
         source_priority = {"google_places": 3, "openstreetmap": 2, "vanvas_curated": 1}
-        sorted_places = sorted(places, key=lambda p: source_priority.get(p.get("source", ""), 0), reverse=True)
+        sorted_places = sorted(places, key=lambda p: source_priority.get(p.get("source_provider", p.get("source", "")), 0), reverse=True)
 
         for p in sorted_places:
             sid = str(p.get("source_id") or "")
@@ -499,7 +678,6 @@ out center 60;"""
             p_lat = p.get("latitude")
             p_lng = p.get("longitude")
 
-            # Check if this place matches any curated place that should not be duplicated in live stream
             is_curated_dup = False
             for c_name, c_lat, c_lng in curated_ref:
                 if self._are_places_duplicate(p_name, p_lat, p_lng, c_name, c_lat, c_lng, max_distance_km=0.4):
@@ -610,21 +788,6 @@ out center 60;"""
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return round(r * c, 2)
 
-    async def _execute_overpass_query(self, query_str: str) -> List[Dict[str, Any]]:
-        """Executes an Overpass QL query across primary and backup endpoints with robust timeout."""
-        for endpoint in self.OVERPASS_ENDPOINTS:
-            try:
-                async with httpx.AsyncClient(timeout=5.5, headers=self.headers) as client:
-                    res = await client.post(endpoint, data={"data": query_str})
-                    if res.status_code == 200:
-                        data = res.json()
-                        elements = data.get("elements", [])
-                        if elements:
-                            return elements
-            except Exception as e:
-                logger.debug(f"Overpass endpoint {endpoint} failed: {e}")
-        return []
-
     def _parse_osm_element(
         self,
         el: Dict[str, Any],
@@ -639,18 +802,14 @@ out center 60;"""
 
         p_name_lower = p_name.lower().strip()
         cat_lower = (category_filter or "").lower().strip()
-        is_essentials_query = cat_lower in ["essentials", "medical", "hospital", "pharmacy", "essentials & medical"]
+        is_essentials_query = cat_lower in ["essentials", "medical", "hospital", "pharmacy", "fuel", "atm", "essentials & medical"]
 
-        # Travel Relevance Filter: Discard non-travel everyday facilities
         if not is_essentials_query:
             amenity = tags.get("amenity", "").lower()
             shop = tags.get("shop", "").lower()
             office = tags.get("office", "").lower()
             building = tags.get("building", "").lower()
-            tourism = tags.get("tourism", "").lower()
-            historic = tags.get("historic", "").lower()
 
-            # Discard explicitly excluded amenity or shop tags, office buildings, or civic name tokens
             if amenity in self.EXCLUDED_AMENITY_TAGS or shop in self.EXCLUDED_SHOP_TAGS or office:
                 return None
             if building in ["school", "college", "university", "kindergarten", "hospital", "clinic", "office", "commercial", "residential", "apartments"]:
@@ -658,7 +817,6 @@ out center 60;"""
             if any(neg in p_name_lower for neg in self.NEGATIVE_NAME_TOKENS):
                 return None
 
-        # Support node lat/lon or way/relation center lat/lon
         p_lat = el.get("lat") or el.get("center", {}).get("lat", center_lat)
         p_lng = el.get("lon") or el.get("center", {}).get("lon", center_lng)
         if p_lat is None or p_lng is None:
@@ -667,17 +825,17 @@ out center 60;"""
         p_cat = self._map_osm_category(tags)
 
         if category_filter and category_filter.lower() != "all":
-            if cat_lower in ["food", "restaurant", "dining", "local food"] and p_cat not in ["Local Food", "Cafés & Bakery"]:
+            if cat_lower in ["food", "restaurant", "dining", "local_food", "street_food", "local food"] and p_cat not in ["Local Food", "Cafés & Bakery"]:
                 return None
             elif cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"] and p_cat != "Cafés & Bakery":
                 return None
-            elif cat_lower in ["attractions", "things to do", "attraction", "nature", "trails & nature"] and p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails", "Adventure"]:
+            elif cat_lower in ["attractions", "things to do", "attraction", "nature", "trails & nature", "viewpoint"] and p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails", "Adventure"]:
                 return None
-            elif cat_lower in ["shopping", "market", "markets", "shops & markets"] and p_cat != "Shops & Markets":
+            elif cat_lower in ["shopping", "market", "markets", "shops & markets", "shop", "souvenir", "craft"] and p_cat != "Shops & Markets":
                 return None
-            elif cat_lower in ["mobility", "transport", "rentals", "mobility & rentals"] and p_cat != "Mobility & Transport":
+            elif cat_lower in ["mobility", "transport", "rentals", "mobility & rentals", "bike_rental", "scooter_rental", "car_rental"] and p_cat != "Mobility & Transport":
                 return None
-            elif cat_lower in ["essentials", "medical", "hospital", "essentials & medical"] and p_cat != "Essentials & Medical":
+            elif cat_lower in ["essentials", "medical", "hospital", "pharmacy", "fuel", "atm", "essentials & medical"] and p_cat != "Essentials & Medical":
                 return None
             elif cat_lower in ["culture", "heritage", "spiritual", "temple", "church", "culture & heritage"] and p_cat != "Culture & Heritage":
                 return None
@@ -693,6 +851,7 @@ out center 60;"""
 
         phone = tags.get("phone") or tags.get("contact:phone")
         website = tags.get("website") or tags.get("contact:website") or tags.get("url")
+        google_maps_url = f"https://www.google.com/maps/dir/?api=1&destination={p_lat:.6f},{p_lng:.6f}"
 
         osm_rating = None
         if "rating" in tags:
@@ -700,6 +859,8 @@ out center 60;"""
                 osm_rating = float(tags["rating"])
             except Exception:
                 osm_rating = None
+
+        menu_url, menu_source, menu_available = self._discover_menu(website)
 
         action_links = ActionLinkGenerator.generate_place_action_links(
             name=p_name,
@@ -710,6 +871,8 @@ out center 60;"""
             booking_url=None,
             source="openstreetmap",
             source_id=str(el.get("id")),
+            menu_url=menu_url,
+            google_maps_url=google_maps_url,
         )
 
         osm_img_url = None
@@ -730,35 +893,301 @@ out center 60;"""
             "id": f"osm-{el.get('id')}",
             "name": p_name,
             "category": p_cat,
+            "subcategory": tags.get("amenity") or tags.get("tourism") or tags.get("historic") or p_cat,
             "description": tags.get("description") or f"OpenStreetMap verified {p_cat.lower()}.",
             "address": addr,
             "latitude": p_lat,
             "longitude": p_lng,
             "price_level": None,
+            "price_range": None,
             "approx_cost": None,
             "rating": osm_rating,
             "review_count": None,
             "opening_time": hours_eval.opening_time,
             "closing_time": hours_eval.closing_time,
+            "opening_hours": op_hours,
             "hours_available": hours_eval.hours_available,
             "is_open_now": hours_eval.is_open_now,
+            "open_now": hours_eval.is_open_now,
+            "business_status": "OPERATIONAL",
             "phone": phone,
             "website": website,
+            "google_maps_url": google_maps_url,
             "recommended_duration_mins": 60,
             "tags": f"{p_cat},OpenStreetMap",
             "image_url": final_img_url,
+            "photo_url": osm_img_url,
             "why_vanvas_recommends": None,
             "is_must_visit": False,
             "is_hidden_gem": tags.get("tourism") == "viewpoint",
             "is_indoor": p_cat in ["Cafés & Bakery", "Essentials & Medical", "Shops & Markets"],
             "source": "openstreetmap",
+            "source_provider": "openstreetmap",
             "source_id": str(el.get("id")),
+            "source_url": f"https://www.openstreetmap.org/node/{el.get('id')}",
             "is_live": True,
             "distance_km": dist,
             "action_links": action_links,
             "data_state": "LIVE",
             "trust_source": "OPENSTREETMAP",
+            "last_verified_at": datetime.now(timezone.utc).isoformat(),
+            "menu_url": menu_url,
+            "menu_source": menu_source,
+            "menu_available": menu_available,
         }
+
+    def _parse_google_place_new(self, place: Dict[str, Any], center_lat: float, center_lng: float, category_filter: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Normalizes a Google Places API (New) response dictionary into the VANVAS internal POI representation.
+        Never fabricates missing fields.
+        """
+        display_obj = place.get("displayName", {})
+        p_name = display_obj.get("text") if isinstance(display_obj, dict) else (place.get("name") or "")
+        if not p_name:
+            return None
+
+        loc = place.get("location", {})
+        p_lat = loc.get("latitude")
+        p_lng = loc.get("longitude")
+        if p_lat is None or p_lng is None:
+            return None
+
+        types = place.get("types", [])
+        p_cat, subcat = self._map_google_types_to_category(types, category_filter)
+
+        dist = self._haversine(center_lat, center_lng, p_lat, p_lng)
+
+        # Phone numbers
+        phone = place.get("nationalPhoneNumber") or place.get("internationalPhoneNumber")
+
+        # URLs
+        website = place.get("websiteUri")
+        google_maps_url = place.get("googleMapsUri") or f"https://www.google.com/maps/dir/?api=1&destination={p_lat:.6f},{p_lng:.6f}"
+
+        # Ratings
+        rating_val = float(place["rating"]) if ("rating" in place and place["rating"] is not None) else None
+        review_cnt = int(place["userRatingCount"]) if ("userRatingCount" in place and place["userRatingCount"] is not None) else None
+
+        # Price level & Range
+        raw_price_lvl = place.get("priceLevel")
+        price_lvl_map = {
+            "PRICE_LEVEL_FREE": "Free",
+            "PRICE_LEVEL_INEXPENSIVE": "₹",
+            "PRICE_LEVEL_MODERATE": "₹₹",
+            "PRICE_LEVEL_EXPENSIVE": "₹₹₹",
+            "PRICE_LEVEL_VERY_EXPENSIVE": "₹₹₹₹",
+        }
+        price_lvl = price_lvl_map.get(str(raw_price_lvl), None) if raw_price_lvl else None
+
+        price_range_obj = place.get("priceRange")
+        price_range_str = None
+        if isinstance(price_range_obj, dict):
+            start = price_range_obj.get("startPrice", {}).get("units")
+            end = price_range_obj.get("endPrice", {}).get("units")
+            if start and end:
+                price_range_str = f"₹{start} - ₹{end}"
+            elif start:
+                price_range_str = f"From ₹{start}"
+
+        # Opening hours
+        reg_hours = place.get("regularOpeningHours", {})
+        cur_hours = place.get("currentOpeningHours", {})
+        open_now = cur_hours.get("openNow") if (isinstance(cur_hours, dict) and cur_hours.get("openNow") is not None) else (
+            reg_hours.get("openNow") if isinstance(reg_hours, dict) else None
+        )
+
+        weekday_texts = reg_hours.get("weekdayDescriptions", []) if isinstance(reg_hours, dict) else []
+        op_hours_str = ", ".join(weekday_texts[:2]) if weekday_texts else None
+
+        # Photos
+        photos = place.get("photos", [])
+        photo_url = None
+        if photos and isinstance(photos, list) and len(photos) > 0:
+            photo_name = photos[0].get("name")
+            if photo_name and self.api_key:
+                photo_url = f"https://places.googleapis.com/v1/{photo_name}/media?maxHeightPx=800&maxWidthPx=1200&key={self.api_key}"
+
+        img_url = photo_url or self._category_image(p_cat)
+
+        # Menu discovery
+        menu_url, menu_source, menu_available = self._discover_menu(website)
+
+        place_id = str(place.get("id", ""))
+        action_links = ActionLinkGenerator.generate_place_action_links(
+            name=p_name,
+            latitude=p_lat,
+            longitude=p_lng,
+            website=website,
+            phone=phone,
+            booking_url=None,
+            source="google_places",
+            source_id=place_id,
+            menu_url=menu_url,
+            google_maps_url=google_maps_url,
+        )
+
+        return {
+            "id": f"gp-{place_id[:32]}" if place_id else f"gp-{dist}",
+            "name": p_name,
+            "category": p_cat,
+            "subcategory": subcat or (types[0] if types else p_cat),
+            "description": f"Verified venue at {place.get('formattedAddress', 'the area')}.",
+            "address": place.get("formattedAddress"),
+            "latitude": p_lat,
+            "longitude": p_lng,
+            "price_level": price_lvl,
+            "price_range": price_range_str,
+            "approx_cost": None,
+            "rating": rating_val,
+            "review_count": review_cnt,
+            "opening_time": None,
+            "closing_time": None,
+            "opening_hours": op_hours_str,
+            "hours_available": bool(open_now is not None or op_hours_str),
+            "is_open_now": open_now,
+            "open_now": open_now,
+            "business_status": place.get("businessStatus", "OPERATIONAL"),
+            "phone": phone,
+            "website": website,
+            "google_maps_url": google_maps_url,
+            "recommended_duration_mins": 60,
+            "tags": ",".join(types[:3]) if types else "GooglePlaces",
+            "image_url": img_url,
+            "photo_url": photo_url,
+            "why_vanvas_recommends": None,
+            "is_must_visit": False,
+            "is_hidden_gem": False,
+            "is_indoor": p_cat in ["Cafés & Bakery", "Essentials & Medical", "Shops & Markets"],
+            "source": "google_places",
+            "source_provider": "google_places",
+            "source_id": place_id,
+            "source_url": google_maps_url or website,
+            "is_live": True,
+            "distance_km": dist,
+            "action_links": action_links,
+            "data_state": "LIVE",
+            "trust_source": "GOOGLE_PLACES",
+            "last_verified_at": datetime.now(timezone.utc).isoformat(),
+            "menu_url": menu_url,
+            "menu_source": menu_source,
+            "menu_available": menu_available,
+        }
+
+    async def _fetch_google_places_new_nearby(self, lat: float, lng: float, radius_m: int, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Calls Google Places API (New) Nearby Search with FieldMask."""
+        if not self._has_valid_google_key():
+            return []
+
+        types = []
+        if category and category.lower() in self.CATEGORY_MAP_GOOGLE:
+            types = self.CATEGORY_MAP_GOOGLE[category.lower()]
+        elif category:
+            cat_l = category.lower().strip()
+            if cat_l in ["food", "dining", "local food", "street food"]:
+                types = ["restaurant", "indian_restaurant", "fast_food_restaurant"]
+            elif cat_l in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
+                types = ["cafe", "coffee_shop", "bakery"]
+            elif cat_l in ["attractions", "sightseeing", "things to do"]:
+                types = ["tourist_attraction", "museum", "historical_landmark"]
+            elif cat_l in ["spiritual", "temple", "faith", "heritage"]:
+                types = ["hindu_temple", "place_of_worship", "historical_landmark"]
+            elif cat_l in ["shopping", "market", "markets", "shops & markets", "craft"]:
+                types = ["store", "market", "shopping_mall"]
+            elif cat_l in ["mobility", "transport", "rental", "rentals"]:
+                types = ["car_rental", "transit_station"]
+            elif cat_l in ["stay", "stays", "hotel", "hostel", "homestay"]:
+                types = ["hotel", "lodging", "bed_and_breakfast", "hostel"]
+            elif cat_l in ["essentials", "medical", "hospital", "pharmacy", "fuel", "atm"]:
+                types = ["pharmacy", "hospital", "gas_station", "atm"]
+
+        url = "https://places.googleapis.com/v1/places:searchNearby"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": self.api_key,
+            "X-Goog-FieldMask": self.GOOGLE_FIELD_MASK,
+        }
+        body: Dict[str, Any] = {
+            "maxResultCount": 20,
+            "locationRestriction": {
+                "circle": {
+                    "center": {"latitude": lat, "longitude": lng},
+                    "radius": float(radius_m)
+                }
+            }
+        }
+        if types:
+            body["includedTypes"] = types[:10]
+
+        start_time = time.time()
+        try:
+            async with httpx.AsyncClient(timeout=4.5) as client:
+                res = await client.post(url, headers=headers, json=body)
+                if res.status_code == 200:
+                    data = res.json()
+                    places = data.get("places", [])
+                    results = []
+                    for p in places:
+                        parsed = self._parse_google_place_new(p, lat, lng, category)
+                        if parsed:
+                            results.append(parsed)
+                    latency = (time.time() - start_time) * 1000
+                    health_tracker.record_success("google_places", latency)
+                    return results
+                else:
+                    logger.debug(f"Google Places (New) Nearby Search returned {res.status_code}: {res.text}")
+                    health_tracker.record_failure("google_places", f"HTTP {res.status_code}")
+        except Exception as e:
+            logger.debug(f"Google Places (New) Nearby Search error: {e}")
+            health_tracker.record_failure("google_places", str(e))
+
+        return []
+
+    async def _fetch_google_places_new_search(self, query: str, lat: Optional[float] = None, lng: Optional[float] = None, radius_m: int = 15000, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Calls Google Places API (New) Text Search with FieldMask."""
+        if not self._has_valid_google_key():
+            return []
+
+        url = "https://places.googleapis.com/v1/places:searchText"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": self.api_key,
+            "X-Goog-FieldMask": self.GOOGLE_FIELD_MASK,
+        }
+        body: Dict[str, Any] = {
+            "textQuery": query,
+            "maxResultCount": 20,
+        }
+        if lat is not None and lng is not None:
+            body["locationBias"] = {
+                "circle": {
+                    "center": {"latitude": lat, "longitude": lng},
+                    "radius": float(radius_m)
+                }
+            }
+
+        start_time = time.time()
+        try:
+            async with httpx.AsyncClient(timeout=4.5) as client:
+                res = await client.post(url, headers=headers, json=body)
+                if res.status_code == 200:
+                    data = res.json()
+                    places = data.get("places", [])
+                    results = []
+                    c_lat = lat or 28.6139
+                    c_lng = lng or 77.2090
+                    for p in places:
+                        parsed = self._parse_google_place_new(p, c_lat, c_lng, category)
+                        if parsed:
+                            results.append(parsed)
+                    latency = (time.time() - start_time) * 1000
+                    health_tracker.record_success("google_places", latency)
+                    return results
+                else:
+                    health_tracker.record_failure("google_places", f"HTTP {res.status_code}")
+        except Exception as e:
+            health_tracker.record_failure("google_places", str(e))
+
+        return []
 
     async def search_places(self, query: str, destination_name: str = "", category: Optional[str] = None) -> List[Dict[str, Any]]:
         """
@@ -773,9 +1202,13 @@ out center 60;"""
         curated_matches = await self.demo_fallback.search_places(query, destination_name, category)
         for p in curated_matches:
             p["source"] = "vanvas_curated"
+            p["source_provider"] = "vanvas_curated"
             p["is_live"] = False
             p["data_state"] = "VERIFIED"
             p["trust_source"] = "VANVAS_CURATED"
+            p["last_verified_at"] = datetime.now(timezone.utc).isoformat()
+            p["menu_available"] = False
+            p["menu_url"] = None
 
         target_location = destination_name.strip()
         if not target_location and query:
@@ -796,84 +1229,11 @@ out center 60;"""
         if lat is not None and lng is not None:
             radius_m = 15000
 
-            # 1. Google Places Text Search (when configured)
-            if self.api_key and len(self.api_key) > 10 and not self.api_key.startswith("your_"):
-                try:
-                    clean_q = f"{query} in {target_location}" if target_location not in query else query
-                    gp_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={httpx.URL(clean_q)}&location={lat},{lng}&radius={radius_m}&key={self.api_key}"
-                    async with httpx.AsyncClient(timeout=4.0) as client:
-                        res = await client.get(gp_url)
-                        if res.status_code == 200:
-                            gp_data = res.json()
-                            for item in gp_data.get("results", [])[:20]:
-                                p_name = item.get("name")
-                                if not p_name:
-                                    continue
-                                p_geom = item.get("geometry", {}).get("location", {})
-                                p_lat = p_geom.get("lat", lat)
-                                p_lng = p_geom.get("lng", lng)
-                                types = item.get("types", [])
-                                cat = "Attractions"
-                                if any(t in types for t in ["cafe", "bakery"]):
-                                    cat = "Cafés & Bakery"
-                                elif any(t in types for t in ["restaurant", "food", "bar", "meal_takeaway"]):
-                                    cat = "Local Food"
-                                elif any(t in types for t in ["park", "natural_feature", "campground"]):
-                                    cat = "Nature & Trails"
-                                elif any(t in types for t in ["hindu_temple", "place_of_worship", "museum", "church", "tourist_attraction"]):
-                                    cat = "Culture & Heritage"
-
-                                dist = self._haversine(lat, lng, p_lat, p_lng)
-                                rating_val = float(item["rating"]) if "rating" in item and item["rating"] is not None else None
-                                review_cnt = int(item["user_ratings_total"]) if "user_ratings_total" in item and item["user_ratings_total"] is not None else None
-                                price_lvl = ("₹" * int(item["price_level"])) if "price_level" in item and item["price_level"] is not None else None
-
-                                gp_action_links = ActionLinkGenerator.generate_place_action_links(
-                                    name=p_name,
-                                    latitude=p_lat,
-                                    longitude=p_lng,
-                                    website=None,
-                                    phone=None,
-                                    booking_url=None,
-                                    source="google_places",
-                                    source_id=item.get("place_id"),
-                                )
-
-                                gathered_live.append({
-                                    "id": f"gp-{item.get('place_id', '')[:16]}",
-                                    "name": p_name,
-                                    "category": cat,
-                                    "description": f"Verified venue at {item.get('formatted_address', item.get('vicinity', 'the area'))}.",
-                                    "address": item.get("formatted_address") or item.get("vicinity"),
-                                    "latitude": p_lat,
-                                    "longitude": p_lng,
-                                    "price_level": price_lvl,
-                                    "approx_cost": None,
-                                    "rating": rating_val,
-                                    "review_count": review_cnt,
-                                    "opening_time": None,
-                                    "closing_time": None,
-                                    "hours_available": False,
-                                    "is_open_now": None,
-                                    "phone": None,
-                                    "website": None,
-                                    "recommended_duration_mins": 60,
-                                    "tags": ",".join(types[:3]),
-                                    "image_url": self._category_image(cat),
-                                    "why_vanvas_recommends": None,
-                                    "is_must_visit": False,
-                                    "is_hidden_gem": False,
-                                    "is_indoor": False,
-                                    "source": "google_places",
-                                    "source_id": item.get("place_id"),
-                                    "is_live": True,
-                                    "distance_km": dist,
-                                    "action_links": gp_action_links,
-                                    "data_state": "LIVE",
-                                    "trust_source": "GOOGLE_PLACES",
-                                })
-                except Exception as e:
-                    logger.warning(f"Google Places text search failed: {e}")
+            # 1. Google Places (New) Text Search
+            if self._has_valid_google_key():
+                clean_q = f"{query} in {target_location}" if target_location not in query else query
+                gp_results = await self._fetch_google_places_new_search(clean_q, lat, lng, radius_m, category)
+                gathered_live.extend(gp_results)
 
             # 2. OpenStreetMap Overpass Search (nodes + ways)
             clean_search_tokens = [t for t in re.sub(r"[^a-zA-Z0-9\s]", "", query.lower()).split() if t not in {"in", "near", "best", "quiet", "famous", "top", "good", "the", "and", target_location.lower()}]
@@ -924,6 +1284,12 @@ out center 60;"""
         category: Optional[str] = None,
         excluded_curated: Optional[List[Dict[str, Any]]] = None
     ) -> List[Dict[str, Any]]:
+        """
+        Genuine coordinate-based nearby search.
+        Sorted by actual geographic distance.
+        Uses Google Places API (New) when configured, OpenStreetMap Overpass live fallback,
+        and deduplicates against curated items without fabricating missing fields.
+        """
         cache_key = cache_service.make_places_key(lat, lng, radius_km, category)
         cached_val, is_stale = cache_service.get(cache_key)
         if cached_val is not None and not is_stale:
@@ -931,98 +1297,14 @@ out center 60;"""
 
         start_time = time.time()
         gathered_places: List[Dict[str, Any]] = []
+        radius_m = min(int(radius_km * 1000), 25000)
 
-        # 1. Try Google Places if configured with valid API Key
-        if self.api_key and len(self.api_key) > 10 and not self.api_key.startswith("your_"):
-            try:
-                radius_m = min(int(radius_km * 1000), 25000)
-                gp_url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius={radius_m}&key={self.api_key}"
-                async with httpx.AsyncClient(timeout=4.0) as client:
-                    res = await client.get(gp_url)
-                    if res.status_code == 200:
-                        gp_data = res.json()
-                        for item in gp_data.get("results", [])[:25]:
-                            p_name = item.get("name")
-                            if not p_name:
-                                continue
-                            p_geom = item.get("geometry", {}).get("location", {})
-                            p_lat = p_geom.get("lat", lat)
-                            p_lng = p_geom.get("lng", lng)
-                            types = item.get("types", [])
+        # 1. Primary: Google Places API (New) with field masks when configured
+        if self._has_valid_google_key():
+            gp_places = await self._fetch_google_places_new_nearby(lat, lng, radius_m, category)
+            gathered_places.extend(gp_places)
 
-                            cat = "Attractions"
-                            if any(t in types for t in ["cafe", "bakery"]):
-                                cat = "Cafés & Bakery"
-                            elif any(t in types for t in ["restaurant", "food", "bar", "meal_takeaway"]):
-                                cat = "Local Food"
-                            elif any(t in types for t in ["park", "natural_feature", "campground"]):
-                                cat = "Nature & Trails"
-                            elif any(t in types for t in ["hindu_temple", "place_of_worship", "museum", "church", "tourist_attraction"]):
-                                cat = "Culture & Heritage"
-                            elif any(t in types for t in ["pharmacy", "hospital", "doctor", "atm", "bank", "police", "gas_station"]):
-                                cat = "Essentials & Medical"
-                            elif any(t in types for t in ["store", "supermarket", "shopping_mall", "clothing_store"]):
-                                cat = "Shops & Markets"
-                            elif any(t in types for t in ["car_rental", "parking", "gas_station", "transit_station"]):
-                                cat = "Mobility & Transport"
-
-                            if category and category.lower() != "all":
-                                if category.lower() not in cat.lower():
-                                    continue
-
-                            dist = self._haversine(lat, lng, p_lat, p_lng)
-                            rating_val = float(item["rating"]) if "rating" in item and item["rating"] is not None else None
-                            review_cnt = int(item["user_ratings_total"]) if "user_ratings_total" in item and item["user_ratings_total"] is not None else None
-                            price_lvl = ("₹" * int(item["price_level"])) if "price_level" in item and item["price_level"] is not None else None
-
-                            gp_nb_links = ActionLinkGenerator.generate_place_action_links(
-                                name=p_name,
-                                latitude=p_lat,
-                                longitude=p_lng,
-                                website=None,
-                                phone=None,
-                                booking_url=None,
-                                source="google_places",
-                                source_id=item.get("place_id"),
-                            )
-
-                            gathered_places.append({
-                                "id": f"gp-{item.get('place_id', '')[:16]}",
-                                "name": p_name,
-                                "category": cat,
-                                "description": f"Verified venue located at {item.get('vicinity', 'the area')}.",
-                                "address": item.get("vicinity"),
-                                "latitude": p_lat,
-                                "longitude": p_lng,
-                                "price_level": price_lvl,
-                                "approx_cost": None,
-                                "rating": rating_val,
-                                "review_count": review_cnt,
-                                "opening_time": None,
-                                "closing_time": None,
-                                "hours_available": False,
-                                "is_open_now": None,
-                                "phone": None,
-                                "website": None,
-                                "recommended_duration_mins": 60,
-                                "tags": ",".join(types[:3]),
-                                "image_url": self._category_image(cat),
-                                "why_vanvas_recommends": None,
-                                "is_must_visit": False,
-                                "is_hidden_gem": False,
-                                "is_indoor": False,
-                                "source": "google_places",
-                                "source_id": item.get("place_id"),
-                                "is_live": True,
-                                "distance_km": dist,
-                                "action_links": gp_nb_links,
-                                "data_state": "LIVE",
-                                "trust_source": "GOOGLE_PLACES",
-                            })
-            except Exception as e:
-                logger.warning(f"Google Places live discovery failed: {e}")
-
-        # 2. Comprehensive OpenStreetMap Overpass Live Query (Indexed BBOX query on nodes and ways)
+        # 2. OpenStreetMap Overpass Live Query (Indexed BBOX query on nodes and ways)
         south, west, north, east = self._calculate_bbox(lat, lng, radius_km)
         try:
             query_str = self._build_overpass_query(south, west, north, east, category)
@@ -1032,7 +1314,6 @@ out center 60;"""
                 if parsed and parsed.get("distance_km", 999) <= radius_km:
                     gathered_places.append(parsed)
 
-            # If Overpass returned few results or failed, invoke Photon live POI discovery
             if len(gathered_places) < 4:
                 photon_places = await self._query_photon_fallback(lat, lng, radius_km, category)
                 for pp in photon_places:
@@ -1040,14 +1321,12 @@ out center 60;"""
                         gathered_places.append(pp)
         except Exception as e:
             logger.warning(f"Overpass live query failed: {e}")
-            # Try photon fallback
             photon_places = await self._query_photon_fallback(lat, lng, radius_km, category)
             for pp in photon_places:
                 if pp.get("distance_km", 999) <= radius_km:
                     gathered_places.append(pp)
 
-        # 3. Deduplicate across Google Places and OSM, and EXCLUDE curated places
-        # Ensure strict radius enforcement
+        # 3. Deduplicate across Google Places and OSM, enforce radius limit, and sort by actual distance
         valid_radius_places = [p for p in gathered_places if (p.get("distance_km") or 0) <= (radius_km + 0.1)]
 
         if valid_radius_places:
@@ -1055,6 +1334,7 @@ out center 60;"""
             deduped.sort(key=lambda x: x.get("distance_km", 999))
             latency_ms = (time.time() - start_time) * 1000
             health_tracker.record_success("places", latency_ms)
+            health_tracker.record_success("osm_overpass", latency_ms)
             cache_service.set(cache_key, deduped, ttl_seconds=300)
             return deduped
 
@@ -1129,7 +1409,8 @@ class LiveImageProvider(ImageProvider):
 
 class HaversineRoutingProvider(RoutingProvider):
     """
-    Routing provider calculating realistic road distances and driving times taking Himalayan terrain curves into account.
+    Routing provider calculating realistic road distances, driving times, and turn-by-turn route polylines
+    using Open Source Routing Machine (OSRM) with resilient mountain tortuosity fallback.
     """
     def calculate_distance_matrix(self, points: List[Dict[str, float]]) -> List[List[Dict[str, Any]]]:
         n = len(points)
@@ -1169,19 +1450,56 @@ class HaversineRoutingProvider(RoutingProvider):
 
     async def calculate_route(self, lat1: float, lng1: float, lat2: float, lng2: float) -> Dict[str, Any]:
         """
-        Direct route calculation between two geographic coordinates with mountain tortuosity correction.
+        Direct route calculation between two geographic coordinates.
+        Queries OSRM for true road navigation geometry; falls back to mountain tortuosity when offline.
         """
+        start_time = time.time()
+        # 1. Try OSRM route API with short timeout
+        try:
+            osrm_url = f"https://router.project-osrm.org/route/v1/driving/{lng1},{lat1};{lng2},{lat2}?overview=full&geometries=geojson"
+            async with httpx.AsyncClient(timeout=3.5) as client:
+                res = await client.get(osrm_url)
+                if res.status_code == 200:
+                    data = res.json()
+                    routes = data.get("routes", [])
+                    if routes:
+                        r0 = routes[0]
+                        dist_km = round(r0.get("distance", 0) / 1000.0, 2)
+                        dur_mins = max(1, round(r0.get("duration", 0) / 60.0))
+                        geom_coords = r0.get("geometry", {}).get("coordinates", [])
+                        # Convert [lng, lat] GeoJSON to Leaflet [lat, lng]
+                        polyline = [[c[1], c[0]] for c in geom_coords] if geom_coords else [[lat1, lng1], [lat2, lng2]]
+                        
+                        latency = (time.time() - start_time) * 1000
+                        health_tracker.record_success("routing", latency)
+                        return {
+                            "distance_km": dist_km,
+                            "duration_mins": dur_mins,
+                            "is_accurate": True,
+                            "is_mountain_adjusted": False,
+                            "geometry": polyline,
+                            "source": "osrm",
+                            "source_provider": "osrm",
+                            "data_state": "LIVE",
+                            "trust_source": "OSRM_NAVIGATION",
+                        }
+        except Exception as e:
+            logger.debug(f"OSRM route calculation failed, falling back to mountain tortuosity: {e}")
+
+        # 2. Fallback to mountain tortuosity estimate
         matrix = self.calculate_distance_matrix([{"lat": lat1, "lng": lng1}, {"lat": lat2, "lng": lng2}])
         res = matrix[0][1]
         health_tracker.record_success("routing", 0.5)
         return {
             "distance_km": res["distance_km"],
             "duration_mins": res["duration_mins"],
+            "is_accurate": False,
             "is_mountain_adjusted": True,
-            "schedule_type": "estimated_route",
+            "geometry": [[lat1, lng1], [lat2, lng2]],
             "source": "internal",
+            "source_provider": "internal",
             "data_state": "VERIFIED",
-            "trust_source": "INTERNAL",
+            "trust_source": "INTERNAL_ESTIMATION",
         }
 
 

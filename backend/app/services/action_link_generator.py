@@ -80,11 +80,19 @@ class ActionLinkGenerator:
         booking_url: Optional[str] = None,
         source: Optional[str] = None,
         source_id: Optional[str] = None,
+        menu_url: Optional[str] = None,
+        google_maps_url: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         links: List[Dict[str, str]] = []
 
-        # 1. Directions link (from verified coordinates)
-        if latitude is not None and longitude is not None and abs(latitude) <= 90 and abs(longitude) <= 180:
+        # 1. Directions link (from verified coordinates or google_maps_url)
+        if is_valid_url(google_maps_url):
+            links.append({
+                "type": "directions",
+                "label": "Get Directions",
+                "url": google_maps_url.strip(),
+            })
+        elif latitude is not None and longitude is not None and abs(latitude) <= 90 and abs(longitude) <= 180:
             maps_url = f"https://www.google.com/maps/dir/?api=1&destination={latitude:.6f},{longitude:.6f}"
             links.append({
                 "type": "directions",
@@ -100,7 +108,15 @@ class ActionLinkGenerator:
                 "url": website.strip(),
             })
 
-        # 3. Phone action (if genuine phone)
+        # 3. Menu link (if genuine URL)
+        if is_valid_url(menu_url):
+            links.append({
+                "type": "menu",
+                "label": "View Menu",
+                "url": menu_url.strip(),
+            })
+
+        # 4. Phone action (if genuine phone)
         if is_valid_phone(phone):
             links.append({
                 "type": "phone",
@@ -108,7 +124,7 @@ class ActionLinkGenerator:
                 "url": format_tel_url(phone),
             })
 
-        # 4. External Checkout / Booking link (only if genuine verified URL)
+        # 5. External Checkout / Booking link (only if genuine verified URL)
         if is_valid_url(booking_url):
             links.append({
                 "type": "booking",
@@ -117,7 +133,7 @@ class ActionLinkGenerator:
                 "capability": "EXTERNAL_CHECKOUT",
             })
 
-        # 5. OpenStreetMap POI link (if live OSM item)
+        # 6. OpenStreetMap POI link (if live OSM item)
         if source == "openstreetmap" and source_id and str(source_id).isdigit():
             osm_url = f"https://www.openstreetmap.org/node/{source_id}"
             links.append({

@@ -197,37 +197,50 @@ class ActionLink(BaseModel):
 class PlaceBase(BaseModel):
     destination_id: str
     category: str = "Attractions"
+    subcategory: Optional[str] = None
     name: str
     slug: str
     description: str = ""
     address: Optional[str] = None
     latitude: float
     longitude: float
-    price_level: Optional[str] = "₹₹"
+    price_level: Optional[str] = None
+    price_range: Optional[str] = None
     approx_cost: Optional[float] = 0.0
     rating: Optional[float] = None
     review_count: Optional[int] = None
     opening_time: Optional[str] = None
     closing_time: Optional[str] = None
+    opening_hours: Optional[str] = None
     hours_available: Optional[bool] = None
     is_open_now: Optional[bool] = None
+    open_now: Optional[bool] = None
+    business_status: Optional[str] = None
     phone: Optional[str] = None
     website: Optional[str] = None
+    google_maps_url: Optional[str] = None
     recommended_duration_mins: Optional[int] = 60
     tags: str = "Scenic,Mountain"
     image_url: Optional[str] = None
+    photo_url: Optional[str] = None
     why_vanvas_recommends: Optional[str] = None
     booking_url: Optional[str] = None
     is_must_visit: bool = False
     is_hidden_gem: bool = False
     is_indoor: bool = False
     source: Optional[str] = "vanvas_curated"
+    source_provider: Optional[str] = "vanvas_curated"
     source_id: Optional[str] = None
+    source_url: Optional[str] = None
     is_live: Optional[bool] = False
     distance_km: Optional[float] = None
     action_links: List[ActionLink] = []
     data_state: Optional[str] = "VERIFIED"
     trust_source: Optional[str] = "VANVAS_CURATED"
+    last_verified_at: Optional[str] = None
+    menu_url: Optional[str] = None
+    menu_source: Optional[str] = None
+    menu_available: Optional[bool] = None
 
 class PlaceResponse(PlaceBase):
     id: str
@@ -242,28 +255,37 @@ class HotelResponse(BaseModel):
     id: str
     destination_id: str
     name: str
+    property_name: Optional[str] = None
     address: str
     latitude: float
     longitude: float
     price_per_night: Optional[float] = None
+    total_price: Optional[float] = None
     price_formatted: Optional[str] = None
     currency: Optional[str] = "INR"
+    taxes: Optional[float] = None
+    available: Optional[bool] = None
     availability_state: Optional[str] = "UNKNOWN"
     rating: Optional[float] = None
     review_count: Optional[int] = None
     hotel_style: Optional[str] = "Boutique / Mountain Stay"
     accommodation_type: Optional[str] = "Hotel"
+    property_type: Optional[str] = None
+    room_type: Optional[str] = None
     traveller_tags: List[str] = []
     amenities: Optional[str] = "WiFi,Hot Water"
     check_in_time: Optional[str] = "11:00 AM"
     check_out_time: Optional[str] = "10:00 AM"
     image_url: Optional[str] = None
+    photos: List[str] = []
     booking_url: Optional[str] = None
     badge: Optional[str] = "Verified Sanctuary"
     phone: Optional[str] = None
     website: Optional[str] = None
     source: Optional[str] = "vanvas_curated"
+    source_provider: Optional[str] = "vanvas_curated"
     source_id: Optional[str] = None
+    source_url: Optional[str] = None
     provider_source: Optional[str] = None
     provider_listing_id: Optional[str] = None
     provider_url: Optional[str] = None
@@ -273,6 +295,7 @@ class HotelResponse(BaseModel):
     action_links: List[ActionLink] = []
     data_state: Optional[str] = "VERIFIED"
     trust_source: Optional[str] = "VANVAS_CURATED"
+    last_verified_at: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -283,10 +306,14 @@ class RentalOptionResponse(BaseModel):
     provider_name: str
     vehicle_type: str
     vehicle_name: str
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    price_per_hour: Optional[float] = None
     price_per_day: Optional[float] = None
-    hourly_price: Optional[float] = None
+    deposit: Optional[float] = None
     deposit_amount: Optional[float] = None
     location: str
+    address: Optional[str] = None
     latitude: float
     longitude: float
     opening_hours: Optional[str] = "Hours not listed"
@@ -297,8 +324,11 @@ class RentalOptionResponse(BaseModel):
     phone: Optional[str] = None
     whatsapp: Optional[str] = None
     website: Optional[str] = None
+    google_maps_url: Optional[str] = None
     source: Optional[str] = "vanvas_curated"
+    source_provider: Optional[str] = "vanvas_curated"
     source_id: Optional[str] = None
+    source_url: Optional[str] = None
     is_live: Optional[bool] = False
     inventory_verified: Optional[bool] = False
     verification_status: Optional[str] = "CURATED"  # LIVE_PROVIDER, LIVE_OSM, CURATED, UNVERIFIED, UNAVAILABLE
@@ -306,6 +336,7 @@ class RentalOptionResponse(BaseModel):
     action_links: List[ActionLink] = []
     data_state: Optional[str] = "VERIFIED"
     trust_source: Optional[str] = "VANVAS_CURATED"
+    last_verified_at: Optional[str] = None
 
     class Config:
         from_attributes = True

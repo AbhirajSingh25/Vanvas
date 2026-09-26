@@ -1412,8 +1412,9 @@ export default function DestinationDetailPage() {
             ) : rentals.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {rentals.map((r) => {
-                  const vStatus = r.verification_status || "VERIFIED";
-                  const isLiveProvider = vStatus === "LIVE_PROVIDER";
+                  const vStatus = r.data_state || r.verification_status || "VERIFIED";
+                  const isLiveProvider = vStatus === "LIVE" || vStatus === "LIVE_PROVIDER";
+                  const isVerified = vStatus === "VERIFIED";
                   const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
 
                   const dirLink = r.action_links?.find((l) => l.type === "directions")?.url ||
@@ -1421,6 +1422,7 @@ export default function DestinationDetailPage() {
                   const phoneLink = r.action_links?.find((l) => l.type === "phone")?.url || (r.phone ? `tel:${r.phone}` : null);
                   const waLink = r.action_links?.find((l) => l.type === "whatsapp")?.url ||
                     (r.whatsapp ? `https://wa.me/${r.whatsapp.replace(/[^\d]/g, "")}` : null);
+                  const webLink = r.website || r.source_url || (r.action_links?.find((l) => l.type === "website")?.url);
 
                   return (
                     <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
@@ -1440,9 +1442,20 @@ export default function DestinationDetailPage() {
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
-                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
-                              {isLiveProvider ? "LIVE PROVIDER" : "VERIFIED MOBILITY"}
+                            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
+                              isLiveProvider 
+                                ? "bg-emerald-700 text-white" 
+                                : isVerified 
+                                ? "bg-[#173B32] text-[#EFE5D2]"
+                                : "bg-[#7B4D36] text-[#FAF7F0]"
+                            }`}>
+                              {isLiveProvider ? "LIVE PROVIDER" : isVerified ? "VERIFIED FLEET" : "CURATED"}
                             </span>
+                            {r.source_provider && (
+                              <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-medium bg-[#20211D]/80 text-[#FAF7F0] backdrop-blur-xs">
+                                {r.source_provider}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1456,8 +1469,13 @@ export default function DestinationDetailPage() {
                             </div>
                             <div className="text-right shrink-0">
                               <span className={`font-bold text-sm block ${hasPrice ? "text-[#173B32]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
-                                {hasPrice ? `₹${r.price_per_day}/day` : "Price upon inquiry"}
+                                {hasPrice ? `₹${r.price_per_day}/day` : "Price on enquiry"}
                               </span>
+                              {r.price_per_hour ? (
+                                <span className="text-[10px] font-mono text-[#7B4D36] block">
+                                  ₹{r.price_per_hour}/hr
+                                </span>
+                              ) : null}
                             </div>
                           </div>
 
@@ -1482,13 +1500,47 @@ export default function DestinationDetailPage() {
                         </div>
 
                         {/* Action Links */}
-                        <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                          {phoneLink ? (
+                            <a
+                              href={phoneLink}
+                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-[#173B32]" />
+                              <span>Call</span>
+                            </a>
+                          ) : null}
+
+                          {waLink ? (
+                            <a
+                              href={waLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-2xs"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>WhatsApp</span>
+                            </a>
+                          ) : null}
+
+                          {webLink ? (
+                            <a
+                              href={webLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-[#173B32]" />
+                              <span>Website</span>
+                            </a>
+                          ) : null}
+
                           {dirLink ? (
                             <a
                               href={dirLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
+                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
                             >
                               <Navigation className="w-3.5 h-3.5" />
                               <span>Directions</span>
@@ -1498,38 +1550,11 @@ export default function DestinationDetailPage() {
                               href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
+                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
                             >
                               <Navigation className="w-3.5 h-3.5" />
                               <span>Directions</span>
                             </a>
-                          )}
-
-                          {phoneLink ? (
-                            <a
-                              href={phoneLink}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
-                            >
-                              <Phone className="w-3.5 h-3.5 text-[#173B32]" />
-                              <span>Call</span>
-                            </a>
-                          ) : waLink ? (
-                            <a
-                              href={waLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-2xs"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                              <span>WhatsApp</span>
-                            </a>
-                          ) : (
-                            <Link
-                              href={`/plan?dest=${destination.id}`}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] text-xs font-medium hover:text-[#173B32] transition-colors"
-                            >
-                              <span>Reserve Fleet</span>
-                            </Link>
                           )}
                         </div>
                       </div>

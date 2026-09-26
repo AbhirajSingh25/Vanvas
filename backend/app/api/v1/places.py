@@ -468,3 +468,36 @@ def get_place_detail(
         data_state="VERIFIED",
         trust_source="VANVAS_CURATED",
     )
+
+
+@router.get("/route")
+async def calculate_route_polyline(
+    lat1: float = Query(..., description="Origin latitude"),
+    lng1: float = Query(..., description="Origin longitude"),
+    lat2: float = Query(..., description="Destination latitude"),
+    lng2: float = Query(..., description="Destination longitude"),
+):
+    """
+    Phase 12: Route calculation between user position and selected POI.
+    Uses OSRM navigation route with mountain tortuosity fallback.
+    """
+    routing_provider = ProviderFactory.get_routing_provider()
+    if hasattr(routing_provider, "calculate_route"):
+        route_res = await routing_provider.calculate_route(lat1, lng1, lat2, lng2)
+        return route_res
+    else:
+        # Fallback matrix
+        matrix = routing_provider.calculate_distance_matrix([{"lat": lat1, "lng": lng1}, {"lat": lat2, "lng": lng2}])
+        res = matrix[0][1]
+        return {
+            "distance_km": res["distance_km"],
+            "duration_mins": res["duration_mins"],
+            "is_accurate": False,
+            "is_mountain_adjusted": True,
+            "geometry": [[lat1, lng1], [lat2, lng2]],
+            "source": "internal",
+            "source_provider": "internal",
+            "data_state": "VERIFIED",
+            "trust_source": "INTERNAL_ESTIMATION",
+        }
+

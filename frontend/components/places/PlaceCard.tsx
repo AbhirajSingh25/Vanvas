@@ -158,6 +158,31 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           </p>
         </div>
 
+        {/* Menu Discovery Banner for Dining/Cafes */}
+        {(safeCategory.toLowerCase().includes("food") || safeCategory.toLowerCase().includes("caf") || safeCategory.toLowerCase().includes("restaurant")) && (
+          <div className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg bg-[#EFE5D2]/50 border border-[#E5D5BA]">
+            {place.menu_available && place.menu_url ? (
+              <a
+                href={place.menu_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <span>📜 View Menu</span>
+                <span className="text-[9px] font-mono text-emerald-600">(Official)</span>
+              </a>
+            ) : (
+              <span className="text-[#7B4D36] italic text-[10px]">
+                Menu not published online
+              </span>
+            )}
+            <span className="text-[9px] font-mono text-[#536B52] uppercase font-semibold">
+              {place.data_state || "VERIFIED"}
+            </span>
+          </div>
+        )}
+
         {/* VANVAS Journal Note */}
         {place.why_vanvas_recommends && (
           <div className="p-3 rounded-xl bg-[#EFE5D2]/70 border border-[#E5D5BA] text-[11px] text-[#7B4D36] space-y-1">

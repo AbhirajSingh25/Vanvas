@@ -86,6 +86,7 @@ class MobilityService:
                     continue
 
             seen_names.add(prov.business_name.lower().strip())
+            gmaps_url = f"https://www.google.com/maps/dir/?api=1&destination={prov.latitude:.6f},{prov.longitude:.6f}"
             action_links = ActionLinkGenerator.generate_rental_action_links(
                 provider_name=prov.business_name,
                 latitude=prov.latitude,
@@ -109,16 +110,21 @@ class MobilityService:
                         dest_name=dest.name if dest else prov.city,
                         state=dest.state if dest else None,
                     )
+                    has_price = v.daily_price is not None and v.daily_price > 0
                     listings.append({
                         "id": f"mob-{prov.id}-{v.id}",
                         "destination_id": dest.id if dest else "near",
                         "provider_name": prov.business_name,
                         "vehicle_type": v.vehicle_type,
                         "vehicle_name": f"{v.brand or ''} {v.model or v.vehicle_type}".strip(),
-                        "price_per_day": v.daily_price,
-                        "hourly_price": v.hourly_price,
+                        "brand": v.brand,
+                        "model": v.model,
+                        "price_per_hour": v.hourly_price,
+                        "price_per_day": v.daily_price if has_price else None,
+                        "deposit": v.deposit,
                         "deposit_amount": v.deposit,
                         "location": prov.address or prov.city or "Local Hub",
+                        "address": prov.address,
                         "latitude": prov.latitude,
                         "longitude": prov.longitude,
                         "opening_hours": "08:00 AM - 08:00 PM",
@@ -129,8 +135,11 @@ class MobilityService:
                         "phone": prov.phone,
                         "whatsapp": prov.whatsapp,
                         "website": prov.website,
+                        "google_maps_url": gmaps_url,
                         "source": prov.source,
+                        "source_provider": prov.source,
                         "source_id": prov.source_id or prov.id,
+                        "source_url": prov.website,
                         "is_live": True,
                         "inventory_verified": True,
                         "verification_status": "LIVE_PROVIDER",
@@ -138,19 +147,24 @@ class MobilityService:
                         "action_links": action_links,
                         "data_state": "VERIFIED",
                         "trust_source": "VERIFIED_PROVIDER",
+                        "last_verified_at": prov.verified_at.isoformat() if prov.verified_at else datetime.now(timezone.utc).isoformat(),
                     })
             else:
-                # Provider registered without individual vehicles listed
+                # Provider registered without individual fleet vehicles listed (Price on Enquiry)
                 listings.append({
                     "id": f"mob-{prov.id}",
                     "destination_id": dest.id if dest else "near",
                     "provider_name": prov.business_name,
                     "vehicle_type": "Scooter & Motorcycle",
                     "vehicle_name": f"{prov.business_name} Fleet",
+                    "brand": None,
+                    "model": None,
+                    "price_per_hour": None,
                     "price_per_day": None,
-                    "hourly_price": None,
+                    "deposit": None,
                     "deposit_amount": None,
                     "location": prov.address or prov.city or "Local Hub",
+                    "address": prov.address,
                     "latitude": prov.latitude,
                     "longitude": prov.longitude,
                     "opening_hours": "Hours upon contact",
@@ -161,8 +175,11 @@ class MobilityService:
                     "phone": prov.phone,
                     "whatsapp": prov.whatsapp,
                     "website": prov.website,
+                    "google_maps_url": gmaps_url,
                     "source": prov.source,
+                    "source_provider": prov.source,
                     "source_id": prov.source_id or prov.id,
+                    "source_url": prov.website,
                     "is_live": True,
                     "inventory_verified": True,
                     "verification_status": "LIVE_PROVIDER",
@@ -170,6 +187,7 @@ class MobilityService:
                     "action_links": action_links,
                     "data_state": "VERIFIED",
                     "trust_source": "VERIFIED_PROVIDER",
+                    "last_verified_at": prov.verified_at.isoformat() if prov.verified_at else datetime.now(timezone.utc).isoformat(),
                 })
 
         # -------------------------------------------------------------
@@ -212,6 +230,7 @@ class MobilityService:
                     continue
                 seen_names.add(norm)
                 hours_eval = OperatingHoursEngine.evaluate_osm_hours(r.opening_hours, r.latitude, r.longitude)
+                gmaps_url = f"https://www.google.com/maps/dir/?api=1&destination={r.latitude:.6f},{r.longitude:.6f}"
                 action_links = ActionLinkGenerator.generate_rental_action_links(
                     provider_name=r.provider_name,
                     latitude=r.latitude,
@@ -231,10 +250,14 @@ class MobilityService:
                     "provider_name": r.provider_name,
                     "vehicle_type": r.vehicle_type,
                     "vehicle_name": r.vehicle_name,
+                    "brand": None,
+                    "model": r.vehicle_name,
+                    "price_per_hour": None,
                     "price_per_day": r.price_per_day,
-                    "hourly_price": None,
+                    "deposit": r.deposit_amount,
                     "deposit_amount": r.deposit_amount,
                     "location": r.location,
+                    "address": r.location,
                     "latitude": r.latitude,
                     "longitude": r.longitude,
                     "opening_hours": r.opening_hours or "08:00 AM - 08:00 PM",
@@ -245,15 +268,19 @@ class MobilityService:
                     "phone": None,
                     "whatsapp": None,
                     "website": None,
+                    "google_maps_url": gmaps_url,
                     "source": "vanvas_curated",
+                    "source_provider": "vanvas_curated",
                     "source_id": r.id,
+                    "source_url": None,
                     "is_live": False,
                     "inventory_verified": True,
                     "verification_status": "CURATED",
                     "distance_km": None,
                     "action_links": action_links,
-                    "data_state": "VERIFIED",
+                    "data_state": "CURATED",
                     "trust_source": "VANVAS_CURATED",
+                    "last_verified_at": datetime.now(timezone.utc).isoformat(),
                 })
 
         # Sort by distance when available

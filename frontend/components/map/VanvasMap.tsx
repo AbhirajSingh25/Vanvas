@@ -370,8 +370,56 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
         leafletPolylinesRef.current.push(polyline);
       });
 
+      // Render Route line if user location is active and a POI is selected
+      if (userLocation && activeMarker && !isNaN(activeMarker.lat) && !isNaN(activeMarker.lng)) {
+        const uLat = userLocation.latitude;
+        const uLng = userLocation.longitude;
+        const destLat = activeMarker.lat;
+        const destLng = activeMarker.lng;
+
+        // Draw "YOU ARE HERE -> SELECTED POI" route polyline
+        const routeLine = L.polyline([[uLat, uLng], [destLat, destLng]], {
+          color: "#38BDF8",
+          weight: 4,
+          dashArray: "8, 8",
+          opacity: 0.9,
+          lineCap: "round",
+        }).addTo(map);
+
+        routeLine.bindTooltip(
+          `<div style="font-family: monospace; font-size: 10px; color: #38BDF8; font-weight: bold;">YOU ARE HERE ➔ ${activeMarker.title}</div>`,
+          { className: "vanvas-map-tooltip", direction: "center" }
+        );
+
+        leafletPolylinesRef.current.push(routeLine);
+      }
+
       // Render Markers
       const boundsArr: any[] = [];
+
+      // Add user location marker if available
+      if (userLocation) {
+        boundsArr.push([userLocation.latitude, userLocation.longitude]);
+        const userIcon = L.divIcon({
+          className: "vanvas-user-location-marker",
+          html: `
+            <div style="
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+              background: #38BDF8;
+              border: 3px solid #FAF4E8;
+              box-shadow: 0 0 12px #38BDF8;
+              animation: pulse 2s infinite;
+            "></div>
+          `,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+        const userMarker = L.marker([userLocation.latitude, userLocation.longitude], { icon: userIcon }).addTo(map);
+        userMarker.bindTooltip("<strong>YOU ARE HERE</strong>", { className: "vanvas-map-tooltip", direction: "top" });
+        leafletMarkersRef.current.push(userMarker);
+      }
 
       filteredMarkers.forEach((m) => {
         if (isNaN(m.lat) || isNaN(m.lng)) return;
@@ -429,7 +477,7 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
         map.setView(boundsArr[0], zoom);
       }
     })();
-  }, [filteredMarkers, routes, activeMarker, mapReady, handleSelectMarker, zoom]);
+  }, [filteredMarkers, routes, activeMarker, userLocation, mapReady, handleSelectMarker, zoom]);
 
   // GPS Locate Action
   const handleGPSLocate = async () => {
@@ -459,8 +507,8 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
 
   return (
     <div
-      className={`relative w-full rounded-3xl overflow-hidden border-2 border-[#2D4539] bg-[#0E1612] shadow-2xl flex flex-col ${
-        isFullscreen ? "fixed inset-0 z-50 rounded-none border-0 h-screen" : ""
+      className={`relative w-full rounded-3xl overflow-hidden border-2 border-[#2D4539] bg-[#0E1612] shadow-2xl flex flex-col z-0 isolate ${
+        isFullscreen ? "fixed inset-0 z-40 rounded-none border-0 h-screen" : ""
       } ${className}`}
       style={{ height: isFullscreen ? "100vh" : height }}
     >
@@ -509,10 +557,10 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
       </div>
 
       {/* Map Interactive Canvas */}
-      <div className="relative flex-1 w-full h-full overflow-hidden" style={{ touchAction: "none" }}>
+      <div className="relative flex-1 w-full h-full overflow-hidden z-0" style={{ touchAction: "none" }}>
         <div
           ref={mapContainerRef}
-          className="w-full h-full"
+          className="w-full h-full z-0"
           style={{
             minHeight: "100%",
             touchAction: "pan-x pan-y",
@@ -653,6 +701,13 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
         .leaflet-container {
           background-color: #0E1612 !important;
           font-family: inherit;
+          z-index: 1 !important;
+        }
+        .leaflet-pane {
+          z-index: 5 !important;
+        }
+        .leaflet-top, .leaflet-bottom {
+          z-index: 10 !important;
         }
       `}</style>
     </div>
@@ -660,3 +715,4 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
 };
 
 export default VanvasMap;
+

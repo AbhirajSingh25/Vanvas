@@ -1905,6 +1905,11 @@ def seed_database():
                 else:
                     old_r.image_url = "/images/vehicles/universal_mobility.jpg"
         db.flush()
+        # 7. Seed Verified Real Rental Providers
+        from app.seed.seed_real_rentals import seed_verified_rentals
+        seed_verified_rentals(db)
+
+        db.flush()
         db.commit()
 
         print("VANVAS curated travel database successfully seeded with all 25 canonical destinations, places, hotels, and rentals.")
