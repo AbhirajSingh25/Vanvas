@@ -87,6 +87,18 @@ export const SEEDED_DESTINATION_PROFILES: Record<string, DestinationVisualProfil
     fallbackPath: "/images/destinations/fallbacks/valley.jpg",
     artDirectionPrompt: "Turquoise Ganga flowing through forested Himalayan foothills, suspension bridge silhouette, stone riverside ghats, lush cliffs, early morning mist, screen-print texture, emerald river blue, muted terracotta, no text.",
   },
+  "haridwar-rishikesh": {
+    slug: "haridwar-rishikesh",
+    name: "Haridwar & Rishikesh",
+    hindiName: "हरिद्वार और ऋषिकेश",
+    terrainType: "river_ghat",
+    elevationMeters: 314,
+    palette: { primary: "#0F2924", secondary: "#3B6A68", accent: "#B49252", mist: "#E5D5BA" },
+    illustrationPath: "/artworks/haridwar-rishikesh.jpg",
+    heroPath: "/images/destinations/haridwar-rishikesh/hero.jpg",
+    fallbackPath: "/artworks/haridwar-rishikesh.jpg",
+    artDirectionPrompt: "Sacred Ganges river ghats, suspension bridges, evening Ganga Aarti brass lamps, river rapids, Himalayan foothills, no text.",
+  },
   kasol: {
     slug: "kasol",
     name: "Kasol",

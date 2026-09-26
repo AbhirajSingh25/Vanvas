@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="he_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#173B32"/>
+      <stop offset="100%" stop-color="#0E1E1A"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#he_bg)" stroke="#C59B47" stroke-width="3"/>
+  <polygon points="20,85 50,40 70,70" fill="#2A5245" opacity="0.6"/>
+  <polygon points="45,85 75,30 105,85" fill="#3F6E5E"/>
+  <polygon points="75,30 65,48 75,54 85,48" fill="#FAF4E8"/>
+  <polygon points="50,40 43,52 50,56 57,52" fill="#FAF4E8" opacity="0.9"/>
+  <circle cx="60" cy="62" r="14" fill="#D95327"/>
+  <path d="M47,60 Q60,42 73,60 Z" fill="#C59B47"/>
+  <circle cx="60" cy="44" r="3.5" fill="#FAF4E8"/>
+  <rect x="50" y="58" width="9" height="6" rx="2.5" fill="#14201A" stroke="#FAF4E8" stroke-width="1.2"/>
+  <rect x="61" y="58" width="9" height="6" rx="2.5" fill="#14201A" stroke="#FAF4E8" stroke-width="1.2"/>
+  <line x1="59" y1="61" x2="61" y2="61" stroke="#FAF4E8" stroke-width="1.5"/>
+  <path d="M42,88 Q60,74 78,88 L74,96 Q60,86 46,96 Z" fill="#C59B47"/>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="#FAF4E8" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+</svg>

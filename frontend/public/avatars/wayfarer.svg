@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="wf_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2B1E17"/>
+      <stop offset="100%" stop-color="#160E0A"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#wf_bg)" stroke="#D95327" stroke-width="3"/>
+  <polygon points="60,18 64,56 60,60 56,56" fill="#C59B47" opacity="0.7"/>
+  <polygon points="60,102 64,64 60,60 56,64" fill="#C59B47" opacity="0.4"/>
+  <polygon points="18,60 56,64 60,60 56,56" fill="#C59B47" opacity="0.4"/>
+  <polygon points="102,60 64,64 60,60 64,56" fill="#C59B47" opacity="0.7"/>
+  <circle cx="60" cy="52" r="13" fill="#E5C578"/>
+  <ellipse cx="60" cy="46" rx="24" ry="6" fill="#7B4D36"/>
+  <path d="M46,46 Q60,32 74,46 Z" fill="#5A3725"/>
+  <rect x="46" y="43" width="28" height="3" fill="#D95327"/>
+  <path d="M38,92 L48,68 L72,68 L82,92 Z" fill="#3F2E23"/>
+  <polygon points="60,70 52,88 68,88" fill="#D95327"/>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="#C59B47" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+</svg>

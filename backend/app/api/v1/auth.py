@@ -19,7 +19,7 @@ from app.schemas.schemas import (
     UserPreferenceSchema, UserProfileUpdateRequest,
     PasswordChangeRequest, AccountDeleteRequest,
     UserStatsResponse, UserDataExportResponse,
-    AvatarUploadResponse
+    AvatarUploadResponse, AvatarPresetSelectRequest
 )
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.config import settings
@@ -555,12 +555,54 @@ async def upload_avatar(
 
     current_user.avatar_storage_key = storage_key
     current_user.avatar_url = avatar_url
+    current_user.avatar_type = "uploaded"
+    current_user.avatar_preset = None
     db.commit()
     db.refresh(current_user)
 
     return AvatarUploadResponse(
         avatar_url=current_user.avatar_url,
+        avatar_type=current_user.avatar_type,
+        avatar_preset=current_user.avatar_preset,
         message="Profile photo updated successfully."
+    )
+
+@router.post("/profile/avatar/preset", response_model=AvatarUploadResponse)
+def select_avatar_preset(
+    payload: AvatarPresetSelectRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    valid_presets = [
+        "himalayan-explorer", "wayfarer", "mountain-camper", "heritage-wanderer",
+        "river-roamer", "desert-nomad", "forest-walker", "road-tripper",
+        "trail-photographer", "backpacker", "cafe-wanderer", "night-traveller"
+    ]
+    if payload.preset not in valid_presets:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid preset. Available presets: {', '.join(valid_presets)}"
+        )
+
+    # Clean up uploaded storage key if any
+    if current_user.avatar_storage_key:
+        try:
+            StorageService.delete_profile_photo(current_user.avatar_storage_key)
+        except Exception:
+            pass
+        current_user.avatar_storage_key = None
+
+    current_user.avatar_type = "preset"
+    current_user.avatar_preset = payload.preset
+    current_user.avatar_url = f"/avatars/{payload.preset}.svg"
+    db.commit()
+    db.refresh(current_user)
+
+    return AvatarUploadResponse(
+        avatar_url=current_user.avatar_url,
+        avatar_type=current_user.avatar_type,
+        avatar_preset=current_user.avatar_preset,
+        message="Avatar preset updated successfully."
     )
 
 @router.delete("/profile/avatar", response_model=AvatarUploadResponse)
@@ -575,13 +617,17 @@ def delete_avatar(
             pass
 
     current_user.avatar_storage_key = None
-    current_user.avatar_url = None
+    current_user.avatar_type = "preset"
+    current_user.avatar_preset = "himalayan-explorer"
+    current_user.avatar_url = "/avatars/himalayan-explorer.svg"
     db.commit()
     db.refresh(current_user)
 
     return AvatarUploadResponse(
-        avatar_url=None,
-        message="Profile photo removed successfully."
+        avatar_url=current_user.avatar_url,
+        avatar_type=current_user.avatar_type,
+        avatar_preset=current_user.avatar_preset,
+        message="Profile photo removed; restored default illustrated avatar."
     )
 
 @router.get("/profile/avatar/file/{key_path:path}")

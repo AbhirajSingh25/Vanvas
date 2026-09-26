@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
-import { resolveAvatarUrl } from "@/lib/api";
+import { Avatar } from "@/components/ui/Avatar";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -58,8 +58,6 @@ export const Header: React.FC = () => {
     }
     return name.charAt(0).toUpperCase();
   };
-
-  const resolvedAvatar = resolveAvatarUrl(user?.avatar_url);
 
   return (
     <>
@@ -111,24 +109,11 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs text-[#20211D] hover:border-[#173B32] hover:shadow-sm transition-all group cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs text-[#20211D] hover:border-[#173B32] hover:shadow-sm transition-all group cursor-pointer"
                   aria-expanded={profileDropdownOpen}
                   aria-haspopup="true"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#173B32] group-hover:bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-[10px] transition-colors border border-[#B49252]/40 overflow-hidden">
-                    {resolvedAvatar ? (
-                      <img
-                        src={resolvedAvatar}
-                        alt={user.full_name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      getInitials(user.full_name)
-                    )}
-                  </div>
+                  <Avatar user={user} size="xs" borderColor="border-[#B49252]/40" />
                   <span className="font-medium max-w-[120px] truncate">{user.full_name}</span>
                   <ChevronDown className={`w-3 h-3 text-[#173B32]/70 transition-transform ${profileDropdownOpen ? "rotate-180" : ""}`} />
                 </button>
@@ -257,20 +242,7 @@ export const Header: React.FC = () => {
             {user ? (
               <div className="p-3 bg-[#FAF7F0] rounded-2xl border border-[#D8CBB2] space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-xs overflow-hidden border border-[#B49252]/40">
-                    {resolvedAvatar ? (
-                      <img
-                        src={resolvedAvatar}
-                        alt={user.full_name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      getInitials(user.full_name)
-                    )}
-                  </div>
+                  <Avatar user={user} size="sm" borderColor="border-[#B49252]/40" />
                   <div className="text-left min-w-0 flex-1">
                     <div className="text-xs font-bold text-[#173B32] truncate">{user.full_name}</div>
                     <div className="text-[10px] text-[#20211D]/65 truncate">{user.email}</div>

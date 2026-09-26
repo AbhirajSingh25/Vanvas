@@ -180,13 +180,21 @@ export const api = {
     });
   },
 
-  async uploadProfileAvatar(file: File): Promise<{ avatar_url: string; message: string }> {
+  async uploadProfileAvatar(file: File): Promise<{ avatar_url: string; message: string; avatar_type?: string }> {
     clearApiCache();
     const formData = new FormData();
     formData.append("file", file);
     return fetchApi("/auth/profile/avatar", {
       method: "POST",
       body: formData,
+    });
+  },
+
+  async selectAvatarPreset(preset: string): Promise<{ avatar_url: string; avatar_preset: string; message: string }> {
+    clearApiCache();
+    return fetchApi("/auth/profile/avatar/preset", {
+      method: "POST",
+      body: JSON.stringify({ preset }),
     });
   },
 

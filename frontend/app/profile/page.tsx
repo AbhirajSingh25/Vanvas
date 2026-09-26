@@ -14,6 +14,7 @@ import {
   Clock, ArrowRight, X, RefreshCw, Camera, Upload, Image as ImageIcon
 } from "lucide-react";
 import { TravelStamp } from "@/components/ui/TravelStamp";
+import { Avatar } from "@/components/ui/Avatar";
 
 function ProfileContent() {
   const { user, updateProfile, uploadAvatar, deleteAvatar } = useAuth();
@@ -209,21 +210,8 @@ function ProfileContent() {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="flex items-center gap-5">
-              {/* Avatar with gold ring & initials fallback */}
-              <div className="relative">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold border-3 border-[#B49252] shadow-inner overflow-hidden">
-                  {resolveAvatarUrl(user?.avatar_url) && !avatarLoadFailed ? (
-                    <img
-                      src={resolveAvatarUrl(user?.avatar_url)}
-                      alt={user?.full_name || "Profile"}
-                      className="w-full h-full object-cover"
-                      onError={() => setAvatarLoadFailed(true)}
-                    />
-                  ) : (
-                    <span>{getInitials(user?.full_name)}</span>
-                  )}
-                </div>
-              </div>
+              {/* Avatar with gold ring */}
+              <Avatar user={user} size="2xl" showBorder borderColor="border-[#B49252]" />
 
               {/* User Identity Details */}
               <div className="space-y-1">
@@ -612,26 +600,13 @@ function ProfileContent() {
                 </label>
                 <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-[#D8CBB2]/80 shadow-xs">
                   {/* Circular Avatar Preview */}
-                  <div className="relative w-16 h-16 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif text-xl font-bold border-2 border-[#B49252] overflow-hidden shrink-0 shadow-inner">
-                    {previewUrl ? (
-                      <img
-                        src={previewUrl}
-                        alt="Selected Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : !removeAvatarRequested && resolveAvatarUrl(user?.avatar_url) ? (
-                      <img
-                        src={resolveAvatarUrl(user?.avatar_url)}
-                        alt={user?.full_name || "Profile"}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <span>{getInitials(editName || user?.full_name)}</span>
-                    )}
-                  </div>
+                  {previewUrl ? (
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#B49252] shrink-0 shadow-inner">
+                      <img src={previewUrl} alt="Selected Preview" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <Avatar user={removeAvatarRequested ? { ...user, avatar_url: undefined, avatar_preset: undefined } : user} name={editName} size="lg" showBorder borderColor="border-[#B49252]" />
+                  )}
 
                   {/* Actions & Description */}
                   <div className="flex-1 min-w-0 space-y-1.5">

@@ -71,7 +71,12 @@ class UserProfileUpdateRequest(BaseModel):
 
 class AvatarUploadResponse(BaseModel):
     avatar_url: Optional[str] = None
+    avatar_type: Optional[str] = None
+    avatar_preset: Optional[str] = None
     message: str
+
+class AvatarPresetSelectRequest(BaseModel):
+    preset: str = Field(..., min_length=1, max_length=100)
 
 class PasswordChangeRequest(BaseModel):
     current_password: str = Field(..., min_length=1)
@@ -104,6 +109,8 @@ class UserResponse(UserBase):
     id: str
     role: str
     avatar_url: Optional[str] = None
+    avatar_type: Optional[str] = None
+    avatar_preset: Optional[str] = None
     email_verified_at: Optional[datetime] = None
     is_verified: bool = False
     created_at: datetime

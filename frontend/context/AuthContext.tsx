@@ -45,6 +45,7 @@ interface AuthContextType {
   setUser: (user: User | null) => void;
   updateProfile: (data: ProfileUpdatePayload) => Promise<User>;
   uploadAvatar: (file: File) => Promise<{ avatar_url: string; message: string }>;
+  selectAvatarPreset: (preset: string) => Promise<{ avatar_url: string; avatar_preset: string; message: string }>;
   deleteAvatar: () => Promise<{ message: string }>;
   updatePreferences: (preferences: Partial<UserPreferences>) => Promise<UserPreferences>;
   changePassword: (payload: PasswordChangePayload) => Promise<{ message: string }>;
@@ -152,6 +153,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({
         ...user,
         avatar_url: res.avatar_url,
+        avatar_type: "uploaded",
+        avatar_preset: undefined,
+      });
+    }
+    return res;
+  };
+
+  const selectAvatarPreset = async (preset: string): Promise<{ avatar_url: string; avatar_preset: string; message: string }> => {
+    const res = await api.selectAvatarPreset(preset);
+    if (user) {
+      setUser({
+        ...user,
+        avatar_url: res.avatar_url,
+        avatar_type: "preset",
+        avatar_preset: res.avatar_preset,
       });
     }
     return res;
@@ -163,6 +179,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({
         ...user,
         avatar_url: undefined,
+        avatar_type: "preset",
+        avatar_preset: "himalayan-explorer",
       });
     }
     return res;
@@ -207,6 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser,
       updateProfile,
       uploadAvatar,
+      selectAvatarPreset,
       deleteAvatar,
       updatePreferences,
       changePassword,

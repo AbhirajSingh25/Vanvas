@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cw_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3A281E"/>
+      <stop offset="100%" stop-color="#1C120B"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#cw_bg)" stroke="#C59B47" stroke-width="3"/>
+  <rect x="20" y="82" width="80" height="8" rx="2" fill="#6D432E" stroke="#1F130B" stroke-width="1"/>
+  <path d="M42,56 L70,56 L66,82 L46,82 Z" fill="#FAF4E8" stroke="#C59B47" stroke-width="2"/>
+  <path d="M70,60 Q80,68 68,76" fill="none" stroke="#C59B47" stroke-width="2.5"/>
+  <ellipse cx="56" cy="58" rx="11" ry="3" fill="#B65E3C"/>
+  <path d="M50,48 Q46,38 52,30" fill="none" stroke="#FAF4E8" stroke-width="1.8" opacity="0.7" stroke-linecap="round"/>
+  <path d="M58,50 Q64,38 58,26" fill="none" stroke="#FAF4E8" stroke-width="1.8" opacity="0.7" stroke-linecap="round"/>
+  <path d="M64,48 Q60,40 66,32" fill="none" stroke="#FAF4E8" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="#C59B47" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+</svg>

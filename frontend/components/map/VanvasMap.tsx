@@ -292,8 +292,24 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
         subdomains: "abcd",
       }).addTo(map);
 
+      // Prevent mobile browser page zoom hijack on multi-touch within the map container
+      const container = mapContainerRef.current;
+      const handleTouchMove = (e: TouchEvent) => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+        }
+      };
+      if (container) {
+        container.addEventListener("touchmove", handleTouchMove, { passive: false });
+      }
+
       leafletMapRef.current = map;
       setMapReady(true);
+
+      // Invalidate size on next tick to ensure correct canvas sizing
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 200);
     }
 
     initMap();
@@ -306,6 +322,15 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
       }
     };
   }, []);
+
+  // Invalidate map size on fullscreen toggle
+  useEffect(() => {
+    if (leafletMapRef.current) {
+      setTimeout(() => {
+        leafletMapRef.current?.invalidateSize();
+      }, 250);
+    }
+  }, [isFullscreen]);
 
   // Update Markers & Polylines when data or filteredMarkers changes
   useEffect(() => {
