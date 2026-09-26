@@ -13,6 +13,7 @@ import {
   AlertCircle, RefreshCw, ChevronRight, LogOut, Heart, Utensils,
   Car, Users, Clock, Info, Check, Eye, EyeOff, Camera, ArrowRight
 } from "lucide-react";
+import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
 
 export default function SettingsPage() {
   return (
@@ -26,7 +27,7 @@ function SettingsContent() {
   const { user, logout, updateProfile, updatePreferences, changePassword, deleteAccount, exportData } = useAuth();
 
   const [activeSection, setActiveSection] = useState<
-    "account" | "travel" | "food" | "language" | "currency" | "notifications" | "location" | "copilot" | "appearance" | "privacy" | "security" | "about"
+    "account" | "travel" | "solo" | "food" | "language" | "currency" | "notifications" | "location" | "copilot" | "appearance" | "privacy" | "security" | "about"
   >("travel");
 
   // State for all settings
@@ -241,6 +242,7 @@ function SettingsContent() {
 
   const sections = [
     { id: "travel", label: "Travel DNA", icon: Compass },
+    { id: "solo", label: "Solo & Circles", icon: Users },
     { id: "food", label: "Food & Dietary", icon: Utensils },
     { id: "language", label: "Language & Region", icon: Globe },
     { id: "currency", label: "Currency", icon: DollarSign },
@@ -454,6 +456,25 @@ function SettingsContent() {
                       })}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Section: Solo & Circles */}
+              {activeSection === "solo" && (
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="border-b border-[#D8CBB2]/60 pb-4">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                      <Users className="w-3.5 h-3.5" />
+                      <span>Fellowship & Companionship</span>
+                    </div>
+                    <h2 className="font-serif text-xl font-bold text-[#173B32] mt-1">
+                      Solo Traveler & Circles Discovery
+                    </h2>
+                    <p className="text-xs text-[#20211D]/70 mt-1">
+                      Manage how you appear to verified solo travelers with overlapping itineraries. Your exact GPS coordinates are never disclosed.
+                    </p>
+                  </div>
+                  <SoloSettingsTab />
                 </div>
               )}
 

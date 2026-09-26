@@ -1463,9 +1463,8 @@ class HaversineRoutingProvider(RoutingProvider):
                     data = res.json()
                     routes = data.get("routes", [])
                     if routes:
-                        r0 = routes[0]
-                        dist_km = round(r0.get("distance", 0) / 1000.0, 2)
-                        dur_mins = max(1, round(r0.get("duration", 0) / 60.0))
+                        raw_mins = max(1, round(r0.get("duration", 0) / 60.0))
+                        dur_mins = max(raw_mins, round((dist_km / 30.0) * 60)) if (lat1 > 28.0 or lat2 > 28.0) else raw_mins
                         geom_coords = r0.get("geometry", {}).get("coordinates", [])
                         # Convert [lng, lat] GeoJSON to Leaflet [lat, lng]
                         polyline = [[c[1], c[0]] for c in geom_coords] if geom_coords else [[lat1, lng1], [lat2, lng2]]
@@ -1476,7 +1475,7 @@ class HaversineRoutingProvider(RoutingProvider):
                             "distance_km": dist_km,
                             "duration_mins": dur_mins,
                             "is_accurate": True,
-                            "is_mountain_adjusted": False,
+                            "is_mountain_adjusted": (lat1 > 28.0 or lat2 > 28.0),
                             "geometry": polyline,
                             "source": "osrm",
                             "source_provider": "osrm",

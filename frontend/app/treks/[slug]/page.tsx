@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, { useState, useEffect, use, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Mountain, Compass, MapPin, Footprints, ShieldAlert,
   ArrowRight, Sparkles, Navigation, Layers, ChevronRight,
@@ -19,8 +20,17 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export default function TrekDetailPage({ params }: PageProps) {
+export default function TrekDetailPage(props: PageProps) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0F1713]" />}>
+      <TrekDetailContent {...props} />
+    </Suspense>
+  );
+}
+
+function TrekDetailContent({ params }: PageProps) {
   const { slug } = use(params);
+  const searchParams = useSearchParams();
   const trek = getTrekBySlug(slug);
 
   const [selectedRouteId, setSelectedRouteId] = useState<string>(
@@ -33,8 +43,21 @@ export default function TrekDetailPage({ params }: PageProps) {
   const [gearActions, setGearActions] = useState<Record<string, "buy" | "rent" | "borrow" | "skip">>({});
   const [groupSize, setGroupSize] = useState<number>(2);
   const [isGroupBudget, setIsGroupBudget] = useState<boolean>(false);
-  const [isTrailModeActive, setIsTrailModeActive] = useState<boolean>(false);
+  const [isTrailModeActive, setIsTrailModeActive] = useState<boolean>(() => {
+    const mode = searchParams?.get("mode");
+    const trail = searchParams?.get("trail");
+    return mode === "trail" || trail === "1" || trail === "true";
+  });
   const [trailWaypointIndex, setTrailWaypointIndex] = useState<number>(0);
+
+  // Sync Trail Mode from URL query parameter
+  useEffect(() => {
+    const mode = searchParams?.get("mode");
+    const trail = searchParams?.get("trail");
+    if (mode === "trail" || trail === "1" || trail === "true") {
+      setIsTrailModeActive(true);
+    }
+  }, [searchParams]);
 
   if (!trek) {
     return (
@@ -95,67 +118,96 @@ export default function TrekDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-[#0F1713] text-[#EFE5D2] pb-32 selection:bg-[#E05A2B] selection:text-white">
       {/* ON-THE-TRAIL MODE OVERLAY */}
       {isTrailModeActive && (
-        <div className="fixed inset-0 z-50 bg-[#0A100D]/98 text-[#EFE5D2] flex flex-col justify-between p-4 sm:p-6 overflow-y-auto">
-          {/* Header Bar */}
-          <div className="flex items-center justify-between border-b border-[#2A3E33] pb-4">
+        <div className="fixed inset-0 z-50 bg-[#0A100D]/98 text-[#EFE5D2] flex flex-col h-full overflow-hidden">
+          {/* Top Sticky Header */}
+          <div className="shrink-0 bg-[#0E1612] border-b border-[#2A3E33] px-4 py-3 flex items-center justify-between z-10">
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
               <span className="text-xs font-mono font-black text-emerald-400 uppercase tracking-widest">
-                LIVE TRAIL MODE ACTIVE
+                TRAIL COCKPIT • {trek.title}
               </span>
             </div>
             <button
               onClick={() => setIsTrailModeActive(false)}
-              className="px-4 py-1.5 rounded-lg bg-[#1E2E25] hover:bg-[#2B4034] text-xs font-mono font-bold text-[#EFE5D2] border border-[#3B5446] cursor-pointer"
+              className="px-3 py-1 rounded-lg bg-[#1E2E25] hover:bg-[#2B4034] text-xs font-mono font-bold text-[#EFE5D2] border border-[#3B5446] cursor-pointer"
             >
-              Exit Trail Mode [✕]
+              Exit [✕]
             </button>
           </div>
 
-          {/* Main Navigation Cockpit */}
-          <div className="max-w-3xl mx-auto w-full my-auto py-8 space-y-6">
+          {/* Scrollable Trail Cockpit Center */}
+          <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full space-y-6">
+            {/* Waypoint Progress Ribbon */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar">
+              {trek.waypoints.map((wp, idx) => {
+                const isCurrent = idx === trailWaypointIndex;
+                const isPassed = idx < trailWaypointIndex;
+                return (
+                  <button
+                    key={wp.id}
+                    onClick={() => setTrailWaypointIndex(idx)}
+                    className={`shrink-0 px-3 py-1.5 rounded-xl text-left border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-mono ${
+                      isCurrent
+                        ? "bg-[#E05A2B] text-white border-[#E05A2B] font-bold shadow-md"
+                        : isPassed
+                        ? "bg-[#1E2E25] text-emerald-300 border-[#2A3E33]"
+                        : "bg-[#121B16] text-[#8FA699] border-[#1F2D24]"
+                    }`}
+                  >
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
+                      isCurrent ? "bg-white text-[#E05A2B] font-black" : isPassed ? "bg-emerald-800 text-white" : "bg-[#25372C] text-[#8FA699]"
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    <span className="truncate max-w-[100px]">{wp.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Current Waypoint Heading */}
             <div className="text-center space-y-1">
               <span className="text-xs font-mono text-[#B49252] uppercase tracking-wider">
-                Current Waypoint ({trailWaypointIndex + 1} of {trek.waypoints.length})
+                Waypoint {trailWaypointIndex + 1} of {trek.waypoints.length}
               </span>
-              <h2 className="text-3xl sm:text-5xl font-serif font-black text-white">
+              <h2 className="text-2xl sm:text-4xl font-serif font-black text-white">
                 {currentTrailWaypoint.name}
               </h2>
-              <span className="font-devanagari text-lg text-[#B49252]">
+              <span className="font-devanagari text-base text-[#B49252] block">
                 {currentTrailWaypoint.hindiName}
               </span>
             </div>
 
             {/* Altitude & Topographic Data Card */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-[#15221B] p-4 rounded-xl border border-[#2B4034] text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="bg-[#15221B] p-3.5 rounded-xl border border-[#2B4034] text-center">
                 <span className="block text-[10px] font-mono text-[#6D8578] uppercase">Elevation</span>
-                <span className="text-xl sm:text-2xl font-mono font-black text-[#FAF4E8]">
+                <span className="text-lg sm:text-2xl font-mono font-black text-[#FAF4E8]">
                   {currentTrailWaypoint.elevationFormatted}
                 </span>
               </div>
-              <div className="bg-[#15221B] p-4 rounded-xl border border-[#2B4034] text-center">
+              <div className="bg-[#15221B] p-3.5 rounded-xl border border-[#2B4034] text-center">
                 <span className="block text-[10px] font-mono text-[#6D8578] uppercase">Trail Distance</span>
-                <span className="text-xl sm:text-2xl font-mono font-black text-[#E05A2B]">
+                <span className="text-lg sm:text-2xl font-mono font-black text-[#E05A2B]">
                   {currentTrailWaypoint.distanceFromStartKm} km
                 </span>
               </div>
-              <div className="bg-[#15221B] p-4 rounded-xl border border-[#2B4034] text-center">
+              <div className="bg-[#15221B] p-3.5 rounded-xl border border-[#2B4034] text-center">
                 <span className="block text-[10px] font-mono text-[#6D8578] uppercase">Water Point</span>
-                <span className={`text-sm font-mono font-bold ${currentTrailWaypoint.waterAvailable ? "text-emerald-400" : "text-amber-400"}`}>
+                <span className={`text-xs sm:text-sm font-mono font-bold block mt-1 ${currentTrailWaypoint.waterAvailable ? "text-emerald-400" : "text-amber-400"}`}>
                   {currentTrailWaypoint.waterAvailable ? "✓ Spring Active" : "✕ Carry Water"}
                 </span>
               </div>
-              <div className="bg-[#15221B] p-4 rounded-xl border border-[#2B4034] text-center">
+              <div className="bg-[#15221B] p-3.5 rounded-xl border border-[#2B4034] text-center">
                 <span className="block text-[10px] font-mono text-[#6D8578] uppercase">Food & Shelter</span>
-                <span className={`text-sm font-mono font-bold ${currentTrailWaypoint.foodAvailable ? "text-emerald-400" : "text-[#8FA699]"}`}>
+                <span className={`text-xs sm:text-sm font-mono font-bold block mt-1 ${currentTrailWaypoint.foodAvailable ? "text-emerald-400" : "text-[#8FA699]"}`}>
                   {currentTrailWaypoint.foodAvailable ? "✓ Dhaba / Camp" : "Wilderness Only"}
                 </span>
               </div>
             </div>
 
             {/* Field Notes & Safety Directive */}
-            <div className="bg-[#1A2A22] p-5 rounded-2xl border border-[#395344] space-y-2">
+            <div className="bg-[#1A2A22] p-4 sm:p-5 rounded-2xl border border-[#395344] space-y-2">
               <div className="flex items-center gap-2 text-xs font-mono text-[#B49252] uppercase font-bold">
                 <Info className="w-4 h-4 text-[#E05A2B]" />
                 <span>Immediate Trail Directives</span>
@@ -167,7 +219,7 @@ export default function TrekDetailPage({ params }: PageProps) {
 
             {/* Next Waypoint Preview */}
             {nextTrailWaypoint ? (
-              <div className="bg-[#131C17] p-4 rounded-xl border border-[#25372C] flex items-center justify-between">
+              <div className="bg-[#131C17] p-4 rounded-xl border border-[#25372C] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <span className="text-[10px] font-mono text-[#8FA699] uppercase">Next Target Ahead</span>
                   <h4 className="text-sm font-bold text-white">{nextTrailWaypoint.name}</h4>
@@ -177,7 +229,7 @@ export default function TrekDetailPage({ params }: PageProps) {
                 </div>
                 <button
                   onClick={() => setTrailWaypointIndex((prev) => Math.min(trek.waypoints.length - 1, prev + 1))}
-                  className="px-5 py-2.5 rounded-xl bg-[#E05A2B] hover:bg-[#C8491D] text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-lg active:scale-95"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#E05A2B] hover:bg-[#C8491D] text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95"
                 >
                   <span>Reach Next WP</span>
                   <ChevronRight className="w-4 h-4" />
@@ -195,27 +247,29 @@ export default function TrekDetailPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Bottom Trail Control Strip */}
-          <div className="max-w-3xl mx-auto w-full flex items-center justify-between gap-3 border-t border-[#2A3E33] pt-4">
-            <button
-              disabled={trailWaypointIndex === 0}
-              onClick={() => setTrailWaypointIndex((prev) => Math.max(0, prev - 1))}
-              className="px-4 py-2 rounded-xl bg-[#15201A] border border-[#2B4034] text-xs font-mono text-[#FAF4E8] disabled:opacity-40 cursor-pointer"
-            >
-              ← Previous Waypoint
-            </button>
+          {/* Bottom Fixed Trail Control Strip */}
+          <div className="shrink-0 bg-[#0E1612] border-t border-[#2A3E33] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+            <div className="max-w-3xl mx-auto w-full flex items-center justify-between gap-3">
+              <button
+                disabled={trailWaypointIndex === 0}
+                onClick={() => setTrailWaypointIndex((prev) => Math.max(0, prev - 1))}
+                className="px-3.5 py-2 rounded-xl bg-[#15201A] border border-[#2B4034] text-xs font-mono text-[#FAF4E8] disabled:opacity-30 cursor-pointer hover:bg-[#1E2E25]"
+              >
+                ← Prev WP
+              </button>
 
-            <span className="text-xs font-mono text-[#8FA699]">
-              GPS Altitude Checkpoint {trailWaypointIndex + 1}/{trek.waypoints.length}
-            </span>
+              <span className="text-xs font-mono text-[#8FA699] text-center truncate">
+                WP {trailWaypointIndex + 1}/{trek.waypoints.length} • {currentTrailWaypoint.name}
+              </span>
 
-            <button
-              disabled={trailWaypointIndex >= trek.waypoints.length - 1}
-              onClick={() => setTrailWaypointIndex((prev) => Math.min(trek.waypoints.length - 1, prev + 1))}
-              className="px-4 py-2 rounded-xl bg-[#15201A] border border-[#2B4034] text-xs font-mono text-[#FAF4E8] disabled:opacity-40 cursor-pointer"
-            >
-              Next Waypoint →
-            </button>
+              <button
+                disabled={trailWaypointIndex >= trek.waypoints.length - 1}
+                onClick={() => setTrailWaypointIndex((prev) => Math.min(trek.waypoints.length - 1, prev + 1))}
+                className="px-3.5 py-2 rounded-xl bg-[#15201A] border border-[#2B4034] text-xs font-mono text-[#FAF4E8] disabled:opacity-30 cursor-pointer hover:bg-[#1E2E25]"
+              >
+                Next WP →
+              </button>
+            </div>
           </div>
         </div>
       )}
