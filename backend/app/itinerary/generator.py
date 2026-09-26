@@ -28,7 +28,7 @@ class ItineraryEngine:
         num_days = max(1, (end_date - start_date).days + 1)
         dest_slug = (destination.slug or "").lower().strip()
         is_trek_destination = planning_mode == "trek" or dest_slug == "tungnath-chandrashila" or "trek" in dest_slug
-        
+
         # Determine items per day based on intensity, mode, and duration
         if is_trek_destination:
             items_per_day = 3 if activity_intensity == "Relaxed" else 4
@@ -62,7 +62,7 @@ class ItineraryEngine:
                 current_lng=destination.longitude
             )
             scored_places.append((score, p))
-        
+
         # Sort by score descending
         scored_places.sort(key=lambda x: x[0], reverse=True)
         top_places = [p for _, p in scored_places]
@@ -334,7 +334,7 @@ class ItineraryEngine:
             current_day_date = start_date + timedelta(days=day_idx)
             day_num = day_idx + 1
             day_places = clusters[day_idx] if day_idx < len(clusters) and clusters[day_idx] else ([activity_places[day_idx % len(activity_places)]] if activity_places else [])
-            
+
             # Sequence places using nearest neighbor to avoid zigzagging
             ordered_day_places = order_route_nearest_neighbor(start_lat, start_lng, day_places)
 
@@ -358,7 +358,7 @@ class ItineraryEngine:
                 bf_place = food_places[0] if food_places else None
                 bf_title = f"Arrival Breakfast at {bf_place.name}" if bf_place else "Morning Breakfast & Fresh Himalayan Chai"
                 bf_cost = bf_place.approx_cost if bf_place else 180.0
-                
+
                 day_items.append({
                     "place_id": bf_place.id if bf_place else None,
                     "title": bf_title,
@@ -429,14 +429,81 @@ class ItineraryEngine:
 
             # Add Daytime Activities (2 for 1-day trip, 3-4 for multi-day)
             max_act = 2 if num_days == 1 else (items_per_day - 1)
-            for p in ordered_day_places[:max_act]:
-                dist_km = haversine_distance_km(prev_lat, prev_lng, p.latitude, p.longitude)
-                travel_mins = max(10, int((dist_km / 25.0) * 60) + 5)
-                dur_mins = p.recommended_duration_mins or 90
-                
-                start_str = f"{current_time_minutes // 60:02d}:{current_time_minutes % 60:02d}"
-                end_time_min = current_time_minutes + dur_mins
-                end_str = f"{end_time_min // 60:02d}:{end_time_min % 60:02d}"
+            if not ordered_day_places:
+                # Synthesize destination-appropriate daytime exploration stops
+                d_name = destination.name
+                d_lat = destination.latitude
+                d_lng = destination.longitude
+                day_items.append({
+                    "place_id": None,
+                    "title": f"Iconic Exploration & Landmark Walk in {d_name}",
+                    "category": "Nature & Trails",
+                    "start_time": "10:30",
+                    "end_time": "12:30",
+                    "duration_mins": 120,
+                    "estimated_cost": 50.0,
+                    "travel_time_from_prev_mins": 15,
+                    "distance_from_prev_km": 2.0,
+                    "notes": f"Main highlights, trails, and iconic sights of {d_name}.",
+                    "reason_for_recommendation": f"Signature landmark experience in {d_name}.",
+                    "map_lat": d_lat,
+                    "map_lng": d_lng,
+                    "booking_url": None,
+                    "opening_hours": "08:00 - 18:30",
+                    "status": "upcoming",
+                    "is_locked": True
+                })
+                day_items.append({
+                    "place_id": None,
+                    "title": f"Local Heritage & Scenic Ridge in {d_name}",
+                    "category": "Culture & Heritage",
+                    "start_time": "14:30",
+                    "end_time": "16:30",
+                    "duration_mins": 120,
+                    "estimated_cost": 100.0,
+                    "travel_time_from_prev_mins": 15,
+                    "distance_from_prev_km": 3.0,
+                    "notes": f"Afternoon promenade and local cultural viewpoints across {d_name}.",
+                    "reason_for_recommendation": f"Must-see afternoon vantage point in {d_name}.",
+                    "map_lat": d_lat + 0.005,
+                    "map_lng": d_lng + 0.005,
+                    "booking_url": None,
+                    "opening_hours": "09:00 - 19:00",
+                    "status": "upcoming",
+                    "is_locked": False
+                })
+            else:
+                for p in ordered_day_places[:max_act]:
+                    dist_km = haversine_distance_km(prev_lat, prev_lng, p.latitude, p.longitude)
+                    travel_mins = max(10, int((dist_km / 25.0) * 60) + 5)
+                    dur_mins = p.recommended_duration_mins or 90
+
+                    start_str = f"{current_time_minutes // 60:02d}:{current_time_minutes % 60:02d}"
+                    end_time_min = current_time_minutes + dur_mins
+                    end_str = f"{end_time_min // 60:02d}:{end_time_min % 60:02d}"
+
+                    day_items.append({
+                        "place_id": p.id,
+                        "title": p.name,
+                        "category": p.category,
+                        "start_time": start_str,
+                        "end_time": end_str,
+                        "duration_mins": dur_mins,
+                        "estimated_cost": p.approx_cost or 0.0,
+                        "travel_time_from_prev_mins": travel_mins,
+                        "distance_from_prev_km": dist_km,
+                        "notes": (p.description[:140] + "...") if p.description and len(p.description) > 140 else (p.description or p.why_vanvas_recommends or "Exploration point."),
+                        "reason_for_recommendation": p.why_vanvas_recommends or "Geographically optimized match for your trip style.",
+                        "map_lat": p.latitude,
+                        "map_lng": p.longitude,
+                        "booking_url": p.booking_url,
+                        "opening_hours": f"{p.opening_time} - {p.closing_time}",
+                        "status": "upcoming",
+                        "is_locked": False
+                    })
+
+                    current_time_minutes = end_time_min + travel_mins
+                    prev_lat, prev_lng = p.latitude, p.longitude
 
                 day_items.append({
                     "place_id": p.id,
@@ -466,7 +533,7 @@ class ItineraryEngine:
                     lunch_place = food_places[(day_idx + 1) % len(food_places)] if food_places else None
                     l_title = f"Local Lunch & Siddu at {lunch_place.name}" if lunch_place else "Authentic Valley Lunch"
                     l_cost = lunch_place.approx_cost if lunch_place else 320.0
-                    
+
                     day_items.append({
                         "place_id": lunch_place.id if lunch_place else None,
                         "title": l_title,

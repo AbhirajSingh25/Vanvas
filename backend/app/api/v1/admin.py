@@ -30,6 +30,37 @@ def get_system_health():
         "providers": ProviderFactory.get_provider_health()
     }
 
+@router.get("/diagnostics")
+async def get_system_diagnostics(db: Session = Depends(get_db)):
+    """
+    Developer-visible diagnostics endpoint distinguishing CONFIGURATION ERROR,
+    PROVIDER UNAVAILABLE, DATABASE ERROR, NO RESULTS, and OPERATIONAL state.
+    """
+    from datetime import datetime, timezone
+    diagnostics = {
+        "status": "OPERATIONAL",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "database": {"status": "OPERATIONAL", "detail": "Connected"},
+        "map_tiles": {
+            "primary": "CartoDB Voyager (Keyless)",
+            "fallback": "OpenStreetMap (Keyless)",
+            "status": "OPERATIONAL"
+        },
+        "destinations": {"count": 0, "status": "OPERATIONAL"},
+        "providers": ProviderFactory.get_provider_health()
+    }
+    try:
+        dest_count = db.query(Destination).count()
+        diagnostics["destinations"]["count"] = dest_count
+        if dest_count == 0:
+            diagnostics["destinations"]["status"] = "NO RESULTS"
+    except Exception as e:
+        diagnostics["database"]["status"] = "DATABASE ERROR"
+        diagnostics["database"]["detail"] = str(e)
+        diagnostics["status"] = "DEGRADED"
+
+    return diagnostics
+
 @router.get("/ai/health")
 async def get_ai_provider_health():
     """

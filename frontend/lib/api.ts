@@ -10,11 +10,30 @@ import {
 } from "@/types";
 
 function getApiBaseUrl(): string {
-  let base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").trim().replace(/\/+$/, "");
-  if (!base.endsWith("/api/v1")) {
-    base = `${base}/api/v1`;
+  if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "") {
+    let base = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, "");
+    if (!base.endsWith("/api/v1")) {
+      base = `${base}/api/v1`;
+    }
+    return base;
   }
-  return base;
+
+  // Browser runtime environment detection
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local");
+    if (isLocalhost) {
+      return "http://localhost:8000/api/v1";
+    }
+    // Production browser: use relative /api/v1 proxying to backend to avoid cross-device localhost failures
+    return "/api/v1";
+  }
+
+  // Server-side default
+  if (process.env.NODE_ENV === "production") {
+    return "/api/v1";
+  }
+  return "http://localhost:8000/api/v1";
 }
 
 const API_BASE_URL = getApiBaseUrl();

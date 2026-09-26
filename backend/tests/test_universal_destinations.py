@@ -21,7 +21,7 @@ from app.services.copilot_context import build_copilot_context
 
 client = TestClient(app)
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def db_session():
     db = SessionLocal()
     try:
@@ -29,7 +29,7 @@ def db_session():
     finally:
         db.close()
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def test_user(db_session):
     user = db_session.query(User).filter(User.email == "universal_test@vanvas.com").first()
     if not user:

@@ -95,10 +95,14 @@ def get_destinations(
     Dynamic search destinations will NEVER enter this catalogue.
     """
     query = db.query(Destination)
-    if not include_dynamic:
+    if featured_only:
         query = query.filter(Destination.is_featured == True)
-    elif featured_only:
-        query = query.filter(Destination.is_featured == True)
+    elif not include_dynamic:
+        query = query.filter(
+            (Destination.is_featured == True) |
+            (Destination.id.like("dest-%")) |
+            (~Destination.id.like("dyn-%"))
+        )
 
     if region and region != "All":
         query = query.filter(Destination.region.ilike(f"%{region}%"))

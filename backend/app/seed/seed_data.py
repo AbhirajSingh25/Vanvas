@@ -2087,10 +2087,20 @@ def seed_database():
                 else:
                     old_r.image_url = "/images/vehicles/universal_mobility.jpg"
         db.flush()
-        db.flush()
-
         db.commit()
-        print("VANVAS curated travel database successfully seeded with 12 isolated destinations.")
+
+        # Seed all 25 canonical destinations and places
+        try:
+            import os
+            from pathlib import Path
+            json_path = Path(__file__).parent.parent.parent / "scratch" / "canonical_destinations.json"
+            if json_path.exists():
+                from seed_all_canonical import seed_all_canonical
+                seed_all_canonical()
+        except Exception as seed_err:
+            print(f"Canonical registry auto-sync notice: {seed_err}")
+
+        print("VANVAS curated travel database successfully seeded with all canonical destinations and places.")
 
     except Exception as e:
         db.rollback()

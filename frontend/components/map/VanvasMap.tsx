@@ -285,12 +285,30 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
         boxZoom: true,
       } as any);
 
-      // CartoDB Positron / Voyager Tile Layer with warm editorial tone
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      // Primary: CartoDB Voyager Tile Layer with warm editorial tone
+      const cartoLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
         attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org">OSM</a>',
         maxZoom: 19,
         subdomains: "abcd",
-      }).addTo(map);
+      });
+
+      let failedTileCount = 0;
+      cartoLayer.on("tileerror", () => {
+        failedTileCount++;
+        if (failedTileCount === 3 && leafletMapRef.current) {
+          try {
+            leafletMapRef.current.removeLayer(cartoLayer);
+            L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+              attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              maxZoom: 19,
+            }).addTo(leafletMapRef.current);
+          } catch (err) {
+            console.warn("Map fallback tile activation:", err);
+          }
+        }
+      });
+
+      cartoLayer.addTo(map);
 
       // Prevent mobile browser page zoom hijack on multi-touch within the map container
       const container = mapContainerRef.current;

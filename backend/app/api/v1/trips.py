@@ -36,7 +36,7 @@ def get_user_trips(
     user_trips = db.query(Trip).filter(
         (Trip.user_id == current_user.id) | (Trip.id.in_(member_trip_ids))
     ).order_by(Trip.start_date.desc()).all()
-    
+
     # Deduplicate trips by id
     seen_ids = set()
     unique_trips = []
@@ -44,7 +44,7 @@ def get_user_trips(
         if t.id not in seen_ids:
             seen_ids.add(t.id)
             unique_trips.append(t)
-    
+
     summaries = []
     for t in unique_trips:
         summaries.append(TripSummaryResponse(
@@ -71,192 +71,202 @@ async def create_trip(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    raw_dest_id = trip_in.destination_id.strip()
-    clean_slug = DestinationIntelligenceService._clean_query(raw_dest_id).lower().replace(" ", "-")
+    try:
+        raw_dest_id = trip_in.destination_id.strip()
+        clean_slug = DestinationIntelligenceService._clean_query(raw_dest_id).lower().replace(" ", "-")
 
-    destination = db.query(Destination).filter(
-        (Destination.id == raw_dest_id) |
-        (Destination.id == f"dest-{clean_slug}") |
-        (Destination.id == f"dyn-{clean_slug}") |
-        (Destination.slug == clean_slug) |
-        (Destination.name.ilike(clean_slug.replace("-", " ")))
-    ).first()
-    
-    if not destination:
-        # Resolve dynamic destination across India
-        dyn = await DestinationIntelligenceService.resolve_dynamic_destination(raw_dest_id)
-        if not dyn:
-            raise HTTPException(status_code=404, detail=f"Destination '{trip_in.destination_id}' not found")
-        
-        # Check if already in DB by canonical slug
-        canonical_slug = dyn.get("canonical_slug") or dyn["slug"]
-        existing = db.query(Destination).filter(
-            (Destination.slug == canonical_slug) |
-            (Destination.id == f"dyn-{canonical_slug}")
+        destination = db.query(Destination).filter(
+            (Destination.id == raw_dest_id) |
+            (Destination.id == f"dest-{clean_slug}") |
+            (Destination.id == f"dyn-{clean_slug}") |
+            (Destination.slug == clean_slug) |
+            (Destination.name.ilike(clean_slug.replace("-", " ")))
         ).first()
-        if existing:
-            destination = existing
-        else:
-            destination = Destination(
-                id=dyn["id"],
-                name=dyn["name"],
-                slug=canonical_slug,
-                state=dyn["state"],
-                region=dyn["region"],
-                tagline=dyn["tagline"],
-                description=dyn["description"],
-                hero_image=dyn.get("hero_image"),
-                latitude=dyn["latitude"],
-                longitude=dyn["longitude"],
-                altitude_meters=dyn.get("altitude_meters", 550),
-                weather_type=dyn.get("weather_type", "Live Dynamic"),
-                is_featured=False
-            )
-            db.add(destination)
-            db.flush()
 
+        if not destination:
+            # Resolve dynamic destination across India
+            dyn = await DestinationIntelligenceService.resolve_dynamic_destination(raw_dest_id)
+            if not dyn:
+                raise HTTPException(status_code=404, detail=f"Destination '{trip_in.destination_id}' not found")
 
-        # Fetch live places for dynamic destination
-        try:
-            places_provider = ProviderFactory.get_places_provider()
-            live_places_raw = await places_provider.get_nearby_places(destination.latitude, destination.longitude, radius_km=15.0)
-            for lp in live_places_raw:
-                p_name = lp.get("name")
-                if not p_name:
-                    continue
-                p_exist = db.query(Place).filter(Place.destination_id == destination.id, Place.name == p_name).first()
-                if not p_exist:
-                    new_p = Place(
-                        id=lp.get("id", f"place-{generate_uuid()[:8]}"),
-                        destination_id=destination.id,
-                        category=lp.get("category", "Attractions"),
-                        name=p_name,
-                        slug=p_name.lower().replace(" ", "-"),
-                        description=lp.get("address") or f"Point of interest in {destination.name}",
-                        address=lp.get("address"),
-                        latitude=lp.get("latitude") or destination.latitude,
-                        longitude=lp.get("longitude") or destination.longitude,
-                        price_level=lp.get("price_level", "₹₹"),
-                        approx_cost=lp.get("approx_cost", 0.0),
-                        rating=lp.get("rating"),
-                        review_count=lp.get("review_count"),
-                        opening_time=lp.get("opening_time") or "09:00",
-                        closing_time=lp.get("closing_time") or "20:00",
-                        booking_url=lp.get("website"),
-                        is_active=True
-                    )
-                    db.add(new_p)
-            db.flush()
-        except Exception as e:
-            pass
-    
-    num_days = max(1, (trip_in.end_date - trip_in.start_date).days + 1)
-    
-    # Auto-select best hotel and rental matching budget style
-    hotel = db.query(Hotel).filter(Hotel.destination_id == destination.id).first()
-    rental = db.query(RentalOption).filter(RentalOption.destination_id == destination.id).first()
+            # Check if already in DB by canonical slug
+            canonical_slug = dyn.get("canonical_slug") or dyn["slug"]
+            existing = db.query(Destination).filter(
+                (Destination.slug == canonical_slug) |
+                (Destination.id == f"dyn-{canonical_slug}")
+            ).first()
+            if existing:
+                destination = existing
+            else:
+                destination = Destination(
+                    id=dyn["id"],
+                    name=dyn["name"],
+                    slug=canonical_slug,
+                    state=dyn["state"],
+                    region=dyn["region"],
+                    tagline=dyn["tagline"],
+                    description=dyn["description"],
+                    hero_image=dyn.get("hero_image"),
+                    latitude=dyn["latitude"],
+                    longitude=dyn["longitude"],
+                    altitude_meters=dyn.get("altitude_meters", 550),
+                    weather_type=dyn.get("weather_type", "Live Dynamic"),
+                    is_featured=False
+                )
+                db.add(destination)
+                db.flush()
 
-    trip = Trip(
-        user_id=current_user.id,
-        destination_id=destination.id,
-        title=f"Spontaneous Journey to {destination.name}",
-        start_date=trip_in.start_date,
-        end_date=trip_in.end_date,
-        num_days=num_days,
-        budget_total=trip_in.budget,
-        budget_spent=0.0,
-        travellers_count=trip_in.travellers_count,
-        companion_type=trip_in.companion_type,
-        travel_style=trip_in.travel_style,
-        wake_up_preference=trip_in.wake_up_preference,
-        activity_intensity=trip_in.activity_intensity,
-        interests=",".join(trip_in.interests),
-        hotel_id=hotel.id if hotel else None,
-        rental_id=rental.id if rental else None,
-        status="active"
-    )
-    db.add(trip)
-    db.flush()
+            # Fetch live places for dynamic destination
+            try:
+                places_provider = ProviderFactory.get_places_provider()
+                live_places_raw = await places_provider.get_nearby_places(destination.latitude, destination.longitude, radius_km=15.0)
+                for lp in live_places_raw:
+                    p_name = lp.get("name")
+                    if not p_name:
+                        continue
+                    p_exist = db.query(Place).filter(Place.destination_id == destination.id, Place.name == p_name).first()
+                    if not p_exist:
+                        new_p = Place(
+                            id=lp.get("id", f"place-{generate_uuid()[:8]}"),
+                            destination_id=destination.id,
+                            category=lp.get("category", "Attractions"),
+                            name=p_name,
+                            slug=p_name.lower().replace(" ", "-"),
+                            description=lp.get("address") or f"Point of interest in {destination.name}",
+                            address=lp.get("address"),
+                            latitude=lp.get("latitude") or destination.latitude,
+                            longitude=lp.get("longitude") or destination.longitude,
+                            price_level=lp.get("price_level", "₹₹"),
+                            approx_cost=lp.get("approx_cost", 0.0),
+                            rating=lp.get("rating"),
+                            review_count=lp.get("review_count"),
+                            opening_time=lp.get("opening_time") or "09:00",
+                            closing_time=lp.get("closing_time") or "20:00",
+                            booking_url=lp.get("website"),
+                            is_active=True
+                        )
+                        db.add(new_p)
+                db.flush()
+            except Exception:
+                pass
 
-    # Add owner member
-    db.add(TripMember(trip_id=trip.id, user_id=current_user.id, role="owner"))
+        num_days = max(1, (trip_in.end_date - trip_in.start_date).days + 1)
 
-    # Generate Itinerary
-    all_places = db.query(Place).filter(Place.destination_id == destination.id, Place.is_active == True).all()
-    
-    generated_days = itinerary_engine.generate_trip_itinerary(
-        destination=destination,
-        all_places=all_places,
-        start_date=trip_in.start_date,
-        end_date=trip_in.end_date,
-        budget=trip_in.budget,
-        companion_type=trip_in.companion_type,
-        travel_style=trip_in.travel_style,
-        wake_up_preference=trip_in.wake_up_preference,
-        activity_intensity=trip_in.activity_intensity,
-        interests=trip_in.interests,
-        hotel=hotel,
-        rental=rental,
-        planning_mode=getattr(trip_in, "planning_mode", "multi_day") or "multi_day"
-    )
+        # Auto-select best hotel and rental matching budget style
+        hotel = db.query(Hotel).filter(Hotel.destination_id == destination.id).first()
+        rental = db.query(RentalOption).filter(RentalOption.destination_id == destination.id).first()
 
-    for day_dict in generated_days:
-        it = Itinerary(
-            trip_id=trip.id,
-            day_number=day_dict["day_number"],
-            date=day_dict["date"],
-            title=day_dict["title"],
-            theme=day_dict["theme"],
-            status=day_dict["status"]
+        trip = Trip(
+            user_id=current_user.id,
+            destination_id=destination.id,
+            title=f"Spontaneous Journey to {destination.name}",
+            start_date=trip_in.start_date,
+            end_date=trip_in.end_date,
+            num_days=num_days,
+            budget_total=trip_in.budget,
+            budget_spent=0.0,
+            travellers_count=trip_in.travellers_count,
+            companion_type=trip_in.companion_type,
+            travel_style=trip_in.travel_style,
+            wake_up_preference=trip_in.wake_up_preference,
+            activity_intensity=trip_in.activity_intensity,
+            interests=",".join(trip_in.interests),
+            hotel_id=hotel.id if hotel else None,
+            rental_id=rental.id if rental else None,
+            status="active"
         )
-        db.add(it)
+        db.add(trip)
         db.flush()
 
-        for item_dict in day_dict["items"]:
-            it_item = ItineraryItem(
-                itinerary_id=it.id,
-                place_id=item_dict.get("place_id"),
-                title=item_dict["title"],
-                category=item_dict["category"],
-                start_time=item_dict["start_time"],
-                end_time=item_dict["end_time"],
-                duration_mins=item_dict["duration_mins"],
-                estimated_cost=item_dict["estimated_cost"],
-                travel_time_from_prev_mins=item_dict["travel_time_from_prev_mins"],
-                distance_from_prev_km=item_dict["distance_from_prev_km"],
-                notes=item_dict.get("notes"),
-                reason_for_recommendation=item_dict.get("reason_for_recommendation"),
-                map_lat=item_dict.get("map_lat"),
-                map_lng=item_dict.get("map_lng"),
-                booking_url=item_dict.get("booking_url"),
-                opening_hours=item_dict.get("opening_hours"),
-                status=item_dict.get("status", "upcoming"),
-                is_locked=item_dict.get("is_locked", False)
+        # Add owner member
+        db.add(TripMember(trip_id=trip.id, user_id=current_user.id, role="owner"))
+
+        # Generate Itinerary
+        all_places = db.query(Place).filter(Place.destination_id == destination.id, Place.is_active == True).all()
+
+        generated_days = itinerary_engine.generate_trip_itinerary(
+            destination=destination,
+            all_places=all_places,
+            start_date=trip_in.start_date,
+            end_date=trip_in.end_date,
+            budget=trip_in.budget,
+            companion_type=trip_in.companion_type,
+            travel_style=trip_in.travel_style,
+            wake_up_preference=trip_in.wake_up_preference,
+            activity_intensity=trip_in.activity_intensity,
+            interests=trip_in.interests,
+            hotel=hotel,
+            rental=rental,
+            planning_mode=getattr(trip_in, "planning_mode", "multi_day") or "multi_day"
+        )
+
+        for day_dict in generated_days:
+            it = Itinerary(
+                trip_id=trip.id,
+                day_number=day_dict["day_number"],
+                date=day_dict["date"],
+                title=day_dict["title"],
+                theme=day_dict["theme"],
+                status=day_dict["status"]
             )
-            db.add(it_item)
+            db.add(it)
+            db.flush()
 
-    # Seed Checklist Items
-    default_checks = [
-        ("Essentials", "Government Photo ID & Driving License", True),
-        ("Essentials", "Fast Charger & 20,000mAh Power Bank", True),
-        ("Clothing", "Warm Fleece / Windproof Mountain Jacket", False),
-        ("Clothing", "Comfortable Grippy Walking/Trek Shoes", False),
-        ("Medicine", "Motion Sickness / Altitude Acclimatization Pills", False),
-        ("Essentials", "Emergency Cash (Mountain ATMs can run empty)", True),
-        ("Toiletries", "Sunscreen SPF 50 & Lip Balm (Alpine UV)", False)
-    ]
-    for cat, item_name, is_chk in default_checks:
-        db.add(ChecklistItem(
-            trip_id=trip.id,
-            category=cat,
-            item_name=item_name,
-            is_checked=is_chk,
-            is_custom=False
-        ))
+            for item_dict in day_dict["items"]:
+                it_item = ItineraryItem(
+                    itinerary_id=it.id,
+                    place_id=item_dict.get("place_id"),
+                    title=item_dict["title"],
+                    category=item_dict["category"],
+                    start_time=item_dict["start_time"],
+                    end_time=item_dict["end_time"],
+                    duration_mins=item_dict["duration_mins"],
+                    estimated_cost=item_dict["estimated_cost"],
+                    travel_time_from_prev_mins=item_dict["travel_time_from_prev_mins"],
+                    distance_from_prev_km=item_dict["distance_from_prev_km"],
+                    notes=item_dict.get("notes"),
+                    reason_for_recommendation=item_dict.get("reason_for_recommendation"),
+                    map_lat=item_dict.get("map_lat"),
+                    map_lng=item_dict.get("map_lng"),
+                    booking_url=item_dict.get("booking_url"),
+                    opening_hours=item_dict.get("opening_hours"),
+                    status=item_dict.get("status", "upcoming"),
+                    is_locked=item_dict.get("is_locked", False)
+                )
+                db.add(it_item)
 
-    db.commit()
-    db.refresh(trip)
-    return trip
+        # Seed Checklist Items
+        default_checks = [
+            ("Essentials", "Government Photo ID & Driving License", True),
+            ("Essentials", "Fast Charger & 20,000mAh Power Bank", True),
+            ("Clothing", "Warm Fleece / Windproof Mountain Jacket", False),
+            ("Clothing", "Comfortable Grippy Walking/Trek Shoes", False),
+            ("Medicine", "Motion Sickness / Altitude Acclimatization Pills", False),
+            ("Essentials", "Emergency Cash (Mountain ATMs can run empty)", True),
+            ("Toiletries", "Sunscreen SPF 50 & Lip Balm (Alpine UV)", False)
+        ]
+        for cat, item_name, is_chk in default_checks:
+            db.add(ChecklistItem(
+                trip_id=trip.id,
+                category=cat,
+                item_name=item_name,
+                is_checked=is_chk,
+                is_custom=False
+            ))
+
+        db.commit()
+        db.refresh(trip)
+        return trip
+    except Exception as exc:
+        db.rollback()
+        import logging
+        logging.getLogger("vanvas.trips").error(f"Trip creation failed for {trip_in.destination_id}: {exc}", exc_info=True)
+        if isinstance(exc, HTTPException):
+            raise exc
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Trip itinerary generation could not complete: {str(exc)}"
+        )
 
 def _is_expired(expires_at: Optional[datetime]) -> bool:
     if not expires_at:
@@ -514,7 +524,7 @@ def replan_trip(
         if it.day_number == replan_in.day_number:
             target_itinerary = it
             break
-    
+
     if not target_itinerary and trip.itineraries:
         target_itinerary = trip.itineraries[0]
 
@@ -522,7 +532,7 @@ def replan_trip(
         raise HTTPException(status_code=400, detail="No active itinerary to replan")
 
     available_places = db.query(Place).filter(Place.destination_id == trip.destination_id).all()
-    
+
     res = replanner.replan_day(
         itinerary=target_itinerary,
         action_type=replan_in.action_type,
@@ -556,16 +566,16 @@ def quick_plan(
     places = db.query(Place).filter(Place.destination_id == trip.destination_id).all()
     if not places:
         places = db.query(Place).all()
-    
+
     # Sort by distance
     places.sort(key=lambda p: haversine_distance_km(lat, lng, p.latitude, p.longitude))
-    
+
     # If variation > 0, rotate places list so user gets alternate curated stops
     variation_count = int(getattr(req, "variation", 0) or 0)
     if variation_count > 0 and len(places) > 2:
         offset = (variation_count * 2) % len(places)
         places = places[offset:] + places[:offset]
-    
+
     now_hour = datetime.now(timezone.utc).hour + 5 # IST offset approx
     now_min = datetime.now(timezone.utc).minute + 30
     curr_mins = (now_hour % 24) * 60 + (now_min % 60)
@@ -745,7 +755,7 @@ def update_itinerary_item(
     item = db.query(ItineraryItem).filter(ItineraryItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Itinerary item not found")
-    
+
     if status is not None:
         item.status = status
     if is_locked is not None:
