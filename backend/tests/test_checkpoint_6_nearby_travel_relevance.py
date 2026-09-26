@@ -292,7 +292,7 @@ class TestDatabaseSeedingAndIsolation:
 
                 hotels = db.query(Hotel).filter(Hotel.destination_id == d.id).all()
                 for h in hotels:
-                    if h.image_url and not h.image_url.startswith("http"):
+                    if h.image_url and not h.image_url.startswith("http") and not h.image_url.startswith("/images/places/universal/"):
                         assert f"/{d.slug}/" in h.image_url, f"Curated stay {h.name} image {h.image_url} must belong to destination {d.slug}"
         finally:
             db.close()

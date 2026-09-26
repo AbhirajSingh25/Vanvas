@@ -559,8 +559,10 @@ def quick_plan(
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    lat = req.current_lat or trip.destination.latitude
-    lng = req.current_lng or trip.destination.longitude
+    dest_lat = trip.destination.latitude if (trip.destination and trip.destination.latitude is not None) else 28.6139
+    dest_lng = trip.destination.longitude if (trip.destination and trip.destination.longitude is not None) else 77.2090
+    lat = req.current_lat or dest_lat
+    lng = req.current_lng or dest_lng
 
     # Query nearest places
     places = db.query(Place).filter(Place.destination_id == trip.destination_id).all()

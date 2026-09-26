@@ -682,7 +682,7 @@ export const CANONICAL_DESTINATIONS: CanonicalDestination[] = [
     description_en: "One of the oldest continuously inhabited cities on earth, where life, philosophy, and spiritual devotion revolve around the sacred Ganges.",
     description_hi: "संसार की सबसे प्राचीन नगरी, जहाँ दशाश्वमेध और अस्सी घाट पर जीवन, दर्शन और गंगा आरती का अद्भुत संगम देखने को मिलता है।",
     hero_image: "/images/destinations/varanasi/hero.jpg",
-    hero_artwork: "/artworks/varanasi.jpg",
+    hero_artwork: "/images/destinations/varanasi/illustration.jpg",
     hero_photo: "/images/destinations/varanasi/hero.jpg",
     latitude: 25.3176,
     longitude: 82.9739,

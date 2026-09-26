@@ -87,29 +87,43 @@ def ensure_database_schema(eng=engine):
             # Check and migrate `destinations` table
             if "destinations" in existing_tables:
                 dest_cols = {col["name"] for col in inspector.get_columns("destinations")}
-                if "hindi_name" not in dest_cols:
-                    conn.execute(text("ALTER TABLE destinations ADD COLUMN hindi_name VARCHAR(255) NULL"))
-                    logger.info("Migrated schema: added hindi_name to destinations table.")
+                dest_additions = {
+                    "hindi_name": "VARCHAR(255) NULL",
+                    "name_en": "VARCHAR(255) NULL",
+                    "name_hi": "VARCHAR(255) NULL",
+                    "subtitle_en": "VARCHAR(500) NULL",
+                    "subtitle_hi": "VARCHAR(500) NULL",
+                    "description_en": "TEXT NULL",
+                    "description_hi": "TEXT NULL",
+                    "hero_artwork": "VARCHAR(500) NULL",
+                    "hero_photo": "VARCHAR(500) NULL",
+                    "one_day_available": "BOOLEAN DEFAULT TRUE",
+                    "trek_available": "BOOLEAN DEFAULT FALSE",
+                    "nearby_available": "BOOLEAN DEFAULT TRUE",
+                }
+                for col_name, col_def in dest_additions.items():
+                    if col_name not in dest_cols:
+                        conn.execute(text(f"ALTER TABLE destinations ADD COLUMN {col_name} {col_def}"))
+                        conn.commit()
+                        logger.info(f"Migrated schema: added {col_name} to destinations table.")
 
             # Check and migrate `users` table
             if "users" in existing_tables:
                 user_cols = {col["name"] for col in inspector.get_columns("users")}
 
-                if "email_verified_at" not in user_cols:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN email_verified_at TIMESTAMP NULL"))
-                    logger.info("Migrated schema: added email_verified_at to users table.")
-
-                if "avatar_url" not in user_cols:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500) NULL"))
-                    logger.info("Migrated schema: added avatar_url to users table.")
-
-                if "avatar_storage_key" not in user_cols:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN avatar_storage_key VARCHAR(255) NULL"))
-                    logger.info("Migrated schema: added avatar_storage_key to users table.")
-
-                if "role" not in user_cols:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'traveller'"))
-                    logger.info("Migrated schema: added role to users table.")
+                user_additions = {
+                    "email_verified_at": "TIMESTAMP NULL",
+                    "avatar_url": "VARCHAR(500) NULL",
+                    "avatar_type": "VARCHAR(50) DEFAULT 'preset'",
+                    "avatar_preset": "VARCHAR(100) DEFAULT 'himalayan-explorer'",
+                    "avatar_storage_key": "VARCHAR(255) NULL",
+                    "role": "VARCHAR(50) DEFAULT 'traveller'",
+                }
+                for col_name, col_def in user_additions.items():
+                    if col_name not in user_cols:
+                        conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}"))
+                        conn.commit()
+                        logger.info(f"Migrated schema: added {col_name} to users table.")
 
             # Check and migrate `user_preferences` table
             if "user_preferences" in existing_tables:

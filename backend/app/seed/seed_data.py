@@ -10,8 +10,16 @@ from app.models.models import (
 )
 from app.itinerary.generator import ItineraryEngine
 
+from app.seed.canonical_dataset import (
+    CANONICAL_25_DESTINATIONS,
+    ADDITIONAL_PLACES_BY_DEST,
+    ADDITIONAL_HOTELS_BY_DEST,
+    ADDITIONAL_RENTALS_BY_DEST
+)
+
 def seed_database():
-    Base.metadata.create_all(bind=engine)
+    from app.database.session import ensure_database_schema
+    ensure_database_schema(engine)
     db: Session = SessionLocal()
 
     try:
@@ -73,227 +81,22 @@ def seed_database():
                 db.flush()
             category_map[slug] = cat
 
-        # 3. 12 Approved Curated Destinations
-        destinations_data = [
-            {
-                "name": "Manali",
-                "slug": "manali",
-                "hindi_name": "मनाली",
-                "state": "Himachal Pradesh",
-                "region": "Himalayan",
-                "tagline": "Pine-scented mountain air, riverside stone cafés, and high alpine trails.",
-                "description": "Nestled in the Beas River Valley, Manali blends rustic Himalayan charm with vibrant café culture and gateway routes to high altitude passes.",
-                "hero_image": "/images/destinations/manali/hero.jpg",
-                "latitude": 32.2396,
-                "longitude": 77.1887,
-                "altitude_meters": 2050,
-                "best_time_to_visit": "October to June",
-                "weather_type": "Alpine Mist / Cool",
-                "is_featured": True
-            },
-            {
-                "name": "Rishikesh",
-                "slug": "rishikesh",
-                "hindi_name": "ऋषिकेश",
-                "state": "Uttarakhand",
-                "region": "Himalayan Foothills",
-                "tagline": "Turquoise Ganga currents, cliffside meditation, and rapid adventures.",
-                "description": "The yoga capital of the world resting on the banks of the sacred Ganges, where jungle serenity meets world-class river rafting and sunset aartis.",
-                "hero_image": "/images/destinations/rishikesh/hero.jpg",
-                "latitude": 30.0869,
-                "longitude": 78.2676,
-                "altitude_meters": 372,
-                "best_time_to_visit": "September to May",
-                "weather_type": "Pleasant / River Breeze",
-                "is_featured": True
-            },
-            {
-                "name": "Tungnath–Chandrashila Trek",
-                "slug": "tungnath-chandrashila",
-                "hindi_name": "तुंगनाथ–चंद्रशिला",
-                "state": "Uttarakhand",
-                "region": "Garhwal Himalayas",
-                "tagline": "World's highest Shiva shrine, alpine rhododendron bugyals, and a 360° summit over Chaukhamba.",
-                "description": "An iconic Garhwal Himalayan trail ascending from the meadows of Chopta (2,680m) through alpine rhododendrons to the ancient stone Tungnath Temple (3,680m) and continuing 1.5 km to the Chandrashila Summit (4,000m) with sweeping views of Chaukhamba, Trishul, and Nanda Devi.",
-                "hero_image": "/images/destinations/tungnath-chandrashila/hero.jpg",
-                "latitude": 30.4886,
-                "longitude": 79.2173,
-                "altitude_meters": 4000,
-                "best_time_to_visit": "April to November",
-                "weather_type": "High Alpine Crisp Air",
-                "is_featured": True
-            },
-            {
-                "name": "Kasol",
-                "slug": "kasol",
-                "hindi_name": "कसोल",
-                "state": "Himachal Pradesh",
-                "region": "Parvati Valley",
-                "tagline": "Mystic deodar canopies, roaring emerald waters, and bohemian trails.",
-                "description": "A tranquil haven in Parvati Valley famous for Israeli bakeries, pine-forested riverside hikes to Chalal and Tosh, and unmatched mountain peace.",
-                "hero_image": "/images/destinations/kasol/hero.jpg",
-                "latitude": 32.0100,
-                "longitude": 77.3150,
-                "altitude_meters": 1580,
-                "best_time_to_visit": "March to June & Sept to Nov",
-                "weather_type": "Crisp Mountain Mist",
-                "is_featured": True
-            },
-            {
-                "name": "Dharamshala & McLeod Ganj",
-                "slug": "dharamshala",
-                "hindi_name": "धर्मशाला",
-                "state": "Himachal Pradesh",
-                "region": "Kangra Valley",
-                "tagline": "Prayer flags in the mist, Tibetan heritage, and the mighty Dhauladhar ridge.",
-                "description": "Home of the Dalai Lama, surrounded by cedar forests and dramatic snow-capped peaks with authentic momos and serene monasteries.",
-                "hero_image": "/images/destinations/dharamshala/hero.jpg",
-                "latitude": 32.2190,
-                "longitude": 76.3234,
-                "altitude_meters": 1457,
-                "best_time_to_visit": "September to June",
-                "weather_type": "Misty Cedar Air",
-                "is_featured": True
-            },
-            {
-                "name": "Goa",
-                "slug": "goa",
-                "hindi_name": "गोवा",
-                "state": "Goa",
-                "region": "Coastal Western Ghats",
-                "tagline": "Golden palms, Portuguese villas, beach shack sunsets, and spice farms.",
-                "description": "Beyond the crowded tourist strips lie sleepy riverside villages, historic Latin quarters, vibrant night flea markets, and tranquil cliff beaches.",
-                "hero_image": "/images/destinations/goa/hero.jpg",
-                "latitude": 15.2993,
-                "longitude": 74.1240,
-                "altitude_meters": 10,
-                "best_time_to_visit": "November to April",
-                "weather_type": "Warm Coastal Breeze",
-                "is_featured": True
-            },
-            {
-                "name": "Jaipur",
-                "slug": "jaipur",
-                "hindi_name": "जयपुर",
-                "state": "Rajasthan",
-                "region": "Royal Heritage",
-                "tagline": "Terracotta ramparts, historic havelis, rich kachoris, and artisan crafts.",
-                "description": "The Pink City where regal hill forts overlook bustling bazaars full of blue pottery, block-printed fabrics, and royal Rajasthani delicacies.",
-                "hero_image": "/images/destinations/jaipur/hero.jpg",
-                "latitude": 26.9124,
-                "longitude": 75.7873,
-                "altitude_meters": 431,
-                "best_time_to_visit": "October to March",
-                "weather_type": "Dry Heritage Warmth",
-                "is_featured": True
-            },
-            {
-                "name": "Mussoorie",
-                "slug": "mussoorie",
-                "hindi_name": "मसूरी",
-                "state": "Uttarakhand",
-                "region": "Garhwal Hills",
-                "tagline": "Queen of the Hills, colonial bookshops, winterline sunsets, and oak trails.",
-                "description": "Perched on a horseshoe ridge overlooking the Doon Valley, offering tranquil walks along Camel's Back Road and historic bakeries in Landour.",
-                "hero_image": "/images/destinations/mussoorie/hero.jpg",
-                "latitude": 30.4598,
-                "longitude": 78.0644,
-                "altitude_meters": 2005,
-                "best_time_to_visit": "March to June & Sept to Nov",
-                "weather_type": "Cool Mountain Mist",
-                "is_featured": True
-            },
-            {
-                "name": "Udaipur",
-                "slug": "udaipur",
-                "hindi_name": "उदयपुर",
-                "state": "Rajasthan",
-                "region": "Mewar Lakes",
-                "tagline": "Shimmering lake waters, whitewashed palaces, and romantic rooftop evenings.",
-                "description": "The City of Lakes framed by the Aravalli Hills, offering tranquil boat rides on Lake Pichola and authentic Mewari hospitality.",
-                "hero_image": "/images/destinations/udaipur/hero.jpg",
-                "latitude": 24.5854,
-                "longitude": 73.7125,
-                "altitude_meters": 598,
-                "best_time_to_visit": "September to March",
-                "weather_type": "Pleasant Lake Breeze",
-                "is_featured": True
-            },
-            {
-                "name": "Varanasi",
-                "slug": "varanasi",
-                "hindi_name": "वाराणसी",
-                "state": "Uttar Pradesh",
-                "region": "Ganga Riverfront",
-                "tagline": "Ancient eternal ghats, dawn boat reflections, sacred chanting, and silk lanes.",
-                "description": "One of the oldest continuously inhabited cities on earth, where life, philosophy, and spiritual devotion revolve around the sacred Ganges.",
-                "hero_image": "/images/destinations/varanasi/hero.jpg",
-                "latitude": 25.3176,
-                "longitude": 82.9739,
-                "altitude_meters": 80,
-                "best_time_to_visit": "October to March",
-                "weather_type": "Ancient River Breeze",
-                "is_featured": True
-            },
-            {
-                "name": "Leh",
-                "slug": "leh",
-                "hindi_name": "लेह",
-                "state": "Ladakh",
-                "region": "Trans-Himalayan Cold Desert",
-                "tagline": "Barren moonscapes, thousand-year-old gompas, and world-highest motorable passes.",
-                "description": "The crown of Ladakh situated in the Indus River Valley, where stark dramatic mountain terrain meets ancient Tibetan Buddhist culture.",
-                "hero_image": "/images/destinations/leh/hero.jpg",
-                "latitude": 34.1526,
-                "longitude": 77.5771,
-                "altitude_meters": 3500,
-                "best_time_to_visit": "May to October",
-                "weather_type": "High Altitude Crisp Air",
-                "is_featured": True
-            },
-            {
-                "name": "Spiti Valley",
-                "slug": "spiti",
-                "hindi_name": "स्पीति घाटी",
-                "state": "Himachal Pradesh",
-                "region": "Cold Desert Valley",
-                "tagline": "The middle land between Tibet and India, cliffside monasteries, and fossil villages.",
-                "description": "A high-altitude desert wonderland carved by the Spiti River, renowned for century-old gompas like Key and Dhankar, and pristine high-altitude lakes.",
-                "hero_image": "/images/destinations/spiti-valley/hero.jpg",
-                "latitude": 32.2461,
-                "longitude": 78.0349,
-                "altitude_meters": 3800,
-                "best_time_to_visit": "June to October",
-                "weather_type": "Dry Cold Moonscape",
-                "is_featured": True
-            },
-            {
-                "name": "Munnar",
-                "slug": "munnar",
-                "hindi_name": "मुन्नार",
-                "state": "Kerala",
-                "region": "Western Ghats Tea Hills",
-                "tagline": "Rolling emerald tea plantations, misty mountain gaps, and cardamom forests.",
-                "description": "Perched at the confluence of three mountain streams in the Western Ghats, Munnar offers endless green tea slopes, cool breezes, and colonial bungalows.",
-                "hero_image": "/images/destinations/fallbacks/valley.jpg",
-                "latitude": 10.0889,
-                "longitude": 77.0595,
-                "altitude_meters": 1600,
-                "best_time_to_visit": "September to May",
-                "weather_type": "Misty Green Slopes",
-                "is_featured": True
-            }
-        ]
+        # 3. All 25 Approved Curated Canonical Destinations
+        destinations_data = CANONICAL_25_DESTINATIONS
 
         dest_objects = {}
         for d_info in destinations_data:
-            existing = db.query(Destination).filter(Destination.slug == d_info["slug"]).first()
+            dest_id = f"dest-{d_info['slug']}"
+            existing = db.query(Destination).filter(
+                (Destination.slug == d_info["slug"]) | (Destination.id == dest_id)
+            ).first()
             if not existing:
-                dest = Destination(**d_info)
+                dest = Destination(id=dest_id, **d_info)
                 db.add(dest)
                 db.flush()
                 dest_objects[dest.slug] = dest
             else:
+                existing.id = dest_id
                 for k, v in d_info.items():
                     setattr(existing, k, v)
                 db.flush()
@@ -1484,7 +1287,8 @@ def seed_database():
             ]
         }
 
-        # Seed places for all destinations
+        # Seed places for all 25 destinations
+        curated_places_by_dest.update(ADDITIONAL_PLACES_BY_DEST)
         curated_place_keys = set()
         for dest_slug, places_list in curated_places_by_dest.items():
             if dest_slug in dest_objects:
@@ -1504,6 +1308,7 @@ def seed_database():
         for old_p in db.query(Place).all():
             key = (old_p.destination_id, old_p.slug)
             if key not in curated_place_keys or key in seen_dest_slug:
+                db.query(Vote).filter(Vote.place_id == old_p.id).delete()
                 db.query(ItineraryItem).filter(ItineraryItem.place_id == old_p.id).delete()
                 db.query(SavedPlace).filter(SavedPlace.place_id == old_p.id).delete()
                 db.delete(old_p)
@@ -1751,6 +1556,7 @@ def seed_database():
             ]
         }
 
+        curated_hotels_by_dest.update(ADDITIONAL_HOTELS_BY_DEST)
         for dest_slug, hotel_list in curated_hotels_by_dest.items():
             if dest_slug in dest_objects:
                 dest_obj = dest_objects[dest_slug]
@@ -1765,8 +1571,9 @@ def seed_database():
 
         # Clean up legacy / orphan hotels
         curated_hotel_names = {h["name"] for hotel_list in curated_hotels_by_dest.values() for h in hotel_list}
+        valid_dest_ids = {d.id for d in db.query(Destination).all()}
         for old_h in db.query(Hotel).all():
-            if old_h.name not in curated_hotel_names:
+            if old_h.name not in curated_hotel_names or old_h.destination_id not in valid_dest_ids:
                 db.delete(old_h)
         db.flush()
 
@@ -2060,6 +1867,7 @@ def seed_database():
             ]
         }
 
+        curated_rentals_by_dest.update(ADDITIONAL_RENTALS_BY_DEST)
         for dest_slug, rental_list in curated_rentals_by_dest.items():
             if dest_slug in dest_objects:
                 dest_obj = dest_objects[dest_slug]
@@ -2073,8 +1881,12 @@ def seed_database():
                             setattr(existing_r, k, v)
         db.flush()
 
-        # Clean up legacy rentals with stale/invalid image URLs
+        # Clean up legacy rentals with stale/invalid image URLs or missing destinations
+        valid_dest_ids = {d.id for d in db.query(Destination).all()}
         for old_r in db.query(RentalOption).all():
+            if old_r.destination_id not in valid_dest_ids:
+                db.delete(old_r)
+                continue
             if old_r.image_url and (".svg" in old_r.image_url or "unsplash" in old_r.image_url):
                 if "himalayan" in old_r.vehicle_name.lower():
                     old_r.image_url = "/images/vehicles/adventure_motorcycle.jpg"
@@ -2089,18 +1901,7 @@ def seed_database():
         db.flush()
         db.commit()
 
-        # Seed all 25 canonical destinations and places
-        try:
-            import os
-            from pathlib import Path
-            json_path = Path(__file__).parent.parent.parent / "scratch" / "canonical_destinations.json"
-            if json_path.exists():
-                from seed_all_canonical import seed_all_canonical
-                seed_all_canonical()
-        except Exception as seed_err:
-            print(f"Canonical registry auto-sync notice: {seed_err}")
-
-        print("VANVAS curated travel database successfully seeded with all canonical destinations and places.")
+        print("VANVAS curated travel database successfully seeded with all 25 canonical destinations, places, hotels, and rentals.")
 
     except Exception as e:
         db.rollback()

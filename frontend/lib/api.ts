@@ -92,7 +92,8 @@ async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       headers,
       signal: options.signal || controller.signal,

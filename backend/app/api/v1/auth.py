@@ -617,17 +617,17 @@ def delete_avatar(
             pass
 
     current_user.avatar_storage_key = None
-    current_user.avatar_type = "preset"
-    current_user.avatar_preset = "himalayan-explorer"
-    current_user.avatar_url = "/avatars/himalayan-explorer.svg"
+    current_user.avatar_type = "none"
+    current_user.avatar_preset = None
+    current_user.avatar_url = None
     db.commit()
     db.refresh(current_user)
 
     return AvatarUploadResponse(
-        avatar_url=current_user.avatar_url,
-        avatar_type=current_user.avatar_type,
-        avatar_preset=current_user.avatar_preset,
-        message="Profile photo removed; restored default illustrated avatar."
+        avatar_url=None,
+        avatar_type="none",
+        avatar_preset=None,
+        message="Profile photo removed successfully."
     )
 
 @router.get("/profile/avatar/file/{key_path:path}")

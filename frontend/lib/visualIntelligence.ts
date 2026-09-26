@@ -423,12 +423,28 @@ export function resolveDestinationVisualProfile(
   state?: string,
   elevationMeters?: number
 ): DestinationVisualProfile {
+  // 1. Direct exact key match
+  const rawKey = (slugOrName || "").toLowerCase().trim();
+  if (SEEDED_DESTINATION_PROFILES[rawKey]) {
+    return SEEDED_DESTINATION_PROFILES[rawKey];
+  }
+
   const norm = (slugOrName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-  // Check direct seeded match
+  // 2. Normalized exact key/slug/name match
   for (const [key, profile] of Object.entries(SEEDED_DESTINATION_PROFILES)) {
     const keyNorm = key.replace(/[^a-z0-9]/g, "");
-    if (norm === keyNorm || norm.includes(keyNorm) || keyNorm.includes(norm)) {
+    const slugNorm = (profile.slug || "").replace(/[^a-z0-9]/g, "");
+    const nameNorm = (profile.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (norm === keyNorm || norm === slugNorm || norm === nameNorm) {
+      return profile;
+    }
+  }
+
+  // 3. Exact word/alias match for composite names (e.g., 'haridwar-rishikesh')
+  for (const [key, profile] of Object.entries(SEEDED_DESTINATION_PROFILES)) {
+    const keyNorm = key.replace(/[^a-z0-9]/g, "");
+    if (norm.length >= 5 && keyNorm.length >= 5 && (norm === keyNorm || keyNorm.startsWith(norm) || norm.startsWith(keyNorm))) {
       return profile;
     }
   }
