@@ -78,6 +78,7 @@ def root():
     }
 
 @app.get("/health", tags=["Health"])
+@app.get(f"{settings.API_V1_STR}/health", tags=["Health"])
 def health_check():
     """
     Liveness probe indicating the API process is alive.
@@ -89,6 +90,7 @@ def health_check():
     }
 
 @app.get("/health/ready", tags=["Health"])
+@app.get(f"{settings.API_V1_STR}/health/ready", tags=["Health"])
 def readiness_check(response: Response, db: Session = Depends(get_db)):
     """
     Readiness probe verifying essential runtime dependencies (database connectivity).
@@ -108,3 +110,53 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
             "database": "disconnected",
             "service": "vanvas-core-api"
         }
+
+@app.get(f"{settings.API_V1_STR}/health/diagnostics", tags=["Health"])
+def health_diagnostics(response: Response, db: Session = Depends(get_db)):
+    """
+    Production diagnostics endpoint verifying database connectivity,
+    canonical destination count, tables status, map and provider config without exposing secrets.
+    """
+    try:
+        from app.models.models import Destination, Place, Hotel, RentalOption, User
+        db.execute(text("SELECT 1"))
+        dest_count = db.query(Destination).count()
+        places_count = db.query(Place).count()
+        hotels_count = db.query(Hotel).count()
+        rentals_count = db.query(RentalOption).count()
+        users_count = db.query(User).count()
+
+        return {
+            "status": "operational",
+            "environment": settings.ENVIRONMENT,
+            "database": {
+                "connected": True,
+                "engine": "postgresql" if "postgresql" in settings.DATABASE_URL.lower() else "sqlite",
+                "counts": {
+                    "destinations": dest_count,
+                    "places": places_count,
+                    "hotels": hotels_count,
+                    "rentals": rentals_count,
+                    "users": users_count
+                }
+            },
+            "map_configuration": {
+                "provider": "OpenStreetMap",
+                "requires_api_key": False,
+                "keyless_production_ready": True
+            },
+            "auth_configuration": {
+                "jwt_algorithm": "HS256",
+                "token_expire_minutes": settings.ACCESS_TOKEN_EXPIRE_MINUTES
+            },
+            "service": "vanvas-core-api",
+            "version": settings.VERSION
+        }
+    except Exception as exc:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {
+            "status": "degraded",
+            "error": str(exc),
+            "service": "vanvas-core-api"
+        }
+

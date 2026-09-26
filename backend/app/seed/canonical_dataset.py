@@ -6,18 +6,15 @@ Self-contained, production-ready dataset.
 
 CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'best_time_to_visit': 'October to June',
-        'description': 'Nestled in the Beas River Valley, Manali blends rustic '
-                       'Himalayan charm with vibrant café culture and gateway '
-                       'routes to high altitude passes.',
-        'description_en': 'Nestled in the Beas River Valley, Manali blends '
-                          'rustic Himalayan charm with vibrant café culture '
-                          'and gateway routes to high altitude passes.',
-        'description_hi': 'ब्यास नदी घाटी में बसा मनाली पारंपरिक हिमालयी '
-                          'संस्कृति और जीवंत कैफ़े जीवन का अनूठा संगम प्रस्तुत '
-                          'करता है।',
+        'description': 'Nestled in the Beas River Valley, Manali blends rustic Himalayan charm with vibrant café '
+                       'culture and gateway routes to high altitude passes.',
+        'description_en': 'Nestled in the Beas River Valley, Manali blends rustic Himalayan charm with vibrant café '
+                          'culture and gateway routes to high altitude passes.',
+        'description_hi': 'ब्यास नदी घाटी में बसा मनाली पारंपरिक हिमालयी संस्कृति और जीवंत कैफ़े जीवन का अनूठा संगम '
+                          'प्रस्तुत करता है।',
         'hero_artwork': '/artworks/manali.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/manali/hero.jpg',
+        'hero_photo': '/images/destinations/manali/hero.jpg',
         'hindi_name': 'मनाली',
         'is_featured': True,
         'latitude': 32.2396,
@@ -30,28 +27,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Himalayan',
         'slug': 'manali',
         'state': 'Himachal Pradesh',
-        'subtitle_en': 'Pine-scented mountain air, riverside stone cafés, and '
-                       'high alpine trails.',
-        'subtitle_hi': 'चीड़ की खुशबू वाली हवा, नदी किनारे कैफ़े और अल्पाइन '
-                       'रास्ते।',
-        'tagline': 'Pine-scented mountain air, riverside stone cafés, and high '
-                   'alpine trails.',
+        'subtitle_en': 'Pine-scented mountain air, riverside stone cafés, and high alpine trails.',
+        'subtitle_hi': 'चीड़ की खुशबू वाली हवा, नदी किनारे कैफ़े और अल्पाइन रास्ते।',
+        'tagline': 'Pine-scented mountain air, riverside stone cafés, and high alpine trails.',
         'trek_available': True,
         'weather_type': 'Alpine Mist / Cool'},
     {   'altitude_meters': 372,
         'best_time_to_visit': 'September to May',
-        'description': 'The yoga capital of the world resting on the banks of '
-                       'the sacred Ganges, where jungle serenity meets '
-                       'world-class river rafting and sunset aartis.',
-        'description_en': 'The yoga capital of the world resting on the banks '
-                          'of the sacred Ganges, where jungle serenity meets '
-                          'world-class river rafting and sunset aartis.',
-        'description_hi': 'पवित्र गंगा के तट पर स्थित योग और अध्यात्म की '
-                          'वैश्विक राजधानी, जहाँ संध्या आरती और प्राकृतिक '
-                          'शांति का अद्भुत अनुभव मिलता है।',
+        'description': 'The yoga capital of the world resting on the banks of the sacred Ganges, where jungle serenity '
+                       'meets world-class river rafting and sunset aartis.',
+        'description_en': 'The yoga capital of the world resting on the banks of the sacred Ganges, where jungle '
+                          'serenity meets world-class river rafting and sunset aartis.',
+        'description_hi': 'पवित्र गंगा के तट पर स्थित योग और अध्यात्म की वैश्विक राजधानी, जहाँ संध्या आरती और '
+                          'प्राकृतिक शांति का अद्भुत अनुभव मिलता है।',
         'hero_artwork': '/artworks/rishikesh.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/rishikesh/hero.jpg',
+        'hero_photo': '/images/destinations/rishikesh/hero.jpg',
         'hindi_name': 'ऋषिकेश',
         'is_featured': True,
         'latitude': 30.0869,
@@ -64,34 +55,25 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Himalayan Foothills',
         'slug': 'rishikesh',
         'state': 'Uttarakhand',
-        'subtitle_en': 'Turquoise Ganga currents, cliffside meditation, and '
-                       'rapid adventures.',
-        'subtitle_hi': 'नीली गंगा की धारा, योग साधना और रोमांचक रिवर '
-                       'राफ़्टिंग।',
-        'tagline': 'Turquoise Ganga currents, cliffside meditation, and rapid '
-                   'adventures.',
+        'subtitle_en': 'Turquoise Ganga currents, cliffside meditation, and rapid adventures.',
+        'subtitle_hi': 'नीली गंगा की धारा, योग साधना और रोमांचक रिवर राफ़्टिंग।',
+        'tagline': 'Turquoise Ganga currents, cliffside meditation, and rapid adventures.',
         'trek_available': True,
         'weather_type': 'Pleasant / River Breeze'},
     {   'altitude_meters': 4000,
         'best_time_to_visit': 'April to November',
-        'description': 'An iconic Garhwal Himalayan trail ascending from the '
-                       'meadows of Chopta (2,680m) through alpine '
-                       'rhododendrons to the ancient stone Tungnath Temple '
-                       '(3,680m) and continuing 1.5 km to the Chandrashila '
-                       'Summit (4,000m) with sweeping views of Chaukhamba, '
-                       'Trishul, and Nanda Devi.',
-        'description_en': 'An iconic Garhwal Himalayan trail ascending from '
-                          'the meadows of Chopta (2,680m) through alpine '
-                          'rhododendrons to the ancient stone Tungnath Temple '
-                          '(3,680m) and continuing 1.5 km to the Chandrashila '
-                          'Summit (4,000m) with sweeping views of Chaukhamba, '
-                          'Trishul, and Nanda Devi.',
-        'description_hi': 'चोपता के मखमली बुग्यालों से शुरू होकर प्राचीन '
-                          'तुंगनाथ मंदिर और 4000 मीटर ऊँचे चंद्रशिला शिखर तक '
-                          'जाने वाला अद्वितीय हिमालयी ट्रेक।',
+        'description': 'An iconic Garhwal Himalayan trail ascending from the meadows of Chopta (2,680m) through alpine '
+                       'rhododendrons to the ancient stone Tungnath Temple (3,680m) and continuing 1.5 km to the '
+                       'Chandrashila Summit (4,000m) with sweeping views of Chaukhamba, Trishul, and Nanda Devi.',
+        'description_en': 'An iconic Garhwal Himalayan trail ascending from the meadows of Chopta (2,680m) through '
+                          'alpine rhododendrons to the ancient stone Tungnath Temple (3,680m) and continuing 1.5 km to '
+                          'the Chandrashila Summit (4,000m) with sweeping views of Chaukhamba, Trishul, and Nanda '
+                          'Devi.',
+        'description_hi': 'चोपता के मखमली बुग्यालों से शुरू होकर प्राचीन तुंगनाथ मंदिर और 4000 मीटर ऊँचे चंद्रशिला '
+                          'शिखर तक जाने वाला अद्वितीय हिमालयी ट्रेक।',
         'hero_artwork': '/artworks/fallback_himalayan.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/tungnath-chandrashila/hero.jpg',
+        'hero_photo': '/images/destinations/tungnath-chandrashila/hero.jpg',
         'hindi_name': 'तुंगनाथ–चंद्रशिला',
         'is_featured': True,
         'latitude': 30.4886,
@@ -104,32 +86,24 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Garhwal Himalayas',
         'slug': 'tungnath-chandrashila',
         'state': 'Uttarakhand',
-        'subtitle_en': "World's highest Shiva shrine, alpine rhododendron "
-                       'bugyals, and a 360° summit over Chaukhamba.',
-        'subtitle_hi': 'विश्व का सबसे ऊँचा शिव मंदिर, बुरांश के बुग्याल और '
-                       'चौखंभा का 360° विहंगम दृश्य।',
-        'tagline': "World's highest Shiva shrine, alpine rhododendron bugyals, "
-                   'and a 360° summit over Chaukhamba.',
+        'subtitle_en': "World's highest Shiva shrine, alpine rhododendron bugyals, and a 360° summit over Chaukhamba.",
+        'subtitle_hi': 'विश्व का सबसे ऊँचा शिव मंदिर, बुरांश के बुग्याल और चौखंभा का 360° विहंगम दृश्य।',
+        'tagline': "World's highest Shiva shrine, alpine rhododendron bugyals, and a 360° summit over Chaukhamba.",
         'trek_available': True,
         'weather_type': 'High Alpine Crisp Air'},
     {   'altitude_meters': 1400,
         'best_time_to_visit': 'Round the Year',
-        'description': 'Established in 1962 by the revered mystic Neem Karoli '
-                       'Baba, Kainchi Dham sits between two scenic mountain '
-                       'hills in Nainital district. Renowned worldwide as a '
-                       'sanctuary of immense spiritual peace, chanting, and '
-                       'selfless service.',
-        'description_en': 'Established in 1962 by the revered mystic Neem '
-                          'Karoli Baba, Kainchi Dham sits between two scenic '
-                          'mountain hills in Nainital district. Renowned '
-                          'worldwide as a sanctuary of immense spiritual '
-                          'peace, chanting, and selfless service.',
-        'description_hi': '1962 में नीम करौली बाबा द्वारा स्थापित कैंची धाम दो '
-                          'सुरम्य पहाड़ियों के बीच स्थित एक परम पावन '
-                          'आध्यात्मिक आश्रम है।',
+        'description': 'Established in 1962 by the revered mystic Neem Karoli Baba, Kainchi Dham sits between two '
+                       'scenic mountain hills in Nainital district. Renowned worldwide as a sanctuary of immense '
+                       'spiritual peace, chanting, and selfless service.',
+        'description_en': 'Established in 1962 by the revered mystic Neem Karoli Baba, Kainchi Dham sits between two '
+                          'scenic mountain hills in Nainital district. Renowned worldwide as a sanctuary of immense '
+                          'spiritual peace, chanting, and selfless service.',
+        'description_hi': '1962 में नीम करौली बाबा द्वारा स्थापित कैंची धाम दो सुरम्य पहाड़ियों के बीच स्थित एक परम '
+                          'पावन आध्यात्मिक आश्रम है।',
         'hero_artwork': '/artworks/kainchi-dham.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/kainchi-dham/hero.jpg',
+        'hero_photo': '/images/destinations/kainchi-dham/hero.jpg',
         'hindi_name': 'कैंची धाम',
         'is_featured': True,
         'latitude': 29.4239,
@@ -142,27 +116,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Kumaon Hills',
         'slug': 'kainchi-dham',
         'state': 'Uttarakhand',
-        'subtitle_en': "Neem Karoli Baba's sacred riverside ashram nestled in "
-                       'pine-scented Kumaoni valleys.',
-        'subtitle_hi': 'नीम करौली बाबा का पवित्र आश्रम, शांत पहाड़ी नदी और '
-                       'देवदार के घने जंगल।',
-        'tagline': "Neem Karoli Baba's sacred riverside ashram nestled in "
-                   'pine-scented Kumaoni valleys.',
+        'subtitle_en': "Neem Karoli Baba's sacred riverside ashram nestled in pine-scented Kumaoni valleys.",
+        'subtitle_hi': 'नीम करौली बाबा का पवित्र आश्रम, शांत पहाड़ी नदी और देवदार के घने जंगल।',
+        'tagline': "Neem Karoli Baba's sacred riverside ashram nestled in pine-scented Kumaoni valleys.",
         'trek_available': False,
         'weather_type': 'Pleasant Mountain River Breeze'},
     {   'altitude_meters': 1580,
         'best_time_to_visit': 'March to June & Sept to Nov',
-        'description': 'A tranquil haven in Parvati Valley famous for Israeli '
-                       'bakeries, pine-forested riverside hikes to Chalal and '
-                       'Tosh, and unmatched mountain peace.',
-        'description_en': 'A tranquil haven in Parvati Valley famous for '
-                          'Israeli bakeries, pine-forested riverside hikes to '
-                          'Chalal and Tosh, and unmatched mountain peace.',
-        'description_hi': 'पार्वती घाटी का एक शांत कोना, जहाँ कल-कल बहती नदी, '
-                          'देवदार के जंगल और सुकून भरे रास्ते मिलते हैं।',
+        'description': 'A tranquil haven in Parvati Valley famous for Israeli bakeries, pine-forested riverside hikes '
+                       'to Chalal and Tosh, and unmatched mountain peace.',
+        'description_en': 'A tranquil haven in Parvati Valley famous for Israeli bakeries, pine-forested riverside '
+                          'hikes to Chalal and Tosh, and unmatched mountain peace.',
+        'description_hi': 'पार्वती घाटी का एक शांत कोना, जहाँ कल-कल बहती नदी, देवदार के जंगल और सुकून भरे रास्ते मिलते '
+                          'हैं।',
         'hero_artwork': '/artworks/kasol.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/kasol/hero.jpg',
+        'hero_photo': '/images/destinations/kasol/hero.jpg',
         'hindi_name': 'कसोल',
         'is_featured': True,
         'latitude': 32.01,
@@ -175,28 +144,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Parvati Valley',
         'slug': 'kasol',
         'state': 'Himachal Pradesh',
-        'subtitle_en': 'Mystic deodar canopies, roaring emerald waters, and '
-                       'bohemian trails.',
-        'subtitle_hi': 'देवदार के रहस्यमयी जंगल, पार्वती नदी और खूबसूरत पहाड़ी '
-                       'रास्ते।',
-        'tagline': 'Mystic deodar canopies, roaring emerald waters, and '
-                   'bohemian trails.',
+        'subtitle_en': 'Mystic deodar canopies, roaring emerald waters, and bohemian trails.',
+        'subtitle_hi': 'देवदार के रहस्यमयी जंगल, पार्वती नदी और खूबसूरत पहाड़ी रास्ते।',
+        'tagline': 'Mystic deodar canopies, roaring emerald waters, and bohemian trails.',
         'trek_available': True,
         'weather_type': 'Crisp Mountain Mist'},
     {   'altitude_meters': 1457,
         'best_time_to_visit': 'September to June',
-        'description': 'Home of the Dalai Lama, surrounded by cedar forests '
-                       'and dramatic snow-capped peaks with authentic momos '
-                       'and serene monasteries.',
-        'description_en': 'Home of the Dalai Lama, surrounded by cedar forests '
-                          'and dramatic snow-capped peaks with authentic momos '
-                          'and serene monasteries.',
-        'description_hi': 'दलाई लामा का निवास स्थल, देवदार के वनों और '
-                          'हिमाच्छादित धौलाधार चोटियों से घिरा तिब्बती '
+        'description': 'Home of the Dalai Lama, surrounded by cedar forests and dramatic snow-capped peaks with '
+                       'authentic momos and serene monasteries.',
+        'description_en': 'Home of the Dalai Lama, surrounded by cedar forests and dramatic snow-capped peaks with '
+                          'authentic momos and serene monasteries.',
+        'description_hi': 'दलाई लामा का निवास स्थल, देवदार के वनों और हिमाच्छादित धौलाधार चोटियों से घिरा तिब्बती '
                           'संस्कृति का केंद्र।',
         'hero_artwork': '/artworks/dharamshala.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/dharamshala/hero.jpg',
+        'hero_photo': '/images/destinations/dharamshala/hero.jpg',
         'hindi_name': 'धर्मशाला',
         'is_featured': True,
         'latitude': 32.219,
@@ -209,29 +172,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Kangra Valley',
         'slug': 'dharamshala',
         'state': 'Himachal Pradesh',
-        'subtitle_en': 'Prayer flags in the mist, Tibetan heritage, and the '
-                       'mighty Dhauladhar ridge.',
-        'subtitle_hi': 'धुंध में लहराते प्रार्थना ध्वज, तिब्बती संस्कृति और '
-                       'धौलाधार की विशाल पर्वतमाला।',
-        'tagline': 'Prayer flags in the mist, Tibetan heritage, and the mighty '
-                   'Dhauladhar ridge.',
+        'subtitle_en': 'Prayer flags in the mist, Tibetan heritage, and the mighty Dhauladhar ridge.',
+        'subtitle_hi': 'धुंध में लहराते प्रार्थना ध्वज, तिब्बती संस्कृति और धौलाधार की विशाल पर्वतमाला।',
+        'tagline': 'Prayer flags in the mist, Tibetan heritage, and the mighty Dhauladhar ridge.',
         'trek_available': True,
         'weather_type': 'Misty Cedar Air'},
     {   'altitude_meters': 10,
         'best_time_to_visit': 'November to April',
-        'description': 'Beyond the crowded tourist strips lie sleepy riverside '
-                       'villages, historic Latin quarters, vibrant night flea '
-                       'markets, and tranquil cliff beaches.',
-        'description_en': 'Beyond the crowded tourist strips lie sleepy '
-                          'riverside villages, historic Latin quarters, '
-                          'vibrant night flea markets, and tranquil cliff '
-                          'beaches.',
-        'description_hi': 'अरब सागर के तट पर बसा सुरम्य प्रदेश, जो अपने '
-                          'पुर्तगाली स्थापत्य, नारियल के कुंजों और शांत तटों '
-                          'के लिए प्रसिद्ध है।',
+        'description': 'Beyond the crowded tourist strips lie sleepy riverside villages, historic Latin quarters, '
+                       'vibrant night flea markets, and tranquil cliff beaches.',
+        'description_en': 'Beyond the crowded tourist strips lie sleepy riverside villages, historic Latin quarters, '
+                          'vibrant night flea markets, and tranquil cliff beaches.',
+        'description_hi': 'अरब सागर के तट पर बसा सुरम्य प्रदेश, जो अपने पुर्तगाली स्थापत्य, नारियल के कुंजों और शांत '
+                          'तटों के लिए प्रसिद्ध है।',
         'hero_artwork': '/artworks/goa.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/goa/hero.jpg',
+        'hero_photo': '/images/destinations/goa/hero.jpg',
         'hindi_name': 'गोवा',
         'is_featured': True,
         'latitude': 15.2993,
@@ -244,29 +200,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Coastal Western Ghats',
         'slug': 'goa',
         'state': 'Goa',
-        'subtitle_en': 'Golden palms, Portuguese villas, beach shack sunsets, '
-                       'and spice farms.',
-        'subtitle_hi': 'सुनहरी धूप, पुर्तगाली विला, सूर्यास्त और शांत समुद्री '
-                       'तट।',
-        'tagline': 'Golden palms, Portuguese villas, beach shack sunsets, and '
-                   'spice farms.',
+        'subtitle_en': 'Golden palms, Portuguese villas, beach shack sunsets, and spice farms.',
+        'subtitle_hi': 'सुनहरी धूप, पुर्तगाली विला, सूर्यास्त और शांत समुद्री तट।',
+        'tagline': 'Golden palms, Portuguese villas, beach shack sunsets, and spice farms.',
         'trek_available': False,
         'weather_type': 'Warm Coastal Breeze'},
     {   'altitude_meters': 431,
         'best_time_to_visit': 'October to March',
-        'description': 'The Pink City where regal hill forts overlook bustling '
-                       'bazaars full of blue pottery, block-printed fabrics, '
-                       'and royal Rajasthani delicacies.',
-        'description_en': 'The Pink City where regal hill forts overlook '
-                          'bustling bazaars full of blue pottery, '
-                          'block-printed fabrics, and royal Rajasthani '
-                          'delicacies.',
-        'description_hi': 'राजस्थान की ऐतिहासिक राजधानी, जहाँ आमेर का किला, '
-                          'हवा महल और पारंपरिक बाज़ार राजपूताना वैभव की गवाही '
-                          'देते हैं।',
+        'description': 'The Pink City where regal hill forts overlook bustling bazaars full of blue pottery, '
+                       'block-printed fabrics, and royal Rajasthani delicacies.',
+        'description_en': 'The Pink City where regal hill forts overlook bustling bazaars full of blue pottery, '
+                          'block-printed fabrics, and royal Rajasthani delicacies.',
+        'description_hi': 'राजस्थान की ऐतिहासिक राजधानी, जहाँ आमेर का किला, हवा महल और पारंपरिक बाज़ार राजपूताना वैभव '
+                          'की गवाही देते हैं।',
         'hero_artwork': '/artworks/jaipur.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/jaipur/hero.jpg',
+        'hero_photo': '/images/destinations/jaipur/hero.jpg',
         'hindi_name': 'जयपुर',
         'is_featured': True,
         'latitude': 26.9124,
@@ -279,29 +228,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Royal Heritage',
         'slug': 'jaipur',
         'state': 'Rajasthan',
-        'subtitle_en': 'Terracotta ramparts, historic havelis, rich kachoris, '
-                       'and artisan crafts.',
-        'subtitle_hi': 'गुलाबी नगर के भव्य किले, हवेलियाँ और पारंपरिक '
-                       'राजस्थानी स्वाद।',
-        'tagline': 'Terracotta ramparts, historic havelis, rich kachoris, and '
-                   'artisan crafts.',
+        'subtitle_en': 'Terracotta ramparts, historic havelis, rich kachoris, and artisan crafts.',
+        'subtitle_hi': 'गुलाबी नगर के भव्य किले, हवेलियाँ और पारंपरिक राजस्थानी स्वाद।',
+        'tagline': 'Terracotta ramparts, historic havelis, rich kachoris, and artisan crafts.',
         'trek_available': False,
         'weather_type': 'Dry Heritage Warmth'},
     {   'altitude_meters': 224,
         'best_time_to_visit': 'Round the Year',
-        'description': 'Located along NH-44 in Sonipat district, Murthal is '
-                       'the capital of north Indian road trips, renowned for '
-                       '24/7 legendary dhabas like Amrik Sukhdev and Haveli.',
-        'description_en': 'Located along NH-44 in Sonipat district, Murthal is '
-                          'the capital of north Indian road trips, renowned '
-                          'for 24/7 legendary dhabas like Amrik Sukhdev and '
-                          'Haveli.',
-        'description_hi': 'सोनीपत में स्थित मुरथल दिल्ली-एनसीआर का सबसे '
-                          'लोकप्रिय हाइवे डेस्टिनेशन है, जहाँ के पराठे देश भर '
-                          'में प्रसिद्ध हैं।',
+        'description': 'Located along NH-44 in Sonipat district, Murthal is the capital of north Indian road trips, '
+                       'renowned for 24/7 legendary dhabas like Amrik Sukhdev and Haveli.',
+        'description_en': 'Located along NH-44 in Sonipat district, Murthal is the capital of north Indian road trips, '
+                          'renowned for 24/7 legendary dhabas like Amrik Sukhdev and Haveli.',
+        'description_hi': 'सोनीपत में स्थित मुरथल दिल्ली-एनसीआर का सबसे लोकप्रिय हाइवे डेस्टिनेशन है, जहाँ के पराठे '
+                          'देश भर में प्रसिद्ध हैं।',
         'hero_artwork': '/artworks/murthal.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/murthal/hero.jpg',
+        'hero_photo': '/images/destinations/murthal/hero.jpg',
         'hindi_name': 'मुरथल',
         'is_featured': True,
         'latitude': 29.0289,
@@ -314,29 +256,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'GT Road Corridor',
         'slug': 'murthal',
         'state': 'Haryana',
-        'subtitle_en': 'Hot tandoori parathas with white butter, clay '
-                       'tandoors, and legendary GT Road highway culture.',
-        'subtitle_hi': 'गरमा-गरम तंदूरी पराठे, मक्खन और प्रसिद्ध जीटी रोड ढाबा '
-                       'संस्कृति।',
-        'tagline': 'Hot tandoori parathas with white butter, clay tandoors, '
-                   'and legendary GT Road highway culture.',
+        'subtitle_en': 'Hot tandoori parathas with white butter, clay tandoors, and legendary GT Road highway culture.',
+        'subtitle_hi': 'गरमा-गरम तंदूरी पराठे, मक्खन और प्रसिद्ध जीटी रोड ढाबा संस्कृति।',
+        'tagline': 'Hot tandoori parathas with white butter, clay tandoors, and legendary GT Road highway culture.',
         'trek_available': False,
         'weather_type': 'Highway Breeze'},
     {   'altitude_meters': 171,
         'best_time_to_visit': 'October to March',
-        'description': 'Home to the Taj Mahal and Agra Fort, Agra combines '
-                       'world-renowned Mughal sandstone architecture with '
-                       'bustling petha sweet lanes and riverside promenades.',
-        'description_en': 'Home to the Taj Mahal and Agra Fort, Agra combines '
-                          'world-renowned Mughal sandstone architecture with '
-                          'bustling petha sweet lanes and riverside '
-                          'promenades.',
-        'description_hi': 'यमुना तट पर स्थित ऐतिहासिक मुग़ल राजधानी, जहाँ '
-                          'विश्व प्रसिद्ध ताजमहल, आगरा का किला और फतेहपुर '
-                          'सीकरी स्थित हैं।',
+        'description': 'Home to the Taj Mahal and Agra Fort, Agra combines world-renowned Mughal sandstone '
+                       'architecture with bustling petha sweet lanes and riverside promenades.',
+        'description_en': 'Home to the Taj Mahal and Agra Fort, Agra combines world-renowned Mughal sandstone '
+                          'architecture with bustling petha sweet lanes and riverside promenades.',
+        'description_hi': 'यमुना तट पर स्थित ऐतिहासिक मुग़ल राजधानी, जहाँ विश्व प्रसिद्ध ताजमहल, आगरा का किला और '
+                          'फतेहपुर सीकरी स्थित हैं।',
         'hero_artwork': '/artworks/agra.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/agra/hero.jpg',
+        'hero_photo': '/images/destinations/agra/hero.jpg',
         'hindi_name': 'आगरा',
         'is_featured': True,
         'latitude': 27.1767,
@@ -349,28 +284,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Yamuna Heritage Corridor',
         'slug': 'agra',
         'state': 'Uttar Pradesh',
-        'subtitle_en': 'The timeless marble poetry of the Taj Mahal, Agra '
-                       'Fort, and rich Yamuna river sunsets.',
-        'subtitle_hi': 'ताजमहल का श्वेत संगमरमर, आगरा का लाल किला और यमुना का '
-                       'विहंगम दृश्य।',
-        'tagline': 'The timeless marble poetry of the Taj Mahal, Agra Fort, '
-                   'and rich Yamuna river sunsets.',
+        'subtitle_en': 'The timeless marble poetry of the Taj Mahal, Agra Fort, and rich Yamuna river sunsets.',
+        'subtitle_hi': 'ताजमहल का श्वेत संगमरमर, आगरा का लाल किला और यमुना का विहंगम दृश्य।',
+        'tagline': 'The timeless marble poetry of the Taj Mahal, Agra Fort, and rich Yamuna river sunsets.',
         'trek_available': False,
         'weather_type': 'Pleasant Heritage Winter'},
     {   'altitude_meters': 178,
         'best_time_to_visit': 'September to March',
-        'description': 'The divine heartland of Braj Bhoomi, featuring Prem '
-                       'Mandir, Shri Krishna Janmabhoomi, Banke Bihari Temple, '
-                       'and holy evening ghat aartis on the Yamuna.',
-        'description_en': 'The divine heartland of Braj Bhoomi, featuring Prem '
-                          'Mandir, Shri Krishna Janmabhoomi, Banke Bihari '
-                          'Temple, and holy evening ghat aartis on the Yamuna.',
-        'description_hi': 'भगवान श्रीकृष्ण की पावन जन्मभूमि और लीला स्थली, '
-                          'जहाँ भक्ति, भजन और यमुना घाटों की अलौकिक शांति का '
-                          'अनुभव होता है।',
+        'description': 'The divine heartland of Braj Bhoomi, featuring Prem Mandir, Shri Krishna Janmabhoomi, Banke '
+                       'Bihari Temple, and holy evening ghat aartis on the Yamuna.',
+        'description_en': 'The divine heartland of Braj Bhoomi, featuring Prem Mandir, Shri Krishna Janmabhoomi, Banke '
+                          'Bihari Temple, and holy evening ghat aartis on the Yamuna.',
+        'description_hi': 'भगवान श्रीकृष्ण की पावन जन्मभूमि और लीला स्थली, जहाँ भक्ति, भजन और यमुना घाटों की अलौकिक '
+                          'शांति का अनुभव होता है।',
         'hero_artwork': '/artworks/mathura-vrindavan.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/mathura-vrindavan/hero.jpg',
+        'hero_photo': '/images/destinations/mathura-vrindavan/hero.jpg',
         'hindi_name': 'मथुरा और वृन्दावन',
         'is_featured': True,
         'latitude': 27.5706,
@@ -383,29 +312,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Braj Bhoomi',
         'slug': 'mathura-vrindavan',
         'state': 'Uttar Pradesh',
-        'subtitle_en': 'Sacred Yamuna aartis, Banke Bihari blessings, and '
-                       'glowing white marble of Prem Mandir.',
-        'subtitle_hi': 'बांके बिहारी के दर्शन, यमुना आरती और प्रेम मंदिर की '
-                       'भव्य छटा।',
-        'tagline': 'Sacred Yamuna aartis, Banke Bihari blessings, and glowing '
-                   'white marble of Prem Mandir.',
+        'subtitle_en': 'Sacred Yamuna aartis, Banke Bihari blessings, and glowing white marble of Prem Mandir.',
+        'subtitle_hi': 'बांके बिहारी के दर्शन, यमुना आरती और प्रेम मंदिर की भव्य छटा।',
+        'tagline': 'Sacred Yamuna aartis, Banke Bihari blessings, and glowing white marble of Prem Mandir.',
         'trek_available': False,
         'weather_type': 'Pleasant Temple Atmosphere'},
     {   'altitude_meters': 340,
         'best_time_to_visit': 'September to April',
-        'description': 'Perched majestically on Aravalli hillocks along NH-48, '
-                       'Neemrana Fort Palace offers 14 stepped levels of '
-                       'Rajput architecture, zip-lining, and sunset views.',
-        'description_en': 'Perched majestically on Aravalli hillocks along '
-                          'NH-48, Neemrana Fort Palace offers 14 stepped '
-                          'levels of Rajput architecture, zip-lining, and '
-                          'sunset views.',
-        'description_hi': 'दिल्ली-जयपुर राजमार्ग पर अरावली की पहाड़ियों में '
-                          'स्थित 14 स्तरों वाला ऐतिहासिक किला जो अपनी राजसी '
-                          'वास्तुकला के लिए विख्यात है।',
+        'description': 'Perched majestically on Aravalli hillocks along NH-48, Neemrana Fort Palace offers 14 stepped '
+                       'levels of Rajput architecture, zip-lining, and sunset views.',
+        'description_en': 'Perched majestically on Aravalli hillocks along NH-48, Neemrana Fort Palace offers 14 '
+                          'stepped levels of Rajput architecture, zip-lining, and sunset views.',
+        'description_hi': 'दिल्ली-जयपुर राजमार्ग पर अरावली की पहाड़ियों में स्थित 14 स्तरों वाला ऐतिहासिक किला जो अपनी '
+                          'राजसी वास्तुकला के लिए विख्यात है।',
         'hero_artwork': '/artworks/neemrana.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/neemrana/hero.jpg',
+        'hero_photo': '/images/destinations/neemrana/hero.jpg',
         'hindi_name': 'नीमराना',
         'is_featured': True,
         'latitude': 27.9942,
@@ -418,28 +340,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Aravalli Heritage',
         'slug': 'neemrana',
         'state': 'Rajasthan',
-        'subtitle_en': '15th-century stepped fortress palace carved into '
-                       'Aravalli cliffs along the Jaipur Highway.',
-        'subtitle_hi': 'अरावली की पहाड़ियों पर बना 15वीं सदी का सीढ़ीदार राजसी '
-                       'किला महल।',
-        'tagline': '15th-century stepped fortress palace carved into Aravalli '
-                   'cliffs along the Jaipur Highway.',
+        'subtitle_en': '15th-century stepped fortress palace carved into Aravalli cliffs along the Jaipur Highway.',
+        'subtitle_hi': 'अरावली की पहाड़ियों पर बना 15वीं सदी का सीढ़ीदार राजसी किला महल।',
+        'tagline': '15th-century stepped fortress palace carved into Aravalli cliffs along the Jaipur Highway.',
         'trek_available': False,
         'weather_type': 'Crisp Heritage Breeze'},
     {   'altitude_meters': 220,
         'best_time_to_visit': 'October to March',
-        'description': "One of Haryana's largest natural lakes, resting at the "
-                       'base of the Aravalli hills near Sohna, perfect for '
-                       'boating, rock climbing, and weekend picnics.',
-        'description_en': "One of Haryana's largest natural lakes, resting at "
-                          'the base of the Aravalli hills near Sohna, perfect '
-                          'for boating, rock climbing, and weekend picnics.',
-        'description_hi': 'अरावली की पहाड़ियों की तलहटी में स्थित प्राकृतिक '
-                          'झील, जो दिल्ली-एनसीआर के यात्रियों के लिए नौकायन और '
-                          'आउटडोर पिकनिक का आदर्श स्थान है।',
+        'description': "One of Haryana's largest natural lakes, resting at the base of the Aravalli hills near Sohna, "
+                       'perfect for boating, rock climbing, and weekend picnics.',
+        'description_en': "One of Haryana's largest natural lakes, resting at the base of the Aravalli hills near "
+                          'Sohna, perfect for boating, rock climbing, and weekend picnics.',
+        'description_hi': 'अरावली की पहाड़ियों की तलहटी में स्थित प्राकृतिक झील, जो दिल्ली-एनसीआर के यात्रियों के लिए '
+                          'नौकायन और आउटडोर पिकनिक का आदर्श स्थान है।',
         'hero_artwork': '/artworks/damdama-sohna.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/damdama-sohna/hero.jpg',
+        'hero_photo': '/images/destinations/damdama-sohna/hero.jpg',
         'hindi_name': 'दमदमा और सोहना',
         'is_featured': True,
         'latitude': 28.3075,
@@ -452,29 +368,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Aravalli Foothills',
         'slug': 'damdama-sohna',
         'state': 'Haryana',
-        'subtitle_en': 'Tranquil lake waters framed by rugged Aravalli rocky '
-                       'ridges, rowing boats, and rustic trails.',
-        'subtitle_hi': 'अरावली की गोद में बसी शांत झील, नौका विहार और '
-                       'प्राकृतिक पहाड़ियाँ।',
-        'tagline': 'Tranquil lake waters framed by rugged Aravalli rocky '
-                   'ridges, rowing boats, and rustic trails.',
+        'subtitle_en': 'Tranquil lake waters framed by rugged Aravalli rocky ridges, rowing boats, and rustic trails.',
+        'subtitle_hi': 'अरावली की गोद में बसी शांत झील, नौका विहार और प्राकृतिक पहाड़ियाँ।',
+        'tagline': 'Tranquil lake waters framed by rugged Aravalli rocky ridges, rowing boats, and rustic trails.',
         'trek_available': False,
         'weather_type': 'Lakeside Breeze'},
     {   'altitude_meters': 270,
         'best_time_to_visit': 'October to March',
-        'description': 'Surrounded by the dense Aravalli mountain hills, '
-                       'Siliserh Lake Palace was built in 1845 as a royal '
-                       'hunting lodge, offering boat rides and serene mountain '
-                       'vistas.',
-        'description_en': 'Surrounded by the dense Aravalli mountain hills, '
-                          'Siliserh Lake Palace was built in 1845 as a royal '
-                          'hunting lodge, offering boat rides and serene '
-                          'mountain vistas.',
-        'description_hi': '1845 में निर्मित सिलीसेढ़ झील पैलेस अरावली की '
-                          'वादियों में स्थित एक शांत व सुंदर पर्यटन स्थल है।',
+        'description': 'Surrounded by the dense Aravalli mountain hills, Siliserh Lake Palace was built in 1845 as a '
+                       'royal hunting lodge, offering boat rides and serene mountain vistas.',
+        'description_en': 'Surrounded by the dense Aravalli mountain hills, Siliserh Lake Palace was built in 1845 as '
+                          'a royal hunting lodge, offering boat rides and serene mountain vistas.',
+        'description_hi': '1845 में निर्मित सिलीसेढ़ झील पैलेस अरावली की वादियों में स्थित एक शांत व सुंदर पर्यटन स्थल '
+                          'है।',
         'hero_artwork': '/artworks/alwar-siliserh.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/alwar-siliserh/hero.jpg',
+        'hero_photo': '/images/destinations/alwar-siliserh/hero.jpg',
         'hindi_name': 'अलवर और सिलीसेढ़',
         'is_featured': True,
         'latitude': 27.5342,
@@ -487,29 +396,21 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Mewat & Aravalli Hills',
         'slug': 'alwar-siliserh',
         'state': 'Rajasthan',
-        'subtitle_en': 'Historic 19th-century royal lake palace, tranquil '
-                       'waters, and Aravalli mountain reflections.',
-        'subtitle_hi': 'सिलीसेढ़ झील का राजसी पैलेस, नीली जलधारा और अरावली की '
-                       'पहाड़ियाँ।',
-        'tagline': 'Historic 19th-century royal lake palace, tranquil waters, '
-                   'and Aravalli mountain reflections.',
+        'subtitle_en': 'Historic 19th-century royal lake palace, tranquil waters, and Aravalli mountain reflections.',
+        'subtitle_hi': 'सिलीसेढ़ झील का राजसी पैलेस, नीली जलधारा और अरावली की पहाड़ियाँ।',
+        'tagline': 'Historic 19th-century royal lake palace, tranquil waters, and Aravalli mountain reflections.',
         'trek_available': False,
         'weather_type': 'Pleasant Hill Breeze'},
     {   'altitude_meters': 420,
         'best_time_to_visit': 'October to April',
-        'description': 'Combines the thrill of tiger safari in Sariska '
-                       'National Park with the architectural mystery and '
-                       'scenic stone ramparts of the 17th-century Bhangarh '
-                       'Fort ruins.',
-        'description_en': 'Combines the thrill of tiger safari in Sariska '
-                          'National Park with the architectural mystery and '
-                          'scenic stone ramparts of the 17th-century Bhangarh '
-                          'Fort ruins.',
-        'description_hi': 'अरावली की घनी वादियों में स्थित सरिस्का टाइगर '
-                          'रिजर्व और 17वीं सदी का रहस्यमयी भानगढ़ किला।',
+        'description': 'Combines the thrill of tiger safari in Sariska National Park with the architectural mystery '
+                       'and scenic stone ramparts of the 17th-century Bhangarh Fort ruins.',
+        'description_en': 'Combines the thrill of tiger safari in Sariska National Park with the architectural mystery '
+                          'and scenic stone ramparts of the 17th-century Bhangarh Fort ruins.',
+        'description_hi': 'अरावली की घनी वादियों में स्थित सरिस्का टाइगर रिजर्व और 17वीं सदी का रहस्यमयी भानगढ़ किला।',
         'hero_artwork': '/artworks/sariska-bhangarh.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/sariska-bhangarh/hero.jpg',
+        'hero_photo': '/images/destinations/sariska-bhangarh/hero.jpg',
         'hindi_name': 'सरिस्का और भानगढ़',
         'is_featured': True,
         'latitude': 27.3292,
@@ -522,30 +423,24 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Aravalli Wilderness',
         'slug': 'sariska-bhangarh',
         'state': 'Rajasthan',
-        'subtitle_en': 'Dense dry deciduous forest wildlife, tiger territory, '
-                       'and legendary ancient stone ruins of Bhangarh.',
-        'subtitle_hi': 'सरिस्का के घने जंगल, बाघ अभयारण्य और भानगढ़ के '
-                       'ऐतिहासिक रहस्यमयी खंडहर।',
-        'tagline': 'Dense dry deciduous forest wildlife, tiger territory, and '
-                   'legendary ancient stone ruins of Bhangarh.',
+        'subtitle_en': 'Dense dry deciduous forest wildlife, tiger territory, and legendary ancient stone ruins of '
+                       'Bhangarh.',
+        'subtitle_hi': 'सरिस्का के घने जंगल, बाघ अभयारण्य और भानगढ़ के ऐतिहासिक रहस्यमयी खंडहर।',
+        'tagline': 'Dense dry deciduous forest wildlife, tiger territory, and legendary ancient stone ruins of '
+                   'Bhangarh.',
         'trek_available': False,
         'weather_type': 'Dry Forest Air'},
     {   'altitude_meters': 640,
         'best_time_to_visit': 'Round the Year',
-        'description': 'Nestled in the Doon Valley between the Ganga and '
-                       'Yamuna, Dehradun offers historic bakery trails along '
-                       "Rajpur Road, Robber's Cave, and gateway paths to "
-                       'Mussoorie.',
-        'description_en': 'Nestled in the Doon Valley between the Ganga and '
-                          'Yamuna, Dehradun offers historic bakery trails '
-                          "along Rajpur Road, Robber's Cave, and gateway paths "
-                          'to Mussoorie.',
-        'description_hi': 'गंगा और यमुना के मध्य दून घाटी में बसा शांत शहर, जो '
-                          'अपनी ऐतिहासिक बेकरियों, गुच्चूपानी और सुहावने मौसम '
-                          'के लिए जाना जाता है।',
+        'description': 'Nestled in the Doon Valley between the Ganga and Yamuna, Dehradun offers historic bakery '
+                       "trails along Rajpur Road, Robber's Cave, and gateway paths to Mussoorie.",
+        'description_en': 'Nestled in the Doon Valley between the Ganga and Yamuna, Dehradun offers historic bakery '
+                          "trails along Rajpur Road, Robber's Cave, and gateway paths to Mussoorie.",
+        'description_hi': 'गंगा और यमुना के मध्य दून घाटी में बसा शांत शहर, जो अपनी ऐतिहासिक बेकरियों, गुच्चूपानी और '
+                          'सुहावने मौसम के लिए जाना जाता है।',
         'hero_artwork': '/artworks/dehradun.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/dehradun/hero.jpg',
+        'hero_photo': '/images/destinations/dehradun/hero.jpg',
         'hindi_name': 'देहरादून',
         'is_featured': True,
         'latitude': 30.3165,
@@ -558,30 +453,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Doon Valley Foothills',
         'slug': 'dehradun',
         'state': 'Uttarakhand',
-        'subtitle_en': 'Sal-forested foothills, historic Rajpur Road bakeries, '
-                       'and cool Himalayan mountain streams.',
-        'subtitle_hi': 'दून घाटी के साल वन, राजपुर रोड की ऐतिहासिक बेकरियाँ और '
-                       'ठंडी नदियाँ।',
-        'tagline': 'Sal-forested foothills, historic Rajpur Road bakeries, and '
-                   'cool Himalayan mountain streams.',
+        'subtitle_en': 'Sal-forested foothills, historic Rajpur Road bakeries, and cool Himalayan mountain streams.',
+        'subtitle_hi': 'दून घाटी के साल वन, राजपुर रोड की ऐतिहासिक बेकरियाँ और ठंडी नदियाँ।',
+        'tagline': 'Sal-forested foothills, historic Rajpur Road bakeries, and cool Himalayan mountain streams.',
         'trek_available': True,
         'weather_type': 'Pleasant Valley Mist'},
     {   'altitude_meters': 321,
         'best_time_to_visit': 'October to March',
-        'description': 'Designed by Le Corbusier at the base of the Shivalik '
-                       'hills, Chandigarh is celebrated for its modernist '
-                       'urban planning, Sukhna Lake sunsets, and the iconic '
-                       'Rock Garden.',
-        'description_en': 'Designed by Le Corbusier at the base of the '
-                          'Shivalik hills, Chandigarh is celebrated for its '
-                          'modernist urban planning, Sukhna Lake sunsets, and '
-                          'the iconic Rock Garden.',
-        'description_hi': 'शिवालिक की तलहटी में ली कोर्बुज़िए द्वारा डिज़ाइन '
-                          'किया गया सुंदर शहर, जो सुखना झील और रॉक गार्डन के '
-                          'लिए प्रसिद्ध है।',
+        'description': 'Designed by Le Corbusier at the base of the Shivalik hills, Chandigarh is celebrated for its '
+                       'modernist urban planning, Sukhna Lake sunsets, and the iconic Rock Garden.',
+        'description_en': 'Designed by Le Corbusier at the base of the Shivalik hills, Chandigarh is celebrated for '
+                          'its modernist urban planning, Sukhna Lake sunsets, and the iconic Rock Garden.',
+        'description_hi': 'शिवालिक की तलहटी में ली कोर्बुज़िए द्वारा डिज़ाइन किया गया सुंदर शहर, जो सुखना झील और रॉक '
+                          'गार्डन के लिए प्रसिद्ध है।',
         'hero_artwork': '/artworks/chandigarh.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/chandigarh/hero.jpg',
+        'hero_photo': '/images/destinations/chandigarh/hero.jpg',
         'hindi_name': 'चंडीगढ़',
         'is_featured': True,
         'latitude': 30.7333,
@@ -594,28 +481,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Shivalik Plains',
         'slug': 'chandigarh',
         'state': 'Punjab / Haryana',
-        'subtitle_en': "Sukhna Lake morning reflections, Nek Chand's Rock "
-                       'Garden, and tree-lined modernist boulevards.',
-        'subtitle_hi': 'सुखना झील की शांत लहरें, रॉक गार्डन की कलाकृतियाँ और '
-                       'शिवालिक की तलहटी।',
-        'tagline': "Sukhna Lake morning reflections, Nek Chand's Rock Garden, "
-                   'and tree-lined modernist boulevards.',
+        'subtitle_en': "Sukhna Lake morning reflections, Nek Chand's Rock Garden, and tree-lined modernist boulevards.",
+        'subtitle_hi': 'सुखना झील की शांत लहरें, रॉक गार्डन की कलाकृतियाँ और शिवालिक की तलहटी।',
+        'tagline': "Sukhna Lake morning reflections, Nek Chand's Rock Garden, and tree-lined modernist boulevards.",
         'trek_available': False,
         'weather_type': 'Crisp Pleasant Air'},
     {   'altitude_meters': 1220,
         'best_time_to_visit': 'September to April',
-        'description': "Haryana's only hill station, nestled in the Shivalik "
-                       'ranges, featuring the sacred twin lakes of Tikkar '
-                       'Taal, pine forests, and scenic viewpoints.',
-        'description_en': "Haryana's only hill station, nestled in the "
-                          'Shivalik ranges, featuring the sacred twin lakes of '
-                          'Tikkar Taal, pine forests, and scenic viewpoints.',
-        'description_hi': 'हरियाणा का एकमात्र हिल स्टेशन, जो शिवालिक '
-                          'पहाड़ियों, टिक्कर ताल झील और शांत देवदार-चीड़ के '
+        'description': "Haryana's only hill station, nestled in the Shivalik ranges, featuring the sacred twin lakes "
+                       'of Tikkar Taal, pine forests, and scenic viewpoints.',
+        'description_en': "Haryana's only hill station, nestled in the Shivalik ranges, featuring the sacred twin "
+                          'lakes of Tikkar Taal, pine forests, and scenic viewpoints.',
+        'description_hi': 'हरियाणा का एकमात्र हिल स्टेशन, जो शिवालिक पहाड़ियों, टिक्कर ताल झील और शांत देवदार-चीड़ के '
                           'वनों से आच्छादित है।',
         'hero_artwork': '/artworks/morni-hills.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/morni-hills/hero.jpg',
+        'hero_photo': '/images/destinations/morni-hills/hero.jpg',
         'hindi_name': 'मोरनी हिल्स',
         'is_featured': True,
         'latitude': 30.6908,
@@ -628,28 +509,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Shivalik Hills',
         'slug': 'morni-hills',
         'state': 'Haryana',
-        'subtitle_en': 'Pine-covered Shivalik mountain ridges, peaceful Tikkar '
-                       'Taal lake, and quiet hill roads.',
-        'subtitle_hi': 'चीड़ से ढकी मोरनी पहाड़ियाँ, शांत टिक्कर ताल और '
-                       'सुहावनी ठंडी हवा।',
-        'tagline': 'Pine-covered Shivalik mountain ridges, peaceful Tikkar '
-                   'Taal lake, and quiet hill roads.',
+        'subtitle_en': 'Pine-covered Shivalik mountain ridges, peaceful Tikkar Taal lake, and quiet hill roads.',
+        'subtitle_hi': 'चीड़ से ढकी मोरनी पहाड़ियाँ, शांत टिक्कर ताल और सुहावनी ठंडी हवा।',
+        'tagline': 'Pine-covered Shivalik mountain ridges, peaceful Tikkar Taal lake, and quiet hill roads.',
         'trek_available': True,
         'weather_type': 'Cool Mountain Air'},
     {   'altitude_meters': 1706,
         'best_time_to_visit': 'Round the Year',
-        'description': 'An unspoilt Garhwal cantonment town founded in 1887, '
-                       'surrounded by dense blue pine forests with serene '
-                       'walking trails to Tip-in-Top and Bhulla Tal.',
-        'description_en': 'An unspoilt Garhwal cantonment town founded in '
-                          '1887, surrounded by dense blue pine forests with '
-                          'serene walking trails to Tip-in-Top and Bhulla Tal.',
-        'description_hi': 'गढ़वाल राइफल्स का मुख्यालय और 1887 में स्थापित शांत '
-                          'छावनी नगर, जो टिप-इन-टॉप और भुल्ला ताल के लिए '
-                          'प्रसिद्ध है।',
+        'description': 'An unspoilt Garhwal cantonment town founded in 1887, surrounded by dense blue pine forests '
+                       'with serene walking trails to Tip-in-Top and Bhulla Tal.',
+        'description_en': 'An unspoilt Garhwal cantonment town founded in 1887, surrounded by dense blue pine forests '
+                          'with serene walking trails to Tip-in-Top and Bhulla Tal.',
+        'description_hi': 'गढ़वाल राइफल्स का मुख्यालय और 1887 में स्थापित शांत छावनी नगर, जो टिप-इन-टॉप और भुल्ला ताल '
+                          'के लिए प्रसिद्ध है।',
         'hero_artwork': '/artworks/lansdowne.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/lansdowne/hero.jpg',
+        'hero_photo': '/images/destinations/lansdowne/hero.jpg',
         'hindi_name': 'लैंसडाउन',
         'is_featured': True,
         'latitude': 29.8377,
@@ -662,28 +537,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Garhwal Hills',
         'slug': 'lansdowne',
         'state': 'Uttarakhand',
-        'subtitle_en': 'Quiet oak and blue pine ridge walks, colonial stone '
-                       'churches, and snow-peak panoramas.',
-        'subtitle_hi': 'बाँज और नीले चीड़ के शांत वन, ऐतिहासिक गिरजाघर और '
-                       'हिमालयी चोटियों के दृश्य।',
-        'tagline': 'Quiet oak and blue pine ridge walks, colonial stone '
-                   'churches, and snow-peak panoramas.',
+        'subtitle_en': 'Quiet oak and blue pine ridge walks, colonial stone churches, and snow-peak panoramas.',
+        'subtitle_hi': 'बाँज और नीले चीड़ के शांत वन, ऐतिहासिक गिरजाघर और हिमालयी चोटियों के दृश्य।',
+        'tagline': 'Quiet oak and blue pine ridge walks, colonial stone churches, and snow-peak panoramas.',
         'trek_available': True,
         'weather_type': 'Crisp Pine Breeze'},
     {   'altitude_meters': 2005,
         'best_time_to_visit': 'March to June & Sept to Nov',
-        'description': 'Perched on a horseshoe ridge overlooking the Doon '
-                       "Valley, offering tranquil walks along Camel's Back "
-                       'Road and historic bakeries in Landour.',
-        'description_en': 'Perched on a horseshoe ridge overlooking the Doon '
-                          "Valley, offering tranquil walks along Camel's Back "
-                          'Road and historic bakeries in Landour.',
-        'description_hi': 'दून घाटी के ऊपर स्थित पहाड़ों की रानी, जो अपनी '
-                          'औपनिवेशिक वास्तुकला, कैमल्स बैक रोड और लाल टिब्बा '
-                          'के लिए प्रसिद्ध है।',
+        'description': 'Perched on a horseshoe ridge overlooking the Doon Valley, offering tranquil walks along '
+                       "Camel's Back Road and historic bakeries in Landour.",
+        'description_en': 'Perched on a horseshoe ridge overlooking the Doon Valley, offering tranquil walks along '
+                          "Camel's Back Road and historic bakeries in Landour.",
+        'description_hi': 'दून घाटी के ऊपर स्थित पहाड़ों की रानी, जो अपनी औपनिवेशिक वास्तुकला, कैमल्स बैक रोड और लाल '
+                          'टिब्बा के लिए प्रसिद्ध है।',
         'hero_artwork': '/artworks/mussoorie.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/mussoorie/hero.jpg',
+        'hero_photo': '/images/destinations/mussoorie/hero.jpg',
         'hindi_name': 'मसूरी',
         'is_featured': True,
         'latitude': 30.4598,
@@ -696,27 +565,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Garhwal Hills',
         'slug': 'mussoorie',
         'state': 'Uttarakhand',
-        'subtitle_en': 'Queen of the Hills, colonial bookshops, winterline '
-                       'sunsets, and oak trails.',
-        'subtitle_hi': 'पहाड़ों की रानी, विंटरलाइन का विहंगम सूर्यास्त और '
-                       'ओक-देवदार के रास्ते।',
-        'tagline': 'Queen of the Hills, colonial bookshops, winterline '
-                   'sunsets, and oak trails.',
+        'subtitle_en': 'Queen of the Hills, colonial bookshops, winterline sunsets, and oak trails.',
+        'subtitle_hi': 'पहाड़ों की रानी, विंटरलाइन का विहंगम सूर्यास्त और ओक-देवदार के रास्ते।',
+        'tagline': 'Queen of the Hills, colonial bookshops, winterline sunsets, and oak trails.',
         'trek_available': True,
         'weather_type': 'Cool Mountain Mist'},
     {   'altitude_meters': 598,
         'best_time_to_visit': 'September to March',
-        'description': 'The City of Lakes framed by the Aravalli Hills, '
-                       'offering tranquil boat rides on Lake Pichola and '
-                       'authentic Mewari hospitality.',
-        'description_en': 'The City of Lakes framed by the Aravalli Hills, '
-                          'offering tranquil boat rides on Lake Pichola and '
-                          'authentic Mewari hospitality.',
-        'description_hi': 'अरावली पहाड़ियों से घिरी झीलों की नगरी, जहाँ पिछोला '
-                          'झील और सिटी पैलेस का भव्य नजारा मिलता है।',
+        'description': 'The City of Lakes framed by the Aravalli Hills, offering tranquil boat rides on Lake Pichola '
+                       'and authentic Mewari hospitality.',
+        'description_en': 'The City of Lakes framed by the Aravalli Hills, offering tranquil boat rides on Lake '
+                          'Pichola and authentic Mewari hospitality.',
+        'description_hi': 'अरावली पहाड़ियों से घिरी झीलों की नगरी, जहाँ पिछोला झील और सिटी पैलेस का भव्य नजारा मिलता '
+                          'है।',
         'hero_artwork': '/artworks/udaipur.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/udaipur/hero.jpg',
+        'hero_photo': '/images/destinations/udaipur/hero.jpg',
         'hindi_name': 'उदयपुर',
         'is_featured': True,
         'latitude': 24.5854,
@@ -729,28 +593,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Mewar Lakes',
         'slug': 'udaipur',
         'state': 'Rajasthan',
-        'subtitle_en': 'Shimmering lake waters, whitewashed palaces, and '
-                       'romantic rooftop evenings.',
-        'subtitle_hi': 'झीलों की नगरी के श्वेत महल, पिछोला का जल और मनमोहक '
-                       'शामें।',
-        'tagline': 'Shimmering lake waters, whitewashed palaces, and romantic '
-                   'rooftop evenings.',
+        'subtitle_en': 'Shimmering lake waters, whitewashed palaces, and romantic rooftop evenings.',
+        'subtitle_hi': 'झीलों की नगरी के श्वेत महल, पिछोला का जल और मनमोहक शामें।',
+        'tagline': 'Shimmering lake waters, whitewashed palaces, and romantic rooftop evenings.',
         'trek_available': False,
         'weather_type': 'Pleasant Lake Breeze'},
     {   'altitude_meters': 80,
         'best_time_to_visit': 'October to March',
-        'description': 'One of the oldest continuously inhabited cities on '
-                       'earth, where life, philosophy, and spiritual devotion '
-                       'revolve around the sacred Ganges.',
-        'description_en': 'One of the oldest continuously inhabited cities on '
-                          'earth, where life, philosophy, and spiritual '
-                          'devotion revolve around the sacred Ganges.',
-        'description_hi': 'संसार की सबसे प्राचीन नगरी, जहाँ दशाश्वमेध और अस्सी '
-                          'घाट पर जीवन, दर्शन और गंगा आरती का अद्भुत संगम '
-                          'देखने को मिलता है।',
+        'description': 'One of the oldest continuously inhabited cities on earth, where life, philosophy, and '
+                       'spiritual devotion revolve around the sacred Ganges.',
+        'description_en': 'One of the oldest continuously inhabited cities on earth, where life, philosophy, and '
+                          'spiritual devotion revolve around the sacred Ganges.',
+        'description_hi': 'संसार की सबसे प्राचीन नगरी, जहाँ दशाश्वमेध और अस्सी घाट पर जीवन, दर्शन और गंगा आरती का '
+                          'अद्भुत संगम देखने को मिलता है।',
         'hero_artwork': '/images/destinations/varanasi/illustration.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/varanasi/hero.jpg',
+        'hero_photo': '/images/destinations/varanasi/hero.jpg',
         'hindi_name': 'वाराणसी',
         'is_featured': True,
         'latitude': 25.3176,
@@ -763,28 +621,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Ganga Riverfront',
         'slug': 'varanasi',
         'state': 'Uttar Pradesh',
-        'subtitle_en': 'Ancient eternal ghats, dawn boat reflections, sacred '
-                       'chanting, and silk lanes.',
-        'subtitle_hi': 'काशी के पावन घाट, भोर की नौका सवारी और गंगा आरती का '
-                       'दिव्य अनुभव।',
-        'tagline': 'Ancient eternal ghats, dawn boat reflections, sacred '
-                   'chanting, and silk lanes.',
+        'subtitle_en': 'Ancient eternal ghats, dawn boat reflections, sacred chanting, and silk lanes.',
+        'subtitle_hi': 'काशी के पावन घाट, भोर की नौका सवारी और गंगा आरती का दिव्य अनुभव।',
+        'tagline': 'Ancient eternal ghats, dawn boat reflections, sacred chanting, and silk lanes.',
         'trek_available': False,
         'weather_type': 'Ancient River Breeze'},
     {   'altitude_meters': 3500,
         'best_time_to_visit': 'May to October',
-        'description': 'The crown of Ladakh situated in the Indus River '
-                       'Valley, where stark dramatic mountain terrain meets '
-                       'ancient Tibetan Buddhist culture.',
-        'description_en': 'The crown of Ladakh situated in the Indus River '
-                          'Valley, where stark dramatic mountain terrain meets '
-                          'ancient Tibetan Buddhist culture.',
-        'description_hi': 'सिंधु नदी घाटी में स्थित लद्दाख का हृदय, जहाँ '
-                          'प्राचीन थिकसे व हेमिस मठ और खारदुंग ला जैसे ऊँचे '
-                          'दर्रे स्थित हैं।',
+        'description': 'The crown of Ladakh situated in the Indus River Valley, where stark dramatic mountain terrain '
+                       'meets ancient Tibetan Buddhist culture.',
+        'description_en': 'The crown of Ladakh situated in the Indus River Valley, where stark dramatic mountain '
+                          'terrain meets ancient Tibetan Buddhist culture.',
+        'description_hi': 'सिंधु नदी घाटी में स्थित लद्दाख का हृदय, जहाँ प्राचीन थिकसे व हेमिस मठ और खारदुंग ला जैसे '
+                          'ऊँचे दर्रे स्थित हैं।',
         'hero_artwork': '/artworks/fallback_himalayan.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/leh/hero.jpg',
+        'hero_photo': '/images/destinations/leh/hero.jpg',
         'hindi_name': 'लेह',
         'is_featured': True,
         'latitude': 34.1526,
@@ -797,27 +649,22 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Trans-Himalayan Cold Desert',
         'slug': 'leh',
         'state': 'Ladakh',
-        'subtitle_en': 'Barren moonscapes, thousand-year-old gompas, and '
-                       'world-highest motorable passes.',
-        'subtitle_hi': 'लद्दाख के विहंगम मरुस्थल, प्राचीन बौद्ध मठ और विश्व के '
-                       'सबसे ऊँचे दर्रे।',
-        'tagline': 'Barren moonscapes, thousand-year-old gompas, and '
-                   'world-highest motorable passes.',
+        'subtitle_en': 'Barren moonscapes, thousand-year-old gompas, and world-highest motorable passes.',
+        'subtitle_hi': 'लद्दाख के विहंगम मरुस्थल, प्राचीन बौद्ध मठ और विश्व के सबसे ऊँचे दर्रे।',
+        'tagline': 'Barren moonscapes, thousand-year-old gompas, and world-highest motorable passes.',
         'trek_available': True,
         'weather_type': 'High Altitude Crisp Air'},
     {   'altitude_meters': 3800,
         'best_time_to_visit': 'June to October',
-        'description': 'A high-altitude desert wonderland carved by the Spiti '
-                       'River, renowned for century-old gompas like Key and '
-                       'Dhankar, and pristine high-altitude lakes.',
-        'description_en': 'A high-altitude desert wonderland carved by the '
-                          'Spiti River, renowned for century-old gompas like '
-                          'Key and Dhankar, and pristine high-altitude lakes.',
-        'description_hi': 'स्पीति नदी द्वारा तराशी गई शीत मरुस्थल घाटी, जहाँ '
-                          '1000 वर्ष पुराना की मठ और चंद्रताल झील स्थित हैं।',
+        'description': 'A high-altitude desert wonderland carved by the Spiti River, renowned for century-old gompas '
+                       'like Key and Dhankar, and pristine high-altitude lakes.',
+        'description_en': 'A high-altitude desert wonderland carved by the Spiti River, renowned for century-old '
+                          'gompas like Key and Dhankar, and pristine high-altitude lakes.',
+        'description_hi': 'स्पीति नदी द्वारा तराशी गई शीत मरुस्थल घाटी, जहाँ 1000 वर्ष पुराना की मठ और चंद्रताल झील '
+                          'स्थित हैं।',
         'hero_artwork': '/artworks/fallback_desert.jpg',
-        'hero_image': '/images/places/universal/stay.webp',
-        'hero_photo': '/images/places/universal/stay.webp',
+        'hero_image': '/images/destinations/spiti-valley/hero.jpg',
+        'hero_photo': '/images/destinations/spiti-valley/hero.jpg',
         'hindi_name': 'स्पीति घाटी',
         'is_featured': True,
         'latitude': 32.2461,
@@ -830,25 +677,19 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Cold Desert Valley',
         'slug': 'spiti',
         'state': 'Himachal Pradesh',
-        'subtitle_en': 'The middle land between Tibet and India, cliffside '
-                       'monasteries, and fossil villages.',
-        'subtitle_hi': 'तिब्बत और भारत के बीच का मध्य देश, की गोम्पा और '
-                       'जीवाश्मों के गाँव।',
-        'tagline': 'The middle land between Tibet and India, cliffside '
-                   'monasteries, and fossil villages.',
+        'subtitle_en': 'The middle land between Tibet and India, cliffside monasteries, and fossil villages.',
+        'subtitle_hi': 'तिब्बत और भारत के बीच का मध्य देश, की गोम्पा और जीवाश्मों के गाँव।',
+        'tagline': 'The middle land between Tibet and India, cliffside monasteries, and fossil villages.',
         'trek_available': True,
         'weather_type': 'Dry Cold Moonscape'},
     {   'altitude_meters': 1600,
         'best_time_to_visit': 'September to May',
-        'description': 'Perched at the confluence of three mountain streams in '
-                       'the Western Ghats, Munnar offers endless green tea '
-                       'slopes, cool breezes, and colonial bungalows.',
-        'description_en': 'Perched at the confluence of three mountain streams '
-                          'in the Western Ghats, Munnar offers endless green '
-                          'tea slopes, cool breezes, and colonial bungalows.',
-        'description_hi': 'पश्चिमी घाट की वादियों में स्थित मुन्नार हरी-भरी '
-                          'चाय की ढलानों, शीतल बयार और अनामुडी चोटी के लिए '
-                          'प्रसिद्ध है।',
+        'description': 'Perched at the confluence of three mountain streams in the Western Ghats, Munnar offers '
+                       'endless green tea slopes, cool breezes, and colonial bungalows.',
+        'description_en': 'Perched at the confluence of three mountain streams in the Western Ghats, Munnar offers '
+                          'endless green tea slopes, cool breezes, and colonial bungalows.',
+        'description_hi': 'पश्चिमी घाट की वादियों में स्थित मुन्नार हरी-भरी चाय की ढलानों, शीतल बयार और अनामुडी चोटी '
+                          'के लिए प्रसिद्ध है।',
         'hero_artwork': '/artworks/fallback_valley.jpg',
         'hero_image': '/images/destinations/fallbacks/valley.jpg',
         'hero_photo': '/images/destinations/fallbacks/valley.jpg',
@@ -864,12 +705,9 @@ CANONICAL_25_DESTINATIONS = [   {   'altitude_meters': 2050,
         'region': 'Western Ghats Tea Hills',
         'slug': 'munnar',
         'state': 'Kerala',
-        'subtitle_en': 'Rolling emerald tea plantations, misty mountain gaps, '
-                       'and cardamom forests.',
-        'subtitle_hi': 'मखमली चाय के बागान, धुंध भरी पहाड़ियाँ और इलायची के '
-                       'महकते जंगल।',
-        'tagline': 'Rolling emerald tea plantations, misty mountain gaps, and '
-                   'cardamom forests.',
+        'subtitle_en': 'Rolling emerald tea plantations, misty mountain gaps, and cardamom forests.',
+        'subtitle_hi': 'मखमली चाय के बागान, धुंध भरी पहाड़ियाँ और इलायची के महकते जंगल।',
+        'tagline': 'Rolling emerald tea plantations, misty mountain gaps, and cardamom forests.',
         'trek_available': True,
         'weather_type': 'Misty Green Slopes'}]
 

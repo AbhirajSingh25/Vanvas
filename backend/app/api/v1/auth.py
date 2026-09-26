@@ -574,9 +574,14 @@ def select_avatar_preset(
     current_user: User = Depends(get_current_user)
 ):
     valid_presets = [
-        "himalayan-explorer", "wayfarer", "mountain-camper", "heritage-wanderer",
-        "river-roamer", "desert-nomad", "forest-walker", "road-tripper",
-        "trail-photographer", "backpacker", "cafe-wanderer", "night-traveller"
+        "himalayan-explorer", "mountain-camper", "road-tripper", "heritage-wanderer",
+        "river-roamer", "desert-nomad", "forest-walker", "trail-photographer",
+        "backpacker", "cafe-wanderer", "night-traveller", "wayfarer",
+        "monsoon-trekker", "snow-chaser", "bike-nomad", "train-traveller",
+        "temple-explorer", "coastal-drifter", "wildlife-explorer", "stargazer",
+        "solo-traveller", "group-traveller", "old-school-explorer", "backpack-photographer",
+        "valley-wanderer", "campfire-traveller", "urban-explorer", "monsoon-rider",
+        "desert-rider", "expedition-leader"
     ]
     if payload.preset not in valid_presets:
         raise HTTPException(

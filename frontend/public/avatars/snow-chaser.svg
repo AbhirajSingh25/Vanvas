@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sc_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B3344"/>
+      <stop offset="100%" stop-color="#0C1821"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#sc_bg)" stroke="#E0F2FE" stroke-width="3"/>
+  <polygon points="15,90 48,32 80,90" fill="#33536B" opacity="0.6"/>
+  <polygon points="45,90 75,25 105,90" fill="#4A779D"/>
+  <polygon points="75,25 67,42 75,48 83,42" fill="#FAF4E8"/>
+  <polygon points="48,32 42,44 48,49 54,44" fill="#FAF4E8"/>
+  <circle cx="60" cy="62" r="13" fill="#D95327"/>
+  <rect x="51" y="58" width="18" height="7" rx="3" fill="#0F2924" stroke="#FAF4E8" stroke-width="1"/>
+  <path d="M48,76 Q60,68 72,76 L76,96 Q60,90 44,96 Z" fill="#C59B47"/>
+  <circle cx="30" cy="35" r="2" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="88" cy="38" r="2.5" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="24" cy="65" r="1.8" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="#E0F2FE" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+</svg>

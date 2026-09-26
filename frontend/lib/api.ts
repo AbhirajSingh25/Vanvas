@@ -73,6 +73,9 @@ export function resolveAvatarUrl(avatarUrl?: string | null): string | undefined 
   ) {
     return avatarUrl;
   }
+  if (avatarUrl.startsWith("/avatars/") || avatarUrl.startsWith("/images/")) {
+    return avatarUrl;
+  }
   const base = getApiBaseUrl().replace(/\/api\/v1\/?$/, "");
   const cleanPath = avatarUrl.startsWith("/") ? avatarUrl : `/${avatarUrl}`;
   return `${base}${cleanPath}`;

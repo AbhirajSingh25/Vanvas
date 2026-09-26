@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { api, resolveAvatarUrl } from "@/lib/api";
+import { api } from "@/lib/api";
 import { UserPreferences, PasswordChangePayload } from "@/types";
 import { Avatar } from "@/components/ui/Avatar";
-import { AVATAR_PRESETS } from "@/lib/avatarPresets";
 import {
   User, Compass, Globe, DollarSign, Bell, MapPin, Sparkles,
   Sun, Moon, Shield, Lock, Download, Trash2, CheckCircle2,
   AlertCircle, RefreshCw, ChevronRight, LogOut, Heart, Utensils,
-  Car, Users, Clock, Info, Check, Eye, EyeOff, Camera, Upload, Sparkle
+  Car, Users, Clock, Info, Check, Eye, EyeOff, Camera, ArrowRight
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -23,7 +23,7 @@ export default function SettingsPage() {
 }
 
 function SettingsContent() {
-  const { user, logout, updateProfile, updatePreferences, changePassword, deleteAccount, exportData, uploadAvatar, selectAvatarPreset, deleteAvatar } = useAuth();
+  const { user, logout, updateProfile, updatePreferences, changePassword, deleteAccount, exportData } = useAuth();
 
   const [activeSection, setActiveSection] = useState<
     "account" | "travel" | "food" | "language" | "currency" | "notifications" | "location" | "copilot" | "appearance" | "privacy" | "security" | "about"
@@ -77,77 +77,6 @@ function SettingsContent() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  // Avatar Upload States (Phase 10)
-  const [avatarLoading, setAvatarLoading] = useState(false);
-  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-    if (!validTypes.includes(file.type.toLowerCase())) {
-      setAvatarError("Please select a JPG, PNG, or WebP image.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setAvatarError("Selected image exceeds 5 MB limit. Please choose a smaller photo.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    setAvatarLoading(true);
-    setAvatarError(null);
-    setAvatarSuccess(null);
-
-    try {
-      await uploadAvatar(file);
-      setAvatarSuccess("Profile photo updated and saved!");
-      setTimeout(() => setAvatarSuccess(null), 3000);
-    } catch (err: any) {
-      setAvatarError(err.message || "Failed to upload profile photo.");
-    } finally {
-      setAvatarLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const handleAvatarDelete = async () => {
-    setAvatarLoading(true);
-    setAvatarError(null);
-    setAvatarSuccess(null);
-
-    try {
-      await deleteAvatar();
-      setAvatarSuccess("Profile photo removed; switched to default illustrated avatar.");
-      setTimeout(() => setAvatarSuccess(null), 3000);
-    } catch (err: any) {
-      setAvatarError(err.message || "Failed to remove profile photo.");
-    } finally {
-      setAvatarLoading(false);
-    }
-  };
-
-  const handleSelectPreset = async (presetId: string) => {
-    setAvatarLoading(true);
-    setAvatarError(null);
-    setAvatarSuccess(null);
-
-    try {
-      await selectAvatarPreset(presetId);
-      setAvatarSuccess("Illustrated avatar selected and saved!");
-      setTimeout(() => setAvatarSuccess(null), 3000);
-    } catch (err: any) {
-      setAvatarError(err.message || "Failed to select illustrated avatar.");
-    } finally {
-      setAvatarLoading(false);
-    }
-  };
 
   // Initialize from user preferences
   useEffect(() => {
@@ -1037,160 +966,34 @@ function SettingsContent() {
                     </p>
                   </div>
 
-                  {/* Profile Photo & Avatar Management (Phase 9 & 10) */}
-                  <div className="p-6 rounded-3xl bg-white border border-[#D8CBB2] space-y-6">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#B49252]" />
-                        <h3 className="font-serif text-lg font-bold text-[#173B32]">
-                          Profile Photo &amp; Illustrated Avatars
-                        </h3>
-                      </div>
-                      <p className="text-xs text-[#20211D]/70 mt-1">
-                        Choose an editorial VANVAS illustrated avatar or upload your own real photograph. Updates instantly across all application navigation and journey logs.
-                      </p>
-                    </div>
-
-                    {/* Current Active Avatar Preview & Upload */}
-                    <div className="p-5 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                  {/* Profile Identity & Avatar Link Card */}
+                  <div className="p-6 rounded-3xl bg-white border border-[#D8CBB2] space-y-5">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <Avatar user={user} size="xl" showBorder borderColor="border-[#B49252]" />
-                        <div className="space-y-1">
+                        <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-[#173B32]">
-                              {user?.avatar_type === "uploaded" ? "Custom Uploaded Photo" : "Active Illustrated Avatar"}
+                            <span className="font-serif text-lg font-bold text-[#173B32]">
+                              {user?.full_name || "Traveler"}
                             </span>
                             <span className="px-2 py-0.5 rounded-full bg-[#173B32]/10 text-[10px] font-mono font-bold text-[#173B32] uppercase">
-                              {user?.avatar_type === "uploaded" ? "Custom" : (user?.avatar_preset || "Preset")}
+                              {user?.avatar_type === "uploaded" ? "Custom Photo" : (user?.avatar_preset || "himalayan-explorer")}
                             </span>
                           </div>
-                          <p className="text-xs text-[#20211D]/60 max-w-sm">
-                            {user?.avatar_type === "uploaded"
-                              ? "Real photo active. You can select an illustrated avatar below anytime."
-                              : "Illustrated traveler identity active across your expedition logs."}
+                          <p className="text-xs text-[#20211D]/70 mt-0.5">
+                            Avatar and traveler persona management has moved to your Profile.
                           </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleAvatarFileSelect}
-                          accept="image/jpeg,image/png,image/webp,image/jpg"
-                          className="hidden"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={avatarLoading}
-                          className="px-4 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-60"
-                        >
-                          {avatarLoading ? (
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Upload className="w-3.5 h-3.5 text-[#B49252]" />
-                          )}
-                          <span>Upload Custom Photo</span>
-                        </button>
-
-                        {user?.avatar_type === "uploaded" && (
-                          <button
-                            type="button"
-                            onClick={handleAvatarDelete}
-                            disabled={avatarLoading}
-                            className="px-3.5 py-2.5 rounded-xl bg-[#B65E3C]/10 text-[#B65E3C] hover:bg-[#B65E3C]/20 text-xs font-bold transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-1"
-                            title="Remove Custom Photo"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Remove</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {avatarSuccess && (
-                      <div className="p-3.5 rounded-2xl bg-[#173B32]/10 border border-[#173B32]/30 text-xs text-[#173B32] flex items-center gap-2 animate-fadeIn font-medium">
-                        <CheckCircle2 className="w-4 h-4 text-[#173B32] shrink-0" />
-                        <span>{avatarSuccess}</span>
-                      </div>
-                    )}
-
-                    {avatarError && (
-                      <div className="p-3.5 rounded-2xl bg-[#B65E3C]/10 border border-[#B65E3C]/30 text-xs text-[#7B4D36] flex items-center gap-2 animate-fadeIn font-medium">
-                        <AlertCircle className="w-4 h-4 text-[#B65E3C] shrink-0" />
-                        <span>{avatarError}</span>
-                      </div>
-                    )}
-
-                    {/* Illustrated Avatars Selection Grid */}
-                    <div className="space-y-3 pt-3 border-t border-[#D8CBB2]/60">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#B49252] block">
-                            CHOOSE YOUR VANVAS AVATAR
-                          </span>
-                          <p className="text-xs text-[#20211D]/70 font-serif">
-                            12 curated Indian travel personas illustrated with editorial elegance
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        {AVATAR_PRESETS.map((preset) => {
-                          const isSelected =
-                            user?.avatar_type !== "uploaded" &&
-                            (user?.avatar_preset === preset.id || (!user?.avatar_preset && preset.id === "himalayan-explorer"));
-
-                          return (
-                            <button
-                              key={preset.id}
-                              type="button"
-                              onClick={() => handleSelectPreset(preset.id)}
-                              disabled={avatarLoading}
-                              className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-center justify-between gap-2 cursor-pointer group ${
-                                isSelected
-                                  ? "bg-[#173B32] text-white border-[#B49252] shadow-md ring-2 ring-[#B49252]"
-                                  : "bg-[#FAF7F0] hover:bg-[#EFE5D2] border-[#D8CBB2] text-[#20211D]"
-                              }`}
-                            >
-                              <div className="relative w-14 h-14 rounded-full overflow-hidden border border-[#C59B47]/40 shadow-xs group-hover:scale-105 transition-transform">
-                                <img
-                                  src={preset.src}
-                                  alt={preset.name}
-                                  className="w-full h-full object-cover"
-                                />
-                                {isSelected && (
-                                  <div className="absolute inset-0 bg-[#B49252]/20 flex items-center justify-center">
-                                    <div className="w-4 h-4 rounded-full bg-[#FAF4E8] text-[#173B32] flex items-center justify-center font-bold text-[9px] shadow-sm">
-                                      ✓
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="text-center w-full space-y-0.5">
-                                <div className="font-serif font-bold text-xs leading-tight line-clamp-1">
-                                  {preset.name}
-                                </div>
-                                <div className={`font-devanagari text-[10px] ${isSelected ? "text-[#E5C578]" : "text-[#7B4D36]"}`}>
-                                  {preset.hindiName}
-                                </div>
-                              </div>
-
-                              <span
-                                className={`text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full ${
-                                  isSelected
-                                    ? "bg-[#B49252] text-[#173B32]"
-                                    : "bg-black/5 text-[#20211D]/60 group-hover:bg-[#173B32] group-hover:text-white"
-                                }`}
-                              >
-                                {isSelected ? "ACTIVE" : "SELECT"}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <Link
+                        href="/profile?tab=avatar"
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#173B32] text-xs font-bold text-[#EFE5D2] hover:bg-[#20453B] transition-colors shadow-xs shrink-0"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>Manage Avatars in Profile</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   </div>
 

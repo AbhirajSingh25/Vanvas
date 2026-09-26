@@ -24,7 +24,8 @@ def seed_database():
 
     try:
         # 1. Users
-        if not db.query(User).filter(User.email == "admin@vanvas.com").first():
+        admin_user = db.query(User).filter(User.email == "admin@vanvas.com").first()
+        if not admin_user:
             admin_user = User(
                 email="admin@vanvas.com",
                 hashed_password=get_password_hash("vanvas123"),
@@ -34,6 +35,8 @@ def seed_database():
                 email_verified_at=datetime.now(timezone.utc)
             )
             db.add(admin_user)
+        elif admin_user.email_verified_at is None:
+            admin_user.email_verified_at = datetime.now(timezone.utc)
 
         demo_user = db.query(User).filter(User.email == "traveller@vanvas.com").first()
         if not demo_user:
@@ -58,6 +61,9 @@ def seed_database():
                 interests="Nature,Cafés,Adventure,Food,Hidden places"
             )
             db.add(user_pref)
+        elif demo_user.email_verified_at is None:
+            demo_user.email_verified_at = datetime.now(timezone.utc)
+            db.flush()
 
         # 2. Categories
         categories_data = [
