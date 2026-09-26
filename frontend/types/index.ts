@@ -780,3 +780,188 @@ export interface ImageContract {
   badge_label: ProvenanceBadge;
   visual_description?: string;
 }
+
+// ----------------- Solo Traveler Circles Types -----------------
+
+export interface SoloTravelerProfile {
+  id: string;
+  user_id: string;
+  travel_mode: "SOLO" | "GROUP" | "COUPLE";
+  is_enabled: boolean;
+  discover_before_trip: boolean;
+  discover_when_here: boolean;
+  preferred_group_size: number;
+  interests: string;
+  travel_style: string;
+  trek_pace: string;
+  bio: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface SoloTripIntent {
+  id: string;
+  user_id: string;
+  destination_id?: string;
+  destination_name?: string;
+  trek_slug?: string;
+  trip_id?: string;
+  intent_type: "PLANNING" | "CURRENTLY_THERE" | "BOTH";
+  start_date: string;
+  end_date: string;
+  arrival_window: string;
+  departure_window: string;
+  interests?: string;
+  preferred_group_size: number;
+  travel_style: string;
+  trek_pace: string;
+  status: string;
+  created_at: string;
+}
+
+export interface SoloTravelerCard {
+  user_id: string;
+  full_name: string;
+  avatar_url?: string;
+  avatar_type?: string;
+  avatar_preset?: string;
+  travel_mode: string;
+  travel_style: string;
+  trek_pace: string;
+  interests: string[];
+  bio: string;
+  proximity_label: string;
+  overlapping_days: number;
+  overlap_dates_label?: string;
+  connection_status: "NONE" | "PENDING_OUTGOING" | "PENDING_INCOMING" | "ACCEPTED" | "DECLINED" | "BLOCKED";
+  match_id?: string;
+  destination_name?: string;
+  trek_slug?: string;
+}
+
+export interface SoloDiscoverySummary {
+  destination_id?: string;
+  destination_name?: string;
+  trek_slug?: string;
+  total_matches: number;
+  travelers: SoloTravelerCard[];
+  user_solo_enabled: boolean;
+}
+
+export interface SoloMatch {
+  id: string;
+  sender_user_id: string;
+  receiver_user_id: string;
+  sender_name: string;
+  sender_avatar_url?: string;
+  receiver_name: string;
+  receiver_avatar_url?: string;
+  destination_id?: string;
+  trek_slug?: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "BLOCKED";
+  message?: string;
+  created_at: string;
+}
+
+export interface CircleMember {
+  id: string;
+  user_id: string;
+  full_name: string;
+  avatar_url?: string;
+  avatar_type?: string;
+  avatar_preset?: string;
+  role: "creator" | "member" | "admin";
+  joined_at: string;
+  travel_style?: string;
+  interests?: string;
+}
+
+export interface CircleActivity {
+  id: string;
+  circle_id: string;
+  place_id?: string;
+  place_name?: string;
+  place_category?: string;
+  custom_title?: string;
+  category: string;
+  meetup_time?: string;
+  suggested_by_user_id: string;
+  suggested_by_name: string;
+  status: string;
+  love_count: number;
+  like_count: number;
+  no_count: number;
+  total_votes: number;
+  compatibility_score: number;
+  is_consensus_favorite: boolean;
+  my_vote?: "LOVE" | "LIKE" | "NO" | null;
+  created_at: string;
+}
+
+export interface TravelCircle {
+  id: string;
+  creator_user_id: string;
+  creator_name: string;
+  destination_id?: string;
+  destination_name?: string;
+  trip_id?: string;
+  trek_slug?: string;
+  name: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+  max_members: number;
+  members_count: number;
+  activity_type: string;
+  meetup_point: string;
+  meetup_lat?: number;
+  meetup_lng?: number;
+  meetup_time?: string;
+  status: "DISCOVERABLE" | "FORMING" | "ACTIVE" | "COMPLETED" | "ARCHIVED";
+  is_member: boolean;
+  is_creator: boolean;
+  created_at: string;
+  members: CircleMember[];
+  activities: CircleActivity[];
+}
+
+export interface CircleMessage {
+  id: string;
+  circle_id: string;
+  user_id?: string;
+  sender_name?: string;
+  sender_avatar?: string;
+  message_type: "user" | "system" | "ask_vanvas";
+  content: string;
+  metadata_json?: string;
+  created_at: string;
+}
+
+export interface UserNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  category: string;
+  entity_id?: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface AskVanvasCircleResponse {
+  plan_title: string;
+  narrative: string;
+  suggested_activities: Array<{
+    place_id?: string;
+    place_name?: string;
+    category?: string;
+    timing?: string;
+    approx_cost?: number;
+    highlight?: string;
+    is_must_visit?: boolean;
+  }>;
+  weather_summary?: string;
+  safety_advisories: string[];
+  estimated_cost_per_person?: number;
+}
+

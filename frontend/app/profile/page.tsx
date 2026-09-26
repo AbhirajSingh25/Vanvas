@@ -11,20 +11,21 @@ import {
   User as UserIcon, Settings as SettingsIcon, Bookmark, Calendar,
   Sparkles, MapPin, Compass, Edit3, CheckCircle2, AlertCircle,
   ExternalLink, Trash2, Shield, Heart, Utensils, Car, Trees,
-  Clock, ArrowRight, X, RefreshCw, Camera, Upload, Image as ImageIcon
+  Clock, ArrowRight, X, RefreshCw, Camera, Upload, Image as ImageIcon,
+  Users
 } from "lucide-react";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { Avatar } from "@/components/ui/Avatar";
-
 import { AVATAR_PRESETS, AvatarPreset } from "@/lib/avatarPresets";
+import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
 
 function ProfileContent() {
   const { user, updateProfile, uploadAvatar, selectAvatarPreset, deleteAvatar } = useAuth();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const initialTab = tabParam === "saved" ? "saved" : tabParam === "avatar" ? "avatar" : tabParam === "trips" ? "trips" : "overview";
+  const initialTab = tabParam === "saved" ? "saved" : tabParam === "avatar" ? "avatar" : tabParam === "trips" ? "trips" : tabParam === "solo" ? "solo" : "overview";
 
-  const [activeTab, setActiveTab] = useState<"overview" | "avatar" | "saved" | "trips">(
+  const [activeTab, setActiveTab] = useState<"overview" | "avatar" | "saved" | "trips" | "solo">(
     initialTab as any
   );
 
@@ -379,6 +380,7 @@ function ProfileContent() {
         <div className="flex items-center gap-2 border-b border-[#D8CBB2] pb-1 overflow-x-auto">
           {[
             { id: "overview", label: "Overview & Persona", icon: UserIcon },
+            { id: "solo", label: "Solo & Circles (मण्डली)", icon: Users },
             { id: "avatar", label: "Avatar & Identity (30)", icon: Sparkles },
             { id: "saved", label: `Saved Places (${savedPlaces.length})`, icon: Bookmark },
             { id: "trips", label: `Expeditions (${trips.length})`, icon: Calendar },
@@ -667,6 +669,13 @@ function ProfileContent() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Tab: Solo Traveler Settings */}
+        {activeTab === "solo" && (
+          <div className="animate-fadeIn">
+            <SoloSettingsTab />
           </div>
         )}
 

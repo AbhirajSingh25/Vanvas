@@ -26,6 +26,7 @@ class User(Base):
 
     # Relationships
     preferences = relationship("UserPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    solo_profile = relationship("SoloTravelerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     verification_tokens = relationship("EmailVerificationToken", back_populates="user", cascade="all, delete-orphan")
     verification_otps = relationship("EmailVerificationOTP", back_populates="user", cascade="all, delete-orphan")
     trips = relationship("Trip", back_populates="creator", cascade="all, delete-orphan")
@@ -36,6 +37,9 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     bookings = relationship("Booking", back_populates="user", cascade="all, delete-orphan")
+    solo_intents = relationship("SoloTripIntent", back_populates="user", cascade="all, delete-orphan")
+    circle_memberships = relationship("CircleMember", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("UserNotification", back_populates="user", cascade="all, delete-orphan")
 
     @property
     def is_verified(self) -> bool:
@@ -604,4 +608,231 @@ class BookingEvent(Base):
 
     # Relationships
     booking = relationship("Booking", back_populates="events")
+
+
+# ----------------- Solo Traveler Circles Models -----------------
+
+class SoloTravelerProfile(Base):
+    __tablename__ = "solo_traveler_profiles"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), unique=True, nullable=False, index=True)
+    travel_mode = Column(String(50), default="SOLO", nullable=False)  # SOLO, GROUP, COUPLE
+    is_enabled = Column(Boolean, default=True, nullable=False)
+    discover_before_trip = Column(Boolean, default=True, nullable=False)
+    discover_when_here = Column(Boolean, default=True, nullable=False)
+    preferred_group_size = Column(Integer, default=4, nullable=False)
+    interests = Column(Text, default="Trekking,Cafés,Photography,Local Culture", nullable=False)
+    travel_style = Column(String(50), default="Balanced", nullable=False)  # Budget, Balanced, Comfort, Adventure, Slow Travel
+    trek_pace = Column(String(50), default="Moderate", nullable=False)  # Leisurely, Moderate, Fast
+    bio = Column(Text, default="", nullable=False)
+    
+    # Transient approximate client check-in coordinates (never exact live tracker, non-persistent historical log)
+    last_approx_lat = Column(Float, nullable=True)
+    last_approx_lng = Column(Float, nullable=True)
+    last_location_updated_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="solo_profile")
+
+
+class SoloTripIntent(Base):
+    __tablename__ = "solo_trip_intents"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    destination_id = Column(String(36), ForeignKey("destinations.id"), nullable=True, index=True)
+    destination_name = Column(String(255), nullable=True)
+    trek_slug = Column(String(100), nullable=True, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=True, index=True)
+    intent_type = Column(String(50), default="BOTH", index=True, nullable=False)  # PLANNING, CURRENTLY_THERE, BOTH
+    start_date = Column(Date, nullable=False, index=True)
+    end_date = Column(Date, nullable=False, index=True)
+    arrival_window = Column(String(50), default="Flexible", nullable=False)
+    departure_window = Column(String(50), default="Flexible", nullable=False)
+    interests = Column(Text, nullable=True)
+    preferred_group_size = Column(Integer, default=4, nullable=False)
+    travel_style = Column(String(50), default="Balanced", nullable=False)
+    trek_pace = Column(String(50), default="Moderate", nullable=False)
+    status = Column(String(50), default="active", index=True, nullable=False)  # active, completed, cancelled
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="solo_intents")
+    destination = relationship("Destination")
+    trip = relationship("Trip")
+
+
+class SoloMatch(Base):
+    __tablename__ = "solo_matches"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    sender_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    receiver_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    destination_id = Column(String(36), ForeignKey("destinations.id"), nullable=True, index=True)
+    trek_slug = Column(String(100), nullable=True, index=True)
+    trip_intent_id = Column(String(36), ForeignKey("solo_trip_intents.id"), nullable=True)
+    status = Column(String(50), default="PENDING", index=True, nullable=False)  # PENDING, ACCEPTED, DECLINED, BLOCKED
+    message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    sender = relationship("User", foreign_keys=[sender_user_id])
+    receiver = relationship("User", foreign_keys=[receiver_user_id])
+    destination = relationship("Destination")
+    trip_intent = relationship("SoloTripIntent")
+
+    @property
+    def sender_name(self) -> str:
+        return self.sender.full_name if self.sender else "Traveler"
+
+    @property
+    def sender_avatar_url(self) -> Optional[str]:
+        return self.sender.avatar_url if self.sender else None
+
+    @property
+    def receiver_name(self) -> str:
+        return self.receiver.full_name if self.receiver else "Traveler"
+
+    @property
+    def receiver_avatar_url(self) -> Optional[str]:
+        return self.receiver.avatar_url if self.receiver else None
+
+
+class TravelCircle(Base):
+    __tablename__ = "travel_circles"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    creator_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    destination_id = Column(String(36), ForeignKey("destinations.id"), nullable=True, index=True)
+    destination_name = Column(String(255), nullable=True)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=True, index=True)
+    trek_slug = Column(String(100), nullable=True, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    start_date = Column(Date, nullable=False, index=True)
+    end_date = Column(Date, nullable=False, index=True)
+    max_members = Column(Integer, default=6, nullable=False)
+    activity_type = Column(String(100), default="Exploration", nullable=False)  # Trek, Exploration, Café Hopping, Sightseeing, Photography, Cultural
+    meetup_point = Column(String(255), default="Town Center", nullable=False)
+    meetup_lat = Column(Float, nullable=True)
+    meetup_lng = Column(Float, nullable=True)
+    meetup_time = Column(String(50), default="10:00 AM", nullable=True)
+    status = Column(String(50), default="FORMING", index=True, nullable=False)  # DISCOVERABLE, FORMING, ACTIVE, COMPLETED, ARCHIVED
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    creator = relationship("User", foreign_keys=[creator_user_id])
+    destination = relationship("Destination")
+    trip = relationship("Trip")
+    members = relationship("CircleMember", back_populates="circle", cascade="all, delete-orphan")
+    messages = relationship("CircleMessage", back_populates="circle", cascade="all, delete-orphan", order_by="CircleMessage.created_at")
+    activities = relationship("CircleActivity", back_populates="circle", cascade="all, delete-orphan", order_by="CircleActivity.created_at")
+
+
+class CircleMember(Base):
+    __tablename__ = "circle_members"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    circle_id = Column(String(36), ForeignKey("travel_circles.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    role = Column(String(50), default="member", nullable=False)  # creator, member, admin
+    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    circle = relationship("TravelCircle", back_populates="members")
+    user = relationship("User", back_populates="circle_memberships")
+
+
+class CircleMessage(Base):
+    __tablename__ = "circle_messages"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    circle_id = Column(String(36), ForeignKey("travel_circles.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
+    sender_name = Column(String(255), nullable=True)
+    sender_avatar = Column(String(500), nullable=True)
+    message_type = Column(String(50), default="user", nullable=False)  # user, system, ask_vanvas
+    content = Column(Text, nullable=False)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    circle = relationship("TravelCircle", back_populates="messages")
+    user = relationship("User")
+
+
+class CircleActivity(Base):
+    __tablename__ = "circle_activities"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    circle_id = Column(String(36), ForeignKey("travel_circles.id"), nullable=False, index=True)
+    place_id = Column(String(36), ForeignKey("places.id"), nullable=True, index=True)
+    custom_title = Column(String(255), nullable=True)
+    category = Column(String(100), default="attraction", nullable=False)  # destination, restaurant, attraction, activity, meetup_time
+    meetup_time = Column(String(50), nullable=True)
+    suggested_by_user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    status = Column(String(50), default="proposed", nullable=False)  # proposed, decided, completed
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    circle = relationship("TravelCircle", back_populates="activities")
+    place = relationship("Place")
+    suggested_by = relationship("User")
+    votes = relationship("CircleActivityVote", back_populates="activity", cascade="all, delete-orphan")
+
+
+class CircleActivityVote(Base):
+    __tablename__ = "circle_activity_votes"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    activity_id = Column(String(36), ForeignKey("circle_activities.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    vote_type = Column(String(20), nullable=False)  # LOVE, LIKE, NO
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    activity = relationship("CircleActivity", back_populates="votes")
+    user = relationship("User")
+
+
+class TravelerBlock(Base):
+    __tablename__ = "traveler_blocks"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    blocker_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    blocked_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    reason = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    blocker = relationship("User", foreign_keys=[blocker_user_id])
+    blocked = relationship("User", foreign_keys=[blocked_user_id])
+
+
+class TravelerReport(Base):
+    __tablename__ = "traveler_reports"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    reporter_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    reported_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    circle_id = Column(String(36), nullable=True)
+    reason = Column(Text, nullable=False)
+    status = Column(String(50), default="pending", index=True, nullable=False)  # pending, reviewed, dismissed
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    reporter = relationship("User", foreign_keys=[reporter_user_id])
+    reported = relationship("User", foreign_keys=[reported_user_id])
+
+
+class UserNotification(Base):
+    __tablename__ = "user_notifications"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    body = Column(Text, nullable=False)
+    category = Column(String(100), default="circle", nullable=False)  # connection_request, connection_accepted, circle_invitation, circle_member_joined, circle_message, circle_vote, meetup_reminder
+    entity_id = Column(String(36), nullable=True)
+    is_read = Column(Boolean, default=False, index=True, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    user = relationship("User", back_populates="notifications")
 

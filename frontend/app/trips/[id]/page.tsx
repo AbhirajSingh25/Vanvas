@@ -22,6 +22,7 @@ import { TravelStamp } from "@/components/ui/TravelStamp";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { TripInviteModal } from "@/components/trip/TripInviteModal";
 import { TripMembersSection } from "@/components/trip/TripMembersSection";
+import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tripId } = use(params);
@@ -322,6 +323,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             { id: "food", label: "Food Along Route (स्वाद)", icon: Coffee },
             { id: "budget", label: "Budget & Expenses (खर्च)", icon: Wallet },
             { id: "group", label: "Group & Voting (यार-दोस्त)", icon: Users },
+            { id: "circles", label: "Solo Circles (मण्डली)", icon: Users },
             { id: "checklist", label: "Checklist (तैयारी)", icon: CheckSquare },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -864,6 +866,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* SOLO CIRCLES TAB */}
+        {activeTab === "circles" && (
+          <div className="space-y-6 animate-fadeIn">
+            <TravelingSoloSection
+              destinationId={trip.destination_id}
+              destinationName={trip.destination?.name || "Mountain Destination"}
+              startDate={trip.start_date}
+              endDate={trip.end_date}
+              tripId={trip.id}
+            />
           </div>
         )}
       </main>

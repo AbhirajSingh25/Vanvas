@@ -842,5 +842,218 @@ export const api = {
 
   async checkOfferAvailability(offerId: string): Promise<{ offer_id: string; provider?: string; availability_state: string; is_available?: boolean; valid_until?: string | null; message: string; price?: number | null; currency?: string; cancellation_policy?: string | null }> {
     return fetchApi(`/offers/${encodeURIComponent(offerId)}/availability`);
+  },
+
+  // ---------------------------------------------------------------------------
+  // Solo Traveler Circles & Notifications
+  // ---------------------------------------------------------------------------
+
+  async getSoloProfile(): Promise<any> {
+    return fetchApi("/solo/profile");
+  },
+
+  async updateSoloProfile(data: any): Promise<any> {
+    return fetchApi("/solo/profile", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async checkinLocation(lat: number, lng: number): Promise<any> {
+    return fetchApi(`/solo/checkin-location?lat=${lat}&lng=${lng}`, {
+      method: "POST",
+    });
+  },
+
+  async createSoloIntent(data: any): Promise<any> {
+    return fetchApi("/solo/intents", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getMySoloIntents(): Promise<any[]> {
+    return fetchApi("/solo/intents/my");
+  },
+
+  async cancelSoloIntent(intentId: string): Promise<any> {
+    return fetchApi(`/solo/intents/${encodeURIComponent(intentId)}`, {
+      method: "DELETE",
+    });
+  },
+
+  async discoverSoloTravelers(params: {
+    destination_id?: string;
+    destination_slug?: string;
+    trek_slug?: string;
+    start_date?: string;
+    end_date?: string;
+    lat?: number;
+    lng?: number;
+    mode?: string;
+  }): Promise<any> {
+    const q = new URLSearchParams();
+    if (params.destination_id) q.set("destination_id", params.destination_id);
+    if (params.destination_slug) q.set("destination_slug", params.destination_slug);
+    if (params.trek_slug) q.set("trek_slug", params.trek_slug);
+    if (params.start_date) q.set("start_date", params.start_date);
+    if (params.end_date) q.set("end_date", params.end_date);
+    if (params.lat !== undefined) q.set("lat", params.lat.toString());
+    if (params.lng !== undefined) q.set("lng", params.lng.toString());
+    if (params.mode) q.set("mode", params.mode);
+    return fetchApi(`/solo/discover?${q.toString()}`);
+  },
+
+  async discoverNearbySolo(lat: number, lng: number, mode: string = "here_now", radiusKm: number = 25): Promise<any> {
+    return fetchApi(`/solo/nearby?lat=${lat}&lng=${lng}&mode=${mode}&radius_km=${radiusKm}`);
+  },
+
+  async sendConnectionRequest(data: { receiver_user_id: string; destination_id?: string; trek_slug?: string; message?: string }): Promise<any> {
+    return fetchApi("/solo/connect/request", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async acceptConnectionRequest(matchId: string): Promise<any> {
+    return fetchApi(`/solo/connect/${encodeURIComponent(matchId)}/accept`, {
+      method: "POST",
+    });
+  },
+
+  async declineConnectionRequest(matchId: string): Promise<any> {
+    return fetchApi(`/solo/connect/${encodeURIComponent(matchId)}/decline`, {
+      method: "POST",
+    });
+  },
+
+  async getConnectionRequests(): Promise<any[]> {
+    return fetchApi("/solo/connect/requests");
+  },
+
+  async blockTraveler(data: { blocked_user_id: string; reason?: string }): Promise<any> {
+    return fetchApi("/solo/block", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async unblockTraveler(blockedUserId: string): Promise<any> {
+    return fetchApi(`/solo/unblock?blocked_user_id=${encodeURIComponent(blockedUserId)}`, {
+      method: "POST",
+    });
+  },
+
+  async listBlockedTravelers(): Promise<any[]> {
+    return fetchApi("/solo/blocked");
+  },
+
+  async reportTraveler(data: { reported_user_id: string; circle_id?: string; reason: string }): Promise<any> {
+    return fetchApi("/solo/report", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async createCircle(data: any): Promise<any> {
+    return fetchApi("/circles", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async discoverCircles(params: {
+    destination_id?: string;
+    destination_slug?: string;
+    trek_slug?: string;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<any[]> {
+    const q = new URLSearchParams();
+    if (params.destination_id) q.set("destination_id", params.destination_id);
+    if (params.destination_slug) q.set("destination_slug", params.destination_slug);
+    if (params.trek_slug) q.set("trek_slug", params.trek_slug);
+    if (params.start_date) q.set("start_date", params.start_date);
+    if (params.end_date) q.set("end_date", params.end_date);
+    return fetchApi(`/circles/discover?${q.toString()}`);
+  },
+
+  async getMyCircles(): Promise<any[]> {
+    return fetchApi("/circles/my");
+  },
+
+  async getCircleDetails(circleId: string): Promise<any> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}`);
+  },
+
+  async updateCircle(circleId: string, data: any): Promise<any> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async joinCircle(circleId: string): Promise<any> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}/join`, {
+      method: "POST",
+    });
+  },
+
+  async leaveCircle(circleId: string): Promise<any> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}/leave`, {
+      method: "POST",
+    });
+  },
+
+  async getCircleMessages(circleId: string): Promise<any[]> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}/messages`);
+  },
+
+  async sendCircleMessage(circleId: string, data: { content: string; message_type?: string; metadata_json?: string }): Promise<any> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}/messages`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getCircleActivities(circleId: string): Promise<any[]> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}/activities`);
+  },
+
+  async proposeCircleActivity(circleId: string, data: { place_id?: string; custom_title?: string; category?: string; meetup_time?: string }): Promise<any> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}/activities`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async voteCircleActivity(circleId: string, activityId: string, voteType: "LOVE" | "LIKE" | "NO"): Promise<any> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}/activities/${encodeURIComponent(activityId)}/vote`, {
+      method: "POST",
+      body: JSON.stringify({ vote_type: voteType }),
+    });
+  },
+
+  async askVanvasForCircle(circleId: string, data: { query: string; current_lat?: number; current_lng?: number; time_limit_hours?: number; budget_level?: string }): Promise<any> {
+    return fetchApi(`/circles/${encodeURIComponent(circleId)}/ask-vanvas`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getNotifications(): Promise<any[]> {
+    return fetchApi("/notifications");
+  },
+
+  async markNotificationRead(notificationId: string): Promise<any> {
+    return fetchApi(`/notifications/${encodeURIComponent(notificationId)}/read`, {
+      method: "POST",
+    });
+  },
+
+  async markAllNotificationsRead(): Promise<any> {
+    return fetchApi("/notifications/read-all", {
+      method: "POST",
+    });
   }
 };

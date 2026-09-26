@@ -6,7 +6,7 @@ import {
   MapPin, Utensils, Coffee, Compass, Bike,
   ShoppingBag, ShieldAlert,
   Search, Navigation, RefreshCw, AlertCircle, CheckCircle2,
-  Landmark, Trees, BedDouble, X
+  Landmark, Trees, BedDouble, X, Users
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Place } from "@/types";
@@ -15,6 +15,7 @@ import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
+import { NearbySoloSection } from "@/components/solo/NearbySoloSection";
 import { Layers, LayoutGrid } from "lucide-react";
 
 type LocationStatus = "idle" | "locating" | "located" | "denied" | "error" | "unsupported";
@@ -46,6 +47,7 @@ const PRESET_HUBS: SearchCenter[] = [
 
 const CATEGORIES = [
   { id: "all", label: "All Nearby", hindi: "सभी", icon: MapPin },
+  { id: "solo_circles", label: "Solo Travelers", hindi: "अकेले यात्री", icon: Users },
   { id: "restaurant", label: "Restaurants", hindi: "रेस्तरां", icon: Utensils },
   { id: "cafe", label: "Cafés", hindi: "कैफ़े", icon: Coffee },
   { id: "bakery", label: "Bakeries", hindi: "बेकरी", icon: Coffee },
@@ -537,7 +539,12 @@ function NearbyInner() {
         </div>
 
         {/* Results Stream */}
-        {loading ? (
+        {category === "solo_circles" ? (
+          <NearbySoloSection
+            currentLat={searchCenter.lat}
+            currentLng={searchCenter.lng}
+          />
+        ) : loading ? (
           <div className="py-24 flex flex-col items-center justify-center text-[#173B32] gap-3">
             <div className="w-10 h-10 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
             <span className="text-xs font-serif italic text-[#7B4D36]">

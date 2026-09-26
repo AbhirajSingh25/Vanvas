@@ -170,6 +170,21 @@ def ensure_database_schema(eng=engine):
                 except Exception:
                     pass
 
+            # Ensure essential indexes on solo traveler circles tables
+            for idx_stmt in [
+                "CREATE INDEX IF NOT EXISTS ix_solo_intents_dest_dates ON solo_trip_intents(destination_id, start_date, end_date)",
+                "CREATE INDEX IF NOT EXISTS ix_solo_intents_status ON solo_trip_intents(status)",
+                "CREATE INDEX IF NOT EXISTS ix_travel_circles_status_dates ON travel_circles(status, start_date, end_date)",
+                "CREATE INDEX IF NOT EXISTS ix_travel_circles_dest ON travel_circles(destination_id)",
+                "CREATE INDEX IF NOT EXISTS ix_circle_messages_circle ON circle_messages(circle_id, created_at)",
+                "CREATE INDEX IF NOT EXISTS ix_traveler_blocks_lookup ON traveler_blocks(blocker_user_id, blocked_user_id)",
+                "CREATE INDEX IF NOT EXISTS ix_user_notifications_user_read ON user_notifications(user_id, is_read)",
+            ]:
+                try:
+                    conn.execute(text(idx_stmt))
+                except Exception:
+                    pass
+
             conn.commit()
         return True
     except OperationalError as oe:

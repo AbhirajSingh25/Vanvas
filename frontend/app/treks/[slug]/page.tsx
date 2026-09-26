@@ -13,6 +13,7 @@ import {
 import { getTrekBySlug, TrekItem, TrekRouteOption, TrekWaypoint, TrekGearItem } from "@/lib/trekContentModel";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { VanvasMap, VanvasMapMarker, VanvasMapRouteSegment } from "@/components/ui/VanvasMap";
+import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -895,7 +896,27 @@ export default function TrekDetailPage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* 9. PRACTICAL FIELD INTELLIGENCE & SAFETY */}
+      {/* 9. TREK SOLO TRAVELER CIRCLES */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="bg-[#14201A] border border-[#2B4034] rounded-3xl p-6 sm:p-8">
+          <div className="flex items-center gap-2 text-xs font-mono text-[#E05A2B] font-bold uppercase tracking-wider mb-2">
+            <Users className="w-4 h-4" />
+            <span>Trek Circles • Fellow Trekkers</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8] mb-2">
+            Trek Fellowship & Circles
+          </h2>
+          <p className="text-xs sm:text-sm text-[#8FA699] max-w-2xl leading-relaxed mb-6 font-serif">
+            Discover other solo trekkers heading to {trek.title} with overlapping dates and compatible pacing. Form or join a verified alpine trek circle for safety and shared expedition joy.
+          </p>
+          <TravelingSoloSection
+            destinationId={trek.id}
+            destinationName={trek.title}
+          />
+        </div>
+      </section>
+
+      {/* 10. PRACTICAL FIELD INTELLIGENCE & SAFETY */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="border-b border-[#2A3E33] pb-4">
           <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">

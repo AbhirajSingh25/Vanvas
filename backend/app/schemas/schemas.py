@@ -985,3 +985,318 @@ class BookingTransitionRequest(BaseModel):
     reason: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
 
+
+# ----------------- Solo Traveler Circles Schemas -----------------
+
+class SoloTravelerProfileSchema(BaseModel):
+    travel_mode: str = "SOLO"
+    is_enabled: bool = True
+    discover_before_trip: bool = True
+    discover_when_here: bool = True
+    preferred_group_size: int = 4
+    interests: str = "Trekking,Cafés,Photography,Local Culture"
+    travel_style: str = "Balanced"
+    trek_pace: str = "Moderate"
+    bio: str = ""
+
+    class Config:
+        from_attributes = True
+
+
+class SoloProfileUpdateRequest(BaseModel):
+    travel_mode: Optional[str] = None
+    is_enabled: Optional[bool] = None
+    discover_before_trip: Optional[bool] = None
+    discover_when_here: Optional[bool] = None
+    preferred_group_size: Optional[int] = None
+    interests: Optional[str] = None
+    travel_style: Optional[str] = None
+    trek_pace: Optional[str] = None
+    bio: Optional[str] = None
+
+
+class SoloProfileResponse(BaseModel):
+    id: str
+    user_id: str
+    travel_mode: str
+    is_enabled: bool
+    discover_before_trip: bool
+    discover_when_here: bool
+    preferred_group_size: int
+    interests: str
+    travel_style: str
+    trek_pace: str
+    bio: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class SoloTripIntentCreate(BaseModel):
+    destination_id: Optional[str] = None
+    destination_name: Optional[str] = None
+    trek_slug: Optional[str] = None
+    trip_id: Optional[str] = None
+    intent_type: str = "BOTH"  # PLANNING, CURRENTLY_THERE, BOTH
+    start_date: date
+    end_date: date
+    arrival_window: str = "Flexible"
+    departure_window: str = "Flexible"
+    interests: Optional[str] = None
+    preferred_group_size: int = 4
+    travel_style: str = "Balanced"
+    trek_pace: str = "Moderate"
+
+
+class SoloTripIntentResponse(BaseModel):
+    id: str
+    user_id: str
+    destination_id: Optional[str] = None
+    destination_name: Optional[str] = None
+    trek_slug: Optional[str] = None
+    trip_id: Optional[str] = None
+    intent_type: str
+    start_date: date
+    end_date: date
+    arrival_window: str
+    departure_window: str
+    interests: Optional[str] = None
+    preferred_group_size: int
+    travel_style: str
+    trek_pace: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SoloTravelerCardResponse(BaseModel):
+    user_id: str
+    full_name: str
+    avatar_url: Optional[str] = None
+    avatar_type: Optional[str] = "preset"
+    avatar_preset: Optional[str] = "himalayan-explorer"
+    travel_mode: str = "SOLO"
+    travel_style: str = "Balanced"
+    trek_pace: str = "Moderate"
+    interests: List[str] = []
+    bio: str = ""
+    proximity_label: str = "Planning"  # "Nearby", "Same area", "Around destination", "Planning"
+    overlapping_days: int = 0
+    overlap_dates_label: Optional[str] = None
+    connection_status: str = "NONE"  # NONE, PENDING_OUTGOING, PENDING_INCOMING, ACCEPTED, BLOCKED
+    match_id: Optional[str] = None
+    destination_name: Optional[str] = None
+    trek_slug: Optional[str] = None
+
+
+class SoloDiscoverySummaryResponse(BaseModel):
+    destination_id: Optional[str] = None
+    destination_name: Optional[str] = None
+    trek_slug: Optional[str] = None
+    total_matches: int
+    travelers: List[SoloTravelerCardResponse]
+    user_solo_enabled: bool
+
+
+class SoloMatchRequest(BaseModel):
+    receiver_user_id: str
+    destination_id: Optional[str] = None
+    trek_slug: Optional[str] = None
+    message: Optional[str] = None
+
+
+class SoloMatchResponse(BaseModel):
+    id: str
+    sender_user_id: str
+    receiver_user_id: str
+    sender_name: str
+    sender_avatar_url: Optional[str] = None
+    receiver_name: str
+    receiver_avatar_url: Optional[str] = None
+    destination_id: Optional[str] = None
+    trek_slug: Optional[str] = None
+    status: str
+    message: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TravelCircleCreate(BaseModel):
+    destination_id: Optional[str] = None
+    destination_name: Optional[str] = None
+    trip_id: Optional[str] = None
+    trek_slug: Optional[str] = None
+    name: str = Field(..., min_length=2, max_length=255)
+    description: Optional[str] = None
+    start_date: date
+    end_date: date
+    max_members: int = 6
+    activity_type: str = "Exploration"
+    meetup_point: str = "Town Center"
+    meetup_lat: Optional[float] = None
+    meetup_lng: Optional[float] = None
+    meetup_time: Optional[str] = "10:00 AM"
+
+
+class TravelCircleUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    meetup_point: Optional[str] = None
+    meetup_lat: Optional[float] = None
+    meetup_lng: Optional[float] = None
+    meetup_time: Optional[str] = None
+    max_members: Optional[int] = None
+    activity_type: Optional[str] = None
+    status: Optional[str] = None
+
+
+class CircleMemberResponse(BaseModel):
+    id: str
+    user_id: str
+    full_name: str
+    avatar_url: Optional[str] = None
+    avatar_type: Optional[str] = "preset"
+    avatar_preset: Optional[str] = "himalayan-explorer"
+    role: str
+    joined_at: datetime
+    travel_style: Optional[str] = "Balanced"
+    interests: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CircleMessageCreate(BaseModel):
+    content: str = Field(..., min_length=1, max_length=2000)
+    message_type: str = "user"
+    metadata_json: Optional[str] = None
+
+
+class CircleMessageResponse(BaseModel):
+    id: str
+    circle_id: str
+    user_id: Optional[str] = None
+    sender_name: Optional[str] = None
+    sender_avatar: Optional[str] = None
+    message_type: str
+    content: str
+    metadata_json: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CircleActivityVoteRequest(BaseModel):
+    vote_type: str = Field(..., description="LOVE, LIKE, or NO")
+
+
+class CircleActivityCreate(BaseModel):
+    place_id: Optional[str] = None
+    custom_title: Optional[str] = None
+    category: str = "attraction"
+    meetup_time: Optional[str] = None
+
+
+class CircleActivityResponse(BaseModel):
+    id: str
+    circle_id: str
+    place_id: Optional[str] = None
+    place_name: Optional[str] = None
+    place_category: Optional[str] = None
+    custom_title: Optional[str] = None
+    category: str
+    meetup_time: Optional[str] = None
+    suggested_by_user_id: str
+    suggested_by_name: str
+    status: str
+    love_count: int = 0
+    like_count: int = 0
+    no_count: int = 0
+    total_votes: int = 0
+    compatibility_score: float = 0.0
+    is_consensus_favorite: bool = False
+    my_vote: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TravelCircleResponse(BaseModel):
+    id: str
+    creator_user_id: str
+    creator_name: str
+    destination_id: Optional[str] = None
+    destination_name: Optional[str] = None
+    trip_id: Optional[str] = None
+    trek_slug: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    start_date: date
+    end_date: date
+    max_members: int
+    members_count: int
+    activity_type: str
+    meetup_point: str
+    meetup_lat: Optional[float] = None
+    meetup_lng: Optional[float] = None
+    meetup_time: Optional[str] = None
+    status: str
+    is_member: bool = False
+    is_creator: bool = False
+    created_at: datetime
+    members: List[CircleMemberResponse] = []
+    activities: List[CircleActivityResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class TravelerBlockRequest(BaseModel):
+    blocked_user_id: str
+    reason: Optional[str] = None
+
+
+class TravelerReportRequest(BaseModel):
+    reported_user_id: str
+    circle_id: Optional[str] = None
+    reason: str = Field(..., min_length=3, max_length=1000)
+
+
+class UserNotificationResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    body: str
+    category: str
+    entity_id: Optional[str] = None
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AskVanvasCircleRequest(BaseModel):
+    query: str = Field(..., min_length=2, max_length=1000)
+    current_lat: Optional[float] = None
+    current_lng: Optional[float] = None
+    time_limit_hours: Optional[float] = None
+    budget_level: Optional[str] = None
+
+
+class AskVanvasCircleResponse(BaseModel):
+    plan_title: str
+    narrative: str
+    suggested_activities: List[Dict[str, Any]] = []
+    weather_summary: Optional[str] = None
+    safety_advisories: List[str] = []
+    estimated_cost_per_person: Optional[float] = None
+

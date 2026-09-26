@@ -20,6 +20,7 @@ import { JournalNote } from "@/components/ui/JournalNote";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
+import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
 import { getCanonicalHindiName, findCanonicalDestination } from "@/lib/canonicalDestinations";
@@ -150,7 +151,7 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
 
 import { useParams } from "next/navigation";
 
-type OperationalMode = "overview" | "places" | "stays" | "mobility";
+type OperationalMode = "overview" | "places" | "stays" | "mobility" | "solo";
 
 export default function DestinationDetailPage() {
   const routeParams = useParams();
@@ -690,6 +691,7 @@ export default function DestinationDetailPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
           {[
             { id: "overview", label: "Overview", devanagari: "सफ़रनामा", icon: Compass },
+            { id: "solo", label: "Traveling Solo?", devanagari: "अकेले यात्री", icon: Users },
             { id: "places", label: "Curated Places", devanagari: "पड़ाव", icon: Sparkles, count: places.length },
             { id: "stays", label: "Stays & Sanctuaries", devanagari: "आशियाना", icon: BedDouble, count: hotels.length },
             { id: "mobility", label: "Valley Mobility", devanagari: "सवारी", icon: Bike, count: rentals.length },
@@ -808,6 +810,17 @@ export default function DestinationDetailPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* 2.5 TRAVELING SOLO & CIRCLES SECTION */}
+            {(activeMode === "overview" || activeMode === "solo") && (
+              <div className="pt-2">
+                <TravelingSoloSection
+                  destinationId={destination.id}
+                  destinationSlug={destination.slug || slug}
+                  destinationName={destination.name}
+                />
               </div>
             )}
 
