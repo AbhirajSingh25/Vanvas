@@ -10,6 +10,43 @@ import {
 } from "@/types";
 
 function getApiBaseUrl(): string {
+  // Browser runtime environment detection
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local");
+    
+    // If running on local machine, allow custom NEXT_PUBLIC_API_URL or default to local backend
+    if (isLocalhost) {
+      if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "") {
+        let base = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, "");
+        if (!base.endsWith("/api/v1")) {
+          base = `${base}/api/v1`;
+        }
+        return base;
+      }
+      return "http://localhost:8000/api/v1";
+    }
+
+    // In production browser:
+    // If NEXT_PUBLIC_API_URL is an explicit remote HTTPS URL (and not localhost), use it,
+    // otherwise ALWAYS use relative "/api/v1" to leverage same-origin Next.js rewrites without CORS or mixed-content issues.
+    if (
+      process.env.NEXT_PUBLIC_API_URL &&
+      process.env.NEXT_PUBLIC_API_URL.startsWith("https://") &&
+      !process.env.NEXT_PUBLIC_API_URL.includes("localhost") &&
+      !process.env.NEXT_PUBLIC_API_URL.includes("127.0.0.1")
+    ) {
+      let base = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, "");
+      if (!base.endsWith("/api/v1")) {
+        base = `${base}/api/v1`;
+      }
+      return base;
+    }
+
+    return "/api/v1";
+  }
+
+  // Server-side (SSR / SSG / Route Handlers)
   if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "") {
     let base = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, "");
     if (!base.endsWith("/api/v1")) {
@@ -18,18 +55,6 @@ function getApiBaseUrl(): string {
     return base;
   }
 
-  // Browser runtime environment detection
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local");
-    if (isLocalhost) {
-      return "http://localhost:8000/api/v1";
-    }
-    // Production browser: use relative /api/v1 proxying to backend to avoid cross-device localhost failures
-    return "/api/v1";
-  }
-
-  // Server-side default
   if (process.env.NODE_ENV === "production") {
     return "/api/v1";
   }

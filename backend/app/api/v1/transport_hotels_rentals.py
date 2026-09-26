@@ -144,6 +144,7 @@ def optimize_arrival_timing(
     return result
 
 @router.get("/hotels", response_model=List[HotelResponse])
+@router.get("/stays/destination/{destination_id}", response_model=List[HotelResponse])
 async def get_hotels(
     destination_id: str,
     style: Optional[str] = None,

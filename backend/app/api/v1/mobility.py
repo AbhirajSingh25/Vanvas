@@ -15,6 +15,7 @@ from app.services.action_link_generator import ActionLinkGenerator
 router = APIRouter()
 
 @router.get("/near", response_model=List[RentalOptionResponse])
+@router.get("/rentals", response_model=List[RentalOptionResponse])
 async def get_mobility_near(
     destination_id: Optional[str] = Query(None, description="Destination slug or ID"),
     lat: Optional[float] = Query(None, description="Latitude"),

@@ -87,6 +87,9 @@ def get_destinations(
     featured_only: bool = True,
     region: Optional[str] = None,
     search: Optional[str] = None,
+    one_day_only: Optional[bool] = None,
+    trek_only: Optional[bool] = None,
+    nearby_only: Optional[bool] = None,
     include_dynamic: bool = False,
     db: Session = Depends(get_db)
 ):
@@ -95,7 +98,7 @@ def get_destinations(
     Dynamic search destinations will NEVER enter this catalogue.
     """
     query = db.query(Destination)
-    if featured_only:
+    if featured_only and not one_day_only and not trek_only:
         query = query.filter(Destination.is_featured == True)
     elif not include_dynamic:
         query = query.filter(
@@ -103,6 +106,13 @@ def get_destinations(
             (Destination.id.like("dest-%")) |
             (~Destination.id.like("dyn-%"))
         )
+
+    if one_day_only:
+        query = query.filter(Destination.one_day_available == True)
+    if trek_only:
+        query = query.filter(Destination.trek_available == True)
+    if nearby_only:
+        query = query.filter(Destination.nearby_available == True)
 
     if region and region != "All":
         query = query.filter(Destination.region.ilike(f"%{region}%"))
@@ -416,3 +426,44 @@ async def get_destination_places(
             trust_source="VANVAS_CURATED",
         ))
     return results
+
+
+@router.get("/{destination_id}/hotels", response_model=List[HotelResponse])
+async def get_destination_hotels(
+    destination_id: str,
+    style: Optional[str] = None,
+    traveller_profile: Optional[str] = None,
+    max_price: Optional[float] = None,
+    check_in: Optional[str] = None,
+    check_out: Optional[str] = None,
+    adults: int = 1,
+    children: int = 0,
+    db: Session = Depends(get_db)
+):
+    from app.services.stay_matching_service import StayMatchingService
+    return await StayMatchingService.match_stays(
+        db=db,
+        destination_id=destination_id,
+        style=style,
+        traveller_profile=traveller_profile,
+        max_price=max_price,
+        check_in=check_in,
+        check_out=check_out,
+        adults=adults,
+        children=children,
+    )
+
+
+@router.get("/{destination_id}/rentals", response_model=List[RentalOptionResponse])
+async def get_destination_rentals(
+    destination_id: str,
+    vehicle_type: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    from app.services.mobility_service import MobilityService
+    return await MobilityService.get_mobility_listings(
+        db=db,
+        destination_slug_or_id=destination_id,
+        vehicle_type=vehicle_type,
+    )
+
