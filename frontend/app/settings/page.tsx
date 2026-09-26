@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { api } from "@/lib/api";
+import { api, resolveAvatarUrl } from "@/lib/api";
 import { UserPreferences, PasswordChangePayload } from "@/types";
 import {
   User, Compass, Globe, DollarSign, Bell, MapPin, Sparkles,
   Sun, Moon, Shield, Lock, Download, Trash2, CheckCircle2,
   AlertCircle, RefreshCw, ChevronRight, LogOut, Heart, Utensils,
-  Car, Users, Clock, Info, Check, Eye, EyeOff
+  Car, Users, Clock, Info, Check, Eye, EyeOff, Camera, Upload
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -21,7 +21,7 @@ export default function SettingsPage() {
 }
 
 function SettingsContent() {
-  const { user, logout, updateProfile, updatePreferences, changePassword, deleteAccount, exportData } = useAuth();
+  const { user, logout, updateProfile, updatePreferences, changePassword, deleteAccount, exportData, uploadAvatar, deleteAvatar } = useAuth();
 
   const [activeSection, setActiveSection] = useState<
     "account" | "travel" | "food" | "language" | "currency" | "notifications" | "location" | "copilot" | "appearance" | "privacy" | "security" | "about"
@@ -75,6 +75,61 @@ function SettingsContent() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Avatar Upload States (Phase 10)
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      setAvatarError("Please select a JPG, PNG, or WebP image.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("Selected image exceeds 5 MB limit. Please choose a smaller photo.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setAvatarLoading(true);
+    setAvatarError(null);
+    setAvatarSuccess(null);
+
+    try {
+      await uploadAvatar(file);
+      setAvatarSuccess("Profile photo updated and saved!");
+      setTimeout(() => setAvatarSuccess(null), 3000);
+    } catch (err: any) {
+      setAvatarError(err.message || "Failed to upload profile photo.");
+    } finally {
+      setAvatarLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAvatarDelete = async () => {
+    setAvatarLoading(true);
+    setAvatarError(null);
+    setAvatarSuccess(null);
+
+    try {
+      await deleteAvatar();
+      setAvatarSuccess("Profile photo removed.");
+      setTimeout(() => setAvatarSuccess(null), 3000);
+    } catch (err: any) {
+      setAvatarError(err.message || "Failed to remove profile photo.");
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
 
   // Initialize from user preferences
   useEffect(() => {
@@ -962,6 +1017,86 @@ function SettingsContent() {
                     <p className="text-xs text-[#20211D]/70 mt-1">
                       Manage account identity, session credentials, and permanent account deactivation.
                     </p>
+                  </div>
+
+                  {/* Profile Photo & Avatar Management (Phase 10) */}
+                  <div className="p-5 rounded-2xl bg-white border border-[#D8CBB2] space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-16 h-16 rounded-full bg-[#173B32] text-[#EFE5D2] flex items-center justify-center font-serif font-bold text-xl border-2 border-[#B49252] overflow-hidden shadow-sm shrink-0">
+                          {user?.avatar_url ? (
+                            <img
+                              src={resolveAvatarUrl(user.avatar_url)}
+                              alt={user.full_name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <span>{user?.full_name?.charAt(0).toUpperCase() || "V"}</span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="font-bold text-sm text-[#173B32]">
+                            Profile Photo / Avatar
+                          </div>
+                          <p className="text-[11px] text-[#20211D]/60 max-w-sm">
+                            JPG, PNG, or WebP. Max 5 MB. Appears in navigation, journey logs, and account records.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleAvatarFileSelect}
+                          accept="image/jpeg,image/png,image/webp,image/jpg"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={avatarLoading}
+                          className="px-4 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-60"
+                        >
+                          {avatarLoading ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Upload className="w-3.5 h-3.5 text-[#B49252]" />
+                          )}
+                          <span>Upload Photo</span>
+                        </button>
+
+                        {user?.avatar_url && (
+                          <button
+                            type="button"
+                            onClick={handleAvatarDelete}
+                            disabled={avatarLoading}
+                            className="px-3 py-2 rounded-xl bg-[#B65E3C]/10 text-[#B65E3C] hover:bg-[#B65E3C]/20 text-xs font-bold transition-colors cursor-pointer disabled:opacity-60"
+                            title="Remove Photo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {avatarSuccess && (
+                      <div className="p-3 rounded-xl bg-[#173B32]/10 border border-[#173B32]/30 text-xs text-[#173B32] flex items-center gap-2 animate-fadeIn">
+                        <CheckCircle2 className="w-4 h-4 text-[#173B32]" />
+                        <span>{avatarSuccess}</span>
+                      </div>
+                    )}
+
+                    {avatarError && (
+                      <div className="p-3 rounded-xl bg-[#B65E3C]/10 border border-[#B65E3C]/30 text-xs text-[#7B4D36] flex items-center gap-2 animate-fadeIn">
+                        <AlertCircle className="w-4 h-4 text-[#B65E3C]" />
+                        <span>{avatarError}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-5 rounded-2xl bg-white border border-[#D8CBB2] space-y-3 text-xs">

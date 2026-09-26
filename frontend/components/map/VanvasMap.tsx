@@ -121,45 +121,54 @@ const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string
   liquor: { bg: "bg-[#231A26]", border: "border-[#A06CD5]", text: "text-[#C8B6FF]", iconBg: "#7209B7" },
 };
 
-function getCategoryIcon(type: string) {
-  switch (type) {
+function getCategorySymbol(type: string): string {
+  switch (type.toLowerCase()) {
     case "food":
     case "dhaba":
-      return Utensils;
+      return "🍽️";
     case "cafe":
-      return Coffee;
+      return "☕";
     case "fuel":
-      return Fuel;
+      return "⛽";
     case "medical":
     case "hospital":
     case "pharmacy":
     case "emergency":
-      return Pill;
+      return "✚";
     case "stay":
     case "camp":
-      return Home;
+    case "stays":
+      return "🛏️";
     case "rental":
-      return Car;
+    case "rentals":
+      return "🚗";
     case "viewpoint":
+    case "views":
     case "summit":
-      return Mountain;
+      return "⛰️";
     case "temple":
-      return Building2;
+    case "temples":
+      return "🛕";
+    case "landmark":
+    case "landmarks":
+    case "heritage":
+    case "fort":
+      return "🏰";
     case "market":
     case "shop":
     case "convenience":
-      return ShoppingBag;
+      return "🛍️";
     case "liquor":
-      return Wine;
+      return "🍷";
     case "danger":
-      return AlertTriangle;
+      return "⚠️";
     case "start":
     case "origin":
-      return Compass;
+      return "🏁";
     case "destination":
-      return MapPin;
+      return "📍";
     default:
-      return MapPin;
+      return "📍";
   }
 }
 
@@ -364,7 +373,7 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
               font-weight: bold;
               font-size: 11px;
             ">
-              <span style="font-size: ${isSelected ? "14px" : "12px"};">📍</span>
+              <span style="font-size: ${isSelected ? "14px" : "12px"};">${getCategorySymbol(m.type)}</span>
             </div>
           `,
           iconSize: [isSelected ? 38 : 30, isSelected ? 38 : 30],

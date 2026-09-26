@@ -158,6 +158,17 @@ class DestinationBase(BaseModel):
     best_time_to_visit: Optional[str] = None
     weather_type: Optional[str] = "Cool / Mountain"
     hindi_name: Optional[str] = None
+    name_en: Optional[str] = None
+    name_hi: Optional[str] = None
+    subtitle_en: Optional[str] = None
+    subtitle_hi: Optional[str] = None
+    description_en: Optional[str] = None
+    description_hi: Optional[str] = None
+    hero_artwork: Optional[str] = None
+    hero_photo: Optional[str] = None
+    one_day_available: Optional[bool] = True
+    trek_available: Optional[bool] = False
+    nearby_available: Optional[bool] = True
     is_featured: bool = False
 
 class DestinationResponse(DestinationBase):

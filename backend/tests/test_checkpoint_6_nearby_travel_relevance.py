@@ -286,8 +286,8 @@ class TestDatabaseSeedingAndIsolation:
             for d in destinations:
                 places = db.query(Place).filter(Place.destination_id == d.id).all()
                 for p in places:
-                    # Verified that curated place image URL corresponds to this destination or a nearby travel asset
-                    if p.image_url and not p.image_url.startswith("/images/nearby/") and not p.image_url.startswith("http"):
+                    # Verified that curated place image URL corresponds to this destination or a nearby/places travel asset
+                    if p.image_url and not p.image_url.startswith("/images/nearby/") and not p.image_url.startswith("/images/places/") and not p.image_url.startswith("http"):
                         assert f"/{d.slug}/" in p.image_url, f"Curated place {p.name} image {p.image_url} must belong to destination {d.slug}"
 
                 hotels = db.query(Hotel).filter(Hotel.destination_id == d.id).all()

@@ -117,6 +117,17 @@ def get_destinations(
             "name": d.name,
             "slug": d.slug,
             "hindi_name": d.hindi_name,
+            "name_en": d.name_en or d.name,
+            "name_hi": d.name_hi or d.hindi_name,
+            "subtitle_en": d.subtitle_en or d.tagline,
+            "subtitle_hi": d.subtitle_hi,
+            "description_en": d.description_en or d.description,
+            "description_hi": d.description_hi,
+            "hero_artwork": d.hero_artwork or d.hero_image,
+            "hero_photo": d.hero_photo or d.hero_image,
+            "one_day_available": d.one_day_available if d.one_day_available is not None else True,
+            "trek_available": d.trek_available if d.trek_available is not None else False,
+            "nearby_available": d.nearby_available if d.nearby_available is not None else True,
             "state": d.state,
             "region": d.region,
             "tagline": d.tagline,
@@ -135,8 +146,10 @@ def get_destinations(
         results.append(d_dict)
 
     CANONICAL_SLUG_ORDER = [
-        "manali", "rishikesh", "tungnath-chandrashila", "kasol", "dharamshala",
-        "goa", "jaipur", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar"
+        "manali", "rishikesh", "tungnath-chandrashila", "kainchi-dham", "kasol", "dharamshala",
+        "goa", "jaipur", "murthal", "agra", "mathura-vrindavan", "neemrana", "damdama-sohna",
+        "alwar-siliserh", "sariska-bhangarh", "dehradun", "chandigarh", "morni-hills",
+        "lansdowne", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar"
     ]
     results.sort(key=lambda d: CANONICAL_SLUG_ORDER.index(d["slug"]) if d["slug"] in CANONICAL_SLUG_ORDER else 999)
     return results

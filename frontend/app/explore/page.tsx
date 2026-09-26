@@ -16,7 +16,7 @@ export default function ExploreIndexPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [visibleDestCount, setVisibleDestCount] = useState<number>(10);
+  const [visibleDestCount, setVisibleDestCount] = useState<number>(30);
 
   const loadDestinations = () => {
     setLoading(true);
