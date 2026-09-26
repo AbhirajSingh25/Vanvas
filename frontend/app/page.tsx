@@ -121,27 +121,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 1B: CHOOSE YOUR WAY TO TRAVEL (4 DISTINCT EXPERIENCE MODES) */}
+      {/* SECTION 1B: CHOOSE YOUR WAY TO TRAVEL (3 DISTINCT EXPERIENCE MODES) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#D8CBB2] pb-6">
           <DevanagariHeading
             devanagari="अपनी यात्रा चुनें"
             english="Choose Your Way to Travel"
-            subtitle="Four dedicated visual environments built for different travel mentalities."
+            subtitle="Three dedicated visual environments built for different travel mentalities."
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: CORE EXPLORER'S DESK */}
           <Link
             href="/explore"
-            className="group bg-[#FAF4E8] rounded-3xl p-6 border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+            className="group bg-[#FAF4E8] rounded-3xl p-7 border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
           >
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shadow-md">
                 <Compass className="w-6 h-6 text-[#B49252]" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-[#7B4D36] font-bold">
                   LAYER 01 • EXPLORER&apos;S DESK
                 </span>
@@ -153,7 +153,7 @@ export default function HomePage() {
                 Discover curated sanctuaries, river ghats, royal palaces, tea plantations, and hidden mountain valleys across India.
               </p>
             </div>
-            <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
+            <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
               <span>Explore Catalogue</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -162,13 +162,13 @@ export default function HomePage() {
           {/* Card 2: TREK EXPEDITION MODE */}
           <Link
             href="/treks"
-            className="group bg-[#111A16] text-[#EFE5D2] rounded-3xl p-6 border-2 border-[#2C3E35] hover:border-[#E05A2B] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+            className="group bg-[#111A16] text-[#EFE5D2] rounded-3xl p-7 border-2 border-[#2C3E35] hover:border-[#E05A2B] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
           >
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-[#E05A2B] text-white flex items-center justify-center shadow-md">
                 <Mountain className="w-6 h-6" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
                   LAYER 02 • FIELD JOURNAL
                 </span>
@@ -177,68 +177,38 @@ export default function HomePage() {
                 </h3>
               </div>
               <p className="text-xs text-[#A6BAAE] font-serif leading-relaxed">
-                Understand the mountain before you climb it. Elevation graphs, route comparisons, gear checklists & live trail cockpit.
+                Understand the mountain before you climb it. Elevation graphs, route comparisons, gear checklists &amp; live trail cockpit.
               </p>
             </div>
-            <div className="pt-3 border-t border-[#25372D] flex items-center justify-between text-xs font-bold text-[#E05A2B]">
+            <div className="pt-4 border-t border-[#25372D] flex items-center justify-between text-xs font-bold text-[#E05A2B]">
               <span>Find Your Mountain</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
 
-          {/* Card 3: ONE-DAY ROUND TRIP */}
+          {/* Card 3: DAY ESCAPE MODE */}
           <Link
             href="/one-day"
-            className="group bg-[#FFF9F0] rounded-3xl p-6 border-2 border-[#E5D5BA] hover:border-[#B65E3C] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+            className="group bg-[#FFF9F0] rounded-3xl p-7 border-2 border-[#E5D5BA] hover:border-[#B65E3C] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
           >
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-[#B65E3C] text-white flex items-center justify-center shadow-md">
                 <Clock className="w-6 h-6" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-[#B65E3C] font-bold">
-                  LAYER 03 • SPONTANEOUS ESCAPE
+                  LAYER 03 • DAY ESCAPE COCKPIT
                 </span>
                 <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
-                  One-Day Trips
+                  Day Escape Mode
                 </h3>
               </div>
               <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                &ldquo;We have one day. Let&apos;s go.&rdquo; Spontaneous road trips, friend group budget splitting, timeline boards & rental discovery.
+                &ldquo;Leave in the morning. Come back tonight.&rdquo; Editorial day-trip cockpit, road journal spine, group budget split &amp; verified stops.
               </p>
             </div>
-            <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#B65E3C]">
-              <span>Plan 1-Day Escape</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-          {/* Card 4: ASK VANVAS TRAVEL COPILOT */}
-          <Link
-            href="/copilot"
-            onClick={(e) => {
-              // If floating copilot trigger exists or opened via modal
-            }}
-            className="group bg-[#FAF4E8] rounded-3xl p-6 border-2 border-[#D8CBB2] hover:border-[#B49252] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#FAF4E8] flex items-center justify-center shadow-md">
-                <Sparkles className="w-6 h-6 text-[#B49252]" />
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
-                  LAYER 04 • UNIVERSAL COPILOT
-                </span>
-                <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B49252] transition-colors">
-                  Ask VANVAS
-                </h3>
-              </div>
-              <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                Universal travel intelligence for any place in India. Instant budget plans, timing advice, routes & zero-hallucination guidance.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
-              <span>Ask Anywhere</span>
+            <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#B65E3C]">
+              <span>Launch Day Escape</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>

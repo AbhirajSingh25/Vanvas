@@ -1,9 +1,10 @@
+import asyncio
 import httpx
 import math
 import logging
 import time
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from app.core.config import settings
 from app.providers.base import (
     WeatherProvider, PlacesProvider, ImageProvider,
@@ -477,10 +478,10 @@ class LivePlacesProvider(PlacesProvider):
 out center 60;"""
 
     async def _execute_overpass_query(self, query_str: str) -> List[Dict[str, Any]]:
-        """Executes an Overpass QL query across primary and backup endpoints with robust timeout."""
-        for endpoint in self.OVERPASS_ENDPOINTS:
+        """Executes an Overpass QL query across primary and backup endpoints with fast concurrent execution."""
+        async def _try_endpoint(endpoint: str) -> Optional[List[Dict[str, Any]]]:
             try:
-                async with httpx.AsyncClient(timeout=5.5, headers=self.headers) as client:
+                async with httpx.AsyncClient(timeout=2.8, headers=self.headers) as client:
                     res = await client.post(endpoint, data={"data": query_str})
                     if res.status_code == 200:
                         data = res.json()
@@ -489,10 +490,23 @@ out center 60;"""
                             return elements
             except Exception as e:
                 logger.debug(f"Overpass endpoint {endpoint} failed: {e}")
+            return None
+
+        # Try top endpoints concurrently
+        tasks = [asyncio.create_task(_try_endpoint(ep)) for ep in self.OVERPASS_ENDPOINTS[:3]]
+        for task in asyncio.as_completed(tasks, timeout=3.2):
+            try:
+                res = await task
+                if res:
+                    for t in tasks:
+                        t.cancel()
+                    return res
+            except Exception:
+                pass
         return []
 
     async def _query_photon_fallback(self, lat: float, lng: float, radius_km: float, category: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Fallback live OSM geocoding/POI discovery via Photon API."""
+        """Fallback live OSM geocoding/POI discovery via Photon API with concurrent term fetching."""
         try:
             cat_lower = (category or "").lower().strip()
             if cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
@@ -519,112 +533,120 @@ out center 60;"""
             results: List[Dict[str, Any]] = []
             seen_ids = set()
 
-            async with httpx.AsyncClient(timeout=4.0, headers=self.headers) as client:
-                for q_term in terms[:3]:
-                    url = f"https://photon.komoot.io/api/?lat={lat}&lon={lng}&q={q_term}&limit=15"
-                    try:
-                        res = await client.get(url)
-                        if res.status_code == 200:
-                            data = res.json()
-                            for feat in data.get("features", []):
-                                props = feat.get("properties", {})
-                                geom = feat.get("geometry", {})
-                                coords = geom.get("coordinates", [])
-                                if len(coords) < 2:
-                                    continue
-                                p_lng, p_lat = coords[0], coords[1]
-                                p_name = props.get("name")
-                                if not p_name:
-                                    continue
-                                osm_id = str(props.get("osm_id", p_name))
-                                if osm_id in seen_ids:
-                                    continue
-                                dist = self._haversine(lat, lng, p_lat, p_lng)
-                                if dist > radius_km:
-                                    continue
-                                
-                                osm_key = props.get("osm_key", "")
-                                osm_val = props.get("osm_value", "")
-                                tags = {osm_key: osm_val, "name": p_name}
-                                p_cat = self._map_osm_category(tags)
+            async def _fetch_term(client: httpx.AsyncClient, q_term: str):
+                url = f"https://photon.komoot.io/api/?lat={lat}&lon={lng}&q={q_term}&limit=12"
+                try:
+                    res = await client.get(url)
+                    if res.status_code == 200:
+                        return res.json().get("features", [])
+                except Exception:
+                    pass
+                return []
 
-                                if cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
-                                    if p_cat != "Cafés & Bakery" and not any(w in p_name.lower() for w in ["cafe", "café", "coffee", "bakery", "bake", "tea", "chai"]):
-                                        continue
-                                    p_cat = "Cafés & Bakery"
-                                elif cat_lower in ["food", "dining", "restaurant", "street_food", "local_food", "local food"]:
-                                    if p_cat not in ["Local Food", "Cafés & Bakery"] and not any(w in p_name.lower() for w in ["restaurant", "dhaba", "food", "kitchen", "bhojanalaya", "sweets", "diner"]):
-                                        continue
-                                elif cat_lower in ["attractions", "sightseeing", "attraction"]:
-                                    if p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails"]:
-                                        continue
-                                elif cat_lower in ["spiritual", "temple", "faith", "heritage"]:
-                                    if p_cat not in ["Culture & Heritage", "Attractions"]:
-                                        continue
+            async with httpx.AsyncClient(timeout=2.5, headers=self.headers) as client:
+                fetch_tasks = [_fetch_term(client, t) for t in terms[:3]]
+                all_feats_list = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+                
+                for feats in all_feats_list:
+                    if not isinstance(feats, list):
+                        continue
+                    for feat in feats:
+                        props = feat.get("properties", {})
+                        geom = feat.get("geometry", {})
+                        coords = geom.get("coordinates", [])
+                        if len(coords) < 2:
+                            continue
+                        p_lng, p_lat = coords[0], coords[1]
+                        p_name = props.get("name")
+                        if not p_name:
+                            continue
+                        osm_id = str(props.get("osm_id", p_name))
+                        if osm_id in seen_ids:
+                            continue
+                        dist = self._haversine(lat, lng, p_lat, p_lng)
+                        if dist > radius_km:
+                            continue
+                        
+                        osm_key = props.get("osm_key", "")
+                        osm_val = props.get("osm_value", "")
+                        tags = {osm_key: osm_val, "name": p_name}
+                        p_cat = self._map_osm_category(tags)
 
-                                addr_parts = [props.get("housenumber"), props.get("street"), props.get("district"), props.get("city"), props.get("state")]
-                                addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from search location"
+                        if cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
+                            if p_cat != "Cafés & Bakery" and not any(w in p_name.lower() for w in ["cafe", "café", "coffee", "bakery", "bake", "tea", "chai"]):
+                                continue
+                            p_cat = "Cafés & Bakery"
+                        elif cat_lower in ["food", "dining", "restaurant", "street_food", "local_food", "local food"]:
+                            if p_cat not in ["Local Food", "Cafés & Bakery"] and not any(w in p_name.lower() for w in ["restaurant", "dhaba", "food", "kitchen", "bhojanalaya", "sweets", "diner"]):
+                                continue
+                        elif cat_lower in ["attractions", "sightseeing", "attraction"]:
+                            if p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails"]:
+                                continue
+                        elif cat_lower in ["spiritual", "temple", "faith", "heritage"]:
+                            if p_cat not in ["Culture & Heritage", "Attractions"]:
+                                continue
 
-                                action_links = ActionLinkGenerator.generate_place_action_links(
-                                    name=p_name,
-                                    latitude=p_lat,
-                                    longitude=p_lng,
-                                    website=None,
-                                    phone=None,
-                                    booking_url=None,
-                                    source="openstreetmap",
-                                    source_id=osm_id,
-                                )
+                        addr_parts = [props.get("housenumber"), props.get("street"), props.get("district"), props.get("city"), props.get("state")]
+                        addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from search location"
 
-                                results.append({
-                                    "id": f"osm-{osm_id}",
-                                    "name": p_name,
-                                    "category": p_cat,
-                                    "subcategory": osm_val or p_cat,
-                                    "description": f"Verified {p_cat.lower()} located in {props.get('city') or props.get('state') or 'the area'}.",
-                                    "address": addr,
-                                    "latitude": p_lat,
-                                    "longitude": p_lng,
-                                    "price_level": None,
-                                    "price_range": None,
-                                    "approx_cost": None,
-                                    "rating": None,
-                                    "review_count": None,
-                                    "opening_time": None,
-                                    "closing_time": None,
-                                    "opening_hours": None,
-                                    "hours_available": False,
-                                    "is_open_now": None,
-                                    "open_now": None,
-                                    "business_status": "OPERATIONAL",
-                                    "phone": None,
-                                    "website": None,
-                                    "google_maps_url": f"https://www.google.com/maps/dir/?api=1&destination={p_lat:.6f},{p_lng:.6f}",
-                                    "recommended_duration_mins": 60,
-                                    "tags": f"{p_cat},OpenStreetMap",
-                                    "image_url": self._category_image(p_cat),
-                                    "photo_url": None,
-                                    "why_vanvas_recommends": None,
-                                    "is_must_visit": False,
-                                    "is_hidden_gem": False,
-                                    "is_indoor": p_cat in ["Cafés & Bakery", "Essentials & Medical", "Shops & Markets"],
-                                    "source": "openstreetmap",
-                                    "source_provider": "openstreetmap",
-                                    "source_id": osm_id,
-                                    "source_url": f"https://www.openstreetmap.org/node/{osm_id}",
-                                    "is_live": True,
-                                    "distance_km": dist,
-                                    "action_links": action_links,
-                                    "data_state": "LIVE",
-                                    "trust_source": "OPENSTREETMAP",
-                                    "last_verified_at": datetime.now(timezone.utc).isoformat(),
-                                    "menu_url": None,
-                                    "menu_source": None,
-                                    "menu_available": False,
-                                })
-                                seen_ids.add(osm_id)
-                    except Exception as e:
-                        logger.debug(f"Photon term {q_term} failed: {e}")
+                        action_links = ActionLinkGenerator.generate_place_action_links(
+                            name=p_name,
+                            latitude=p_lat,
+                            longitude=p_lng,
+                            website=None,
+                            phone=None,
+                            booking_url=None,
+                            source="openstreetmap",
+                            source_id=osm_id,
+                        )
+
+                        results.append({
+                            "id": f"osm-{osm_id}",
+                            "name": p_name,
+                            "category": p_cat,
+                            "subcategory": osm_val or p_cat,
+                            "description": f"Verified {p_cat.lower()} located in {props.get('city') or props.get('state') or 'the area'}.",
+                            "address": addr,
+                            "latitude": p_lat,
+                            "longitude": p_lng,
+                            "price_level": None,
+                            "price_range": None,
+                            "approx_cost": None,
+                            "rating": None,
+                            "review_count": None,
+                            "opening_time": None,
+                            "closing_time": None,
+                            "opening_hours": None,
+                            "hours_available": False,
+                            "is_open_now": None,
+                            "open_now": None,
+                            "business_status": "OPERATIONAL",
+                            "phone": None,
+                            "website": None,
+                            "google_maps_url": f"https://www.google.com/maps/dir/?api=1&destination={p_lat:.6f},{p_lng:.6f}",
+                            "recommended_duration_mins": 60,
+                            "tags": f"{p_cat},OpenStreetMap",
+                            "image_url": self._category_image(p_cat),
+                            "photo_url": None,
+                            "why_vanvas_recommends": None,
+                            "is_must_visit": False,
+                            "is_hidden_gem": False,
+                            "is_indoor": p_cat in ["Cafés & Bakery", "Essentials & Medical", "Shops & Markets"],
+                            "source": "openstreetmap",
+                            "source_provider": "openstreetmap",
+                            "source_id": osm_id,
+                            "source_url": f"https://www.openstreetmap.org/node/{osm_id}",
+                            "is_live": True,
+                            "distance_km": dist,
+                            "action_links": action_links,
+                            "data_state": "LIVE",
+                            "trust_source": "OPENSTREETMAP",
+                            "last_verified_at": datetime.now(timezone.utc).isoformat(),
+                            "menu_url": None,
+                            "menu_source": None,
+                            "menu_available": False,
+                        })
+                        seen_ids.add(osm_id)
             return results
         except Exception as e:
             logger.debug(f"Photon fallback query failed: {e}")

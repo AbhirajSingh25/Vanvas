@@ -49,6 +49,17 @@ export interface OneDayStop {
   lat?: number;
   lng?: number;
   imageUrl?: string;
+  phone?: string;
+  website?: string;
+  rating?: number;
+  reviewCount?: number;
+  openingTime?: string;
+  closingTime?: string;
+  isOpenNow?: boolean;
+  menuUrl?: string;
+  menuAvailable?: boolean;
+  priceLevel?: string;
+  googleMapsUrl?: string;
 }
 
 export interface OneDayRentalDiscovery {
@@ -60,6 +71,7 @@ export interface OneDayRentalDiscovery {
   verificationStatus: "VERIFIED" | "ESTIMATED" | "CONTACT PROVIDER" | "PRICE NOT VERIFIED";
   contactOrBookingTip: string;
   phone?: string;
+  website?: string;
   securityDeposit: number;
   includedKmPerDay: number;
   extraKmRate: number;
@@ -90,6 +102,13 @@ export interface OneDayPlan {
   originCity: string;
   destinationArea: string;
   vibes: OneDayVibe[];
+  tripStyle?: "QUICK ESCAPE" | "FOOD TRAIL" | "NATURE DAY" | "CULTURE DAY" | "ADVENTURE DAY" | "ROMANTIC / LEISURE";
+  weatherSummary?: {
+    tempC: number;
+    condition: string;
+    advisory?: string;
+    isRain?: boolean;
+  };
   primaryTransport: OneDayTransport;
   totalDistanceKm: number;
   totalTravelTime: string;
