@@ -548,6 +548,20 @@ out center 60;"""
                                 tags = {osm_key: osm_val, "name": p_name}
                                 p_cat = self._map_osm_category(tags)
 
+                                if cat_lower in ["coffee", "cafe", "cafes", "bakery", "cafés & bakery"]:
+                                    if p_cat != "Cafés & Bakery" and not any(w in p_name.lower() for w in ["cafe", "café", "coffee", "bakery", "bake", "tea", "chai"]):
+                                        continue
+                                    p_cat = "Cafés & Bakery"
+                                elif cat_lower in ["food", "dining", "restaurant", "street_food", "local_food", "local food"]:
+                                    if p_cat not in ["Local Food", "Cafés & Bakery"] and not any(w in p_name.lower() for w in ["restaurant", "dhaba", "food", "kitchen", "bhojanalaya", "sweets", "diner"]):
+                                        continue
+                                elif cat_lower in ["attractions", "sightseeing", "attraction"]:
+                                    if p_cat not in ["Attractions", "Culture & Heritage", "Nature & Trails"]:
+                                        continue
+                                elif cat_lower in ["spiritual", "temple", "faith", "heritage"]:
+                                    if p_cat not in ["Culture & Heritage", "Attractions"]:
+                                        continue
+
                                 addr_parts = [props.get("housenumber"), props.get("street"), props.get("district"), props.get("city"), props.get("state")]
                                 addr = ", ".join([p for p in addr_parts if p]) or f"{dist} km from search location"
 
