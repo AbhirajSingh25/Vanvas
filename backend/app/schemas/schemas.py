@@ -1300,3 +1300,89 @@ class AskVanvasCircleResponse(BaseModel):
     safety_advisories: List[str] = []
     estimated_cost_per_person: Optional[float] = None
 
+
+# ----------------- Direct 1-to-1 Chat Schemas -----------------
+class SoloDirectMessageCreate(BaseModel):
+    receiver_user_id: str
+    content: str = Field(..., min_length=1, max_length=2000)
+
+
+class SoloDirectMessageResponse(BaseModel):
+    id: str
+    match_id: str
+    sender_user_id: str
+    receiver_user_id: str
+    sender_name: str
+    sender_avatar_url: Optional[str] = None
+    content: str
+    is_read: bool = False
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ----------------- Destination Solo Field Intelligence Schemas -----------------
+class EmergencyContactItem(BaseModel):
+    label: str
+    number: str
+
+
+class SoloDestinationIntelligenceResponse(BaseModel):
+    destination_id: str
+    slug: str
+    name: str
+    state: str
+    region: str
+    tagline: str
+    atmosphere_type: str = "mountain"  # mountain, coastal, desert, heritage, spiritual, forest, urban
+    safe_areas: List[str] = []
+    getting_around: List[str] = []
+    stay_tips: List[str] = []
+    dining_tips: List[str] = []
+    solo_experiences: List[str] = []
+    etiquette: List[str] = []
+    emergency_contacts: List[EmergencyContactItem] = []
+    best_seasons: List[str] = []
+    weather_summary: Optional[str] = None
+    solo_friendliness_score: float = 4.8
+    packing_essentials: List[str] = []
+    money_connectivity: List[str] = []
+    source_metadata: Dict[str, Any] = {}
+
+
+# ----------------- Destination Recommendation Schemas -----------------
+class DestinationRecommendationResponse(BaseModel):
+    destination_id: str
+    destination_name: str
+    destination_slug: str
+    selected_styles: List[str] = []
+    total_places_matched: int = 0
+    recommended_places: List[PlaceResponse] = []
+    recommended_stays: List[HotelResponse] = []
+    recommended_mobility: List[RentalOptionResponse] = []
+    field_note: Optional[str] = None
+    style_breakdown: Dict[str, int] = {}
+
+
+# ----------------- Research Pipeline Schemas -----------------
+class DestinationResearchRequest(BaseModel):
+    query: str = Field(..., min_length=2, max_length=255)
+    force_refresh: bool = False
+
+
+class DestinationResearchResponse(BaseModel):
+    job_id: str
+    query: str
+    canonical_slug: str
+    destination_name: str
+    status: str
+    stage: str
+    destination: Dict[str, Any]
+    places_count: int
+    hotels_count: int
+    rentals_count: int
+    intelligence: SoloDestinationIntelligenceResponse
+    source_trail: List[Dict[str, Any]] = []
+
+

@@ -1337,7 +1337,7 @@ def seed_database():
                     "check_in_time": "11:00 AM",
                     "check_out_time": "10:00 AM",
                     "image_url": "/images/places/manali/categories/stay.webp",
-                    "booking_url": "https://booking.vanvas.com/himalayan-woods",
+                    "booking_url": None,
                     "badge": "Best for your trip"
                 }
             ],
@@ -1422,7 +1422,7 @@ def seed_database():
                     "check_in_time": "12:00 PM",
                     "check_out_time": "10:00 AM",
                     "image_url": "/images/places/spiti/categories/stay.webp",
-                    "booking_url": "https://booking.vanvas.com/spiti-homestay",
+                    "booking_url": None,
                     "badge": "Authentic Mudhouse"
                 }
             ],
@@ -1439,7 +1439,7 @@ def seed_database():
                     "check_in_time": "12:00 PM",
                     "check_out_time": "11:00 AM",
                     "image_url": "/images/places/kasol/categories/stay.webp",
-                    "booking_url": "https://booking.vanvas.com/parvati-woods",
+                    "booking_url": None,
                     "badge": "Riverside Alpine Lodge"
                 }
             ],
@@ -1456,7 +1456,7 @@ def seed_database():
                     "check_in_time": "02:00 PM",
                     "check_out_time": "11:00 AM",
                     "image_url": "/images/places/goa/categories/stay.webp",
-                    "booking_url": "https://booking.vanvas.com/fontainhas-villa",
+                    "booking_url": None,
                     "badge": "Latin Heritage Villa"
                 }
             ],
@@ -1473,7 +1473,7 @@ def seed_database():
                     "check_in_time": "02:00 PM",
                     "check_out_time": "12:00 PM",
                     "image_url": "/images/places/jaipur/categories/stay.webp",
-                    "booking_url": "https://booking.vanvas.com/samode-haveli",
+                    "booking_url": None,
                     "badge": "Royal Haveli"
                 }
             ],
@@ -1490,7 +1490,7 @@ def seed_database():
                     "check_in_time": "01:00 PM",
                     "check_out_time": "11:00 AM",
                     "image_url": "/images/places/dharamshala/categories/stay.webp",
-                    "booking_url": "https://booking.vanvas.com/chonor-house",
+                    "booking_url": None,
                     "badge": "Tibetan Cultural Sanctuary"
                 }
             ],
@@ -1507,7 +1507,7 @@ def seed_database():
                     "check_in_time": "02:00 PM",
                     "check_out_time": "11:00 AM",
                     "image_url": "/images/places/rishikesh/categories/stay.webp",
-                    "booking_url": "https://booking.vanvas.com/ganga-kinare",
+                    "booking_url": None,
                     "badge": "Private Ganga Ghat"
                 }
             ],
@@ -1524,7 +1524,7 @@ def seed_database():
                     "check_in_time": "01:00 PM",
                     "check_out_time": "11:00 AM",
                     "image_url": "/images/places/munnar/categories/stay.webp",
-                    "booking_url": "https://booking.vanvas.com/windermere-estate",
+                    "booking_url": None,
                     "badge": "Tea Planter Sanctuary"
                 }
             ],
@@ -1541,7 +1541,7 @@ def seed_database():
                     "check_in_time": "12:00 PM",
                     "check_out_time": "10:00 AM",
                     "image_url": "/images/places/tungnath-chandrashila/mountain-stay.jpg",
-                    "booking_url": "https://booking.vanvas.com/magpie-chopta",
+                    "booking_url": None,
                     "badge": "Alpine Camp Base"
                 },
                 {
@@ -1556,7 +1556,7 @@ def seed_database():
                     "check_in_time": "11:00 AM",
                     "check_out_time": "10:00 AM",
                     "image_url": "/images/places/tungnath-chandrashila/mountain-stay.jpg",
-                    "booking_url": "https://booking.vanvas.com/chopta-homestay",
+                    "booking_url": None,
                     "badge": "Trailhead Homestay"
                 }
             ]

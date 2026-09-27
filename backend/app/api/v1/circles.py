@@ -24,7 +24,8 @@ from app.schemas.schemas import (
     CircleMemberResponse, CircleMessageCreate, CircleMessageResponse,
     CircleActivityCreate, CircleActivityVoteRequest, CircleActivityResponse,
     TravelerBlockRequest, TravelerReportRequest, UserNotificationResponse,
-    AskVanvasCircleRequest, AskVanvasCircleResponse
+    AskVanvasCircleRequest, AskVanvasCircleResponse,
+    SoloDirectMessageCreate, SoloDirectMessageResponse
 )
 from app.api.deps import get_current_user
 from app.services.solo_matching_service import SoloMatchingService, calculate_haversine_km
@@ -1398,3 +1399,66 @@ def mark_all_notifications_read(
     ).update({"is_read": True})
     db.commit()
     return {"success": True, "message": "All notifications marked as read."}
+
+
+# =========================================================
+# PHASE 14 & 16: 1-TO-1 PRIVATE CHAT BETWEEN CONNECTED TRAVELERS
+# =========================================================
+
+@router.get("/solo/messages/{partner_user_or_match_id}", response_model=List[SoloDirectMessageResponse], tags=["Solo Chat"])
+def get_solo_direct_messages(
+    partner_user_or_match_id: str,
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get persistent 1-to-1 chat message history between connected solo travelers.
+    Requires an ACCEPTED connection match.
+    """
+    from app.services.solo_direct_chat_service import SoloDirectChatService
+    return SoloDirectChatService.get_messages(
+        db=db,
+        current_user_id=current_user.id,
+        partner_user_or_match_id=partner_user_or_match_id,
+        limit=limit
+    )
+
+
+@router.post("/solo/messages/{partner_user_or_match_id}", response_model=SoloDirectMessageResponse, tags=["Solo Chat"])
+def send_solo_direct_message_param(
+    partner_user_or_match_id: str,
+    msg_in: SoloDirectMessageCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Send a persistent private message to a connected traveler.
+    """
+    from app.services.solo_direct_chat_service import SoloDirectChatService
+    target_id = msg_in.receiver_user_id or partner_user_or_match_id
+    return SoloDirectChatService.send_message(
+        db=db,
+        current_user=current_user,
+        partner_user_or_match_id=target_id,
+        content=msg_in.content
+    )
+
+
+@router.post("/solo/messages", response_model=SoloDirectMessageResponse, tags=["Solo Chat"])
+def send_solo_direct_message_body(
+    msg_in: SoloDirectMessageCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Send a persistent private message to a connected traveler using request body.
+    """
+    from app.services.solo_direct_chat_service import SoloDirectChatService
+    return SoloDirectChatService.send_message(
+        db=db,
+        current_user=current_user,
+        partner_user_or_match_id=msg_in.receiver_user_id,
+        content=msg_in.content
+    )
+

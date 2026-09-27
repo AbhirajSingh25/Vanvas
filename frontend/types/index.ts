@@ -965,3 +965,77 @@ export interface AskVanvasCircleResponse {
   estimated_cost_per_person?: number;
 }
 
+export interface SoloDirectMessage {
+  id: string;
+  match_id: string;
+  sender_user_id: string;
+  receiver_user_id: string;
+  sender_name: string;
+  sender_avatar_url?: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface EmergencyContactItem {
+  label: string;
+  number: string;
+}
+
+export interface SoloDestinationIntelligence {
+  destination_id: string;
+  slug: string;
+  name: string;
+  state: string;
+  region: string;
+  tagline: string;
+  atmosphere_type: "mountain" | "coastal" | "desert" | "heritage" | "spiritual" | "forest" | "urban";
+  safe_areas: string[];
+  getting_around: string[];
+  stay_tips: string[];
+  dining_tips: string[];
+  solo_experiences: string[];
+  etiquette: string[];
+  emergency_contacts: EmergencyContactItem[];
+  best_seasons: string[];
+  weather_summary?: string;
+  solo_friendliness_score: number;
+  packing_essentials: string[];
+  money_connectivity: string[];
+  source_metadata?: Record<string, any>;
+}
+
+export interface DestinationRecommendation {
+  destination_id: string;
+  destination_name: string;
+  destination_slug: string;
+  selected_styles: string[];
+  total_places_matched: number;
+  recommended_places: Place[];
+  recommended_stays: Hotel[];
+  recommended_mobility: RentalOption[];
+  field_note?: string;
+  style_breakdown?: Record<string, number>;
+}
+
+export interface DestinationResearchResult {
+  job_id: string;
+  query: string;
+  canonical_slug: string;
+  destination_name: string;
+  status: string;
+  stage: string;
+  destination: Destination;
+  places_count: number;
+  hotels_count: number;
+  rentals_count: number;
+  intelligence: SoloDestinationIntelligence;
+  source_trail?: Array<{
+    step: string;
+    source: string;
+    count?: number;
+    timestamp: string;
+  }>;
+}
+
+

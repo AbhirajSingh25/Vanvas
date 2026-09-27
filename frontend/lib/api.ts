@@ -1055,5 +1055,45 @@ export const api = {
     return fetchApi("/notifications/read-all", {
       method: "POST",
     });
+  },
+
+  // ----------------- Destination Research & Field Intelligence -----------------
+  async getDestinationSoloIntelligence(slugOrId: string): Promise<any> {
+    return fetchApi(`/destinations/${encodeURIComponent(slugOrId)}/solo`);
+  },
+
+  async getDestinationRecommendations(
+    slugOrId: string,
+    styles?: string[],
+    budget?: string,
+    duration?: number
+  ): Promise<any> {
+    const params = new URLSearchParams();
+    if (styles && styles.length > 0) params.set("styles", styles.join(","));
+    if (budget) params.set("budget", budget);
+    if (duration) params.set("duration", duration.toString());
+    const queryStr = params.toString() ? `?${params.toString()}` : "";
+    return fetchApi(`/destinations/${encodeURIComponent(slugOrId)}/recommendations${queryStr}`);
+  },
+
+  async researchDestination(query: string, forceRefresh: boolean = false): Promise<any> {
+    return fetchApi("/destinations/research", {
+      method: "POST",
+      body: JSON.stringify({ query, force_refresh: forceRefresh }),
+      timeoutMs: 60000,
+    });
+  },
+
+  // ----------------- 1-to-1 Solo Direct Chat -----------------
+  async getSoloDirectMessages(partnerUserOrMatchId: string): Promise<any[]> {
+    return fetchApi(`/circles/solo/messages/${encodeURIComponent(partnerUserOrMatchId)}`);
+  },
+
+  async sendSoloDirectMessage(receiverUserId: string, content: string): Promise<any> {
+    return fetchApi("/circles/solo/messages", {
+      method: "POST",
+      body: JSON.stringify({ receiver_user_id: receiverUserId, content }),
+    });
   }
 };
+

@@ -836,3 +836,37 @@ class UserNotification(Base):
 
     user = relationship("User", back_populates="notifications")
 
+
+class SoloDirectMessage(Base):
+    __tablename__ = "solo_direct_messages"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    match_id = Column(String(36), ForeignKey("solo_matches.id"), nullable=False, index=True)
+    sender_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    receiver_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    content = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    match = relationship("SoloMatch")
+    sender = relationship("User", foreign_keys=[sender_user_id])
+    receiver = relationship("User", foreign_keys=[receiver_user_id])
+
+
+class ResearchJob(Base):
+    __tablename__ = "research_jobs"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    query = Column(String(255), nullable=False, index=True)
+    canonical_slug = Column(String(255), nullable=True, index=True)
+    destination_name = Column(String(255), nullable=True)
+    status = Column(String(50), default="completed", index=True)  # queued, running, completed, partial, failed
+    stage = Column(String(100), default="ready")
+    total_places_found = Column(Integer, default=0)
+    total_stays_found = Column(Integer, default=0)
+    total_mobility_found = Column(Integer, default=0)
+    result_summary = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+

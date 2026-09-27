@@ -26,7 +26,7 @@ from typing import List, Dict, Any, Optional
 INVALID_DOMAINS = {
     "example.com", "example.org", "example.net",
     "test.com", "placeholder.com", "fake.com", "domain.com",
-    "none", "null", "undefined", "localhost"
+    "none", "null", "undefined", "localhost", "booking.vanvas.com", "vanvas.com"
 }
 
 

@@ -696,13 +696,17 @@ export default function DestinationDetailPage() {
       {/* 2. DESTINATION OPERATIONAL MODES TAB BAR */}
       <div className="sticky top-20 z-30 bg-[#FAF7F0]/95 backdrop-blur-md border-y border-[#E5D5BA] py-3 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
-          {[
-            { id: "overview", label: "Overview", devanagari: "सफ़रनामा", icon: Compass },
-            { id: "solo", label: "Traveling Solo?", devanagari: "अकेले यात्री", icon: Users },
-            { id: "places", label: "Curated Places", devanagari: "पड़ाव", icon: Sparkles, count: places.length },
-            { id: "stays", label: "Stays & Sanctuaries", devanagari: "आशियाना", icon: BedDouble, count: hotels.length },
-            { id: "mobility", label: "Valley Mobility", devanagari: "सवारी", icon: Bike, count: rentals.length },
-          ].map((mode) => {
+          {(() => {
+            const isMountainValley = (destination?.region || "").toLowerCase().includes("himalay") || (destination?.region || "").toLowerCase().includes("valley") || (destination?.altitude_meters || 0) > 1200;
+            const mobilityLabel = isMountainValley ? "Valley Mobility" : "Local Mobility";
+            return [
+              { id: "overview", label: "Overview", devanagari: "सफ़रनामा", icon: Compass },
+              { id: "solo", label: "Traveling Solo?", devanagari: "अकेले यात्री", icon: Users },
+              { id: "places", label: "Curated Places", devanagari: "पड़ाव", icon: Sparkles, count: places.length },
+              { id: "stays", label: "Stays & Sanctuaries", devanagari: "आशियाना", icon: BedDouble, count: hotels.length },
+              { id: "mobility", label: mobilityLabel, devanagari: "सवारी", icon: Bike, count: rentals.length },
+            ];
+          })().map((mode) => {
             const Icon = mode.icon;
             const isActive = activeMode === mode.id;
             return (
@@ -1405,7 +1409,7 @@ export default function DestinationDetailPage() {
             <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  सवारी • Valley Mobility &amp; Rentals
+                  {((destination?.region || "").toLowerCase().includes("himalay") || (destination?.altitude_meters || 0) > 1200) ? "सवारी • Valley Mobility & Rentals" : "सवारी • Local Mobility & Transport"}
                 </span>
                 <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
                   <Bike className="w-6 h-6 text-[#B65E3C]" />

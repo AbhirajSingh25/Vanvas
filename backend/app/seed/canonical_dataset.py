@@ -1332,7 +1332,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                     'amenities': 'Rooftop Taj View,Mughal Courtyard,Swimming '
                                  'Pool,Spa',
                     'badge': 'Taj View Sanctuary',
-                    'booking_url': 'https://booking.vanvas.com/taj-view-retreat',
+                    'booking_url': None,
                     'check_in_time': '02:00 PM',
                     'check_out_time': '12:00 PM',
                     'hotel_style': 'Heritage / Taj View',
@@ -1346,7 +1346,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                               'amenities': 'Lakefront Rooms,Boating '
                                            'Deck,Aravalli Balcony,Restaurant',
                               'badge': 'Lake Palace Stay',
-                              'booking_url': 'https://booking.vanvas.com/siliserh-palace',
+                              'booking_url': None,
                               'check_in_time': '12:00 PM',
                               'check_out_time': '11:00 AM',
                               'hotel_style': 'Heritage / Lakefront Palace',
@@ -1360,7 +1360,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                           'amenities': 'Lake Access,Courtyard '
                                        'Garden,Terrace,Modernist Design',
                           'badge': 'Modernist Villa',
-                          'booking_url': 'https://booking.vanvas.com/sukhna-villa',
+                          'booking_url': None,
                           'check_in_time': '01:00 PM',
                           'check_out_time': '11:00 AM',
                           'hotel_style': 'Boutique / Modernist Villa',
@@ -1375,7 +1375,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                              'amenities': 'Lake Views,Nature Trails,Outdoor '
                                           'Pool,Spa,Archery',
                              'badge': 'Lakeside Resort',
-                             'booking_url': 'https://booking.vanvas.com/damdama-gateway',
+                             'booking_url': None,
                              'check_in_time': '02:00 PM',
                              'check_out_time': '11:00 AM',
                              'hotel_style': 'Resort / Lakeside Sanctuary',
@@ -1389,7 +1389,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                         'amenities': 'Foothill Balcony,Artisan '
                                      'Bakery,High-Speed WiFi,Garden',
                         'badge': 'Rajpur Heritage Retreat',
-                        'booking_url': 'https://booking.vanvas.com/rajpur-heritage',
+                        'booking_url': None,
                         'check_in_time': '01:00 PM',
                         'check_out_time': '11:00 AM',
                         'hotel_style': 'Heritage / Foothill Boutique',
@@ -1404,7 +1404,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                             'amenities': 'Riverside Balcony,Satvik '
                                          'Meals,Meditation Hall,Valley View',
                             'badge': 'Ashram Valley Homestay',
-                            'booking_url': 'https://booking.vanvas.com/kainchi-retreat',
+                            'booking_url': None,
                             'check_in_time': '12:00 PM',
                             'check_out_time': '10:00 AM',
                             'hotel_style': 'Homestay / Kumaon Valley',
@@ -1418,7 +1418,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                          'amenities': 'Blue Pine Balcony,Snow Peak '
                                       'Views,Garhwali Meals,Bonfire',
                          'badge': 'Blue Pine Lodge',
-                         'booking_url': 'https://booking.vanvas.com/lansdowne-pine-lodge',
+                         'booking_url': None,
                          'check_in_time': '12:00 PM',
                          'check_out_time': '10:00 AM',
                          'hotel_style': 'Homestay / Wooden Pine Cabin',
@@ -1433,7 +1433,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                                  'amenities': 'Satvik Dining,Spiritual '
                                               'Library,Temple Shuttle,WiFi',
                                  'badge': 'Temple Heritage Stay',
-                                 'booking_url': 'https://booking.vanvas.com/braj-heritage',
+                                 'booking_url': None,
                                  'check_in_time': '01:00 PM',
                                  'check_out_time': '11:00 AM',
                                  'hotel_style': 'Homestay / Temple Sanctuary',
@@ -1448,7 +1448,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                            'amenities': 'Pine Forest Balcony,Tikkar Taal '
                                         'View,Bonfire,Restaurant',
                            'badge': 'Pine Forest Resort',
-                           'booking_url': 'https://booking.vanvas.com/morni-heights',
+                           'booking_url': None,
                            'check_in_time': '12:00 PM',
                            'check_out_time': '10:00 AM',
                            'hotel_style': 'Resort / Pine Mountain View',
@@ -1462,7 +1462,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                        'amenities': 'Heritage Courtyard,24/7 Dining,Free '
                                     'Parking,WiFi',
                        'badge': 'Highway Heritage Resort',
-                       'booking_url': 'https://booking.vanvas.com/grand-haveli-murthal',
+                       'booking_url': None,
                        'check_in_time': '01:00 PM',
                        'check_out_time': '11:00 AM',
                        'hotel_style': 'Resort / Heritage',
@@ -1477,7 +1477,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                         'amenities': 'Stepped Courtyards,Pools,Zip-Line,Royal '
                                      'Dining,Spa',
                         'badge': 'Royal Fortress Palace',
-                        'booking_url': 'https://booking.vanvas.com/neemrana-fort',
+                        'booking_url': None,
                         'check_in_time': '02:00 PM',
                         'check_out_time': '11:00 AM',
                         'hotel_style': 'Heritage / 15th Century Palace',
@@ -1492,7 +1492,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                                 'amenities': 'Safari Desk,Campfire Lounge,Folk '
                                              'Music,Pool',
                                 'badge': 'Wilderness Camp',
-                                'booking_url': 'https://booking.vanvas.com/sariska-tiger-camp',
+                                'booking_url': None,
                                 'check_in_time': '01:00 PM',
                                 'check_out_time': '11:00 AM',
                                 'hotel_style': 'Resort / Wilderness Camp',

@@ -3,7 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.models import Destination, Place, Hotel, RentalOption, WeatherSnapshot
-from app.schemas.schemas import DestinationResponse, PlaceResponse, HotelResponse, RentalOptionResponse
+from app.schemas.schemas import (
+    DestinationResponse, PlaceResponse, HotelResponse, RentalOptionResponse,
+    DestinationResearchRequest, DestinationResearchResponse,
+    SoloDestinationIntelligenceResponse, DestinationRecommendationResponse
+)
 from app.providers.provider_factory import ProviderFactory
 from app.services.destination_intelligence import DestinationIntelligenceService
 
@@ -466,4 +470,64 @@ async def get_destination_rentals(
         destination_slug_or_id=destination_id,
         vehicle_type=vehicle_type,
     )
+
+
+# ----------------- Global Destination Research & Intelligence Endpoints -----------------
+
+@router.post("/research", response_model=DestinationResearchResponse)
+async def research_destination_pipeline(
+    research_in: DestinationResearchRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Executes the 12-step universal destination research pipeline for any destination (seeded or unseeded).
+    Geocodes, discovers POIs, accommodations, mobility, and synthesizes solo field intelligence.
+    """
+    from app.services.destination_research_service import DestinationResearchService
+    return await DestinationResearchService.run_destination_research_pipeline(
+        query=research_in.query,
+        db=db,
+        force_refresh=research_in.force_refresh
+    )
+
+
+@router.get("/{destination_id}/intelligence", response_model=SoloDestinationIntelligenceResponse)
+@router.get("/{destination_id}/solo", response_model=SoloDestinationIntelligenceResponse)
+async def get_destination_solo_intelligence(
+    destination_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Returns structured solo field intelligence, emergency contacts, safe zones, and local transit.
+    Destination-aware and never falls back to hardcoded Manali data.
+    """
+    from app.services.destination_research_service import DestinationResearchService
+    return await DestinationResearchService.get_solo_intelligence(
+        destination_slug_or_id=destination_id,
+        db=db
+    )
+
+
+@router.get("/{destination_id}/recommendations", response_model=DestinationRecommendationResponse)
+async def get_destination_recommendations(
+    destination_id: str,
+    styles: Optional[str] = Query(None, description="Comma-separated travel styles: slow_travel,adventure_trails,culture_heritage,cafes_food,nature_solitude,spiritual_ashrams,backpacking"),
+    budget: Optional[str] = Query(None),
+    duration: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns travel-style-aware recommendations for places, stays, and mobility.
+    Dynamically ranks and scores according to single or multi-selected styles.
+    """
+    from app.services.destination_research_service import DestinationResearchService
+    style_list = [s.strip() for s in styles.split(",") if s.strip()] if styles else []
+    return await DestinationResearchService.get_destination_recommendations(
+        destination_slug_or_id=destination_id,
+        travel_styles=style_list,
+        db=db,
+        budget=budget,
+        duration=duration
+    )
+
 
