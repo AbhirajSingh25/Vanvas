@@ -176,6 +176,8 @@ export default function DestinationDetailPage() {
   
   const [rentals, setRentals] = useState<RentalOption[]>([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
+  const [selectedRentalForModal, setSelectedRentalForModal] = useState<RentalOption | null>(null);
+  const [rentalModalOpen, setRentalModalOpen] = useState(false);
   
   // Operational Modes
   const [activeMode, setActiveMode] = useState<OperationalMode>("overview");
@@ -1523,6 +1525,17 @@ export default function DestinationDetailPage() {
                           </span>
                         </div>
 
+                        <button
+                          onClick={() => {
+                            setSelectedRentalForModal(r);
+                            setRentalModalOpen(true);
+                          }}
+                          className="w-full py-1.5 px-3 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]/40 text-[#173B32] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Info className="w-3.5 h-3.5 text-[#B65E3C]" />
+                          <span>Rental Terms &amp; Verified Details</span>
+                        </button>
+
                         {/* Action Links */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                           {phoneLink ? (
@@ -2065,6 +2078,177 @@ export default function DestinationDetailPage() {
                   Close
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXPANDED MOBILITY / RENTAL TERMS MODAL */}
+      {rentalModalOpen && selectedRentalForModal && destination && (
+        <div className="fixed inset-0 z-50 bg-[#0F2924]/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fadeIn">
+          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col justify-between">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-[#E5D5BA] flex items-center justify-between gap-3 sticky top-0 bg-[#FAF7F0] z-10">
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#B65E3C] block">
+                  VANVAS Mobility • Verified Provider Terms
+                </span>
+                <h3 className="font-serif font-bold text-lg sm:text-xl text-[#173B32]">
+                  {selectedRentalForModal.vehicle_name}
+                </h3>
+              </div>
+              <button
+                onClick={() => setRentalModalOpen(false)}
+                className="p-2 rounded-full hover:bg-[#EFE5D2] text-[#7B4D36] transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4">
+              {/* Artwork Header */}
+              <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                <VehicleArtwork
+                  type={selectedRentalForModal.vehicle_type}
+                  name={selectedRentalForModal.vehicle_name}
+                  destination={destination.name}
+                  context={{
+                    destination: destination.name,
+                    state: destination.state,
+                    region: destination.region,
+                  }}
+                  imageUrl={selectedRentalForModal.image_url}
+                  alt={selectedRentalForModal.vehicle_name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                    {selectedRentalForModal.provider_name}
+                  </span>
+                </div>
+              </div>
+
+              {/* Pricing & Deposit Summary */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs text-[#7B4D36]">
+                <div className="p-3 rounded-2xl bg-white border border-[#E5D5BA] space-y-0.5">
+                  <span className="font-mono uppercase text-[10px] text-[#7B4D36]/80 block">Daily Tariff</span>
+                  <span className="font-bold text-sm text-[#173B32]">
+                    {selectedRentalForModal.price_per_day ? `₹${selectedRentalForModal.price_per_day}/day` : "On Enquiry"}
+                  </span>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-[#E5D5BA] space-y-0.5">
+                  <span className="font-mono uppercase text-[10px] text-[#7B4D36]/80 block">Security Deposit</span>
+                  <span className="font-bold text-sm text-[#173B32]">
+                    {selectedRentalForModal.deposit_amount ? `₹${selectedRentalForModal.deposit_amount}` : "Standard/None"}
+                  </span>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-[#E5D5BA] space-y-0.5 col-span-2 sm:col-span-1">
+                  <span className="font-mono uppercase text-[10px] text-[#7B4D36]/80 block">Operating Hours</span>
+                  <span className="font-bold text-xs text-[#173B32] truncate block">
+                    {selectedRentalForModal.opening_hours || "08:00 AM - 08:00 PM"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Pickup Address */}
+              <div className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] space-y-1">
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  <span>Pickup Hub &amp; Operating Base</span>
+                </span>
+                <p className="text-xs font-semibold text-[#173B32]">
+                  {selectedRentalForModal.address || selectedRentalForModal.location || "Central Destination Stand"}
+                </p>
+                {selectedRentalForModal.distance_km && (
+                  <p className="text-[11px] text-[#7B4D36]">
+                    Approximately {selectedRentalForModal.distance_km} km from current waypoint
+                  </p>
+                )}
+              </div>
+
+              {/* Verified Rental Terms & Standard Policies */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7B4D36]">
+                  Verified Operating Guidelines
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-[#173B32]">
+                  <div className="p-2.5 rounded-xl bg-[#FAF4E8] border border-[#E5D5BA] flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#B65E3C] shrink-0" />
+                    <span><strong>Documents:</strong> Driving License + Govt ID</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#FAF4E8] border border-[#E5D5BA] flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#B65E3C] shrink-0" />
+                    <span><strong>Helmets:</strong> 1-2 ISI Certified Included</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#FAF4E8] border border-[#E5D5BA] flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#B65E3C] shrink-0" />
+                    <span><strong>Fuel:</strong> Return at same fuel level</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#FAF4E8] border border-[#E5D5BA] flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#B65E3C] shrink-0" />
+                    <span><strong>Permit:</strong> Registered Commercial Tourist Fleet</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-4 border-t border-[#E5D5BA] bg-[#FAF7F0] flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                {selectedRentalForModal.latitude && selectedRentalForModal.longitude && (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedRentalForModal.latitude},${selectedRentalForModal.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] transition-colors"
+                    title="Get Directions on Google Maps"
+                  >
+                    <Navigation className="w-4 h-4" />
+                  </a>
+                )}
+                {selectedRentalForModal.website && (
+                  <a
+                    href={selectedRentalForModal.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] transition-colors"
+                    title="Visit Official Operator Website"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {selectedRentalForModal.whatsapp && (
+                  <a
+                    href={`https://wa.me/${selectedRentalForModal.whatsapp.replace(/[^\d]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </a>
+                )}
+                {selectedRentalForModal.phone ? (
+                  <a
+                    href={`tel:${selectedRentalForModal.phone}`}
+                    className="px-4 py-2.5 bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>Call Provider</span>
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => setRentalModalOpen(false)}
+                    className="px-4 py-2.5 bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

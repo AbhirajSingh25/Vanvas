@@ -243,6 +243,18 @@ export const SEEDED_DESTINATION_PROFILES: Record<string, DestinationVisualProfil
     fallbackPath: "/images/destinations/fallbacks/valley.jpg",
     artDirectionPrompt: "Crescent bend of the sacred Ganges River, stone ghat steps, multi-layered temple spires, dawn river mist, soft brass lamp reflections, saffron and river blue-grey palette, no text.",
   },
+  jaisalmer: {
+    slug: "jaisalmer",
+    name: "Jaisalmer",
+    hindiName: "जैसलमेर",
+    terrainType: "desert",
+    elevationMeters: 225,
+    palette: { primary: "#7B4D36", secondary: "#B49252", accent: "#9E4D2E", mist: "#FAF4E8" },
+    illustrationPath: "/images/destinations/fallbacks/desert.jpg",
+    heroPath: "/images/destinations/fallbacks/desert.jpg",
+    fallbackPath: "/images/destinations/fallbacks/desert.jpg",
+    artDirectionPrompt: "Golden sandstone fortress of Sonar Qila rising from Thar desert dunes, intricately carved haveli jharokhas, warm desert sunset light, golden ochre and sandstone amber palette, no text.",
+  },
   "tungnath-chandrashila": {
     slug: "tungnath-chandrashila",
     name: "Tungnath–Chandrashila Trek",

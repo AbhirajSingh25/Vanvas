@@ -8,6 +8,7 @@ export type VehicleCategory =
   | "automatic_scooter"
   | "electric_scooter"
   | "mountain_bike"
+  | "car"
   | "universal_mobility";
 
 export interface MobilityContext {
@@ -63,14 +64,33 @@ export function resolveVehicleArtwork(
     destStr.includes("banaras") ||
     regionStr.includes("varanasi");
 
-  const isRajasthan =
+  const isGoa =
+    destStr.includes("goa") ||
+    destStr.includes("gokarna") ||
+    stateStr.includes("goa");
+
+  const isJaipur =
     destStr.includes("jaipur") ||
+    destStr.includes("pink city") ||
+    destStr.includes("amer");
+
+  const isUdaipur =
     destStr.includes("udaipur") ||
-    destStr.includes("jodhpur") ||
+    destStr.includes("pichola") ||
+    destStr.includes("mewar");
+
+  const isJaisalmer =
     destStr.includes("jaisalmer") ||
+    destStr.includes("thar") ||
+    destStr.includes("sam dunes");
+
+  const isRajasthan =
+    isJaipur ||
+    isUdaipur ||
+    isJaisalmer ||
+    destStr.includes("jodhpur") ||
     stateStr.includes("rajasthan") ||
     regionStr.includes("rajasthan") ||
-    regionStr.includes("mewar") ||
     regionStr.includes("rajputana") ||
     regionStr.includes("royal");
 
@@ -83,17 +103,14 @@ export function resolveVehicleArtwork(
     destStr.includes("varkala") ||
     stateStr.includes("kerala");
 
-  const isGoa =
-    destStr.includes("goa") ||
-    destStr.includes("gokarna") ||
-    stateStr.includes("goa");
-
-  const isLehSpiti =
+  const isLeh =
     destStr.includes("leh") ||
     destStr.includes("ladakh") ||
+    regionStr.includes("ladakh");
+
+  const isSpiti =
     destStr.includes("spiti") ||
     destStr.includes("kaza") ||
-    regionStr.includes("ladakh") ||
     regionStr.includes("spiti");
 
   const isHimachal =
@@ -101,6 +118,8 @@ export function resolveVehicleArtwork(
     destStr.includes("kasol") ||
     destStr.includes("shimla") ||
     destStr.includes("dharamshala") ||
+    destStr.includes("mcleod") ||
+    destStr.includes("bhagsu") ||
     destStr.includes("bir") ||
     destStr.includes("jibhi") ||
     stateStr.includes("himachal");
@@ -108,12 +127,28 @@ export function resolveVehicleArtwork(
   const isUttarakhand =
     destStr.includes("rishikesh") ||
     destStr.includes("mussoorie") ||
+    destStr.includes("landour") ||
     destStr.includes("dehradun") ||
     destStr.includes("tungnath") ||
     destStr.includes("chopta") ||
     destStr.includes("chandrashila") ||
     stateStr.includes("uttarakhand") ||
     regionStr.includes("garhwal");
+
+  const isCar =
+    query.includes("car") ||
+    query.includes("self-drive") ||
+    query.includes("self drive") ||
+    query.includes("suv") ||
+    query.includes("sedan") ||
+    query.includes("hatchback") ||
+    query.includes("thar") ||
+    query.includes("creta") ||
+    query.includes("swift") ||
+    query.includes("baleno") ||
+    query.includes("i20") ||
+    query.includes("scorpio") ||
+    query.includes("seltos");
 
   const isBicycle =
     query.includes("mountain_bike") ||
@@ -162,7 +197,13 @@ export function resolveVehicleArtwork(
     query.includes("interceptor") ||
     query.includes("hunter") ||
     query.includes("meteor") ||
-    query.includes("gt 650");
+    query.includes("gt 650") ||
+    query.includes("motorcycle") ||
+    query.includes("bike") ||
+    query.includes("fz") ||
+    query.includes("pulsar") ||
+    query.includes("apache") ||
+    query.includes("avenger");
 
   const isScooter =
     query.includes("automatic_scooter") ||
@@ -184,8 +225,172 @@ export function resolveVehicleArtwork(
     query.includes("aerox") ||
     query.includes("scooty");
 
-  // 1. Varanasi Old City & Riverfront Mobility
+  // 1. Goa Coastal & Heritage
+  if (isGoa) {
+    if (isCar) {
+      return {
+        src: "/images/vehicles/goa_coastal_car.jpg",
+        label: "Goa Coastal Self-Drive Car",
+        category: "car",
+      };
+    }
+    if (isBicycle) {
+      return {
+        src: "/images/vehicles/mountain_bike.jpg",
+        label: "Coastal Trail Bicycle",
+        category: "mountain_bike",
+      };
+    }
+    if (isElectric || isScooter) {
+      return {
+        src: "/images/vehicles/goa_beach_scooter.jpg",
+        label: "Anjuna Beach Palm Scooter",
+        category: "automatic_scooter",
+      };
+    }
+    if (isClassicBullet || isAdventure) {
+      return {
+        src: "/images/vehicles/goa_coastal_bullet.jpg",
+        label: "Goa Coastal Heritage Cruiser",
+        category: "classic_bullet",
+      };
+    }
+    return {
+      src: "/images/vehicles/goa_beach_scooter.jpg",
+      label: "Goan Coastal Mobility",
+      category: "automatic_scooter",
+    };
+  }
+
+  // 2. Jaipur Pink City & Amer
+  if (isJaipur) {
+    if (isCar) {
+      return {
+        src: "/images/vehicles/jaipur_amer_car.jpg",
+        label: "Pink City Amer Heritage Car",
+        category: "car",
+      };
+    }
+    if (isScooter || isElectric) {
+      return {
+        src: "/images/vehicles/jaipur_hawa_mahal_scooter.jpg",
+        label: "Hawa Mahal Pink City Scooter",
+        category: "automatic_scooter",
+      };
+    }
+    if (isClassicBullet || isAdventure) {
+      return {
+        src: "/images/vehicles/jaipur_pinkcity_bullet.jpg",
+        label: "Pink City Bazaar Cruiser",
+        category: "classic_bullet",
+      };
+    }
+    return {
+      src: "/images/vehicles/jaipur_hawa_mahal_scooter.jpg",
+      label: "Jaipur Heritage Mobility",
+      category: "automatic_scooter",
+    };
+  }
+
+  // 3. Udaipur Lake Pichola & Old City
+  if (isUdaipur) {
+    if (isCar) {
+      return {
+        src: "/images/vehicles/udaipur_lakeside_car.jpg",
+        label: "Lake Pichola Aravalli Car",
+        category: "car",
+      };
+    }
+    if (isScooter || isElectric) {
+      return {
+        src: "/images/vehicles/udaipur_pichola_scooter.jpg",
+        label: "Lake Pichola Waterfront Scooter",
+        category: "automatic_scooter",
+      };
+    }
+    if (isClassicBullet || isAdventure) {
+      return {
+        src: "/images/vehicles/udaipur_oldcity_bullet.jpg",
+        label: "Old City Mewar Heritage Cruiser",
+        category: "classic_bullet",
+      };
+    }
+    return {
+      src: "/images/vehicles/udaipur_pichola_scooter.jpg",
+      label: "Udaipur Lakeside Mobility",
+      category: "automatic_scooter",
+    };
+  }
+
+  // 4. Jaisalmer Thar Desert & Fort
+  if (isJaisalmer) {
+    if (isAdventure) {
+      return {
+        src: "/images/vehicles/rajasthan_desert_bike.jpg",
+        label: "Thar Desert Safari Tourer",
+        category: "adventure_motorcycle",
+      };
+    }
+    if (isClassicBullet) {
+      return {
+        src: "/images/vehicles/rajasthan_classic_bullet.jpg",
+        label: "Thar Sandstone Cruiser",
+        category: "classic_bullet",
+      };
+    }
+    if (isScooter || isElectric) {
+      return {
+        src: "/images/vehicles/rajasthan_urban_scooter.jpg",
+        label: "Golden Fort City Scooter",
+        category: "automatic_scooter",
+      };
+    }
+    return {
+      src: "/images/vehicles/rajasthan_classic_bullet.jpg",
+      label: "Jaisalmer Desert Mobility",
+      category: "classic_bullet",
+    };
+  }
+
+  // 5. General Rajasthan
+  if (isRajasthan) {
+    if (isClassicBullet) {
+      return {
+        src: "/images/vehicles/rajasthan_classic_bullet.jpg",
+        label: "Aravalli Classic Cruiser",
+        category: "classic_bullet",
+      };
+    }
+    if (isScooter || isElectric) {
+      return {
+        src: "/images/vehicles/rajasthan_urban_scooter.jpg",
+        label: "Heritage City Scooter",
+        category: "automatic_scooter",
+      };
+    }
+    if (isAdventure) {
+      return {
+        src: "/images/vehicles/rajasthan_desert_bike.jpg",
+        label: "Desert Highway Tourer",
+        category: "adventure_motorcycle",
+      };
+    }
+    return {
+      src: "/images/vehicles/rajasthan_urban_scooter.jpg",
+      label: "Rajputana Mobility Fleet",
+      category: "automatic_scooter",
+    };
+  }
+
+  // 6. Varanasi Old City & Riverfront Mobility
   if (isVaranasi) {
+    if (isCar) {
+      return {
+        src: "/images/vehicles/varanasi_ghat_car.jpg",
+        label: "Kashi Ghat Approach Car",
+        category: "car",
+      };
+    }
     if (isBicycle) {
       return {
         src: "/images/vehicles/varanasi_city_cycle.jpg",
@@ -193,21 +398,53 @@ export function resolveVehicleArtwork(
         category: "mountain_bike",
       };
     }
+    if (isClassicBullet || isAdventure) {
+      return {
+        src: "/images/vehicles/varanasi_bhu_bullet.jpg",
+        label: "BHU Campus Heritage Cruiser",
+        category: "classic_bullet",
+      };
+    }
     if (isScooter || isElectric) {
       return {
-        src: "/images/vehicles/varanasi_oldcity_scooter.jpg",
-        label: "Old City Ghat Scooter",
+        src: "/images/vehicles/varanasi_assi_scooter.jpg",
+        label: "Assi Ghat Morning Scooter",
         category: "automatic_scooter",
       };
     }
     return {
-      src: "/images/vehicles/varanasi_ghat_approach_scooter.jpg",
+      src: "/images/vehicles/varanasi_oldcity_scooter.jpg",
       label: "Varanasi Ghat Approach Fleet",
       category: "automatic_scooter",
     };
   }
 
-  // 2. Kerala & Munnar Tea Plantation & Western Ghats
+  // 7. Leh & Ladakh High-Altitude
+  if (isLeh) {
+    if (isAdventure) {
+      return {
+        src: "/images/vehicles/leh_high_altitude_motorcycle.jpg",
+        label: "Ladakh High-Altitude Adventure Tourer",
+        category: "adventure_motorcycle",
+      };
+    }
+    return {
+      src: "/images/vehicles/leh_palace_bullet.jpg",
+      label: "Leh Palace High-Altitude Bullet",
+      category: "classic_bullet",
+    };
+  }
+
+  // 8. Spiti Valley / Kaza Arid High-Altitude
+  if (isSpiti) {
+    return {
+      src: "/images/vehicles/spiti_arid_adventure_bike.jpg",
+      label: "Spiti Valley Arid Tourer",
+      category: "adventure_motorcycle",
+    };
+  }
+
+  // 9. Kerala & Munnar Tea Plantation & Western Ghats
   if (isKerala) {
     if (isBicycle) {
       return {
@@ -237,84 +474,7 @@ export function resolveVehicleArtwork(
     };
   }
 
-  // 3. Goa Coastal & Heritage
-  if (isGoa) {
-    if (isBicycle) {
-      return {
-        src: "/images/vehicles/mountain_bike.jpg",
-        label: "Coastal Trail Bicycle",
-        category: "mountain_bike",
-      };
-    }
-    if (isElectric || isScooter) {
-      return {
-        src: "/images/vehicles/coastal_palm_scooter.jpg",
-        label: "Goa Palm Coast Scooter",
-        category: "automatic_scooter",
-      };
-    }
-    if (isClassicBullet || isAdventure) {
-      return {
-        src: "/images/vehicles/coastal_heritage_bike.jpg",
-        label: "Portuguese Heritage Cruiser",
-        category: "adventure_motorcycle",
-      };
-    }
-    return {
-      src: "/images/vehicles/coastal_beach_scooter.jpg",
-      label: "Goan Coastal Mobility Fleet",
-      category: "automatic_scooter",
-    };
-  }
-
-  // 4. Rajasthan Heritage & Desert Highway
-  if (isRajasthan) {
-    if (isBicycle) {
-      return {
-        src: "/images/vehicles/mountain_bike.jpg",
-        label: "Heritage Fort Cycle",
-        category: "mountain_bike",
-      };
-    }
-    if (isClassicBullet) {
-      return {
-        src: "/images/vehicles/rajasthan_classic_bullet.jpg",
-        label: "Aravalli Classic Cruiser",
-        category: "classic_bullet",
-      };
-    }
-    if (isScooter || isElectric) {
-      return {
-        src: "/images/vehicles/rajasthan_urban_scooter.jpg",
-        label: "Heritage City Scooter",
-        category: "automatic_scooter",
-      };
-    }
-    if (isAdventure) {
-      return {
-        src: "/images/vehicles/rajasthan_desert_bike.jpg",
-        label: "Desert Highway Tourer",
-        category: "adventure_motorcycle",
-      };
-    }
-    return {
-      src: "/images/vehicles/rajasthan_urban_scooter.jpg",
-      label: "Rajputana Mobility Fleet",
-      category: "automatic_scooter",
-    };
-  }
-
-  // 5. Leh & Spiti Trans-Himalayan Arid
-  if (isLehSpiti) {
-    const isSpiti = destStr.includes("spiti") || destStr.includes("kaza");
-    return {
-      src: isSpiti ? "/images/vehicles/spiti_arid_adventure_bike.jpg" : "/images/vehicles/leh_high_altitude_motorcycle.jpg",
-      label: isSpiti ? "Spiti Valley Arid Tourer" : "Ladakh High-Altitude Tourer",
-      category: "adventure_motorcycle",
-    };
-  }
-
-  // 6. Himachal Valleys (Manali, Kasol, Dharamshala, etc.)
+  // 10. Himachal Valleys (Manali, Kasol, Dharamshala, etc.)
   if (isHimachal) {
     if (isBicycle) {
       return {
@@ -344,7 +504,7 @@ export function resolveVehicleArtwork(
     };
   }
 
-  // 7. Uttarakhand Foothills (Rishikesh, Mussoorie, Dehradun, etc.)
+  // 11. Uttarakhand Foothills (Rishikesh, Mussoorie, Dehradun, etc.)
   if (isUttarakhand) {
     if (isBicycle) {
       return {
@@ -356,14 +516,14 @@ export function resolveVehicleArtwork(
     if (isAdventure || isClassicBullet) {
       return {
         src: "/images/vehicles/uttarakhand_forest_bike.jpg",
-        label: "Garhwal Valley Tourer",
+        label: "Tapovan Foothill Cruiser",
         category: "adventure_motorcycle",
       };
     }
     if (isScooter || isElectric) {
       return {
         src: "/images/vehicles/uttarakhand_valley_scooter.jpg",
-        label: "Mountain Foothill Scooter",
+        label: "Ganga Foothill Scooter",
         category: "automatic_scooter",
       };
     }
@@ -374,7 +534,7 @@ export function resolveVehicleArtwork(
     };
   }
 
-  // 8. General Mountain Bike (Only if specifically a bicycle/cycle)
+  // 12. General Defaults
   if (isBicycle) {
     return {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -382,8 +542,6 @@ export function resolveVehicleArtwork(
       category: "mountain_bike",
     };
   }
-
-  // 9. Himalayan / Alpine General Defaults
   if (isElectric) {
     return {
       src: "/images/vehicles/electric_scooter.jpg",
@@ -413,7 +571,6 @@ export function resolveVehicleArtwork(
     };
   }
 
-  // 10. Universal Valley Mobility
   return {
     src: "/images/vehicles/automatic_scooter.jpg",
     label: "Valley Mobility Fleet",
