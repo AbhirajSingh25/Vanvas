@@ -1488,7 +1488,13 @@ export default function DestinationDetailPage() {
                   return (
                     <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
                       <div className="space-y-3">
-                        <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                        <div
+                          onClick={() => {
+                            setSelectedRentalForModal(r);
+                            setRentalModalOpen(true);
+                          }}
+                          className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group"
+                        >
                           <VehicleArtwork
                             type={r.vehicle_type}
                             name={r.vehicle_name}
@@ -1500,7 +1506,7 @@ export default function DestinationDetailPage() {
                             }}
                             imageUrl={r.image_url}
                             alt={r.vehicle_name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                           <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
                             <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${

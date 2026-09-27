@@ -236,6 +236,49 @@ async def get_destination_detail(
         hotels = db.query(Hotel).filter(Hotel.destination_id == dest.id).all()
         rentals = db.query(RentalOption).filter(RentalOption.destination_id == dest.id).all()
         weather_snapshots = db.query(WeatherSnapshot).filter(WeatherSnapshot.destination_id == dest.id).all()
+
+        if not places and dest.slug in ADDITIONAL_PLACES_BY_DEST:
+            places = [
+                {
+                    "id": f"p-{dest.slug}-{p.get('slug', idx)}",
+                    "destination_id": dest.id,
+                    **p,
+                    "data_state": "VERIFIED",
+                    "trust_source": "VANVAS_CURATED",
+                }
+                for idx, p in enumerate(ADDITIONAL_PLACES_BY_DEST[dest.slug])
+            ]
+
+        if not hotels and dest.slug in ADDITIONAL_HOTELS_BY_DEST:
+            hotels = [
+                {
+                    "id": f"h-{dest.slug}-{idx}",
+                    "destination_id": dest.id,
+                    **h,
+                    "data_state": "VERIFIED",
+                    "trust_source": "VANVAS_CURATED",
+                }
+                for idx, h in enumerate(ADDITIONAL_HOTELS_BY_DEST[dest.slug])
+            ]
+
+        if not rentals and dest.slug in ADDITIONAL_RENTALS_BY_DEST:
+            from app.services.mobility_service import MobilityService
+            rentals = [
+                {
+                    "id": f"r-{dest.slug}-{idx}",
+                    "destination_id": dest.id,
+                    **r,
+                    "image_url": r.get("image_url") or MobilityService.resolve_mobility_artwork(
+                        vehicle_type=r.get("vehicle_type", "scooter"),
+                        vehicle_name=r.get("vehicle_name", ""),
+                        destination_name=dest.name,
+                        destination_slug=dest.slug,
+                    ),
+                    "data_state": "VERIFIED",
+                    "trust_source": "VANVAS_CURATED",
+                }
+                for idx, r in enumerate(ADDITIONAL_RENTALS_BY_DEST[dest.slug])
+            ]
         
         if not weather_snapshots:
             try:
@@ -267,6 +310,7 @@ async def get_destination_detail(
         c_places = ADDITIONAL_PLACES_BY_DEST.get(canon["slug"], [])
         c_hotels = ADDITIONAL_HOTELS_BY_DEST.get(canon["slug"], [])
         c_rentals = ADDITIONAL_RENTALS_BY_DEST.get(canon["slug"], [])
+        from app.services.mobility_service import MobilityService
         return {
             "destination": {
                 "id": f"dest-{canon['slug']}",
@@ -302,6 +346,12 @@ async def get_destination_detail(
                     "id": f"r-{canon['slug']}-{idx}",
                     "destination_id": f"dest-{canon['slug']}",
                     **r,
+                    "image_url": r.get("image_url") or MobilityService.resolve_mobility_artwork(
+                        vehicle_type=r.get("vehicle_type", "scooter"),
+                        vehicle_name=r.get("vehicle_name", ""),
+                        destination_name=canon["name"],
+                        destination_slug=canon["slug"],
+                    ),
                     "data_state": "VERIFIED",
                     "trust_source": "VANVAS_CURATED",
                 }

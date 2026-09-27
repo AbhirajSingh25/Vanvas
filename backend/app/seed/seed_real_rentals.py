@@ -40,7 +40,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_valley_scooter.jpg"
+                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -51,7 +51,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 130.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_forest_bike.jpg"
+                "image_url": "/images/vehicles/rishikesh_ganga_bullet.jpg"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -92,7 +92,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_valley_scooter.jpg"
+                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -103,7 +103,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 120.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_forest_bike.jpg"
+                "image_url": "/images/vehicles/rishikesh_ganga_bullet.jpg"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -144,7 +144,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_valley_scooter.jpg"
+                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.jpg"
             }
         ]
     },
@@ -178,7 +178,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_valley_scooter.jpg"
+                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.jpg"
             },
             {
                 "vehicle_type": "Scooter",
@@ -189,7 +189,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_valley_scooter.jpg"
+                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -200,7 +200,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_pine_forest_bike.jpg"
+                "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.jpg"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -240,7 +240,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_valley_scooter.jpg"
+                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -251,7 +251,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_pine_forest_bike.jpg"
+                "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.jpg"
             }
         ]
     },
@@ -284,7 +284,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 80.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_valley_scooter.jpg"
+                "image_url": "/images/vehicles/manali_beas_scooter.jpg"
             },
             {
                 "vehicle_type": "Scooter",
@@ -295,7 +295,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 80.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_valley_scooter.jpg"
+                "image_url": "/images/vehicles/manali_beas_scooter.jpg"
             }
         ]
     },
@@ -327,7 +327,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_pine_forest_bike.jpg"
+                "image_url": "/images/vehicles/manali_solang_bullet.jpg"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -949,7 +949,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 90.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_valley_scooter.jpg"
+                "image_url": "/images/vehicles/mussoorie_landour_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -960,7 +960,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 160.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_forest_bike.jpg"
+                "image_url": "/images/vehicles/mussoorie_landour_bullet.jpg"
             }
         ]
     },
@@ -989,7 +989,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_forest_bike.jpg"
+                "image_url": "/images/vehicles/mussoorie_landour_bullet.jpg"
             }
         ]
     },
@@ -1020,7 +1020,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 90.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_valley_scooter.jpg"
+                "image_url": "/images/vehicles/kasol_valley_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1031,7 +1031,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/himachal_pine_forest_bike.jpg"
+                "image_url": "/images/vehicles/kasol_parvati_bullet.jpg"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -1073,7 +1073,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rajasthan_urban_scooter.jpg"
+                "image_url": "/images/vehicles/jaisalmer_fort_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1084,7 +1084,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rajasthan_classic_bullet.jpg"
+                "image_url": "/images/vehicles/jaisalmer_thar_bullet.jpg"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -1124,7 +1124,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 135.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rajasthan_classic_bullet.jpg"
+                "image_url": "/images/vehicles/jaisalmer_thar_bullet.jpg"
             },
             {
                 "vehicle_type": "Scooter",
@@ -1135,7 +1135,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 55.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rajasthan_urban_scooter.jpg"
+                "image_url": "/images/vehicles/jaisalmer_fort_scooter.jpg"
             }
         ]
     },
@@ -1168,7 +1168,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 80.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_valley_scooter.jpg"
+                "image_url": "/images/vehicles/kainchi_bhowali_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1179,7 +1179,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_forest_bike.jpg"
+                "image_url": "/images/vehicles/kainchi_kumaon_bike.jpg"
             }
         ]
     },
@@ -1252,7 +1252,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_valley_scooter.jpg"
+                "image_url": "/images/vehicles/dehradun_rajpur_scooter.jpg"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1263,7 +1263,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 130.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/uttarakhand_forest_bike.jpg"
+                "image_url": "/images/vehicles/dehradun_foothills_bike.jpg"
             }
         ]
     },
@@ -1294,7 +1294,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/automatic_scooter.jpg"
+                "image_url": "/images/vehicles/vrindavan_braj_scooter.jpg"
             },
             {
                 "vehicle_type": "Electric Scooter",
@@ -1305,7 +1305,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 50.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/electric_scooter.jpg"
+                "image_url": "/images/vehicles/vrindavan_braj_scooter.jpg"
             }
         ]
     }
