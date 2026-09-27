@@ -498,25 +498,32 @@ export default function DestinationDetailPage() {
     return typeof p.category === "string" ? p.category.toLowerCase() : "";
   };
 
-  const categories = [
+  const allCategories = [
     { id: "all", label: "All Places", count: places.length },
     { id: "must-visit", label: "Must Visit", count: places.filter((p) => Boolean(p.is_must_visit)).length },
     { id: "hidden", label: "Hidden Gems", count: places.filter((p) => Boolean(p.is_hidden_gem)).length },
-    { id: "cafes", label: "Cafés & Bakeries", count: places.filter((p) => getCategory(p).includes("café") || getCategory(p).includes("bakery") || getCategory(p).includes("cafe")).length },
-    { id: "nature", label: "Trails & Nature", count: places.filter((p) => getCategory(p).includes("nature") || getCategory(p).includes("trail") || getCategory(p).includes("waterfall") || getCategory(p).includes("scenic") || getCategory(p).includes("lake")).length },
-    { id: "food", label: "Local Food", count: places.filter((p) => getCategory(p).includes("food") || getCategory(p).includes("dhaba") || getCategory(p).includes("restaurant")).length },
-    { id: "culture", label: "Culture & Heritage", count: places.filter((p) => getCategory(p).includes("culture") || getCategory(p).includes("temple") || getCategory(p).includes("heritage") || getCategory(p).includes("monastery") || getCategory(p).includes("ghat") || getCategory(p).includes("spiritual") || getCategory(p).includes("fort")).length },
+    { id: "cafes", label: "Cafés & Bakeries", count: places.filter((p) => getCategory(p).includes("café") || getCategory(p).includes("bakery") || getCategory(p).includes("cafe") || getCategory(p).includes("coffee")).length },
+    { id: "food", label: "Local Food & Dhabas", count: places.filter((p) => getCategory(p).includes("food") || getCategory(p).includes("dhaba") || getCategory(p).includes("restaurant") || getCategory(p).includes("dining")).length },
+    { id: "nature", label: "Trails & Nature", count: places.filter((p) => getCategory(p).includes("nature") || getCategory(p).includes("trail") || getCategory(p).includes("waterfall") || getCategory(p).includes("scenic") || getCategory(p).includes("lake") || getCategory(p).includes("viewpoint")).length },
+    { id: "culture", label: "Culture & Temples", count: places.filter((p) => getCategory(p).includes("culture") || getCategory(p).includes("temple") || getCategory(p).includes("heritage") || getCategory(p).includes("monastery") || getCategory(p).includes("ghat") || getCategory(p).includes("spiritual") || getCategory(p).includes("fort") || getCategory(p).includes("palace") || getCategory(p).includes("ashram")).length },
+    { id: "adventure", label: "Adventure & Treks", count: places.filter((p) => getCategory(p).includes("adventure") || getCategory(p).includes("trek") || getCategory(p).includes("rafting") || getCategory(p).includes("paragliding") || getCategory(p).includes("skiing")).length },
+    { id: "markets", label: "Shops & Bazaars", count: places.filter((p) => getCategory(p).includes("market") || getCategory(p).includes("shop") || getCategory(p).includes("bazaar") || getCategory(p).includes("craft") || getCategory(p).includes("souvenir")).length },
   ];
+
+  // Automatically hide empty categories
+  const categories = allCategories.filter((c) => c.id === "all" || c.count > 0);
 
   const filteredPlaces = places.filter((p) => {
     if (selectedCategory === "all") return true;
     if (selectedCategory === "must-visit") return Boolean(p.is_must_visit);
     if (selectedCategory === "hidden") return Boolean(p.is_hidden_gem);
     const cat = getCategory(p);
-    if (selectedCategory === "cafes") return cat.includes("café") || cat.includes("bakery") || cat.includes("cafe");
-    if (selectedCategory === "nature") return cat.includes("nature") || cat.includes("trail") || cat.includes("waterfall") || cat.includes("scenic") || cat.includes("lake");
-    if (selectedCategory === "food") return cat.includes("food") || cat.includes("dhaba") || cat.includes("restaurant");
-    if (selectedCategory === "culture") return cat.includes("culture") || cat.includes("temple") || cat.includes("heritage") || cat.includes("monastery") || cat.includes("ghat") || cat.includes("spiritual") || cat.includes("fort");
+    if (selectedCategory === "cafes") return cat.includes("café") || cat.includes("bakery") || cat.includes("cafe") || cat.includes("coffee");
+    if (selectedCategory === "food") return cat.includes("food") || cat.includes("dhaba") || cat.includes("restaurant") || cat.includes("dining");
+    if (selectedCategory === "nature") return cat.includes("nature") || cat.includes("trail") || cat.includes("waterfall") || cat.includes("scenic") || cat.includes("lake") || cat.includes("viewpoint");
+    if (selectedCategory === "culture") return cat.includes("culture") || cat.includes("temple") || cat.includes("heritage") || cat.includes("monastery") || cat.includes("ghat") || cat.includes("spiritual") || cat.includes("fort") || cat.includes("palace") || cat.includes("ashram");
+    if (selectedCategory === "adventure") return cat.includes("adventure") || cat.includes("trek") || cat.includes("rafting") || cat.includes("paragliding") || cat.includes("skiing");
+    if (selectedCategory === "markets") return cat.includes("market") || cat.includes("shop") || cat.includes("bazaar") || cat.includes("craft") || cat.includes("souvenir");
     return true;
   });
 

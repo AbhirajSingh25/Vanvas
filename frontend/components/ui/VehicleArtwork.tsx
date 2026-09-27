@@ -119,17 +119,9 @@ export function resolveVehicleArtwork(
     query.includes("mountain_bike") ||
     query.includes("mountain bike") ||
     query.includes("bicycle") ||
-    query.includes("cycle") ||
     query.includes("mtb") ||
-    (query.includes("bike") &&
-      !query.includes("motor") &&
-      !query.includes("bullet") &&
-      !query.includes("enfield") &&
-      !query.includes("himalayan") &&
-      !query.includes("adventure") &&
-      !query.includes("scooter") &&
-      !query.includes("xpulse") &&
-      !query.includes("ktm"));
+    query.includes("pedal") ||
+    (query.includes("cycle") && !query.includes("motorcycle") && !query.includes("motor cycle"));
 
   const isElectric =
     query.includes("electric_scooter") ||
@@ -148,6 +140,7 @@ export function resolveVehicleArtwork(
     query.includes("adventure") ||
     query.includes("adv") ||
     query.includes("450") ||
+    query.includes("411") ||
     query.includes("off-road") ||
     query.includes("offroad") ||
     query.includes("scrambler") ||
@@ -167,6 +160,8 @@ export function resolveVehicleArtwork(
     query.includes("cruiser") ||
     query.includes("standard") ||
     query.includes("interceptor") ||
+    query.includes("hunter") ||
+    query.includes("meteor") ||
     query.includes("gt 650");
 
   const isScooter =
@@ -183,7 +178,11 @@ export function resolveVehicleArtwork(
     query.includes("fascino") ||
     query.includes("pleasure") ||
     query.includes("dio") ||
-    query.includes("burgman");
+    query.includes("burgman") ||
+    query.includes("destini") ||
+    query.includes("rayzr") ||
+    query.includes("aerox") ||
+    query.includes("scooty");
 
   // 1. Varanasi Old City & Riverfront Mobility
   if (isVaranasi) {
@@ -210,6 +209,13 @@ export function resolveVehicleArtwork(
 
   // 2. Kerala & Munnar Tea Plantation & Western Ghats
   if (isKerala) {
+    if (isBicycle) {
+      return {
+        src: "/images/vehicles/mountain_bike.jpg",
+        label: "Tea Estate Trail Cycle",
+        category: "mountain_bike",
+      };
+    }
     if (isScooter || isElectric) {
       return {
         src: "/images/vehicles/kerala_tea_plantation_scooter.jpg",
@@ -233,6 +239,13 @@ export function resolveVehicleArtwork(
 
   // 3. Goa Coastal & Heritage
   if (isGoa) {
+    if (isBicycle) {
+      return {
+        src: "/images/vehicles/mountain_bike.jpg",
+        label: "Coastal Trail Bicycle",
+        category: "mountain_bike",
+      };
+    }
     if (isElectric || isScooter) {
       return {
         src: "/images/vehicles/coastal_palm_scooter.jpg",
@@ -256,6 +269,13 @@ export function resolveVehicleArtwork(
 
   // 4. Rajasthan Heritage & Desert Highway
   if (isRajasthan) {
+    if (isBicycle) {
+      return {
+        src: "/images/vehicles/mountain_bike.jpg",
+        label: "Heritage Fort Cycle",
+        category: "mountain_bike",
+      };
+    }
     if (isClassicBullet) {
       return {
         src: "/images/vehicles/rajasthan_classic_bullet.jpg",
@@ -294,8 +314,15 @@ export function resolveVehicleArtwork(
     };
   }
 
-  // 6. Himachal Valleys
+  // 6. Himachal Valleys (Manali, Kasol, Dharamshala, etc.)
   if (isHimachal) {
+    if (isBicycle) {
+      return {
+        src: "/images/vehicles/mountain_bike.jpg",
+        label: "Mountain Downhill Trail Cycle",
+        category: "mountain_bike",
+      };
+    }
     if (isAdventure || isClassicBullet) {
       return {
         src: "/images/vehicles/himachal_pine_forest_bike.jpg",
@@ -310,10 +337,22 @@ export function resolveVehicleArtwork(
         category: "automatic_scooter",
       };
     }
+    return {
+      src: "/images/vehicles/himachal_valley_scooter.jpg",
+      label: "Himachal Valley Two-Wheeler",
+      category: "automatic_scooter",
+    };
   }
 
-  // 7. Uttarakhand Foothills
+  // 7. Uttarakhand Foothills (Rishikesh, Mussoorie, Dehradun, etc.)
   if (isUttarakhand) {
+    if (isBicycle) {
+      return {
+        src: "/images/vehicles/mountain_bike.jpg",
+        label: "Garhwal Foothill Trail Cycle",
+        category: "mountain_bike",
+      };
+    }
     if (isAdventure || isClassicBullet) {
       return {
         src: "/images/vehicles/uttarakhand_forest_bike.jpg",
@@ -328,9 +367,14 @@ export function resolveVehicleArtwork(
         category: "automatic_scooter",
       };
     }
+    return {
+      src: "/images/vehicles/uttarakhand_valley_scooter.jpg",
+      label: "Uttarakhand Foothill Two-Wheeler",
+      category: "automatic_scooter",
+    };
   }
 
-  // 8. General Mountain Bike
+  // 8. General Mountain Bike (Only if specifically a bicycle/cycle)
   if (isBicycle) {
     return {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -339,7 +383,7 @@ export function resolveVehicleArtwork(
     };
   }
 
-  // 5. Himalayan / Alpine Defaults
+  // 9. Himalayan / Alpine General Defaults
   if (isElectric) {
     return {
       src: "/images/vehicles/electric_scooter.jpg",
@@ -369,11 +413,11 @@ export function resolveVehicleArtwork(
     };
   }
 
-  // 6. Universal Valley Mobility
+  // 10. Universal Valley Mobility
   return {
-    src: "/images/vehicles/universal_mobility.jpg",
+    src: "/images/vehicles/automatic_scooter.jpg",
     label: "Valley Mobility Fleet",
-    category: "universal_mobility",
+    category: "automatic_scooter",
   };
 }
 

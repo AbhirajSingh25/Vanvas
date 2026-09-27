@@ -43,6 +43,7 @@ export const Header: React.FC = () => {
 
   const navLinks = [
     { name: "Explore", devanagari: "खोज", href: "/explore", icon: Compass },
+    { name: "Solo", devanagari: "स्वतंत्र", href: "/solo", icon: Compass },
     { name: "Treks", devanagari: "पदयात्रा", href: "/treks", icon: Mountain },
     { name: "One Day", devanagari: "एक दिवसीय", href: "/one-day", icon: Clock },
     { name: "Trips", devanagari: "यात्रा", href: "/trips", icon: Calendar },

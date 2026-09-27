@@ -115,7 +115,7 @@
 }
 
 /* ===================================================
-   VANVAS Global Night Camp Dark Mode Surface Mapping
+   VANVAS Global Night Camp Dark Mode Surface & Readability Mapping
    =================================================== */
 html.dark {
   color-scheme: dark;
@@ -123,14 +123,14 @@ html.dark {
 
 html.dark .journal-card {
   background-color: #111A16 !important;
-  border-color: rgba(216, 222, 213, 0.16) !important;
+  border-color: rgba(216, 222, 213, 0.22) !important;
   box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 2px 6px 0 rgba(0, 0, 0, 0.4) !important;
 }
 
 html.dark .travel-stamp {
-  border-color: #C49A45 !important;
-  background-color: rgba(196, 154, 69, 0.12) !important;
-  color: #C49A45 !important;
+  border-color: #D4A855 !important;
+  background-color: rgba(196, 154, 69, 0.15) !important;
+  color: #E8C170 !important;
 }
 
 html.dark .postage-edge {
@@ -139,9 +139,11 @@ html.dark .postage-edge {
 
 /* Background & card surfaces in Night Camp */
 html.dark .bg-\[\#FAF4E8\],
+html.dark .bg-\[\#FAF4E8\]\/90,
 html.dark .bg-\[\#FAF4E8\]\/92,
 html.dark .bg-\[\#FAF4E8\]\/95,
 html.dark .bg-\[\#EFE5D2\],
+html.dark .bg-\[\#EFE5D2\]\/90,
 html.dark .bg-\[\#EFE5D2\]\/92,
 html.dark .bg-\[\#EFE5D2\]\/95 {
   background-color: #0D1512 !important;
@@ -159,54 +161,109 @@ html.dark .bg-white\/95 {
   background-color: #16241E !important;
 }
 
+html.dark .bg-\[\#E5D5BA\],
 html.dark .bg-\[\#E5D5BA\]\/30,
 html.dark .bg-\[\#E5D5BA\]\/40,
 html.dark .bg-\[\#E5D5BA\]\/50,
-html.dark .bg-\[\#E5D5BA\]\/60 {
-  background-color: rgba(26, 44, 36, 0.6) !important;
+html.dark .bg-\[\#E5D5BA\]\/60,
+html.dark .bg-\[\#E5D5BA\]\/70,
+html.dark .bg-\[\#EFE5D2\]\/50,
+html.dark .bg-\[\#EFE5D2\]\/70 {
+  background-color: #1A2C24 !important;
 }
 
+html.dark .hover\:bg-\[\#E5D5BA\]:hover,
 html.dark .hover\:bg-\[\#E5D5BA\]\/40:hover,
 html.dark .hover\:bg-\[\#E5D5BA\]\/50:hover,
-html.dark .hover\:bg-\[\#E5D5BA\]\/60:hover {
-  background-color: rgba(34, 56, 46, 0.8) !important;
+html.dark .hover\:bg-\[\#E5D5BA\]\/60:hover,
+html.dark .hover\:bg-\[\#EAE0CB\]:hover,
+html.dark .hover\:bg-\[\#EFE5D2\]:hover {
+  background-color: #22382E !important;
 }
 
 /* Borders in Night Camp */
 html.dark .border-\[\#D8CBB2\],
 html.dark .border-\[\#E5D5BA\],
 html.dark .border-\[\#D8CBB2\]\/40,
+html.dark .border-\[\#D8CBB2\]\/50,
 html.dark .border-\[\#D8CBB2\]\/60,
 html.dark .border-\[\#D8CBB2\]\/70,
 html.dark .border-\[\#E5D5BA\]\/40,
 html.dark .border-\[\#E5D5BA\]\/60 {
-  border-color: rgba(216, 222, 213, 0.16) !important;
+  border-color: rgba(216, 222, 213, 0.22) !important;
 }
 
-/* Text and Typography in Night Camp */
+/* Primary Forest Green text remapped to clear ivory/cream in Night Camp */
+html.dark .text-\[\#173B32\],
+html.dark h1.text-\[\#173B32\],
+html.dark h2.text-\[\#173B32\],
+html.dark h3.text-\[\#173B32\],
+html.dark h4.text-\[\#173B32\],
+html.dark h5.text-\[\#173B32\],
+html.dark strong.text-\[\#173B32\],
+html.dark span.text-\[\#173B32\],
+html.dark p.text-\[\#173B32\],
+html.dark div.text-\[\#173B32\],
+html.dark a.text-\[\#173B32\],
+html.dark label.text-\[\#173B32\] {
+  color: #ECEAE4 !important;
+}
+
+html.dark .text-\[\#173B32\]\/80,
+html.dark .text-\[\#173B32\]\/70,
+html.dark .text-\[\#173B32\]\/60 {
+  color: #C2D4CC !important;
+}
+
+/* Charcoal text remapped in Night Camp */
 html.dark .text-\[\#20211D\] {
   color: #ECEAE4 !important;
 }
 
+html.dark .text-\[\#20211D\]\/90,
+html.dark .text-\[\#20211D\]\/85,
 html.dark .text-\[\#20211D\]\/80,
 html.dark .text-\[\#20211D\]\/75,
 html.dark .text-\[\#20211D\]\/70 {
-  color: rgba(236, 234, 228, 0.82) !important;
+  color: rgba(236, 234, 228, 0.88) !important;
 }
 
 html.dark .text-\[\#20211D\]\/65,
 html.dark .text-\[\#20211D\]\/60,
 html.dark .text-\[\#20211D\]\/50 {
-  color: rgba(236, 234, 228, 0.65) !important;
+  color: rgba(236, 234, 228, 0.72) !important;
 }
 
-/* Headings and primary text in Night Camp */
-html.dark h1.text-\[\#173B32\],
-html.dark h2.text-\[\#173B32\],
-html.dark h3.text-\[\#173B32\],
-html.dark h4.text-\[\#173B32\],
-html.dark strong.text-\[\#173B32\] {
-  color: #ECEAE4 !important;
+/* Burnt Earth / Dark Brown remapped to warm legible terracotta-sand in Night Camp */
+html.dark .text-\[\#7B4D36\],
+html.dark span.text-\[\#7B4D36\],
+html.dark p.text-\[\#7B4D36\],
+html.dark div.text-\[\#7B4D36\],
+html.dark label.text-\[\#7B4D36\] {
+  color: #E2B79A !important;
+}
+
+html.dark .text-\[\#7B4D36\]\/80,
+html.dark .text-\[\#7B4D36\]\/70,
+html.dark .text-\[\#7B4D36\]\/60 {
+  color: rgba(226, 183, 154, 0.78) !important;
+}
+
+/* Moss green remapped to crisp mint-sage in Night Camp */
+html.dark .text-\[\#536B52\],
+html.dark span.text-\[\#536B52\],
+html.dark p.text-\[\#536B52\],
+html.dark div.text-\[\#536B52\] {
+  color: #9DBFA0 !important;
+}
+
+/* Terracotta and Mustard accents glow in Night Camp */
+html.dark .text-\[\#B65E3C\] {
+  color: #F08058 !important;
+}
+
+html.dark .text-\[\#B49252\] {
+  color: #D4A855 !important;
 }
 
 /* Form controls in Night Camp */
@@ -215,12 +272,12 @@ html.dark textarea,
 html.dark select {
   background-color: #16241E !important;
   color: #ECEAE4 !important;
-  border-color: rgba(216, 222, 213, 0.2) !important;
+  border-color: rgba(216, 222, 213, 0.28) !important;
 }
 
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-  color: rgba(236, 234, 228, 0.4) !important;
+  color: rgba(236, 234, 228, 0.5) !important;
 }
 
 /* Safe area insets */
