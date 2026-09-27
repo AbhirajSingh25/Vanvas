@@ -316,9 +316,10 @@ class MobilityService:
 
         is_car = any(k in query for k in ["car", "self-drive", "self drive", "suv", "sedan", "hatchback", "thar", "creta", "swift", "baleno", "i20", "scorpio", "seltos"])
         is_bicycle = any(k in query for k in ["bicycle", "cycle", "mtb", "pedal"]) and "motor" not in query
-        is_scooter = any(k in query for k in ["scooter", "activa", "jupiter", "access", "vespa", "moped", "ntorq", "fascino", "dio", "pleasure", "burgman", "electric", "ev", "ather", "ola", "scooty"])
-        is_adv = any(k in query for k in ["himalayan", "adventure", "adv", "450", "411", "xpulse", "off-road", "rally"])
+        is_electric = any(k in query for k in ["electric", "ev", "ather", "ola", "chetak", "iqube"])
+        is_adv = (any(k in query for k in ["himalayan", "adventure", "adv", "450", "411", "xpulse", "off-road", "rally", "touring"])) and not is_electric
         is_bullet = any(k in query for k in ["bullet", "classic", "enfield", "350", "cruiser", "hunter", "meteor", "interceptor", "motorcycle", "bike", "fz", "pulsar", "apache", "avenger"])
+        is_scooter = any(k in query for k in ["scooter", "activa", "jupiter", "access", "vespa", "moped", "ntorq", "fascino", "dio", "pleasure", "burgman", "scooty"]) or is_electric
 
         # 1. Goa Coastal
         if is_goa:
@@ -419,6 +420,8 @@ class MobilityService:
         # Default fallbacks
         if is_bicycle:
             return "/images/vehicles/mountain_bike.jpg"
+        if is_electric:
+            return "/images/vehicles/electric_scooter.jpg"
         if is_adv:
             return "/images/vehicles/adventure_motorcycle.jpg"
         if is_bullet:

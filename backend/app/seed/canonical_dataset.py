@@ -1575,7 +1575,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Fatehabad Road, Tajg
                          'check_in_time': '12:00 PM',
                          'check_out_time': '11:00 AM',
                          'hotel_style': 'Heritage / Sandstone Haveli',
-                         'image_url': '/images/destinations/fallbacks/desert.jpg',
+                         'image_url': '/images/places/universal/heritage.webp',
                          'latitude': 26.914,
                          'longitude': 70.914,
                          'name': 'Sonar Sandstone Heritage Haveli',
