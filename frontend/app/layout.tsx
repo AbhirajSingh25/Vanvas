@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display, Noto_Serif_Devanagari } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -43,15 +44,47 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${notoSerifDevanagari.variable}`}
     >
-      <body className="min-h-screen flex flex-col bg-[#EFE5D2] text-[#20211D] antialiased selection:bg-[#B65E3C] selection:text-[#EFE5D2]">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var storedTheme = localStorage.getItem('vanvas_theme');
+                  var theme = storedTheme || 'system';
+                  var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    document.documentElement.style.colorScheme = 'dark';
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    document.documentElement.style.colorScheme = 'light';
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body
+        suppressHydrationWarning
+        className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-[#B65E3C] selection:text-[#FAF7F0]"
+      >
         <AuthProvider>
-          <Header />
-          <main className="flex-1 pb-16 md:pb-0">{children}</main>
-          <Footer />
-          <MobileNav />
-          <Analytics />
+          <ThemeProvider>
+            <Header />
+            <main className="flex-1 pb-16 md:pb-0">{children}</main>
+            <Footer />
+            <MobileNav />
+            <Analytics />
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

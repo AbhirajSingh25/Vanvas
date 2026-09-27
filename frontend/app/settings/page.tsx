@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
 
+import { useTheme } from "@/context/ThemeContext";
+
 export default function SettingsPage() {
   return (
     <ProtectedRoute>
@@ -25,6 +27,7 @@ export default function SettingsPage() {
 
 function SettingsContent() {
   const { user, logout, updateProfile, updatePreferences, changePassword, deleteAccount, exportData } = useAuth();
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   const [activeSection, setActiveSection] = useState<
     "account" | "travel" | "solo" | "food" | "language" | "currency" | "notifications" | "location" | "copilot" | "appearance" | "privacy" | "security" | "about"
@@ -41,7 +44,6 @@ function SettingsContent() {
   const [language, setLanguage] = useState("en");
   const [region, setRegion] = useState("India");
   const [currency, setCurrency] = useState("INR");
-  const [theme, setTheme] = useState("system");
   const [locationMode, setLocationMode] = useState("ask_every_time");
 
   // Notifications
@@ -93,7 +95,9 @@ function SettingsContent() {
       setLanguage(p.language || "en");
       setRegion(p.region || "India");
       setCurrency(p.currency || "INR");
-      setTheme(p.theme || "system");
+      if (p.theme && (p.theme === "light" || p.theme === "dark" || p.theme === "system")) {
+        setTheme(p.theme as any);
+      }
       setLocationMode(p.location_mode || "ask_every_time");
       setNotifyReminders(p.notify_trip_reminders !== false);
       setNotifyChanges(p.notify_trip_changes !== false);
@@ -107,25 +111,6 @@ function SettingsContent() {
       setUseTripContext(p.ai_use_trip_context !== false);
     }
   }, [user]);
-
-  // Apply Theme Preference
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const root = document.documentElement;
-      if (theme === "dark") {
-        root.classList.add("dark");
-      } else if (theme === "light") {
-        root.classList.remove("dark");
-      } else {
-        // System preference
-        if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-          root.classList.add("dark");
-        } else {
-          root.classList.remove("dark");
-        }
-      }
-    }
-  }, [theme]);
 
   const handleToggleInterest = (tag: string) => {
     setInterests(prev =>
@@ -815,15 +800,30 @@ function SettingsContent() {
                       Appearance & Theme
                     </h2>
                     <p className="text-xs text-[#20211D]/70 mt-1">
-                      Customize visual presentation while preserving the VANVAS travel-journal aesthetic.
+                      Customize visual presentation while preserving the authentic VANVAS travel-journal aesthetic.
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
-                      { id: "light", label: "Light (Cream)", icon: Sun },
-                      { id: "dark", label: "Night Camp (Dark)", icon: Moon },
-                      { id: "system", label: "System Sync", icon: Globe },
+                      {
+                        id: "light",
+                        label: "Light (Cream)",
+                        desc: "Explorer's Desk warm parchment & forest green",
+                        icon: Sun,
+                      },
+                      {
+                        id: "dark",
+                        label: "Night Camp (Dark)",
+                        desc: "Deep Himalayan pine mist & dark camp glow",
+                        icon: Moon,
+                      },
+                      {
+                        id: "system",
+                        label: "System Sync",
+                        desc: `Matches OS settings (${resolvedTheme === "dark" ? "Night Camp active" : "Light active"})`,
+                        icon: Globe,
+                      },
                     ].map((item) => {
                       const Icon = item.icon;
                       const isSel = theme === item.id;
@@ -831,18 +831,40 @@ function SettingsContent() {
                         <button
                           key={item.id}
                           type="button"
-                          onClick={() => setTheme(item.id)}
-                          className={`p-4 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-2 ${
+                          onClick={() => setTheme(item.id as any)}
+                          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative ${
                             isSel
-                              ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-xs"
+                              ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md ring-2 ring-[#B49252]/50"
                               : "bg-white text-[#20211D] border-[#D8CBB2] hover:bg-[#E5D5BA]/40"
                           }`}
                         >
-                          <Icon className={`w-5 h-5 ${isSel ? "text-[#B49252]" : "text-[#20211D]/70"}`} />
-                          <span className="font-bold text-xs">{item.label}</span>
+                          <div className="flex items-center justify-between w-full mb-3">
+                            <div className={`p-2 rounded-xl ${isSel ? "bg-white/15 text-[#B49252]" : "bg-[#FAF4E8] text-[#173B32]"}`}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            {isSel && (
+                              <span className="px-2 py-0.5 rounded-full bg-[#B49252]/30 text-[10px] font-bold text-[#FAF7F0] uppercase tracking-wider flex items-center gap-1">
+                                <Check className="w-3 h-3 text-[#B49252]" />
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm mb-1">{item.label}</div>
+                            <div className={`text-[11px] leading-relaxed ${isSel ? "text-[#EFE5D2]/80" : "text-[#20211D]/60"}`}>
+                              {item.desc}
+                            </div>
+                          </div>
                         </button>
                       );
                     })}
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#E5D5BA]/40 border border-[#D8CBB2] text-xs text-[#20211D]/80 flex items-start gap-2.5">
+                    <Info className="w-4 h-4 text-[#B49252] shrink-0 mt-0.5" />
+                    <div>
+                      <strong>Theme Persistence:</strong> Switching options applies immediately across all views. Click <strong>Save Preferences</strong> at the top to sync your selection with your cloud account across devices.
+                    </div>
                   </div>
                 </div>
               )}

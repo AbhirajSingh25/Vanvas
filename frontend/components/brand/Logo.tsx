@@ -16,15 +16,27 @@ export const Logo: React.FC<LogoProps> = ({
   hideSignature = false,
 }) => {
   const isLight = variant === "light";
-  const primaryColor = isLight ? "#EFE5D2" : "#173B32";
-  const signatureColor = isLight ? "#D8DED5" : "#7B4D36";
-  const accentColor = isLight ? "#B49252" : "#B65E3C";
+  const isDarkExplicit = variant === "dark";
 
   const sizeStyles = {
     sm: { text: "text-xl", emblemSize: 28, sig: "text-[9px]" },
     md: { text: "text-2xl", emblemSize: 34, sig: "text-[10px]" },
     lg: { text: "text-3xl", emblemSize: 42, sig: "text-[11px]" },
   }[size];
+
+  const wordmarkColorClass = isLight
+    ? "text-[#EFE5D2]"
+    : isDarkExplicit
+    ? "text-[#ECEAE4]"
+    : "text-[#173B32] dark:text-[#ECEAE4]";
+
+  const signatureColorClass = isLight
+    ? "text-[#D8DED5]"
+    : isDarkExplicit
+    ? "text-[#A3B8B0]"
+    : "text-[#7B4D36] dark:text-[#A3B8B0]";
+
+  const accentColor = isLight ? "#B49252" : "#B65E3C";
 
   return (
     <Link
@@ -40,8 +52,7 @@ export const Logo: React.FC<LogoProps> = ({
       {/* Bespoke Wordmark + Signature */}
       <div className="flex flex-col">
         <div
-          className={`font-serif font-black tracking-[0.22em] leading-none transition-colors duration-200 flex items-center ${sizeStyles.text}`}
-          style={{ color: primaryColor }}
+          className={`font-serif font-black tracking-[0.22em] leading-none transition-colors duration-200 flex items-center ${wordmarkColorClass} ${sizeStyles.text}`}
         >
           {/* V with Top Ridge Line */}
           <span className="relative inline-block">
@@ -74,15 +85,14 @@ export const Logo: React.FC<LogoProps> = ({
 
         {/* Artisan Signature "by The Sorted Club" */}
         {!hideSignature && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="h-[1px] w-3 opacity-50" style={{ backgroundColor: signatureColor }} />
+          <div className={`flex items-center gap-1.5 mt-1 ${signatureColorClass}`}>
+            <span className="h-[1px] w-3 bg-current opacity-50" />
             <span
               className={`font-serif italic tracking-wider uppercase font-medium ${sizeStyles.sig}`}
-              style={{ color: signatureColor }}
             >
               by The Sorted Club
             </span>
-            <span className="h-[1px] w-3 opacity-50" style={{ backgroundColor: signatureColor }} />
+            <span className="h-[1px] w-3 bg-current opacity-50" />
           </div>
         )}
       </div>

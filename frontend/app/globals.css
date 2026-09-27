@@ -1,7 +1,33 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
+    /* VANVAS Light / Explorer's Desk Palette */
+    --background: #FAF4E8;
+    --background-subtle: #EFE5D2;
+    --surface: #FAF7F0;
+    --surface-elevated: #FFFFFF;
+    --surface-muted: #E5D5BA;
+    --card: #FAF7F0;
+    --card-border: #D8CBB2;
+    --foreground: #20211D;
+    --foreground-muted: #5A6560;
+    --foreground-subtle: #7A8580;
+    
+    /* Brand Accents */
+    --primary: #173B32;
+    --primary-hover: #20453B;
+    --primary-foreground: #FAF7F0;
+    --accent: #B65E3C;
+    --accent-hover: #9E4D2E;
+    --brass: #B49252;
+    --brass-glow: rgba(180, 146, 82, 0.2);
+    --border: #D8CBB2;
+    --border-subtle: #E5D5BA;
+
+    /* Legacy palette tokens */
     --forest: #173B32;
     --jungle: #0F2924;
     --moss: #536B52;
@@ -16,15 +42,66 @@
     --charcoal: #20211D;
   }
 
+  html.dark,
+  :root.dark,
+  .dark {
+    /* VANVAS Night Camp Dark Palette */
+    --background: #0A100D;
+    --background-subtle: #0D1512;
+    --surface: #111A16;
+    --surface-elevated: #16241E;
+    --surface-muted: #1A2C24;
+    --card: #111A16;
+    --card-border: rgba(216, 222, 213, 0.16);
+    --foreground: #ECEAE4;
+    --foreground-muted: #A3B8B0;
+    --foreground-subtle: #7E948B;
+    
+    /* Brand Accents in Night Camp */
+    --primary: #2D5A43;
+    --primary-hover: #386E53;
+    --primary-foreground: #ECEAE4;
+    --accent: #E07048;
+    --accent-hover: #F08058;
+    --brass: #C49A45;
+    --brass-glow: rgba(196, 154, 69, 0.25);
+    --border: rgba(216, 222, 213, 0.16);
+    --border-subtle: rgba(216, 222, 213, 0.1);
+
+    /* Legacy palette tokens remapped for Night Camp */
+    --forest: #224338;
+    --jungle: #091310;
+    --moss: #6F8E6E;
+    --mist: #20352D;
+    --parchment: #0D1512;
+    --old-paper: #16241E;
+    --terracotta: #E07048;
+    --terracotta-hover: #F08058;
+    --burnt-earth: #B87352;
+    --mustard: #C49A45;
+    --indigo: #39556E;
+    --charcoal: #ECEAE4;
+  }
+
   body {
-    background-color: var(--parchment);
-    color: var(--charcoal);
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     background-image: 
       radial-gradient(rgba(23, 59, 50, 0.035) 1px, transparent 0),
       linear-gradient(to bottom, rgba(239, 229, 210, 0.8), rgba(229, 213, 186, 0.9));
+    background-size: 24px 24px, 100% 100%;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  html.dark body {
+    background-color: var(--background);
+    color: var(--foreground);
+    background-image: 
+      radial-gradient(rgba(74, 140, 110, 0.08) 1px, transparent 0),
+      linear-gradient(to bottom, rgba(13, 21, 18, 0.98), rgba(8, 14, 12, 0.99));
     background-size: 24px 24px, 100% 100%;
   }
 
@@ -37,7 +114,116 @@
   }
 }
 
-/* iOS Safe Area Inset Utilities */
+/* ===================================================
+   VANVAS Global Night Camp Dark Mode Surface Mapping
+   =================================================== */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark .journal-card {
+  background-color: #111A16 !important;
+  border-color: rgba(216, 222, 213, 0.16) !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 2px 6px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .travel-stamp {
+  border-color: #C49A45 !important;
+  background-color: rgba(196, 154, 69, 0.12) !important;
+  color: #C49A45 !important;
+}
+
+html.dark .postage-edge {
+  background: radial-gradient(circle, transparent 70%, #111A16 75%) 0 0/14px 14px !important;
+}
+
+/* Background & card surfaces in Night Camp */
+html.dark .bg-\[\#FAF4E8\],
+html.dark .bg-\[\#FAF4E8\]\/92,
+html.dark .bg-\[\#FAF4E8\]\/95,
+html.dark .bg-\[\#EFE5D2\],
+html.dark .bg-\[\#EFE5D2\]\/92,
+html.dark .bg-\[\#EFE5D2\]\/95 {
+  background-color: #0D1512 !important;
+}
+
+html.dark .bg-\[\#FAF7F0\],
+html.dark .bg-\[\#FAF7F0\]\/90,
+html.dark .bg-\[\#FAF7F0\]\/95 {
+  background-color: #111A16 !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/90,
+html.dark .bg-white\/95 {
+  background-color: #16241E !important;
+}
+
+html.dark .bg-\[\#E5D5BA\]\/30,
+html.dark .bg-\[\#E5D5BA\]\/40,
+html.dark .bg-\[\#E5D5BA\]\/50,
+html.dark .bg-\[\#E5D5BA\]\/60 {
+  background-color: rgba(26, 44, 36, 0.6) !important;
+}
+
+html.dark .hover\:bg-\[\#E5D5BA\]\/40:hover,
+html.dark .hover\:bg-\[\#E5D5BA\]\/50:hover,
+html.dark .hover\:bg-\[\#E5D5BA\]\/60:hover {
+  background-color: rgba(34, 56, 46, 0.8) !important;
+}
+
+/* Borders in Night Camp */
+html.dark .border-\[\#D8CBB2\],
+html.dark .border-\[\#E5D5BA\],
+html.dark .border-\[\#D8CBB2\]\/40,
+html.dark .border-\[\#D8CBB2\]\/60,
+html.dark .border-\[\#D8CBB2\]\/70,
+html.dark .border-\[\#E5D5BA\]\/40,
+html.dark .border-\[\#E5D5BA\]\/60 {
+  border-color: rgba(216, 222, 213, 0.16) !important;
+}
+
+/* Text and Typography in Night Camp */
+html.dark .text-\[\#20211D\] {
+  color: #ECEAE4 !important;
+}
+
+html.dark .text-\[\#20211D\]\/80,
+html.dark .text-\[\#20211D\]\/75,
+html.dark .text-\[\#20211D\]\/70 {
+  color: rgba(236, 234, 228, 0.82) !important;
+}
+
+html.dark .text-\[\#20211D\]\/65,
+html.dark .text-\[\#20211D\]\/60,
+html.dark .text-\[\#20211D\]\/50 {
+  color: rgba(236, 234, 228, 0.65) !important;
+}
+
+/* Headings and primary text in Night Camp */
+html.dark h1.text-\[\#173B32\],
+html.dark h2.text-\[\#173B32\],
+html.dark h3.text-\[\#173B32\],
+html.dark h4.text-\[\#173B32\],
+html.dark strong.text-\[\#173B32\] {
+  color: #ECEAE4 !important;
+}
+
+/* Form controls in Night Camp */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select {
+  background-color: #16241E !important;
+  color: #ECEAE4 !important;
+  border-color: rgba(216, 222, 213, 0.2) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: rgba(236, 234, 228, 0.4) !important;
+}
+
+/* Safe area insets */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -88,7 +274,7 @@
   animation: float-gentle 6s ease-in-out infinite;
 }
 
-/* Travel Journal Texture & Card Elements */
+/* Journal textures & elements */
 .journal-card {
   background-color: #FAF4E8;
   border: 1px solid #D8CBB2;
@@ -102,7 +288,6 @@
   box-shadow: 0 10px 30px -5px rgba(15, 41, 36, 0.3);
 }
 
-/* Authentic Travel Stamp Styling */
 .travel-stamp {
   border: 1.5px dashed #7B4D36;
   background-color: rgba(229, 213, 186, 0.4);
@@ -112,7 +297,6 @@
   text-transform: uppercase;
 }
 
-/* Postage stamp serrated edge illusion */
 .postage-edge {
   background: radial-gradient(circle, transparent 70%, #FAF4E8 75%) 0 0/14px 14px;
 }
@@ -123,14 +307,24 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #E5D5BA;
+  background: var(--surface-muted);
 }
 ::-webkit-scrollbar-thumb {
-  background: #173B32;
+  background: var(--primary);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B65E3C;
+  background: var(--accent);
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #0D1512;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2D5A43;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #E07048;
 }
 
 /* ===================================================
@@ -151,7 +345,6 @@
     overflow: visible !important;
   }
 
-  /* Hide interactive non-print elements */
   nav,
   header,
   footer,
@@ -163,7 +356,6 @@
     display: none !important;
   }
 
-  /* Prevent awkward page break splits */
   .page-break-avoid,
   .journal-item,
   .itinerary-day-section,
@@ -179,7 +371,6 @@
     page-break-before: always !important;
   }
 
-  /* Paper texture & background replacements for ink efficiency */
   .journal-card,
   .journal-doc-container {
     background-color: #FFFFFF !important;
@@ -190,19 +381,16 @@
     max-width: 100% !important;
   }
 
-  /* Remove backdrop blur / dark gradients for ink conservation */
   .print-clean-bg {
     background: #FFFFFF !important;
     color: #173B32 !important;
   }
 
-  /* Images sizing within printable margins */
   img {
     max-width: 100% !important;
     page-break-inside: avoid !important;
   }
 
-  /* Links styling in print */
   a {
     text-decoration: none !important;
     color: inherit !important;

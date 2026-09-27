@@ -67,7 +67,7 @@ export const Header: React.FC = () => {
           <Logo size="md" />
 
           {/* Desktop Editorial Navigation */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+          <nav className="hidden xl:flex items-center gap-1 xl:gap-2">
             {navLinks.map((item) => {
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
@@ -90,7 +90,7 @@ export const Header: React.FC = () => {
           </nav>
 
           {/* Header Right Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden xl:flex items-center gap-3">
             {/* Ask VANVAS AI Copilot Button */}
             <button
               type="button"
@@ -212,7 +212,7 @@ export const Header: React.FC = () => {
           {/* Mobile Hamburger Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl text-[#173B32] hover:bg-[#E5D5BA] transition-colors"
+            className="xl:hidden p-2 rounded-xl text-[#173B32] hover:bg-[#E5D5BA] transition-colors cursor-pointer"
             aria-label="Toggle Navigation"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -221,7 +221,7 @@ export const Header: React.FC = () => {
 
         {/* Mobile Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-b border-[#D8CBB2] bg-[#FAF4E8] px-4 pt-3 pb-6 space-y-3 animate-fadeIn">
+          <div className="xl:hidden border-b border-[#D8CBB2] bg-[#FAF4E8] px-4 pt-3 pb-6 space-y-3 animate-fadeIn">
             {/* Ask VANVAS in Mobile Drawer */}
             <button
               type="button"
