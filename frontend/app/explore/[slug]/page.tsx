@@ -195,6 +195,15 @@ export default function DestinationDetailPage() {
 
   useEffect(() => {
     setMounted(true);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setModalOpen(false);
+        setStayModalOpen(false);
+        setRentalModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -744,6 +753,17 @@ export default function DestinationDetailPage() {
       {/* Main Content Sections */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
         
+        {/* MODE: SOLO DIRECT VIEW */}
+        {activeMode === "solo" && (
+          <div className="space-y-6 animate-fadeIn">
+            <TravelingSoloSection
+              destinationId={destination.id}
+              destinationSlug={destination.slug || slug}
+              destinationName={destination.name}
+            />
+          </div>
+        )}
+
         {/* MODE: OVERVIEW */}
         {activeMode === "overview" && (
           <div className="space-y-12 animate-fadeIn">
@@ -826,16 +846,14 @@ export default function DestinationDetailPage() {
               </div>
             )}
 
-            {/* 2.5 TRAVELING SOLO & CIRCLES SECTION */}
-            {(activeMode === "overview" || activeMode === "solo") && (
-              <div className="pt-2">
-                <TravelingSoloSection
-                  destinationId={destination.id}
-                  destinationSlug={destination.slug || slug}
-                  destinationName={destination.name}
-                />
-              </div>
-            )}
+            {/* 2.5 TRAVELING SOLO & CIRCLES SECTION (In Overview Flow) */}
+            <div className="pt-2">
+              <TravelingSoloSection
+                destinationId={destination.id}
+                destinationSlug={destination.slug || slug}
+                destinationName={destination.name}
+              />
+            </div>
 
             {/* VANVAS Interactive Sanctuary Map */}
             <div className="space-y-4">
@@ -1259,12 +1277,18 @@ export default function DestinationDetailPage() {
                     <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
                       <div className="space-y-3">
                         {/* Visual Header with Normalized Aspect Ratio */}
-                        <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA]">
+                        <div
+                          onClick={() => {
+                            setSelectedStayForModal(h);
+                            setStayModalOpen(true);
+                          }}
+                          className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group"
+                        >
                           <VanvasImage
                             src={stayVisual.imageUrl}
                             fallbackSrc={stayVisual.fallbackUrl}
                             alt={`${h.name} in ${destination.name}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                           {/* Top Badges */}
                           <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">

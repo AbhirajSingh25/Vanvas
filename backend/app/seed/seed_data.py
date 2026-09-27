@@ -1597,7 +1597,7 @@ def seed_database():
                     "longitude": 75.8050,
                     "opening_hours": "07:30 AM - 09:00 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/rajasthan_classic_bullet.jpg"
+                    "image_url": "/images/vehicles/jaipur_pinkcity_bullet.jpg"
                 },
                 {
                     "provider_name": "Jaipur Heritage Scooter Hub",
@@ -1610,7 +1610,7 @@ def seed_database():
                     "longitude": 75.8270,
                     "opening_hours": "08:00 AM - 08:30 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/rajasthan_urban_scooter.jpg"
+                    "image_url": "/images/vehicles/jaipur_hawa_mahal_scooter.jpg"
                 }
             ],
             "varanasi": [
@@ -1625,7 +1625,7 @@ def seed_database():
                     "longitude": 83.0060,
                     "opening_hours": "07:00 AM - 09:00 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/electric_scooter.jpg"
+                    "image_url": "/images/vehicles/varanasi_assi_scooter.jpg"
                 },
                 {
                     "provider_name": "Ganga Riverfront Scooter Hub",
@@ -1638,7 +1638,7 @@ def seed_database():
                     "longitude": 83.0040,
                     "opening_hours": "07:30 AM - 08:30 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                    "image_url": "/images/vehicles/varanasi_bhu_bullet.jpg"
                 }
             ],
             "manali": [
@@ -1653,7 +1653,7 @@ def seed_database():
                     "longitude": 77.1880,
                     "opening_hours": "07:30 AM - 09:00 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                    "image_url": "/images/vehicles/manali_solang_bullet.jpg"
                 },
                 {
                     "provider_name": "Valley Scooters Hub",
@@ -1666,7 +1666,7 @@ def seed_database():
                     "longitude": 77.1760,
                     "opening_hours": "08:00 AM - 08:30 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                    "image_url": "/images/vehicles/manali_beas_scooter.jpg"
                 }
             ],
             "mussoorie": [
@@ -1681,7 +1681,20 @@ def seed_database():
                     "longitude": 78.0790,
                     "opening_hours": "08:00 AM - 08:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/uttarakhand_forest_bike.jpg"
+                    "image_url": "/images/vehicles/mussoorie_landour_bullet.jpg"
+                },
+                {
+                    "provider_name": "Mussoorie Hill Scooters",
+                    "vehicle_type": "Scooter",
+                    "vehicle_name": "Honda Activa 6G Landour Edition",
+                    "price_per_day": 550.0,
+                    "deposit_amount": 1000.0,
+                    "location": "Library Chowk, Mall Road, Mussoorie",
+                    "latitude": 30.4590,
+                    "longitude": 78.0740,
+                    "opening_hours": "07:30 AM - 08:30 PM",
+                    "rating": 4.9,
+                    "image_url": "/images/vehicles/mussoorie_landour_scooter.jpg"
                 }
             ],
             "udaipur": [
@@ -1696,7 +1709,7 @@ def seed_database():
                     "longitude": 73.6790,
                     "opening_hours": "08:00 AM - 09:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/rajasthan_urban_scooter.jpg"
+                    "image_url": "/images/vehicles/udaipur_pichola_scooter.jpg"
                 }
             ],
             "leh": [
@@ -1711,7 +1724,7 @@ def seed_database():
                     "longitude": 77.5840,
                     "opening_hours": "07:00 AM - 09:00 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                    "image_url": "/images/vehicles/leh_palace_bullet.jpg"
                 }
             ],
             "rishikesh": [
@@ -1726,7 +1739,7 @@ def seed_database():
                     "longitude": 78.3240,
                     "opening_hours": "07:00 AM - 09:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/uttarakhand_valley_scooter.jpg"
+                    "image_url": "/images/vehicles/rishikesh_tapovan_scooter.jpg"
                 },
                 {
                     "provider_name": "Rishikesh Mountain Biking Hub",
@@ -1739,7 +1752,7 @@ def seed_database():
                     "longitude": 78.3270,
                     "opening_hours": "06:30 AM - 08:30 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/mountain_bike.jpg"
+                    "image_url": "/images/vehicles/rishikesh_ganga_bullet.jpg"
                 }
             ],
             "dharamshala": [
@@ -1754,7 +1767,7 @@ def seed_database():
                     "longitude": 76.3215,
                     "opening_hours": "07:30 AM - 08:30 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/classic_bullet.jpg"
+                    "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.jpg"
                 },
                 {
                     "provider_name": "Bhagsu Hill Scooter Rental",
@@ -1767,7 +1780,7 @@ def seed_database():
                     "longitude": 76.3320,
                     "opening_hours": "08:00 AM - 08:00 PM",
                     "rating": 4.7,
-                    "image_url": "/images/vehicles/automatic_scooter.jpg"
+                    "image_url": "/images/vehicles/dharamshala_mcleod_scooter.jpg"
                 }
             ],
             "spiti": [
@@ -1782,7 +1795,7 @@ def seed_database():
                     "longitude": 78.0720,
                     "opening_hours": "07:00 AM - 08:00 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                    "image_url": "/images/vehicles/spiti_arid_adventure_bike.jpg"
                 }
             ],
             "munnar": [
@@ -1797,7 +1810,7 @@ def seed_database():
                     "longitude": 77.0600,
                     "opening_hours": "08:00 AM - 08:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/electric_scooter.jpg"
+                    "image_url": "/images/vehicles/munnar_estate_scooter.jpg"
                 },
                 {
                     "provider_name": "Munnar Tea Trail Cycles",
@@ -1810,7 +1823,7 @@ def seed_database():
                     "longitude": 77.0700,
                     "opening_hours": "06:30 AM - 07:30 PM",
                     "rating": 4.9,
-                    "image_url": "/images/vehicles/mountain_bike.jpg"
+                    "image_url": "/images/vehicles/munnar_tea_trails_cycle.jpg"
                 }
             ],
             "goa": [
@@ -1825,7 +1838,7 @@ def seed_database():
                     "longitude": 73.7400,
                     "opening_hours": "07:00 AM - 10:00 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/coastal_beach_scooter.jpg"
+                    "image_url": "/images/vehicles/goa_beach_scooter.jpg"
                 }
             ],
             "kasol": [
@@ -1838,37 +1851,9 @@ def seed_database():
                     "location": "Old Kasol Bridge, Parvati Valley",
                     "latitude": 32.0100,
                     "longitude": 77.3150,
-                    "opening_hours": "08:00 AM - 08:30 PM",
+                    "opening_hours": "07:30 AM - 08:30 PM",
                     "rating": 4.8,
-                    "image_url": "/images/vehicles/classic_bullet.jpg"
-                }
-            ],
-            "varanasi": [
-                {
-                    "provider_name": "Kashi Heritage E-Rides",
-                    "vehicle_type": "Electric Scooter",
-                    "vehicle_name": "Ather 450X Ghats EV Explorer",
-                    "price_per_day": 500.0,
-                    "deposit_amount": 1000.0,
-                    "location": "Godowlia Chowk, Varanasi",
-                    "latitude": 25.3080,
-                    "longitude": 83.0060,
-                    "opening_hours": "06:30 AM - 09:30 PM",
-                    "rating": 4.9,
-                    "image_url": "/images/vehicles/electric_scooter.jpg"
-                },
-                {
-                    "provider_name": "Varanasi Ghat Cycle Tours",
-                    "vehicle_type": "Mountain Bike",
-                    "vehicle_name": "Hero Sprint Ghat Cruiser Cycle",
-                    "price_per_day": 250.0,
-                    "deposit_amount": 500.0,
-                    "location": "Assi Ghat Riverfront, Varanasi",
-                    "latitude": 25.2890,
-                    "longitude": 83.0070,
-                    "opening_hours": "06:00 AM - 08:30 PM",
-                    "rating": 4.8,
-                    "image_url": "/images/vehicles/mountain_bike.jpg"
+                    "image_url": "/images/vehicles/kasol_parvati_bullet.jpg"
                 }
             ]
         }
