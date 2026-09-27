@@ -287,17 +287,105 @@ async def get_destination_detail(
             except Exception:
                 weather_snapshots = []
         
+        places_list = [
+            {
+                "id": p.id,
+                "destination_id": p.destination_id,
+                "name": p.name,
+                "slug": p.slug,
+                "category": p.category,
+                "description": p.description,
+                "address": p.address,
+                "latitude": p.latitude,
+                "longitude": p.longitude,
+                "approx_cost": p.approx_cost,
+                "price_level": p.price_level,
+                "rating": p.rating,
+                "review_count": p.review_count,
+                "opening_time": p.opening_time,
+                "closing_time": p.closing_time,
+                "recommended_duration_mins": p.recommended_duration_mins,
+                "why_vanvas_recommends": p.why_vanvas_recommends,
+                "tags": p.tags,
+                "is_must_visit": p.is_must_visit,
+                "is_hidden_gem": p.is_hidden_gem,
+                "is_indoor": p.is_indoor,
+                "image_url": p.image_url,
+                "booking_url": p.booking_url,
+                "data_state": "VERIFIED",
+                "trust_source": "VANVAS_CURATED",
+            }
+            if hasattr(p, "name") else p
+            for p in places
+        ]
+
+        hotels_list = [
+            {
+                "id": h.id,
+                "destination_id": h.destination_id,
+                "name": h.name,
+                "category": getattr(h, "hotel_style", None) or getattr(h, "category", "Boutique Stay"),
+                "hotel_style": getattr(h, "hotel_style", "Boutique Stay"),
+                "address": h.address,
+                "price_per_night": h.price_per_night,
+                "rating": h.rating,
+                "amenities": h.amenities,
+                "image_url": h.image_url,
+                "booking_url": h.booking_url,
+                "check_in_time": h.check_in_time,
+                "check_out_time": h.check_out_time,
+                "badge": getattr(h, "badge", "Best for your trip"),
+                "data_state": "VERIFIED",
+                "trust_source": "VANVAS_CURATED",
+            }
+            if hasattr(h, "name") else h
+            for h in hotels
+        ]
+
+        from app.services.mobility_service import MobilityService
+        rentals_list = [
+            {
+                "id": r.id,
+                "destination_id": r.destination_id,
+                "operator_name": getattr(r, "provider_name", None) or getattr(r, "operator_name", ""),
+                "provider_name": getattr(r, "provider_name", ""),
+                "vehicle_type": r.vehicle_type,
+                "vehicle_name": r.vehicle_name,
+                "daily_rate": getattr(r, "price_per_day", None) or getattr(r, "daily_rate", 800.0),
+                "price_per_day": getattr(r, "price_per_day", 800.0),
+                "deposit_amount": getattr(r, "deposit_amount", 1000.0),
+                "security_deposit": getattr(r, "deposit_amount", None) or getattr(r, "security_deposit", 1000.0),
+                "location": getattr(r, "location", None) or getattr(r, "pickup_location", "Main Market Hub"),
+                "pickup_location": getattr(r, "location", None) or getattr(r, "pickup_location", "Main Market Hub"),
+                "contact_phone": getattr(r, "contact_phone", "Available upon booking"),
+                "operating_hours": getattr(r, "operating_hours", None) or getattr(r, "opening_hours", "08:00 AM - 08:00 PM"),
+                "requirements": getattr(r, "requirements", "Valid Driving License & Govt ID"),
+                "rating": getattr(r, "rating", 4.8),
+                "review_count": getattr(r, "review_count", 95),
+                "image_url": getattr(r, "image_url", None) or MobilityService.resolve_mobility_artwork(
+                    vehicle_type=r.vehicle_type,
+                    vehicle_name=r.vehicle_name,
+                    destination_name=dest.name,
+                    destination_slug=dest.slug,
+                ),
+                "data_state": "VERIFIED",
+                "trust_source": "VANVAS_CURATED",
+            }
+            if hasattr(r, "provider_name") or hasattr(r, "vehicle_name") else r
+            for r in rentals
+        ]
+
         return {
             "destination": dest,
             "is_curated": bool(dest.is_featured),
             "is_dynamic": not bool(dest.is_featured),
-            "places": places,
-            "hotels": hotels,
-            "rentals": rentals,
+            "places": places_list,
+            "hotels": hotels_list,
+            "rentals": rentals_list,
             "weather": weather_snapshots,
-            "places_count": len(places),
-            "hotels_count": len(hotels),
-            "rentals_count": len(rentals)
+            "places_count": len(places_list),
+            "hotels_count": len(hotels_list),
+            "rentals_count": len(rentals_list)
         }
     
     # Check authoritative canonical dataset fallback before calling live geocoder

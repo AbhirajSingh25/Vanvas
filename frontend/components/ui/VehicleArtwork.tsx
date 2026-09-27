@@ -226,9 +226,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
   // 6. Spiti
   spiti: {
     scooter: {
-      src: "/images/vehicles/himachal_valley_scooter.jpg",
-      label: "Kaza Local Valley Scooter",
-      category: "automatic_scooter",
+      src: "/images/vehicles/spiti_arid_adventure_bike.jpg",
+      label: "Spiti Cold Desert Tourer",
+      category: "adventure_motorcycle",
     },
     motorcycle: {
       src: "/images/vehicles/spiti_arid_adventure_bike.jpg",
@@ -338,9 +338,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/himachal_pine_forest_bike.jpg",
-      label: "Rohtang Alpine Adventure Tourer",
-      category: "adventure_motorcycle",
+      src: "/images/vehicles/manali_solang_bullet.jpg",
+      label: "Manali Solang Pass Tourer",
+      category: "classic_bullet",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -372,9 +372,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/himachal_pine_forest_bike.jpg",
-      label: "Kangra Valley Adventure Tourer",
-      category: "adventure_motorcycle",
+      src: "/images/vehicles/dharamshala_dhauladhar_bullet.jpg",
+      label: "Dhauladhar Snow View Classic Bullet",
+      category: "classic_bullet",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -406,9 +406,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/himachal_pine_forest_bike.jpg",
-      label: "Tosh & Barshaini Trail Tourer",
-      category: "adventure_motorcycle",
+      src: "/images/vehicles/kasol_parvati_bullet.jpg",
+      label: "Parvati Gorge Trail Tourer",
+      category: "classic_bullet",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -954,11 +954,16 @@ function normalizeDestinationKey(dest?: string): string {
  * Deterministically resolves vehicle type/name/model and destination context
  * to the appropriate regional VANVAS editorial mobility artworks.
  */
+/**
+ * Deterministically resolves vehicle type/name/model and destination context
+ * to the appropriate regional VANVAS editorial mobility artworks.
+ */
 export function resolveVehicleArtwork(
   typeOrName?: string,
-  destinationOrContext?: string | MobilityContext
+  destinationOrContext?: string | MobilityContext,
+  secondaryName?: string
 ): ArtworkResult {
-  const query = (typeOrName || "").toLowerCase().trim();
+  const combined = `${typeOrName || ""} ${secondaryName || ""}`.toLowerCase().trim();
   
   let destStr = "";
   if (typeof destinationOrContext === "string") {
@@ -970,105 +975,105 @@ export function resolveVehicleArtwork(
   const destKey = normalizeDestinationKey(destStr);
   const destFleet = DESTINATION_VEHICLE_REGISTRY[destKey];
 
-  // Category detection
-  const isCar =
-    query.includes("car") ||
-    query.includes("self-drive") ||
-    query.includes("self drive") ||
-    query.includes("suv") ||
-    query.includes("sedan") ||
-    query.includes("hatchback") ||
-    query.includes("thar") ||
-    query.includes("creta") ||
-    query.includes("swift") ||
-    query.includes("baleno") ||
-    query.includes("i20") ||
-    query.includes("scorpio") ||
-    query.includes("seltos");
-
-  const isBicycle =
-    query.includes("mountain_bike") ||
-    query.includes("mountain bike") ||
-    query.includes("bicycle") ||
-    query.includes("mtb") ||
-    query.includes("pedal") ||
-    (query.includes("cycle") && !query.includes("motorcycle") && !query.includes("motor cycle"));
-
-  const isAdventure =
-    query.includes("adventure_motorcycle") ||
-    query.includes("adventure motorcycle") ||
-    query.includes("himalayan") ||
-    query.includes("adventure") ||
-    query.includes("adv") ||
-    query.includes("450") ||
-    query.includes("411") ||
-    query.includes("off-road") ||
-    query.includes("offroad") ||
-    query.includes("scrambler") ||
-    query.includes("xpulse") ||
-    query.includes("ktm") ||
-    query.includes("gs") ||
-    query.includes("rally");
-
-  const isClassicBullet =
-    query.includes("classic_bullet") ||
-    query.includes("classic bullet") ||
-    query.includes("bullet") ||
-    query.includes("classic") ||
-    query.includes("enfield") ||
-    query.includes("royal enfield") ||
-    query.includes("350") ||
-    query.includes("cruiser") ||
-    query.includes("standard") ||
-    query.includes("interceptor") ||
-    query.includes("hunter") ||
-    query.includes("meteor") ||
-    query.includes("gt 650") ||
-    query.includes("motorcycle") ||
-    query.includes("bike") ||
-    query.includes("fz") ||
-    query.includes("pulsar") ||
-    query.includes("apache") ||
-    query.includes("avenger");
-
+  // Specific vehicle category detection
   const isElectric =
-    query.includes("electric_scooter") ||
-    query.includes("electric scooter") ||
-    query.includes("electric") ||
-    query.includes("ev") ||
-    query.includes("ather") ||
-    query.includes("ola") ||
-    query.includes("chetak") ||
-    query.includes("iqube");
+    combined.includes("electric_scooter") ||
+    combined.includes("electric scooter") ||
+    combined.includes("electric") ||
+    combined.includes("ev") ||
+    combined.includes("ather") ||
+    combined.includes("ola") ||
+    combined.includes("chetak") ||
+    combined.includes("iqube");
 
   const isScooter =
     isElectric ||
-    query.includes("automatic_scooter") ||
-    query.includes("automatic scooter") ||
-    query.includes("activa") ||
-    query.includes("scooter") ||
-    query.includes("automatic") ||
-    query.includes("jupiter") ||
-    query.includes("access") ||
-    query.includes("vespa") ||
-    query.includes("moped") ||
-    query.includes("ntorq") ||
-    query.includes("fascino") ||
-    query.includes("pleasure") ||
-    query.includes("dio") ||
-    query.includes("burgman") ||
-    query.includes("destini") ||
-    query.includes("rayzr") ||
-    query.includes("aerox") ||
-    query.includes("scooty");
+    combined.includes("automatic_scooter") ||
+    combined.includes("automatic scooter") ||
+    combined.includes("activa") ||
+    combined.includes("scooter") ||
+    combined.includes("automatic") ||
+    combined.includes("jupiter") ||
+    combined.includes("access") ||
+    combined.includes("vespa") ||
+    combined.includes("moped") ||
+    combined.includes("ntorq") ||
+    combined.includes("fascino") ||
+    combined.includes("pleasure") ||
+    combined.includes("dio") ||
+    combined.includes("burgman") ||
+    combined.includes("destini") ||
+    combined.includes("rayzr") ||
+    combined.includes("aerox") ||
+    combined.includes("scooty");
 
-  // 1. Destination-Matched Explicit Resolution
+  const isCar =
+    combined.includes("car") ||
+    combined.includes("self-drive") ||
+    combined.includes("self drive") ||
+    combined.includes("suv") ||
+    combined.includes("sedan") ||
+    combined.includes("hatchback") ||
+    combined.includes("thar") ||
+    combined.includes("creta") ||
+    combined.includes("swift") ||
+    combined.includes("baleno") ||
+    combined.includes("i20") ||
+    combined.includes("scorpio") ||
+    combined.includes("seltos");
+
+  const isBicycle =
+    combined.includes("mountain_bike") ||
+    combined.includes("mountain bike") ||
+    combined.includes("bicycle") ||
+    combined.includes("mtb") ||
+    combined.includes("pedal") ||
+    (combined.includes("cycle") && !combined.includes("motorcycle") && !combined.includes("motor cycle"));
+
+  const isAdventure =
+    combined.includes("adventure_motorcycle") ||
+    combined.includes("adventure motorcycle") ||
+    combined.includes("himalayan") ||
+    combined.includes("adventure") ||
+    combined.includes("adv") ||
+    combined.includes("450") ||
+    combined.includes("411") ||
+    combined.includes("off-road") ||
+    combined.includes("offroad") ||
+    combined.includes("scrambler") ||
+    combined.includes("xpulse") ||
+    combined.includes("ktm") ||
+    combined.includes("gs") ||
+    combined.includes("rally");
+
+  const isClassicBullet =
+    combined.includes("classic_bullet") ||
+    combined.includes("classic bullet") ||
+    combined.includes("bullet") ||
+    combined.includes("classic") ||
+    combined.includes("enfield") ||
+    combined.includes("royal enfield") ||
+    combined.includes("350") ||
+    combined.includes("cruiser") ||
+    combined.includes("standard") ||
+    combined.includes("interceptor") ||
+    combined.includes("hunter") ||
+    combined.includes("meteor") ||
+    combined.includes("gt 650") ||
+    combined.includes("motorcycle") ||
+    combined.includes("bike") ||
+    combined.includes("fz") ||
+    combined.includes("pulsar") ||
+    combined.includes("apache") ||
+    combined.includes("avenger");
+
+  // 1. Destination-Matched Explicit Resolution (Scooter priority over bullet for scooters)
   if (destFleet) {
+    if (isScooter && destFleet.scooter) return destFleet.scooter;
     if (isCar && destFleet.car) return destFleet.car;
     if (isBicycle && destFleet.bicycle) return destFleet.bicycle;
     if (isAdventure && destFleet.adventure) return destFleet.adventure;
-    if (isClassicBullet) return destFleet.motorcycle;
-    if (isScooter) return destFleet.scooter;
+    if (isClassicBullet && destFleet.motorcycle) return destFleet.motorcycle;
     return destFleet.default;
   }
 
@@ -1087,6 +1092,13 @@ export function resolveVehicleArtwork(
       category: "electric_scooter",
     };
   }
+  if (isScooter) {
+    return {
+      src: "/images/vehicles/automatic_scooter.jpg",
+      label: "Automatic Hill Scooter",
+      category: "automatic_scooter",
+    };
+  }
   if (isAdventure) {
     return {
       src: "/images/vehicles/adventure_motorcycle.jpg",
@@ -1099,13 +1111,6 @@ export function resolveVehicleArtwork(
       src: "/images/vehicles/classic_bullet.jpg",
       label: "Classic Himalayan Bullet",
       category: "classic_bullet",
-    };
-  }
-  if (isScooter) {
-    return {
-      src: "/images/vehicles/automatic_scooter.jpg",
-      label: "Automatic Hill Scooter",
-      category: "automatic_scooter",
     };
   }
 
@@ -1130,17 +1135,21 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
   showBadge = true,
 }) => {
   const destCtx = context || (destination ? { destination } : undefined);
-  const artwork = resolveVehicleArtwork(type || name, destCtx);
+  const artwork = resolveVehicleArtwork(type, destCtx, name);
   const [hasError, setHasError] = useState(false);
 
-  // Deterministic resolver is authoritative for destination isolation
+  // Deterministic destination-first artwork
   let finalSrc = artwork.src;
   
-  // Custom remote/explicit imageUrl only used if it doesn't collide with generic fallbacks
+  // Custom explicit destination-specific imageUrl from backend
   if (
     imageUrl &&
-    (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) &&
-    !imageUrl.includes("unsplash.com")
+    typeof imageUrl === "string" &&
+    imageUrl.length > 0 &&
+    !imageUrl.includes("unsplash.com") &&
+    !imageUrl.includes("generic") &&
+    !imageUrl.includes("automatic_scooter.jpg") &&
+    !imageUrl.includes("universal_mobility.jpg")
   ) {
     finalSrc = imageUrl;
   }
