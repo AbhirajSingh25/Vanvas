@@ -146,7 +146,8 @@ def optimize_arrival_timing(
 @router.get("/hotels", response_model=List[HotelResponse])
 @router.get("/stays/destination/{destination_id}", response_model=List[HotelResponse])
 async def get_hotels(
-    destination_id: str,
+    destination_id: Optional[str] = None,
+    destination: Optional[str] = None,
     style: Optional[str] = None,
     traveller_profile: Optional[str] = None,
     max_price: Optional[float] = None,
@@ -156,10 +157,13 @@ async def get_hotels(
     children: int = 0,
     db: Session = Depends(get_db)
 ):
+    target_dest_id = destination_id or destination
+    if not target_dest_id:
+        raise HTTPException(status_code=400, detail="destination_id or destination query parameter is required")
     from app.services.stay_matching_service import StayMatchingService
     return await StayMatchingService.match_stays(
         db=db,
-        destination_id=destination_id,
+        destination_id=target_dest_id,
         style=style,
         traveller_profile=traveller_profile,
         max_price=max_price,
@@ -171,14 +175,18 @@ async def get_hotels(
 
 @router.get("/rentals", response_model=List[RentalOptionResponse])
 async def get_rentals(
-    destination_id: str,
+    destination_id: Optional[str] = None,
+    destination: Optional[str] = None,
     vehicle_type: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    target_dest_id = destination_id or destination
+    if not target_dest_id:
+        raise HTTPException(status_code=400, detail="destination_id or destination query parameter is required")
     from app.services.mobility_service import MobilityService
     listings = await MobilityService.get_mobility_listings(
         db=db,
-        destination_slug_or_id=destination_id,
+        destination_slug_or_id=target_dest_id,
         vehicle_type=vehicle_type,
     )
     return listings

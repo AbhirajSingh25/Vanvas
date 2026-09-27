@@ -363,6 +363,24 @@ class MobilityService:
         return listings
 
     @classmethod
+    def resolve_mobility_artwork(
+        cls,
+        vehicle_type: str,
+        vehicle_name: Optional[str] = None,
+        destination_name: Optional[str] = None,
+        destination_slug: Optional[str] = None,
+        state: Optional[str] = None,
+        **kwargs
+    ) -> str:
+        dest_name = destination_name or destination_slug
+        return cls._resolve_category_artwork(
+            vehicle_type=vehicle_type,
+            vehicle_name=vehicle_name,
+            dest_name=dest_name,
+            state=state,
+        )
+
+    @classmethod
     def _resolve_category_artwork(
         cls,
         vehicle_type: str,
