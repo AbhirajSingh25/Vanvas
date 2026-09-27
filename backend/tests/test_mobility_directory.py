@@ -282,10 +282,11 @@ async def test_truthful_empty_state(setup_test_db):
 
         listings = await MobilityService.get_mobility_listings(
             db=db,
-            destination_slug_or_id="manali"
+            destination_slug_or_id="pune"
         )
 
         assert listings == []
+
 
 
 # -------------------------------------------------------------

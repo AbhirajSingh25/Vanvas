@@ -20,23 +20,8 @@ CANONICAL_26_SLUGS = [
     "sariska-bhangarh", "chandigarh", "morni-hills", "lansdowne", "murthal"
 ]
 
-EXPECTED_PLACES_PER_DEST = {
-    "goa": 3, "jaipur": 3, "udaipur": 4, "varanasi": 4, "leh": 3, "spiti": 5,
-    "mussoorie": 5, "rishikesh": 6, "manali": 5, "dharamshala": 5, "kasol": 6,
-    "jaisalmer": 2, "munnar": 4, "dehradun": 2, "tungnath-chandrashila": 2,
-    "kainchi-dham": 2, "agra": 2, "mathura-vrindavan": 2, "neemrana": 2,
-    "damdama-sohna": 2, "alwar-siliserh": 2, "sariska-bhangarh": 2,
-    "chandigarh": 2, "morni-hills": 2, "lansdowne": 2, "murthal": 2
-}
-
-EXPECTED_STAYS_PER_DEST = {
-    "goa": 1, "jaipur": 1, "udaipur": 1, "varanasi": 1, "leh": 1, "spiti": 1,
-    "mussoorie": 1, "rishikesh": 1, "manali": 1, "dharamshala": 1, "kasol": 1,
-    "jaisalmer": 1, "munnar": 1, "dehradun": 1, "tungnath-chandrashila": 2,
-    "kainchi-dham": 1, "agra": 1, "mathura-vrindavan": 1, "neemrana": 1,
-    "damdama-sohna": 1, "alwar-siliserh": 1, "sariska-bhangarh": 1,
-    "chandigarh": 1, "morni-hills": 1, "lansdowne": 1, "murthal": 1
-}
+EXPECTED_PLACES_PER_DEST = {s: 8 for s in CANONICAL_26_SLUGS}
+EXPECTED_STAYS_PER_DEST = {s: 4 for s in CANONICAL_26_SLUGS}
 
 
 def test_canonical_destination_count():
@@ -53,9 +38,9 @@ def test_canonical_destination_count():
         assert s in slugs, f"Missing canonical slug: {s}"
 
 
-def test_canonical_place_inventory_total_81():
+def test_canonical_place_inventory_completeness_208():
     total_places = sum(len(v) for v in ADDITIONAL_PLACES_BY_DEST.values())
-    assert total_places == 81, f"Expected 81 places, found {total_places}"
+    assert total_places == 208, f"Expected 208 places, found {total_places}"
     
     for s in CANONICAL_26_SLUGS:
         expected = EXPECTED_PLACES_PER_DEST[s]
@@ -63,9 +48,9 @@ def test_canonical_place_inventory_total_81():
         assert actual == expected, f"{s}: expected {expected} places, found {actual}"
 
 
-def test_canonical_stay_inventory_total_27():
+def test_canonical_stay_inventory_completeness_104():
     total_hotels = sum(len(v) for v in ADDITIONAL_HOTELS_BY_DEST.values())
-    assert total_hotels == 27, f"Expected 27 stays, found {total_hotels}"
+    assert total_hotels == 104, f"Expected 104 stays, found {total_hotels}"
     
     for s in CANONICAL_26_SLUGS:
         expected = EXPECTED_STAYS_PER_DEST[s]
@@ -75,11 +60,12 @@ def test_canonical_stay_inventory_total_27():
 
 def test_canonical_mobility_inventory_completeness():
     total_rentals = sum(len(v) for v in ADDITIONAL_RENTALS_BY_DEST.values())
-    assert total_rentals >= 33, f"Expected at least 33 mobility options, found {total_rentals}"
+    assert total_rentals >= 50, f"Expected at least 50 mobility options, found {total_rentals}"
     
     for s in CANONICAL_26_SLUGS:
         actual = len(ADDITIONAL_RENTALS_BY_DEST.get(s, []))
         assert actual >= 1, f"{s} must have at least 1 mobility option, found {actual}"
+
 
 
 from unittest.mock import patch, AsyncMock

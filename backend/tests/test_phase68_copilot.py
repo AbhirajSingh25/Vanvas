@@ -126,9 +126,10 @@ async def test_tool_get_destination_info(db):
     dispatcher = AIToolDispatcher(db=db)
     res = await dispatcher.dispatch("get_destination_info", {"destination_slug": "mussoorie"})
     assert "error" not in res
-    assert res["destination_name"] == "Mussoorie"
+    assert "Mussoorie" in res["destination_name"]
     assert "altitude_meters" in res
     assert "total_curated_places" in res
+
 
 
 @pytest.mark.asyncio

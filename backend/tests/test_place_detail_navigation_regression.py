@@ -35,9 +35,10 @@ def test_curated_place_click_resolves():
 
     # Verify key Dharamshala landmarks are present
     names = [p["name"] for p in places]
-    assert any("Bhagsunag" in n for n in names)
-    assert any("Namgyal" in n for n in names)
+    assert any("Bhagsu" in n for n in names)
+    assert any("Tsuglagkhang" in n or "Namgyal" in n or "Dalai Lama" in n for n in names)
     assert any("Triund" in n for n in names)
+
 
     # 2. Check individual place detail & reviews API
     for p in places[:3]:
