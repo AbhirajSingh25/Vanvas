@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from app.models.models import Destination, Place, Hotel, RentalOption, WeatherSnapshot
 from app.providers.provider_factory import ProviderFactory
+from app.seed.canonical_dataset import CANONICAL_25_DESTINATIONS
 
 logger = logging.getLogger("vanvas.intelligence")
 
@@ -48,6 +49,17 @@ class DestinationIntelligenceService:
         if dest:
             return dest
 
+        # 3. Canonical dataset fallback
+        canon = next((
+            d for d in CANONICAL_25_DESTINATIONS
+            if d["slug"] == slug
+            or d["name"].lower() == clean_q
+            or slug in d["slug"]
+            or clean_q in d["name"].lower()
+        ), None)
+        if canon:
+            return Destination(id=f"dest-{canon['slug']}", **canon)
+
         return None
 
     @staticmethod
@@ -60,11 +72,38 @@ class DestinationIntelligenceService:
         if not clean_query:
             return None
 
-        geocoder = ProviderFactory.get_geocoding_provider()
-        geo_data = await geocoder.geocode(clean_query)
-        if not geo_data:
-            logger.warning(f"Could not dynamically geocode '{clean_query}'")
-            return None
+        clean_q = clean_query.lower().replace("-", " ")
+        slug_norm = clean_query.lower().replace(" ", "-").replace(",", "").replace("'", "")
+
+        # Check canonical registry first before calling unconstrained geocoders
+        canon = next((
+            d for d in CANONICAL_25_DESTINATIONS
+            if d["slug"] == slug_norm
+            or d["name"].lower() == clean_q
+            or slug_norm in d["slug"]
+            or clean_q in d["name"].lower()
+        ), None)
+
+        if canon:
+            geo_data = {
+                "name": canon["name"],
+                "canonical_slug": canon["slug"],
+                "slug": canon["slug"],
+                "state": canon["state"],
+                "country": "India",
+                "region": canon["region"],
+                "latitude": canon["latitude"],
+                "longitude": canon["longitude"],
+                "altitude_meters": canon["altitude_meters"],
+                "display_name": f"{canon['name']}, {canon['state']}, India",
+                "city": canon["name"],
+            }
+        else:
+            geocoder = ProviderFactory.get_geocoding_provider()
+            geo_data = await geocoder.geocode(clean_query)
+            if not geo_data:
+                logger.warning(f"Could not dynamically geocode '{clean_query}'")
+                return None
 
         name = geo_data["name"]
         slug = geo_data.get("canonical_slug") or geo_data.get("slug") or clean_query.lower().replace(" ", "-")

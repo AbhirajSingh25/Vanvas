@@ -320,7 +320,18 @@ export default function DestinationDetailPage() {
         if (!data || !data.destination) {
           throw new Error("404: Sanctuary not found in index");
         }
-        setDestination(data.destination);
+        const canon = findCanonicalDestination(slug);
+        const resolvedDest = canon ? {
+          ...data.destination,
+          name: canon.name || data.destination.name,
+          hindi_name: canon.hindi_name || data.destination.hindi_name,
+          state: canon.state || data.destination.state,
+          tagline: canon.tagline || data.destination.tagline,
+          description: data.destination.description || canon.description,
+          altitude_meters: canon.altitude_meters || data.destination.altitude_meters,
+          best_time_to_visit: canon.best_time_to_visit || data.destination.best_time_to_visit,
+        } : data.destination;
+        setDestination(resolvedDest);
         setPlaces(data.places || []);
         setWeather(data.weather || []);
         setDestLoading(false);
@@ -1938,8 +1949,14 @@ export default function DestinationDetailPage() {
 
       {/* Stay Detail Modal */}
       {stayModalOpen && selectedStayForModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4 max-h-[90vh] flex flex-col justify-between">
+        <div
+          onClick={() => setStayModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4 max-h-[90vh] flex flex-col justify-between"
+          >
             {/* Header Visual with Normalized Aspect Ratio */}
             <div className="relative aspect-[16/10] w-full bg-[#E5D5BA] shrink-0">
               {(() => {
@@ -2109,8 +2126,14 @@ export default function DestinationDetailPage() {
 
       {/* EXPANDED MOBILITY / RENTAL TERMS MODAL */}
       {rentalModalOpen && selectedRentalForModal && destination && (
-        <div className="fixed inset-0 z-50 bg-[#0F2924]/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fadeIn">
-          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col justify-between">
+        <div
+          onClick={() => setRentalModalOpen(false)}
+          className="fixed inset-0 z-50 bg-[#0F2924]/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col justify-between"
+          >
             {/* Modal Header */}
             <div className="p-5 border-b border-[#E5D5BA] flex items-center justify-between gap-3 sticky top-0 bg-[#FAF7F0] z-10">
               <div>

@@ -13,6 +13,7 @@ from app.schemas.schemas import (
 from app.providers.provider_factory import ProviderFactory
 from app.services.action_link_generator import ActionLinkGenerator
 from app.services.operating_hours_engine import OperatingHoursEngine
+from app.seed.canonical_dataset import CANONICAL_25_DESTINATIONS, ADDITIONAL_RENTALS_BY_DEST
 
 logger = logging.getLogger("vanvas.mobility")
 
@@ -218,11 +219,14 @@ class MobilityService:
         # -------------------------------------------------------------
         # TIER 4: Curated DB Listings (Only when explicitly marked curated)
         # -------------------------------------------------------------
-        if not listings and dest:
-            curated_query = db.query(RentalOption).filter(RentalOption.destination_id == dest.id)
-            if vehicle_type and vehicle_type != "All":
-                curated_query = curated_query.filter(RentalOption.vehicle_type.ilike(f"%{vehicle_type}%"))
-            curated_options = curated_query.order_by(RentalOption.price_per_day.asc()).all()
+        if not listings:
+            curated_options = []
+            dest_slug = dest.slug if dest else (destination_slug_or_id or "")
+            if dest:
+                curated_query = db.query(RentalOption).filter(RentalOption.destination_id == dest.id)
+                if vehicle_type and vehicle_type != "All":
+                    curated_query = curated_query.filter(RentalOption.vehicle_type.ilike(f"%{vehicle_type}%"))
+                curated_options = curated_query.order_by(RentalOption.price_per_day.asc()).all()
 
             for r in curated_options:
                 norm = r.provider_name.lower().strip()
@@ -282,6 +286,73 @@ class MobilityService:
                     "trust_source": "VANVAS_CURATED",
                     "last_verified_at": datetime.now(timezone.utc).isoformat(),
                 })
+
+            if not listings and dest_slug:
+                # Fallback to canonical rental dataset
+                c_rentals = ADDITIONAL_RENTALS_BY_DEST.get(dest_slug.lower(), [])
+                for r in c_rentals:
+                    v_type = r.get("vehicle_type", "Scooter")
+                    if vehicle_type and vehicle_type != "All":
+                        if vehicle_type.lower() not in v_type.lower() and vehicle_type.lower() not in r.get("vehicle_name", "").lower():
+                            continue
+                    norm = r.get("provider_name", "").lower().strip()
+                    if norm in seen_names:
+                        continue
+                    seen_names.add(norm)
+                    lat_val = r.get("latitude") or (dest.latitude if dest else 28.6139)
+                    lng_val = r.get("longitude") or (dest.longitude if dest else 77.2090)
+                    gmaps_url = f"https://www.google.com/maps/dir/?api=1&destination={lat_val:.6f},{lng_val:.6f}"
+                    action_links = ActionLinkGenerator.generate_rental_action_links(
+                        provider_name=r.get("provider_name", ""),
+                        latitude=lat_val,
+                        longitude=lng_val,
+                        website=None,
+                        phone=None,
+                    )
+                    cat_artwork = cls._resolve_category_artwork(
+                        vehicle_type=v_type,
+                        vehicle_name=r.get("vehicle_name"),
+                        dest_name=dest.name if dest else dest_slug,
+                        state=dest.state if dest else None,
+                    )
+                    listings.append({
+                        "id": f"c-rent-{dest_slug}-{len(listings)}",
+                        "destination_id": dest.id if dest else dest_slug,
+                        "provider_name": r.get("provider_name"),
+                        "vehicle_type": v_type,
+                        "vehicle_name": r.get("vehicle_name"),
+                        "brand": None,
+                        "model": r.get("vehicle_name"),
+                        "price_per_hour": None,
+                        "price_per_day": r.get("price_per_day"),
+                        "deposit": r.get("deposit_amount"),
+                        "deposit_amount": r.get("deposit_amount"),
+                        "location": r.get("location"),
+                        "address": r.get("location"),
+                        "latitude": lat_val,
+                        "longitude": lng_val,
+                        "opening_hours": r.get("opening_hours") or "08:00 AM - 08:00 PM",
+                        "hours_available": True,
+                        "is_open_now": True,
+                        "rating": r.get("rating", 4.7),
+                        "image_url": r.get("image_url") or cat_artwork,
+                        "phone": None,
+                        "whatsapp": None,
+                        "website": None,
+                        "google_maps_url": gmaps_url,
+                        "source": "vanvas_curated",
+                        "source_provider": "vanvas_curated",
+                        "source_id": f"c-rent-{dest_slug}-{len(listings)}",
+                        "source_url": None,
+                        "is_live": False,
+                        "inventory_verified": True,
+                        "verification_status": "CURATED",
+                        "distance_km": None,
+                        "action_links": action_links,
+                        "data_state": "CURATED",
+                        "trust_source": "VANVAS_CURATED",
+                        "last_verified_at": datetime.now(timezone.utc).isoformat(),
+                    })
 
         # Sort by distance when available
         listings.sort(key=lambda x: (

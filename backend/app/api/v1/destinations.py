@@ -10,6 +10,12 @@ from app.schemas.schemas import (
 )
 from app.providers.provider_factory import ProviderFactory
 from app.services.destination_intelligence import DestinationIntelligenceService
+from app.seed.canonical_dataset import (
+    CANONICAL_25_DESTINATIONS,
+    ADDITIONAL_PLACES_BY_DEST,
+    ADDITIONAL_HOTELS_BY_DEST,
+    ADDITIONAL_RENTALS_BY_DEST
+)
 
 router = APIRouter()
 
@@ -128,6 +134,7 @@ def get_destinations(
         )
     
     destinations = query.all()
+    existing_slugs = {d.slug for d in destinations}
     results = []
     for d in destinations:
         d_dict = {
@@ -163,11 +170,49 @@ def get_destinations(
         }
         results.append(d_dict)
 
+    # Merge unseeded canonical destinations if database is partially populated
+    for cd in CANONICAL_25_DESTINATIONS:
+        if cd["slug"] not in existing_slugs:
+            c_places = ADDITIONAL_PLACES_BY_DEST.get(cd["slug"], [])
+            c_hotels = ADDITIONAL_HOTELS_BY_DEST.get(cd["slug"], [])
+            c_rentals = ADDITIONAL_RENTALS_BY_DEST.get(cd["slug"], [])
+            results.append({
+                "id": f"dest-{cd['slug']}",
+                "name": cd["name"],
+                "slug": cd["slug"],
+                "hindi_name": cd.get("hindi_name", ""),
+                "name_en": cd.get("name_en", cd["name"]),
+                "name_hi": cd.get("name_hi", cd.get("hindi_name", "")),
+                "subtitle_en": cd.get("subtitle_en", cd["tagline"]),
+                "subtitle_hi": cd.get("subtitle_hi", ""),
+                "description_en": cd.get("description_en", cd["description"]),
+                "description_hi": cd.get("description_hi", ""),
+                "hero_artwork": cd.get("hero_artwork", cd["hero_image"]),
+                "hero_photo": cd.get("hero_photo", cd["hero_image"]),
+                "one_day_available": cd.get("one_day_available", True),
+                "trek_available": cd.get("trek_available", False),
+                "nearby_available": cd.get("nearby_available", True),
+                "state": cd["state"],
+                "region": cd["region"],
+                "tagline": cd["tagline"],
+                "description": cd["description"],
+                "hero_image": cd["hero_image"],
+                "latitude": cd["latitude"],
+                "longitude": cd["longitude"],
+                "altitude_meters": cd["altitude_meters"],
+                "best_time_to_visit": cd["best_time_to_visit"],
+                "weather_type": cd["weather_type"],
+                "is_featured": cd.get("is_featured", True),
+                "places_count": len(c_places),
+                "hotels_count": len(c_hotels),
+                "rentals_count": len(c_rentals)
+            })
+
     CANONICAL_SLUG_ORDER = [
         "manali", "rishikesh", "tungnath-chandrashila", "kainchi-dham", "kasol", "dharamshala",
         "goa", "jaipur", "murthal", "agra", "mathura-vrindavan", "neemrana", "damdama-sohna",
         "alwar-siliserh", "sariska-bhangarh", "dehradun", "chandigarh", "morni-hills",
-        "lansdowne", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar"
+        "lansdowne", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar", "jaisalmer"
     ]
     results.sort(key=lambda d: CANONICAL_SLUG_ORDER.index(d["slug"]) if d["slug"] in CANONICAL_SLUG_ORDER else 999)
     return results
@@ -212,6 +257,62 @@ async def get_destination_detail(
             "rentals_count": len(rentals)
         }
     
+    # Check authoritative canonical dataset fallback before calling live geocoder
+    clean_slug = slug_or_id.lower().replace("dest-", "").strip()
+    canon = next((
+        d for d in CANONICAL_25_DESTINATIONS
+        if d["slug"] == clean_slug or d["name"].lower() == clean_slug
+    ), None)
+    if canon:
+        c_places = ADDITIONAL_PLACES_BY_DEST.get(canon["slug"], [])
+        c_hotels = ADDITIONAL_HOTELS_BY_DEST.get(canon["slug"], [])
+        c_rentals = ADDITIONAL_RENTALS_BY_DEST.get(canon["slug"], [])
+        return {
+            "destination": {
+                "id": f"dest-{canon['slug']}",
+                **canon,
+                "places_count": len(c_places),
+                "hotels_count": len(c_hotels),
+                "rentals_count": len(c_rentals)
+            },
+            "is_curated": True,
+            "is_dynamic": False,
+            "places": [
+                {
+                    "id": f"p-{canon['slug']}-{p.get('slug', idx)}",
+                    "destination_id": f"dest-{canon['slug']}",
+                    **p,
+                    "data_state": "VERIFIED",
+                    "trust_source": "VANVAS_CURATED",
+                }
+                for idx, p in enumerate(c_places)
+            ],
+            "hotels": [
+                {
+                    "id": f"h-{canon['slug']}-{idx}",
+                    "destination_id": f"dest-{canon['slug']}",
+                    **h,
+                    "data_state": "VERIFIED",
+                    "trust_source": "VANVAS_CURATED",
+                }
+                for idx, h in enumerate(c_hotels)
+            ],
+            "rentals": [
+                {
+                    "id": f"r-{canon['slug']}-{idx}",
+                    "destination_id": f"dest-{canon['slug']}",
+                    **r,
+                    "data_state": "VERIFIED",
+                    "trust_source": "VANVAS_CURATED",
+                }
+                for idx, r in enumerate(c_rentals)
+            ],
+            "weather": [],
+            "places_count": len(c_places),
+            "hotels_count": len(c_hotels),
+            "rentals_count": len(c_rentals)
+        }
+
     # Dynamic destination resolution (transient, never inserted into DB)
     dyn_dest = await DestinationIntelligenceService.resolve_dynamic_destination(slug_or_id)
     if not dyn_dest:
@@ -292,6 +393,68 @@ async def get_destination_places(
         (Destination.id == destination_id) | (Destination.slug == destination_id)
     ).first()
     if not dest:
+        clean_d_slug = destination_id.lower().replace("dest-", "").strip()
+        canon_d = next((d for d in CANONICAL_25_DESTINATIONS if d["slug"] == clean_d_slug or d["name"].lower() == clean_d_slug), None)
+        if canon_d and canon_d["slug"] in ADDITIONAL_PLACES_BY_DEST:
+            raw_c_places = ADDITIONAL_PLACES_BY_DEST[canon_d["slug"]]
+            c_results: List[PlaceResponse] = []
+            for p in raw_c_places:
+                if category and category != "all" and category.lower() not in p.get("category", "").lower():
+                    continue
+                if search and search.lower() not in p.get("name", "").lower():
+                    continue
+                hours_eval = OperatingHoursEngine.evaluate_simple_hours(
+                    p.get("opening_time", "08:00"),
+                    p.get("closing_time", "20:00"),
+                    p.get("latitude", canon_d["latitude"]),
+                    p.get("longitude", canon_d["longitude"]),
+                )
+                action_links = ActionLinkGenerator.generate_place_action_links(
+                    name=p.get("name", ""),
+                    latitude=p.get("latitude", canon_d["latitude"]),
+                    longitude=p.get("longitude", canon_d["longitude"]),
+                    website=p.get("booking_url"),
+                    phone=None,
+                    booking_url=p.get("booking_url"),
+                    source="vanvas_curated",
+                    source_id=p.get("slug", ""),
+                )
+                c_results.append(PlaceResponse(
+                    id=f"p-{canon_d['slug']}-{p.get('slug', 'curated')}",
+                    destination_id=f"dest-{canon_d['slug']}",
+                    category=p.get("category", "Culture & Heritage"),
+                    name=p.get("name", "Landmark"),
+                    slug=p.get("slug", "landmark"),
+                    description=p.get("description", ""),
+                    address=p.get("address", f"{canon_d['name']}, {canon_d['state']}"),
+                    latitude=p.get("latitude", canon_d["latitude"]),
+                    longitude=p.get("longitude", canon_d["longitude"]),
+                    price_level=p.get("price_level", "Free"),
+                    approx_cost=p.get("approx_cost", 0.0),
+                    rating=p.get("rating", 4.8),
+                    review_count=p.get("review_count", 150),
+                    opening_time=p.get("opening_time", "08:00"),
+                    closing_time=p.get("closing_time", "20:00"),
+                    hours_available=hours_eval.hours_available,
+                    is_open_now=hours_eval.is_open_now,
+                    phone=None,
+                    website=p.get("booking_url"),
+                    recommended_duration_mins=p.get("recommended_duration_mins", 60),
+                    tags=p.get("tags", ""),
+                    image_url=p.get("image_url"),
+                    why_vanvas_recommends=p.get("why_vanvas_recommends"),
+                    booking_url=p.get("booking_url"),
+                    is_must_visit=p.get("is_must_visit", True),
+                    is_hidden_gem=p.get("is_hidden_gem", False),
+                    is_indoor=p.get("is_indoor", False),
+                    is_saved=False,
+                    action_links=action_links,
+                    data_state="VERIFIED",
+                    trust_source="VANVAS_CURATED",
+                ))
+            if c_results:
+                return c_results
+
         # Dynamic destination resolution for non-curated destination places
         dyn_dest = await DestinationIntelligenceService.resolve_dynamic_destination(destination_id)
         if not dyn_dest:

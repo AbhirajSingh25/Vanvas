@@ -16,6 +16,7 @@ from app.schemas.schemas import HotelResponse, ActionLink
 from app.providers.commerce.stayingapi_stay_adapter import StayingAPIStayCommerceAdapter
 from app.providers.provider_factory import ProviderFactory
 from app.services.action_link_generator import ActionLinkGenerator
+from app.seed.canonical_dataset import CANONICAL_25_DESTINATIONS, ADDITIONAL_HOTELS_BY_DEST
 
 logger = logging.getLogger(__name__)
 
@@ -559,84 +560,161 @@ class StayMatchingService:
 
         # 4. Fetch Curated DB Stays (if present)
         try:
+            db_hotels = []
             if dest:
                 db_hotels = db.query(Hotel).filter(Hotel.destination_id == dest.id).all()
-                for h in db_hotels:
-                    norm = h.name.lower().strip()
+
+            # If no DB hotels found, check canonical dataset fallback
+            if not db_hotels and dest_slug in ADDITIONAL_HOTELS_BY_DEST:
+                raw_c_hotels = ADDITIONAL_HOTELS_BY_DEST[dest_slug]
+                for idx, ch in enumerate(raw_c_hotels):
+                    norm = ch["name"].lower().strip()
                     if norm in seen_names:
                         continue
-
-                    h_lat = h.latitude or center_lat
-                    h_lng = h.longitude or center_lng
+                    h_lat = ch.get("latitude") or center_lat
+                    h_lng = ch.get("longitude") or center_lng
                     dist_km = cls._haversine(center_lat, center_lng, h_lat, h_lng) if (target_lat and target_lng) else None
-
                     acc_type = cls.classify_accommodation_type(
-                        property_type=h.hotel_style,
-                        name=h.name,
-                        stars=h.rating,
+                        property_type=ch.get("hotel_style"),
+                        name=ch["name"],
+                        stars=ch.get("rating"),
                     )
                     traveller_tags = cls.derive_traveller_tags(
                         accommodation_type=acc_type,
-                        property_type=h.hotel_style,
-                        price_per_night=h.price_per_night,
+                        property_type=ch.get("hotel_style"),
+                        price_per_night=ch.get("price_per_night"),
                     )
-
                     resolved_img = cls.resolve_stay_artwork(
-                        property_name=h.name,
+                        property_name=ch["name"],
                         destination_name=dest_name,
                         accommodation_type=acc_type,
-                        provider_image_url=h.image_url,
+                        provider_image_url=ch.get("image_url"),
                         destination_slug=dest_slug,
                     )
-
                     action_links = ActionLinkGenerator.generate_hotel_action_links(
-                        name=h.name,
+                        name=ch["name"],
                         latitude=h_lat,
                         longitude=h_lng,
-                        website=h.booking_url,
+                        website=ch.get("booking_url"),
                         phone=None,
-                        booking_url=h.booking_url,
+                        booking_url=ch.get("booking_url"),
                         source="vanvas_curated",
-                        source_id=h.id,
+                        source_id=f"h-{dest_slug}-{idx}",
                     )
-
                     seen_names.add(norm)
                     candidates.append({
-                        "id": h.id,
-                        "destination_id": dest.id,
-                        "name": h.name,
-                        "address": h.address or f"{dest_name} Valley",
+                        "id": f"h-{dest_slug}-{idx}",
+                        "destination_id": dest.id if dest else f"dest-{dest_slug}",
+                        "name": ch["name"],
+                        "address": ch.get("address") or f"{dest_name} Area",
                         "latitude": float(h_lat),
                         "longitude": float(h_lng),
-                        "price_per_night": h.price_per_night,
-                        "price_formatted": cls.format_price(h.price_per_night, "INR"),
+                        "price_per_night": ch.get("price_per_night"),
+                        "price_formatted": cls.format_price(ch.get("price_per_night"), "INR"),
                         "currency": "INR",
                         "availability_state": "UPON INQUIRY",
-                        "rating": h.rating,
+                        "rating": ch.get("rating", 4.8),
                         "review_count": 120,
-                        "hotel_style": h.hotel_style or "Boutique Sanctuary",
+                        "hotel_style": ch.get("hotel_style") or "Boutique Sanctuary",
                         "accommodation_type": acc_type,
                         "traveller_tags": traveller_tags,
-                        "amenities": h.amenities or "WiFi,Hot Water,Scenic View",
-                        "check_in_time": h.check_in_time or "11:00 AM",
-                        "check_out_time": h.check_out_time or "10:00 AM",
+                        "amenities": ch.get("amenities") or "WiFi,Hot Water,Scenic View",
+                        "check_in_time": ch.get("check_in_time") or "11:00 AM",
+                        "check_out_time": ch.get("check_out_time") or "10:00 AM",
                         "image_url": resolved_img,
-                        "booking_url": h.booking_url,
-                        "badge": h.badge or "CURATED STAY",
+                        "booking_url": ch.get("booking_url"),
+                        "badge": ch.get("badge") or "CURATED STAY",
                         "phone": None,
-                        "website": h.booking_url,
+                        "website": ch.get("booking_url"),
                         "source": "vanvas_curated",
-                        "source_id": h.id,
+                        "source_id": f"h-{dest_slug}-{idx}",
                         "provider_source": "vanvas_curated",
-                        "provider_listing_id": h.id,
-                        "provider_url": h.booking_url,
+                        "provider_listing_id": f"h-{dest_slug}-{idx}",
+                        "provider_url": ch.get("booking_url"),
                         "is_live": False,
-                        "price_verified": h.price_per_night is not None,
+                        "price_verified": ch.get("price_per_night") is not None,
                         "distance_km": dist_km,
                         "action_links": action_links,
                         "data_state": "CURATED",
                         "trust_source": "VANVAS_CURATED",
                     })
+
+            for h in db_hotels:
+                norm = h.name.lower().strip()
+                if norm in seen_names:
+                    continue
+
+                h_lat = h.latitude or center_lat
+                h_lng = h.longitude or center_lng
+                dist_km = cls._haversine(center_lat, center_lng, h_lat, h_lng) if (target_lat and target_lng) else None
+
+                acc_type = cls.classify_accommodation_type(
+                    property_type=h.hotel_style,
+                    name=h.name,
+                    stars=h.rating,
+                )
+                traveller_tags = cls.derive_traveller_tags(
+                    accommodation_type=acc_type,
+                    property_type=h.hotel_style,
+                    price_per_night=h.price_per_night,
+                )
+
+                resolved_img = cls.resolve_stay_artwork(
+                    property_name=h.name,
+                    destination_name=dest_name,
+                    accommodation_type=acc_type,
+                    provider_image_url=h.image_url,
+                    destination_slug=dest_slug,
+                )
+
+                action_links = ActionLinkGenerator.generate_hotel_action_links(
+                    name=h.name,
+                    latitude=h_lat,
+                    longitude=h_lng,
+                    website=h.booking_url,
+                    phone=None,
+                    booking_url=h.booking_url,
+                    source="vanvas_curated",
+                    source_id=h.id,
+                )
+
+                seen_names.add(norm)
+                candidates.append({
+                    "id": h.id,
+                    "destination_id": dest.id,
+                    "name": h.name,
+                    "address": h.address or f"{dest_name} Valley",
+                    "latitude": float(h_lat),
+                    "longitude": float(h_lng),
+                    "price_per_night": h.price_per_night,
+                    "price_formatted": cls.format_price(h.price_per_night, "INR"),
+                    "currency": "INR",
+                    "availability_state": "UPON INQUIRY",
+                    "rating": h.rating,
+                    "review_count": 120,
+                    "hotel_style": h.hotel_style or "Boutique Sanctuary",
+                    "accommodation_type": acc_type,
+                    "traveller_tags": traveller_tags,
+                    "amenities": h.amenities or "WiFi,Hot Water,Scenic View",
+                    "check_in_time": h.check_in_time or "11:00 AM",
+                    "check_out_time": h.check_out_time or "10:00 AM",
+                    "image_url": resolved_img,
+                    "booking_url": h.booking_url,
+                    "badge": h.badge or "CURATED STAY",
+                    "phone": None,
+                    "website": h.booking_url,
+                    "source": "vanvas_curated",
+                    "source_id": h.id,
+                    "provider_source": "vanvas_curated",
+                    "provider_listing_id": h.id,
+                    "provider_url": h.booking_url,
+                    "is_live": False,
+                    "price_verified": h.price_per_night is not None,
+                    "distance_km": dist_km,
+                    "action_links": action_links,
+                    "data_state": "CURATED",
+                    "trust_source": "VANVAS_CURATED",
+                })
         except Exception as exc:
             logger.warning(f"DB curated hotels query error in match_stays: {exc}")
 
