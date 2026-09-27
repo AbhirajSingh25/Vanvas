@@ -90,7 +90,7 @@ class UserPreference(Base):
     currency = Column(String(10), default="INR")  # INR, USD, EUR, GBP
     
     # Theme & Appearance
-    theme = Column(String(20), default="system")  # light, dark, system
+    theme = Column(String(20), default="light")  # light, dark, system
     
     # Location & Privacy Preferences
     location_mode = Column(String(50), default="ask_every_time")  # ask_every_time, while_using, never

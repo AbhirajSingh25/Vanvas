@@ -54,8 +54,14 @@ export default function RootLayout({
               (function() {
                 try {
                   var storedTheme = localStorage.getItem('vanvas_theme');
-                  var theme = storedTheme || 'system';
-                  var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  var isDark = false;
+                  if (storedTheme === 'dark') {
+                    isDark = true;
+                  } else if (storedTheme === 'system') {
+                    isDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  } else {
+                    isDark = false;
+                  }
                   if (isDark) {
                     document.documentElement.classList.add('dark');
                     document.documentElement.classList.remove('light');

@@ -26,7 +26,7 @@ class UserPreferenceSchema(BaseModel):
     language: Optional[str] = "en"
     region: Optional[str] = "India"
     currency: Optional[str] = "INR"
-    theme: Optional[str] = "system"
+    theme: Optional[str] = "light"
     location_mode: Optional[str] = "ask_every_time"
     notify_trip_reminders: Optional[bool] = True
     notify_trip_changes: Optional[bool] = True

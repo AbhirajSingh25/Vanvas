@@ -40,7 +40,7 @@ function applyThemeToDOM(resolved: ResolvedTheme) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [theme, setThemeState] = useState<ThemeMode>("system");
+  const [theme, setThemeState] = useState<ThemeMode>("light");
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
   const [mounted, setMounted] = useState(false);
 
@@ -48,22 +48,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
     const stored = (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null);
-    const initialTheme: ThemeMode = stored || (user?.preferences?.theme as ThemeMode) || "system";
+    let initialTheme: ThemeMode = "light";
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      initialTheme = stored;
+    } else if (user?.preferences?.theme === "light" || user?.preferences?.theme === "dark" || user?.preferences?.theme === "system") {
+      initialTheme = user.preferences.theme as ThemeMode;
+    } else {
+      initialTheme = "light";
+    }
+
     setThemeState(initialTheme);
-    const resolved = initialTheme === "system" ? getSystemTheme() : initialTheme;
+    const resolved: ResolvedTheme = initialTheme === "system" ? getSystemTheme() : (initialTheme === "dark" ? "dark" : "light");
     setResolvedTheme(resolved);
     applyThemeToDOM(resolved);
   }, []);
 
-  // Sync with authenticated user preferences when user object updates
+  // Sync with authenticated user preferences when user object updates (e.g. fresh login)
   useEffect(() => {
     if (user?.preferences?.theme) {
       const userTheme = user.preferences.theme as ThemeMode;
       const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-      // If user has a preference and no overriding local session was explicitly set, sync it
-      if (userTheme && userTheme !== theme && !stored) {
+      // If user has an explicit saved preference on account and no local session choice was stored, sync it
+      if ((userTheme === "light" || userTheme === "dark" || userTheme === "system") && !stored) {
         setThemeState(userTheme);
-        const resolved = userTheme === "system" ? getSystemTheme() : userTheme;
+        const resolved: ResolvedTheme = userTheme === "system" ? getSystemTheme() : (userTheme === "dark" ? "dark" : "light");
         setResolvedTheme(resolved);
         applyThemeToDOM(resolved);
         localStorage.setItem(THEME_STORAGE_KEY, userTheme);
@@ -73,23 +81,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Handle setting a new theme mode
   const setTheme = useCallback((newTheme: ThemeMode) => {
-    setThemeState(newTheme);
+    const validTheme: ThemeMode = (newTheme === "light" || newTheme === "dark" || newTheme === "system") ? newTheme : "light";
+    setThemeState(validTheme);
     if (typeof window !== "undefined") {
-      localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+      localStorage.setItem(THEME_STORAGE_KEY, validTheme);
     }
-    const resolved = newTheme === "system" ? getSystemTheme() : newTheme;
+    const resolved: ResolvedTheme = validTheme === "system" ? getSystemTheme() : (validTheme === "dark" ? "dark" : "light");
     setResolvedTheme(resolved);
     applyThemeToDOM(resolved);
   }, []);
 
-  // Listen to OS prefers-color-scheme changes when in system mode
+  // Listen to OS prefers-color-scheme changes ONLY when in explicit system mode
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (theme !== "system") return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleMediaChange = (e: MediaQueryListEvent) => {
       if (theme === "system") {
-        const resolved = e.matches ? "dark" : "light";
+        const resolved: ResolvedTheme = e.matches ? "dark" : "light";
         setResolvedTheme(resolved);
         applyThemeToDOM(resolved);
       }

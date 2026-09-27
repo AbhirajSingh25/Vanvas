@@ -95,9 +95,6 @@ function SettingsContent() {
       setLanguage(p.language || "en");
       setRegion(p.region || "India");
       setCurrency(p.currency || "INR");
-      if (p.theme && (p.theme === "light" || p.theme === "dark" || p.theme === "system")) {
-        setTheme(p.theme as any);
-      }
       setLocationMode(p.location_mode || "ask_every_time");
       setNotifyReminders(p.notify_trip_reminders !== false);
       setNotifyChanges(p.notify_trip_changes !== false);
