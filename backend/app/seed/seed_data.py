@@ -175,22 +175,20 @@ def seed_database():
         db.flush()
 
         # Clean up legacy rentals with stale/invalid image URLs or missing destinations
-        valid_dest_ids = {d.id for d in db.query(Destination).all()}
+        from app.services.mobility_service import MobilityService
+        valid_dest_ids = {d.id: d for d in db.query(Destination).all()}
         for old_r in db.query(RentalOption).all():
             if old_r.destination_id not in valid_dest_ids:
                 db.delete(old_r)
                 continue
-            if old_r.image_url and (".svg" in old_r.image_url or "unsplash" in old_r.image_url):
-                if "himalayan" in old_r.vehicle_name.lower():
-                    old_r.image_url = "/images/vehicles/adventure_motorcycle.jpg"
-                elif "bullet" in old_r.vehicle_name.lower() or "classic" in old_r.vehicle_name.lower():
-                    old_r.image_url = "/images/vehicles/classic_bullet.jpg"
-                elif "activa" in old_r.vehicle_name.lower() or "scooter" in old_r.vehicle_name.lower() or "jupiter" in old_r.vehicle_name.lower():
-                    old_r.image_url = "/images/vehicles/automatic_scooter.jpg"
-                elif "bike" in old_r.vehicle_name.lower() or "cycle" in old_r.vehicle_name.lower():
-                    old_r.image_url = "/images/vehicles/mountain_bike.jpg"
-                else:
-                    old_r.image_url = "/images/vehicles/universal_mobility.jpg"
+            dest_obj = valid_dest_ids[old_r.destination_id]
+            # Ensure deterministic destination-specific artwork
+            old_r.image_url = MobilityService.resolve_mobility_artwork(
+                vehicle_type=old_r.vehicle_type,
+                vehicle_name=old_r.vehicle_name,
+                destination_name=dest_obj.name,
+                destination_slug=dest_obj.slug,
+            )
         db.flush()
 
         # 7. Seed Verified Real Rental Providers

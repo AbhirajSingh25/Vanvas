@@ -361,6 +361,8 @@ class StayMatchingService:
 
                     # Distance
                     dist_km = cls._haversine(center_lat, center_lng, h_lat, h_lng) if (target_lat and target_lng) else None
+                    if dist_km is not None and dist_km > 75.0:
+                        continue
 
                     # Pricing
                     price_obj = item.get("price") or {}
@@ -491,6 +493,8 @@ class StayMatchingService:
                 dist_km = ls.get("distance_km") or (
                     cls._haversine(center_lat, center_lng, h_lat, h_lng) if (target_lat and target_lng) else None
                 )
+                if dist_km is not None and dist_km > 75.0:
+                    continue
 
                 # Classify from OSM style and tags
                 osm_style = ls.get("hotel_style", "")
@@ -564,8 +568,8 @@ class StayMatchingService:
             if dest:
                 db_hotels = db.query(Hotel).filter(Hotel.destination_id == dest.id).all()
 
-            # If no DB hotels found, check canonical dataset fallback
-            if not db_hotels and dest_slug in ADDITIONAL_HOTELS_BY_DEST:
+            # If fewer than 4 DB hotels found, ensure full canonical dataset stays are present
+            if (not db_hotels or len(db_hotels) < 4) and dest_slug in ADDITIONAL_HOTELS_BY_DEST:
                 raw_c_hotels = ADDITIONAL_HOTELS_BY_DEST[dest_slug]
                 for idx, ch in enumerate(raw_c_hotels):
                     norm = ch["name"].lower().strip()
@@ -612,7 +616,7 @@ class StayMatchingService:
                         "price_per_night": ch.get("price_per_night"),
                         "price_formatted": cls.format_price(ch.get("price_per_night"), "INR"),
                         "currency": "INR",
-                        "availability_state": "UPON INQUIRY",
+                        "availability_state": "AVAILABLE",
                         "rating": ch.get("rating", 4.8),
                         "review_count": 120,
                         "hotel_style": ch.get("hotel_style") or "Boutique Sanctuary",
@@ -800,8 +804,8 @@ class StayMatchingService:
         # Rank candidates by score descending
         filtered.sort(key=calculate_score, reverse=True)
 
-        # Slice top ~4-5 results (Never invent fake hotels to reach 5)
-        top_results = filtered[:5]
+        # Return all matched results (at least all 4 curated stays plus any live verified stays)
+        top_results = filtered[:20]
 
         # Convert to HotelResponse Pydantic models
         responses: List[HotelResponse] = []

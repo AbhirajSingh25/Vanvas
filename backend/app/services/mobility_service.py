@@ -522,8 +522,6 @@ class MobilityService:
         if any(k in dest_str for k in ["agra", "taj"]):
             if is_car:
                 return "/images/vehicles/agra_heritage_car.jpg"
-            if is_bullet:
-                return "/images/vehicles/classic_bullet.jpg"
             return "/images/vehicles/agra_taj_scooter.jpg"
 
         # 18. Mathura & Vrindavan
@@ -536,32 +534,22 @@ class MobilityService:
         if any(k in dest_str for k in ["neemrana"]):
             if is_car:
                 return "/images/vehicles/neemrana_highway_car.jpg"
-            if is_bullet or is_adv:
-                return "/images/vehicles/neemrana_fort_bullet.jpg"
-            return "/images/vehicles/automatic_scooter.jpg"
+            return "/images/vehicles/neemrana_fort_bullet.jpg"
 
         # 20. Damdama & Sohna
         if any(k in dest_str for k in ["damdama", "sohna"]):
-            if is_bullet or is_adv:
-                return "/images/vehicles/classic_bullet.jpg"
             return "/images/vehicles/damdama_lake_scooter.jpg"
 
         # 21. Alwar & Siliserh
         if any(k in dest_str for k in ["alwar", "siliserh"]):
-            if is_bullet or is_adv:
-                return "/images/vehicles/rajasthan_classic_bullet.jpg"
             return "/images/vehicles/alwar_siliserh_scooter.jpg"
 
         # 22. Sariska & Bhangarh
         if any(k in dest_str for k in ["sariska", "bhangarh"]):
-            if is_bullet or is_adv:
-                return "/images/vehicles/sariska_safari_adv_bike.jpg"
             return "/images/vehicles/sariska_safari_adv_bike.jpg"
 
         # 23. Chandigarh
         if any(k in dest_str for k in ["chandigarh"]):
-            if is_bullet:
-                return "/images/vehicles/classic_bullet.jpg"
             return "/images/vehicles/chandigarh_boulevard_ev.jpg"
 
         # 24. Morni Hills

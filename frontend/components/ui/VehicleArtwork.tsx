@@ -600,14 +600,14 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "electric_scooter",
     },
     motorcycle: {
-      src: "/images/vehicles/classic_bullet.jpg",
-      label: "Mughal Heritage City Cruiser",
-      category: "classic_bullet",
+      src: "/images/vehicles/agra_taj_scooter.jpg",
+      label: "Taj Heritage Tourer",
+      category: "electric_scooter",
     },
     adventure: {
-      src: "/images/vehicles/adventure_motorcycle.jpg",
+      src: "/images/vehicles/agra_taj_scooter.jpg",
       label: "Yamuna Corridor Tourer",
-      category: "adventure_motorcycle",
+      category: "electric_scooter",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -663,9 +663,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
   // 19. Neemrana
   neemrana: {
     scooter: {
-      src: "/images/vehicles/automatic_scooter.jpg",
-      label: "Neemrana Local Scooter",
-      category: "automatic_scooter",
+      src: "/images/vehicles/neemrana_fort_bullet.jpg",
+      label: "Neemrana Local Cruiser",
+      category: "classic_bullet",
     },
     motorcycle: {
       src: "/images/vehicles/neemrana_fort_bullet.jpg",
@@ -673,9 +673,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/rajasthan_desert_bike.jpg",
+      src: "/images/vehicles/neemrana_fort_bullet.jpg",
       label: "Aravalli Highway Tourer",
-      category: "adventure_motorcycle",
+      category: "classic_bullet",
     },
     car: {
       src: "/images/vehicles/neemrana_highway_car.jpg",
@@ -697,14 +697,14 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "automatic_scooter",
     },
     motorcycle: {
-      src: "/images/vehicles/classic_bullet.jpg",
-      label: "Sohna Ridge Classic Cruiser",
-      category: "classic_bullet",
+      src: "/images/vehicles/damdama_lake_scooter.jpg",
+      label: "Sohna Ridge Lake Cruiser",
+      category: "automatic_scooter",
     },
     adventure: {
-      src: "/images/vehicles/adventure_motorcycle.jpg",
+      src: "/images/vehicles/damdama_lake_scooter.jpg",
       label: "Aravalli Off-Road Explorer",
-      category: "adventure_motorcycle",
+      category: "automatic_scooter",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -731,14 +731,14 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "automatic_scooter",
     },
     motorcycle: {
-      src: "/images/vehicles/rajasthan_classic_bullet.jpg",
+      src: "/images/vehicles/alwar_siliserh_scooter.jpg",
       label: "Alwar Bala Quila Cruiser",
-      category: "classic_bullet",
+      category: "automatic_scooter",
     },
     adventure: {
-      src: "/images/vehicles/rajasthan_desert_bike.jpg",
+      src: "/images/vehicles/alwar_siliserh_scooter.jpg",
       label: "Aravalli Gap Adventure Bike",
-      category: "adventure_motorcycle",
+      category: "automatic_scooter",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -760,9 +760,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
   // 22. Sariska & Bhangarh
   "sariska-bhangarh": {
     scooter: {
-      src: "/images/vehicles/automatic_scooter.jpg",
-      label: "Alwar-Sariska Hill Scooter",
-      category: "automatic_scooter",
+      src: "/images/vehicles/sariska_safari_adv_bike.jpg",
+      label: "Alwar-Sariska Safari Tourer",
+      category: "adventure_motorcycle",
     },
     motorcycle: {
       src: "/images/vehicles/sariska_safari_adv_bike.jpg",
@@ -794,9 +794,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "electric_scooter",
     },
     motorcycle: {
-      src: "/images/vehicles/classic_bullet.jpg",
-      label: "Shivalik Highway Cruiser",
-      category: "classic_bullet",
+      src: "/images/vehicles/chandigarh_boulevard_ev.jpg",
+      label: "Chandigarh Shivalik Highway EV",
+      category: "electric_scooter",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -828,9 +828,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/adventure_motorcycle.jpg",
+      src: "/images/vehicles/morni_shivalik_bike.jpg",
       label: "Shivalik Hills Ridge Tourer",
-      category: "adventure_motorcycle",
+      category: "classic_bullet",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -886,9 +886,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
   // 26. Murthal
   murthal: {
     scooter: {
-      src: "/images/vehicles/automatic_scooter.jpg",
-      label: "GT Road Commuter Scooter",
-      category: "automatic_scooter",
+      src: "/images/vehicles/murthal_gt_road_bullet.jpg",
+      label: "GT Road Commuter Cruiser",
+      category: "classic_bullet",
     },
     motorcycle: {
       src: "/images/vehicles/murthal_gt_road_bullet.jpg",
@@ -912,6 +912,38 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
     },
   },
 };
+
+/**
+ * Known generic / fallback asset filenames that must NEVER override
+ * an exact destination-specific artwork.
+ */
+const GENERIC_VEHICLE_PATTERNS = [
+  "automatic_scooter.jpg",
+  "universal_mobility.jpg",
+  "classic_bullet.jpg",
+  "adventure_motorcycle.jpg",
+  "mountain_bike.jpg",
+  "electric_scooter.jpg",
+  "himachal_pine_forest_bike.jpg",
+  "himachal_valley_scooter.jpg",
+  "uttarakhand_forest_bike.jpg",
+  "uttarakhand_valley_scooter.jpg",
+  "rajasthan_classic_bullet.jpg",
+  "rajasthan_desert_bike.jpg",
+  "rajasthan_urban_scooter.jpg",
+  "coastal_beach_scooter.jpg",
+  "coastal_heritage_bike.jpg",
+  "coastal_palm_scooter.jpg",
+  "south_tea_scooter.jpg",
+  "generic",
+  "unsplash.com",
+];
+
+export function isGenericArtwork(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return true;
+  const lower = url.toLowerCase();
+  return GENERIC_VEHICLE_PATTERNS.some((p) => lower.includes(p));
+}
 
 /**
  * Normalizes destination string into canonical key.
@@ -950,10 +982,6 @@ function normalizeDestinationKey(dest?: string): string {
   return s.replace(/[^a-z0-9]/g, "-");
 }
 
-/**
- * Deterministically resolves vehicle type/name/model and destination context
- * to the appropriate regional VANVAS editorial mobility artworks.
- */
 /**
  * Deterministically resolves vehicle type/name/model and destination context
  * to the appropriate regional VANVAS editorial mobility artworks.
@@ -1067,7 +1095,7 @@ export function resolveVehicleArtwork(
     combined.includes("apache") ||
     combined.includes("avenger");
 
-  // 1. Destination-Matched Explicit Resolution (Scooter priority over bullet for scooters)
+  // 1. Destination-Matched Explicit Resolution (Absolute Destination Priority)
   if (destFleet) {
     if (isScooter && destFleet.scooter) return destFleet.scooter;
     if (isCar && destFleet.car) return destFleet.car;
@@ -1077,7 +1105,7 @@ export function resolveVehicleArtwork(
     return destFleet.default;
   }
 
-  // 2. Regional / General Defaults
+  // 2. Regional / General Defaults only when destination is unknown
   if (isBicycle) {
     return {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -1138,18 +1166,16 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
   const artwork = resolveVehicleArtwork(type, destCtx, name);
   const [hasError, setHasError] = useState(false);
 
-  // Deterministic destination-first artwork
+  // Deterministic destination-first artwork:
+  // Artwork resolved for the destination has absolute priority over generic/regional fallbacks.
   let finalSrc = artwork.src;
   
-  // Custom explicit destination-specific imageUrl from backend
+  // Custom explicit destination-specific imageUrl from backend only if not a generic fallback
   if (
     imageUrl &&
     typeof imageUrl === "string" &&
     imageUrl.length > 0 &&
-    !imageUrl.includes("unsplash.com") &&
-    !imageUrl.includes("generic") &&
-    !imageUrl.includes("automatic_scooter.jpg") &&
-    !imageUrl.includes("universal_mobility.jpg")
+    !isGenericArtwork(imageUrl)
   ) {
     finalSrc = imageUrl;
   }
@@ -1188,3 +1214,4 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
     </div>
   );
 };
+

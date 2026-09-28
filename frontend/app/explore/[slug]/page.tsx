@@ -186,7 +186,7 @@ export default function DestinationDetailPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [placesVisibleCount, setPlacesVisibleCount] = useState<number>(6);
+  const [placesVisibleCount, setPlacesVisibleCount] = useState<number>(24);
   
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [savedExperiences, setSavedExperiences] = useState<Record<string, boolean>>({});
@@ -1128,7 +1128,7 @@ export default function DestinationDetailPage() {
                   key={cat.id}
                   onClick={() => {
                     setSelectedCategory(cat.id);
-                    setPlacesVisibleCount(6);
+                    setPlacesVisibleCount(24);
                   }}
                   className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
                     selectedCategory === cat.id
