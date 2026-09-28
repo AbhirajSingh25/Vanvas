@@ -192,9 +192,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
   // 5. Leh
   leh: {
     scooter: {
-      src: "/images/vehicles/automatic_scooter.jpg",
+      src: "/images/vehicles/leh_palace_bullet.jpg",
       label: "Leh Town Mountain Scooter",
-      category: "automatic_scooter",
+      category: "classic_bullet",
     },
     motorcycle: {
       src: "/images/vehicles/leh_palace_bullet.jpg",
@@ -304,7 +304,7 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/adventure_motorcycle.jpg",
+      src: "/images/vehicles/uttarakhand_forest_bike.jpg",
       label: "Garhwal Foothill Adventure Bike",
       category: "adventure_motorcycle",
     },
@@ -340,7 +340,7 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
     adventure: {
       src: "/images/vehicles/manali_solang_bullet.jpg",
       label: "Manali Solang Pass Tourer",
-      category: "classic_bullet",
+      category: "adventure_motorcycle",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -372,9 +372,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/dharamshala_dhauladhar_bullet.jpg",
+      src: "/images/vehicles/himachal_pine_forest_bike.jpg",
       label: "Dhauladhar Snow View Classic Bullet",
-      category: "classic_bullet",
+      category: "adventure_motorcycle",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -406,9 +406,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/kasol_parvati_bullet.jpg",
+      src: "/images/vehicles/himachal_pine_forest_bike.jpg",
       label: "Parvati Gorge Trail Tourer",
-      category: "classic_bullet",
+      category: "adventure_motorcycle",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",

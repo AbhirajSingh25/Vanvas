@@ -461,7 +461,7 @@ class MobilityService:
         # 8. Rishikesh
         if any(k in dest_str for k in ["rishikesh", "tapovan"]):
             if is_adv:
-                return "/images/vehicles/adventure_motorcycle.jpg"
+                return "/images/vehicles/uttarakhand_forest_bike.jpg"
             if is_bullet:
                 return "/images/vehicles/rishikesh_ganga_bullet.jpg"
             return "/images/vehicles/rishikesh_tapovan_scooter.jpg"
@@ -474,13 +474,17 @@ class MobilityService:
 
         # 10. Dharamshala
         if any(k in dest_str for k in ["dharamshala", "mcleod", "bhagsu", "dharamsala"]):
-            if is_bullet or is_adv:
+            if is_adv:
+                return "/images/vehicles/himachal_pine_forest_bike.jpg"
+            if is_bullet:
                 return "/images/vehicles/dharamshala_dhauladhar_bullet.jpg"
             return "/images/vehicles/dharamshala_mcleod_scooter.jpg"
 
         # 11. Kasol
         if any(k in dest_str for k in ["kasol", "parvati"]):
-            if is_bullet or is_adv:
+            if is_adv:
+                return "/images/vehicles/himachal_pine_forest_bike.jpg"
+            if is_bullet:
                 return "/images/vehicles/kasol_parvati_bullet.jpg"
             return "/images/vehicles/kasol_valley_scooter.jpg"
 
