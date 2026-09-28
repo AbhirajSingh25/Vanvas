@@ -1263,7 +1263,7 @@ export default function DestinationDetailPage() {
               </div>
             </div>
 
-            {/* Stays Grid with Normalized Image Frame */}
+            {/* Stays Grid with Normalized Image Frame & Preview Limitation */}
             {staysLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
@@ -1275,148 +1275,170 @@ export default function DestinationDetailPage() {
                 ))}
               </div>
             ) : hotels.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {hotels.map((h) => {
-                  const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
-                  const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
-                  const stayVisual = resolvePlaceArtwork(h.name, destination.name, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
-                  const displayPrice = h.price_formatted || (isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry");
-                  const badgeLabel = isLiveStay ? (h.badge || "VERIFIED LIVE STAY") : "CURATED STAY";
-                  const availState = isLiveStay ? (h.availability_state || "AVAILABLE") : (h.availability_state === "AVAILABLE" ? "UPON INQUIRY" : (h.availability_state || "UPON INQUIRY"));
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {hotels.slice(0, 3).map((h) => {
+                    const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
+                    const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
+                    const stayVisual = resolvePlaceArtwork(h.name, destination.name, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
+                    const displayPrice = h.price_formatted || (isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry");
+                    const badgeLabel = isLiveStay ? (h.badge || "VERIFIED LIVE STAY") : "CURATED STAY";
+                    const availState = isLiveStay ? (h.availability_state || "AVAILABLE") : (h.availability_state === "AVAILABLE" ? "UPON INQUIRY" : (h.availability_state || "UPON INQUIRY"));
 
-                  return (
-                    <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
-                      <div className="space-y-3">
-                        {/* Visual Header with Normalized Aspect Ratio */}
-                        <div
-                          onClick={() => {
-                            setSelectedStayForModal(h);
-                            setStayModalOpen(true);
-                          }}
-                          className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group"
-                        >
-                          <VanvasImage
-                            src={stayVisual.imageUrl}
-                            fallbackSrc={stayVisual.fallbackUrl}
-                            alt={`${h.name} in ${destination.name}`}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                          {/* Top Badges */}
-                          <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
-                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
-                              {badgeLabel}
-                            </span>
+                    return (
+                      <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
+                        <div className="space-y-3">
+                          {/* Visual Header with Normalized Aspect Ratio */}
+                          <div
+                            onClick={() => {
+                              setSelectedStayForModal(h);
+                              setStayModalOpen(true);
+                            }}
+                            className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group"
+                          >
+                            <VanvasImage
+                              src={stayVisual.imageUrl}
+                              fallbackSrc={stayVisual.fallbackUrl}
+                              alt={`${h.name} in ${destination.name}`}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            {/* Top Badges */}
+                            <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
+                              <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                                {badgeLabel}
+                              </span>
 
-                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-xs ${
-                              availState === "AVAILABLE"
-                                ? "bg-emerald-600 text-white"
-                                : "bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] border border-white/15"
-                            }`}>
-                              {availState}
-                            </span>
-                          </div>
-
-                          {/* Bottom Category Tag */}
-                          <div className="absolute bottom-2.5 left-2.5">
-                            <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-medium border border-white/10">
-                              {h.accommodation_type || h.hotel_style || "Stay Sanctuary"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Content Details */}
-                        <div>
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{h.name}</h4>
-                            <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
-                              {displayPrice}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">
-                            {h.address}
-                            {typeof h.distance_km === "number" && ` • ${h.distance_km} km away`}
-                          </p>
-
-                          {/* Verified Tags */}
-                          {h.traveller_tags && h.traveller_tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {h.traveller_tags.slice(0, 3).map((tag) => (
-                                <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-[#EFE5D2] text-[#7B4D36] border border-[#E5D5BA]">
-                                  {tag}
-                                </span>
-                              ))}
+                              <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-xs ${
+                                availState === "AVAILABLE"
+                                  ? "bg-emerald-600 text-white"
+                                  : "bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] border border-white/15"
+                              }`}>
+                                {availState}
+                              </span>
                             </div>
-                          )}
+
+                            {/* Bottom Category Tag */}
+                            <div className="absolute bottom-2.5 left-2.5">
+                              <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-medium border border-white/10">
+                                {h.accommodation_type || h.hotel_style || "Stay Sanctuary"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Content Details */}
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{h.name}</h4>
+                              <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
+                                {displayPrice}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">
+                              {h.address}
+                              {typeof h.distance_km === "number" && ` • ${h.distance_km} km away`}
+                            </p>
+
+                            {/* Verified Tags */}
+                            {h.traveller_tags && h.traveller_tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {h.traveller_tags.slice(0, 3).map((tag) => (
+                                  <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-[#EFE5D2] text-[#7B4D36] border border-[#E5D5BA]">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Toolbar */}
+                        <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52] gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedStayForModal(h);
+                              setStayModalOpen(true);
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-semibold text-xs hover:bg-[#EFE5D2] hover:border-[#173B32] transition-colors cursor-pointer"
+                          >
+                            View Property
+                          </button>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {h.latitude && h.longitude && (
+                              <a
+                                href={`https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#B65E3C] transition-colors"
+                                title="Get directions"
+                              >
+                                <MapPin className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+
+                            {h.phone && (
+                              <a
+                                href={`tel:${h.phone}`}
+                                className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-emerald-700 hover:border-emerald-700 transition-colors"
+                                title={`Call ${h.phone}`}
+                              >
+                                <Phone className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+
+                            {h.availability_state === "UNAVAILABLE" ? (
+                              <span className="px-3 py-1.5 bg-neutral-200 text-neutral-600 rounded-xl font-bold text-[11px] uppercase tracking-wider">
+                                Unavailable
+                              </span>
+                            ) : (h.booking_url || h.provider_url) ? (
+                              <a
+                                href={h.booking_url || h.provider_url || "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
+                              >
+                                <span>{h.availability_state === "AVAILABLE" ? "Book Direct" : "Check Availability"}</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : h.phone ? (
+                              <a
+                                href={`tel:${h.phone}`}
+                                className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
+                              >
+                                <span>Contact Provider</span>
+                                <Phone className="w-3.5 h-3.5" />
+                              </a>
+                            ) : (
+                              <span className="px-2.5 py-1 text-[11px] font-mono text-[#7B4D36] bg-[#EFE5D2] rounded-lg border border-[#E5D5BA]">
+                                Upon Inquiry
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
 
-                      {/* Action Toolbar */}
-                      <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52] gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedStayForModal(h);
-                            setStayModalOpen(true);
-                          }}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-semibold text-xs hover:bg-[#EFE5D2] hover:border-[#173B32] transition-colors cursor-pointer"
-                        >
-                          View Property
-                        </button>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {h.latitude && h.longitude && (
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#B65E3C] transition-colors"
-                              title="Get directions"
-                            >
-                              <MapPin className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-
-                          {h.phone && (
-                            <a
-                              href={`tel:${h.phone}`}
-                              className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-emerald-700 hover:border-emerald-700 transition-colors"
-                              title={`Call ${h.phone}`}
-                            >
-                              <Phone className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-
-                          {h.availability_state === "UNAVAILABLE" ? (
-                            <span className="px-3 py-1.5 bg-neutral-200 text-neutral-600 rounded-xl font-bold text-[11px] uppercase tracking-wider">
-                              Unavailable
-                            </span>
-                          ) : (h.booking_url || h.provider_url) ? (
-                            <a
-                              href={h.booking_url || h.provider_url || "#"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
-                            >
-                              <span>{h.availability_state === "AVAILABLE" ? "Book Direct" : "Check Availability"}</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          ) : h.phone ? (
-                            <a
-                              href={`tel:${h.phone}`}
-                              className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
-                            >
-                              <span>Contact Provider</span>
-                              <Phone className="w-3.5 h-3.5" />
-                            </a>
-                          ) : (
-                            <span className="px-2.5 py-1 text-[11px] font-mono text-[#7B4D36] bg-[#EFE5D2] rounded-lg border border-[#E5D5BA]">
-                              Upon Inquiry
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {/* Explore All Stays CTA */}
+                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="space-y-0.5 text-center sm:text-left">
+                    <h4 className="font-serif font-bold text-base text-[#173B32]">
+                      Discover All Stays in {destination.name}
+                    </h4>
+                    <p className="text-xs text-[#7B4D36]">
+                      View all {hotels.length} verified sanctuaries, filter by style or traveller profile, and compare direct booking rates.
+                    </p>
+                  </div>
+                  <Link
+                    href={`/explore/${destination.slug || slug}/stays`}
+                    className="px-5 py-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-md shrink-0 cursor-pointer"
+                  >
+                    <BedDouble className="w-4 h-4 text-[#EFE5D2]" />
+                    <span>See All {hotels.length} Stays</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">

@@ -347,24 +347,53 @@ def send_connection_request(
     ).first()
 
     if existing:
-        if existing.status == "PENDING" and existing.receiver_user_id == current_user.id:
-            # Auto accept if opposite request was pending
-            existing.status = "ACCEPTED"
+        if existing.status == "PENDING":
+            if existing.receiver_user_id == current_user.id:
+                # Auto accept if opposite request was pending
+                existing.status = "ACCEPTED"
+                existing.updated_at = datetime.now(timezone.utc)
+                db.commit()
+                db.refresh(existing)
+
+                # Create notification
+                SoloMatchingService.create_notification(
+                    db,
+                    receiver.id,
+                    "Connection Request Accepted",
+                    f"{current_user.full_name} accepted your connection request!",
+                    "connection_accepted",
+                    entity_id=existing.id
+                )
+                return serialize_match_response(existing)
+            else:
+                # Idempotent response for existing outgoing pending request
+                if request_in.message and request_in.message != existing.message:
+                    existing.message = request_in.message
+                    existing.updated_at = datetime.now(timezone.utc)
+                    db.commit()
+                    db.refresh(existing)
+                return serialize_match_response(existing)
+        elif existing.status == "ACCEPTED":
+            return serialize_match_response(existing)
+        elif existing.status == "DECLINED":
+            # Re-activate declined request
+            existing.status = "PENDING"
+            existing.sender_user_id = current_user.id
+            existing.receiver_user_id = receiver.id
+            existing.destination_id = request_in.destination_id or existing.destination_id
+            existing.trek_slug = request_in.trek_slug or existing.trek_slug
+            existing.message = request_in.message
             existing.updated_at = datetime.now(timezone.utc)
             db.commit()
             db.refresh(existing)
-
-            # Create notification
             SoloMatchingService.create_notification(
                 db,
                 receiver.id,
-                "Connection Request Accepted",
-                f"{current_user.full_name} accepted your connection request!",
-                "connection_accepted",
+                "New Solo Traveler Connection Request",
+                f"{current_user.full_name} wants to connect with you on VANVAS!",
+                "connection_request",
                 entity_id=existing.id
             )
-            return serialize_match_response(existing)
-        elif existing.status == "ACCEPTED":
             return serialize_match_response(existing)
         elif existing.status == "BLOCKED":
             raise HTTPException(status_code=403, detail="Unable to connect with this traveler.")

@@ -242,7 +242,7 @@ export function TravelerDetailModal({
           </div>
 
           {/* Connect Input & Action */}
-          {traveler.connection_status === "NONE" && (
+          {(!traveler.connection_status || traveler.connection_status === "NONE") && (
             <div className="space-y-2 pt-2 border-t border-[#D8CBB2]/60">
               <label className="text-[11px] font-bold text-[#173B32] block">
                 Introduce Yourself (Optional)
@@ -260,6 +260,38 @@ export function TravelerDetailModal({
               >
                 {isSending ? "Sending Connection Request..." : "Send Connection Request"}
               </button>
+            </div>
+          )}
+
+          {traveler.connection_status === "PENDING_INCOMING" && (
+            <div className="space-y-2.5 pt-2 border-t border-[#D8CBB2]/60 bg-amber-50/60 p-4 rounded-2xl border border-amber-200">
+              <p className="text-xs font-bold text-amber-900">
+                {traveler.full_name} sent you a connection request!
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (traveler.match_id) {
+                      await api.acceptConnectionRequest(traveler.match_id);
+                      onConnectionUpdated?.(traveler.user_id, "ACCEPTED");
+                    }
+                  }}
+                  className="flex-1 py-2 rounded-xl bg-[#173B32] text-white text-xs font-bold hover:bg-[#20453B] transition-colors"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={async () => {
+                    if (traveler.match_id) {
+                      await api.declineConnectionRequest(traveler.match_id);
+                      onConnectionUpdated?.(traveler.user_id, "NONE");
+                    }
+                  }}
+                  className="flex-1 py-2 rounded-xl bg-white border border-amber-300 text-amber-900 text-xs font-bold hover:bg-amber-100/50 transition-colors"
+                >
+                  Decline
+                </button>
+              </div>
             </div>
           )}
 
