@@ -66,9 +66,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/goa_coastal_bullet.jpg",
-      label: "Goa Coastal Heritage Cruiser",
-      category: "classic_bullet",
+      src: "/images/vehicles/coastal_heritage_bike.jpg",
+      label: "Goa Coastal Heritage Adventure Tourer",
+      category: "adventure_motorcycle",
     },
     bicycle: {
       src: "/images/vehicles/mountain_bike.jpg",
@@ -168,9 +168,9 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/varanasi_bhu_bullet.jpg",
-      label: "Kashi Heritage Cruiser",
-      category: "classic_bullet",
+      src: "/images/vehicles/adventure_motorcycle.jpg",
+      label: "Kashi Expedition Adventure Tourer",
+      category: "adventure_motorcycle",
     },
     bicycle: {
       src: "/images/vehicles/varanasi_city_cycle.jpg",
@@ -338,7 +338,7 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/manali_solang_bullet.jpg",
+      src: "/images/vehicles/himachal_pine_forest_bike.jpg",
       label: "Manali Solang Pass Tourer",
       category: "adventure_motorcycle",
     },

@@ -402,7 +402,9 @@ class MobilityService:
         if any(k in dest_str for k in ["goa", "gokarna"]):
             if is_car:
                 return "/images/vehicles/goa_coastal_car.jpg"
-            if is_bullet or is_adv:
+            if is_adv:
+                return "/images/vehicles/coastal_heritage_bike.jpg"
+            if is_bullet:
                 return "/images/vehicles/goa_coastal_bullet.jpg"
             return "/images/vehicles/goa_beach_scooter.jpg"
 
@@ -432,7 +434,9 @@ class MobilityService:
                 return "/images/vehicles/varanasi_ghat_car.jpg"
             if is_bicycle:
                 return "/images/vehicles/varanasi_city_cycle.jpg"
-            if is_bullet or is_adv:
+            if is_adv:
+                return "/images/vehicles/adventure_motorcycle.jpg"
+            if is_bullet:
                 return "/images/vehicles/varanasi_bhu_bullet.jpg"
             return "/images/vehicles/varanasi_assi_scooter.jpg"
 

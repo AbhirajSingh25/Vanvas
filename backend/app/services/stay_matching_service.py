@@ -232,18 +232,53 @@ class StayMatchingService:
         destination_slug: Optional[str] = None,
     ) -> str:
         """
-        Implements strict Task 6 image hierarchy:
-        1. Provider property image (if valid HTTP URL)
-        2. Provider verified image
-        3. Stay category artwork (hostel.webp, homestay.webp, resort.webp, boutique.webp, heritage.webp, stay.webp)
-        4. Universal accommodation fallback (stay.webp)
+        Implements strict hotel visual resolution hierarchy:
+        1. Exact provider / verified property photo (HTTP URL)
+        2. Exact property image from provider_image_url (if local property asset)
+        3. Curated exact-hotel registry lookup (HOTEL_ARTWORK_REGISTRY)
+        4. Destination stay category artwork
+        5. Universal accommodation fallback (stay.webp)
 
-        NEVER inherits monastery, scooter, hero, or landmark artwork.
+        A generic destination stay image must never override an exact property mapping.
         """
-        if provider_image_url and (provider_image_url.startswith("http://") or provider_image_url.startswith("https://")):
+        # 1. External Real Photograph
+        if provider_image_url and (provider_image_url.startswith("http://") or provider_image_url.startswith("https://")) and "placeholder" not in provider_image_url:
             return provider_image_url
 
-        # Check category-specific artwork
+        # 2. Local exact property asset path
+        if provider_image_url and provider_image_url.startswith("/images/places/") and "/stays/" in provider_image_url and not any(k in provider_image_url for k in ["/categories/", "/fallbacks/", "/universal/"]):
+            return provider_image_url
+
+        # 3. Exact Hotel Registry Lookup
+        from app.providers.artwork_provider import CuratedArtworkProvider
+        dest_slug_clean = (destination_slug or destination_name or "").lower().strip().replace(" ", "-")
+        import re
+        prop_slug = re.sub(r"[^a-z0-9]+", "-", property_name.lower().replace("&", "and").replace("'", "").replace("’", "")).strip("-")
+        lookup_key = f"{dest_slug_clean}:{prop_slug}"
+
+        if lookup_key in CuratedArtworkProvider.HOTEL_ARTWORK_REGISTRY:
+            return CuratedArtworkProvider.HOTEL_ARTWORK_REGISTRY[lookup_key]["image_url"]
+        
+        alias_map = CuratedArtworkProvider.HOTEL_ALIAS_MAP
+        if lookup_key in alias_map and alias_map[lookup_key] in CuratedArtworkProvider.HOTEL_ARTWORK_REGISTRY:
+            return CuratedArtworkProvider.HOTEL_ARTWORK_REGISTRY[alias_map[lookup_key]]["image_url"]
+
+        # Check destination-scoped aliases
+        for reg_key, item in CuratedArtworkProvider.HOTEL_ARTWORK_REGISTRY.items():
+            reg_dest, reg_hotel = reg_key.split(":")
+            if reg_dest == dest_slug_clean or reg_dest in dest_slug_clean or dest_slug_clean in reg_dest:
+                aliases = item.get("aliases", [reg_hotel])
+                if prop_slug == reg_hotel or prop_slug in aliases:
+                    return item["image_url"]
+                for al in aliases:
+                    if len(al) >= 3 and (prop_slug.startswith(f"{al}-") or prop_slug.endswith(f"-{al}") or f"-{al}-" in prop_slug):
+                        return item["image_url"]
+
+        # 4. Stay category artwork if destination category exists
+        if destination_slug:
+            return f"/images/places/{destination_slug}/categories/stay.webp"
+
+        # 5. Check category-specific universal artwork
         cat_lower = accommodation_type.lower().strip()
         if cat_lower in ["hostel", "dorm"]:
             return "/images/places/universal/hostel.webp"
@@ -255,10 +290,6 @@ class StayMatchingService:
             return "/images/places/universal/boutique.webp"
         elif cat_lower in ["heritage"]:
             return "/images/places/universal/heritage.webp"
-
-        # Destination category stay artwork if available, otherwise universal stay
-        if destination_slug:
-            return f"/images/places/{destination_slug}/categories/stay.webp"
 
         return "/images/places/universal/stay.webp"
 

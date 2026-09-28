@@ -4664,7 +4664,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '19:00',
                          'description': 'The highest point in Landour (2,275m) offering high-powered telescope '
                                         'panoramas of snow-capped Himalayan peaks including Kedarnath and Badrinath.',
-                         'image_url': '/images/places/mussoorie/lal-tibba-viewpoint.webp',
+                         'image_url': '/images/places/mussoorie/lal-tibba.webp',
                          'is_hidden_gem': False,
                          'is_indoor': False,
                          'is_must_visit': True,
