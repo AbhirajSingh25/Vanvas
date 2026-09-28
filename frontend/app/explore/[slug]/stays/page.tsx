@@ -12,7 +12,7 @@ import {
 import { api } from "@/lib/api";
 import { Hotel, Destination } from "@/types";
 import { VanvasImage } from "@/components/ui/VanvasImage";
-import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
+import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
 import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 
 const ACCOMMODATION_STYLES = [
@@ -319,7 +319,7 @@ export default function DestinationStaysPage() {
             {filteredHotels.map((h) => {
               const isPriceVerified = typeof h.price_per_night === "number" && h.price_per_night > 0;
               const displayPrice = isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry";
-              const stayVisual = resolvePlaceArtwork(h.name, destName, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
+              const stayVisual = resolveHotelArtwork(h.name, destName, h.hotel_style || h.accommodation_type, h.image_url, h.is_live, h.source);
 
               // Direction url
               const dirUrl = h.latitude && h.longitude
@@ -504,10 +504,10 @@ export default function DestinationStaysPage() {
               {/* Primary Image Preview */}
               <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA]">
                 {(() => {
-                  const modalVis = resolvePlaceArtwork(
+                  const modalVis = resolveHotelArtwork(
                     selectedStayForModal.name,
                     destName,
-                    "Stays & Sanctuaries",
+                    selectedStayForModal.hotel_style || selectedStayForModal.accommodation_type,
                     selectedStayForModal.image_url,
                     selectedStayForModal.is_live,
                     selectedStayForModal.source

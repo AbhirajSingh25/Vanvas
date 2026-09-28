@@ -22,7 +22,7 @@ import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
-import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
+import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
 import { getCanonicalHindiName, findCanonicalDestination } from "@/lib/canonicalDestinations";
 import {
   DESTINATION_TREK_REGISTRY,
@@ -1280,7 +1280,7 @@ export default function DestinationDetailPage() {
                   {hotels.slice(0, 3).map((h) => {
                     const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
                     const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
-                    const stayVisual = resolvePlaceArtwork(h.name, destination.name, "Stays & Sanctuaries", h.image_url, h.is_live, h.source);
+                    const stayVisual = resolveHotelArtwork(h.name, destination.name, h.hotel_style || h.accommodation_type, h.image_url, h.is_live, h.source);
                     const displayPrice = h.price_formatted || (isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry");
                     const badgeLabel = isLiveStay ? (h.badge || "VERIFIED LIVE STAY") : "CURATED STAY";
                     const availState = isLiveStay ? (h.availability_state || "AVAILABLE") : (h.availability_state === "AVAILABLE" ? "UPON INQUIRY" : (h.availability_state || "UPON INQUIRY"));
@@ -1988,10 +1988,10 @@ export default function DestinationDetailPage() {
             {/* Header Visual with Normalized Aspect Ratio */}
             <div className="relative aspect-[16/10] w-full bg-[#E5D5BA] shrink-0">
               {(() => {
-                const stayVisual = resolvePlaceArtwork(
+                const stayVisual = resolveHotelArtwork(
                   selectedStayForModal.name,
                   destination.name,
-                  "Stays & Sanctuaries",
+                  selectedStayForModal.hotel_style || selectedStayForModal.accommodation_type,
                   selectedStayForModal.image_url,
                   selectedStayForModal.is_live,
                   selectedStayForModal.source

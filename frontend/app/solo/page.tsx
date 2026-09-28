@@ -922,12 +922,14 @@ function SoloPageContent() {
                   className="p-5 rounded-3xl bg-white border border-[#D8CBB2] hover:border-[#173B32] transition-all cursor-pointer shadow-2xs space-y-3 group"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] flex items-center justify-center p-2 text-[#173B32]">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] flex items-center justify-center p-1 text-[#173B32] overflow-hidden">
                       <VehicleArtwork
                         type={r.vehicle_type}
                         name={r.vehicle_name}
                         destination={displayName}
-                        className="w-8 h-8 object-contain"
+                        imageUrl={r.image_url}
+                        className="w-full h-full object-cover rounded-xl"
+                        showBadge={false}
                       />
                     </div>
                     <span className="px-2.5 py-0.5 rounded-full bg-[#E05A2B]/10 text-[#E05A2B] text-[10px] font-mono font-bold uppercase">

@@ -40,7 +40,10 @@ export function MobilityDetailModal({
               <VehicleArtwork
                 type={rental.vehicle_type}
                 name={rental.vehicle_name}
-                className="w-10 h-10 object-contain"
+                destination={rental.location || (rental as any).destination_name || (rental as any).destination}
+                imageUrl={rental.image_url}
+                className="w-full h-full object-cover"
+                showBadge={false}
               />
             </div>
             <div>

@@ -768,17 +768,28 @@ export type ImageExactness =
 
 export interface ImageContract {
   url: string;
+  imageUrl?: string;
   fallback_url?: string;
+  fallbackUrl?: string;
   source: "wikimedia" | "osm" | "vanvas_curated" | "live_provider" | "fallback" | string;
-  source_type: ImageSourceType;
+  source_type?: ImageSourceType;
+  sourceType?: ImageSourceType;
   provenance: ImageProvenanceTier;
-  semantic_category: string;
+  semantic_category?: string;
+  semanticCategory?: string;
   exactness: ImageExactness;
   attribution?: string;
   license?: string;
-  alt_text: string;
-  badge_label: ProvenanceBadge;
+  alt_text?: string;
+  altText?: string;
+  badge_label?: ProvenanceBadge;
+  badgeLabel?: ProvenanceBadge;
   visual_description?: string;
+  visualDescription?: string;
+  artwork_key?: string;
+  artworkKey?: string;
+  is_real_photo?: boolean;
+  badge?: string;
 }
 
 // ----------------- Solo Traveler Circles Types -----------------
