@@ -213,6 +213,8 @@ export const EXACT_PLACE_REGISTRY: Record<string, ExactPlaceEntry> = {
       "city-palace",
       "city-palace-alwar-siliserh",
       "city-palace-of-alwar-siliserh",
+      "city-palace-of-udaipur",
+      "city-palace-udaipur",
       "vinay-vilas-mahal"
     ]
   },
@@ -831,6 +833,8 @@ export const EXACT_PLACE_REGISTRY: Record<string, ExactPlaceEntry> = {
       "city-palace",
       "city-palace-jaipur",
       "city-palace-of-jaipur",
+      "city-palace-of-udaipur",
+      "city-palace-udaipur",
       "jaipur-city-palace",
       "jaipur-city-palace-and-chandra-mahal"
     ]
@@ -2494,6 +2498,8 @@ export const EXACT_PLACE_REGISTRY: Record<string, ExactPlaceEntry> = {
       "city-palace",
       "city-palace-complex",
       "city-palace-complex-and-zenana-mahal",
+      "city-palace-of-udaipur",
+      "city-palace-udaipur",
       "udaipur-city-palace",
       "zenana-mahal"
     ]
