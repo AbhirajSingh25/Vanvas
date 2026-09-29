@@ -304,19 +304,19 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/uttarakhand_forest_bike.jpg",
-      label: "Garhwal Foothill Adventure Bike",
-      category: "adventure_motorcycle",
+      src: "/images/vehicles/rishikesh_ganga_bullet.jpg",
+      label: "Garhwal Foothill Himalayan Cruiser",
+      category: "classic_bullet",
     },
     bicycle: {
-      src: "/images/vehicles/mountain_bike.jpg",
-      label: "Ganga Riverside Trail Cycle",
+      src: "/images/vehicles/rishikesh_ganga_mtb.jpg",
+      label: "Rishikesh Ganga Trail MTB",
       category: "mountain_bike",
     },
     car: {
-      src: "/images/vehicles/universal_mobility.jpg",
-      label: "Rishikesh Foothills Taxi",
-      category: "car",
+      src: "/images/vehicles/rishikesh_tapovan_scooter.jpg",
+      label: "Rishikesh Foothills Mobility",
+      category: "automatic_scooter",
     },
     default: {
       src: "/images/vehicles/rishikesh_tapovan_scooter.jpg",
@@ -338,19 +338,19 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "classic_bullet",
     },
     adventure: {
-      src: "/images/vehicles/himachal_pine_forest_bike.jpg",
-      label: "Manali Solang Pass Tourer",
+      src: "/images/vehicles/manali_himalayan_adv_bike.jpg",
+      label: "Manali Himalayan 450 Pass Tourer",
       category: "adventure_motorcycle",
     },
     bicycle: {
-      src: "/images/vehicles/mountain_bike.jpg",
+      src: "/images/vehicles/manali_solang_mtb.jpg",
       label: "Solang Downhill Mountain MTB",
       category: "mountain_bike",
     },
     car: {
-      src: "/images/vehicles/universal_mobility.jpg",
-      label: "Manali Mountain Taxi",
-      category: "car",
+      src: "/images/vehicles/manali_solang_bullet.jpg",
+      label: "Manali Mountain Mobility",
+      category: "classic_bullet",
     },
     default: {
       src: "/images/vehicles/manali_beas_scooter.jpg",
@@ -1035,29 +1035,6 @@ export function resolveVehicleArtwork(
     combined.includes("aerox") ||
     combined.includes("scooty");
 
-  const isCar =
-    combined.includes("car") ||
-    combined.includes("self-drive") ||
-    combined.includes("self drive") ||
-    combined.includes("suv") ||
-    combined.includes("sedan") ||
-    combined.includes("hatchback") ||
-    combined.includes("thar") ||
-    combined.includes("creta") ||
-    combined.includes("swift") ||
-    combined.includes("baleno") ||
-    combined.includes("i20") ||
-    combined.includes("scorpio") ||
-    combined.includes("seltos");
-
-  const isBicycle =
-    combined.includes("mountain_bike") ||
-    combined.includes("mountain bike") ||
-    combined.includes("bicycle") ||
-    combined.includes("mtb") ||
-    combined.includes("pedal") ||
-    (combined.includes("cycle") && !combined.includes("motorcycle") && !combined.includes("motor cycle"));
-
   const isAdventure =
     combined.includes("adventure_motorcycle") ||
     combined.includes("adventure motorcycle") ||
@@ -1095,13 +1072,41 @@ export function resolveVehicleArtwork(
     combined.includes("apache") ||
     combined.includes("avenger");
 
+  const isCar =
+    !isClassicBullet &&
+    !isAdventure &&
+    (combined.includes("car") ||
+      combined.includes("self-drive") ||
+      combined.includes("self drive") ||
+      combined.includes("suv") ||
+      combined.includes("sedan") ||
+      combined.includes("hatchback") ||
+      combined.includes("mahindra thar") ||
+      combined.includes("thar 4x4") ||
+      combined.includes("creta") ||
+      combined.includes("swift") ||
+      combined.includes("baleno") ||
+      combined.includes("i20") ||
+      combined.includes("scorpio") ||
+      combined.includes("innova") ||
+      combined.includes("ertiga") ||
+      combined.includes("seltos"));
+
+  const isBicycle =
+    combined.includes("mountain_bike") ||
+    combined.includes("mountain bike") ||
+    combined.includes("bicycle") ||
+    combined.includes("mtb") ||
+    combined.includes("pedal") ||
+    (combined.includes("cycle") && !combined.includes("motorcycle") && !combined.includes("motor cycle"));
+
   // 1. Destination-Matched Explicit Resolution (Absolute Destination Priority)
   if (destFleet) {
     if (isScooter && destFleet.scooter) return destFleet.scooter;
-    if (isCar && destFleet.car) return destFleet.car;
-    if (isBicycle && destFleet.bicycle) return destFleet.bicycle;
     if (isAdventure && destFleet.adventure) return destFleet.adventure;
+    if (isBicycle && destFleet.bicycle) return destFleet.bicycle;
     if (isClassicBullet && destFleet.motorcycle) return destFleet.motorcycle;
+    if (isCar && destFleet.car) return destFleet.car;
     return destFleet.default;
   }
 

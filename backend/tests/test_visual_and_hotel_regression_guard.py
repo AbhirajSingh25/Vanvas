@@ -119,4 +119,42 @@ async def test_rentals_have_valid_and_distinct_assets():
             img = r.get("image_url")
             assert img, f"Rental {r['vehicle_name']} in {dest} missing image_url"
             assert not img.endswith("universal_mobility.jpg"), f"Rental {r['vehicle_name']} using universal fallback"
+            assert not img.endswith("himachal_pine_forest_bike.jpg"), f"Rental {r['vehicle_name']} using generic himachal fallback"
+            assert not img.endswith("uttarakhand_forest_bike.jpg"), f"Rental {r['vehicle_name']} using generic uttarakhand fallback"
             assert os.path.exists(os.path.join(FRONTEND_PUBLIC, img.lstrip("/"))), f"Rental file missing: {img}"
+
+
+@pytest.mark.asyncio
+async def test_perceptual_visual_differentiation():
+    """7. Ensure that place images within landmark destinations (Udaipur, Rishikesh, Manali) are perceptually distinct."""
+    from PIL import Image
+    
+    def simple_dhash(full_path, hash_size=8):
+        with Image.open(full_path) as im:
+            im = im.convert('L').resize((hash_size + 1, hash_size), Image.Resampling.LANCZOS)
+            pixels = list(im.get_flattened_data()) if hasattr(im, 'get_flattened_data') else list(im.tobytes())
+            diff = [pixels[row * (hash_size + 1) + col] > pixels[row * (hash_size + 1) + col + 1]
+                    for row in range(hash_size) for col in range(hash_size)]
+            dec = 0
+            hex_str = []
+            for idx, val in enumerate(diff):
+                if val:
+                    dec += 2**(idx % 8)
+                if (idx % 8) == 7:
+                    hex_str.append(hex(dec)[2:].rjust(2, '0'))
+                    dec = 0
+            return ''.join(hex_str)
+
+    for dest in ["udaipur", "rishikesh", "manali"]:
+        places = ADDITIONAL_PLACES_BY_DEST.get(dest, [])
+        hashes = {}
+        for p in places:
+            img = p.get("image_url")
+            full_path = os.path.join(FRONTEND_PUBLIC, img.lstrip("/"))
+            h = simple_dhash(full_path)
+            for other_name, other_h in hashes.items():
+                # Hamming distance between dhashes
+                dist = bin(int(h, 16) ^ int(other_h, 16)).count('1')
+                assert dist > 2, f"Places '{p['name']}' and '{other_name}' in {dest} are visually identical or duplicate (hamming distance {dist})"
+            hashes[p["name"]] = h
+
