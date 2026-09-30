@@ -44,10 +44,15 @@ def setup_db():
     db = TestingSessionLocal()
     seed_database(engine_to_use=engine, db=db)
     app.dependency_overrides[get_db] = override_get_db
-    yield
-    db.close()
-    app.dependency_overrides.clear()
-    Base.metadata.drop_all(bind=engine)
+    settings.ENVIRONMENT = "development"
+    try:
+        yield
+    finally:
+        settings.ENVIRONMENT = "development"
+        db.close()
+        app.dependency_overrides.pop(get_db, None)
+        Base.metadata.drop_all(bind=engine)
+
 
 
 def test_canonical_inventory_counts():
@@ -184,11 +189,14 @@ def test_cors_production_policy():
     dev_origins = settings.get_allowed_cors_origins()
     assert any("localhost" in o for o in dev_origins)
     
-    settings.ENVIRONMENT = "production"
-    prod_filtered = settings.get_allowed_cors_origins()
-    assert not any("localhost" in o or "127.0.0.1" in o for o in prod_filtered)
-    assert "https://vanvas.app" in prod_filtered or "https://vanvas.in" in prod_filtered
-    settings.ENVIRONMENT = "development"
+    try:
+        settings.ENVIRONMENT = "production"
+        prod_filtered = settings.get_allowed_cors_origins()
+        assert not any("localhost" in o or "127.0.0.1" in o for o in prod_filtered)
+        assert "https://vanvas.app" in prod_filtered or "https://vanvas.in" in prod_filtered
+    finally:
+        settings.ENVIRONMENT = "development"
+
 
 
 def test_booking_state_machine_integrity():
@@ -262,7 +270,10 @@ def test_booking_state_machine_integrity():
 def test_copilot_private_chat_image_security():
     """Phase 10: Verify private chat images require authorization and reject unauthorized access."""
     # Unauthenticated access in production -> 401 Unauthorized
-    settings.ENVIRONMENT = "production"
-    res_unauth = client.get("/api/v1/copilot/image/chat/user-chat-1/sample_photo.jpg")
-    assert res_unauth.status_code == 401
-    settings.ENVIRONMENT = "development"
+    try:
+        settings.ENVIRONMENT = "production"
+        res_unauth = client.get("/api/v1/copilot/image/chat/user-chat-1/sample_photo.jpg")
+        assert res_unauth.status_code == 401
+    finally:
+        settings.ENVIRONMENT = "development"
+

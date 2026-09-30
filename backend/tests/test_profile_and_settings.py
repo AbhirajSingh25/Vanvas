@@ -34,12 +34,12 @@ def setup_test_db():
     
     # Enable production mode during security tests so unauthenticated requests strictly return 401
     settings.ENVIRONMENT = "production"
-    
-    yield
-    
-    settings.ENVIRONMENT = "development"
-    app.dependency_overrides.pop(get_db, None)
-    Base.metadata.drop_all(bind=test_engine)
+    try:
+        yield
+    finally:
+        settings.ENVIRONMENT = "development"
+        app.dependency_overrides.pop(get_db, None)
+        Base.metadata.drop_all(bind=test_engine)
 
 client = TestClient(app)
 

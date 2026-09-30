@@ -67,13 +67,13 @@ def setup_test_db():
     
     # Ensure settings default to development before each test
     settings.ENVIRONMENT = "development"
-    
-    yield
-    
-    # Reset
-    settings.ENVIRONMENT = "development"
-    app.dependency_overrides.pop(get_db, None)
-    Base.metadata.drop_all(bind=test_engine)
+    try:
+        yield
+    finally:
+        # Reset
+        settings.ENVIRONMENT = "development"
+        app.dependency_overrides.pop(get_db, None)
+        Base.metadata.drop_all(bind=test_engine)
 
 client = TestClient(app)
 
