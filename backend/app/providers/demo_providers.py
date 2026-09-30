@@ -162,7 +162,9 @@ class DemoTransportProvider(TransportProvider):
                 "source": "vanvas_curated",
                 "source_id": "hptdc-schedule",
                 "is_live": False,
-                "schedule_type": "curated_schedule"
+                "schedule_type": "curated_static",
+                "data_state": "CURATED_STATIC",
+                "disclaimer": "Curated schedule for indicative planning. Please verify departure times directly with operator."
             },
             {
                 "id": f"curated-transit-zingbus-{origin.lower()}-{destination.lower()}",
@@ -181,7 +183,9 @@ class DemoTransportProvider(TransportProvider):
                 "source": "vanvas_curated",
                 "source_id": "zingbus-schedule",
                 "is_live": False,
-                "schedule_type": "curated_schedule"
+                "schedule_type": "curated_static",
+                "data_state": "CURATED_STATIC",
+                "disclaimer": "Curated schedule for indicative planning. Please verify departure times directly with operator."
             },
             {
                 "id": f"curated-transit-intrcity-{origin.lower()}-{destination.lower()}",
@@ -200,7 +204,9 @@ class DemoTransportProvider(TransportProvider):
                 "source": "vanvas_curated",
                 "source_id": "intrcity-schedule",
                 "is_live": False,
-                "schedule_type": "curated_schedule"
+                "schedule_type": "curated_static",
+                "data_state": "CURATED_STATIC",
+                "disclaimer": "Curated schedule for indicative planning. Please verify departure times directly with operator."
             }
         ]
         if transport_type and transport_type.lower() != "all":

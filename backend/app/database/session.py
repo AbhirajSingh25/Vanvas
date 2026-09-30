@@ -155,6 +155,14 @@ def ensure_database_schema(eng=engine):
                         conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col_name} {col_def}"))
                         logger.info(f"Migrated schema: added {col_name} to user_preferences table.")
 
+            # Check and migrate `mobility_providers` table
+            if "mobility_providers" in existing_tables:
+                mob_cols = {col["name"] for col in inspector.get_columns("mobility_providers")}
+                if "owner_user_id" not in mob_cols:
+                    conn.execute(text("ALTER TABLE mobility_providers ADD COLUMN owner_user_id VARCHAR(36) NULL"))
+                    conn.commit()
+                    logger.info("Migrated schema: added owner_user_id to mobility_providers table.")
+
             # Ensure essential indexes on email verification tables
             if "email_verification_tokens" in existing_tables:
                 try:

@@ -76,13 +76,70 @@ async def upload_copilot_image(
         raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
 
 
+from fastapi.security import HTTPAuthorizationCredentials
+from jose import jwt, JWTError
+from app.core.config import settings
+from app.api.deps import security
+
+def get_current_user_for_image(
+    token: Optional[str] = None,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: Session = Depends(get_db),
+) -> User:
+    raw_token = credentials.credentials if credentials else token
+    if not raw_token:
+        if not settings.is_production:
+            demo_user = db.query(User).filter(User.email == "traveller@vanvas.com").first()
+            if demo_user:
+                return demo_user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required to view private chat images",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        payload = jwt.decode(raw_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: str = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except JWTError:
+        if not settings.is_production:
+            demo_user = db.query(User).filter(User.email == "traveller@vanvas.com").first()
+            if demo_user:
+                return demo_user
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    return user
+
+
 @router.get("/image/{key_path:path}")
-def serve_copilot_image(key_path: str):
-    """Serves locally stored chat images."""
+def serve_copilot_image(
+    key_path: str,
+    token: Optional[str] = None,
+    current_user: User = Depends(get_current_user_for_image),
+):
+    """
+    Serves locally stored private conversation chat images.
+    Requires authentication and validates that the requesting user owns the image or is an admin.
+    """
     if ".." in key_path or key_path.startswith("/") or key_path.startswith("\\"):
         raise HTTPException(status_code=400, detail="Invalid file path.")
 
-    file_bytes, mime_type = StorageService.read_local_file(f"chat/{key_path}" if not key_path.startswith("chat/") else key_path)
+    # Validate image ownership from key_path (e.g. "chat/{user_id}/xxx.jpg" or "{user_id}/xxx.jpg")
+    clean = key_path.replace("\\", "/").strip("/")
+    parts = clean.split("/")
+    owner_id = None
+    if parts[0] == "chat" and len(parts) >= 3:
+        owner_id = parts[1]
+    elif len(parts) >= 2:
+        owner_id = parts[0]
+
+    if owner_id and current_user.role != "admin" and current_user.id != owner_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized: You do not have access to this conversation image.")
+
+    file_bytes, mime_type = StorageService.read_local_file(f"chat/{clean}" if not clean.startswith("chat/") else clean)
     if file_bytes is None:
         raise HTTPException(status_code=404, detail="Image not found.")
 
@@ -90,7 +147,7 @@ def serve_copilot_image(key_path: str):
         content=file_bytes,
         media_type=mime_type or "image/jpeg",
         headers={
-            "Cache-Control": "public, max-age=86400, immutable",
+            "Cache-Control": "private, max-age=3600",
             "X-Content-Type-Options": "nosniff",
         }
     )

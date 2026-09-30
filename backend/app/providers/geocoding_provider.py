@@ -1,9 +1,25 @@
+import asyncio
+import time
+import re
 import httpx
 import logging
 from typing import List, Dict, Any, Optional
 from app.providers.base import GeocodingProvider
 
 logger = logging.getLogger("vanvas.geocoding")
+
+_nominatim_rate_lock = asyncio.Lock()
+_last_nominatim_request_ts = 0.0
+
+async def _acquire_nominatim_slot():
+    """Enforce strict <= 1 req/sec policy for public Nominatim usage."""
+    global _last_nominatim_request_ts
+    async with _nominatim_rate_lock:
+        now = time.time()
+        elapsed = now - _last_nominatim_request_ts
+        if elapsed < 1.1:
+            await asyncio.sleep(1.1 - elapsed)
+        _last_nominatim_request_ts = time.time()
 
 # Known Curated Indian & Global destinations with accurate coordinates and elevation
 SEED_DESTINATIONS: List[Dict[str, Any]] = [
@@ -483,7 +499,8 @@ DESTINATION_ALIASES: Dict[str, str] = {
 class LiveGeocodingProvider(GeocodingProvider):
     def __init__(self):
         self.headers = {
-            "User-Agent": "VANVAS-Travel-Operating-System/2.0 (expedition@vanvas.com)"
+            "User-Agent": "VANVAS-Travel-Operating-System/2.0 (contact: info@vanvas.app)",
+            "Referer": "https://vanvas.app"
         }
 
     @staticmethod
@@ -696,6 +713,7 @@ class LiveGeocodingProvider(GeocodingProvider):
 
         # 3. Query OpenStreetMap Nominatim with structured ranking
         try:
+            await _acquire_nominatim_slot()
             url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(clean_q)}&format=json&addressdetails=1&limit={max(limit, 6)}"
             async with httpx.AsyncClient(timeout=3.0, headers=self.headers) as client:
                 res = await client.get(url)
@@ -849,6 +867,7 @@ class LiveGeocodingProvider(GeocodingProvider):
 
         # 3. Live Nominatim Search with structured address details
         try:
+            await _acquire_nominatim_slot()
             url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(clean_q)}&format=json&addressdetails=1&limit=6"
             async with httpx.AsyncClient(timeout=3.5, headers=self.headers) as client:
                 res = await client.get(url)

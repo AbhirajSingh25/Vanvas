@@ -1590,11 +1590,14 @@ class HaversineRoutingProvider(RoutingProvider):
             "distance_km": res["distance_km"],
             "duration_mins": res["duration_mins"],
             "is_accurate": False,
+            "is_estimated": True,
+            "estimation_type": "ESTIMATED_HAVERSINE",
             "is_mountain_adjusted": True,
+            "disclaimer": "Estimated aerial distance with terrain winding factor. Road conditions and mountain transit times may vary.",
             "geometry": [[lat1, lng1], [lat2, lng2]],
             "source": "internal",
             "source_provider": "internal",
-            "data_state": "VERIFIED",
+            "data_state": "ESTIMATED",
             "trust_source": "INTERNAL_ESTIMATION",
         }
 

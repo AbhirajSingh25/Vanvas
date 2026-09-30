@@ -17,17 +17,21 @@ logger = logging.getLogger("vanvas.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.startup_error = None
     # Ensure database schema is up-to-date and all tables/columns exist
     try:
         ensure_database_schema(engine)
     except Exception as e:
-        logger.warning(f"Database schema initialization deferred or encountered an error: {e}")
+        logger.critical(f"Database schema initialization failed: {e}")
+        app.state.startup_error = f"Schema initialization error: {e}"
 
     # Seed database with authentic Indian mountain travel data
-    try:
-        seed_database()
-    except Exception as e:
-        logger.warning(f"Database seeding deferred or encountered an error: {e}")
+    if app.state.startup_error is None:
+        try:
+            seed_database()
+        except Exception as e:
+            logger.critical(f"Database seeding failed: {e}")
+            app.state.startup_error = f"Seeding error: {e}"
     yield
 
 
@@ -38,11 +42,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+# Strict CORS origin configuration
+cors_origins = settings.get_allowed_cors_origins()
+allow_origin_regex = None if settings.is_production else r"https://.*\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origins=cors_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -94,21 +101,64 @@ def health_check():
 @app.get(f"{settings.API_V1_STR}/health/ready", tags=["Health"])
 def readiness_check(response: Response, db: Session = Depends(get_db)):
     """
-    Readiness probe verifying essential runtime dependencies (database connectivity).
-    Returns HTTP 200 when ready, HTTP 503 if database is unreachable.
+    Readiness probe verifying essential runtime dependencies:
+    - Database connectivity
+    - No critical startup/seeding error
+    - Canonical destination inventory valid (>=26 destinations, >=208 places, >=104 hotels, >=53 rentals)
+    Returns HTTP 200 when ready, HTTP 503 if any requirement is unfulfilled.
     """
+    startup_err = getattr(app.state, "startup_error", None)
+    if startup_err is not None:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "status": "not_ready",
+            "database": "startup_failed",
+            "error": startup_err,
+            "service": "vanvas-core-api"
+        }
+
     try:
+        from app.models.models import Destination, Place, Hotel, RentalOption
         db.execute(text("SELECT 1"))
+        
+        dest_count = db.query(Destination).count()
+        places_count = db.query(Place).count()
+        hotels_count = db.query(Hotel).count()
+        rentals_count = db.query(RentalOption).count()
+
+        # Check canonical baseline
+        if dest_count < 26 or places_count < 208 or hotels_count < 104 or rentals_count < 53:
+            response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            return {
+                "status": "not_ready",
+                "database": "inventory_incomplete",
+                "inventory": {
+                    "destinations": dest_count,
+                    "places": places_count,
+                    "hotels": hotels_count,
+                    "rentals": rentals_count,
+                    "expected": {"destinations": 26, "places": 208, "hotels": 104, "rentals": 53}
+                },
+                "service": "vanvas-core-api"
+            }
+
         return {
             "status": "ready",
             "database": "connected",
+            "inventory": {
+                "destinations": dest_count,
+                "places": places_count,
+                "hotels": hotels_count,
+                "rentals": rentals_count
+            },
             "service": "vanvas-core-api"
         }
-    except Exception:
+    except Exception as e:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {
             "status": "unhealthy",
             "database": "disconnected",
+            "error": str(e),
             "service": "vanvas-core-api"
         }
 

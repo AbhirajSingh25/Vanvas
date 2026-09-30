@@ -11,7 +11,7 @@ from app.schemas.schemas import (
 from app.providers.provider_factory import ProviderFactory
 from app.services.destination_intelligence import DestinationIntelligenceService
 from app.seed.canonical_dataset import (
-    CANONICAL_25_DESTINATIONS,
+    CANONICAL_26_DESTINATIONS,
     ADDITIONAL_PLACES_BY_DEST,
     ADDITIONAL_HOTELS_BY_DEST,
     ADDITIONAL_RENTALS_BY_DEST
@@ -171,7 +171,7 @@ def get_destinations(
         results.append(d_dict)
 
     # Merge unseeded canonical destinations if database is partially populated
-    for cd in CANONICAL_25_DESTINATIONS:
+    for cd in CANONICAL_26_DESTINATIONS:
         if cd["slug"] not in existing_slugs:
             c_places = ADDITIONAL_PLACES_BY_DEST.get(cd["slug"], [])
             c_hotels = ADDITIONAL_HOTELS_BY_DEST.get(cd["slug"], [])
@@ -310,10 +310,10 @@ async def get_destination_detail(
                 "address": _get_field(p, "address"),
                 "latitude": _get_field(p, "latitude", dest.latitude),
                 "longitude": _get_field(p, "longitude", dest.longitude),
-                "approx_cost": _get_field(p, "approx_cost", 0.0),
+                "approx_cost": _get_field(p, "approx_cost"),
                 "price_level": _get_field(p, "price_level", "₹₹"),
-                "rating": _get_field(p, "rating", 4.8),
-                "review_count": _get_field(p, "review_count", 120),
+                "rating": _get_field(p, "rating"),
+                "review_count": _get_field(p, "review_count"),
                 "opening_time": _get_field(p, "opening_time", "08:00"),
                 "closing_time": _get_field(p, "closing_time", "20:00"),
                 "recommended_duration_mins": _get_field(p, "recommended_duration_mins", 90),
@@ -343,8 +343,8 @@ async def get_destination_detail(
                 "longitude": _get_field(h, "longitude", dest.longitude),
                 "price_per_night": _get_field(h, "price_per_night"),
                 "price_formatted": f"₹{int(_get_field(h, 'price_per_night', 0)):,}/night" if _get_field(h, "price_per_night") else "Rate upon inquiry",
-                "rating": _get_field(h, "rating", 4.8),
-                "review_count": _get_field(h, "review_count", 120),
+                "rating": _get_field(h, "rating"),
+                "review_count": _get_field(h, "review_count"),
                 "amenities": _get_field(h, "amenities", "WiFi,Mountain View,Café,Hot Water"),
                 "image_url": _get_field(h, "image_url"),
                 "booking_url": _get_field(h, "booking_url"),
@@ -353,7 +353,7 @@ async def get_destination_detail(
                 "check_in_time": _get_field(h, "check_in_time", "11:00 AM"),
                 "check_out_time": _get_field(h, "check_out_time", "10:00 AM"),
                 "badge": _get_field(h, "badge", "CURATED STAY"),
-                "availability_state": "AVAILABLE",
+                "availability_state": "UNKNOWN",
                 "data_state": "VERIFIED",
                 "trust_source": "VANVAS_CURATED",
             }
@@ -370,23 +370,23 @@ async def get_destination_detail(
                 "provider_name": _get_field(r, "provider_name") or _get_field(r, "operator_name", "Local Stand"),
                 "vehicle_type": _get_field(r, "vehicle_type", "scooter"),
                 "vehicle_name": _get_field(r, "vehicle_name", "Vehicle"),
-                "daily_rate": _get_field(r, "price_per_day", 800.0),
-                "price_per_day": _get_field(r, "price_per_day", 800.0),
-                "deposit_amount": _get_field(r, "deposit_amount", 1000.0),
-                "security_deposit": _get_field(r, "deposit_amount", 1000.0),
+                "daily_rate": _get_field(r, "price_per_day"),
+                "price_per_day": _get_field(r, "price_per_day"),
+                "deposit_amount": _get_field(r, "deposit_amount"),
+                "security_deposit": _get_field(r, "deposit_amount"),
                 "location": _get_field(r, "location", f"{dest.name} Hub"),
                 "pickup_location": _get_field(r, "location", f"{dest.name} Hub"),
                 "address": _get_field(r, "location", f"{dest.name} Stand"),
                 "latitude": _get_field(r, "latitude", dest.latitude),
                 "longitude": _get_field(r, "longitude", dest.longitude),
-                "contact_phone": _get_field(r, "phone") or _get_field(r, "contact_phone", "+91 98765 43210"),
-                "phone": _get_field(r, "phone") or _get_field(r, "contact_phone", "+91 98765 43210"),
+                "contact_phone": _get_field(r, "phone") or _get_field(r, "contact_phone"),
+                "phone": _get_field(r, "phone") or _get_field(r, "contact_phone"),
                 "whatsapp": _get_field(r, "whatsapp"),
                 "website": _get_field(r, "website"),
-                "operating_hours": _get_field(r, "operating_hours") or _get_field(r, "opening_hours", "08:00 AM - 08:00 PM"),
+                "operating_hours": _get_field(r, "operating_hours") or _get_field(r, "opening_hours"),
                 "requirements": _get_field(r, "requirements", "Valid Driving License & Govt ID"),
-                "rating": _get_field(r, "rating", 4.8),
-                "review_count": _get_field(r, "review_count", 95),
+                "rating": _get_field(r, "rating"),
+                "review_count": _get_field(r, "review_count"),
                 "action_links": ActionLinkGenerator.generate_rental_action_links(
                     provider_name=_get_field(r, "provider_name") or _get_field(r, "vehicle_name", "Fleet"),
                     latitude=_get_field(r, "latitude", dest.latitude),
@@ -422,7 +422,7 @@ async def get_destination_detail(
     # Check authoritative canonical dataset fallback before calling live geocoder
     clean_slug = slug_or_id.lower().replace("dest-", "").strip()
     canon = next((
-        d for d in CANONICAL_25_DESTINATIONS
+        d for d in CANONICAL_26_DESTINATIONS
         if d["slug"] == clean_slug or d["name"].lower() == clean_slug
     ), None)
     if canon:
@@ -563,7 +563,7 @@ async def get_destination_places(
     ).first()
     if not dest:
         clean_d_slug = destination_id.lower().replace("dest-", "").strip()
-        canon_d = next((d for d in CANONICAL_25_DESTINATIONS if d["slug"] == clean_d_slug or d["name"].lower() == clean_d_slug), None)
+        canon_d = next((d for d in CANONICAL_26_DESTINATIONS if d["slug"] == clean_d_slug or d["name"].lower() == clean_d_slug), None)
         if canon_d and canon_d["slug"] in ADDITIONAL_PLACES_BY_DEST:
             raw_c_places = ADDITIONAL_PLACES_BY_DEST[canon_d["slug"]]
             c_results: List[PlaceResponse] = []

@@ -16,7 +16,7 @@ from app.schemas.schemas import HotelResponse, ActionLink
 from app.providers.commerce.stayingapi_stay_adapter import StayingAPIStayCommerceAdapter
 from app.providers.provider_factory import ProviderFactory
 from app.services.action_link_generator import ActionLinkGenerator
-from app.seed.canonical_dataset import CANONICAL_25_DESTINATIONS, ADDITIONAL_HOTELS_BY_DEST
+from app.seed.canonical_dataset import CANONICAL_26_DESTINATIONS, ADDITIONAL_HOTELS_BY_DEST
 
 logger = logging.getLogger(__name__)
 
@@ -647,9 +647,9 @@ class StayMatchingService:
                         "price_per_night": ch.get("price_per_night"),
                         "price_formatted": cls.format_price(ch.get("price_per_night"), "INR"),
                         "currency": "INR",
-                        "availability_state": "AVAILABLE",
-                        "rating": ch.get("rating", 4.8),
-                        "review_count": 120,
+                        "availability_state": "UNKNOWN",
+                        "rating": ch.get("rating"),
+                        "review_count": ch.get("review_count"),
                         "hotel_style": ch.get("hotel_style") or "Boutique Sanctuary",
                         "accommodation_type": acc_type,
                         "traveller_tags": traveller_tags,
@@ -724,9 +724,9 @@ class StayMatchingService:
                     "price_per_night": h.price_per_night,
                     "price_formatted": cls.format_price(h.price_per_night, "INR"),
                     "currency": "INR",
-                    "availability_state": "UPON INQUIRY",
+                    "availability_state": "UNKNOWN",
                     "rating": h.rating,
-                    "review_count": 120,
+                    "review_count": getattr(h, "review_count", None),
                     "hotel_style": h.hotel_style or "Boutique Sanctuary",
                     "accommodation_type": acc_type,
                     "traveller_tags": traveller_tags,

@@ -25,12 +25,32 @@ class Settings(BaseSettings):
         "http://localhost:8000",
         "http://127.0.0.1:8000",
         "https://vanvasai.vercel.app",
-        "https://vanvas.vercel.app"
+        "https://vanvas.vercel.app",
+        "https://vanvas.in",
+        "https://www.vanvas.in",
+    ]
+
+    PRODUCTION_ALLOWED_ORIGINS: List[str] = [
+        "https://vanvasai.vercel.app",
+        "https://vanvas.vercel.app",
+        "https://vanvas.in",
+        "https://www.vanvas.in",
     ]
 
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() in ("production", "prod")
+
+    def get_allowed_cors_origins(self) -> List[str]:
+        raw_origins = self.BACKEND_CORS_ORIGINS if isinstance(self.BACKEND_CORS_ORIGINS, list) else [self.BACKEND_CORS_ORIGINS]
+        if self.is_production:
+            explicit = set(self.PRODUCTION_ALLOWED_ORIGINS)
+            for o in raw_origins:
+                # Disallow localhost in production
+                if not any(loc in o.lower() for loc in ("localhost", "127.0.0.1", "0.0.0.0")):
+                    explicit.add(o.rstrip("/"))
+            return sorted(list(explicit))
+        return raw_origins
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
@@ -51,7 +71,9 @@ class Settings(BaseSettings):
             "http://localhost:8000",
             "http://127.0.0.1:8000",
             "https://vanvasai.vercel.app",
-            "https://vanvas.vercel.app"
+            "https://vanvas.vercel.app",
+            "https://vanvas.in",
+            "https://www.vanvas.in",
         ]
 
     @model_validator(mode="after")

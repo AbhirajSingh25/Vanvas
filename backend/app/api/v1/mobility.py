@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.models.models import MobilityProvider, MobilityVehicle, Destination
+from app.models.models import MobilityProvider, MobilityVehicle, Destination, User
 from app.schemas.schemas import (
     MobilityListingResponse, MobilityProviderResponse, MobilityVehicleResponse,
     MobilityProviderCreate, MobilityProviderClaim, MobilityVehicleCreate,
@@ -11,6 +11,7 @@ from app.schemas.schemas import (
 )
 from app.services.mobility_service import MobilityService
 from app.services.action_link_generator import ActionLinkGenerator
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -82,28 +83,28 @@ def get_provider_actions(
 @router.post("/providers", response_model=MobilityProviderResponse)
 def register_provider(
     payload: MobilityProviderCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Register a new mobility provider foundation."""
-    return MobilityService.create_provider(db, payload)
+    return MobilityService.create_provider(db, payload, user=current_user)
 
 @router.post("/providers/{provider_id}/claim", response_model=MobilityProviderResponse)
 def claim_provider(
     provider_id: str,
     payload: MobilityProviderClaim,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Provider claim listing foundation."""
-    return MobilityService.claim_provider(db, provider_id, payload)
+    return MobilityService.claim_provider(db, provider_id, payload, user=current_user)
 
 @router.post("/providers/{provider_id}/vehicles", response_model=MobilityVehicleResponse)
 def add_provider_vehicle(
     provider_id: str,
     payload: MobilityVehicleCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Add a vehicle to provider fleet."""
-    prov = db.query(MobilityProvider).filter(MobilityProvider.id == provider_id).first()
-    if not prov:
-        raise HTTPException(status_code=404, detail="Mobility provider not found")
-    return MobilityService.add_vehicle(db, provider_id, payload)
+    return MobilityService.add_vehicle(db, provider_id, payload, user=current_user)

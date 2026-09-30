@@ -177,8 +177,8 @@ class Place(Base):
     longitude = Column(Float, nullable=False)
     price_level = Column(String(20), default="₹₹")  # ₹, ₹₹, ₹₹₹, ₹₹₹₹, Free
     approx_cost = Column(Float, default=0.0)
-    rating = Column(Float, default=4.5)
-    review_count = Column(Integer, default=120)
+    rating = Column(Float, nullable=True, default=None)
+    review_count = Column(Integer, nullable=True, default=None)
     opening_time = Column(String(20), default="08:00")
     closing_time = Column(String(20), default="20:00")
     recommended_duration_mins = Column(Integer, default=90)
@@ -207,7 +207,7 @@ class Hotel(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     price_per_night = Column(Float, nullable=False)
-    rating = Column(Float, default=4.5)
+    rating = Column(Float, nullable=True, default=None)
     hotel_style = Column(String(100), default="Boutique / Mountain Stay")  # Hostel, Budget, Boutique, Heritage, Luxury, Riverside
     amenities = Column(String(500), default="WiFi,Mountain View,Café,Bonfire,Hot Water")
     check_in_time = Column(String(20), default="11:00 AM")
@@ -227,12 +227,12 @@ class RentalOption(Base):
     vehicle_type = Column(String(50), nullable=False)  # Scooter, Royal Enfield, Himalayan Bike, EV Scooter, Car
     vehicle_name = Column(String(255), nullable=False)
     price_per_day = Column(Float, nullable=True)
-    deposit_amount = Column(Float, nullable=True, default=1000.0)
+    deposit_amount = Column(Float, nullable=True, default=None)
     location = Column(String(255), nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    opening_hours = Column(String(100), default="08:00 AM - 08:00 PM")
-    rating = Column(Float, default=4.8)
+    opening_hours = Column(String(100), nullable=True, default=None)
+    rating = Column(Float, nullable=True, default=None)
     image_url = Column(String(500), nullable=True)
 
     destination = relationship("Destination", back_populates="rentals")
@@ -241,6 +241,7 @@ class MobilityProvider(Base):
     __tablename__ = "mobility_providers"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
+    owner_user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
     business_name = Column(String(255), nullable=False, index=True)
     owner_name = Column(String(255), nullable=True)
     phone = Column(String(50), nullable=True)

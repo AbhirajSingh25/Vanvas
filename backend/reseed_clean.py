@@ -6,11 +6,12 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 from app.database.session import SessionLocal, engine, Base
 from app.models.models import Destination, Place, Hotel, RentalOption, User, Trip
+from app.seed.canonical_dataset import CANONICAL_26_DESTINATIONS
 from app.seed.seed_data import seed_database
 
 def clean_and_reseed():
     db = SessionLocal()
-    approved_slugs = {"manali", "rishikesh", "kasol", "dharamshala", "goa", "jaipur", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar"}
+    approved_slugs = {d["slug"] for d in CANONICAL_26_DESTINATIONS}
     
     manali = db.query(Destination).filter(Destination.slug == "manali").first()
     if not manali:

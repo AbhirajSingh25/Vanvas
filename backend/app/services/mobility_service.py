@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
-from app.models.models import MobilityProvider, MobilityVehicle, RentalOption, Destination
+from app.models.models import MobilityProvider, MobilityVehicle, RentalOption, Destination, User
 from app.schemas.schemas import (
     MobilityListingResponse, MobilityProviderResponse, MobilityVehicleResponse,
     MobilityProviderCreate, MobilityProviderClaim, MobilityVehicleCreate,
@@ -13,7 +13,7 @@ from app.schemas.schemas import (
 from app.providers.provider_factory import ProviderFactory
 from app.services.action_link_generator import ActionLinkGenerator
 from app.services.operating_hours_engine import OperatingHoursEngine
-from app.seed.canonical_dataset import CANONICAL_25_DESTINATIONS, ADDITIONAL_RENTALS_BY_DEST
+from app.seed.canonical_dataset import CANONICAL_26_DESTINATIONS, ADDITIONAL_RENTALS_BY_DEST
 
 logger = logging.getLogger("vanvas.mobility")
 
@@ -131,7 +131,7 @@ class MobilityService:
                         "opening_hours": "08:00 AM - 08:00 PM",
                         "hours_available": True,
                         "is_open_now": True,
-                        "rating": 4.9,
+                        "rating": None,
                         "image_url": v_img,
                         "phone": prov.phone,
                         "whatsapp": prov.whatsapp,
@@ -171,7 +171,7 @@ class MobilityService:
                     "opening_hours": "Hours upon contact",
                     "hours_available": False,
                     "is_open_now": None,
-                    "rating": 4.8,
+                    "rating": None,
                     "image_url": "/images/vehicles/universal_mobility.jpg",
                     "phone": prov.phone,
                     "whatsapp": prov.whatsapp,
@@ -334,7 +334,7 @@ class MobilityService:
                         "opening_hours": r.get("opening_hours") or "08:00 AM - 08:00 PM",
                         "hours_available": True,
                         "is_open_now": True,
-                        "rating": r.get("rating", 4.7),
+                        "rating": r.get("rating"),
                         "image_url": r.get("image_url") or cat_artwork,
                         "phone": None,
                         "whatsapp": None,
@@ -588,13 +588,14 @@ class MobilityService:
         return "/images/vehicles/automatic_scooter.jpg"
 
     @classmethod
-    def create_provider(cls, db: Session, payload: MobilityProviderCreate) -> MobilityProvider:
+    def create_provider(cls, db: Session, payload: MobilityProviderCreate, user: Optional[User] = None) -> MobilityProvider:
         prov = MobilityProvider(
+            owner_user_id=user.id if user else None,
             business_name=payload.business_name,
-            owner_name=payload.owner_name,
+            owner_name=payload.owner_name or (user.full_name if user else None),
             phone=payload.phone,
             whatsapp=payload.whatsapp,
-            email=payload.email,
+            email=payload.email or (user.email if user else None),
             website=payload.website,
             address=payload.address,
             latitude=payload.latitude,
@@ -604,7 +605,7 @@ class MobilityService:
             verification_status=payload.verification_status,
             source=payload.source,
             source_id=payload.source_id,
-            claimed=payload.claimed,
+            claimed=True if user else payload.claimed,
         )
         db.add(prov)
         db.commit()
@@ -612,17 +613,18 @@ class MobilityService:
         return prov
 
     @classmethod
-    def claim_provider(cls, db: Session, provider_id: str, claim: MobilityProviderClaim) -> MobilityProvider:
+    def claim_provider(cls, db: Session, provider_id: str, claim: MobilityProviderClaim, user: Optional[User] = None) -> MobilityProvider:
         prov = db.query(MobilityProvider).filter(MobilityProvider.id == provider_id).first()
         if not prov:
             # If provider was an OSM item or virtual, create new claimed provider
             prov = MobilityProvider(
                 id=provider_id,
+                owner_user_id=user.id if user else None,
                 business_name=claim.business_name or "Local Mobility Hub",
-                owner_name=claim.owner_name,
+                owner_name=claim.owner_name or (user.full_name if user else None),
                 phone=claim.phone,
                 whatsapp=claim.whatsapp or claim.phone,
-                email=claim.email,
+                email=claim.email or (user.email if user else None),
                 address=claim.address,
                 latitude=32.2396,  # Default fallback coordinates if new
                 longitude=77.1887,
@@ -633,16 +635,24 @@ class MobilityService:
             )
             db.add(prov)
         else:
-            prov.owner_name = claim.owner_name
-            prov.phone = claim.phone
+            if prov.claimed and prov.owner_user_id and user and prov.owner_user_id != user.id and getattr(user, "role", "") != "admin":
+                from fastapi import HTTPException
+                raise HTTPException(status_code=403, detail="Provider listing is already claimed and owned by another user.")
+
+            prov.owner_name = claim.owner_name or prov.owner_name or (user.full_name if user else None)
+            prov.phone = claim.phone or prov.phone
             if claim.whatsapp:
                 prov.whatsapp = claim.whatsapp
             if claim.email:
                 prov.email = claim.email
+            elif user and not prov.email:
+                prov.email = user.email
             if claim.business_name:
                 prov.business_name = claim.business_name
             if claim.address:
                 prov.address = claim.address
+            if user:
+                prov.owner_user_id = user.id
             prov.claimed = True
             prov.verification_status = "LIVE_PROVIDER"
             prov.verified_at = datetime.now(timezone.utc)
@@ -652,7 +662,15 @@ class MobilityService:
         return prov
 
     @classmethod
-    def add_vehicle(cls, db: Session, provider_id: str, payload: MobilityVehicleCreate) -> MobilityVehicle:
+    def add_vehicle(cls, db: Session, provider_id: str, payload: MobilityVehicleCreate, user: Optional[User] = None) -> MobilityVehicle:
+        from fastapi import HTTPException
+        prov = db.query(MobilityProvider).filter(MobilityProvider.id == provider_id).first()
+        if not prov:
+            raise HTTPException(status_code=404, detail="Mobility provider not found")
+
+        if user and prov.owner_user_id and prov.owner_user_id != user.id and getattr(user, "role", "") != "admin":
+            raise HTTPException(status_code=403, detail="Not authorized to add vehicles to this provider fleet.")
+
         veh = MobilityVehicle(
             provider_id=provider_id,
             vehicle_type=payload.vehicle_type,

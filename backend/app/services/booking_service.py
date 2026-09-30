@@ -12,6 +12,7 @@ REFUND_PENDING -> REFUNDED, FAILED
 FAILED, CANCELLED, REFUNDED -> Terminal
 """
 
+from enum import Enum
 import json
 import logging
 from typing import Dict, Any, List, Optional
@@ -25,23 +26,30 @@ from app.services.action_link_generator import is_valid_url
 
 logger = logging.getLogger("vanvas.services.booking")
 
-VALID_STATUSES = {
-    "DISCOVERED",
-    "SELECTED",
-    "CHECKOUT_READY",
-    "PENDING",
-    "CONFIRMED",
-    "FAILED",
-    "CANCELLED",
-    "REFUND_PENDING",
-    "REFUNDED",
-}
+class BookingStatus(str, Enum):
+    DISCOVERED = "DISCOVERED"
+    SELECTED = "SELECTED"
+    CHECKOUT_READY = "CHECKOUT_READY"
+    PENDING = "PENDING"
+    EXTERNAL_CHECKOUT_PENDING = "EXTERNAL_CHECKOUT_PENDING"
+    USER_RECORDED = "USER_RECORDED"
+    PROVIDER_CONFIRMED = "PROVIDER_CONFIRMED"
+    CONFIRMED = "CONFIRMED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    REFUND_PENDING = "REFUND_PENDING"
+    REFUNDED = "REFUNDED"
+
+VALID_STATUSES = {s.value for s in BookingStatus}
 
 ALLOWED_TRANSITIONS: Dict[str, set] = {
     "DISCOVERED": {"SELECTED", "FAILED", "CANCELLED"},
-    "SELECTED": {"CHECKOUT_READY", "FAILED", "CANCELLED"},
-    "CHECKOUT_READY": {"PENDING", "FAILED", "CANCELLED"},
-    "PENDING": {"CONFIRMED", "FAILED", "CANCELLED"},
+    "SELECTED": {"CHECKOUT_READY", "PENDING", "EXTERNAL_CHECKOUT_PENDING", "FAILED", "CANCELLED"},
+    "CHECKOUT_READY": {"PENDING", "EXTERNAL_CHECKOUT_PENDING", "USER_RECORDED", "PROVIDER_CONFIRMED", "CONFIRMED", "FAILED", "CANCELLED"},
+    "PENDING": {"EXTERNAL_CHECKOUT_PENDING", "USER_RECORDED", "PROVIDER_CONFIRMED", "CONFIRMED", "FAILED", "CANCELLED"},
+    "EXTERNAL_CHECKOUT_PENDING": {"USER_RECORDED", "PROVIDER_CONFIRMED", "CONFIRMED", "FAILED", "CANCELLED"},
+    "USER_RECORDED": {"PROVIDER_CONFIRMED", "CONFIRMED", "CANCELLED", "REFUND_PENDING", "REFUNDED"},
+    "PROVIDER_CONFIRMED": {"CANCELLED", "REFUND_PENDING", "REFUNDED"},
     "CONFIRMED": {"CANCELLED", "REFUND_PENDING", "REFUNDED"},
     "REFUND_PENDING": {"REFUNDED", "FAILED"},
     "FAILED": set(),
@@ -209,9 +217,19 @@ class BookingService:
                 f"Invalid status transition from '{current}' to '{target}'. Allowed transitions: {sorted(list(allowed)) or 'None (Terminal)'}"
             )
 
-        if target == "CONFIRMED" and not booking.confirmation_reference:
-            custom_ref = (metadata or {}).get("confirmation_reference")
-            booking.confirmation_reference = custom_ref or f"VV-{booking.booking_type[:3].upper()}-{booking.id[:8].upper()}"
+        if target == "PROVIDER_CONFIRMED":
+            custom_ref = (metadata or {}).get("confirmation_reference") or (metadata or {}).get("provider_confirmation_reference") or (metadata or {}).get("provider_reference")
+            if not custom_ref:
+                raise ValueError("PROVIDER_CONFIRMED requires a verified provider confirmation reference.")
+            booking.confirmation_reference = custom_ref
+        elif target == "CONFIRMED":
+            custom_ref = (metadata or {}).get("confirmation_reference") or (metadata or {}).get("provider_confirmation_reference")
+            if custom_ref:
+                booking.confirmation_reference = custom_ref
+        elif target == "USER_RECORDED":
+            custom_ref = (metadata or {}).get("confirmation_reference") or (metadata or {}).get("user_reference")
+            if custom_ref:
+                booking.confirmation_reference = custom_ref
 
         previous = booking.status
         booking.status = target

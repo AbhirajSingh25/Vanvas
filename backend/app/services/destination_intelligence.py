@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from app.models.models import Destination, Place, Hotel, RentalOption, WeatherSnapshot
 from app.providers.provider_factory import ProviderFactory
-from app.seed.canonical_dataset import CANONICAL_25_DESTINATIONS
+from app.seed.canonical_dataset import CANONICAL_26_DESTINATIONS
 
 logger = logging.getLogger("vanvas.intelligence")
 
@@ -51,7 +51,7 @@ class DestinationIntelligenceService:
 
         # 3. Canonical dataset fallback
         canon = next((
-            d for d in CANONICAL_25_DESTINATIONS
+            d for d in CANONICAL_26_DESTINATIONS
             if d["slug"] == slug
             or d["name"].lower() == clean_q
             or slug in d["slug"]
@@ -77,7 +77,7 @@ class DestinationIntelligenceService:
 
         # Check canonical registry first before calling unconstrained geocoders
         canon = next((
-            d for d in CANONICAL_25_DESTINATIONS
+            d for d in CANONICAL_26_DESTINATIONS
             if d["slug"] == slug_norm
             or d["name"].lower() == clean_q
             or slug_norm in d["slug"]
