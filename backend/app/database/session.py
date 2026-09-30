@@ -193,6 +193,34 @@ def ensure_database_schema(eng=engine):
                 except Exception:
                     pass
 
+            # Ensure column type widening for PostgreSQL if tables were created with VARCHAR(36)
+            if eng.dialect.name == "postgresql":
+                for alter_type_stmt in [
+                    "ALTER TABLE mobility_providers ALTER COLUMN id TYPE VARCHAR(100)",
+                    "ALTER TABLE mobility_vehicles ALTER COLUMN id TYPE VARCHAR(100)",
+                    "ALTER TABLE mobility_vehicles ALTER COLUMN provider_id TYPE VARCHAR(100)",
+                    "ALTER TABLE destinations ALTER COLUMN id TYPE VARCHAR(100)",
+                    "ALTER TABLE places ALTER COLUMN id TYPE VARCHAR(100)",
+                    "ALTER TABLE places ALTER COLUMN destination_id TYPE VARCHAR(100)",
+                    "ALTER TABLE places ALTER COLUMN category_id TYPE VARCHAR(100)",
+                    "ALTER TABLE place_categories ALTER COLUMN id TYPE VARCHAR(100)",
+                    "ALTER TABLE hotels ALTER COLUMN id TYPE VARCHAR(100)",
+                    "ALTER TABLE hotels ALTER COLUMN destination_id TYPE VARCHAR(100)",
+                    "ALTER TABLE rental_options ALTER COLUMN id TYPE VARCHAR(100)",
+                    "ALTER TABLE rental_options ALTER COLUMN destination_id TYPE VARCHAR(100)",
+                    "ALTER TABLE saved_places ALTER COLUMN place_id TYPE VARCHAR(100)",
+                    "ALTER TABLE saved_places ALTER COLUMN destination_id TYPE VARCHAR(100)",
+                    "ALTER TABLE votes ALTER COLUMN place_id TYPE VARCHAR(100)",
+                    "ALTER TABLE itinerary_items ALTER COLUMN place_id TYPE VARCHAR(100)",
+                    "ALTER TABLE trips ALTER COLUMN destination_id TYPE VARCHAR(100)",
+                    "ALTER TABLE trips ALTER COLUMN hotel_id TYPE VARCHAR(100)",
+                    "ALTER TABLE trips ALTER COLUMN rental_id TYPE VARCHAR(100)",
+                ]:
+                    try:
+                        conn.execute(text(alter_type_stmt))
+                    except Exception:
+                        pass
+
             conn.commit()
         return True
     except OperationalError as oe:

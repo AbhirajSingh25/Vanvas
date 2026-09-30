@@ -121,7 +121,7 @@ class UserPreference(Base):
 class Destination(Base):
     __tablename__ = "destinations"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
+    id = Column(String(100), primary_key=True, default=generate_uuid)
     name = Column(String(255), index=True, nullable=False)
     slug = Column(String(255), unique=True, index=True, nullable=False)
     state = Column(String(255), nullable=False)
@@ -158,7 +158,7 @@ class Destination(Base):
 class PlaceCategory(Base):
     __tablename__ = "place_categories"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
+    id = Column(String(100), primary_key=True, default=generate_uuid)
     name = Column(String(100), unique=True, nullable=False)
     slug = Column(String(100), unique=True, nullable=False)
     icon = Column(String(50), default="mountain")
@@ -169,9 +169,9 @@ class PlaceCategory(Base):
 class Place(Base):
     __tablename__ = "places"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
-    destination_id = Column(String(36), ForeignKey("destinations.id"), nullable=False, index=True)
-    category_id = Column(String(36), ForeignKey("place_categories.id"), nullable=True)
+    id = Column(String(100), primary_key=True, default=generate_uuid)
+    destination_id = Column(String(100), ForeignKey("destinations.id"), nullable=False, index=True)
+    category_id = Column(String(100), ForeignKey("place_categories.id"), nullable=True)
     category = Column(String(100), nullable=False, default="Attraction")  # Attraction, Café, Restaurant, Nature, Adventure, Market, Nightlife, Culture, Essential
     name = Column(String(255), index=True, nullable=False)
     slug = Column(String(255), nullable=False)
@@ -204,8 +204,8 @@ class Place(Base):
 class Hotel(Base):
     __tablename__ = "hotels"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
-    destination_id = Column(String(36), ForeignKey("destinations.id"), nullable=False, index=True)
+    id = Column(String(100), primary_key=True, default=generate_uuid)
+    destination_id = Column(String(100), ForeignKey("destinations.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     address = Column(String(500), nullable=False)
     latitude = Column(Float, nullable=False)
@@ -225,8 +225,8 @@ class Hotel(Base):
 class RentalOption(Base):
     __tablename__ = "rental_options"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
-    destination_id = Column(String(36), ForeignKey("destinations.id"), nullable=False, index=True)
+    id = Column(String(100), primary_key=True, default=generate_uuid)
+    destination_id = Column(String(100), ForeignKey("destinations.id"), nullable=False, index=True)
     provider_name = Column(String(255), nullable=False)
     vehicle_type = Column(String(50), nullable=False)  # Scooter, Royal Enfield, Himalayan Bike, EV Scooter, Car
     vehicle_name = Column(String(255), nullable=False)
@@ -244,7 +244,7 @@ class RentalOption(Base):
 class MobilityProvider(Base):
     __tablename__ = "mobility_providers"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
+    id = Column(String(100), primary_key=True, default=generate_uuid)
     owner_user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
     business_name = Column(String(255), nullable=False, index=True)
     owner_name = Column(String(255), nullable=True)
@@ -270,8 +270,8 @@ class MobilityProvider(Base):
 class MobilityVehicle(Base):
     __tablename__ = "mobility_vehicles"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
-    provider_id = Column(String(36), ForeignKey("mobility_providers.id"), nullable=False, index=True)
+    id = Column(String(100), primary_key=True, default=generate_uuid)
+    provider_id = Column(String(100), ForeignKey("mobility_providers.id"), nullable=False, index=True)
     vehicle_type = Column(String(50), nullable=False)  # Scooter, Motorcycle, Touring Motorcycle, Electric Scooter, Mountain Bike
     brand = Column(String(100), nullable=True)
     model = Column(String(100), nullable=True)
