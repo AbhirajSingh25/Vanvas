@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: vanvas-api
+    runtime: python
+    region: singapore
+    plan: starter
+    branch: main
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health/ready
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: BACKEND_CORS_ORIGINS
+        value: '["https://vanvasai.vercel.app","https://vanvas.vercel.app","https://vanvas.in","https://www.vanvas.in"]'
+      - key: APP_PUBLIC_URL
+        value: https://vanvasai.vercel.app
+      - key: AI_PROVIDER
+        value: gemini
+      - key: EMAIL_PROVIDER
+        value: brevo
+      - key: STORAGE_PROVIDER
+        value: auto
+      - key: PLACE_ARTWORK_PROVIDER
+        value: disabled
+      - key: IMAGE_PROVIDER
+        value: curated

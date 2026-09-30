@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     PROJECT_NAME: str = "VANVAS API"
     VERSION: str = "1.0.0"
+    GIT_REVISION: str = os.getenv(
+        "RENDER_GIT_COMMIT",
+        os.getenv("GIT_COMMIT", os.getenv("VERCEL_GIT_COMMIT_SHA", "30f056a26cb33889aad2f63bc69123a9d3079f7c"))
+    )
     API_V1_STR: str = "/api/v1"
     
     # Secret key for JWT
@@ -98,6 +102,13 @@ class Settings(BaseSettings):
                         "In production (ENVIRONMENT=production), wildcard '*' CORS origin is prohibited when credentials are enabled. "
                         "Explicit frontend domain(s) must be provided in BACKEND_CORS_ORIGINS."
                     )
+
+            # Explicitly reject SQLite in production
+            if not self.DATABASE_URL or self.DATABASE_URL.lower().startswith("sqlite"):
+                raise ValueError(
+                    "In production (ENVIRONMENT=production), DATABASE_URL must point to a production PostgreSQL database. "
+                    "SQLite is strictly prohibited in production."
+                )
         return self
     
     # Provider Keys (External integrations)

@@ -94,7 +94,9 @@ def health_check():
     return {
         "status": "healthy",
         "service": "vanvas-core-api",
-        "version": settings.VERSION
+        "version": settings.VERSION,
+        "git_revision": settings.GIT_REVISION,
+        "environment": settings.ENVIRONMENT
     }
 
 @app.get("/health/ready", tags=["Health"])
@@ -114,7 +116,10 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
             "status": "not_ready",
             "database": "startup_failed",
             "error": startup_err,
-            "service": "vanvas-core-api"
+            "service": "vanvas-core-api",
+            "version": settings.VERSION,
+            "git_revision": settings.GIT_REVISION,
+            "environment": settings.ENVIRONMENT
         }
 
     try:
@@ -139,7 +144,10 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
                     "rentals": rentals_count,
                     "expected": {"destinations": 26, "places": 208, "hotels": 104, "rentals": 53}
                 },
-                "service": "vanvas-core-api"
+                "service": "vanvas-core-api",
+                "version": settings.VERSION,
+                "git_revision": settings.GIT_REVISION,
+                "environment": settings.ENVIRONMENT
             }
 
         return {
@@ -151,7 +159,10 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
                 "hotels": hotels_count,
                 "rentals": rentals_count
             },
-            "service": "vanvas-core-api"
+            "service": "vanvas-core-api",
+            "version": settings.VERSION,
+            "git_revision": settings.GIT_REVISION,
+            "environment": settings.ENVIRONMENT
         }
     except Exception as e:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
@@ -159,7 +170,10 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
             "status": "unhealthy",
             "database": "disconnected",
             "error": str(e),
-            "service": "vanvas-core-api"
+            "service": "vanvas-core-api",
+            "version": settings.VERSION,
+            "git_revision": settings.GIT_REVISION,
+            "environment": settings.ENVIRONMENT
         }
 
 @app.get(f"{settings.API_V1_STR}/health/diagnostics", tags=["Health"])
@@ -180,6 +194,7 @@ def health_diagnostics(response: Response, db: Session = Depends(get_db)):
         return {
             "status": "operational",
             "environment": settings.ENVIRONMENT,
+            "git_revision": settings.GIT_REVISION,
             "database": {
                 "connected": True,
                 "engine": "postgresql" if "postgresql" in settings.DATABASE_URL.lower() else "sqlite",
@@ -208,6 +223,9 @@ def health_diagnostics(response: Response, db: Session = Depends(get_db)):
         return {
             "status": "degraded",
             "error": str(exc),
-            "service": "vanvas-core-api"
+            "service": "vanvas-core-api",
+            "version": settings.VERSION,
+            "git_revision": settings.GIT_REVISION,
+            "environment": settings.ENVIRONMENT
         }
 
