@@ -34,6 +34,11 @@ export const metadata: Metadata = {
   title: "VANVAS • चलो निकलते हैं | AI Travel Companion by The Sorted Club",
   description: "Travel should feel spontaneous. The planning shouldn't. An expedition journal and AI travel operating layer across the Himalayas, ghats, deserts, and Indian coastlines.",
   keywords: ["VANVAS", "The Sorted Club", "Indian travel journal", "Himalayan expedition", "spontaneous trips", "Manali", "Rishikesh", "Kasol", "Jaipur", "Goa"],
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({

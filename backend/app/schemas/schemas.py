@@ -1,6 +1,8 @@
+from __future__ import annotations
 from datetime import date, datetime
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, EmailStr, Field
+
 
 # ----------------- User & Auth Schemas -----------------
 class UserBase(BaseModel):
@@ -845,6 +847,22 @@ class ReviewUpdate(BaseModel):
     body: Optional[str] = None
     comment: Optional[str] = None
 
+class ReviewReportCreate(BaseModel):
+    review_id: Optional[str] = None
+    reason: str
+    details: Optional[str] = None
+
+class ReviewReportResponse(BaseModel):
+    id: str
+    review_id: str
+    reporter_user_id: str
+    reason: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class ReviewResponse(BaseModel):
     id: str
     place_id: str
@@ -872,25 +890,10 @@ class ReviewAggregateResponse(BaseModel):
     reviews: List[ReviewResponse] = []
     trust_source: str = "VANVAS_COMMUNITY"
 
-class ReviewReportCreate(BaseModel):
-    review_id: Optional[str] = None
-    reason: str
-    details: Optional[str] = None
-
-class ReviewReportResponse(BaseModel):
-    id: str
-    review_id: str
-    reporter_user_id: str
-    reason: str
-    status: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
 class ReviewModerateRequest(BaseModel):
     status: str  # published, hidden, removed
     moderation_note: Optional[str] = None
+
 
 
 # ----------------- Travel Commerce Foundation Schemas -----------------
