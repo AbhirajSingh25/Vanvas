@@ -327,6 +327,25 @@ def test_vehicle_artwork_category_isolation():
 # -------------------------------------------------------------
 def test_provider_claim_foundation_api():
     """Verify backend provider registration, claim, and vehicle addition endpoints."""
+    from datetime import datetime, timezone
+    from app.models.models import User
+    from app.core.security import get_password_hash, create_access_token
+
+    db = TestingSessionLocal()
+    user = User(
+        email="provider_owner@vanvas.com",
+        full_name="Provider Owner",
+        hashed_password=get_password_hash("password123"),
+        role="traveller",
+        email_verified_at=datetime.now(timezone.utc)
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    token = create_access_token(user.id)
+    headers = {"Authorization": f"Bearer {token}"}
+    db.close()
+
     # 1. Register a provider
     res_reg = client.post("/api/v1/mobility/providers", json={
         "business_name": "Solang Adventure Wheels",
@@ -334,7 +353,7 @@ def test_provider_claim_foundation_api():
         "longitude": 77.1570,
         "city": "Manali",
         "service_area": "Solang Valley"
-    })
+    }, headers=headers)
     assert res_reg.status_code == 200
     prov_data = res_reg.json()
     prov_id = prov_data["id"]
@@ -347,7 +366,7 @@ def test_provider_claim_foundation_api():
         "whatsapp": "+91 98161 22222",
         "email": "rajesh@solangwheels.com",
         "address": "Solang Valley Road, Manali",
-    })
+    }, headers=headers)
     assert res_claim.status_code == 200
     claimed_data = res_claim.json()
     assert claimed_data["claimed"] is True
@@ -362,7 +381,7 @@ def test_provider_claim_foundation_api():
         "hourly_price": 120.0,
         "deposit": 1500.0,
         "quantity": 4
-    })
+    }, headers=headers)
     assert res_veh.status_code == 200
     veh_data = res_veh.json()
     assert veh_data["model"] == "450X Gen 3"

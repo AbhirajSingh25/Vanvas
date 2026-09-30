@@ -133,19 +133,37 @@ def seed_database(engine_to_use=None, db: Optional[Session] = None) -> bool:
         for dest_slug, places_list in curated_places_by_dest.items():
             if dest_slug in dest_objects:
                 dest_obj = dest_objects[dest_slug]
+                canonical_slugs_for_dest = {p_data["slug"] for p_data in places_list}
                 for p_data in places_list:
                     curated_place_keys.add((dest_obj.id, p_data["slug"]))
-                    existing_p = db.query(Place).filter(
+                    existing_matches = db.query(Place).filter(
                         Place.destination_id == dest_obj.id,
                         Place.slug == p_data["slug"]
-                    ).first()
-                    if not existing_p:
+                    ).all()
+                    if not existing_matches:
                         p = Place(destination_id=dest_obj.id, **p_data)
                         db.add(p)
                     else:
+                        existing_p = existing_matches[0]
                         for k, v in p_data.items():
                             if k not in ("id", "destination_id"):
                                 setattr(existing_p, k, v)
+                        # Clean up duplicate place rows with the same slug on this destination
+                        for dup in existing_matches[1:]:
+                            db.query(Vote).filter(Vote.place_id == dup.id).delete()
+                            db.query(ItineraryItem).filter(ItineraryItem.place_id == dup.id).delete()
+                            db.query(SavedPlace).filter(SavedPlace.place_id == dup.id).delete()
+                            db.delete(dup)
+
+                # Clean up non-canonical transient/test records erroneously attached to this canonical destination
+                for p in db.query(Place).filter(Place.destination_id == dest_obj.id).all():
+                    if p.slug not in canonical_slugs_for_dest and (
+                        p.id.startswith("osm-") or p.id.startswith("gp-") or p.id.startswith("live-") or p.id.startswith("temp-") or p.id == "mussoorie_landour_bakehouse"
+                    ):
+                        db.query(Vote).filter(Vote.place_id == p.id).delete()
+                        db.query(ItineraryItem).filter(ItineraryItem.place_id == p.id).delete()
+                        db.query(SavedPlace).filter(SavedPlace.place_id == p.id).delete()
+                        db.delete(p)
         db.flush()
 
         # Clean up only orphan places referencing non-existent destinations

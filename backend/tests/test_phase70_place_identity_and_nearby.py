@@ -227,21 +227,29 @@ def test_nearby_radius_enforcement():
 
 def test_save_and_retrieve_live_poi(auth_headers):
     live_poi_id = "osm-node-99887766"
-    
-    res_save = client.post(f"/api/v1/places/saved/{live_poi_id}", headers=auth_headers)
-    assert res_save.status_code == 200
-    data = res_save.json()
-    assert data["saved"] is True
-    
-    res_saved_list = client.get("/api/v1/places/saved", headers=auth_headers)
-    assert res_saved_list.status_code == 200
-    saved = res_saved_list.json()
-    saved_ids = [p["id"] for p in saved]
-    assert live_poi_id in saved_ids
-    
-    res_unsave = client.post(f"/api/v1/places/saved/{live_poi_id}", headers=auth_headers)
-    assert res_unsave.status_code == 200
-    assert res_unsave.json()["saved"] is False
+    try:
+        res_save = client.post(f"/api/v1/places/saved/{live_poi_id}", headers=auth_headers)
+        assert res_save.status_code == 200
+        data = res_save.json()
+        assert data["saved"] is True
+        
+        res_saved_list = client.get("/api/v1/places/saved", headers=auth_headers)
+        assert res_saved_list.status_code == 200
+        saved = res_saved_list.json()
+        saved_ids = [p["id"] for p in saved]
+        assert live_poi_id in saved_ids
+        
+        res_unsave = client.post(f"/api/v1/places/saved/{live_poi_id}", headers=auth_headers)
+        assert res_unsave.status_code == 200
+        assert res_unsave.json()["saved"] is False
+    finally:
+        from app.database.session import SessionLocal
+        from app.models.models import Place, SavedPlace
+        db = SessionLocal()
+        db.query(SavedPlace).filter(SavedPlace.place_id == live_poi_id).delete()
+        db.query(Place).filter(Place.id == live_poi_id).delete()
+        db.commit()
+        db.close()
 
 def test_get_place_detail_live_id():
     live_id = "osm-12345678"

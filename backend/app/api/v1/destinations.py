@@ -329,6 +329,17 @@ async def get_destination_detail(
             }
             for p in places
         ]
+        # Deduplicate places by slug
+        seen_place_slugs = set()
+        deduped_places_list = []
+        for p_dict in places_list:
+            p_slug = p_dict.get("slug")
+            if p_slug and p_slug not in seen_place_slugs:
+                seen_place_slugs.add(p_slug)
+                deduped_places_list.append(p_dict)
+            elif not p_slug:
+                deduped_places_list.append(p_dict)
+        places_list = deduped_places_list
 
         hotels_list = [
             {
