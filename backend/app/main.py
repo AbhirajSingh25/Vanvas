@@ -20,7 +20,10 @@ async def lifespan(app: FastAPI):
     app.state.startup_error = None
     # Ensure database schema is up-to-date and all tables/columns exist
     try:
-        ensure_database_schema(engine)
+        schema_ok = ensure_database_schema(engine)
+        if not schema_ok:
+            logger.warning("Database schema verification or connectivity check returned false.")
+            app.state.startup_error = "Database schema initialization or connectivity check failed"
     except Exception as e:
         logger.critical(f"Database schema initialization failed: {e}")
         app.state.startup_error = f"Schema initialization error: {e}"
