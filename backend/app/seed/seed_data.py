@@ -126,6 +126,7 @@ def seed_database(engine_to_use=None, db: Optional[Session] = None) -> bool:
                         setattr(existing, k, v)
                 db.flush()
                 dest_objects[existing.slug] = existing
+        db.commit()
 
         # 4. Authentic Verified Places per Destination (Strict Isolation)
         curated_places_by_dest = ADDITIONAL_PLACES_BY_DEST
@@ -174,7 +175,7 @@ def seed_database(engine_to_use=None, db: Optional[Session] = None) -> bool:
                 db.query(ItineraryItem).filter(ItineraryItem.place_id == old_p.id).delete()
                 db.query(SavedPlace).filter(SavedPlace.place_id == old_p.id).delete()
                 db.delete(old_p)
-        db.flush()
+        db.commit()
 
         # 5. Seed Curated Stays (Hotels) for all 26 destinations
         curated_hotels_by_dest = ADDITIONAL_HOTELS_BY_DEST
@@ -199,7 +200,7 @@ def seed_database(engine_to_use=None, db: Optional[Session] = None) -> bool:
         for old_h in db.query(Hotel).all():
             if old_h.destination_id not in valid_dest_ids:
                 db.delete(old_h)
-        db.flush()
+        db.commit()
 
         # 6. Seed Curated Rentals for all 26 destinations
         curated_rentals_by_dest = ADDITIONAL_RENTALS_BY_DEST
@@ -235,13 +236,12 @@ def seed_database(engine_to_use=None, db: Optional[Session] = None) -> bool:
                     destination_name=dest_obj.name,
                     destination_slug=dest_obj.slug,
                 )
-        db.flush()
+        db.commit()
 
         # 7. Seed Verified Real Rental Providers
         from app.seed.seed_real_rentals import seed_verified_rentals
         seed_verified_rentals(db)
 
-        db.flush()
         db.commit()
 
         logger.info("VANVAS curated travel database successfully seeded with all 26 canonical destinations, places, hotels, and rentals.")

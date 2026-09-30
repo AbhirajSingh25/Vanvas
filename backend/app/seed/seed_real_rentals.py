@@ -1364,7 +1364,7 @@ def seed_verified_rentals(db: Session = None):
                 veh_id = f"veh-{prov_id}-{idx+1}"
                 existing_v = db.query(MobilityVehicle).filter(
                     (MobilityVehicle.id == veh_id) |
-                    ((MobilityVehicle.provider_id == prov_id) & (MobilityVehicle.model == v_data.get("model")))
+                    ((MobilityVehicle.provider_id == prov.id) & (MobilityVehicle.model == v_data.get("model")))
                 ).first()
 
                 if not existing_v:
@@ -1397,7 +1397,8 @@ def seed_verified_rentals(db: Session = None):
         db.commit()
         print(f"Successfully seeded {len(VERIFIED_RENTAL_PROVIDERS)} verified real rental providers.")
     except Exception as e:
-        db.rollback()
+        if close_db:
+            db.rollback()
         print(f"Error seeding verified rental providers: {e}")
     finally:
         if close_db:
