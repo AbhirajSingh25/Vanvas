@@ -192,14 +192,16 @@ def test_production_config_rejects_default_secret_key():
 
 
 def test_production_config_accepts_strong_secret_key():
-    """Settings model validator passes in production with a custom 64-char secret key."""
+    """Settings model validator passes in production with a custom 64-char secret key and PostgreSQL database."""
     custom_secret = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2"
     prod_settings = Settings(
         ENVIRONMENT="production",
-        SECRET_KEY=custom_secret
+        SECRET_KEY=custom_secret,
+        DATABASE_URL="postgresql://vanvas_admin:secure_pass@db.internal:5432/vanvas_prod"
     )
     assert prod_settings.is_production is True
     assert prod_settings.SECRET_KEY == custom_secret
+    assert "postgresql" in prod_settings.DATABASE_URL
 
 
 # ==============================================================================
@@ -265,6 +267,12 @@ def test_liveness_health_endpoint():
 
 def test_readiness_probe_success():
     """GET /health/ready must return HTTP 200 and database connected when DB is operational."""
+    from app.seed.seed_data import seed_database
+    db = TestingSessionLocal()
+    try:
+        seed_database(engine_to_use=test_engine, db=db)
+    finally:
+        db.close()
     resp = client.get("/health/ready")
     assert resp.status_code == 200
     data = resp.json()
@@ -301,6 +309,7 @@ def test_production_cors_wildcard_rejected():
         Settings(
             ENVIRONMENT="production",
             SECRET_KEY="custom-strong-secret-key-that-is-valid-for-testing-123456",
+            DATABASE_URL="postgresql://user:pass@localhost:5432/vanvas",
             BACKEND_CORS_ORIGINS=["*"]
         )
     assert "wildcard '*' CORS origin is prohibited" in str(exc_info.value)
@@ -311,6 +320,7 @@ def test_production_cors_custom_origins():
     prod_settings = Settings(
         ENVIRONMENT="production",
         SECRET_KEY="custom-strong-secret-key-that-is-valid-for-testing-123456",
+        DATABASE_URL="postgresql://user:pass@localhost:5432/vanvas",
         BACKEND_CORS_ORIGINS="https://vanvas.app,https://www.vanvas.app"
     )
     assert prod_settings.BACKEND_CORS_ORIGINS == ["https://vanvas.app", "https://www.vanvas.app"]
