@@ -196,125 +196,290 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
-      {/* Hero Header Banner */}
-      <section className="relative bg-[#0F2924] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-10 pb-14 overflow-hidden">
-        {trip.destination?.hero_image && (
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity"
-            style={{ backgroundImage: `url(${trip.destination.hero_image})` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0F2924]/90 via-[#0F2924]/80 to-[#0F2924]" />
+      {/* Hero / Header Section (Compact Field Guide vs Original Immersive Banner) */}
+      {isCompact ? (
+        <section className="bg-[#FAF7F0] border-b-2 border-[#E5D5BA] px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-7xl mx-auto space-y-4">
+            {/* Top Identity & Badges */}
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] text-[9.5px] font-mono font-bold uppercase tracking-wider">
+                    FIELD PLAN
+                  </span>
+                  <span className="text-xs font-mono text-[#7B4D36]">
+                    {trip.destination?.state || "Himachal Pradesh"}
+                  </span>
+                </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto space-y-6">
-          {/* Top Info Strip */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-xs">
-              <TravelStamp label={`${trip.companion_type} JOURNEY`} variant="terracotta" />
-              <TravelStamp label={`${trip.travel_style} STYLE`} variant="forest" />
-              <TravelStamp label={`${trip.num_days} DAYS`} variant="mustard" />
+                <h1 className="text-3xl sm:text-4xl font-serif font-black tracking-tight text-[#173B32]">
+                  {trip.destination?.name?.toUpperCase() || "MANALI"}
+                </h1>
+              </div>
+
+              {/* Compact Summary Chips: DATES · TRAVELLERS · BUDGET · STYLE */}
+              <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                <span className="px-3 py-1.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] font-bold">
+                  {trip.start_date && trip.end_date ? `${trip.start_date.slice(5)} → ${trip.end_date.slice(5)}` : "12–16 OCT"}
+                </span>
+                <span className="px-3 py-1.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] font-bold">
+                  {trip.num_days} DAYS · {trip.travellers_count || 2} TRAVELLERS
+                </span>
+                <span className="px-3 py-1.5 rounded-xl bg-[#173B32] text-[#B49252] font-bold">
+                  ₹{Math.round((trip.budget_total || 25000) / 1000)}K EST.
+                </span>
+                <span className="px-2.5 py-1.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] font-bold uppercase">
+                  {trip.travel_style || "BACKPACKER"}
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Print / Export Journal Link */}
-              <Link
-                href={`/trips/${trip.id}/journal`}
-                className="px-4 py-1.5 rounded-xl bg-[#B49252]/20 hover:bg-[#B49252]/30 border border-[#B49252]/40 text-xs text-[#EFE5D2] font-semibold flex items-center gap-1.5 transition-colors"
-                title="Print or Export Travel Journal"
-              >
-                <Printer className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Travel Journal</span>
-              </Link>
+            {/* Interests Chips (Emojis) */}
+            {(() => {
+              const parsedInterests = Array.isArray(trip.interests)
+                ? trip.interests
+                : typeof trip.interests === "string"
+                ? (trip.interests as string).split(",").map((s) => s.trim()).filter(Boolean)
+                : [];
+              if (parsedInterests.length === 0) return null;
+              return (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] mr-1">Interests:</span>
+                  {parsedInterests.map((interest: string, idx: number) => {
+                    const getEmoji = (txt: string) => {
+                      const l = txt.toLowerCase();
+                      if (l.includes("mountain") || l.includes("trek")) return "🏔️";
+                      if (l.includes("caf") || l.includes("coffee")) return "☕";
+                      if (l.includes("photo")) return "📷";
+                      if (l.includes("food") || l.includes("eat")) return "🍜";
+                      if (l.includes("nature") || l.includes("forest")) return "🌲";
+                      if (l.includes("cultur") || l.includes("temple")) return "🛕";
+                      return "✨";
+                    };
+                    return (
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 rounded-lg bg-white border border-[#E5D5BA] text-xs font-medium text-[#173B32] flex items-center gap-1"
+                      >
+                        <span>{getEmoji(interest)}</span>
+                        <span>{interest}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
-              {/* Invite Button */}
+            {/* Compact Summary Row: STAYS · GETTING AROUND · WEATHER */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[#E5D5BA] text-xs font-mono">
+              <button
+                type="button"
+                onClick={() => handleTabChange("stays_rentals")}
+                className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] border border-[#E5D5BA] text-left flex items-center justify-between cursor-pointer transition-colors"
+              >
+                <div>
+                  <span className="text-[9px] uppercase text-[#7B4D36] block font-bold">STAYS</span>
+                  <span className="font-bold text-[#173B32] truncate max-w-[120px] sm:max-w-none block">{trip.hotel ? trip.hotel.name : "5 options"}</span>
+                </div>
+                <BedDouble className="w-4 h-4 text-[#B65E3C] shrink-0" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleTabChange("stays_rentals")}
+                className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] border border-[#E5D5BA] text-left flex items-center justify-between cursor-pointer transition-colors"
+              >
+                <div>
+                  <span className="text-[9px] uppercase text-[#7B4D36] block font-bold">GETTING AROUND</span>
+                  <span className="font-bold text-[#173B32] truncate max-w-[120px] sm:max-w-none block">{trip.rental ? trip.rental.vehicle_name : "4 rentals"}</span>
+                </div>
+                <Bike className="w-4 h-4 text-[#B65E3C] shrink-0" />
+              </button>
+
+              <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-left flex items-center justify-between">
+                <div>
+                  <span className="text-[9px] uppercase text-[#7B4D36] block font-bold">WEATHER</span>
+                  <span className="font-bold text-[#173B32]">18–22°C</span>
+                </div>
+                <Sun className="w-4 h-4 text-amber-600 shrink-0" />
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-left flex items-center justify-between">
+                <div>
+                  <span className="text-[9px] uppercase text-[#7B4D36] block font-bold">PROGRESS</span>
+                  <span className="font-bold text-[#173B32]">
+                    {trip.itineraries.reduce((acc, d) => acc + d.items.filter(i => i.status === "completed").length, 0)} / {trip.itineraries.reduce((acc, d) => acc + d.items.length, 0)} stops
+                  </span>
+                </div>
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+              </div>
+            </div>
+
+            {/* Compact Actions Bar */}
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E5D5BA]">
+              <button
+                onClick={() => setImHereOpen(true)}
+                className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Navigation className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>I&rsquo;m Here</span>
+              </button>
+
+              <button
+                onClick={() => setReplanOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>Replan / Adjust</span>
+              </button>
+
               <button
                 onClick={() => setInviteModalOpen(true)}
-                className="px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs text-[#EFE5D2] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5 cursor-pointer"
               >
                 <Share2 className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Invite Friends ({trip.invite_code})</span>
+                <span>Share</span>
+              </button>
+
+              <Link
+                href={`/trips/${trip.id}/journal`}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5"
+              >
+                <Printer className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>Journal</span>
+              </Link>
+
+              <button
+                onClick={() => setCopilotOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs flex items-center gap-1.5 ml-auto cursor-pointer"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>Copilot</span>
               </button>
             </div>
           </div>
+        </section>
+      ) : (
+        /* Hero Header Banner (Original Mode) */
+        <section className="relative bg-[#0F2924] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-10 pb-14 overflow-hidden">
+          {trip.destination?.hero_image && (
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity"
+              style={{ backgroundImage: `url(${trip.destination.hero_image})` }}
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0F2924]/90 via-[#0F2924]/80 to-[#0F2924]" />
 
-          {/* Title & Dates */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <span className="text-sm font-serif text-[#B49252] block">तुम्हारी यात्रा • Active Expedition</span>
-              <h1 className="text-3xl sm:text-6xl font-serif font-black tracking-tight text-[#EFE5D2]">
-                {trip.destination?.name || "Himalayan"} Trail Hub
-              </h1>
-              <p className="text-xs text-[#D8DED5] mt-1.5 flex items-center gap-2 font-mono">
-                <MapPin className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span>{trip.destination?.state}, {trip.destination?.region}</span>
-                <span>•</span>
-                <span>{trip.start_date} to {trip.end_date}</span>
-              </p>
+          <div className="relative z-10 max-w-7xl mx-auto space-y-6">
+            {/* Top Info Strip */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-xs">
+                <TravelStamp label={`${trip.companion_type} JOURNEY`} variant="terracotta" />
+                <TravelStamp label={`${trip.travel_style} STYLE`} variant="forest" />
+                <TravelStamp label={`${trip.num_days} DAYS`} variant="mustard" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Print / Export Journal Link */}
+                <Link
+                  href={`/trips/${trip.id}/journal`}
+                  className="px-4 py-1.5 rounded-xl bg-[#B49252]/20 hover:bg-[#B49252]/30 border border-[#B49252]/40 text-xs text-[#EFE5D2] font-semibold flex items-center gap-1.5 transition-colors"
+                  title="Print or Export Travel Journal"
+                >
+                  <Printer className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>Travel Journal</span>
+                </Link>
+
+                {/* Invite Button */}
+                <button
+                  onClick={() => setInviteModalOpen(true)}
+                  className="px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs text-[#EFE5D2] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>Invite Friends ({trip.invite_code})</span>
+                </button>
+              </div>
             </div>
 
-            {/* Budget Gauge */}
-            <div className="flex items-center gap-5 bg-black/40 backdrop-blur-md px-6 py-3.5 rounded-2xl border border-white/10">
+            {/* Title & Dates */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div>
-                <div className="text-[10px] text-[#D8DED5]/70 uppercase font-bold tracking-wider">Remaining Budget</div>
-                <div className="text-2xl font-mono font-bold text-[#B49252]">₹{Math.round(remainingBudget).toLocaleString()}</div>
+                <span className="text-sm font-serif text-[#B49252] block">तुम्हारी यात्रा • Active Expedition</span>
+                <h1 className="text-3xl sm:text-6xl font-serif font-black tracking-tight text-[#EFE5D2]">
+                  {trip.destination?.name || "Himalayan"} Trail Hub
+                </h1>
+                <p className="text-xs text-[#D8DED5] mt-1.5 flex items-center gap-2 font-mono">
+                  <MapPin className="w-3.5 h-3.5 text-[#B65E3C]" />
+                  <span>{trip.destination?.state}, {trip.destination?.region}</span>
+                  <span>•</span>
+                  <span>{trip.start_date} to {trip.end_date}</span>
+                </p>
               </div>
-              <div className="h-9 w-[1px] bg-white/20" />
-              <div>
-                <div className="text-[10px] text-[#D8DED5]/70 uppercase font-bold tracking-wider">Spent</div>
-                <div className="text-sm font-mono font-bold text-[#EFE5D2]">₹{Math.round(trip.budget_spent || 0).toLocaleString()}</div>
+
+              {/* Budget Gauge */}
+              <div className="flex items-center gap-5 bg-black/40 backdrop-blur-md px-6 py-3.5 rounded-2xl border border-white/10">
+                <div>
+                  <div className="text-[10px] text-[#D8DED5]/70 uppercase font-bold tracking-wider">Remaining Budget</div>
+                  <div className="text-2xl font-mono font-bold text-[#B49252]">₹{Math.round(remainingBudget).toLocaleString()}</div>
+                </div>
+                <div className="h-9 w-[1px] bg-white/20" />
+                <div>
+                  <div className="text-[10px] text-[#D8DED5]/70 uppercase font-bold tracking-wider">Spent</div>
+                  <div className="text-sm font-mono font-bold text-[#EFE5D2]">₹{Math.round(trip.budget_spent || 0).toLocaleString()}</div>
+                </div>
               </div>
             </div>
+
+            {/* Prominent Action Floating Triggers */}
+            <div className="pt-2 flex flex-wrap gap-3">
+              {/* I'M HERE Main Trigger */}
+              <button
+                onClick={() => setImHereOpen(true)}
+                className="px-6 py-3 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-xl transition-all transform active:scale-95 flex items-center gap-2 cursor-pointer"
+              >
+                <Navigation className="w-4 h-4 text-[#B49252] animate-pulse" />
+                <span>I&rsquo;M HERE ARRIVAL MODE</span>
+              </button>
+
+              {/* Quick Plan Trigger */}
+              <button
+                onClick={() => setQuickPlanOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Clock className="w-4 h-4 text-[#B49252]" />
+                <span>Plan Next 3 Hours</span>
+              </button>
+
+              {/* Dynamic Replan Trigger */}
+              <button
+                onClick={() => setReplanOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <CloudRain className="w-4 h-4 text-emerald-300" />
+                <span>Late / Raining / Tired?</span>
+              </button>
+
+              {/* Print / Export Journal Trigger */}
+              <Link
+                href={`/trips/${trip.id}/journal`}
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5"
+              >
+                <Printer className="w-4 h-4 text-[#B49252]" />
+                <span>Export Journal</span>
+              </Link>
+
+              {/* AI Copilot Trigger */}
+              <button
+                onClick={() => setCopilotOpen(true)}
+                className="px-5 py-2.5 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Ask Copilot</span>
+              </button>
+            </div>
           </div>
-
-          {/* Prominent Action Floating Triggers */}
-          <div className="pt-2 flex flex-wrap gap-3">
-            {/* I'M HERE Main Trigger */}
-            <button
-              onClick={() => setImHereOpen(true)}
-              className="px-6 py-3 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-xl transition-all transform active:scale-95 flex items-center gap-2 cursor-pointer"
-            >
-              <Navigation className="w-4 h-4 text-[#B49252] animate-pulse" />
-              <span>I&rsquo;M HERE ARRIVAL MODE</span>
-            </button>
-
-            {/* Quick Plan Trigger */}
-            <button
-              onClick={() => setQuickPlanOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <Clock className="w-4 h-4 text-[#B49252]" />
-              <span>Plan Next 3 Hours</span>
-            </button>
-
-            {/* Dynamic Replan Trigger */}
-            <button
-              onClick={() => setReplanOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <CloudRain className="w-4 h-4 text-emerald-300" />
-              <span>Late / Raining / Tired?</span>
-            </button>
-
-            {/* Print / Export Journal Trigger */}
-            <Link
-              href={`/trips/${trip.id}/journal`}
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5"
-            >
-              <Printer className="w-4 h-4 text-[#B49252]" />
-              <span>Export Journal</span>
-            </Link>
-
-            {/* AI Copilot Trigger */}
-            <button
-              onClick={() => setCopilotOpen(true)}
-              className="px-5 py-2.5 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>Ask Copilot</span>
-            </button>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Main Navigation Tabs */}
       <div id="trip-tabs-navigation" className="sticky top-20 z-30 bg-[#FAF7F0] border-b-2 border-[#E5D5BA] shadow-sm">
@@ -374,60 +539,87 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   </button>
                 </div>
 
-                <div className="space-y-3">
-                  {currentDayItinerary?.items.slice(0, 3).map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-start gap-3.5"
-                    >
-                      <span className="px-2.5 py-1 rounded bg-[#173B32] text-[#EFE5D2] text-xs font-bold font-mono">
-                        {item.start_time}
-                      </span>
-                      <div className="flex-1">
-                        <div className="font-serif font-bold text-base text-[#173B32]">{item.title}</div>
-                        <p className="text-xs text-[#20211D]/75 mt-0.5 font-light">{item.notes}</p>
+                {isCompact ? (
+                  <div className="space-y-2">
+                    {currentDayItinerary?.items.slice(0, 4).map((item) => (
+                      <CompactItineraryItem
+                        key={item.id}
+                        item={item}
+                        onToggleStatus={handleToggleItemStatus}
+                        onToggleLock={handleToggleLock}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {currentDayItinerary?.items.slice(0, 3).map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-start gap-3.5"
+                      >
+                        <span className="px-2.5 py-1 rounded bg-[#173B32] text-[#EFE5D2] text-xs font-bold font-mono">
+                          {item.start_time}
+                        </span>
+                        <div className="flex-1">
+                          <div className="font-serif font-bold text-base text-[#173B32]">{item.title}</div>
+                          <p className="text-xs text-[#20211D]/75 mt-0.5 font-light">{item.notes}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Weather & Stay Card */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Stay Card */}
                 {trip.hotel && (
-                  <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
-                        आशियाना • Booked Stay
-                      </span>
-                      <span className="text-xs font-bold text-[#B65E3C]">{trip.hotel.badge}</span>
+                  isCompact ? (
+                    <CompactStayCard
+                      hotel={trip.hotel}
+                      onSelect={() => handleTabChange("stays_rentals")}
+                    />
+                  ) : (
+                    <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
+                          आशियाना • Booked Stay
+                        </span>
+                        <span className="text-xs font-bold text-[#B65E3C]">{trip.hotel.badge}</span>
+                      </div>
+                      <h4 className="font-serif font-bold text-lg text-[#173B32]">{trip.hotel.name}</h4>
+                      <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
+                      <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
+                        <span>Check-in: {trip.hotel.check_in_time}</span>
+                        <span>{trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night}/night` : "Check availability"}</span>
+                      </div>
                     </div>
-                    <h4 className="font-serif font-bold text-lg text-[#173B32]">{trip.hotel.name}</h4>
-                    <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
-                    <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
-                      <span>Check-in: {trip.hotel.check_in_time}</span>
-                      <span>{trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night}/night` : "Check availability"}</span>
-                    </div>
-                  </div>
+                  )
                 )}
 
                 {/* Scooter Rental Card */}
                 {trip.rental && (
-                  <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
-                        सवारी • Active Scooter
-                      </span>
-                      <span className="text-xs font-bold text-emerald-800">Ready for pickup</span>
+                  isCompact ? (
+                    <CompactRentalCard
+                      rental={trip.rental}
+                      onSelect={() => handleTabChange("stays_rentals")}
+                    />
+                  ) : (
+                    <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
+                          सवारी • Active Scooter
+                        </span>
+                        <span className="text-xs font-bold text-emerald-800">Ready for pickup</span>
+                      </div>
+                      <h4 className="font-serif font-bold text-lg text-[#173B32]">{trip.rental.vehicle_name}</h4>
+                      <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name}</p>
+                      <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
+                        <span>{trip.rental.location}</span>
+                        <span>{trip.rental.price_per_day ? `₹${trip.rental.price_per_day}/day` : "Price on enquiry"}</span>
+                      </div>
                     </div>
-                    <h4 className="font-serif font-bold text-lg text-[#173B32]">{trip.rental.vehicle_name}</h4>
-                    <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name}</p>
-                    <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
-                      <span>{trip.rental.location}</span>
-                      <span>{trip.rental.price_per_day ? `₹${trip.rental.price_per_day}/day` : "Price on enquiry"}</span>
-                    </div>
-                  </div>
+                  )
                 )}
               </div>
             </div>
@@ -589,78 +781,100 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
         {/* STAYS & RENTALS TAB */}
         {activeTab === "stays_rentals" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
-            {/* Hotel Section */}
-            <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-serif font-bold text-lg text-[#173B32] flex items-center gap-2">
-                  <BedDouble className="w-5 h-5 text-[#B65E3C]" />
-                  <span>Your Stay / Hotel</span>
-                </h3>
-                <span className="text-xs text-[#7B4D36]">Official check-in ready</span>
-              </div>
-
+          isCompact ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn">
               {trip.hotel ? (
-                <div className="space-y-3">
-                  <img
-                    src={trip.hotel.image_url || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600"}
-                    alt={trip.hotel.name}
-                    className="w-full h-48 rounded-2xl object-cover border border-[#E5D5BA]"
-                  />
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.hotel.name}</h4>
-                    <span className="text-sm font-mono font-bold text-[#B65E3C]">
-                      {trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night} / night` : "Check availability"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
-                  <div className="p-3 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-xs space-y-1">
-                    <div className="font-semibold text-[#173B32]">Amenities: {trip.hotel.amenities}</div>
-                    <div className="text-[#7B4D36]">Check-in: {trip.hotel.check_in_time} • Check-out: {trip.hotel.check_out_time}</div>
-                  </div>
+                <div className="space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">Booked Stay</span>
+                  <CompactStayCard hotel={trip.hotel} />
                 </div>
               ) : (
-                <div className="py-8 text-center text-xs text-[#7B4D36]">No hotel attached yet.</div>
+                <div className="p-6 text-center text-xs text-[#7B4D36] bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA]">No hotel attached yet.</div>
               )}
-            </div>
-
-            {/* Scooter Mobility Section */}
-            <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-serif font-bold text-lg text-[#173B32] flex items-center gap-2">
-                  <Bike className="w-5 h-5 text-[#B65E3C]" />
-                  <span>Valley Scooter Rentals</span>
-                </h3>
-                <span className="text-xs text-[#7B4D36]">Hill-tuned</span>
-              </div>
 
               {trip.rental ? (
-                <div className="space-y-3">
-                  <div className="w-full h-48 rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
-                    <VehicleArtwork
-                      type={trip.rental.vehicle_type}
-                      name={trip.rental.vehicle_name}
-                      imageUrl={trip.rental.image_url}
-                      alt={trip.rental.vehicle_name}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.rental.vehicle_name}</h4>
-                    <span className="text-sm font-mono font-bold text-[#173B32]">
-                      {trip.rental.price_per_day ? `₹${trip.rental.price_per_day} / day` : "Price on enquiry"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name} • Deposit: ₹{trip.rental.deposit_amount}</p>
-                  <div className="p-3 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-xs space-y-1">
-                    <div className="font-semibold text-[#173B32]">Pickup: {trip.rental.location}</div>
-                    <div className="text-[#7B4D36]">Operating Hours: {trip.rental.opening_hours}</div>
-                  </div>
+                <div className="space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">Scooter / Vehicle</span>
+                  <CompactRentalCard rental={trip.rental} />
                 </div>
               ) : (
-                <div className="py-8 text-center text-xs text-[#7B4D36]">No rental attached.</div>
+                <div className="p-6 text-center text-xs text-[#7B4D36] bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA]">No rental attached.</div>
               )}
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
+              {/* Hotel Section */}
+              <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif font-bold text-lg text-[#173B32] flex items-center gap-2">
+                    <BedDouble className="w-5 h-5 text-[#B65E3C]" />
+                    <span>Your Stay / Hotel</span>
+                  </h3>
+                  <span className="text-xs text-[#7B4D36]">Official check-in ready</span>
+                </div>
+
+                {trip.hotel ? (
+                  <div className="space-y-3">
+                    <img
+                      src={trip.hotel.image_url || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600"}
+                      alt={trip.hotel.name}
+                      className="w-full h-48 rounded-2xl object-cover border border-[#E5D5BA]"
+                    />
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.hotel.name}</h4>
+                      <span className="text-sm font-mono font-bold text-[#B65E3C]">
+                        {trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night} / night` : "Check availability"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
+                    <div className="p-3 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-xs space-y-1">
+                      <div className="font-semibold text-[#173B32]">Amenities: {trip.hotel.amenities}</div>
+                      <div className="text-[#7B4D36]">Check-in: {trip.hotel.check_in_time} • Check-out: {trip.hotel.check_out_time}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-xs text-[#7B4D36]">No hotel attached yet.</div>
+                )}
+              </div>
+
+              {/* Scooter Mobility Section */}
+              <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif font-bold text-lg text-[#173B32] flex items-center gap-2">
+                    <Bike className="w-5 h-5 text-[#B65E3C]" />
+                    <span>Valley Scooter Rentals</span>
+                  </h3>
+                  <span className="text-xs text-[#7B4D36]">Hill-tuned</span>
+                </div>
+
+                {trip.rental ? (
+                  <div className="space-y-3">
+                    <div className="w-full h-48 rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
+                      <VehicleArtwork
+                        type={trip.rental.vehicle_type}
+                        name={trip.rental.vehicle_name}
+                        imageUrl={trip.rental.image_url}
+                        alt={trip.rental.vehicle_name}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.rental.vehicle_name}</h4>
+                      <span className="text-sm font-mono font-bold text-[#173B32]">
+                        {trip.rental.price_per_day ? `₹${trip.rental.price_per_day} / day` : "Price on enquiry"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name} • Deposit: ₹{trip.rental.deposit_amount}</p>
+                    <div className="p-3 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-xs space-y-1">
+                      <div className="font-semibold text-[#173B32]">Pickup: {trip.rental.location}</div>
+                      <div className="text-[#7B4D36]">Operating Hours: {trip.rental.opening_hours}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-xs text-[#7B4D36]">No rental attached.</div>
+                )}
+              </div>
+            </div>
+          )
         )}
 
         {/* FOOD TAB */}

@@ -28,6 +28,8 @@ import { StayDetailModal } from "@/components/solo/StayDetailModal";
 import { MobilityDetailModal } from "@/components/solo/MobilityDetailModal";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { Avatar } from "@/components/ui/Avatar";
+import { useDensity } from "@/context/DensityContext";
+import { CompactTravelerCard, CompactPlaceCard } from "@/components/compact";
 
 // Available Travel Styles with distinctive motifs
 const TRAVEL_STYLES = [
@@ -57,6 +59,7 @@ const PRESET_DESTINATION_CHIPS = [
 ];
 
 function SoloPageContent() {
+  const { isCompact } = useDensity();
   const searchParams = useSearchParams();
   const router = useRouter();
   const destQuery = searchParams.get("dest") || "manali";
@@ -500,59 +503,78 @@ function SoloPageContent() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {travelers.slice(0, 4).map((t) => (
-                    <div
-                      key={t.user_id}
-                      className="p-4 rounded-2xl bg-white border border-[#D8CBB2] hover:border-[#173B32] flex items-center justify-between gap-4 transition-all shadow-2xs"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar
-                          user={{
-                            full_name: t.full_name,
-                            avatar_url: t.avatar_url,
-                            avatar_type: t.avatar_type,
-                            avatar_preset: t.avatar_preset,
-                          }}
-                          size="md"
-                        />
-                        <div>
-                          <h5 className="font-serif font-bold text-sm text-[#173B32]">
-                            {t.full_name}
-                          </h5>
-                          <p className="text-[11px] text-[#20211D]/70">
-                            {t.travel_style || "Solo Explorer"} · {t.overlapping_days || 0} overlapping days
-                          </p>
+                isCompact ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {travelers.slice(0, 6).map((t) => (
+                      <CompactTravelerCard
+                        key={t.user_id}
+                        traveler={t}
+                        onOpenProfile={(traveler) => {
+                          setSelectedTraveler(traveler);
+                          setIsTravelerModalOpen(true);
+                        }}
+                        onOpenChat={(traveler) => {
+                          setChatPartner(traveler);
+                          setIsChatOpen(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {travelers.slice(0, 4).map((t) => (
+                      <div
+                        key={t.user_id}
+                        className="p-4 rounded-2xl bg-white border border-[#D8CBB2] hover:border-[#173B32] flex items-center justify-between gap-4 transition-all shadow-2xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            user={{
+                              full_name: t.full_name,
+                              avatar_url: t.avatar_url,
+                              avatar_type: t.avatar_type,
+                              avatar_preset: t.avatar_preset,
+                            }}
+                            size="md"
+                          />
+                          <div>
+                            <h5 className="font-serif font-bold text-sm text-[#173B32]">
+                              {t.full_name}
+                            </h5>
+                            <p className="text-[11px] text-[#20211D]/70">
+                              {t.travel_style || "Solo Explorer"} · {t.overlapping_days || 0} overlapping days
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {t.connection_status === "ACCEPTED" ? (
+                            <button
+                              onClick={() => {
+                                setChatPartner(t);
+                                setIsChatOpen(true);
+                              }}
+                              className="px-3.5 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 text-[#B49252]" />
+                              <span>Chat</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedTraveler(t);
+                                setIsTravelerModalOpen(true);
+                              }}
+                              className="px-3.5 py-1.5 rounded-xl bg-[#E05A2B] hover:bg-[#C8491D] text-white text-xs font-bold shadow-xs cursor-pointer"
+                            >
+                              Connect
+                            </button>
+                          )}
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2">
-                        {t.connection_status === "ACCEPTED" ? (
-                          <button
-                            onClick={() => {
-                              setChatPartner(t);
-                              setIsChatOpen(true);
-                            }}
-                            className="px-3.5 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
-                          >
-                            <MessageCircle className="w-3.5 h-3.5 text-[#B49252]" />
-                            <span>Chat</span>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setSelectedTraveler(t);
-                              setIsTravelerModalOpen(true);
-                            }}
-                            className="px-3.5 py-1.5 rounded-xl bg-[#E05A2B] hover:bg-[#C8491D] text-white text-xs font-bold shadow-xs cursor-pointer"
-                          >
-                            Connect
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
 
@@ -677,16 +699,28 @@ function SoloPageContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {filteredPlaces.slice(0, visiblePlacesCount).map((place) => (
-                  <PlaceCard
-                    key={place.id}
-                    place={place}
-                    destinationName={displayName}
-                    onSelect={(p: Place) => setSelectedPlace(p)}
-                  />
-                ))}
-              </div>
+              {isCompact ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {filteredPlaces.slice(0, visiblePlacesCount).map((place) => (
+                    <CompactPlaceCard
+                      key={place.id}
+                      place={place}
+                      onSelect={(p: Place) => setSelectedPlace(p)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {filteredPlaces.slice(0, visiblePlacesCount).map((place) => (
+                    <PlaceCard
+                      key={place.id}
+                      place={place}
+                      destinationName={displayName}
+                      onSelect={(p: Place) => setSelectedPlace(p)}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Load More Button */}
               {visiblePlacesCount < filteredPlaces.length && (

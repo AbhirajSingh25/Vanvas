@@ -15,6 +15,7 @@ import { VanvasImage } from "@/components/ui/VanvasImage";
 import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
 import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 import { useDensity } from "@/context/DensityContext";
+import { CompactStayCard } from "@/components/compact";
 
 const ACCOMMODATION_STYLES = [
   "All",
@@ -317,140 +318,157 @@ export default function DestinationStaysPage() {
             ))}
           </div>
         ) : filteredHotels.length > 0 ? (
-          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-4 sm:gap-4" : "gap-6"}`}>
-            {filteredHotels.map((h) => {
-              const isPriceVerified = typeof h.price_per_night === "number" && h.price_per_night > 0;
-              const displayPrice = isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry";
-              const stayVisual = resolveHotelArtwork(h.name, destName, h.hotel_style || h.accommodation_type, h.image_url, h.is_live, h.source);
-
-              // Direction url
-              const dirUrl = h.latitude && h.longitude
-                ? `https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`
-                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${destName}`)}`;
-
-              return (
-                <div
+          isCompact ? (
+            /* COMPACT MODE: FIELD GUIDE CATALOGUE GRID */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredHotels.map((h) => (
+                <CompactStayCard
                   key={h.id}
-                  className={`${isCompact ? "p-3 sm:p-3.5 space-y-2.5 rounded-2xl" : "p-5 space-y-4 rounded-3xl"} bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/50 shadow-2xs hover:shadow-xl transition-all flex flex-col justify-between group`}
-                >
-                  <div className={isCompact ? "space-y-2" : "space-y-3"}>
-                    {/* Visual Card Header */}
-                    <div
-                      onClick={() => {
-                        setSelectedStayForModal(h);
-                        setStayModalOpen(true);
-                      }}
-                      className={`relative ${isCompact ? "h-36 sm:h-40" : "aspect-[16/10]"} w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group-hover:shadow-md transition-shadow`}
-                    >
-                      <VanvasImage
-                        src={stayVisual.imageUrl}
-                        fallbackSrc={stayVisual.fallbackUrl}
-                        alt={`${h.name} in ${destName}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                  hotel={h}
+                  onSelect={(hotel) => {
+                    setSelectedStayForModal(hotel);
+                    setStayModalOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            /* ORIGINAL MODE: IMMERSIVE EDITORIAL CARDS */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredHotels.map((h) => {
+                const isPriceVerified = typeof h.price_per_night === "number" && h.price_per_night > 0;
+                const displayPrice = isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry";
+                const stayVisual = resolveHotelArtwork(h.name, destName, h.hotel_style || h.accommodation_type, h.image_url, h.is_live, h.source);
 
-                      {/* Top Provenance Badge */}
-                      <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
-                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
-                          {h.badge || "VERIFIED SANCTUARY"}
-                        </span>
-                        {h.rating && (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#FAF4E8]/90 backdrop-blur-xs text-[#173B32] flex items-center gap-1 shadow-xs border border-white/20">
-                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                            <span>{h.rating.toFixed(1)}</span>
-                          </span>
-                        )}
-                      </div>
+                // Direction url
+                const dirUrl = h.latitude && h.longitude
+                  ? `https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`
+                  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${destName}`)}`;
 
-                      {/* Bottom Category Tag */}
-                      <div className="absolute bottom-2.5 left-2.5">
-                        <span className="px-2.5 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-medium border border-white/10">
-                          {h.hotel_style || h.accommodation_type || "Boutique Sanctuary"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Content Body */}
-                    <div className="space-y-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className={`font-serif font-bold ${isCompact ? "text-base" : "text-lg"} text-[#173B32] leading-snug group-hover:text-[#B65E3C] transition-colors`}>
-                          {h.name}
-                        </h3>
-                        <div className="text-right shrink-0">
-                          <span className="font-bold text-sm text-[#B65E3C] block">
-                            {displayPrice}
-                          </span>
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-[#7B4D36] line-clamp-1 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
-                        <span>{h.address}</span>
-                      </p>
-
-                      {/* Amenities pills */}
-                      {h.amenities && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          {h.amenities.split(",").slice(0, isCompact ? 2 : 3).map((am, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-0.5 rounded-md bg-white border border-[#E5D5BA] text-[10px] font-medium text-[#7B4D36]"
-                            >
-                              {am.trim()}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions & Timings */}
-                  <div className="space-y-3 pt-3 border-t border-[#E5D5BA]/80">
-                    <div className="flex items-center justify-between text-[11px] text-[#7B4D36] font-mono">
-                      <span>Check-in: {h.check_in_time || "11:00 AM"}</span>
-                      <span>Check-out: {h.check_out_time || "10:00 AM"}</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
+                return (
+                  <div
+                    key={h.id}
+                    className="p-5 space-y-4 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/50 shadow-2xs hover:shadow-xl transition-all flex flex-col justify-between group"
+                  >
+                    <div className="space-y-3">
+                      {/* Visual Card Header */}
+                      <div
                         onClick={() => {
                           setSelectedStayForModal(h);
                           setStayModalOpen(true);
                         }}
-                        className="py-2.5 px-3 rounded-xl bg-white border border-[#E5D5BA] hover:bg-[#EFE5D2] text-[#173B32] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group-hover:shadow-md transition-shadow"
                       >
-                        <Eye className="w-3.5 h-3.5 text-[#B65E3C]" />
-                        <span>View Details</span>
-                      </button>
+                        <VanvasImage
+                          src={stayVisual.imageUrl}
+                          fallbackSrc={stayVisual.fallbackUrl}
+                          alt={`${h.name} in ${destName}`}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
 
-                      <button
-                        onClick={() => {
-                          setSelectedStayForModal(h);
-                          setInquiryModalOpen(true);
-                          setInquirySuccess(false);
-                        }}
-                        className="py-2.5 px-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                      >
-                        <BedDouble className="w-3.5 h-3.5 text-[#EFE5D2]" />
-                        <span>Check Rates</span>
-                      </button>
+                        {/* Top Provenance Badge */}
+                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
+                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                            {h.badge || "VERIFIED SANCTUARY"}
+                          </span>
+                          {h.rating && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#FAF4E8]/90 backdrop-blur-xs text-[#173B32] flex items-center gap-1 shadow-xs border border-white/20">
+                              <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                              <span>{h.rating.toFixed(1)}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Bottom Category Tag */}
+                        <div className="absolute bottom-2.5 left-2.5">
+                          <span className="px-2.5 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-medium border border-white/10">
+                            {h.hotel_style || h.accommodation_type || "Boutique Sanctuary"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content Body */}
+                      <div className="space-y-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-serif font-bold text-lg text-[#173B32] leading-snug group-hover:text-[#B65E3C] transition-colors">
+                            {h.name}
+                          </h3>
+                          <div className="text-right shrink-0">
+                            <span className="font-bold text-sm text-[#B65E3C] block">
+                              {displayPrice}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-[#7B4D36] line-clamp-1 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
+                          <span>{h.address}</span>
+                        </p>
+
+                        {/* Amenities pills */}
+                        {h.amenities && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {h.amenities.split(",").slice(0, 3).map((am, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 rounded-md bg-white border border-[#E5D5BA] text-[10px] font-medium text-[#7B4D36]"
+                              >
+                                {am.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <a
-                      href={dirUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-[#7B4D36] hover:text-[#173B32] flex items-center justify-center gap-1 py-1 font-medium transition-colors"
-                    >
-                      <Navigation className="w-3 h-3 text-[#B65E3C]" />
-                      <span>Get Navigation Directions</span>
-                      <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-                    </a>
+                    {/* Actions & Timings */}
+                    <div className="space-y-3 pt-3 border-t border-[#E5D5BA]/80">
+                      <div className="flex items-center justify-between text-[11px] text-[#7B4D36] font-mono">
+                        <span>Check-in: {h.check_in_time || "11:00 AM"}</span>
+                        <span>Check-out: {h.check_out_time || "10:00 AM"}</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedStayForModal(h);
+                            setStayModalOpen(true);
+                          }}
+                          className="py-2.5 px-3 rounded-xl bg-white border border-[#E5D5BA] hover:bg-[#EFE5D2] text-[#173B32] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-[#B65E3C]" />
+                          <span>View Details</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setSelectedStayForModal(h);
+                            setInquiryModalOpen(true);
+                            setInquirySuccess(false);
+                          }}
+                          className="py-2.5 px-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <BedDouble className="w-3.5 h-3.5 text-[#EFE5D2]" />
+                          <span>Check Rates</span>
+                        </button>
+                      </div>
+
+                      <a
+                        href={dirUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-[#7B4D36] hover:text-[#173B32] flex items-center justify-center gap-1 py-1 font-medium transition-colors"
+                      >
+                        <Navigation className="w-3 h-3 text-[#B65E3C]" />
+                        <span>Get Navigation Directions</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                      </a>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )
         ) : (
           <div className="p-12 text-center bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl space-y-3">
             <BedDouble className="w-10 h-10 text-[#B65E3C] mx-auto opacity-70" />

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle2, Circle, ChevronDown, ChevronUp, Navigation, Lock, Unlock, ArrowRight } from "lucide-react";
+import { CheckCircle2, Circle, ChevronDown, ChevronUp, Lock, Unlock, Navigation, Sparkles } from "lucide-react";
 import { ItineraryItem } from "@/types";
+import { normalizeItineraryItem } from "@/lib/itineraryNormalizer";
 
 interface CompactItineraryItemProps {
   item: ItineraryItem;
@@ -15,111 +16,126 @@ export const CompactItineraryItem: React.FC<CompactItineraryItemProps> = ({
   item,
   onToggleStatus,
   onToggleLock,
-  onOpenDetails,
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const isCompleted = item.status === "completed";
+  const stop = normalizeItineraryItem(item);
 
   return (
     <div
       className={`rounded-2xl border transition-all ${
-        isCompleted
+        stop.isCompleted
           ? "bg-[#E5D5BA]/40 border-[#E5D5BA] opacity-75"
           : "bg-[#FAF7F0] border-[#E5D5BA] hover:border-[#173B32] shadow-2xs"
       }`}
     >
-      {/* Main Scannable Row */}
+      {/* Main Scannable Row: TIME -> PLACE -> SHORT PURPOSE */}
       <div className="p-3 sm:p-3.5 flex items-center justify-between gap-3">
         {/* Checkbox & Time */}
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
-            onClick={() => onToggleStatus && onToggleStatus(item.id, item.status)}
+            onClick={() => onToggleStatus && onToggleStatus(stop.id, stop.isCompleted ? "completed" : "upcoming")}
             className="text-[#173B32] hover:text-[#B65E3C] transition-colors cursor-pointer"
-            aria-label={isCompleted ? "Mark uncompleted" : "Mark completed"}
+            aria-label={stop.isCompleted ? "Mark uncompleted" : "Mark completed"}
           >
-            {isCompleted ? (
+            {stop.isCompleted ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-700 fill-emerald-100" />
             ) : (
               <Circle className="w-4 h-4 text-[#7B4D36]" />
             )}
           </button>
           <span className="font-mono font-bold text-xs sm:text-sm text-[#173B32]">
-            {item.start_time}
+            {stop.time}
           </span>
         </div>
 
-        {/* Place & Short Purpose */}
+        {/* Place & 1 Short Purpose Line */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="font-serif font-black text-xs sm:text-sm text-[#173B32] truncate">
-              {item.title}
+              {stop.placeName}
             </span>
             <span className="px-1.5 py-0.2 rounded bg-[#173B32]/10 text-[#173B32] text-[8.5px] font-mono font-bold uppercase shrink-0">
-              {item.category}
+              {stop.category}
             </span>
           </div>
-          <p className="text-[10px] sm:text-[11px] text-[#7B4D36] truncate mt-0.5">
-            {item.reason_for_recommendation || item.notes || "Exploration stop."}
+          <p className="text-[11px] text-[#7B4D36] truncate mt-0.5 font-medium">
+            {stop.shortPurpose}
           </p>
         </div>
 
-        {/* Action / Expand Trigger */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* Action / Lock / Expand Trigger */}
+        <div className="flex items-center gap-1.5 shrink-0">
           {onToggleLock && (
             <button
               type="button"
-              onClick={() => onToggleLock(item.id, item.is_locked)}
-              className={`p-1 rounded text-xs transition-colors ${
-                item.is_locked ? "text-amber-700" : "text-[#7B4D36]/60 hover:text-[#7B4D36]"
+              onClick={() => onToggleLock(stop.id, stop.isLocked)}
+              className={`p-1 rounded text-xs transition-colors cursor-pointer ${
+                stop.isLocked ? "text-amber-700" : "text-[#7B4D36]/60 hover:text-[#7B4D36]"
               }`}
-              title={item.is_locked ? "Stop is locked" : "Lock stop"}
+              title={stop.isLocked ? "Stop is locked (protected from replanning)" : "Lock stop"}
             >
-              {item.is_locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              {stop.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
             </button>
           )}
 
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="p-1 rounded text-[#7B4D36] hover:text-[#173B32] transition-colors text-xs flex items-center gap-0.5 font-bold cursor-pointer"
+            className="px-2 py-1 rounded-lg bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] transition-colors text-[10.5px] font-bold flex items-center gap-1 cursor-pointer"
             aria-expanded={expanded}
           >
-            <span className="text-[10px] hidden sm:inline">{expanded ? "Less" : "Info"}</span>
-            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            <span>{expanded ? "Less" : "Details"}</span>
+            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3 text-[#B65E3C]" />}
           </button>
         </div>
       </div>
 
-      {/* Progressively Disclosed Structured UI (WHAT, WHY, WHEN, COST, DISTANCE) */}
+      {/* Progressively Disclosed Structured UI (WHY, GETTING THERE, COST, NOTES) */}
       {expanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-[#E5D5BA]/60 space-y-2 text-[11px] animate-fadeIn">
-          {item.notes && (
-            <p className="text-[#20211D]/80 leading-relaxed font-light italic">
-              &ldquo;{item.notes}&rdquo;
-            </p>
+        <div className="px-3.5 pb-3.5 pt-2 border-t border-[#E5D5BA]/80 space-y-2.5 text-xs animate-fadeIn bg-white/40 rounded-b-2xl">
+          {stop.whyThisStop && (
+            <div className="space-y-0.5">
+              <span className="text-[9.5px] font-mono font-bold text-[#B65E3C] uppercase tracking-wider block">
+                WHY THIS STOP
+              </span>
+              <p className="text-[#20211D]/90 text-xs font-serif leading-relaxed">
+                {stop.whyThisStop}
+              </p>
+            </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono pt-1">
-            <div className="bg-[#EFE5D2] p-2 rounded-xl border border-[#E5D5BA]">
-              <span className="text-[#7B4D36] uppercase block text-[8.5px]">When</span>
-              <span className="text-[#173B32] font-bold">{item.start_time}–{item.end_time}</span>
+          {stop.notes && stop.notes !== stop.whyThisStop && (
+            <div className="space-y-0.5">
+              <span className="text-[9.5px] font-mono font-bold text-[#7B4D36] uppercase tracking-wider block">
+                NOTES &amp; RECOMMENDATIONS
+              </span>
+              <p className="text-[#20211D]/80 text-xs leading-relaxed font-light">
+                {stop.notes}
+              </p>
             </div>
-            <div className="bg-[#EFE5D2] p-2 rounded-xl border border-[#E5D5BA]">
+          )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[10.5px]">
+            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]">
+              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Time Window</span>
+              <span className="text-[#173B32] font-bold">
+                {stop.time}{stop.endTime ? ` – ${stop.endTime}` : ` (${stop.durationMins}m)`}
+              </span>
+            </div>
+            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]">
               <span className="text-[#7B4D36] uppercase block text-[8.5px]">Cost</span>
-              <span className="text-[#173B32] font-bold">
-                {item.estimated_cost > 0 ? `₹${item.estimated_cost}` : "Free / Included"}
-              </span>
+              <span className="text-[#173B32] font-bold">{stop.costFormatted}</span>
             </div>
-            <div className="bg-[#EFE5D2] p-2 rounded-xl border border-[#E5D5BA]">
-              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Distance</span>
-              <span className="text-[#173B32] font-bold">
-                {item.distance_from_prev_km > 0 ? `${item.distance_from_prev_km} km` : "Nearby"}
-              </span>
+            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]">
+              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Transit &amp; Distance</span>
+              <span className="text-[#173B32] font-bold">{stop.distanceFormatted}</span>
             </div>
-            <div className="bg-[#EFE5D2] p-2 rounded-xl border border-[#E5D5BA]">
-              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Duration</span>
-              <span className="text-[#173B32] font-bold">{item.duration_mins} mins</span>
+            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]">
+              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Transit Time</span>
+              <span className="text-[#173B32] font-bold">
+                {stop.travelTimeMins > 0 ? `${stop.travelTimeMins} mins` : "On-site / walking"}
+              </span>
             </div>
           </div>
         </div>

@@ -135,7 +135,7 @@ export default function HomePage() {
 
         {/* Compact Mode vs Original Mode Architecture */}
         {isCompact ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             <CompactTravelModeCard
               href="/explore"
               layer="LAYER 01"
@@ -149,7 +149,7 @@ export default function HomePage() {
               href="/solo"
               layer="LAYER 02"
               title="Solo Travel"
-              subtitle="Find your people"
+              subtitle="Find compatible travellers"
               icon={Users}
               badgeColor="bg-[#B65E3C] text-white"
               accentColor="text-[#173B32]"
@@ -158,7 +158,7 @@ export default function HomePage() {
               href="/treks"
               layer="LAYER 03"
               title="Trek Mode"
-              subtitle="Mountains & trails"
+              subtitle="Trails & mountain data"
               icon={Mountain}
               badgeColor="bg-[#E05A2B] text-white"
               accentColor="text-[#173B32]"

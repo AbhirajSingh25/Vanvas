@@ -991,109 +991,152 @@ function OneDayPlannerInner() {
               </div>
 
               {/* INTERMEDIATE STOPS */}
-              {adaptedStops.map((stop, idx) => (
-                <div key={stop.id} className="relative">
-                  <div className="absolute -left-[31px] sm:-left-[39px] top-4 w-6 h-6 rounded-full bg-[#D95327] text-white text-[11px] font-mono font-bold flex items-center justify-center shadow-md">
-                    {idx + 1}
-                  </div>
+              {isCompact ? (
+                adaptedStops.map((stop, idx) => (
+                  <div key={stop.id} className="relative">
+                    <div className="absolute -left-[31px] sm:-left-[39px] top-3.5 w-6 h-6 rounded-full bg-[#D95327] text-white text-[11px] font-mono font-bold flex items-center justify-center shadow-md">
+                      {idx + 1}
+                    </div>
 
-                  <div className="p-5 sm:p-6 rounded-3xl bg-[#121E18] border border-[#22342A] grid grid-cols-1 lg:grid-cols-12 gap-6 items-start shadow-lg">
-                    <div className="lg:col-span-8 space-y-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-md bg-[#1B2C24] text-[#C59B47] text-[10px] font-mono uppercase font-bold border border-[#C59B47]/30">
-                          {stop.timeSlot}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-md bg-[#14201A] text-[#A6C5B4] text-[10px] font-mono uppercase border border-[#22342A]">
-                          {stop.category}
-                        </span>
-                        <span className="text-xs font-mono text-[#6D8578]">
-                          +{stop.distanceFromPrevKm} km • {stop.estimatedDuration}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-[#121E18] border border-[#22342A] space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-[#1B2C24] text-[#C59B47] text-[10px] font-mono font-bold">
+                            {stop.timeSlot}
+                          </span>
+                          <h4 className="font-serif font-black text-sm text-white truncate max-w-[180px] sm:max-w-none">
+                            {stop.name}
+                          </h4>
+                        </div>
+                        <span className="text-[10px] font-mono text-[#52B788] font-bold">
+                          ₹{stop.approxCostPerPerson}
                         </span>
                       </div>
 
-                      <div className="space-y-0.5">
-                        <h4 className="text-xl sm:text-2xl font-serif font-black text-white">
-                          {stop.name}
-                        </h4>
-                        <p className="font-devanagari text-xs text-[#C59B47]">
-                          {stop.hindiName}
-                        </p>
-                      </div>
-
-                      <p className="text-xs sm:text-sm text-[#9EB5A9] font-serif leading-relaxed">
+                      <p className="text-[11.5px] text-[#9EB5A9] font-serif leading-relaxed line-clamp-2">
                         {stop.description}
                       </p>
 
-                      {/* Stop Metadata & Menu Status */}
-                      <div className="flex flex-wrap items-center gap-2 text-xs font-mono pt-1">
-                        {stop.menuUrl ? (
-                          <a
-                            href={stop.menuUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-2.5 py-1 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-bold flex items-center gap-1 hover:bg-emerald-900"
-                          >
-                            <span>📜 View Official Menu</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : stop.category === "food" || stop.category === "cafe" ? (
-                          <span className="px-2.5 py-1 rounded-lg bg-[#14201A] text-[#8FA699] border border-[#22342A] text-[11px] italic">
-                            Menu not published online
-                          </span>
-                        ) : null}
-
-                        {stop.phone ? (
-                          <a
-                            href={`tel:${stop.phone}`}
-                            className="px-2.5 py-1 rounded-lg bg-[#14201A] text-[#C59B47] border border-[#22342A] font-bold flex items-center gap-1 hover:text-white"
-                          >
-                            <Phone className="w-3 h-3" />
-                            <span>{stop.phone}</span>
-                          </a>
-                        ) : (
-                          <span className="text-[11px] text-[#6D8578] font-mono">
-                            Phone unavailable
-                          </span>
-                        )}
-
-                        <span className="text-[#52B788] font-bold ml-auto">
-                          ≈ ₹{stop.approxCostPerPerson}/person
-                        </span>
-                      </div>
-
-                      {/* Explorer Local Hack Note */}
-                      <div className="p-3 rounded-xl bg-[#0E1612] border border-[#1E2D24] text-xs font-mono text-[#D1DFD7] flex items-start gap-2">
-                        <span className="text-[#D95327] font-bold shrink-0">💡</span>
-                        <span><strong>Explorer Note:</strong> {stop.localTip}</span>
-                      </div>
-
-                      {/* Direction CTA */}
-                      <div className="pt-2 flex items-center gap-2">
+                      <div className="flex items-center justify-between text-[10.5px] font-mono pt-1 border-t border-[#1E2D24] text-[#6D8578]">
+                        <span>+{stop.distanceFromPrevKm} km · {stop.estimatedDuration}</span>
                         <a
                           href={stop.lat && stop.lng ? `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3.5 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm"
+                          className="text-[#C59B47] hover:underline flex items-center gap-1 font-bold"
                         >
-                          <MapPin className="w-3.5 h-3.5 text-[#B49252]" />
-                          <span>Get Directions</span>
+                          <MapPin className="w-3 h-3" />
+                          <span>Map</span>
                         </a>
                       </div>
                     </div>
+                  </div>
+                ))
+              ) : (
+                adaptedStops.map((stop, idx) => (
+                  <div key={stop.id} className="relative">
+                    <div className="absolute -left-[31px] sm:-left-[39px] top-4 w-6 h-6 rounded-full bg-[#D95327] text-white text-[11px] font-mono font-bold flex items-center justify-center shadow-md">
+                      {idx + 1}
+                    </div>
 
-                    <div className="lg:col-span-4 relative h-40 sm:h-48 w-full rounded-2xl overflow-hidden border border-[#22342A]">
-                      <VanvasImage
-                        src={stop.imageUrl || activePlan.heroImage || "/artworks/fallback_valley.jpg"}
-                        alt={stop.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-mono text-white">
-                        {stop.locationName}
+                    <div className="p-5 sm:p-6 rounded-3xl bg-[#121E18] border border-[#22342A] grid grid-cols-1 lg:grid-cols-12 gap-6 items-start shadow-lg">
+                      <div className="lg:col-span-8 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-md bg-[#1B2C24] text-[#C59B47] text-[10px] font-mono uppercase font-bold border border-[#C59B47]/30">
+                            {stop.timeSlot}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#14201A] text-[#A6C5B4] text-[10px] font-mono uppercase border border-[#22342A]">
+                            {stop.category}
+                          </span>
+                          <span className="text-xs font-mono text-[#6D8578]">
+                            +{stop.distanceFromPrevKm} km • {stop.estimatedDuration}
+                          </span>
+                        </div>
+
+                        <div className="space-y-0.5">
+                          <h4 className="text-xl sm:text-2xl font-serif font-black text-white">
+                            {stop.name}
+                          </h4>
+                          <p className="font-devanagari text-xs text-[#C59B47]">
+                            {stop.hindiName}
+                          </p>
+                        </div>
+
+                        <p className="text-xs sm:text-sm text-[#9EB5A9] font-serif leading-relaxed">
+                          {stop.description}
+                        </p>
+
+                        {/* Stop Metadata & Menu Status */}
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono pt-1">
+                          {stop.menuUrl ? (
+                            <a
+                              href={stop.menuUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-bold flex items-center gap-1 hover:bg-emerald-900"
+                            >
+                              <span>📜 View Official Menu</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : stop.category === "food" || stop.category === "cafe" ? (
+                            <span className="px-2.5 py-1 rounded-lg bg-[#14201A] text-[#8FA699] border border-[#22342A] text-[11px] italic">
+                              Menu not published online
+                            </span>
+                          ) : null}
+
+                          {stop.phone ? (
+                            <a
+                              href={`tel:${stop.phone}`}
+                              className="px-2.5 py-1 rounded-lg bg-[#14201A] text-[#C59B47] border border-[#22342A] font-bold flex items-center gap-1 hover:text-white"
+                            >
+                              <Phone className="w-3 h-3" />
+                              <span>{stop.phone}</span>
+                            </a>
+                          ) : (
+                            <span className="text-[11px] text-[#6D8578] font-mono">
+                              Phone unavailable
+                            </span>
+                          )}
+
+                          <span className="text-[#52B788] font-bold ml-auto">
+                            ≈ ₹{stop.approxCostPerPerson}/person
+                          </span>
+                        </div>
+
+                        {/* Explorer Local Hack Note */}
+                        <div className="p-3 rounded-xl bg-[#0E1612] border border-[#1E2D24] text-xs font-mono text-[#D1DFD7] flex items-start gap-2">
+                          <span className="text-[#D95327] font-bold shrink-0">💡</span>
+                          <span><strong>Explorer Note:</strong> {stop.localTip}</span>
+                        </div>
+
+                        {/* Direction CTA */}
+                        <div className="pt-2 flex items-center gap-2">
+                          <a
+                            href={stop.lat && stop.lng ? `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3.5 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm"
+                          >
+                            <MapPin className="w-3.5 h-3.5 text-[#B49252]" />
+                            <span>Get Directions</span>
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="lg:col-span-4 relative h-40 sm:h-48 w-full rounded-2xl overflow-hidden border border-[#22342A]">
+                        <VanvasImage
+                          src={stop.imageUrl || activePlan.heroImage || "/artworks/fallback_valley.jpg"}
+                          alt={stop.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-mono text-white">
+                          {stop.locationName}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
 
               {/* SUNSET RETURN MARKER MILESTONE */}
               <div className="relative">
