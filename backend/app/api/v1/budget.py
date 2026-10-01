@@ -1,9 +1,9 @@
 from typing import List
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database.session import get_db
-from app.models.models import Trip, Expense, User
+from app.models.models import Trip, TripMember, Expense, User
 from app.schemas.schemas import (
     ExpenseCreateRequest, ExpenseResponse, BudgetSummaryResponse, BudgetBreakdownCategory
 )
@@ -22,6 +22,15 @@ STANDARD_CATEGORIES = [
     ("Misc", 0.02)
 ]
 
+def _check_trip_access(trip: Trip, user: User, db: Session) -> bool:
+    if trip.user_id == user.id or user.role == "admin":
+        return True
+    member = db.query(TripMember).filter(
+        TripMember.trip_id == trip.id,
+        TripMember.user_id == user.id
+    ).first()
+    return member is not None
+
 @router.get("/{trip_id}/budget", response_model=BudgetSummaryResponse)
 def get_trip_budget(
     trip_id: str,
@@ -30,7 +39,10 @@ def get_trip_budget(
 ):
     trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    if not _check_trip_access(trip, current_user, db):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this trip's budget")
 
     expenses = db.query(Expense).filter(Expense.trip_id == trip_id).order_by(Expense.date.desc(), Expense.created_at.desc()).all()
     
@@ -99,7 +111,10 @@ def add_trip_expense(
 ):
     trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    if not _check_trip_access(trip, current_user, db):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to add expenses to this trip")
 
     exp_date = expense_in.date or datetime.now(timezone.utc).date()
 
@@ -139,13 +154,21 @@ def delete_trip_expense(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    if not _check_trip_access(trip, current_user, db):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to delete expenses from this trip")
+
     expense = db.query(Expense).filter(Expense.id == expense_id, Expense.trip_id == trip_id).first()
     if not expense:
-        raise HTTPException(status_code=404, detail="Expense not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
 
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
-    if trip:
-        trip.budget_spent = max(0.0, trip.budget_spent - expense.amount)
+    if expense.user_id != current_user.id and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot delete another user's expense")
+
+    trip.budget_spent = max(0.0, trip.budget_spent - expense.amount)
 
     db.delete(expense)
     db.commit()
