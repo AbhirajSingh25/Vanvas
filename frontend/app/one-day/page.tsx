@@ -28,6 +28,7 @@ import {
 import { getCurrentGPSPosition, UserLocationState } from "@/lib/locationService";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { VanvasMap, VanvasMapMarker, VanvasMapRouteSegment } from "@/components/ui/VanvasMap";
+import { useDensity } from "@/context/DensityContext";
 
 const DAY_ESCAPE_STYLES: Array<{
   id: string;
@@ -121,6 +122,7 @@ function formatMinutesToTime(totalMins: number): string {
 }
 
 function OneDayPlannerInner() {
+  const { isCompact } = useDensity();
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromParam = searchParams.get("from") || searchParams.get("origin") || "";
@@ -655,8 +657,76 @@ function OneDayPlannerInner() {
         </div>
 
         {/* Destination Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plansForOrigin.map((plan) => {
+        {isCompact ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {plansForOrigin.map((plan) => {
+              const isSelected = activePlan.id === plan.id;
+              return (
+                <div
+                  key={plan.id}
+                  className={`rounded-2xl border transition-all flex flex-col justify-between overflow-hidden relative cursor-pointer ${
+                    isSelected
+                      ? "bg-[#16251E] border-[#D95327] shadow-lg ring-1 ring-[#D95327]"
+                      : "bg-[#121D17] border-[#22342A] hover:border-[#385141]"
+                  }`}
+                  onClick={() => {
+                    setSelectedPlanId(plan.id);
+                    dossierRef.current?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <div className="relative h-20 sm:h-24 w-full overflow-hidden bg-[#0A100D]">
+                    <VanvasImage
+                      src={plan.heroImage || plan.stops[0]?.imageUrl || "/artworks/fallback_valley.jpg"}
+                      alt={plan.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#121D17] via-transparent to-black/30" />
+                    <div className="absolute top-1.5 left-2">
+                      <span className="px-1.5 py-0.5 rounded text-[8.5px] font-mono font-bold uppercase bg-black/70 text-[#C59B47]">
+                        {plan.feasibility}
+                      </span>
+                    </div>
+                    <div className="absolute top-1.5 right-2">
+                      <span className="text-[9px] font-mono font-bold text-white bg-black/70 px-1.5 py-0.5 rounded">
+                        {plan.totalDistanceKm}km
+                      </span>
+                    </div>
+                    <div className="absolute bottom-1 left-2">
+                      <h4 className="font-serif font-bold text-sm text-white leading-tight truncate">
+                        {plan.destinationArea}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 flex-1 flex flex-col justify-between space-y-2">
+                    <div className="text-[10px] font-mono text-[#9EB5A9] truncate">
+                      {plan.departureTime.split(" ")[0]} → {plan.returnTime.split(" ")[0]} · ₹{plan.baseBudgetPerPerson}
+                    </div>
+
+                    <div className="pt-1.5 border-t border-[#23352B] flex items-center justify-between">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPlanId(plan.id);
+                          setTripModalOpen(true);
+                        }}
+                        className="px-2 py-1 rounded-lg bg-[#D95327] text-white text-[9.5px] font-mono font-bold uppercase"
+                      >
+                        PASS
+                      </button>
+                      <span className="text-[#C59B47] text-[10px] font-mono font-bold flex items-center gap-0.5">
+                        <span>TIMELINE</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plansForOrigin.map((plan) => {
             const isSelected = activePlan.id === plan.id;
             const badgeClass = getFeasibilityBadge(plan.feasibility);
 
@@ -787,6 +857,7 @@ function OneDayPlannerInner() {
             );
           })}
         </div>
+        )}
       </section>
 
       {/* 5. ACTIVE DAY ESCAPE COCKPIT & JOURNEY SPINE */}

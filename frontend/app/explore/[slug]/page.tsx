@@ -31,6 +31,8 @@ import {
   DestinationTrekInfo,
   DestinationDayTrip
 } from "@/lib/destinationContentModel";
+import { useDensity } from "@/context/DensityContext";
+import { CompactPlaceCard, CompactStayCard, CompactRentalCard, CompactTrekStrip } from "@/components/compact";
 
 const DISCOVERY_MESSAGES = [
   "VANVAS is gathering live travel information...",
@@ -156,6 +158,7 @@ type OperationalMode = "overview" | "places" | "stays" | "mobility" | "solo";
 export default function DestinationDetailPage() {
   const routeParams = useParams();
   const slug = (Array.isArray(routeParams?.slug) ? routeParams.slug[0] : (routeParams?.slug as string)) || "";
+  const { isCompact } = useDensity();
 
 
   const [mounted, setMounted] = useState(false);
@@ -657,109 +660,321 @@ export default function DestinationDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#EFE5D2] pb-28">
-      {/* 1. HERO BANNER */}
-      <section className="relative h-[56vh] min-h-[420px] max-h-[500px] bg-[#0F2924] text-[#EFE5D2] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <VanvasImage
-            src={destination.hero_image || profile.heroPath || profile.illustrationPath}
-            fallbackSrc={profile.fallbackPath}
-            regionType={regionType}
-            alt={`${destination.name} - ${meta.hindi}`}
-            priority={true}
-            className="w-full h-full object-cover opacity-85 scale-102 transition-transform duration-1000"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924] via-[#0F2924]/60 to-black/30 pointer-events-none z-1" />
+      {isCompact ? (
+        /* ======================================================== */
+        /* COMPACT MODE: FIELD GUIDE / EXPLORER'S HANDBOOK LAYOUT    */
+        /* ======================================================== */
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-6">
+          {/* Top Field Guide Header */}
+          <div className="bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] p-4 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] text-[9.5px] font-mono font-bold uppercase tracking-wider">
+                    FIELD GUIDE
+                  </span>
+                  <span className="text-xs font-mono text-[#7B4D36] font-bold">
+                    {meta.province}
+                  </span>
+                </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <TravelStamp label={meta.province} variant="terracotta" />
-              <TravelStamp label={meta.alt} variant="forest" />
-              <TravelStamp label={isCurated ? "VANVAS VERIFIED" : "LIVE DISCOVERY"} variant={isCurated ? "mustard" : "forest"} />
+                <div className="flex items-baseline gap-2.5">
+                  <h1 className="text-2xl sm:text-4xl font-serif font-black text-[#173B32]">
+                    {destination.name}
+                  </h1>
+                  <span className="font-devanagari text-lg sm:text-2xl text-[#B49252] font-bold">
+                    {meta.hindi}
+                  </span>
+                </div>
+
+                <p className="text-xs font-mono text-[#536B52]">
+                  {destination.state} · {meta.alt} · 4 days suggested
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/plan?dest=${destination.id || slug}`}
+                  className="px-4 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>Plan Trip</span>
+                </Link>
+
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] border border-[#E5D5BA] text-[#173B32] text-xs font-bold transition-all flex items-center gap-1.5"
+                >
+                  <Navigation className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>Map</span>
+                </a>
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-serif text-[#B49252] font-semibold block">
-                {meta.hindi}
-              </span>
-              <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight text-[#EFE5D2]">
-                {destination.name}
-              </h1>
-            </div>
-
-            <p className="text-sm sm:text-base text-[#D8DED5] max-w-xl italic font-serif leading-relaxed">
-              &ldquo;{meta.quote}&rdquo;
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-4 rounded-2xl bg-[#EFE5D2]/15 hover:bg-[#EFE5D2]/25 backdrop-blur-md border border-[#D8DED5]/30 text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Navigation className="w-4 h-4 text-[#B49252]" />
-              <span>Get Directions</span>
-            </a>
-
-            <Link
-              href={`/plan?dest=${destination.id || slug}`}
-              className="px-7 py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center justify-center gap-2 transition-all transform active:scale-95 border border-[#7B4D36]/30"
-            >
-              <Sparkles className="w-4 h-4 text-[#B49252]" />
-              <span>Plan This Trip</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. DESTINATION OPERATIONAL MODES TAB BAR */}
-      <div className="sticky top-20 z-30 bg-[#FAF7F0]/95 backdrop-blur-md border-y border-[#E5D5BA] py-3 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
-          {(() => {
-            const isMountainValley = (destination?.region || "").toLowerCase().includes("himalay") || (destination?.region || "").toLowerCase().includes("valley") || (destination?.altitude_meters || 0) > 1200;
-            const mobilityLabel = isMountainValley ? "Valley Mobility" : "Local Mobility";
-            return [
-              { id: "overview", label: "Overview", devanagari: "सफ़रनामा", icon: Compass },
-              { id: "solo", label: "Traveling Solo?", devanagari: "अकेले यात्री", icon: Users },
-              { id: "places", label: "Curated Places", devanagari: "पड़ाव", icon: Sparkles, count: places.length },
-              { id: "stays", label: "Stays & Sanctuaries", devanagari: "आशियाना", icon: BedDouble, count: hotels.length },
-              { id: "mobility", label: mobilityLabel, devanagari: "सवारी", icon: Bike, count: rentals.length },
-            ];
-          })().map((mode) => {
-            const Icon = mode.icon;
-            const isActive = activeMode === mode.id;
-            return (
+            {/* Compact Stats Navigation Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-[#E5D5BA] text-xs font-mono">
               <button
-                key={mode.id}
                 type="button"
-                onClick={() => {
-                  setActiveMode(mode.id as OperationalMode);
-                  window.scrollTo({ top: 400, behavior: "smooth" });
-                }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
-                  isActive
-                    ? "bg-[#173B32] text-[#EFE5D2] shadow-sm border-2 border-[#173B32] scale-[1.02]"
-                    : "bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA]"
+                onClick={() => setActiveMode("places")}
+                className={`p-2.5 rounded-xl border text-left flex items-center justify-between cursor-pointer transition-colors ${
+                  activeMode === "places" ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32]" : "bg-[#EFE5D2] text-[#173B32] border-[#E5D5BA] hover:bg-[#E5D5BA]"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#B49252]" : "text-[#B65E3C]"}`} />
-                <span>{mode.label}</span>
-                <span className={`text-[10px] ${isActive ? "text-[#B49252]" : "text-[#7B4D36]"} opacity-80`}>
-                  ({mode.devanagari})
-                </span>
-                {mode.count !== undefined && (
-                  <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${isActive ? "bg-[#B49252] text-[#0F2924]" : "bg-[#FAF7F0] text-[#7B4D36]"}`}>
-                    {mode.count}
-                  </span>
-                )}
+                <span>Places</span>
+                <span className="font-bold">{places.length}</span>
               </button>
-            );
-          })}
+
+              <button
+                type="button"
+                onClick={() => setActiveMode("stays")}
+                className={`p-2.5 rounded-xl border text-left flex items-center justify-between cursor-pointer transition-colors ${
+                  activeMode === "stays" ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32]" : "bg-[#EFE5D2] text-[#173B32] border-[#E5D5BA] hover:bg-[#E5D5BA]"
+                }`}
+              >
+                <span>Stays</span>
+                <span className="font-bold">{hotels.length}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveMode("mobility")}
+                className={`p-2.5 rounded-xl border text-left flex items-center justify-between cursor-pointer transition-colors ${
+                  activeMode === "mobility" ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32]" : "bg-[#EFE5D2] text-[#173B32] border-[#E5D5BA] hover:bg-[#E5D5BA]"
+                }`}
+              >
+                <span>Rentals</span>
+                <span className="font-bold">{rentals.length}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveMode("solo")}
+                className={`p-2.5 rounded-xl border text-left flex items-center justify-between cursor-pointer transition-colors ${
+                  activeMode === "solo" ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32]" : "bg-[#EFE5D2] text-[#173B32] border-[#E5D5BA] hover:bg-[#E5D5BA]"
+                }`}
+              >
+                <span>Solo Mode</span>
+                <span className="font-bold">Active</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Compact Weather Summary Strip */}
+          {weather && weather.length > 0 && (
+            <div className="bg-[#173B32] text-[#EFE5D2] p-3 sm:p-4 rounded-2xl border border-[#2D5A43] shadow-xs">
+              <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2 shrink-0">
+                  <Sun className="w-4 h-4 text-[#B49252]" />
+                  <span className="text-xs font-mono font-bold uppercase">5-Day Weather:</span>
+                </div>
+                <div className="flex items-center gap-3 text-xs font-mono">
+                  {weather.slice(0, 5).map((w, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5 shrink-0 bg-white/10 px-2.5 py-1 rounded-lg">
+                      <span className="font-bold text-[#FAF4E8]">{idx === 0 ? "Today" : `D${idx + 1}`}</span>
+                      <span className="text-[#B49252]">{Math.round(w.temp_c)}°C</span>
+                      <span className="text-[10px] text-[#D8DED5]/80">{w.is_rain ? "Rain" : "Clear"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PLACES SECTION (COMPACT 2-COLUMN GRID) */}
+          {(activeMode === "overview" || activeMode === "places") && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif font-black text-lg text-[#173B32] uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#B65E3C]" />
+                  <span>Curated Places ({places.length})</span>
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+                {places.map((place) => (
+                  <CompactPlaceCard
+                    key={place.id}
+                    place={place}
+                    destinationName={destination.name}
+                    onSelect={(p) => {
+                      setSelectedPlace(p);
+                      setModalOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* STAYS SECTION (COMPACT 2-COLUMN GRID) */}
+          {(activeMode === "overview" || activeMode === "stays") && hotels.length > 0 && (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif font-black text-lg text-[#173B32] uppercase tracking-wider flex items-center gap-2">
+                  <BedDouble className="w-4 h-4 text-[#B65E3C]" />
+                  <span>Stays &amp; Sanctuaries ({hotels.length})</span>
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+                {hotels.map((hotel) => (
+                  <CompactStayCard
+                    key={hotel.id}
+                    hotel={hotel}
+                    onSelect={(h) => {
+                      setSelectedStayForModal(h);
+                      setStayModalOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* GET AROUND / RENTALS SECTION (COMPACT 2-COLUMN GRID) */}
+          {(activeMode === "overview" || activeMode === "mobility") && rentals.length > 0 && (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif font-black text-lg text-[#173B32] uppercase tracking-wider flex items-center gap-2">
+                  <Bike className="w-4 h-4 text-[#B65E3C]" />
+                  <span>Get Around / Rentals ({rentals.length})</span>
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+                {rentals.map((rental) => (
+                  <CompactRentalCard
+                    key={rental.id}
+                    rental={rental}
+                    onSelect={(r) => {
+                      setSelectedRentalForModal(r);
+                      setRentalModalOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SOLO SECTION */}
+          {activeMode === "solo" && (
+            <div className="space-y-4 pt-2">
+              <TravelingSoloSection
+                destinationId={destination.id}
+                destinationSlug={destination.slug || slug}
+                destinationName={destination.name}
+              />
+            </div>
+          )}
         </div>
-      </div>
+      ) : (
+        /* ======================================================== */
+        /* ORIGINAL MODE: IMMERSIVE EDITORIAL MAGAZINE LAYOUT       */
+        /* ======================================================== */
+        <>
+          {/* 1. HERO BANNER */}
+          <section className="relative h-[56vh] min-h-[420px] max-h-[500px] bg-[#0F2924] text-[#EFE5D2] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden">
+            <div className="absolute inset-0 z-0">
+              <VanvasImage
+                src={destination.hero_image || profile.heroPath || profile.illustrationPath}
+                fallbackSrc={profile.fallbackPath}
+                regionType={regionType}
+                alt={`${destination.name} - ${meta.hindi}`}
+                priority={true}
+                className="w-full h-full object-cover opacity-85 scale-102 transition-transform duration-1000"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924] via-[#0F2924]/60 to-black/30 pointer-events-none z-1" />
+
+            <div className="relative z-10 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-end justify-between gap-8">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <TravelStamp label={meta.province} variant="terracotta" />
+                  <TravelStamp label={meta.alt} variant="forest" />
+                  <TravelStamp label={isCurated ? "VANVAS VERIFIED" : "LIVE DISCOVERY"} variant={isCurated ? "mustard" : "forest"} />
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-2xl sm:text-3xl font-serif text-[#B49252] font-semibold block">
+                    {meta.hindi}
+                  </span>
+                  <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight text-[#EFE5D2]">
+                    {destination.name}
+                  </h1>
+                </div>
+
+                <p className="text-sm sm:text-base text-[#D8DED5] max-w-xl italic font-serif leading-relaxed">
+                  &ldquo;{meta.quote}&rdquo;
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-4 rounded-2xl bg-[#EFE5D2]/15 hover:bg-[#EFE5D2]/25 backdrop-blur-md border border-[#D8DED5]/30 text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <Navigation className="w-4 h-4 text-[#B49252]" />
+                  <span>Get Directions</span>
+                </a>
+
+                <Link
+                  href={`/plan?dest=${destination.id || slug}`}
+                  className="px-7 py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center justify-center gap-2 transition-all transform active:scale-95 border border-[#7B4D36]/30"
+                >
+                  <Sparkles className="w-4 h-4 text-[#B49252]" />
+                  <span>Plan This Trip</span>
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. DESTINATION OPERATIONAL MODES TAB BAR */}
+          <div className="sticky top-20 z-30 bg-[#FAF7F0]/95 backdrop-blur-md border-y border-[#E5D5BA] py-3 shadow-xs">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
+              {(() => {
+                const isMountainValley = (destination?.region || "").toLowerCase().includes("himalay") || (destination?.region || "").toLowerCase().includes("valley") || (destination?.altitude_meters || 0) > 1200;
+                const mobilityLabel = isMountainValley ? "Valley Mobility" : "Local Mobility";
+                return [
+                  { id: "overview", label: "Overview", devanagari: "सफ़रनामा", icon: Compass },
+                  { id: "solo", label: "Traveling Solo?", devanagari: "अकेले यात्री", icon: Users },
+                  { id: "places", label: "Curated Places", devanagari: "पड़ाव", icon: Sparkles, count: places.length },
+                  { id: "stays", label: "Stays & Sanctuaries", devanagari: "आशियाना", icon: BedDouble, count: hotels.length },
+                  { id: "mobility", label: mobilityLabel, devanagari: "सवारी", icon: Bike, count: rentals.length },
+                ];
+              })().map((mode) => {
+                const Icon = mode.icon;
+                const isActive = activeMode === mode.id;
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveMode(mode.id as OperationalMode);
+                      window.scrollTo({ top: 400, behavior: "smooth" });
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                      isActive
+                        ? "bg-[#173B32] text-[#EFE5D2] shadow-sm border-2 border-[#173B32] scale-[1.02]"
+                        : "bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA]"
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#B49252]" : "text-[#B65E3C]"}`} />
+                    <span>{mode.label}</span>
+                    <span className={`text-[10px] ${isActive ? "text-[#B49252]" : "text-[#7B4D36]"} opacity-80`}>
+                      ({mode.devanagari})
+                    </span>
+                    {mode.count !== undefined && (
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${isActive ? "bg-[#B49252] text-[#0F2924]" : "bg-[#FAF7F0] text-[#7B4D36]"}`}>
+                        {mode.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
       {/* Main Content Sections */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
@@ -1966,6 +2181,8 @@ export default function DestinationDetailPage() {
         </div>
 
       </main>
+        </>
+      )}
 
       {/* Place Detail Modal */}
       <PlaceModal

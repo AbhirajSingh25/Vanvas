@@ -23,9 +23,12 @@ import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { TripInviteModal } from "@/components/trip/TripInviteModal";
 import { TripMembersSection } from "@/components/trip/TripMembersSection";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
+import { useDensity } from "@/context/DensityContext";
+import { CompactItineraryItem, CompactStayCard, CompactRentalCard } from "@/components/compact";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tripId } = use(params);
+  const { isCompact } = useDensity();
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [budgetData, setBudgetData] = useState<BudgetSummary | null>(null);
@@ -482,10 +485,22 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Timeline Items */}
-            <div className="space-y-4">
-              {currentDayItinerary?.items.map((item, idx) => {
-                const isCompleted = item.status === "completed";
-                const isSkipped = item.status === "skipped";
+            {isCompact ? (
+              <div className="space-y-2.5">
+                {currentDayItinerary?.items.map((item) => (
+                  <CompactItineraryItem
+                    key={item.id}
+                    item={item}
+                    onToggleStatus={handleToggleItemStatus}
+                    onToggleLock={handleToggleLock}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {currentDayItinerary?.items.map((item, idx) => {
+                  const isCompleted = item.status === "completed";
+                  const isSkipped = item.status === "skipped";
 
                 return (
                   <div
@@ -568,6 +583,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 );
               })}
             </div>
+            )}
           </div>
         )}
 

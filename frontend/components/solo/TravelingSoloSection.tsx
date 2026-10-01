@@ -13,6 +13,8 @@ import { TravelerDetailModal } from "@/components/solo/TravelerDetailModal";
 import { CreateCircleModal } from "@/components/circles/CreateCircleModal";
 import { CircleDetailModal } from "@/components/circles/CircleDetailModal";
 import { DirectChatModal } from "@/components/solo/DirectChatModal";
+import { CompactTravelerCard } from "@/components/compact";
+import { useDensity } from "@/context/DensityContext";
 import { api } from "@/lib/api";
 
 interface TravelingSoloSectionProps {
@@ -40,6 +42,7 @@ export function TravelingSoloSection({
   title,
   subtitle,
 }: TravelingSoloSectionProps) {
+  const { isCompact } = useDensity();
   const [travelers, setTravelers] = useState<SoloTravelerCard[]>([]);
   const [circles, setCircles] = useState<TravelCircle[]>([]);
   const [intelligence, setIntelligence] = useState<SoloDestinationIntelligence | null>(null);
@@ -206,6 +209,17 @@ export function TravelingSoloSection({
                   </button>
                 </div>
               </div>
+            ) : isCompact ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {travelers.map((traveler) => (
+                  <CompactTravelerCard
+                    key={traveler.user_id}
+                    traveler={traveler}
+                    onOpenProfile={() => handleOpenTraveler(traveler)}
+                    onOpenChat={() => handleOpenChat(traveler)}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {travelers.map((traveler) => (
@@ -313,44 +327,71 @@ export function TravelingSoloSection({
                 </h4>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {circles.map((c) => (
-                  <div
-                    key={c.id}
-                    className="bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between space-y-3"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="px-2 py-0.5 rounded-full bg-[#173B32]/10 text-[#173B32] text-[10px] font-bold uppercase">
-                          {c.activity_type}
-                        </span>
-                        <span className="text-[11px] font-mono font-bold text-[#B49252]">
-                          {c.members_count}/{c.max_members} Travelers
-                        </span>
-                      </div>
-                      <h5 className="font-serif text-base font-bold text-[#173B32] line-clamp-1">
-                        {c.name}
-                      </h5>
-                      <p className="text-xs text-[#20211D]/70 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#E05A2B] shrink-0" />
-                        <span className="line-clamp-1">{c.meetup_point}</span>
-                      </p>
-                      <div className="text-[11px] text-[#20211D]/60 flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-[#B49252]" />
-                        <span>{c.start_date} to {c.end_date}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleOpenCircle(c.id)}
-                      className="w-full py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              {isCompact ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {circles.map((c) => (
+                    <div
+                      key={c.id}
+                      className="bg-[#FAF7F0] border border-[#D8CBB2] rounded-xl p-3 flex items-center justify-between gap-2 shadow-2xs hover:border-[#173B32] transition-colors"
                     >
-                      <span>{c.is_member ? "Open Group Chat" : "View / Join Circle"}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#B49252]" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-[9.5px]">
+                          <span className="font-bold text-[#173B32] uppercase">{c.activity_type}</span>
+                          <span className="text-[#B49252] font-mono font-bold">({c.members_count}/{c.max_members})</span>
+                        </div>
+                        <h5 className="font-serif text-xs font-bold text-[#173B32] truncate">{c.name}</h5>
+                        <p className="text-[10px] text-[#20211D]/60 truncate">{c.meetup_point}</p>
+                      </div>
+                      <button
+                        onClick={() => handleOpenCircle(c.id)}
+                        className="px-2.5 py-1.5 rounded-lg bg-[#173B32] hover:bg-[#20453B] text-white text-[10px] font-bold shrink-0 flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <span>{c.is_member ? "Chat" : "Join"}</span>
+                        <ArrowRight className="w-3 h-3 text-[#B49252]" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {circles.map((c) => (
+                    <div
+                      key={c.id}
+                      className="bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2 py-0.5 rounded-full bg-[#173B32]/10 text-[#173B32] text-[10px] font-bold uppercase">
+                            {c.activity_type}
+                          </span>
+                          <span className="text-[11px] font-mono font-bold text-[#B49252]">
+                            {c.members_count}/{c.max_members} Travelers
+                          </span>
+                        </div>
+                        <h5 className="font-serif text-base font-bold text-[#173B32] line-clamp-1">
+                          {c.name}
+                        </h5>
+                        <p className="text-xs text-[#20211D]/70 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-[#E05A2B] shrink-0" />
+                          <span className="line-clamp-1">{c.meetup_point}</span>
+                        </p>
+                        <div className="text-[11px] text-[#20211D]/60 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-[#B49252]" />
+                          <span>{c.start_date} to {c.end_date}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleOpenCircle(c.id)}
+                        className="w-full py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                      >
+                        <span>{c.is_member ? "Open Group Chat" : "View / Join Circle"}</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#B49252]" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

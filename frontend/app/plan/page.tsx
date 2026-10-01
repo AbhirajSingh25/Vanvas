@@ -33,6 +33,7 @@ function PlanTripContent() {
   const urlDays = searchParams?.get("days") || "";
   const urlCompanion = searchParams?.get("companion") || "";
   const { user } = useAuth();
+  const { isCompact } = useDensity();
 
   // Step Tracker: If user explicitly came from a destination page with a selected destination, start at Step 2 (Dates)
   const [step, setStep] = useState(() => (hasExplicitDest ? 2 : 1));
@@ -361,32 +362,253 @@ function PlanTripContent() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] bg-[#EFE5D2] pt-6 pb-32 sm:py-12 px-3 sm:px-6 lg:px-8 flex flex-col justify-center">
-      <div className="max-w-3xl mx-auto w-full space-y-6 sm:space-y-8">
-        {/* Header Passport Stamp Progress */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TravelStamp label="यात्रा डायरी" sub="JOURNAL WIZARD" variant="terracotta" />
-              <TravelStamp label={`पड़ाव ${step} / 9`} variant="forest" />
+    <div className="min-h-[calc(100vh-5rem)] bg-[#EFE5D2] pt-4 pb-28 sm:py-10 px-3 sm:px-6 lg:px-8 flex flex-col justify-center">
+      {isCompact ? (
+        /* ======================================================== */
+        /* COMPACT MODE: FIELD GUIDE / FAST CHOICE PLAN FLOW         */
+        /* ======================================================== */
+        <div className="max-w-2xl mx-auto w-full space-y-4">
+          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-4 sm:p-7 shadow-lg space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-3">
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                  FIELD GUIDE PLANNER
+                </span>
+                <h1 className="text-xl sm:text-2xl font-serif font-black text-[#173B32]">
+                  Plan Your Journey
+                </h1>
+              </div>
+              <span className="text-[10px] font-mono text-[#7B4D36] bg-[#EFE5D2] px-2.5 py-1 rounded-full font-bold">
+                FAST CHOICE
+              </span>
             </div>
-            <span className="text-xs font-mono text-[#7B4D36] font-semibold">
-              VANVAS EXPEDITION LOG
-            </span>
-          </div>
 
-          <div className="w-full bg-[#E5D5BA] h-2.5 rounded-full overflow-hidden border border-[#E5D5BA]">
-            <div
-              className="bg-[#173B32] h-full transition-all duration-500 rounded-full"
-              style={{ width: `${(step / 9) * 100}%` }}
-            />
+            {/* Q1: WHERE ARE YOU GOING? */}
+            <div className="space-y-2">
+              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
+                1. Where are you going?
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { slug: "manali", name: "Manali" },
+                  { slug: "rishikesh", name: "Rishikesh" },
+                  { slug: "goa", name: "Goa" },
+                  { slug: "jaipur", name: "Jaipur" },
+                  { slug: "udaipur", name: "Udaipur" },
+                  { slug: "leh", name: "Leh" },
+                  { slug: "spiti", name: "Spiti" },
+                  { slug: "kasol", name: "Kasol" },
+                  { slug: "varanasi", name: "Varanasi" },
+                ].map((d) => {
+                  const isSelected = selectedDestId.toLowerCase().includes(d.slug);
+                  return (
+                    <button
+                      key={d.slug}
+                      type="button"
+                      onClick={() => handleSelectDestination(d)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs scale-102"
+                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
+                      }`}
+                    >
+                      {d.name}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Optional Search */}
+              <div className="relative pt-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Or search other town/city..."
+                  className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5D5BA] rounded-xl text-xs text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32]"
+                />
+                <Search className="w-3.5 h-3.5 text-[#7B4D36] absolute left-2.5 top-3.5 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Q2: HOW MANY DAYS? */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
+                2. How many days?
+              </label>
+              <div className="grid grid-cols-6 gap-1.5">
+                {[1, 2, 3, 4, 5, 7].map((dCount) => {
+                  const isSelected = numDays === dCount || (dCount === 7 && numDays >= 6);
+                  return (
+                    <button
+                      key={dCount}
+                      type="button"
+                      onClick={() => {
+                        const today = new Date();
+                        const target = new Date();
+                        target.setDate(today.getDate() + (dCount - 1));
+                        setStartDate(today.toISOString().split("T")[0]);
+                        setEndDate(target.toISOString().split("T")[0]);
+                      }}
+                      className={`py-2 rounded-xl text-xs font-bold text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
+                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
+                      }`}
+                    >
+                      {dCount === 7 ? "6+" : dCount}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Q3: WHO'S COMING? */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
+                3. Who&apos;s coming?
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {[
+                  { type: "Solo", label: "Just me", count: 1 },
+                  { type: "Couple", label: "Partner", count: 2 },
+                  { type: "Friends", label: "Friends", count: 3 },
+                  { type: "Family", label: "Family", count: 4 },
+                ].map((c) => {
+                  const isSelected = companionType === c.type;
+                  return (
+                    <button
+                      key={c.type}
+                      type="button"
+                      onClick={() => {
+                        setCompanionType(c.type);
+                        setTravellersCount(c.count);
+                      }}
+                      className={`p-2 rounded-xl text-xs font-bold text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
+                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Q4: WHAT'S YOUR VIBE? */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
+                4. What&apos;s your vibe?
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  "Nature",
+                  "Adventure",
+                  "Food",
+                  "Cafés",
+                  "Culture",
+                  "Slow",
+                  "Photography",
+                ].map((vibe) => {
+                  const isSelected = selectedInterests.includes(vibe);
+                  return (
+                    <button
+                      key={vibe}
+                      type="button"
+                      onClick={() => handleInterestToggle(vibe)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#B65E3C] text-[#EFE5D2] shadow-xs"
+                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
+                      }`}
+                    >
+                      {isSelected ? `✓ ${vibe}` : vibe}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Q5: STYLE & BUDGET */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
+                5. Style &amp; Budget
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {[
+                  { style: "Budget", b: 5000, label: "Budget (₹5K)" },
+                  { style: "Balanced", b: 10000, label: "Balanced (₹10K)" },
+                  { style: "Comfort", b: 20000, label: "Comfort (₹20K)" },
+                  { style: "Premium", b: 35000, label: "Premium (₹35K)" },
+                ].map((s) => {
+                  const isSelected = travelStyle === s.style;
+                  return (
+                    <button
+                      key={s.style}
+                      type="button"
+                      onClick={() => {
+                        setTravelStyle(s.style);
+                        setBudget(s.b);
+                      }}
+                      className={`p-2 rounded-xl text-xs font-bold text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
+                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Action CTA */}
+            <div className="pt-3 border-t border-[#E5D5BA]">
+              <button
+                type="button"
+                onClick={handleGenerateTrip}
+                disabled={isGenerating}
+                className="w-full py-3.5 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl transition-all transform active:scale-95 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-[#B49252]" />
+                <span>Generate Itinerary →</span>
+              </button>
+            </div>
           </div>
         </div>
+      ) : (
+        /* ======================================================== */
+        /* ORIGINAL MODE: IMMERSIVE 9-STEP JOURNAL WIZARD           */
+        /* ======================================================== */
+        <div className="max-w-3xl mx-auto w-full space-y-6 sm:space-y-8">
+          {/* Header Passport Stamp Progress */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TravelStamp label="यात्रा डायरी" sub="JOURNAL WIZARD" variant="terracotta" />
+                <TravelStamp label={`पड़ाव ${step} / 9`} variant="forest" />
+              </div>
+              <span className="text-xs font-mono text-[#7B4D36] font-semibold">
+                VANVAS EXPEDITION LOG
+              </span>
+            </div>
 
-        {/* Wizard Journal Page */}
-        <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 sm:p-10 shadow-xl relative overflow-hidden min-h-[440px] sm:min-h-[500px] flex flex-col justify-between">
-          {/* Subtle paper background grid */}
-          <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#173B32_1px,transparent_1px)] [background-size:20px_20px]" />
+            <div className="w-full bg-[#E5D5BA] h-2.5 rounded-full overflow-hidden border border-[#E5D5BA]">
+              <div
+                className="bg-[#173B32] h-full transition-all duration-500 rounded-full"
+                style={{ width: `${(step / 9) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Wizard Journal Page */}
+          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 sm:p-10 shadow-xl relative overflow-hidden min-h-[440px] sm:min-h-[500px] flex flex-col justify-between">
+            {/* Subtle paper background grid */}
+            <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#173B32_1px,transparent_1px)] [background-size:20px_20px]" />
 
           {/* STEP 1: UNIVERSAL DESTINATION SELECTION (कहाँ चलें?) */}
           {step === 1 && (
@@ -1037,7 +1259,8 @@ function PlanTripContent() {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Atmospheric Fog Loading Screen */}
       {isGenerating && (

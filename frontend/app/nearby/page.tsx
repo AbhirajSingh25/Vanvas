@@ -17,6 +17,8 @@ import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
 import { NearbySoloSection } from "@/components/solo/NearbySoloSection";
 import { Layers, LayoutGrid } from "lucide-react";
+import { useDensity } from "@/context/DensityContext";
+import { CompactNearbyItem } from "@/components/compact";
 
 type LocationStatus = "idle" | "locating" | "located" | "denied" | "error" | "unsupported";
 
@@ -95,6 +97,7 @@ const RADII = [
 const INITIAL_VISIBLE_COUNT = 9;
 
 function NearbyInner() {
+  const { isCompact } = useDensity();
   const searchParams = useSearchParams();
   const [places, setPlaces] = useState<Place[]>([]);
   const [visibleCount, setVisibleCount] = useState<number>(INITIAL_VISIBLE_COUNT);
@@ -698,6 +701,19 @@ function NearbyInner() {
                   }}
                   className="shadow-xl"
                 />
+              </div>
+            ) : isCompact ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {visiblePlaces.map((place) => (
+                  <CompactNearbyItem
+                    key={`${searchCenter.name}-${place.id}`}
+                    place={place}
+                    onSelect={(p) => {
+                      setSelectedPlace(p);
+                      setModalOpen(true);
+                    }}
+                  />
+                ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

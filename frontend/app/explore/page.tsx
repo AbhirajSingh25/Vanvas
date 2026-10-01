@@ -10,6 +10,7 @@ import { TravelStamp } from "@/components/ui/TravelStamp";
 import { JournalNote } from "@/components/ui/JournalNote";
 import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 import { useDensity } from "@/context/DensityContext";
+import { CompactDestinationCard } from "@/components/compact";
 
 export default function ExploreIndexPage() {
   const { isCompact } = useDensity();
@@ -262,44 +263,46 @@ export default function ExploreIndexPage() {
   return (
     <div className="relative overflow-hidden bg-[#EFE5D2] min-h-screen">
       {/* DESTINATION CATALOGUE & DISCOVERY VIEWPORT */}
-      <section id="catalogue" className="pt-6 pb-32 sm:py-8 px-3 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Compact Top Header & Search Toolbar */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#E5D5BA]">
-            <div className="space-y-2 max-w-2xl">
+      <section id="catalogue" className={`pt-6 pb-32 ${isCompact ? "sm:py-6" : "sm:py-8"} px-3 sm:px-6 lg:px-8`}>
+        <div className={`max-w-7xl mx-auto ${isCompact ? "space-y-4 sm:space-y-6" : "space-y-8"}`}>
+          {/* Top Header & Search Toolbar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#E5D5BA]">
+            <div className="space-y-1.5 max-w-2xl">
               <div className="flex flex-wrap items-center gap-2">
                 <TravelStamp label="FEATURED DESTINATIONS" sub="CURATED DISCOVERY" variant="terracotta" />
                 <TravelStamp label="VANVAS REGISTRY" variant="forest" />
-                <span className="text-[11px] font-mono font-bold tracking-widest text-[#7B4D36] uppercase bg-[#FAF7F0] px-3 py-1 rounded-full border border-[#E5D5BA]">
+                <span className="text-[10.5px] font-mono font-bold tracking-widest text-[#7B4D36] uppercase bg-[#FAF7F0] px-2.5 py-0.5 rounded-full border border-[#E5D5BA]">
                   {uniqueDestinations.length > 0 ? `${uniqueDestinations.length} SANCTUARIES` : "SANCTUARIES"}
                 </span>
               </div>
 
-              <div className="space-y-1">
-                <span className="font-devanagari text-lg sm:text-xl text-[#B65E3C] font-semibold block">
+              <div className="space-y-0.5">
+                <span className="font-devanagari text-base sm:text-lg text-[#B65E3C] font-semibold block">
                   कहाँ चलें? • अनूठे रास्ते
                 </span>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#173B32] tracking-tight">
+                <h1 className={`${isCompact ? "text-2xl sm:text-3xl lg:text-4xl" : "text-3xl sm:text-4xl lg:text-5xl"} font-serif font-black text-[#173B32] tracking-tight`}>
                   Featured Destinations
                 </h1>
               </div>
 
-              <p className="text-xs sm:text-sm text-[#7B4D36] font-light leading-relaxed">
-                Curated destinations, local places and experiences worth travelling for. Switch to authentic photography inside each sanctuary.
+              <p className="text-xs text-[#7B4D36] font-light leading-relaxed">
+                {isCompact
+                  ? "Explore all sanctuaries at a glance."
+                  : "Curated destinations, local places and experiences worth travelling for. Switch to authentic photography inside each sanctuary."}
               </p>
             </div>
 
             {/* Search and Action Toolbar */}
-            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="w-full sm:w-80">
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <div className="w-full sm:w-72">
                 <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7B4D36]/70" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#7B4D36]/70" />
                   <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search destinations, states, landmarks..."
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA] focus:border-[#173B32] outline-none text-xs text-[#173B32] font-medium placeholder:text-[#7B4D36]/50 shadow-xs"
+                    placeholder="Search destinations, states..."
+                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#FAF7F0] border-2 border-[#E5D5BA] focus:border-[#173B32] outline-none text-xs text-[#173B32] font-medium placeholder:text-[#7B4D36]/50 shadow-2xs"
                   />
                 </div>
               </div>
@@ -310,16 +313,16 @@ export default function ExploreIndexPage() {
                     ? `/plan?dest=${encodeURIComponent(filtered[0].slug)}&category=${encodeURIComponent(selectedCategory)}`
                     : "/plan"
                 }
-                className="px-5 py-3 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
               >
-                <Compass className="w-4 h-4 text-[#B49252]" />
-                <span>{selectedCategory !== "All" ? `Plan ${selectedCategory} Escape →` : "FIND MY ESCAPE →"}</span>
+                <Compass className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>{selectedCategory !== "All" ? `Plan ${selectedCategory} →` : "Plan Escape →"}</span>
               </Link>
             </div>
           </div>
 
           {/* Curated Journey Route Category Controls */}
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             {curatedJourneys.map((cat) => {
               const Icon = cat.icon;
               const isActive = selectedCategory === cat.id;
@@ -327,13 +330,13 @@ export default function ExploreIndexPage() {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2.5 cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
                     isActive
-                      ? "bg-[#173B32] text-[#EFE5D2] shadow-md scale-102 border-2 border-[#173B32]"
+                      ? "bg-[#173B32] text-[#EFE5D2] shadow-xs scale-102 border-2 border-[#173B32]"
                       : "bg-[#FAF7F0] text-[#20211D]/80 border-2 border-[#E5D5BA] hover:bg-[#E5D5BA]"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-[#B49252]" : "text-[#7B4D36]"}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#B49252]" : "text-[#7B4D36]"}`} />
                   <span>{cat.label}</span>
                   <span className={`text-[10px] ${isActive ? "text-[#B49252]" : "text-[#7B4D36]"}`}>
                     ({cat.hindi})
@@ -343,58 +346,65 @@ export default function ExploreIndexPage() {
             })}
           </div>
 
-          {/* Destination Editorial Showcase Grid */}
+          {/* Destination Showcase Grid */}
           {loading && destinations.length === 0 ? (
-            <div className="py-24 flex flex-col items-center justify-center text-[#173B32] gap-3">
-              <div className="w-10 h-10 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
+            <div className="py-20 flex flex-col items-center justify-center text-[#173B32] gap-2">
+              <div className="w-8 h-8 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
               <span className="text-xs font-serif italic text-[#7B4D36]">Unrolling illustrated expedition maps...</span>
             </div>
           ) : loadError && destinations.length === 0 ? (
-            <div className="py-16 text-center space-y-4 max-w-md mx-auto bg-[#FAF7F0] p-8 rounded-3xl border-2 border-[#E5D5BA]">
-              <AlertCircle className="w-10 h-10 text-[#B65E3C] mx-auto" />
-              <h3 className="text-xl font-serif font-black text-[#173B32]">
+            <div className="py-12 text-center space-y-3 max-w-md mx-auto bg-[#FAF7F0] p-6 rounded-3xl border-2 border-[#E5D5BA]">
+              <AlertCircle className="w-8 h-8 text-[#B65E3C] mx-auto" />
+              <h3 className="text-lg font-serif font-black text-[#173B32]">
                 VANVAS couldn&rsquo;t load destinations right now.
               </h3>
-              <p className="text-xs text-[#7B4D36]">
-                The server might be waking up or temporarily unreachable.
-              </p>
               <button
                 onClick={loadDestinations}
-                className="px-6 py-2.5 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#204E43] transition-all flex items-center gap-2 mx-auto cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#204E43] transition-all flex items-center gap-2 mx-auto cursor-pointer"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-3.5 h-3.5" />
                 <span>Retry</span>
               </button>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center space-y-4 max-w-md mx-auto bg-[#FAF7F0] p-8 rounded-3xl border-2 border-[#E5D5BA]">
-              <Compass className="w-10 h-10 text-[#7B4D36] mx-auto opacity-60" />
-              <h3 className="text-lg font-serif font-black text-[#173B32]">
+            <div className="py-12 text-center space-y-3 max-w-md mx-auto bg-[#FAF7F0] p-6 rounded-3xl border-2 border-[#E5D5BA]">
+              <Compass className="w-8 h-8 text-[#7B4D36] mx-auto opacity-60" />
+              <h3 className="text-base font-serif font-black text-[#173B32]">
                 No sanctuaries match your criteria
               </h3>
-              <p className="text-xs text-[#7B4D36]">
-                Try adjusting your search query or choosing another journey route.
-              </p>
               <button
                 onClick={() => {
                   setSearch("");
                   setSelectedCategory("All");
                 }}
-                className="px-5 py-2.5 rounded-xl bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#9E4D2E] transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#9E4D2E] transition-all cursor-pointer"
               >
                 Reset Filters
               </button>
             </div>
+          ) : isCompact ? (
+            /* COMPACT MODE: 2-COLUMN (MOBILE) / 4-COLUMN (DESKTOP) FIELD GUIDE CATALOGUE */
+            <div id="all-destinations" className="space-y-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                {filtered.map((dest) => (
+                  <CompactDestinationCard
+                    key={dest.id || dest.slug}
+                    destination={dest}
+                    daysEstimate={dest.slug === "manali" ? 4 : dest.slug === "rishikesh" ? 3 : 3}
+                  />
+                ))}
+              </div>
+            </div>
           ) : (
+            /* ORIGINAL MODE: IMMERSIVE EDITORIAL MAGAZINE POSTERS */
             <div id="all-destinations" className="space-y-12">
-              {/* Top Featured Hero Card (First item) */}
+              {/* Top Featured Hero Card */}
               {filtered.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
                   <Link
                     href={`/explore/${filtered[0].slug}`}
                     className="lg:col-span-8 group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-4 sm:p-6 shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col md:flex-row gap-6 relative overflow-hidden"
                   >
-                    {/* Left Illustrated Poster */}
                     <div className="w-full md:w-1/2 h-72 sm:h-96 rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
                       <DestinationArtwork
                         destination={filtered[0].slug}
@@ -407,7 +417,6 @@ export default function ExploreIndexPage() {
                       />
                     </div>
 
-                    {/* Right Editorial Story */}
                     <div className="w-full md:w-1/2 flex flex-col justify-between py-2 space-y-4">
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
@@ -448,7 +457,6 @@ export default function ExploreIndexPage() {
                     </div>
                   </Link>
 
-                  {/* Right Column: Travel Journal Dispatch */}
                   <div className="lg:col-span-4 flex flex-col justify-between space-y-6">
                     <JournalNote
                       tag="VANVAS EXPEDITION PHILOSOPHY"
@@ -480,17 +488,14 @@ export default function ExploreIndexPage() {
               )}
 
               {/* Asymmetrical Destination Posters Grid */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-4 sm:gap-5" : "gap-8"}`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filtered.slice(1, visibleDestCount).map((dest) => (
                   <Link
                     key={dest.id || dest.slug}
                     href={`/explore/${dest.slug}`}
-                    className={`group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between ${
-                      isCompact ? "p-3 space-y-2" : "p-4"
-                    }`}
+                    className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between p-4"
                   >
-                    {/* Poster Art */}
-                    <div className={`${isCompact ? "h-44 sm:h-48" : "h-72"} w-full rounded-2xl overflow-hidden border border-[#E5D5BA] relative`}>
+                    <div className="h-72 w-full rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
                       <DestinationArtwork
                         destination={dest.slug}
                         title={dest.name}
@@ -502,8 +507,7 @@ export default function ExploreIndexPage() {
                       />
                     </div>
 
-                    {/* Card Content */}
-                    <div className={`${isCompact ? "p-2 pt-2 space-y-2" : "p-3 pt-5 space-y-3"} flex-1 flex flex-col justify-between`}>
+                    <div className="p-3 pt-5 space-y-3 flex-1 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
@@ -516,10 +520,10 @@ export default function ExploreIndexPage() {
                           )}
                         </div>
 
-                        <h3 className={`${isCompact ? "text-xl" : "text-2xl"} font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors mt-0.5`}>
+                        <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors mt-0.5">
                           {dest.name}
                         </h3>
-                        <p className={`text-xs text-[#7B4D36] italic font-serif ${isCompact ? "line-clamp-1" : ""}`}>
+                        <p className="text-xs text-[#7B4D36] italic font-serif">
                           {destDetails[dest.slug]?.quote || dest.tagline}
                         </p>
                       </div>
@@ -538,7 +542,7 @@ export default function ExploreIndexPage() {
                 ))}
               </div>
 
-              {/* Progressive Discovery: Load More Sanctuaries */}
+              {/* Show More */}
               {filtered.length > visibleDestCount && (
                 <div className="pt-6 flex justify-center">
                   <button
