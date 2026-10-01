@@ -40,6 +40,32 @@
     --mustard: #B49252;
     --indigo: #273D52;
     --charcoal: #20211D;
+
+    /* Global Responsive Density System - Original (Editorial / Immersive) */
+    --space-section: 4rem;
+    --space-card: 1.5rem;
+    --space-content: 1.25rem;
+    --card-padding: 1.5rem;
+    --heading-scale: 1;
+    --body-leading: 1.6;
+    --control-height: 2.75rem;
+    --image-height: 220px;
+    --grid-gap: 1.5rem;
+  }
+
+  html[data-density="compact"],
+  :root[data-density="compact"],
+  .density-compact {
+    /* Global Responsive Density System - Compact (Information-Efficient) */
+    --space-section: 2rem;
+    --space-card: 0.875rem;
+    --space-content: 0.625rem;
+    --card-padding: 0.875rem;
+    --heading-scale: 0.9;
+    --body-leading: 1.38;
+    --control-height: 2.125rem;
+    --image-height: 140px;
+    --grid-gap: 0.875rem;
   }
 
   html.dark,
@@ -451,5 +477,186 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   a {
     text-decoration: none !important;
     color: inherit !important;
+  }
+}
+
+/* ===================================================
+   VANVAS GLOBAL COMPACT MODE & CONTENT DENSITY SYSTEM
+   =================================================== */
+
+/* Headings scale in Compact Mode */
+html[data-density="compact"] h1,
+.density-compact h1 {
+  font-size: clamp(1.75rem, 4vw, 2.75rem) !important;
+  line-height: 1.15 !important;
+}
+
+html[data-density="compact"] h2,
+.density-compact h2 {
+  font-size: clamp(1.35rem, 3vw, 2rem) !important;
+  line-height: 1.2 !important;
+}
+
+html[data-density="compact"] h3,
+.density-compact h3 {
+  font-size: clamp(1.1rem, 2.2vw, 1.45rem) !important;
+  line-height: 1.25 !important;
+}
+
+/* Section vertical spacing in Compact Mode */
+html[data-density="compact"] .py-20,
+.density-compact .py-20 {
+  padding-top: 2.75rem !important;
+  padding-bottom: 2.75rem !important;
+}
+
+html[data-density="compact"] .py-16,
+.density-compact .py-16 {
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
+}
+
+html[data-density="compact"] .py-14,
+.density-compact .py-14 {
+  padding-top: 1.75rem !important;
+  padding-bottom: 1.75rem !important;
+}
+
+html[data-density="compact"] .py-12,
+.density-compact .py-12 {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+html[data-density="compact"] .py-10,
+.density-compact .py-10 {
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
+}
+
+html[data-density="compact"] .py-8,
+.density-compact .py-8 {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+html[data-density="compact"] .min-h-\[90vh\],
+.density-compact .min-h-\[90vh\] {
+  min-height: 60vh !important;
+}
+
+html[data-density="compact"] .min-h-\[80vh\],
+.density-compact .min-h-\[80vh\] {
+  min-height: 50vh !important;
+}
+
+/* Card & container padding in Compact Mode */
+html[data-density="compact"] .p-8,
+.density-compact .p-8 {
+  padding: 1.25rem !important;
+}
+
+html[data-density="compact"] .p-7,
+.density-compact .p-7 {
+  padding: 1.125rem !important;
+}
+
+html[data-density="compact"] .p-6,
+.density-compact .p-6 {
+  padding: 1rem !important;
+}
+
+html[data-density="compact"] .p-5,
+.density-compact .p-5 {
+  padding: 0.875rem !important;
+}
+
+/* Card border radii in Compact Mode */
+html[data-density="compact"] .rounded-3xl,
+.density-compact .rounded-3xl {
+  border-radius: 1.125rem !important;
+}
+
+html[data-density="compact"] .rounded-2xl,
+.density-compact .rounded-2xl {
+  border-radius: 0.875rem !important;
+}
+
+/* Gaps and spacing in Compact Mode */
+html[data-density="compact"] .space-y-8 > :not([hidden]) ~ :not([hidden]),
+.density-compact .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1.25rem !important;
+}
+
+html[data-density="compact"] .space-y-6 > :not([hidden]) ~ :not([hidden]),
+.density-compact .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.875rem !important;
+}
+
+html[data-density="compact"] .space-y-4 > :not([hidden]) ~ :not([hidden]),
+.density-compact .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.625rem !important;
+}
+
+html[data-density="compact"] .gap-8,
+.density-compact .gap-8 {
+  gap: 1.125rem !important;
+}
+
+html[data-density="compact"] .gap-6,
+.density-compact .gap-6 {
+  gap: 0.875rem !important;
+}
+
+html[data-density="compact"] .gap-4,
+.density-compact .gap-4 {
+  gap: 0.625rem !important;
+}
+
+/* Compact utilities */
+html[data-density="compact"] .compact-hide,
+.density-compact .compact-hide {
+  display: none !important;
+}
+
+html:not([data-density="compact"]) .compact-only {
+  display: none !important;
+}
+
+html[data-density="compact"] .compact-clamp-1,
+.density-compact .compact-clamp-1 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 1 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+html[data-density="compact"] .compact-clamp-2,
+.density-compact .compact-clamp-2 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* Mobile-Specific Density Optimizations */
+@media (max-width: 640px) {
+  html[data-density="compact"] .mobile-compact-h-auto {
+    height: auto !important;
+  }
+
+  html[data-density="compact"] .mobile-compact-row {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  html[data-density="compact"] .mobile-compact-tight {
+    padding: 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+
+  html[data-density="compact"] .journal-card,
+  html[data-density="compact"] .card-density {
+    padding: 0.875rem !important;
   }
 }

@@ -9,8 +9,10 @@ import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { JournalNote } from "@/components/ui/JournalNote";
 import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
+import { useDensity } from "@/context/DensityContext";
 
 export default function ExploreIndexPage() {
+  const { isCompact } = useDensity();
   const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
@@ -478,15 +480,17 @@ export default function ExploreIndexPage() {
               )}
 
               {/* Asymmetrical Destination Posters Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-4 sm:gap-5" : "gap-8"}`}>
                 {filtered.slice(1, visibleDestCount).map((dest) => (
                   <Link
                     key={dest.id || dest.slug}
                     href={`/explore/${dest.slug}`}
-                    className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-4 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                    className={`group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between ${
+                      isCompact ? "p-3 space-y-2" : "p-4"
+                    }`}
                   >
                     {/* Poster Art */}
-                    <div className="h-72 w-full rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
+                    <div className={`${isCompact ? "h-44 sm:h-48" : "h-72"} w-full rounded-2xl overflow-hidden border border-[#E5D5BA] relative`}>
                       <DestinationArtwork
                         destination={dest.slug}
                         title={dest.name}
@@ -499,7 +503,7 @@ export default function ExploreIndexPage() {
                     </div>
 
                     {/* Card Content */}
-                    <div className="p-3 pt-5 flex-1 flex flex-col justify-between space-y-3">
+                    <div className={`${isCompact ? "p-2 pt-2 space-y-2" : "p-3 pt-5 space-y-3"} flex-1 flex flex-col justify-between`}>
                       <div>
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
@@ -512,17 +516,17 @@ export default function ExploreIndexPage() {
                           )}
                         </div>
 
-                        <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors mt-1">
+                        <h3 className={`${isCompact ? "text-xl" : "text-2xl"} font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors mt-0.5`}>
                           {dest.name}
                         </h3>
-                        <p className="text-xs text-[#7B4D36] italic font-serif">
+                        <p className={`text-xs text-[#7B4D36] italic font-serif ${isCompact ? "line-clamp-1" : ""}`}>
                           {destDetails[dest.slug]?.quote || dest.tagline}
                         </p>
                       </div>
 
-                      <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs">
+                      <div className="pt-2 border-t border-[#E5D5BA] flex items-center justify-between text-xs">
                         <span className="font-semibold text-[#536B52]">
-                          {dest.places_count || 10} Verified Places
+                          {dest.places_count || 10} Places
                         </span>
                         <span className="text-[#B65E3C] font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1">
                           <span>Explore</span>

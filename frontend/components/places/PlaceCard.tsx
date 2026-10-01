@@ -6,6 +6,7 @@ import { Place } from "@/types";
 import { api } from "@/lib/api";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
+import { useDensity } from "@/context/DensityContext";
 
 interface PlaceCardProps {
   place: Place;
@@ -15,6 +16,7 @@ interface PlaceCardProps {
 }
 
 export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "", onSelect, onBookmarkChange }) => {
+  const { isCompact } = useDensity();
   const [isSaved, setIsSaved] = useState(place.is_saved || false);
   const [saving, setSaving] = useState(false);
 
@@ -58,10 +60,12 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           if (onSelect) onSelect(place);
         }
       }}
-      className="group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/50 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30"
+      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/50 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 ${
+        isCompact ? "card-compact" : ""
+      }`}
     >
       {/* Image Container */}
-      <div className="relative h-52 w-full overflow-hidden bg-[#E5D5BA]">
+      <div className={`relative w-full overflow-hidden bg-[#E5D5BA] ${isCompact ? "h-36 sm:h-40" : "h-52"}`}>
         <VanvasImage
           src={visualRes.imageUrl}
           fallbackSrc={visualRes.fallbackUrl}
@@ -73,34 +77,36 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
         <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924]/80 via-transparent to-black/15 pointer-events-none" />
 
         {/* Category Stamp & Source Badge */}
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-          <span className="px-2.5 py-0.5 rounded-md bg-[#173B32]/90 backdrop-blur-md text-[#EFE5D2] text-[10px] font-bold tracking-wider uppercase border border-[#536B52]/40">
+        <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1">
+          <span className="px-2 py-0.5 rounded-md bg-[#173B32]/90 backdrop-blur-md text-[#EFE5D2] text-[9px] font-bold tracking-wider uppercase border border-[#536B52]/40">
             {safeCategory}
           </span>
-          <span
-            className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider ${
-              place.data_state === "STALE"
-                ? "bg-amber-800/90 text-amber-100 border border-amber-500/40"
-                : visualRes.badgeLabel === "LIVE PLACE PHOTO" || isLive
-                ? "bg-emerald-600/90 text-white border border-emerald-400/40"
-                : visualRes.badgeLabel === "EXACT PLACE PHOTO"
-                ? "bg-emerald-700/90 text-emerald-100 border border-emerald-400"
-                : visualRes.badgeLabel === "VANVAS PLACE ARTWORK"
-                ? "bg-[#B49252]/90 text-[#0F2924] border border-[#B49252]"
-                : visualRes.badgeLabel === "DESTINATION CATEGORY ART"
-                ? "bg-[#173B32]/90 text-[#FAF4E8] border border-[#536B52]"
-                : visualRes.badgeLabel === "DESTINATION ART"
-                ? "bg-[#3F4F42]/90 text-[#FAF4E8] border border-[#536B52]"
-                : visualRes.badgeLabel === "REGIONAL ART"
-                ? "bg-[#7B4D36]/90 text-[#FAF4E8] border border-[#7B4D36]"
-                : "bg-neutral-800/90 text-neutral-200 border border-neutral-600"
-            }`}
-          >
-            {place.data_state === "STALE" ? "STALE" : visualRes.badgeLabel}
-          </span>
+          {!isCompact && (
+            <span
+              className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider ${
+                place.data_state === "STALE"
+                  ? "bg-amber-800/90 text-amber-100 border border-amber-500/40"
+                  : visualRes.badgeLabel === "LIVE PLACE PHOTO" || isLive
+                  ? "bg-emerald-600/90 text-white border border-emerald-400/40"
+                  : visualRes.badgeLabel === "EXACT PLACE PHOTO"
+                  ? "bg-emerald-700/90 text-emerald-100 border border-emerald-400"
+                  : visualRes.badgeLabel === "VANVAS PLACE ARTWORK"
+                  ? "bg-[#B49252]/90 text-[#0F2924] border border-[#B49252]"
+                  : visualRes.badgeLabel === "DESTINATION CATEGORY ART"
+                  ? "bg-[#173B32]/90 text-[#FAF4E8] border border-[#536B52]"
+                  : visualRes.badgeLabel === "DESTINATION ART"
+                  ? "bg-[#3F4F42]/90 text-[#FAF4E8] border border-[#536B52]"
+                  : visualRes.badgeLabel === "REGIONAL ART"
+                  ? "bg-[#7B4D36]/90 text-[#FAF4E8] border border-[#7B4D36]"
+                  : "bg-neutral-800/90 text-neutral-200 border border-neutral-600"
+              }`}
+            >
+              {place.data_state === "STALE" ? "STALE" : visualRes.badgeLabel}
+            </span>
+          )}
           {place.is_hidden_gem && (
-            <span className="px-2 py-0.5 rounded-md bg-[#B49252] text-[#0F2924] text-[10px] font-black uppercase tracking-wider shadow-sm">
-              Hidden Gem
+            <span className="px-2 py-0.5 rounded-md bg-[#B49252] text-[#0F2924] text-[9px] font-black uppercase tracking-wider shadow-xs">
+              Gem
             </span>
           )}
         </div>
@@ -110,36 +116,36 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           onClick={handleToggleSave}
           disabled={saving}
           aria-label="Save Place"
-          className="absolute top-3 right-3 p-2 rounded-full bg-[#EFE5D2]/90 backdrop-blur-md text-[#173B32] hover:text-[#B65E3C] hover:scale-110 shadow-sm transition-all"
+          className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-[#EFE5D2]/90 backdrop-blur-md text-[#173B32] hover:text-[#B65E3C] hover:scale-110 shadow-xs transition-all"
         >
-          <Bookmark className={`w-4 h-4 ${isSaved ? "fill-[#B65E3C] text-[#B65E3C]" : ""}`} />
+          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-[#B65E3C] text-[#B65E3C]" : ""}`} />
         </button>
 
         {/* Bottom Image Overlay: Honest Rating, Distance & Price */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[#EFE5D2] text-xs font-semibold">
+        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[#EFE5D2] text-[11px] font-semibold">
           {place.rating !== undefined && place.rating !== null ? (
-            <div className="flex items-center gap-1.5 bg-[#0F2924]/70 px-2.5 py-1 rounded-md backdrop-blur-xs border border-white/10">
-              <Star className="w-3.5 h-3.5 text-[#B49252] fill-current" />
+            <div className="flex items-center gap-1 bg-[#0F2924]/75 px-2 py-0.5 rounded-md backdrop-blur-xs border border-white/10">
+              <Star className="w-3 h-3 text-[#B49252] fill-current" />
               <span className="font-bold">{place.rating}</span>
               {place.review_count !== undefined && place.review_count !== null && (
-                <span className="text-[#D8DED5]/70 text-[10px]">({place.review_count})</span>
+                <span className="text-[#D8DED5]/70 text-[9px]">({place.review_count})</span>
               )}
             </div>
           ) : (
-            <div className="bg-[#0F2924]/70 px-2.5 py-1 rounded-md backdrop-blur-xs border border-white/10 text-[11px] text-[#D8DED5]/80">
-              {isLive ? "Live POI" : "Curated Sanctuary"}
+            <div className="bg-[#0F2924]/75 px-2 py-0.5 rounded-md backdrop-blur-xs border border-white/10 text-[10px] text-[#D8DED5]/80">
+              {isLive ? "POI" : "Sanctuary"}
             </div>
           )}
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {typeof place.distance_km === "number" && (
-              <span className="bg-[#0F2924]/70 px-2 py-1 rounded-md backdrop-blur-xs text-[#FAF4E8] font-mono text-[10px] border border-white/10 flex items-center gap-1">
+              <span className="bg-[#0F2924]/75 px-2 py-0.5 rounded-md backdrop-blur-xs text-[#FAF4E8] font-mono text-[9px] border border-white/10 flex items-center gap-1">
                 <MapPin className="w-2.5 h-2.5 text-[#B49252]" />
                 <span>{place.distance_km} km</span>
               </span>
             )}
             {place.price_level && (
-              <span className="bg-[#0F2924]/70 px-2.5 py-1 rounded-md backdrop-blur-xs text-[#EFE5D2] font-mono text-[11px] border border-white/10">
+              <span className="bg-[#0F2924]/75 px-2 py-0.5 rounded-md backdrop-blur-xs text-[#EFE5D2] font-mono text-[10px] border border-white/10">
                 {place.price_level} {(place.approx_cost ?? 0) > 0 ? `• ₹${place.approx_cost}` : ""}
               </span>
             )}
@@ -148,18 +154,22 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
       </div>
 
       {/* Body */}
-      <div className="p-5 flex-1 flex flex-col justify-between space-y-3.5">
+      <div className={`flex-1 flex flex-col justify-between ${isCompact ? "p-3 sm:p-3.5 space-y-2" : "p-5 space-y-3.5"}`}>
         <div>
-          <h3 className="font-serif font-black text-lg text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug">
+          <h3 className={`font-serif font-bold text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug ${
+            isCompact ? "text-base" : "text-lg font-black"
+          }`}>
             {place.name}
           </h3>
-          <p className="text-xs text-[#20211D]/75 mt-1.5 line-clamp-2 leading-relaxed font-light">
+          <p className={`text-[#20211D]/75 mt-1 leading-relaxed font-light ${
+            isCompact ? "text-[11px] line-clamp-1" : "text-xs line-clamp-2"
+          }`}>
             {place.description || "Authentic destination landmark."}
           </p>
         </div>
 
-        {/* Menu Discovery Banner for Dining/Cafes */}
-        {(safeCategory.toLowerCase().includes("food") || safeCategory.toLowerCase().includes("caf") || safeCategory.toLowerCase().includes("restaurant")) && (
+        {/* Menu Discovery Banner for Dining/Cafes (In Original Mode) */}
+        {!isCompact && (safeCategory.toLowerCase().includes("food") || safeCategory.toLowerCase().includes("caf") || safeCategory.toLowerCase().includes("restaurant")) && (
           <div className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg bg-[#EFE5D2]/50 border border-[#E5D5BA]">
             {place.menu_available && place.menu_url ? (
               <a
@@ -183,8 +193,8 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           </div>
         )}
 
-        {/* VANVAS Journal Note */}
-        {place.why_vanvas_recommends && (
+        {/* VANVAS Journal Note (In Original Mode) */}
+        {!isCompact && place.why_vanvas_recommends && (
           <div className="p-3 rounded-xl bg-[#EFE5D2]/70 border border-[#E5D5BA] text-[11px] text-[#7B4D36] space-y-1">
             <div className="flex items-center gap-1 font-bold text-[#B65E3C] text-[10px] uppercase tracking-wider">
               <Sparkles className="w-3 h-3 text-[#B49252]" />
@@ -197,26 +207,28 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
         )}
 
         {/* Footer Meta */}
-        <div className="flex items-center justify-between pt-3 border-t border-[#E5D5BA] text-[11px] text-[#536B52]">
+        <div className={`flex items-center justify-between border-t border-[#E5D5BA] text-[#536B52] ${
+          isCompact ? "pt-2 text-[10px]" : "pt-3 text-[11px]"
+        }`}>
           <div className="flex items-center gap-1.5">
-            <Clock className={`w-3.5 h-3.5 ${place.is_open_now === true ? "text-emerald-600" : place.is_open_now === false ? "text-[#7B4D36]" : "text-[#B65E3C]"}`} />
+            <Clock className={`w-3 h-3 ${place.is_open_now === true ? "text-emerald-600" : place.is_open_now === false ? "text-[#7B4D36]" : "text-[#B65E3C]"}`} />
             {place.is_open_now === true ? (
               <span className="font-bold text-emerald-700 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                Open Now
+                Open
               </span>
             ) : place.is_open_now === false ? (
               <span className="font-semibold text-[#7B4D36]">
-                Closed Now
+                Closed
               </span>
             ) : (
               <span className="text-[#536B52]">
-                {place.opening_time ? `${place.opening_time} - ${place.closing_time || "Close"}` : "Hours not listed"}
+                {place.opening_time ? `${place.opening_time}` : "Open hours"}
               </span>
             )}
           </div>
 
-          <span className="text-[#B65E3C] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+          <span className="text-[#B65E3C] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
             <span>Explore</span>
             <ArrowRight className="w-3 h-3" />
           </span>

@@ -16,6 +16,7 @@ import {
 import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
 
 import { useTheme } from "@/context/ThemeContext";
+import { useDensity } from "@/context/DensityContext";
 
 export default function SettingsPage() {
   return (
@@ -28,6 +29,7 @@ export default function SettingsPage() {
 function SettingsContent() {
   const { user, logout, updateProfile, updatePreferences, changePassword, deleteAccount, exportData } = useAuth();
   const { theme, resolvedTheme, setTheme } = useTheme();
+  const { density, setDensity } = useDensity();
 
   const [activeSection, setActiveSection] = useState<
     "account" | "travel" | "solo" | "food" | "language" | "currency" | "notifications" | "location" | "copilot" | "appearance" | "privacy" | "security" | "about"
@@ -131,6 +133,7 @@ function SettingsContent() {
       region,
       currency,
       theme,
+      layout_density: density,
       location_mode: locationMode,
       notify_trip_reminders: notifyReminders,
       notify_trip_changes: notifyChanges,
@@ -857,10 +860,78 @@ function SettingsContent() {
                     })}
                   </div>
 
+                  {/* Layout Density Setting */}
+                  <div className="pt-4 border-t border-[#D8CBB2]/60 space-y-4">
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#173B32]">
+                        Layout Density (लेआउट घनत्व)
+                      </h3>
+                      <p className="text-xs text-[#20211D]/70 mt-0.5">
+                        Adjust information density and card spacing across all travel surfaces.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {[
+                        {
+                          id: "original",
+                          title: "Original",
+                          subtitle: "Immersive editorial layout",
+                          desc: "Generous margins, full narrative breathing room, and immersive travel journal cards.",
+                          tag: "Default",
+                        },
+                        {
+                          id: "compact",
+                          title: "Compact",
+                          subtitle: "More information, less scrolling",
+                          desc: "Information-efficient cards, inline tags, tighter section gaps, and scannable itineraries.",
+                          tag: "Optimized for Mobile",
+                        },
+                      ].map((item) => {
+                        const isSel = density === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setDensity(item.id as any)}
+                            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative ${
+                              isSel
+                                ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md ring-2 ring-[#B49252]/50"
+                                : "bg-white text-[#20211D] border-[#D8CBB2] hover:bg-[#E5D5BA]/40"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full mb-2.5">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                isSel ? "bg-[#B49252] text-[#173B32]" : "bg-[#E5D5BA] text-[#173B32]"
+                              }`}>
+                                {item.tag}
+                              </span>
+                              {isSel && (
+                                <span className="px-2 py-0.5 rounded-full bg-[#B49252]/30 text-[10px] font-bold text-[#FAF7F0] uppercase tracking-wider flex items-center gap-1">
+                                  <Check className="w-3 h-3 text-[#B49252]" />
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-serif font-bold text-base mb-0.5">{item.title}</div>
+                              <div className={`text-xs font-semibold mb-1 ${isSel ? "text-[#B49252]" : "text-[#B65E3C]"}`}>
+                                {item.subtitle}
+                              </div>
+                              <div className={`text-[11px] leading-relaxed ${isSel ? "text-[#EFE5D2]/80" : "text-[#20211D]/65"}`}>
+                                {item.desc}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="p-4 rounded-2xl bg-[#E5D5BA]/40 border border-[#D8CBB2] text-xs text-[#20211D]/80 flex items-start gap-2.5">
                     <Info className="w-4 h-4 text-[#B49252] shrink-0 mt-0.5" />
                     <div>
-                      <strong>Theme Persistence:</strong> Switching options applies immediately across all views. Click <strong>Save Preferences</strong> at the top to sync your selection with your cloud account across devices.
+                      <strong>Density & Theme Persistence:</strong> Switching options applies immediately across all views. Click <strong>Save Preferences</strong> at the top to sync your selection with your cloud account across devices.
                     </div>
                   </div>
                 </div>

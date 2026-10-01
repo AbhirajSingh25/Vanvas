@@ -117,6 +117,7 @@ def test_update_profile_and_preferences():
         "currency": "USD",
         "language": "hi",
         "theme": "dark",
+        "layout_density": "compact",
         "location_mode": "while_using"
     }, headers=headers)
     assert prof_resp.status_code == 200
@@ -126,12 +127,14 @@ def test_update_profile_and_preferences():
     assert data["preferences"]["currency"] == "USD"
     assert data["preferences"]["language"] == "hi"
     assert data["preferences"]["theme"] == "dark"
+    assert data["preferences"]["layout_density"] == "compact"
     assert data["preferences"]["location_mode"] == "while_using"
 
     # 2. Update Preferences directly
     pref_resp = client.put("/api/v1/auth/preferences", json={
         "dietary_preference": "Veg",
         "companion_style": "Couple",
+        "layout_density": "original",
         "notify_trip_reminders": True,
         "notify_announcements": True,
         "ai_copilot_enabled": True
@@ -140,6 +143,7 @@ def test_update_profile_and_preferences():
     pref_data = pref_resp.json()
     assert pref_data["dietary_preference"] == "Veg"
     assert pref_data["companion_style"] == "Couple"
+    assert pref_data["layout_density"] == "original"
     assert pref_data["notify_announcements"] is True
 
 

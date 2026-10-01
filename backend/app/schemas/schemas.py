@@ -29,6 +29,7 @@ class UserPreferenceSchema(BaseModel):
     region: Optional[str] = "India"
     currency: Optional[str] = "INR"
     theme: Optional[str] = "light"
+    layout_density: Optional[str] = "original"
     location_mode: Optional[str] = "ask_every_time"
     notify_trip_reminders: Optional[bool] = True
     notify_trip_changes: Optional[bool] = True
@@ -59,6 +60,7 @@ class UserProfileUpdateRequest(BaseModel):
     region: Optional[str] = None
     currency: Optional[str] = None
     theme: Optional[str] = None
+    layout_density: Optional[str] = None
     location_mode: Optional[str] = None
     notify_trip_reminders: Optional[bool] = None
     notify_trip_changes: Optional[bool] = None

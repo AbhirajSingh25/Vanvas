@@ -33,7 +33,7 @@ PREFERENCE_FIELDS = [
     "preferred_travel_style", "wake_up_preference", "activity_intensity",
     "dietary_preference", "interests", "accommodation_preference",
     "transport_preference", "companion_style", "language", "region",
-    "currency", "theme", "location_mode", "notify_trip_reminders",
+    "currency", "theme", "layout_density", "location_mode", "notify_trip_reminders",
     "notify_trip_changes", "notify_booking_updates", "notify_suggestions",
     "notify_copilot_updates", "notify_announcements", "ai_copilot_enabled",
     "ai_personalized_recommendations", "ai_use_travel_preferences",

@@ -95,6 +95,7 @@ class UserPreference(Base):
     
     # Theme & Appearance
     theme = Column(String(20), default="light")  # light, dark, system
+    layout_density = Column(String(20), default="original")  # original, compact
     
     # Location & Privacy Preferences
     location_mode = Column(String(50), default="ask_every_time")  # ask_every_time, while_using, never

@@ -4,9 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Compass, Calendar, MapPin, Sparkles } from "lucide-react";
+import { useDensity } from "@/context/DensityContext";
 
 export const MobileNav: React.FC = () => {
   const pathname = usePathname();
+  const { isCompact } = useDensity();
 
   const navItems = [
     { label: "Home", hindi: "होम", href: "/", icon: Home },
@@ -17,7 +19,9 @@ export const MobileNav: React.FC = () => {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#EFE5D2]/95 backdrop-blur-md border-t border-[#E5D5BA] px-3 pt-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom,0px))] shadow-2xl">
+    <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#EFE5D2]/95 backdrop-blur-md border-t border-[#E5D5BA] px-3 pb-[max(0.35rem,env(safe-area-inset-bottom,0px))] shadow-2xl transition-all ${
+      isCompact ? "pt-1" : "pt-1.5"
+    }`}>
       <div className="flex items-center justify-around relative max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -28,10 +32,12 @@ export const MobileNav: React.FC = () => {
               <Link
                 key={item.label}
                 href={item.href}
-                className="flex flex-col items-center -top-4 relative group"
+                className={`flex flex-col items-center relative group ${isCompact ? "-top-3" : "-top-4"}`}
               >
-                <div className="w-12 h-12 rounded-full bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-lg transform active:scale-95 group-hover:scale-105 transition-all border-2 border-[#EFE5D2]">
-                  <Icon className="w-5 h-5 text-[#EFE5D2]" />
+                <div className={`rounded-full bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-lg transform active:scale-95 group-hover:scale-105 transition-all border-2 border-[#EFE5D2] ${
+                  isCompact ? "w-11 h-11" : "w-12 h-12"
+                }`}>
+                  <Icon className={`${isCompact ? "w-4 h-4" : "w-5 h-5"} text-[#EFE5D2]`} />
                 </div>
                 <span className="text-[10px] font-bold text-[#B65E3C] mt-0.5 tracking-wider uppercase">
                   {item.hindi}
@@ -48,7 +54,7 @@ export const MobileNav: React.FC = () => {
                 isActive ? "text-[#173B32] font-bold" : "text-[#20211D]/65 hover:text-[#173B32]"
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? "stroke-[2.5]" : ""}`} />
+              <Icon className={`${isCompact ? "w-4 h-4" : "w-5 h-5"} ${isActive ? "stroke-[2.5]" : ""}`} />
               <span className="text-[10px] mt-0.5 font-medium">{item.label}</span>
             </Link>
           );

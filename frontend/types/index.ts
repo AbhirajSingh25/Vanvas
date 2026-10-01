@@ -46,6 +46,7 @@ export interface UserPreferences {
   region?: string;
   currency?: string;
   theme?: string;
+  layout_density?: "original" | "compact";
   location_mode?: string;
   notify_trip_reminders?: boolean;
   notify_trip_changes?: boolean;

@@ -136,6 +136,7 @@ def ensure_database_schema(eng=engine):
                     "region": "VARCHAR(50) DEFAULT 'India'",
                     "currency": "VARCHAR(10) DEFAULT 'INR'",
                     "theme": "VARCHAR(20) DEFAULT 'system'",
+                    "layout_density": "VARCHAR(20) DEFAULT 'original'",
                     "location_mode": "VARCHAR(50) DEFAULT 'ask_every_time'",
                     "notify_trip_reminders": "BOOLEAN DEFAULT TRUE",
                     "notify_trip_changes": "BOOLEAN DEFAULT TRUE",

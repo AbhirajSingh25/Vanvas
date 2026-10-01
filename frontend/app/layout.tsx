@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Playfair_Display, Noto_Serif_Devanagari } from "next
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { DensityProvider } from "@/context/DensityContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -78,6 +79,18 @@ export default function RootLayout({
                     document.documentElement.setAttribute('data-theme', 'light');
                     document.documentElement.style.colorScheme = 'light';
                   }
+
+                  var storedDensity = localStorage.getItem('vanvas_density');
+                  var isCompact = storedDensity === 'compact';
+                  if (isCompact) {
+                    document.documentElement.setAttribute('data-density', 'compact');
+                    document.documentElement.classList.add('density-compact');
+                    document.documentElement.classList.remove('density-original');
+                  } else {
+                    document.documentElement.setAttribute('data-density', 'original');
+                    document.documentElement.classList.add('density-original');
+                    document.documentElement.classList.remove('density-compact');
+                  }
                 } catch (e) {}
               })();
             `,
@@ -90,11 +103,13 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ThemeProvider>
-            <Header />
-            <main className="flex-1 pb-16 md:pb-0">{children}</main>
-            <Footer />
-            <MobileNav />
-            <Analytics />
+            <DensityProvider>
+              <Header />
+              <main className="flex-1 pb-16 md:pb-0">{children}</main>
+              <Footer />
+              <MobileNav />
+              <Analytics />
+            </DensityProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

@@ -13,11 +13,13 @@ import {
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
 import { Avatar } from "@/components/ui/Avatar";
+import { useDensity } from "@/context/DensityContext";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { isCompact } = useDensity();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [askVanvasOpen, setAskVanvasOpen] = useState(false);
@@ -63,9 +65,11 @@ export const Header: React.FC = () => {
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-[#D8CBB2] bg-[#EFE5D2]/92 backdrop-blur-md transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between transition-all ${
+          isCompact ? "h-14 sm:h-16" : "h-16 sm:h-20"
+        }`}>
           {/* Brand Logo & Wordmark */}
-          <Logo size="md" />
+          <Logo size={isCompact ? "sm" : "md"} />
 
           {/* Desktop Editorial Navigation */}
           <nav className="hidden xl:flex items-center gap-1 xl:gap-2">

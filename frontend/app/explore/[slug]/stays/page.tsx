@@ -14,6 +14,7 @@ import { Hotel, Destination } from "@/types";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
 import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
+import { useDensity } from "@/context/DensityContext";
 
 const ACCOMMODATION_STYLES = [
   "All",
@@ -33,6 +34,7 @@ const TRAVELLER_PROFILES = [
 ];
 
 export default function DestinationStaysPage() {
+  const { isCompact } = useDensity();
   const params = useParams();
   const router = useRouter();
   const slug = (params?.slug as string) || "manali";
@@ -315,7 +317,7 @@ export default function DestinationStaysPage() {
             ))}
           </div>
         ) : filteredHotels.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-4 sm:gap-4" : "gap-6"}`}>
             {filteredHotels.map((h) => {
               const isPriceVerified = typeof h.price_per_night === "number" && h.price_per_night > 0;
               const displayPrice = isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry";
@@ -329,16 +331,16 @@ export default function DestinationStaysPage() {
               return (
                 <div
                   key={h.id}
-                  className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/50 shadow-2xs hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group"
+                  className={`${isCompact ? "p-3 sm:p-3.5 space-y-2.5 rounded-2xl" : "p-5 space-y-4 rounded-3xl"} bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/50 shadow-2xs hover:shadow-xl transition-all flex flex-col justify-between group`}
                 >
-                  <div className="space-y-3">
+                  <div className={isCompact ? "space-y-2" : "space-y-3"}>
                     {/* Visual Card Header */}
                     <div
                       onClick={() => {
                         setSelectedStayForModal(h);
                         setStayModalOpen(true);
                       }}
-                      className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group-hover:shadow-md transition-shadow"
+                      className={`relative ${isCompact ? "h-36 sm:h-40" : "aspect-[16/10]"} w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group-hover:shadow-md transition-shadow`}
                     >
                       <VanvasImage
                         src={stayVisual.imageUrl}
@@ -369,9 +371,9 @@ export default function DestinationStaysPage() {
                     </div>
 
                     {/* Content Body */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-serif font-bold text-lg text-[#173B32] leading-snug group-hover:text-[#B65E3C] transition-colors">
+                        <h3 className={`font-serif font-bold ${isCompact ? "text-base" : "text-lg"} text-[#173B32] leading-snug group-hover:text-[#B65E3C] transition-colors`}>
                           {h.name}
                         </h3>
                         <div className="text-right shrink-0">
@@ -388,8 +390,8 @@ export default function DestinationStaysPage() {
 
                       {/* Amenities pills */}
                       {h.amenities && (
-                        <div className="flex flex-wrap gap-1 pt-1.5">
-                          {h.amenities.split(",").slice(0, 3).map((am, i) => (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {h.amenities.split(",").slice(0, isCompact ? 2 : 3).map((am, i) => (
                             <span
                               key={i}
                               className="px-2 py-0.5 rounded-md bg-white border border-[#E5D5BA] text-[10px] font-medium text-[#7B4D36]"

@@ -4,11 +4,13 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles, MapPin, Calendar, Wallet, Users, Compass, Sun, Flame, Check,
-  ArrowRight, ArrowLeft, Mountain, Coffee, Trees, Heart, Shield, Search, Loader2
+  ArrowRight, ArrowLeft, Mountain, Coffee, Trees, Heart, Shield, Search, Loader2,
+  Minus, Plus
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
 import { useAuth } from "@/context/AuthContext";
+import { useDensity } from "@/context/DensityContext";
 import confetti from "canvas-confetti";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
@@ -693,79 +695,125 @@ function PlanTripContent() {
 
           {/* STEP 4: COMPANIONS (किसके साथ?) */}
           {step === 4 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+            <div className="space-y-5 relative z-10 animate-fadeIn">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">किसके साथ?</span>
+                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">किसके साथ?</span>
                   <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 4</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
+                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
                   Who is travelling with you?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">We tailor pacing, stay types, and group voting compatibility.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">Select your party archetype and headcount.</p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
-                  { type: "Solo", hindi: "अकेले", count: 1, desc: "Soul-searching & quiet pine walks" },
-                  { type: "Couple", hindi: "हमसफ़र", count: 2, desc: "Romantic stays & sunset dinners" },
-                  { type: "Friends", hindi: "यार-दोस्त", count: 3, desc: "Cafés, scooters & paragliding" },
-                  { type: "Family", hindi: "परिवार", count: 4, desc: "Comfortable pacing & heritage" },
+                  { type: "Solo", hindi: "अकेले", icon: "🧭", count: 1, desc: "Soul-searching & quiet trails" },
+                  { type: "Couple", hindi: "हमसफ़र", icon: "✨", count: 2, desc: "Romantic stays & sunset dinners" },
+                  { type: "Friends", hindi: "यार-दोस्त", icon: "🎒", count: 3, desc: "Cafés, scooters & hikes" },
+                  { type: "Family", hindi: "परिवार", icon: "🏡", count: 4, desc: "Comfortable pacing & heritage" },
                 ].map((comp) => (
                   <button
                     key={comp.type}
+                    type="button"
                     onClick={() => {
                       setCompanionType(comp.type);
                       setTravellersCount(comp.count);
                     }}
-                    className={`p-4 rounded-2xl border-2 text-left transition-all space-y-1.5 ${
+                    className={`p-3 rounded-2xl border-2 text-left transition-all space-y-1 cursor-pointer ${
                       companionType === comp.type
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
                         : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
                     }`}
                   >
-                    <span className="text-[11px] font-serif opacity-80">{comp.hindi}</span>
-                    <div className="font-serif font-bold text-lg leading-tight">{comp.type}</div>
-                    <div className="text-[11px] opacity-75">{comp.desc}</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">{comp.icon}</span>
+                      <span className="text-[10px] font-serif opacity-80">{comp.hindi}</span>
+                    </div>
+                    <div className="font-serif font-bold text-base leading-tight">{comp.type}</div>
+                    <div className="text-[10px] opacity-75 line-clamp-1">{comp.desc}</div>
                   </button>
                 ))}
+              </div>
+
+              {/* Number of Travellers Stepper */}
+              <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border-2 border-[#E5D5BA] flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#7B4D36] block">Exact Travellers</span>
+                  <span className="font-serif font-bold text-sm text-[#173B32]">Headcount: {travellersCount} {travellersCount === 1 ? "Person" : "People"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTravellersCount((prev) => Math.max(1, prev - 1))}
+                    disabled={travellersCount <= 1}
+                    className="w-8 h-8 rounded-xl bg-white border border-[#E5D5BA] text-[#173B32] disabled:opacity-40 flex items-center justify-center font-bold hover:bg-[#FAF7F0] shadow-xs"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="w-8 text-center font-mono font-bold text-base text-[#173B32]">
+                    {travellersCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setTravellersCount((prev) => Math.min(20, prev + 1))}
+                    className="w-8 h-8 rounded-xl bg-white border border-[#E5D5BA] text-[#173B32] flex items-center justify-center font-bold hover:bg-[#FAF7F0] shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           {/* STEP 5: VIBES & INTERESTS (कैसा सफ़र?) */}
           {step === 5 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+            <div className="space-y-5 relative z-10 animate-fadeIn">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">कैसा सफ़र?</span>
+                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">कैसा सफ़र?</span>
                   <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 5</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
+                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
                   What vibes are you seeking?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">Select multiple vibes to guide daily stop selection.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">Select the elements you want in your daily stops.</p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {interestOptions.map((item) => {
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { name: "Nature", icon: "🌲", hindi: "प्रकृति", desc: "Pine forests & ridges" },
+                  { name: "Cafés", icon: "☕", hindi: "कैफे", desc: "Artisan coffee & bakeries" },
+                  { name: "Mountains", icon: "🏔️", hindi: "पहाड़", desc: "High summits & peaks" },
+                  { name: "Culture", icon: "🛕", hindi: "संस्कृति", desc: "Heritage temples & havelis" },
+                  { name: "Adventure", icon: "🏄", hindi: "रोमांच", desc: "Hikes, rafting & thrills" },
+                  { name: "Slow Travel", icon: "🌿", hindi: "सुकून", desc: "Quiet walks & hammocks" },
+                  { name: "Local Food", icon: "🍛", hindi: "स्थानीय स्वाद", desc: "Siddu, thali & street bites" },
+                  { name: "Photography", icon: "📷", hindi: "फोटोग्राफी", desc: "Golden hour viewpoints" },
+                ].map((item) => {
                   const isSelected = selectedInterests.includes(item.name);
                   return (
                     <button
                       key={item.name}
+                      type="button"
                       onClick={() => handleInterestToggle(item.name)}
-                      className={`p-3.5 rounded-2xl border-2 text-left transition-all space-y-1 ${
+                      className={`p-2.5 sm:p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#B65E3C] text-[#EFE5D2] border-[#B65E3C] shadow-sm scale-102"
+                          ? "bg-[#B65E3C] text-[#EFE5D2] border-[#B65E3C] shadow-sm"
                           : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-serif opacity-85">{item.hindi}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#B49252]" />}
+                        <span className="text-base">{item.icon}</span>
+                        {isSelected ? (
+                          <Check className="w-3.5 h-3.5 text-[#B49252]" />
+                        ) : (
+                          <span className="text-[9px] font-serif opacity-75">{item.hindi}</span>
+                        )}
                       </div>
-                      <div className="font-serif font-bold text-sm">{item.name}</div>
-                      <div className="text-[10px] opacity-75 leading-tight">{item.desc}</div>
+                      <div className="font-serif font-bold text-xs sm:text-sm mt-1">{item.name}</div>
+                      <div className="text-[10px] opacity-75 line-clamp-1">{item.desc}</div>
                     </button>
                   );
                 })}
@@ -775,36 +823,38 @@ function PlanTripContent() {
 
           {/* STEP 6: TRAVEL STYLE (सफ़र का अंदाज़) */}
           {step === 6 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+            <div className="space-y-5 relative z-10 animate-fadeIn">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">सफ़र का अंदाज़</span>
+                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">सफ़र का अंदाज़</span>
                   <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 6</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
+                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
                   What is your travel style?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">Determines stay categories and dining choices.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">Determines stay categories and dining choices.</p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
-                  { style: "Budget", desc: "Hostels, local dhabas & buses" },
-                  { style: "Balanced", desc: "Boutique stays & riverside cafés" },
-                  { style: "Comfort", desc: "Heritage resorts & private cabs" },
-                  { style: "Premium", desc: "Luxury mountain suites & fine dining" },
+                  { style: "Budget", icon: "🎒", desc: "Hostels & local dhabas" },
+                  { style: "Balanced", icon: "☕", desc: "Boutique stays & cafés" },
+                  { style: "Comfort", icon: "🏡", desc: "Heritage resorts & cabs" },
+                  { style: "Premium", icon: "✨", desc: "Luxury mountain suites" },
                 ].map((s) => (
                   <button
                     key={s.style}
+                    type="button"
                     onClick={() => setTravelStyle(s.style)}
-                    className={`p-4 rounded-2xl border-2 text-left transition-all space-y-1.5 ${
+                    className={`p-3 sm:p-3.5 rounded-2xl border-2 text-left transition-all space-y-1 cursor-pointer ${
                       travelStyle === s.style
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
                         : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
                     }`}
                   >
-                    <div className="font-serif font-bold text-lg">{s.style}</div>
-                    <div className="text-[11px] opacity-75 leading-tight">{s.desc}</div>
+                    <span className="text-base">{s.icon}</span>
+                    <div className="font-serif font-bold text-sm sm:text-base">{s.style}</div>
+                    <div className="text-[10px] opacity-75 line-clamp-1">{s.desc}</div>
                   </button>
                 ))}
               </div>
@@ -813,36 +863,38 @@ function PlanTripContent() {
 
           {/* STEP 7: WAKE-UP PREFERENCE (सुबह का मिज़ाज) */}
           {step === 7 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+            <div className="space-y-5 relative z-10 animate-fadeIn">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">सुबह का मिज़ाज</span>
+                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">सुबह का मिज़ाज</span>
                   <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 7</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
+                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
                   When do you prefer waking up?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">We align morning activity timings to your natural rhythm.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">We align morning activity timings to your rhythm.</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-3 gap-2.5">
                 {[
-                  { pref: "Early", time: "07:30 AM", desc: "Catch sunrise & quiet morning mist" },
-                  { pref: "Normal", time: "08:30 AM", desc: "Relaxed breakfast and leisurely start" },
-                  { pref: "Late", time: "10:00 AM", desc: "Sleep in & enjoy late brunch" },
+                  { pref: "Early", time: "07:30 AM", icon: "🌅", desc: "Sunrise & morning mist" },
+                  { pref: "Normal", time: "08:30 AM", icon: "☕", desc: "Leisurely breakfast" },
+                  { pref: "Late", time: "10:00 AM", icon: "🥞", desc: "Late brunch start" },
                 ].map((w) => (
                   <button
                     key={w.pref}
+                    type="button"
                     onClick={() => setWakeUpPref(w.pref)}
-                    className={`p-4 rounded-2xl border-2 text-left transition-all space-y-1.5 ${
+                    className={`p-3 rounded-2xl border-2 text-left transition-all space-y-1 cursor-pointer ${
                       wakeUpPref === w.pref
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
                         : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
                     }`}
                   >
-                    <div className="font-serif font-bold text-lg">{w.pref}</div>
-                    <div className="text-xs text-[#B49252] font-mono font-semibold">{w.time}</div>
-                    <div className="text-[11px] opacity-75">{w.desc}</div>
+                    <span className="text-base">{w.icon}</span>
+                    <div className="font-serif font-bold text-sm">{w.pref}</div>
+                    <div className="text-[11px] text-[#B49252] font-mono font-semibold">{w.time}</div>
+                    <div className="text-[10px] opacity-75 line-clamp-1">{w.desc}</div>
                   </button>
                 ))}
               </div>
@@ -851,36 +903,38 @@ function PlanTripContent() {
 
           {/* STEP 8: ACTIVITY INTENSITY (दिन की रफ़्तार) */}
           {step === 8 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+            <div className="space-y-5 relative z-10 animate-fadeIn">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">दिन की रफ़्तार</span>
+                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">दिन की रफ़्तार</span>
                   <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 8</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
+                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
                   How packed should your days be?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">Control how many stops VANVAS schedules each day.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">Control daily stops and exploration pacing.</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-3 gap-2.5">
                 {[
-                  { intensity: "Relaxed", stops: "3 stops/day", desc: "Plenty of downtime & slow riverside cafés" },
-                  { intensity: "Balanced", stops: "4 stops/day", desc: "Optimal mix of trails, culture & food" },
-                  { intensity: "Packed", stops: "5+ stops/day", desc: "Max out every hour of daylight" },
+                  { intensity: "Relaxed", stops: "3 stops/day", icon: "🌿", desc: "Slow café downtime" },
+                  { intensity: "Balanced", stops: "4 stops/day", icon: "🧭", desc: "Optimal trail & food mix" },
+                  { intensity: "Packed", stops: "5+ stops/day", icon: "⚡", desc: "Max daylight hours" },
                 ].map((i) => (
                   <button
                     key={i.intensity}
+                    type="button"
                     onClick={() => setActivityIntensity(i.intensity)}
-                    className={`p-4 rounded-2xl border-2 text-left transition-all space-y-1.5 ${
+                    className={`p-3 rounded-2xl border-2 text-left transition-all space-y-1 cursor-pointer ${
                       activityIntensity === i.intensity
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
                         : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
                     }`}
                   >
-                    <div className="font-serif font-bold text-lg">{i.intensity}</div>
-                    <div className="text-xs text-[#B49252] font-semibold font-mono">{i.stops}</div>
-                    <div className="text-[11px] opacity-75">{i.desc}</div>
+                    <span className="text-base">{i.icon}</span>
+                    <div className="font-serif font-bold text-sm">{i.intensity}</div>
+                    <div className="text-[11px] text-[#B49252] font-semibold font-mono">{i.stops}</div>
+                    <div className="text-[10px] opacity-75 line-clamp-1">{i.desc}</div>
                   </button>
                 ))}
               </div>
@@ -889,52 +943,60 @@ function PlanTripContent() {
 
           {/* STEP 9: CONFIRMATION (डायरी का सारांश) */}
           {step === 9 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+            <div className="space-y-4 relative z-10 animate-fadeIn">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">डायरी का सारांश</span>
+                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">डायरी का सारांश</span>
                   <span className="text-xs font-mono text-[#7B4D36] uppercase">• Ready</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
-                  Your Spontaneous Journey Summary
+                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-0.5">
+                  Trip Summary
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">Ready to compile your itinerary.</p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                {(() => {
-                  const selectedDest = destinations.find(
-                    (d) => d.id === selectedDestId || d.slug === selectedDestId
-                  );
-                  const destName = selectedDest ? selectedDest.name : (destHindiMap[selectedDestId] || selectedDestId);
-                  const destHindi = selectedDest ? (destHindiMap[selectedDest.slug] || selectedDest.name) : "यात्रा";
+              {(() => {
+                const selectedDest = destinations.find(
+                  (d) => d.id === selectedDestId || d.slug === selectedDestId
+                );
+                const destName = selectedDest ? selectedDest.name : (selectedDestObject?.name || destHindiMap[selectedDestId] || selectedDestId);
+                const finalBudget = customBudget ? parseFloat(customBudget) : budget;
+                const formattedBudget = finalBudget >= 1000 ? `₹${(finalBudget / 1000).toFixed(finalBudget % 1000 === 0 ? 0 : 1)}K` : `₹${finalBudget}`;
 
-                  return (
-                    <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                      <span className="text-[#7B4D36] block font-semibold">Destination</span>
-                      <span className="font-serif font-bold text-base text-[#173B32]">
-                        {destName} <span className="text-xs font-serif text-[#B65E3C] font-normal">({destHindi})</span>
-                      </span>
+                return (
+                  <div className="space-y-3">
+                    {/* Concise Summary Banner */}
+                    <div className="p-4 rounded-2xl bg-[#173B32] text-[#EFE5D2] border border-[#173B32] shadow-md">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#B49252]">EXPEDITION OVERVIEW</div>
+                      <div className="text-lg sm:text-xl font-serif font-black uppercase tracking-wide mt-0.5">
+                        {destName}
+                      </div>
+                      <div className="text-xs sm:text-sm font-mono font-semibold text-[#E5D5BA] mt-1">
+                        {numDays} {numDays === 1 ? "DAY" : "DAYS"} · {travellersCount} {travellersCount === 1 ? "TRAVELLER" : "TRAVELLERS"} ({companionType.toUpperCase()}) · {formattedBudget}
+                      </div>
                     </div>
-                  );
-                })()}
-                <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                  <span className="text-[#7B4D36] block font-semibold">Duration</span>
-                  <span className="font-serif font-bold text-base text-[#173B32]">{numDays} Days</span>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                  <span className="text-[#7B4D36] block font-semibold">Expedition Budget</span>
-                  <span className="font-mono font-bold text-base text-[#173B32]">
-                    ₹{(customBudget ? parseFloat(customBudget) : budget).toLocaleString()}
-                  </span>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                  <span className="text-[#7B4D36] block font-semibold">Style</span>
-                  <span className="font-serif font-bold text-base text-[#173B32]">
-                    {travelStyle} • {companionType}
-                  </span>
-                </div>
-              </div>
+
+                    {/* Metadata Chips Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
+                        <span className="text-[10px] text-[#7B4D36] block font-bold uppercase">Dates</span>
+                        <span className="font-mono font-semibold text-xs text-[#173B32]">{startDate} → {endDate}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
+                        <span className="text-[10px] text-[#7B4D36] block font-bold uppercase">Style</span>
+                        <span className="font-serif font-bold text-xs text-[#173B32]">{travelStyle}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
+                        <span className="text-[10px] text-[#7B4D36] block font-bold uppercase">Rhythm</span>
+                        <span className="font-serif font-bold text-xs text-[#173B32]">{wakeUpPref} · {activityIntensity}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
+                        <span className="text-[10px] text-[#7B4D36] block font-bold uppercase">Interests</span>
+                        <span className="font-serif font-bold text-xs text-[#173B32] line-clamp-1">{selectedInterests.slice(0, 3).join(", ")}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
