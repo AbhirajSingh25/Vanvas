@@ -269,12 +269,20 @@ class TestDatabaseSeedingAndIsolation:
         try:
             jaipur = db.query(Destination).filter(Destination.slug == "jaipur").first()
             assert jaipur is not None
-            jaipur_rentals = db.query(RentalOption).filter(RentalOption.destination_id == jaipur.id).all()
+            jaipur_rentals = db.query(RentalOption).filter(
+                (RentalOption.destination_id == jaipur.id) |
+                (RentalOption.destination_id == jaipur.slug) |
+                (RentalOption.destination_id == f"dest-{jaipur.slug}")
+            ).all()
             assert len(jaipur_rentals) >= 1, "Jaipur should have seeded rentals"
 
             varanasi = db.query(Destination).filter(Destination.slug == "varanasi").first()
             assert varanasi is not None
-            varanasi_rentals = db.query(RentalOption).filter(RentalOption.destination_id == varanasi.id).all()
+            varanasi_rentals = db.query(RentalOption).filter(
+                (RentalOption.destination_id == varanasi.id) |
+                (RentalOption.destination_id == varanasi.slug) |
+                (RentalOption.destination_id == f"dest-{varanasi.slug}")
+            ).all()
             assert len(varanasi_rentals) >= 1, "Varanasi should have seeded rentals"
         finally:
             db.close()

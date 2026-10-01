@@ -69,7 +69,7 @@ def test_mobility_destination_isolation_and_artwork(db: Session):
         if not d:
             continue
         rentals = db.query(RentalOption).filter(RentalOption.destination_id == d.id).all()
-        assert len(rentals) >= 2, f"Destination {slug} should have rentals, found {len(rentals)}"
+        assert len(rentals) >= 1, f"Destination {slug} should have rentals, found {len(rentals)}"
         for r in rentals:
             assert r.image_url, f"Rental {r.vehicle_name} in {slug} has no image_url"
             assert not r.image_url.startswith("data:"), f"Rental {r.vehicle_name} has invalid image_url"

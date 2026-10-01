@@ -143,8 +143,12 @@ class AmadeusStayCommerceAdapter(BaseCommerceProvider):
         if not self.is_configured:
             return []
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop and loop.is_running():
                 # In nested event loop, create a task or run via thread pool
                 import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
@@ -154,7 +158,7 @@ class AmadeusStayCommerceAdapter(BaseCommerceProvider):
                     )
                     return future.result()
             else:
-                return loop.run_until_complete(
+                return asyncio.run(
                     self.search_offers_async(destination, product_type, query, max_price)
                 )
         except Exception as exc:

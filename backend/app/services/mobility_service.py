@@ -52,10 +52,16 @@ class MobilityService:
         target_lat = lat
         target_lng = lng
         dest: Optional[Destination] = None
+        clean_slug = (destination_slug_or_id or "").strip()
+        if clean_slug.lower().startswith("dest-"):
+            clean_slug = clean_slug[5:]
 
         if destination_slug_or_id:
             dest = db.query(Destination).filter(
-                (Destination.id == destination_slug_or_id) | (Destination.slug == destination_slug_or_id)
+                (Destination.id == destination_slug_or_id) |
+                (Destination.slug == destination_slug_or_id) |
+                (Destination.id == f"dest-{clean_slug}") |
+                (Destination.slug == clean_slug)
             ).first()
             if dest:
                 if target_lat is None:
@@ -221,9 +227,13 @@ class MobilityService:
         # -------------------------------------------------------------
         if not listings:
             curated_options = []
-            dest_slug = dest.slug if dest else (destination_slug_or_id or "")
+            dest_slug = dest.slug if dest else (clean_slug or destination_slug_or_id or "")
             if dest:
-                curated_query = db.query(RentalOption).filter(RentalOption.destination_id == dest.id)
+                curated_query = db.query(RentalOption).filter(
+                    (RentalOption.destination_id == dest.id) |
+                    (RentalOption.destination_id == f"dest-{dest.slug}") |
+                    (RentalOption.destination_id == dest.slug)
+                )
                 if vehicle_type and vehicle_type != "All":
                     curated_query = curated_query.filter(RentalOption.vehicle_type.ilike(f"%{vehicle_type}%"))
                 curated_options = curated_query.order_by(RentalOption.price_per_day.asc()).all()
@@ -287,9 +297,10 @@ class MobilityService:
                     "last_verified_at": datetime.now(timezone.utc).isoformat(),
                 })
 
-            if not listings and dest_slug:
+            if not listings and (dest_slug or clean_slug):
                 # Fallback to canonical rental dataset
-                c_rentals = ADDITIONAL_RENTALS_BY_DEST.get(dest_slug.lower(), [])
+                lookup_key = dest_slug if dest_slug.lower() in ADDITIONAL_RENTALS_BY_DEST else clean_slug
+                c_rentals = ADDITIONAL_RENTALS_BY_DEST.get(lookup_key.lower(), [])
                 for r in c_rentals:
                     v_type = r.get("vehicle_type", "Scooter")
                     if vehicle_type and vehicle_type != "All":

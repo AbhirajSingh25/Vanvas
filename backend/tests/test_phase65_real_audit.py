@@ -158,15 +158,19 @@ async def test_missing_artwork_does_not_block():
 
 # 13. Vehicle artwork is used everywhere
 def test_vehicle_artwork_files_exist():
-    base = r"c:\Users\user\Desktop\Vanvas\frontend\public\images\vehicles"
-    assert os.path.exists(os.path.join(base, "adventure_motorcycle.jpg")) or os.path.exists(os.path.join(base, "adventure_motorcycle.svg"))
-    assert os.path.exists(os.path.join(base, "classic_bullet.jpg")) or os.path.exists(os.path.join(base, "classic_bullet.svg"))
-    assert os.path.exists(os.path.join(base, "automatic_scooter.jpg")) or os.path.exists(os.path.join(base, "automatic_scooter.svg"))
+    from pathlib import Path
+    repo_root = Path(__file__).resolve().parents[2]
+    base = repo_root / "frontend" / "public" / "images" / "vehicles"
+    assert (base / "adventure_motorcycle.jpg").exists() or (base / "adventure_motorcycle.svg").exists()
+    assert (base / "classic_bullet.jpg").exists() or (base / "classic_bullet.svg").exists()
+    assert (base / "automatic_scooter.jpg").exists() or (base / "automatic_scooter.svg").exists()
 
 # 14. Homepage hero is immediately available
 def test_homepage_hero_exists():
-    path = r"c:\Users\user\Desktop\Vanvas\frontend\public\images\destinations\manali\hero.jpg"
-    assert os.path.exists(path)
+    from pathlib import Path
+    repo_root = Path(__file__).resolve().parents[2]
+    path = repo_root / "frontend" / "public" / "images" / "destinations" / "manali" / "hero.jpg"
+    assert path.exists()
 
 # 15. Image URLs return valid paths
 def test_image_urls_have_valid_assets():

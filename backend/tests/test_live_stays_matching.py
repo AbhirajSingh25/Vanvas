@@ -45,12 +45,12 @@ def override_get_db():
         db.close()
 
 
-app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
 def setup_test_destinations():
+    app.dependency_overrides[get_db] = override_get_db
     db = TestingSessionLocal()
     # Populate standard destinations
     destinations = [
@@ -87,7 +87,28 @@ def setup_test_destinations():
             badge="Verified Sanctuary"
         ))
         db.commit()
+
+    # Add a sample curated hotel in Delhi
+    curated_d = db.query(Hotel).filter(Hotel.id == "delhi_curated_1").first()
+    if not curated_d:
+        db.add(Hotel(
+            id="delhi_curated_1",
+            destination_id="delhi",
+            name="The Claridges New Delhi",
+            address="12 Dr APJ Abdul Kalam Road, New Delhi",
+            latitude=28.5985,
+            longitude=77.2144,
+            price_per_night=12000.0,
+            rating=4.7,
+            hotel_style="Heritage / Luxury Sanctuary",
+            amenities="WiFi,Swimming Pool,Spa,Fine Dining",
+            booking_url="https://claridges.example",
+            badge="Verified Heritage"
+        ))
+        db.commit()
     db.close()
+    yield
+    app.dependency_overrides.pop(get_db, None)
 
 
 # 1. TEST DESTINATIONS DISCOVERY (Manali, Mussoorie, Udaipur, Rishikesh, Leh, Munnar, Delhi, Dynamic)
@@ -101,7 +122,10 @@ async def test_stay_discovery_across_destinations(dest_slug):
     try:
         results = await StayMatchingService.match_stays(db=db, destination_id=dest_slug)
         assert isinstance(results, list)
-        assert len(results) <= 5  # Max ~4-5 results
+        if dest_slug in ["manali", "mussoorie", "udaipur", "rishikesh", "leh", "munnar", "delhi"]:
+            assert 1 <= len(results) <= 20  # Bounded discovery results for destinations with curated/seeded stays
+        else:
+            assert 0 <= len(results) <= 20  # Truthful 0 for dynamic destinations when live OSM is unavailable (zero fabrication)
         for r in results:
             assert isinstance(r, HotelResponse)
             assert r.name

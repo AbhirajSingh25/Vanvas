@@ -368,12 +368,18 @@ def test_invalid_checkout_url_rejected():
 
 def test_api_offers_endpoint():
     """GET /api/v1/offers returns discovery offers and handles provider cleanly."""
-    res = client.get("/api/v1/offers?destination=manali&product_type=stay")
-    assert res.status_code == 200
-    data = res.json()
-    assert isinstance(data, list)
-    assert len(data) > 0
-    assert "booking_capability" in data[0]
+    with patch.object(AmadeusStayCommerceAdapter, "is_configured", True):
+        mock_token_resp = MagicMock(status_code=200, json=lambda: MOCK_AMADEUS_TOKEN_RESPONSE)
+        mock_hotels_resp = MagicMock(status_code=200, json=lambda: MOCK_AMADEUS_HOTELS_LIST_RESPONSE)
+        mock_offers_resp = MagicMock(status_code=200, json=lambda: MOCK_AMADEUS_OFFERS_RESPONSE)
+        with patch("httpx.AsyncClient.post", return_value=mock_token_resp):
+            with patch("httpx.AsyncClient.get", side_effect=[mock_hotels_resp, mock_offers_resp]):
+                res = client.get("/api/v1/offers?destination=manali&product_type=stay")
+                assert res.status_code == 200
+                data = res.json()
+                assert isinstance(data, list)
+                assert len(data) > 0
+                assert "booking_capability" in data[0]
 
 
 def test_api_check_amadeus_availability_unconfigured():
@@ -392,11 +398,17 @@ def test_api_check_amadeus_availability_unconfigured():
 @pytest.mark.asyncio
 async def test_copilot_tool_with_stay_offers(db, test_user):
     """Copilot tool search_commerce_offers returns structured offers with explicit capabilities."""
-    dispatcher = AIToolDispatcher(db=db, user=test_user)
-    result = await dispatcher.dispatch("search_commerce_offers", {"destination": "manali", "product_type": "stay"})
+    with patch.object(AmadeusStayCommerceAdapter, "is_configured", True):
+        mock_token_resp = MagicMock(status_code=200, json=lambda: MOCK_AMADEUS_TOKEN_RESPONSE)
+        mock_hotels_resp = MagicMock(status_code=200, json=lambda: MOCK_AMADEUS_HOTELS_LIST_RESPONSE)
+        mock_offers_resp = MagicMock(status_code=200, json=lambda: MOCK_AMADEUS_OFFERS_RESPONSE)
+        with patch("httpx.AsyncClient.post", return_value=mock_token_resp):
+            with patch("httpx.AsyncClient.get", side_effect=[mock_hotels_resp, mock_offers_resp]):
+                dispatcher = AIToolDispatcher(db=db, user=test_user)
+                result = await dispatcher.dispatch("search_commerce_offers", {"destination": "manali", "product_type": "stay"})
 
-    assert "offers" in result
-    assert "total_offers" in result
-    assert result["total_offers"] > 0
-    for off in result["offers"]:
-        assert off["booking_capability"] in ["DISCOVERY_ONLY", "EXTERNAL_CHECKOUT", "IN_APP_BOOKING", "UNAVAILABLE"]
+                assert "offers" in result
+                assert "total_offers" in result
+                assert result["total_offers"] > 0
+                for off in result["offers"]:
+                    assert off["booking_capability"] in ["DISCOVERY_ONLY", "EXTERNAL_CHECKOUT", "IN_APP_BOOKING", "UNAVAILABLE"]
