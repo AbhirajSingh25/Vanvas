@@ -155,9 +155,12 @@ function RoadTripCockpit() {
       .finally(() => setLoading(false));
   };
 
+  const [errorState, setErrorState] = useState<string | null>(null);
+
   // Execute Road Trip Plan
   const handleBuildRoadTrip = async () => {
     setLoading(true);
+    setErrorState(null);
     try {
       const resp = await api.planRoadTrip({
         origin: origin.trim(),
@@ -171,7 +174,8 @@ function RoadTripCockpit() {
       setPlan(resp);
       setSelectedDayTab(1);
     } catch (err: any) {
-      alert(err.message || "Failed to calculate road route. Please verify your locations.");
+      const errMsg = err?.message || "Route temporarily unavailable.";
+      setErrorState(errMsg);
     } finally {
       setLoading(false);
     }
@@ -240,10 +244,10 @@ function RoadTripCockpit() {
                   className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
                     plan.is_live_route
                       ? "bg-emerald-800 text-emerald-100"
-                      : "bg-[#7B4D36] text-[#EFE5D2]"
+                      : "bg-amber-900 text-amber-100"
                   }`}
                 >
-                  {plan.is_live_route ? "LIVE ROUTE (OSRM)" : "ESTIMATED ROUTE"}
+                  {plan.is_live_route ? "LIVE ROUTE" : "ROUTE UNAVAILABLE"}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-0.5">
@@ -954,6 +958,25 @@ function RoadTripCockpit() {
                     <strong>Priorities:</strong> {selectedPriorities.join(" • ")}
                   </div>
                 </div>
+
+                {errorState && (
+                  <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 space-y-2 animate-fadeIn">
+                    <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-amber-800">
+                      <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                      <span>ROUTE TEMPORARILY UNAVAILABLE</span>
+                    </div>
+                    <p className="text-xs font-mono text-amber-800">{errorState}</p>
+                    <button
+                      type="button"
+                      onClick={handleBuildRoadTrip}
+                      disabled={loading}
+                      className="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-amber-50 rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center gap-1.5 shadow-sm"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+                      <span>Retry</span>
+                    </button>
+                  </div>
+                )}
 
                 <button
                   type="button"

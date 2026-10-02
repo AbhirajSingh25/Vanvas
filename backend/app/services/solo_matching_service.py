@@ -87,7 +87,7 @@ class SoloMatchingService:
     def find_solo_matches(
         cls,
         db: Session,
-        current_user: User,
+        current_user: Optional[User] = None,
         destination_id: Optional[str] = None,
         destination_slug: Optional[str] = None,
         destination_name: Optional[str] = None,
@@ -103,9 +103,18 @@ class SoloMatchingService:
         Find real compatible solo travelers matching hard filters and ranked by compatibility factors.
         Zero fake data.
         """
-        my_profile = cls.get_or_create_solo_profile(db, current_user)
-        blocked_ids = cls.get_blocked_user_ids(db, current_user.id)
-        blocked_ids.add(current_user.id)
+        if current_user:
+            my_profile = cls.get_or_create_solo_profile(db, current_user)
+            blocked_ids = cls.get_blocked_user_ids(db, current_user.id)
+            blocked_ids.add(current_user.id)
+            my_interests = set(tag.strip().lower() for tag in my_profile.interests.split(",") if tag.strip())
+            my_travel_style = my_profile.travel_style.lower()
+            my_trek_pace = my_profile.trek_pace.lower()
+        else:
+            blocked_ids = set()
+            my_interests = set()
+            my_travel_style = "balanced"
+            my_trek_pace = "moderate"
 
         # Resolve destination if slug is given
         dest_obj = None
@@ -143,29 +152,27 @@ class SoloMatchingService:
             target_start = today
             target_end = today + timedelta(days=7)
 
-        # Fetch existing match requests for current user
-        existing_matches = db.query(SoloMatch).filter(
-            or_(
-                SoloMatch.sender_user_id == current_user.id,
-                SoloMatch.receiver_user_id == current_user.id
-            )
-        ).all()
-
+        # Fetch existing match requests for current user if authenticated
         match_status_map: Dict[str, Tuple[str, str]] = {}
-        for m in existing_matches:
-            other_id = m.receiver_user_id if m.sender_user_id == current_user.id else m.sender_user_id
-            if m.status == "ACCEPTED":
-                match_status_map[other_id] = ("ACCEPTED", m.id)
-            elif m.status == "DECLINED":
-                match_status_map[other_id] = ("DECLINED", m.id)
-            elif m.status == "PENDING":
-                if m.sender_user_id == current_user.id:
-                    match_status_map[other_id] = ("PENDING_OUTGOING", m.id)
-                else:
-                    match_status_map[other_id] = ("PENDING_INCOMING", m.id)
+        if current_user:
+            existing_matches = db.query(SoloMatch).filter(
+                or_(
+                    SoloMatch.sender_user_id == current_user.id,
+                    SoloMatch.receiver_user_id == current_user.id
+                )
+            ).all()
 
-        # Parse user interests
-        my_interests = set(tag.strip().lower() for tag in my_profile.interests.split(",") if tag.strip())
+            for m in existing_matches:
+                other_id = m.receiver_user_id if m.sender_user_id == current_user.id else m.sender_user_id
+                if m.status == "ACCEPTED":
+                    match_status_map[other_id] = ("ACCEPTED", m.id)
+                elif m.status == "DECLINED":
+                    match_status_map[other_id] = ("DECLINED", m.id)
+                elif m.status == "PENDING":
+                    if m.sender_user_id == current_user.id:
+                        match_status_map[other_id] = ("PENDING_OUTGOING", m.id)
+                    else:
+                        match_status_map[other_id] = ("PENDING_INCOMING", m.id)
 
         scored_cards: List[Tuple[float, SoloTravelerCardResponse]] = []
 
@@ -286,9 +293,9 @@ class SoloMatchingService:
             score = 0.0
             score += len(shared_interests) * 15.0
             score += min(best_overlap_days, 10) * 10.0
-            if candidate.travel_style.lower() == my_profile.travel_style.lower():
+            if candidate.travel_style.lower() == my_travel_style:
                 score += 20.0
-            if candidate.trek_pace.lower() == my_profile.trek_pace.lower():
+            if candidate.trek_pace.lower() == my_trek_pace:
                 score += 15.0
             if distance_km is not None:
                 score += max(0.0, 50.0 - distance_km)

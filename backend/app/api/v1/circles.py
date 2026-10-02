@@ -27,7 +27,7 @@ from app.schemas.schemas import (
     AskVanvasCircleRequest, AskVanvasCircleResponse,
     SoloDirectMessageCreate, SoloDirectMessageResponse
 )
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_current_user_optional
 from app.services.solo_matching_service import SoloMatchingService, calculate_haversine_km
 
 logger = logging.getLogger("vanvas.api.circles")
@@ -220,13 +220,16 @@ def discover_solo_travelers(
     lng: Optional[float] = Query(None),
     mode: str = Query("all", description="all, before_trip, here_now, today, this_week, trek"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """
     Core matching engine endpoint.
     Returns real compatible solo travelers based on overlapping dates, destination/trek, and verified preferences.
     """
-    my_profile = SoloMatchingService.get_or_create_solo_profile(db, current_user)
+    is_solo_enabled = False
+    if current_user:
+        my_profile = SoloMatchingService.get_or_create_solo_profile(db, current_user)
+        is_solo_enabled = my_profile.is_enabled
 
     travelers = SoloMatchingService.find_solo_matches(
         db=db,
@@ -257,7 +260,7 @@ def discover_solo_travelers(
         trek_slug=trek_slug,
         total_matches=len(travelers),
         travelers=travelers,
-        user_solo_enabled=my_profile.is_enabled
+        user_solo_enabled=is_solo_enabled
     )
 
 
@@ -778,7 +781,7 @@ def discover_circles(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """Discover active/forming circles for a destination, trek, or travel dates."""
     query = db.query(TravelCircle).filter(TravelCircle.status.in_(["DISCOVERABLE", "FORMING", "ACTIVE"]))
@@ -806,7 +809,8 @@ def discover_circles(
         )
 
     circles = query.order_by(TravelCircle.start_date).all()
-    return [serialize_circle_response(c, current_user.id) for c in circles]
+    user_id = current_user.id if current_user else None
+    return [serialize_circle_response(c, user_id) for c in circles]
 
 
 @router.get("/circles/my", response_model=List[TravelCircleResponse], tags=["Travel Circles"])

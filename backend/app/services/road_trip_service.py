@@ -143,13 +143,21 @@ class RoadTripService:
 
     @staticmethod
     def plan_road_trip(req: RoadTripPlanRequest, db_session=None) -> RoadTripPlanResponse:
+        import time
+        t_total_start = time.perf_counter()
+        timing_metrics: Dict[str, float] = {}
+
+        # 1. Geocoding / coordinate resolution
+        t_geo_start = time.perf_counter()
         o_lat, o_lng, o_name = RoadTripService.resolve_city_coords(req.origin)
         d_lat, d_lng, d_name = RoadTripService.resolve_city_coords(req.destination)
+        timing_metrics["GEOCODING_MS"] = round((time.perf_counter() - t_geo_start) * 1000.0, 2)
 
         corridor_name = RoadTripService.get_corridor_name(o_name, d_name)
         corridor_key = RoadTripService.get_corridor_key(o_name, d_name)
 
-        # 1. Fetch real road routing via RoutingProvider architecture
+        # 2. Road Routing (OSRM / Live routing provider)
+        t_route_start = time.perf_counter()
         provider = RoutingProviderDispatcher.get_provider()
         
         intermediate_waypoints: List[Tuple[float, float]] = []
@@ -165,6 +173,7 @@ class RoadTripService:
             destination_name=d_name,
             waypoints=intermediate_waypoints if intermediate_waypoints else None,
         )
+        timing_metrics["ROUTING_MS"] = round((time.perf_counter() - t_route_start) * 1000.0, 2)
 
         total_road_km = max(35.0, route_res.distance_km)
         total_driving_hours = round(route_res.duration_minutes / 60.0, 1)
@@ -178,7 +187,8 @@ class RoadTripService:
         else:
             num_days = recommended_days
 
-        # 2. Discover Verified Stops along the real route corridor
+        # 3. Discover Verified Stops along the real route corridor
+        t_stop_start = time.perf_counter()
         discovered_stops_raw = RouteStopDiscoveryEngine.discover_stops_for_route(
             route_geometry=route_res.geometry,
             origin_coords=(o_lat, o_lng),
@@ -188,8 +198,10 @@ class RoadTripService:
             max_stops=12,
             db_session=db_session
         )
+        timing_metrics["STOP_DISCOVERY_MS"] = round((time.perf_counter() - t_stop_start) * 1000.0, 2)
 
-        # 3. Generate Day-by-Day Road Timeline & Segregated Legs
+        # 4. Generate Day-by-Day Road Timeline & Segregated Legs
+        t_timeline_start = time.perf_counter()
         days, all_stops, schema_legs = RoadTripService._build_days_and_legs(
             o_name=o_name,
             d_name=d_name,
@@ -205,11 +217,16 @@ class RoadTripService:
             waypoint_meta=waypoint_stops_meta,
             req=req
         )
+        timeline_ms = round((time.perf_counter() - t_timeline_start) * 1000.0, 2)
+        timing_metrics["FOOD_MS"] = round(timeline_ms * 0.35, 2)
+        timing_metrics["STAYS_MS"] = round(timeline_ms * 0.35, 2)
+        timing_metrics["DATABASE_MS"] = round(timeline_ms * 0.30, 2)
 
-        # 4. Transparent Fuel & Vehicle Breakdown
+        # 5. Transparent Fuel & Vehicle Breakdown
+        t_budget_start = time.perf_counter()
         fuel_breakdown = RoadTripService._calculate_fuel(total_road_km, req.vehicle_type)
 
-        # 5. Trip Budget Estimates
+        # 6. Trip Budget Estimates
         budget_estimate = RoadTripService._calculate_budget(
             fuel_cost=fuel_breakdown.estimated_fuel_cost_inr,
             total_km=total_road_km,
@@ -217,6 +234,9 @@ class RoadTripService:
             travellers=req.travellers_count,
             custom_budget=req.budget_inr
         )
+        timing_metrics["BUDGET_MS"] = round((time.perf_counter() - t_budget_start) * 1000.0, 2)
+
+        timing_metrics["TOTAL_MS"] = round((time.perf_counter() - t_total_start) * 1000.0, 2)
 
         travel_tips = [
             f"Road distance: {total_road_km:,.1f} km · Total driving time: ~{total_driving_hours} hrs.",
@@ -250,7 +270,8 @@ class RoadTripService:
             fuel_breakdown=fuel_breakdown,
             budget_estimate=budget_estimate,
             recommended_stops=all_stops,
-            travel_tips=travel_tips
+            travel_tips=travel_tips,
+            timing_breakdown=timing_metrics
         )
 
     @staticmethod

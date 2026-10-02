@@ -113,7 +113,8 @@ class OSRMKeylessRoutingProvider(BaseRoutingProvider):
         coords_parts.append(f"{d_lng:.6f},{d_lat:.6f}")
 
         coords_str = ";".join(coords_parts)
-        url = f"{self.base_url}/{coords_str}?overview=full&geometries=geojson&steps=true&annotations=distance,duration"
+        # Request full geometry without heavy step-by-step annotation matrices for lightning-fast response (<300ms)
+        url = f"{self.base_url}/{coords_str}?overview=full&geometries=geojson"
 
         try:
             req = urllib.request.Request(

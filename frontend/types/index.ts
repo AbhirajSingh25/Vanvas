@@ -628,6 +628,7 @@ export interface RoadTripPlanResponse {
   recommended_stops: RoadTripStop[];
   travel_tips: string[];
   created_trip_id?: string;
+  timing_breakdown?: Record<string, number>;
 }
 
 export interface RoadTripCorridor {

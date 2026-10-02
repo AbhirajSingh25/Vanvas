@@ -1634,6 +1634,7 @@ class RoadTripPlanResponse(BaseModel):
     recommended_stops: List[RoadTripStop] = []
     travel_tips: List[str] = []
     created_trip_id: Optional[str] = None
+    timing_breakdown: Optional[Dict[str, float]] = None
 
 
 
