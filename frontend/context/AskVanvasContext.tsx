@@ -8,9 +8,9 @@ import {
   TravelContext,
   StructuredAssistantResponse,
   normalizeAssistantResponse,
-  AssistantActionItem,
+  ActionContract,
 } from "@/lib/askVanvasNormalizer";
-import { getCurrentGPSPosition } from "@/lib/locationService";
+import { ACTION_REGISTRY, ActionId } from "@/lib/actionRegistry";
 
 export interface MessageItem {
   id: string;
@@ -41,13 +41,15 @@ interface AskVanvasContextType {
   loading: boolean;
   statusMessage: string | null;
   conversationId: string | null;
+  lastResponse: StructuredAssistantResponse | null;
+  selectedEntity: any | null;
+  setSelectedEntity: (entity: any) => void;
   sendMessage: (query?: string, imageUrl?: string) => Promise<void>;
-  executeAction: (actionItem: AssistantActionItem) => Promise<void>;
+  executeAction: (actionItem: ActionContract) => Promise<void>;
   confirmation: ConfirmationDialogState | null;
   clearConfirmation: () => void;
   actionFeedback: { type: "success" | "error" | "info"; message: string } | null;
   clearActionFeedback: () => void;
-  onTripUpdated?: () => void;
   registerTripRefreshCallback: (cb: () => void) => () => void;
 }
 
@@ -64,15 +66,17 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [actionFeedback, setActionFeedback] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
   const [confirmation, setConfirmation] = useState<ConfirmationDialogState | null>(null);
   const [tripRefreshCallbacks, setTripRefreshCallbacks] = useState<Array<() => void>>([]);
+  const [lastResponse, setLastResponse] = useState<StructuredAssistantResponse | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
 
   // Dynamic context detected from route or explicitly set
   const [currentContext, setCurrentContext] = useState<TravelContext>({
     type: "home",
     title: "ASK VANVAS · INDIA",
-    subtitle: "General India travel & spontaneous plans",
+    subtitle: "Universal travel copilot across India",
   });
 
-  // Automatically adjust default context when pathname changes if not in an active trip override
+  // Automatically adjust context when pathname changes
   useEffect(() => {
     if (!pathname) return;
 
@@ -83,7 +87,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return {
           type: "trip",
           title: "ASK VANVAS · YOUR TRIP",
-          subtitle: "Active Itinerary & Workspace",
+          subtitle: "Trip · Today · Active itinerary",
           tripId,
         };
       });
@@ -148,71 +152,56 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [tripRefreshCallbacks]);
 
   const getWelcomeMessage = (ctx: TravelContext): MessageItem => {
-    let headline = "How can I help your journey today?";
-    let bestFor = ["Places", "Food Nearby", "Stays", "Route"];
-    let actions: AssistantActionItem[] = [];
+    const dest = ctx.destinationName || "Manali";
+    let title = `${dest.toUpperCase()} · TODAY`;
+    let summary = `4 good options for your afternoon in ${dest}.`;
+    let actions: ActionContract[] = [
+      { id: "w-1", label: "Build Today", action: "build_day_plan", payload: { destination: ctx.destinationSlug || "manali" }, icon: "compass", variant: "primary" },
+      { id: "w-2", label: "Explore Places", action: "navigate_destination", payload: { slug: ctx.destinationSlug || "manali" }, icon: "compass", variant: "secondary" },
+    ];
 
     if (ctx.type === "trip") {
-      headline = ctx.trip?.title
-        ? `Ready for ${ctx.trip.title}. What do you need right now?`
-        : "Ready to assist your trip itinerary and daily schedule.";
-      bestFor = ["Today's Plan", "Cafés", "Replan", "Split"];
+      title = "YOUR TRIP · TODAY";
+      summary = ctx.trip?.title ? `Ready for ${ctx.trip.title}. What do you need right now?` : "Itinerary active. What do you need next?";
       actions = [
-        { label: "What's next today?", action: "query", payload: "What should I do right now?" },
-        { label: "It's raining", action: "query", payload: "It's raining. What changes?" },
-        { label: "Food nearby", action: "query", payload: "Where should we eat?" },
-        { label: "I'm late", action: "query", payload: "I'm 2 hours late. Replan today" },
+        { id: "wt-1", label: "What's next?", action: "query", payload: "What is next on our itinerary right now?", icon: "compass", variant: "primary" },
+        { id: "wt-2", label: "Replan today", action: "replan_today", payload: { trip_id: ctx.tripId, action_type: "late" }, icon: "refresh", variant: "secondary" },
       ];
     } else if (ctx.type === "road_trip") {
-      headline = ctx.roadTripData?.origin && ctx.roadTripData?.destination
-        ? `Road trip from ${ctx.roadTripData.origin} to ${ctx.roadTripData.destination}.`
-        : "Road trip routing ready. Looking for scenic stops, dhabas, or fuel?";
-      bestFor = ["Next Stop", "Dhabas", "Detours", "Stays"];
+      title = "ROAD TRIP ROUTE";
+      summary = "Where should we stop next along your driving route?";
       actions = [
-        { label: "Where should we stop?", action: "query", payload: "Where should we stop on this route?" },
-        { label: "Best dhaba", action: "query", payload: "Best dhaba for lunch on this road trip?" },
-        { label: "Find stay near stop", action: "query", payload: "Find a stay near our next stop" },
+        { id: "wr-1", label: "Where to stop?", action: "view_road_trip_stops", icon: "map", variant: "primary" },
+        { id: "wr-2", label: "Find Dhaba", action: "query", payload: "Best dhaba for lunch on this road trip?", icon: "food", variant: "secondary" },
       ];
     } else if (ctx.type === "budget") {
-      headline = "Trip ledger and balances active. Check spending, shares, or settlements.";
-      bestFor = ["Total Spend", "Who Owes Me", "Settle Up"];
+      title = "BUDGET & SPLIT";
+      summary = "Check balances, who owes whom, or record a shared expense.";
       actions = [
-        { label: "How much spent?", action: "query", payload: "How much have we spent?" },
-        { label: "Who owes me?", action: "query", payload: "Who owes me?" },
-        { label: "Open Wallet", action: "open_wallet", payload: {} },
-      ];
-    } else if (ctx.type === "destination") {
-      const destName = ctx.destinationName || "this destination";
-      headline = `Explore verified travel options in ${destName}.`;
-      bestFor = ["Top Highlights", "Cafés", "Stay Options", "1-Day Plan"];
-      actions = [
-        { label: `What to do in ${destName}`, action: "query", payload: `What can I do in ${destName}?` },
-        { label: "Where to eat?", action: "query", payload: `Where should we eat in ${destName}?` },
-        { label: "Find a cheap stay", action: "query", payload: `Find a budget stay in ${destName}` },
-      ];
-    } else if (ctx.type === "nearby") {
-      headline = "Nearby points of interest, pharmacies, ATMs, and dhabas around your coordinates.";
-      bestFor = ["Food", "Fuel", "Pharmacy", "Explore"];
-      actions = [
-        { label: "Good food nearby", action: "query", payload: "Where should we eat near me?" },
-        { label: "24x7 Pharmacy", action: "query", payload: "Where is the nearest pharmacy?" },
-        { label: "Nearby attractions", action: "query", payload: "What's near me?" },
+        { id: "wb-1", label: "Open Wallet", action: "open_wallet", icon: "wallet", variant: "primary" },
+        { id: "wb-2", label: "Who owes me?", action: "query", payload: "Who owes me money on this trip?", icon: "wallet", variant: "secondary" },
       ];
     }
+
+    const structured: StructuredAssistantResponse = {
+      type: "QUICK_TAKE",
+      title,
+      summary,
+      items: [
+        { id: "wi-1", name: "Old Quarter Walk", category: "Walk", distance: "0.8 km", reason: "Cafes & cedar pine trail" },
+        { id: "wi-2", name: "Ancient Temple Sanctuary", category: "Culture", distance: "1.2 km", reason: "Best visited before noon" },
+        { id: "wi-3", name: "Sunset Viewpoint", category: "Nature", distance: "2.4 km", reason: "Panoramic mountain sunset" },
+      ],
+      actions,
+      provenance: "CURATED",
+      watchOut: "Afternoon traffic slows near central valley bridges.",
+    };
 
     return {
       id: "welcome-msg",
       role: "assistant",
-      text: headline,
-      structured: {
-        quickTake: {
-          headline,
-        },
-        bestFor,
-        topPicks: [],
-        primaryActions: actions,
-        provenance: "DATABASE VERIFIED",
-      },
+      text: summary,
+      structured,
       timestamp: new Date().toISOString(),
     };
   };
@@ -222,7 +211,6 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const setTravelContext = useCallback((ctx: Partial<TravelContext>) => {
     setCurrentContext((prev) => {
       const next = { ...prev, ...ctx };
-      // If destination or trip changed fundamentally, reset conversation
       if (ctx.destinationSlug && ctx.destinationSlug !== prev.destinationSlug) {
         setConversationId(null);
         setMessages([getWelcomeMessage(next as TravelContext)]);
@@ -267,22 +255,42 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!textToSend && !imageUrl) return;
     if (loading) return;
 
-    // Loading indicators based on query
+    // Conversational follow-up resolution (e.g. "Which one is closest?", "Add it")
     const qLower = textToSend.toLowerCase();
+    let effectiveQuery = textToSend;
+
+    if (qLower === "add it" || qLower === "add this" || qLower === "add that") {
+      const targetItem = selectedEntity || lastResponse?.items?.[0];
+      if (targetItem && currentContext.tripId) {
+        await executeAction({
+          id: `add-it-${Date.now()}`,
+          label: `Add ${targetItem.name}`,
+          action: "add_place_to_itinerary",
+          payload: { place_id: targetItem.placeId || targetItem.id, title: targetItem.name, day: 1 },
+        });
+        return;
+      }
+    }
+
+    // Set compact loading state
     if (qLower.includes("replan") || qLower.includes("late") || qLower.includes("rain")) {
-      setStatusMessage("Rebuilding today's schedule...");
+      setStatusMessage("Updating your plan...");
     } else if (qLower.includes("route") || qLower.includes("stop") || qLower.includes("dhaba")) {
-      setStatusMessage("Analyzing route & verified waypoints...");
+      setStatusMessage("Finding a route...");
     } else if (qLower.includes("near") || qLower.includes("gps")) {
-      setStatusMessage("Finding nearby verified sanctuaries...");
+      setStatusMessage("Finding places...");
+    } else if (qLower.includes("spent") || qLower.includes("budget") || qLower.includes("owe")) {
+      setStatusMessage("Checking your budget...");
+    } else if (currentContext.type === "trip") {
+      setStatusMessage("Checking your trip...");
     } else {
-      setStatusMessage("Thinking...");
+      setStatusMessage("Finding places...");
     }
 
     const userMessage: MessageItem = {
       id: `user-${Date.now()}`,
       role: "user",
-      text: textToSend || "Analyze this attached image.",
+      text: effectiveQuery || "Analyze this attached image.",
       imageUrl,
       timestamp: new Date().toISOString(),
     };
@@ -292,18 +300,15 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     try {
       const payload: any = {
-        message: textToSend || "Analyze this attached travel image.",
+        message: effectiveQuery || "Analyze this attached travel image.",
         conversation_id: conversationId || undefined,
         trip_id: currentContext.tripId || currentContext.trip?.id || undefined,
         destination_slug: currentContext.destinationSlug || undefined,
         image_url: imageUrl,
       };
 
-      // Add coordinates if in nearby context
       if (currentContext.coordinates) {
-        payload.context = {
-          coordinates: currentContext.coordinates,
-        };
+        payload.context = { coordinates: currentContext.coordinates };
       }
 
       const res: CopilotChatResponse = await api.copilotChat(payload);
@@ -312,7 +317,11 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setConversationId(res.conversation_id);
       }
 
-      const structured = normalizeAssistantResponse(res.message, res, currentContext, textToSend);
+      const structured = normalizeAssistantResponse(res.message, res, currentContext, effectiveQuery);
+      setLastResponse(structured);
+      if (structured.items && structured.items.length > 0) {
+        setSelectedEntity(structured.items[0]);
+      }
 
       const assistantMessage: MessageItem = {
         id: `assistant-${Date.now()}`,
@@ -324,21 +333,18 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // If action was replan or itinerary addition on active trip, trigger refresh
       if (res.actions?.some((a) => a.action_type === "replan_applied" || a.action_type === "add_place_to_itinerary")) {
         triggerTripRefresh();
       }
     } catch (err: any) {
       console.warn("Copilot API fallback engaged:", err);
-
-      // Deterministic fallback response without essays
-      const fallbackText = getDeterministicFallback(textToSend, currentContext);
-      const structured = normalizeAssistantResponse(fallbackText, undefined, currentContext, textToSend);
+      const structured = normalizeAssistantResponse(effectiveQuery, undefined, currentContext, effectiveQuery);
+      setLastResponse(structured);
 
       const assistantMessage: MessageItem = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        text: fallbackText,
+        text: structured.summary,
         structured,
         timestamp: new Date().toISOString(),
       };
@@ -350,7 +356,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const executeAction = async (actionItem: AssistantActionItem) => {
+  const executeAction = async (actionItem: ActionContract) => {
     const act = actionItem.action;
     const payload = actionItem.payload || {};
 
@@ -384,15 +390,27 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    if (act === "view_road_trip_stops") {
+    if (act === "view_road_trip_stops" || act === "open_route") {
       router.push("/road-trip");
       closeAskVanvas();
       return;
     }
 
-    if (act === "build_plan" || act === "navigate_plan") {
+    if (act === "build_day_plan" || act === "build_plan") {
       const destSlug = payload.destination || currentContext.destinationSlug || "manali";
       router.push(`/destinations/${destSlug}`);
+      closeAskVanvas();
+      return;
+    }
+
+    if (act === "open_nearby") {
+      router.push("/nearby");
+      closeAskVanvas();
+      return;
+    }
+
+    if (act === "open_solo") {
+      router.push("/solo");
       closeAskVanvas();
       return;
     }
@@ -426,7 +444,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     // 5. Add Place to Itinerary Action
-    if (act === "add_place_to_itinerary") {
+    if (act === "add_place_to_itinerary" || act === "add_to_itinerary") {
       const tripId = payload.trip_id || currentContext.tripId;
       const placeId = payload.place_id || payload.id;
       const day = payload.day || 1;
@@ -447,7 +465,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     // 6. Remove Place from Itinerary Action (Requires Confirmation)
-    if (act === "remove_place_from_itinerary" || act === "remove_stop") {
+    if (act === "remove_place_from_itinerary" || act === "remove_from_itinerary" || act === "remove_stop") {
       const stopTitle = payload.title || payload.place_name || payload.removed_title || "this stop";
       const tripId = payload.trip_id || currentContext.tripId;
       const itemId = payload.item_id || payload.itinerary_item_id;
@@ -484,7 +502,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     // 7. Dynamic Replan Action
-    if (act === "replan_today" || act === "replan_applied" || act === "replan") {
+    if (act === "replan_today" || act === "replan_trip" || act === "replan_applied") {
       const tripId = payload.trip_id || currentContext.tripId;
       const reason = payload.reason || payload.action_type || "late";
       const dayNumber = payload.day_number || 1;
@@ -494,7 +512,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
-      setStatusMessage("Applying replan to your trip...");
+      setStatusMessage("Updating your plan...");
       setLoading(true);
       try {
         await api.replanTrip(tripId, {
@@ -503,21 +521,23 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         });
         setActionFeedback({ type: "success", message: "Your trip itinerary has been updated!" });
         triggerTripRefresh();
-        // Send notification turn in chat
+
         const resMsg: MessageItem = {
           id: `replan-confirm-${Date.now()}`,
           role: "assistant",
-          text: `Quick Take: Schedule dynamically replanned for Day ${dayNumber}.\n\nTop Picks:\n• Upcoming stops compressed and adjusted\n• Stay and booked slots preserved\n• Real-time itinerary refreshed`,
+          text: `Day ${dayNumber} successfully replanned.`,
           structured: {
-            quickTake: {
-              headline: `Day ${dayNumber} successfully replanned.`,
-            },
-            bestFor: ["Replan Applied", "Timetable Updated"],
-            topPicks: [],
-            primaryActions: [
-              { label: "View Updated Itinerary", action: "navigate_trip", payload: { trip_id: tripId } },
+            type: "REPLAN",
+            title: "SCHEDULE UPDATED",
+            summary: `Day ${dayNumber} timetable compressed and refreshed.`,
+            items: [
+              { id: "r-1", name: "Afternoon stops compressed", category: "Schedule", reason: "Adjusted by 90 minutes" },
+              { id: "r-2", name: "Stay check-in preserved", category: "Stay", reason: "Confirmed booking intact" },
             ],
-            provenance: "LIVE VERIFIED",
+            actions: [
+              { id: "v-trip", label: "View Updated Itinerary", action: "navigate_trip", payload: { trip_id: tripId }, icon: "compass", variant: "primary" },
+            ],
+            provenance: "LIVE",
           },
           timestamp: new Date().toISOString(),
         };
@@ -557,6 +577,9 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         loading,
         statusMessage,
         conversationId,
+        lastResponse,
+        selectedEntity,
+        setSelectedEntity,
         sendMessage,
         executeAction,
         confirmation,
@@ -578,83 +601,3 @@ export const useAskVanvas = (): AskVanvasContextType => {
   }
   return context;
 };
-
-// Deterministic fallback generator without fluff
-function getDeterministicFallback(query: string, context: TravelContext): string {
-  const q = query.toLowerCase();
-  const dest = context.destinationName || "Manali";
-
-  if (q.includes("eat") || q.includes("food") || q.includes("cafe")) {
-    return (
-      `Quick Take: Verified dining options in ${dest}.\n` +
-      `Best For: Cafés · Local Food · Sunset Views\n` +
-      `Top Picks:\n` +
-      `1. Old Town Riverside Café — Woodfired pizzas and mountain coffee (₹350)\n` +
-      `2. Heritage Pahadi Dhaba — Local thali, siddu & fresh trout (₹250)\n` +
-      `3. Pine Ridge Bakery — Cinnamon rolls and filter coffee (₹180)\n` +
-      `Watch Out: Popular spots fill up after 7:30 PM on weekends.`
-    );
-  }
-
-  if (q.includes("stay") || q.includes("hotel")) {
-    return (
-      `Quick Take: Curated accommodations in ${dest}.\n` +
-      `Best For: Riverside · Boutique · Homestays\n` +
-      `Top Picks:\n` +
-      `1. Pine Forest Riverside Retreat — Riverside rooms (₹3,200/night)\n` +
-      `2. Old Heritage Homestay — Mountain views & home-cooked meals (₹1,800/night)\n` +
-      `3. Backpacker Hostel & Coworking — High-speed Wi-Fi (₹750/night)\n` +
-      `Watch Out: Book weekend stays at least 2 days ahead.`
-    );
-  }
-
-  if (q.includes("late") || q.includes("replan")) {
-    return (
-      `Quick Take: Replan options for today.\n` +
-      `Best For: Compressed Schedule · Preserved Stays\n` +
-      `Top Picks:\n` +
-      `1. Shift remaining afternoon stops by 90 minutes\n` +
-      `2. Skip non-essential scenic detour\n` +
-      `3. Preserve booked dinner and stay check-in\n` +
-      `Watch Out: Mountain daylight dims by 6:00 PM.`
-    );
-  }
-
-  if (q.includes("rain")) {
-    return (
-      `Quick Take: Weather-adaptive rain plan.\n` +
-      `Best For: Indoor Cafes · Monasteries · Covered Markets\n` +
-      `Top Picks:\n` +
-      `1. Skip outdoor waterfall trail\n` +
-      `2. Swap to Heritage Museum & Golden Monastery\n` +
-      `3. Warm herbal tea at Cozy Attic Café\n` +
-      `Watch Out: Avoid slick stone steps during heavy rainfall.`
-    );
-  }
-
-  if (q.includes("spent") || q.includes("budget") || q.includes("how much")) {
-    const b = context.budgetData;
-    const spent = b?.totalSpent || 18450;
-    const total = b?.totalBudget || 30000;
-    const rem = b?.remaining || Math.max(0, total - spent);
-    return (
-      `Quick Take: Trip spending total ₹${spent.toLocaleString()}.\n` +
-      `Best For: Budget Tracking · Expenses\n` +
-      `Top Picks:\n` +
-      `1. Total Budget: ₹${total.toLocaleString()}\n` +
-      `2. Total Spent: ₹${spent.toLocaleString()}\n` +
-      `3. Remaining: ₹${rem.toLocaleString()}\n` +
-      `Watch Out: Stay within daily ₹3,500 target to meet trip budget.`
-    );
-  }
-
-  return (
-    `Quick Take: Verified travel options for ${dest}.\n` +
-    `Best For: Nature · Culture · Easy Outing\n` +
-    `Top Picks:\n` +
-    `1. Old Village Trail — 45 min walk through cedar pines\n` +
-    `2. Ancient Stone Temple — 8 min away, ₹0 entry\n` +
-    `3. Sunset Viewpoint — Best views before 5:30 PM\n` +
-    `Watch Out: Evening traffic slows on main entry road.`
-  );
-}

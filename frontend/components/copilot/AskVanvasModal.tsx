@@ -31,23 +31,12 @@ import { api } from "@/lib/api";
 import { getCurrentGPSPosition } from "@/lib/locationService";
 
 interface AskVanvasModalProps {
-  // Optional standalone props for backward compatibility
   isOpen?: boolean;
   onClose?: () => void;
   defaultDestination?: string;
   tripId?: string;
   trip?: any;
 }
-
-const QUICK_INPUT_CHIPS = [
-  { label: "What to do", query: "What can I do here today?" },
-  { label: "Food nearby", query: "Where should we eat?" },
-  { label: "Stay", query: "Find verified stays nearby" },
-  { label: "Route", query: "Where should we stop next?" },
-  { label: "Budget", query: "How much have we spent?" },
-  { label: "Replan", query: "I'm 2 hours late. Replan today" },
-  { label: "Weather", query: "Live weather and mountain advisory" },
-];
 
 export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   isOpen: propIsOpen,
@@ -58,7 +47,6 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
 }) => {
   const context = useAskVanvas();
 
-  // Support both context control and legacy direct props
   const isModalOpen = propIsOpen !== undefined ? propIsOpen : context.isOpen;
   const handleClose = propOnClose || context.closeAskVanvas;
 
@@ -182,6 +170,39 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
     }
   };
 
+  // Dynamic Suggested Prompts based on Context
+  const getSuggestedPrompts = () => {
+    if (context.currentContext.type === "trip") {
+      return [
+        { label: "What's next?", query: "What is next on our itinerary right now?" },
+        { label: "Good food nearby?", query: "Where should we eat nearby?" },
+        { label: "Replan today", query: "I'm 2 hours late. Replan today" },
+        { label: "Who owes me?", query: "Who owes me money on this trip?" },
+      ];
+    }
+    if (context.currentContext.type === "road_trip") {
+      return [
+        { label: "Where should we stop?", query: "Where should we stop on this route?" },
+        { label: "Best dhaba", query: "Best dhaba for lunch on this road trip?" },
+        { label: "Find stay near stop", query: "Find verified stays near our next stop" },
+      ];
+    }
+    if (context.currentContext.type === "budget") {
+      return [
+        { label: "How much spent?", query: "How much have we spent so far?" },
+        { label: "Who owes me?", query: "Who owes me money on this trip?" },
+        { label: "Split an expense", query: "How do we split our latest expense?" },
+      ];
+    }
+    const dest = context.currentContext.destinationName || "Manali";
+    return [
+      { label: "What should I do?", query: `What should I do in ${dest} today?` },
+      { label: "Good food nearby?", query: `Where should we eat in ${dest}?` },
+      { label: "Find verified stays", query: `Find verified stays in ${dest}` },
+      { label: "What's next?", query: `What are the best afternoon highlights in ${dest}?` },
+    ];
+  };
+
   // Resolve Header Identity
   const headerTitle = context.currentContext.destinationName
     ? `ASK VANVAS · ${context.currentContext.destinationName.toUpperCase()}`
@@ -198,10 +219,12 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const headerSubtitle =
     context.currentContext.subtitle ||
     (context.currentContext.type === "trip"
-      ? "Trip · 4 days · 2 travellers"
+      ? "Trip · Today · 2 travellers"
       : context.currentContext.type === "road_trip"
       ? "Route · Scenic waypoints & stops"
       : "Spontaneous expedition companion");
+
+  const promptChips = getSuggestedPrompts();
 
   return (
     <div
@@ -327,12 +350,12 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
             </div>
           ))}
 
-          {/* Loading / Thinking State */}
+          {/* Compact Loading Indicator */}
           {context.loading && (
             <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#FAF7F0] dark:bg-[#1E2620] border border-[#E5D5BA] dark:border-[#384A3E] text-[#7B4D36] dark:text-[#D8CBB2] w-fit shadow-xs">
               <Loader2 className="w-4 h-4 animate-spin text-[#B65E3C]" />
               <span className="text-xs font-mono font-medium">
-                {context.statusMessage || "Thinking..."}
+                {context.statusMessage || "Finding places..."}
               </span>
             </div>
           )}
@@ -340,11 +363,11 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* 3. INPUT AREA & QUICK ACTION CHIPS */}
+        {/* 3. INPUT AREA & SUGGESTED PROMPT CHIPS */}
         <div className="p-3 sm:p-4 border-t border-[#E5D5BA] dark:border-[#384A3E] bg-[#FAF7F0] dark:bg-[#172019] shrink-0 space-y-2">
-          {/* Quick Chips Row above input */}
+          {/* Suggested Prompts Chips Row */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-            {QUICK_INPUT_CHIPS.map((chip, idx) => (
+            {promptChips.map((chip, idx) => (
               <button
                 key={idx}
                 type="button"
@@ -400,7 +423,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about this place, trip or route..."
+              placeholder="Ask about this trip, place or route..."
               disabled={context.loading}
               className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#FAF7F0] dark:bg-[#1E2620] border border-[#E5D5BA] dark:border-[#384A3E] focus:outline-none focus:ring-2 focus:ring-[#B49252] text-xs sm:text-sm font-sans placeholder:text-[#7B4D36]/60 dark:placeholder:text-[#D8CBB2]/50 text-[#173B32] dark:text-[#FAF7F0]"
             />
