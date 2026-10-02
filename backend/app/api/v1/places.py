@@ -202,6 +202,8 @@ async def get_nearby_places(
                         break
             if not is_dup:
                 dist = lp.get("distance_km") or haversine_distance_km(lat, lng, lp["latitude"], lp["longitude"])
+                if dist > radius_km:
+                    continue
                 lp_match_score = calculate_travel_relevance_score(
                     name=lp["name"],
                     category=lp.get("category", "Attractions"),
