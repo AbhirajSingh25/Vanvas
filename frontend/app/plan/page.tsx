@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Sparkles, MapPin, Calendar, Wallet, Users, Compass, Sun, Flame, Check,
-  ArrowRight, ArrowLeft, Mountain, Coffee, Trees, Heart, Shield, Search, Loader2,
-  Minus, Plus
+  Sparkles, MapPin, Calendar, Wallet, Users, Compass, Check,
+  ArrowRight, ArrowLeft, Search, Loader2, RefreshCw
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
@@ -13,34 +12,29 @@ import { useAuth } from "@/context/AuthContext";
 import { useDensity } from "@/context/DensityContext";
 import confetti from "canvas-confetti";
 import { TravelStamp } from "@/components/ui/TravelStamp";
-import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 import {
   CANONICAL_DESTINATIONS,
   CANONICAL_HINDI_NAMES,
-  getCanonicalHindiName,
 } from "@/lib/canonicalDestinations";
 
-function PlanTripContent() {
+function PlanWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const hasExplicitDest = Boolean(searchParams?.get("dest") || searchParams?.get("destination"));
   const rawInitial = searchParams?.get("dest") || searchParams?.get("destination") || "manali";
   const initialDest = rawInitial.replace(/^(dyn|dest)-/, "").trim() || "manali";
-  const urlCategory = searchParams?.get("category") || "";
-  const urlExp = searchParams?.get("exp") || "";
-  const urlStyle = searchParams?.get("style") || "";
+  const hasExplicitDest = Boolean(searchParams?.get("dest") || searchParams?.get("destination"));
   const urlBudget = searchParams?.get("budget") || "";
   const urlDays = searchParams?.get("days") || "";
   const urlCompanion = searchParams?.get("companion") || "";
   const { user } = useAuth();
   const { isCompact } = useDensity();
 
-  // Step Tracker: If user explicitly came from a destination page with a selected destination, start at Step 2 (Dates)
-  const [step, setStep] = useState(() => (hasExplicitDest ? 2 : 1));
-  const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [loadingDestinations, setLoadingDestinations] = useState(true);
+  // Progressive Step State: 1 to 6, plus Step 7 (Review)
+  const [currentStep, setCurrentStep] = useState<number>(() => (hasExplicitDest ? 2 : 1));
 
-  // Form State & Universal Destination Resolution
+  // Destination Resolution State
+  const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
+  const [loadingDestinations, setLoadingDestinations] = useState(true);
   const [selectedDestId, setSelectedDestId] = useState<string>(initialDest);
   const [selectedDestObject, setSelectedDestObject] = useState<Destination | any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,28 +43,26 @@ function PlanTripContent() {
   const [isResolving, setIsResolving] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
+  // Dates & Duration State
+  const [dateSelectionType, setDateSelectionType] = useState<"this_weekend" | "next_week" | "next_month" | "custom">("this_weekend");
   const [startDate, setStartDate] = useState<string>(() => {
     const today = new Date();
-    return today.toISOString().split("T")[0];
+    // Default to upcoming Saturday if weekend, or tomorrow
+    const day = today.getDay();
+    const daysUntilSat = (6 - day + 7) % 7 || 7;
+    const sat = new Date();
+    sat.setDate(today.getDate() + daysUntilSat);
+    return sat.toISOString().split("T")[0];
   });
   const [endDate, setEndDate] = useState<string>(() => {
     const d = new Date();
-    const addDays = urlDays ? Math.max(1, parseInt(urlDays, 10)) - 1 : 2;
-    d.setDate(d.getDate() + (isNaN(addDays) ? 2 : addDays));
+    const addDays = urlDays ? Math.max(1, parseInt(urlDays, 10)) - 1 : 3;
+    d.setDate(d.getDate() + (isNaN(addDays) ? 3 : addDays));
     return d.toISOString().split("T")[0];
   });
-  const [budget, setBudget] = useState<number>(() => {
-    if (urlBudget && !isNaN(parseFloat(urlBudget))) {
-      return parseFloat(urlBudget);
-    }
-    return 10000;
-  });
-  const [customBudget, setCustomBudget] = useState<string>(() => {
-    if (urlBudget && ![5000, 8000, 10000, 15000, 25000, 40000].includes(parseFloat(urlBudget))) {
-      return urlBudget;
-    }
-    return "";
-  });
+  const [daysCount, setDaysCount] = useState<number>(() => (urlDays ? parseInt(urlDays, 10) || 4 : 4));
+
+  // Companions State
   const [companionType, setCompanionType] = useState<string>(() => {
     if (urlCompanion) {
       const match = ["Solo", "Couple", "Friends", "Family"].find(
@@ -78,164 +70,65 @@ function PlanTripContent() {
       );
       if (match) return match;
     }
-    return "Solo";
+    return "Couple";
   });
   const [travellersCount, setTravellersCount] = useState<number>(() => {
-    if (urlCompanion?.toLowerCase() === "couple") return 2;
+    if (urlCompanion?.toLowerCase() === "solo" || urlCompanion?.toLowerCase() === "just me") return 1;
     if (urlCompanion?.toLowerCase() === "friends") return 3;
     if (urlCompanion?.toLowerCase() === "family") return 4;
-    return 1;
+    return 2;
   });
 
-  const getInitialInterests = (): string[] => {
-    const defaultInterests = ["Nature", "Cafés", "Adventure", "Local Food", "Hidden places"];
-    const dSlug = initialDest.toLowerCase();
-    if (dSlug.includes("tungnath") || dSlug.includes("spiti") || dSlug.includes("leh") || urlExp.includes("trek") || urlExp.includes("sunrise")) {
-      return ["Nature", "Adventure", "Hidden places", "Photography"];
-    }
-    if (dSlug.includes("varanasi") || dSlug.includes("jaipur") || dSlug.includes("udaipur") || urlCategory.toLowerCase().includes("royal")) {
-      return ["Culture", "Local Food", "Photography", "Hidden places"];
-    }
-    if (dSlug.includes("goa") || dSlug.includes("munnar") || urlCategory.toLowerCase().includes("coastal")) {
-      return ["Nature", "Cafés", "Relaxation", "Local Food"];
-    }
-    return defaultInterests;
-  };
+  // Vibe & Interests State (Multi-select)
+  const [selectedVibes, setSelectedVibes] = useState<string[]>(["Nature", "Food", "Slow"]);
 
-  const [selectedInterests, setSelectedInterests] = useState<string[]>(getInitialInterests);
-  const [travelStyle, setTravelStyle] = useState<string>(() => {
-    if (urlStyle) {
-      const match = ["Budget", "Balanced", "Comfort", "Premium"].find(
-        (s) => s.toLowerCase() === urlStyle.toLowerCase()
-      );
-      if (match) return match;
-    }
-    return "Balanced";
-  });
+  // Travel Style & Budget Tier
+  const [travelStyle, setTravelStyle] = useState<string>("Balanced");
+  const [budgetEstimate, setBudgetEstimate] = useState<number>(25000);
 
-  type PlanningMode = "one_day" | "weekend" | "multi_day" | "trek" | "relaxed" | "adventure";
-  const [planningMode, setPlanningMode] = useState<PlanningMode>(() => {
-    const dSlug = initialDest.toLowerCase();
-    if (dSlug.includes("tungnath") || urlExp.includes("trek")) return "trek";
-    if (urlDays === "1") return "one_day";
-    if (urlDays === "2") return "weekend";
-    return "multi_day";
-  });
-
-  const handleModeSelect = (mode: PlanningMode) => {
-    setPlanningMode(mode);
-    const today = new Date();
-    if (mode === "one_day") {
-      setStartDate(today.toISOString().split("T")[0]);
-      setEndDate(today.toISOString().split("T")[0]);
-      setActivityIntensity("Balanced");
-    } else if (mode === "weekend") {
-      const d1 = new Date();
-      const d2 = new Date();
-      d2.setDate(d1.getDate() + 1);
-      setStartDate(d1.toISOString().split("T")[0]);
-      setEndDate(d2.toISOString().split("T")[0]);
-      setActivityIntensity("Balanced");
-    } else if (mode === "trek") {
-      const d1 = new Date();
-      const d2 = new Date();
-      d2.setDate(d1.getDate() + 2);
-      setStartDate(d1.toISOString().split("T")[0]);
-      setEndDate(d2.toISOString().split("T")[0]);
-      setActivityIntensity("Balanced");
-      setSelectedInterests((prev) => Array.from(new Set([...prev, "Nature", "Adventure"])));
-    } else if (mode === "relaxed") {
-      const d1 = new Date();
-      const d2 = new Date();
-      d2.setDate(d1.getDate() + 3);
-      setStartDate(d1.toISOString().split("T")[0]);
-      setEndDate(d2.toISOString().split("T")[0]);
-      setActivityIntensity("Relaxed");
-    } else if (mode === "adventure") {
-      const d1 = new Date();
-      const d2 = new Date();
-      d2.setDate(d1.getDate() + 3);
-      setStartDate(d1.toISOString().split("T")[0]);
-      setEndDate(d2.toISOString().split("T")[0]);
-      setActivityIntensity("Packed");
-      setSelectedInterests((prev) => Array.from(new Set([...prev, "Adventure", "Nature"])));
-    } else {
-      const d1 = new Date();
-      const d2 = new Date();
-      d2.setDate(d1.getDate() + 2);
-      setStartDate(d1.toISOString().split("T")[0]);
-      setEndDate(d2.toISOString().split("T")[0]);
-      setActivityIntensity("Balanced");
-    }
-  };
-
-  const [wakeUpPref, setWakeUpPref] = useState<string>("Normal");
-  const [activityIntensity, setActivityIntensity] = useState<string>("Balanced");
-
-  // Loading Sequence State
+  // Generation State
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationMsgIndex, setGenerationMsgIndex] = useState(0);
+  const [genMessage, setGenMessage] = useState("Drafting your itinerary...");
 
-  const generationMessages = [
-    "Scouting pine valleys & riverside trails...",
-    "Clustering stops to eliminate zigzag hill driving...",
-    "Balancing your budget across stays, dhabas & fuel...",
-    "Matching opening hours with sunset viewpoints...",
-    "Binding your bespoke VANVAS travel journal...",
-  ];
-
-  const destHindiMap: Record<string, string> = CANONICAL_HINDI_NAMES;
-  const fallbackDestinations: Destination[] = CANONICAL_DESTINATIONS;
-
-  // Resolve initial destination from query params or database
+  // Calculate estimated budget when days, travellers, and style change
   useEffect(() => {
-    const cleanDestParam = initialDest.replace(/^(dyn|dest)-/, "").trim();
+    const perDayPerPerson =
+      travelStyle === "Budget" ? 2200 : travelStyle === "Comfort" ? 6500 : 3800;
+    const est = daysCount * travellersCount * perDayPerPerson;
+    setBudgetEstimate(urlBudget ? parseFloat(urlBudget) : est);
+  }, [daysCount, travellersCount, travelStyle, urlBudget]);
+
+  // Load initial destinations
+  useEffect(() => {
     api.getDestinations(false)
-      .then(async (data) => {
-        const loaded = (data && data.length > 0) ? data : fallbackDestinations;
+      .then((data) => {
+        const loaded = data && data.length > 0 ? data : CANONICAL_DESTINATIONS;
         setDestinations(loaded);
         const match = loaded.find(
-          (d) => d.id === initialDest || d.slug.toLowerCase() === cleanDestParam.toLowerCase() || d.id === `dest-${cleanDestParam.toLowerCase()}`
+          (d) =>
+            d.id === initialDest ||
+            d.slug.toLowerCase() === initialDest.toLowerCase() ||
+            d.id === `dest-${initialDest.toLowerCase()}`
         );
         if (match) {
           setSelectedDestId(match.id);
           setSelectedDestObject(match);
         } else {
-          try {
-            setIsResolving(true);
-            const resolved = await api.resolveDestination(cleanDestParam);
-            if (resolved) {
-              setSelectedDestId(resolved.id || resolved.slug);
-              setSelectedDestObject(resolved);
-            } else if (loaded.length > 0) {
-              setSelectedDestId(loaded[0].id);
-              setSelectedDestObject(loaded[0]);
+          api.resolveDestination(initialDest).then((res) => {
+            if (res) {
+              setSelectedDestId(res.id || res.slug);
+              setSelectedDestObject(res);
             }
-          } catch {
-            if (loaded.length > 0) {
-              setSelectedDestId(loaded[0].id);
-              setSelectedDestObject(loaded[0]);
-            }
-          } finally {
-            setIsResolving(false);
-          }
+          }).catch(() => {});
         }
       })
-      .catch((err) => {
-        console.error("Could not fetch destinations for plan wizard:", err);
-        setDestinations(fallbackDestinations);
-        const match = fallbackDestinations.find(
-          (d) => d.id === initialDest || d.slug.toLowerCase() === cleanDestParam.toLowerCase()
-        );
-        if (match) {
-          setSelectedDestId(match.id);
-          setSelectedDestObject(match);
-        }
+      .catch(() => {
+        setDestinations(CANONICAL_DESTINATIONS);
       })
       .finally(() => setLoadingDestinations(false));
   }, [initialDest]);
 
-  // Debounced search for destination input with request cancellation
+  // Debounced search for destination input
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -246,11 +139,11 @@ function PlanTripContent() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await api.searchDestinations(searchQuery, 8, abortController.signal);
+        const res = await api.searchDestinations(searchQuery, 6, abortController.signal);
         setSearchResults(res || []);
       } catch (err: any) {
         if (err.name !== "AbortError") {
-          console.error("Destination search error in plan page:", err);
+          console.error("Destination search error:", err);
         }
       } finally {
         setIsSearching(false);
@@ -262,20 +155,28 @@ function PlanTripContent() {
     };
   }, [searchQuery]);
 
-  const handleSelectDestination = async (destOrQuery: any) => {
+  // Handle single-select destination selection with AUTO-ADVANCE
+  const handleSelectDestination = async (destItem: any, autoAdvance = true) => {
     setResolveError(null);
     setSearchQuery("");
     setSearchResults([]);
     setIsResolving(true);
     try {
-      const rawQ = typeof destOrQuery === "string" ? destOrQuery : (destOrQuery.canonical_slug || destOrQuery.name || destOrQuery.slug);
+      const rawQ =
+        typeof destItem === "string"
+          ? destItem
+          : destItem.canonical_slug || destItem.name || destItem.slug;
       const q = String(rawQ).replace(/^(dyn|dest)-/, "").trim();
       const res = await api.resolveDestination(q);
       if (res) {
         setSelectedDestId(res.id || res.slug);
         setSelectedDestObject(res);
+        if (autoAdvance) {
+          // Micro-delay for visual acknowledgement
+          setTimeout(() => setCurrentStep(2), 150);
+        }
       } else {
-        setResolveError(`Could not resolve '${q}'. Please try another location.`);
+        setResolveError(`Could not resolve '${q}'. Try another location.`);
       }
     } catch (err: any) {
       setResolveError(err.message || "Failed to resolve destination");
@@ -284,122 +185,199 @@ function PlanTripContent() {
     }
   };
 
-  // Pre-fill user saved preferences if available
-  useEffect(() => {
-    if (user?.preferences) {
-      const p = user.preferences;
-      if (p.preferred_travel_style) setTravelStyle(p.preferred_travel_style);
-      if (p.wake_up_preference) setWakeUpPref(p.wake_up_preference);
-      if (p.activity_intensity) setActivityIntensity(p.activity_intensity);
-      if (p.companion_style) setCompanionType(p.companion_style);
-      if (p.interests) {
-        const parsed = p.interests.split(",").map((s) => s.trim()).filter(Boolean);
-        if (parsed.length > 0) setSelectedInterests(parsed);
-      }
+  // Handle Dates selection with auto-advance for preset options
+  const handleDatePresetSelect = (preset: "this_weekend" | "next_week" | "next_month") => {
+    setDateSelectionType(preset);
+    const today = new Date();
+    const start = new Date();
+    if (preset === "this_weekend") {
+      const day = today.getDay();
+      const daysUntilSat = (6 - day + 7) % 7 || 7;
+      start.setDate(today.getDate() + daysUntilSat);
+    } else if (preset === "next_week") {
+      start.setDate(today.getDate() + 7);
+    } else if (preset === "next_month") {
+      start.setDate(today.getDate() + 30);
     }
-  }, [user]);
+    const end = new Date(start);
+    end.setDate(start.getDate() + (daysCount - 1));
 
-  // Calculate days
-  const numDays = Math.max(
-    1,
-    Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
-  );
+    setStartDate(start.toISOString().split("T")[0]);
+    setEndDate(end.toISOString().split("T")[0]);
+    setTimeout(() => setCurrentStep(3), 150);
+  };
 
-  const interestOptions = [
-    { name: "Nature", hindi: "प्रकृति", desc: "Pine forests, rivers & ridges" },
-    { name: "Adventure", hindi: "रोमांच", desc: "Hikes, paragliding & rafting" },
-    { name: "Local Food", hindi: "स्थानीय स्वाद", desc: "Authentic siddu, kachori & dhabas" },
-    { name: "Cafés", hindi: "कैफे", desc: "Riverside espresso & bakeries" },
-    { name: "Culture", hindi: "संस्कृति", desc: "Ancient temples & havelis" },
-    { name: "Photography", hindi: "फोटोग्राफी", desc: "Golden hour viewpoints & mist" },
-    { name: "Relaxation", hindi: "सुकून", desc: "Quiet hammocks & slow mornings" },
-    { name: "Hidden places", hindi: "अनछुए रास्ते", desc: "Away from commercial crowds" },
-  ];
+  // Handle Days count selection with AUTO-ADVANCE
+  const handleDaysSelect = (days: number) => {
+    setDaysCount(days);
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + (days - 1));
+    setEndDate(end.toISOString().split("T")[0]);
+    setTimeout(() => setCurrentStep(4), 150);
+  };
 
-  const handleInterestToggle = (interest: string) => {
-    if (selectedInterests.includes(interest)) {
-      setSelectedInterests(selectedInterests.filter((i) => i !== interest));
+  // Handle Companion selection with AUTO-ADVANCE
+  const handleCompanionSelect = (type: string, count: number) => {
+    setCompanionType(type);
+    setTravellersCount(count);
+    setTimeout(() => setCurrentStep(5), 150);
+  };
+
+  // Handle Vibe toggle (Multi-select)
+  const handleVibeToggle = (vibe: string) => {
+    if (selectedVibes.includes(vibe)) {
+      if (selectedVibes.length > 1) {
+        setSelectedVibes(selectedVibes.filter((v) => v !== vibe));
+      }
     } else {
-      setSelectedInterests([...selectedInterests, interest]);
+      setSelectedVibes([...selectedVibes, vibe]);
     }
   };
 
-  const handleGenerateTrip = async () => {
+  // Handle Travel Style selection with AUTO-ADVANCE to Review
+  const handleStyleSelect = (style: string) => {
+    setTravelStyle(style);
+    setTimeout(() => setCurrentStep(7), 150);
+  };
+
+  // Handle Generate Trip Execution
+  const handleBuildTrip = async () => {
     setIsGenerating(true);
-    const interval = setInterval(() => {
-      setGenerationMsgIndex((prev) => (prev + 1) % generationMessages.length);
-    }, 800);
+    const msgs = [
+      "Clustering scenic stops & local trails...",
+      "Matching verified stays & mountain dhabas...",
+      "Calculating realistic day timing...",
+      "Binding your personalized VANVAS journal...",
+    ];
+    let idx = 0;
+    const timer = setInterval(() => {
+      idx = (idx + 1) % msgs.length;
+      setGenMessage(msgs[idx]);
+    }, 700);
 
     try {
-      const targetSlug = selectedDestObject?.canonical_slug || selectedDestObject?.slug || selectedDestId;
+      const targetSlug =
+        selectedDestObject?.canonical_slug ||
+        selectedDestObject?.slug ||
+        selectedDestId;
       const cleanTarget = String(targetSlug).replace(/^(dyn|dest)-/, "").trim();
-      const targetId = selectedDestObject?.id || (selectedDestObject?.is_curated ? `dest-${cleanTarget}` : `dyn-${cleanTarget}`);
+      const targetId =
+        selectedDestObject?.id ||
+        (selectedDestObject?.is_curated !== false
+          ? `dest-${cleanTarget}`
+          : `dyn-${cleanTarget}`);
 
       const trip = await api.createTrip({
         destination_id: targetId,
         start_date: startDate,
         end_date: endDate,
-        budget: customBudget ? parseFloat(customBudget) : budget,
+        budget: budgetEstimate,
         travellers_count: travellersCount,
         companion_type: companionType,
         travel_style: travelStyle,
-        wake_up_preference: wakeUpPref,
-        activity_intensity: activityIntensity,
-        interests: selectedInterests,
-        planning_mode: planningMode,
+        wake_up_preference: "Normal",
+        activity_intensity: "Balanced",
+        interests: selectedVibes,
+        planning_mode: daysCount === 1 ? "one_day" : daysCount === 2 ? "weekend" : "multi_day",
       });
 
-      clearInterval(interval);
+      clearInterval(timer);
       try {
-        confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } catch {}
       router.push(`/trips/${trip.id}`);
-    } catch (err) {
-      console.error(err);
-      clearInterval(interval);
+    } catch (err: any) {
+      clearInterval(timer);
       setIsGenerating(false);
+      alert(err.message || "Failed to generate trip. Please try again.");
     }
   };
 
+  const currentDestName = selectedDestObject?.name || selectedDestId.charAt(0).toUpperCase() + selectedDestId.slice(1);
+
   return (
-    <div className="min-h-[calc(100vh-5rem)] bg-[#EFE5D2] pt-4 pb-28 sm:py-10 px-3 sm:px-6 lg:px-8 flex flex-col justify-center">
-      {isCompact ? (
-        /* ======================================================== */
-        /* COMPACT MODE: FIELD GUIDE / FAST CHOICE PLAN FLOW         */
-        /* ======================================================== */
-        <div className="max-w-2xl mx-auto w-full space-y-4">
-          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-4 sm:p-7 shadow-lg space-y-5">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-3">
-              <div>
+    <div className="min-h-[calc(100vh-4rem)] bg-[#EFE5D2] flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="max-w-xl mx-auto w-full">
+        {/* Loading Overlay */}
+        {isGenerating && (
+          <div className="fixed inset-0 z-50 bg-[#0F2924]/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-[#EFE5D2] animate-fadeIn">
+            <div className="w-14 h-14 rounded-2xl bg-[#B65E3C] flex items-center justify-center shadow-2xl mb-4">
+              <Sparkles className="w-7 h-7 text-[#FAF4E8] animate-spin" />
+            </div>
+            <h3 className="font-serif font-black text-2xl text-[#FAF4E8] mb-2">
+              Building Your Trip to {currentDestName}
+            </h3>
+            <p className="text-xs sm:text-sm font-mono text-[#D8DED5] animate-pulse">
+              {genMessage}
+            </p>
+          </div>
+        )}
+
+        {/* Card Container */}
+        <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden transition-all duration-300">
+          {/* Top Progress & Navigation Header */}
+          <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4 mb-6">
+            <div className="flex items-center gap-2">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
+                  className="p-1.5 rounded-xl hover:bg-[#EFE5D2] text-[#173B32] transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
+                  aria-label="Previous question"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
+              )}
+              {currentStep === 1 && (
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
-                  FIELD GUIDE PLANNER
+                  VANVAS PLANNER
                 </span>
-                <h1 className="text-xl sm:text-2xl font-serif font-black text-[#173B32]">
-                  Plan Your Journey
-                </h1>
-              </div>
-              <span className="text-[10px] font-mono text-[#7B4D36] bg-[#EFE5D2] px-2.5 py-1 rounded-full font-bold">
-                FAST CHOICE
-              </span>
+              )}
             </div>
 
-            {/* Q1: WHERE ARE YOU GOING? */}
-            <div className="space-y-2">
-              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
-                1. Where are you going?
-              </label>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold text-[#173B32]">
+                {currentStep <= 6 ? `0${currentStep} / 06` : "REVIEW"}
+              </span>
+              <div className="w-16 sm:w-24 bg-[#E5D5BA] h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-[#173B32] h-full transition-all duration-300 rounded-full"
+                  style={{ width: `${(Math.min(currentStep, 6) / 6) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ======================================================== */}
+          {/* 01 / 06: WHERE ARE YOU GOING?                            */}
+          {/* ======================================================== */}
+          {currentStep === 1 && (
+            <div className="space-y-5 animate-fadeIn">
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  QUESTION 01
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  Where are you going?
+                </h2>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  Pick a curated destination or search any town in India.
+                </p>
+              </div>
+
+              {/* Quick Choice Buttons (Single tap -> Auto-advance) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { slug: "manali", name: "Manali" },
-                  { slug: "rishikesh", name: "Rishikesh" },
-                  { slug: "goa", name: "Goa" },
-                  { slug: "jaipur", name: "Jaipur" },
-                  { slug: "udaipur", name: "Udaipur" },
-                  { slug: "leh", name: "Leh" },
-                  { slug: "spiti", name: "Spiti" },
-                  { slug: "kasol", name: "Kasol" },
-                  { slug: "varanasi", name: "Varanasi" },
+                  { name: "Manali", slug: "manali" },
+                  { name: "Goa", slug: "goa" },
+                  { name: "Jaipur", slug: "jaipur" },
+                  { name: "Udaipur", slug: "udaipur" },
+                  { name: "Rishikesh", slug: "rishikesh" },
+                  { name: "Spiti", slug: "spiti" },
+                  { name: "Kasol", slug: "kasol" },
+                  { name: "Varanasi", slug: "varanasi" },
                 ].map((d) => {
                   const isSelected = selectedDestId.toLowerCase().includes(d.slug);
                   return (
@@ -407,10 +385,10 @@ function PlanTripContent() {
                       key={d.slug}
                       type="button"
                       onClick={() => handleSelectDestination(d)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`p-3 rounded-2xl text-xs font-bold text-center transition-all cursor-pointer border-2 ${
                         isSelected
-                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs scale-102"
-                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
+                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
                       }`}
                     >
                       {d.name}
@@ -419,215 +397,8 @@ function PlanTripContent() {
                 })}
               </div>
 
-              {/* Optional Search */}
-              <div className="relative pt-1">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Or search other town/city..."
-                  className="w-full pl-8 pr-3 py-2 bg-white border border-[#E5D5BA] rounded-xl text-xs text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32]"
-                />
-                <Search className="w-3.5 h-3.5 text-[#7B4D36] absolute left-2.5 top-3.5 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Q2: HOW MANY DAYS? */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
-                2. How many days?
-              </label>
-              <div className="grid grid-cols-6 gap-1.5">
-                {[1, 2, 3, 4, 5, 7].map((dCount) => {
-                  const isSelected = numDays === dCount || (dCount === 7 && numDays >= 6);
-                  return (
-                    <button
-                      key={dCount}
-                      type="button"
-                      onClick={() => {
-                        const today = new Date();
-                        const target = new Date();
-                        target.setDate(today.getDate() + (dCount - 1));
-                        setStartDate(today.toISOString().split("T")[0]);
-                        setEndDate(target.toISOString().split("T")[0]);
-                      }}
-                      className={`py-2 rounded-xl text-xs font-bold text-center transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
-                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
-                      }`}
-                    >
-                      {dCount === 7 ? "6+" : dCount}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Q3: WHO'S COMING? */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
-                3. Who&apos;s coming?
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                {[
-                  { type: "Solo", label: "Just me", count: 1 },
-                  { type: "Couple", label: "Partner", count: 2 },
-                  { type: "Friends", label: "Friends", count: 3 },
-                  { type: "Family", label: "Family", count: 4 },
-                ].map((c) => {
-                  const isSelected = companionType === c.type;
-                  return (
-                    <button
-                      key={c.type}
-                      type="button"
-                      onClick={() => {
-                        setCompanionType(c.type);
-                        setTravellersCount(c.count);
-                      }}
-                      className={`p-2 rounded-xl text-xs font-bold text-center transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
-                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
-                      }`}
-                    >
-                      {c.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Q4: WHAT'S YOUR VIBE? */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
-                4. What&apos;s your vibe?
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  "Nature",
-                  "Adventure",
-                  "Food",
-                  "Cafés",
-                  "Culture",
-                  "Slow",
-                  "Photography",
-                ].map((vibe) => {
-                  const isSelected = selectedInterests.includes(vibe);
-                  return (
-                    <button
-                      key={vibe}
-                      type="button"
-                      onClick={() => handleInterestToggle(vibe)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-[#B65E3C] text-[#EFE5D2] shadow-xs"
-                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
-                      }`}
-                    >
-                      {isSelected ? `✓ ${vibe}` : vibe}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Q5: STYLE & BUDGET */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono font-bold uppercase text-[#173B32] block">
-                5. Style &amp; Budget
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                {[
-                  { style: "Budget", b: 5000, label: "Budget (₹5K)" },
-                  { style: "Balanced", b: 10000, label: "Balanced (₹10K)" },
-                  { style: "Comfort", b: 20000, label: "Comfort (₹20K)" },
-                  { style: "Premium", b: 35000, label: "Premium (₹35K)" },
-                ].map((s) => {
-                  const isSelected = travelStyle === s.style;
-                  return (
-                    <button
-                      key={s.style}
-                      type="button"
-                      onClick={() => {
-                        setTravelStyle(s.style);
-                        setBudget(s.b);
-                      }}
-                      className={`p-2 rounded-xl text-xs font-bold text-center transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
-                          : "bg-[#EFE5D2] text-[#173B32] hover:bg-[#E5D5BA] border border-[#E5D5BA]"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Action CTA */}
-            <div className="pt-3 border-t border-[#E5D5BA]">
-              <button
-                type="button"
-                onClick={handleGenerateTrip}
-                disabled={isGenerating}
-                className="w-full py-3.5 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl transition-all transform active:scale-95 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-[#B49252]" />
-                <span>Generate Itinerary →</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* ======================================================== */
-        /* ORIGINAL MODE: IMMERSIVE 9-STEP JOURNAL WIZARD           */
-        /* ======================================================== */
-        <div className="max-w-3xl mx-auto w-full space-y-6 sm:space-y-8">
-          {/* Header Passport Stamp Progress */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TravelStamp label="यात्रा डायरी" sub="JOURNAL WIZARD" variant="terracotta" />
-                <TravelStamp label={`पड़ाव ${step} / 9`} variant="forest" />
-              </div>
-              <span className="text-xs font-mono text-[#7B4D36] font-semibold">
-                VANVAS EXPEDITION LOG
-              </span>
-            </div>
-
-            <div className="w-full bg-[#E5D5BA] h-2.5 rounded-full overflow-hidden border border-[#E5D5BA]">
-              <div
-                className="bg-[#173B32] h-full transition-all duration-500 rounded-full"
-                style={{ width: `${(step / 9) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Wizard Journal Page */}
-          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 sm:p-10 shadow-xl relative overflow-hidden min-h-[440px] sm:min-h-[500px] flex flex-col justify-between">
-            {/* Subtle paper background grid */}
-            <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#173B32_1px,transparent_1px)] [background-size:20px_20px]" />
-
-          {/* STEP 1: UNIVERSAL DESTINATION SELECTION (कहाँ चलें?) */}
-          {step === 1 && (
-            <div className="space-y-5 sm:space-y-6 relative z-10 animate-fadeIn">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">कहाँ चलें?</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 1</span>
-                </div>
-                <h2 className="text-xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
-                  Where is the road taking you?
-                </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5 sm:mt-1">
-                  Search any Indian city, town, hill station or choose a featured sanctuary.
-                </p>
-              </div>
-
-              {/* Universal Destination Search Input */}
-              <div className="relative">
+              {/* Search Bar with Autocomplete */}
+              <div className="relative pt-2">
                 <div className="relative flex items-center">
                   <input
                     type="text"
@@ -639,38 +410,32 @@ function PlanTripContent() {
                         handleSelectDestination(searchQuery.trim());
                       }
                     }}
-                    placeholder="Search any destination: Delhi, Pune, Kolkata, Ayodhya, Varanasi, Goa, Manali..."
-                    className="w-full pl-10 pr-10 py-3 bg-white border-2 border-[#E5D5BA] rounded-2xl text-xs sm:text-sm font-semibold text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32] shadow-sm transition-all"
+                    placeholder="Or search any destination: Munnar, Leh, Ooty..."
+                    className="w-full pl-9 pr-9 py-2.5 bg-white border-2 border-[#E5D5BA] rounded-2xl text-xs font-medium text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32]"
                   />
-                  <Search className="w-4 h-4 text-[#7B4D36] absolute left-3.5 pointer-events-none" />
+                  <Search className="w-4 h-4 text-[#7B4D36] absolute left-3 pointer-events-none" />
                   {(isSearching || isResolving) && (
-                    <Loader2 className="w-4 h-4 text-[#B65E3C] animate-spin absolute right-3.5 pointer-events-none" />
+                    <Loader2 className="w-4 h-4 text-[#B65E3C] animate-spin absolute right-3 pointer-events-none" />
                   )}
                 </div>
 
-                {/* Autocomplete Dropdown */}
                 {searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-2xl shadow-2xl overflow-hidden divide-y divide-[#E5D5BA]/60 max-h-60 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border-2 border-[#E5D5BA] rounded-2xl shadow-xl overflow-hidden divide-y divide-[#E5D5BA] max-h-52 overflow-y-auto">
                     {searchResults.map((item, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => handleSelectDestination(item)}
-                        className="w-full text-left p-3 flex items-center justify-between hover:bg-[#EFE5D2] text-[#20211D] transition-colors"
+                        className="w-full text-left p-3 flex items-center justify-between hover:bg-[#EFE5D2] text-[#173B32] text-xs font-bold transition-colors cursor-pointer"
                       >
-                        <div className="flex items-center gap-3">
-                          <MapPin className="w-4 h-4 text-[#B65E3C] shrink-0" />
-                          <div>
-                            <div className="text-xs font-bold font-serif text-[#173B32]">{item.name}</div>
-                            <div className="text-[10px] text-[#7B4D36]">
-                              {[item.state, item.country].filter(Boolean).join(", ")}
-                              {item.altitude_meters ? ` • ${item.altitude_meters}m` : ""}
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-[#B65E3C]" />
+                          <span>{item.name}</span>
+                          <span className="text-[10px] text-[#7B4D36] font-normal">
+                            {[item.state, item.country].filter(Boolean).join(", ")}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E5D5BA] text-[#173B32]">
-                          Select
-                        </span>
+                        <span className="text-[10px] font-mono text-[#B65E3C]">Select →</span>
                       </button>
                     ))}
                   </div>
@@ -682,621 +447,346 @@ function PlanTripContent() {
                   {resolveError}
                 </p>
               )}
-
-              {/* Active Selected Destination Preview Card */}
-              {selectedDestObject && (
-                <div className="p-4 rounded-2xl bg-[#EFE5D2] border-2 border-[#173B32]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-fadeIn">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
-                        selectedDestObject.is_curated !== false
-                          ? "bg-[#173B32] text-[#EFE5D2]"
-                          : "bg-emerald-700 text-white"
-                      }`}>
-                        {selectedDestObject.is_curated !== false ? "VANVAS VERIFIED SANCTUARY" : "LIVE DESTINATION DISCOVERY"}
-                      </span>
-                      {selectedDestObject.latitude && selectedDestObject.longitude && (
-                        <span className="text-[10px] font-mono text-[#7B4D36]">
-                          {Number(selectedDestObject.latitude).toFixed(2)}°N, {Number(selectedDestObject.longitude).toFixed(2)}°E
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <h3 className="text-xl font-serif font-black text-[#173B32]">
-                        {selectedDestObject.name}
-                      </h3>
-                      <span className="text-xs font-serif text-[#B65E3C]">
-                        {destHindiMap[selectedDestObject.slug?.toLowerCase()] || selectedDestObject.hindi_name || ""}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#20211D]/80 line-clamp-1 font-light">
-                      {[selectedDestObject.state, selectedDestObject.country || "India"].filter(Boolean).join(", ")}
-                      {selectedDestObject.altitude_meters ? ` • Elevation: ${selectedDestObject.altitude_meters}m` : ""}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Destination Confirmed</span>
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Quick-Select Shortcuts for Popular Sanctuaries */}
-              <div className="space-y-2 pt-1">
-                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#7B4D36]">
-                  <span>Featured Sanctuaries • Quick Select</span>
-                </div>
-
-                {loadingDestinations ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                    {[1, 2, 3, 4].map((n) => (
-                      <div key={n} className="p-3 rounded-2xl border-2 border-[#E5D5BA] bg-[#FAF7F0] min-h-[90px] animate-pulse" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 max-h-[220px] overflow-y-auto pr-1">
-                    {destinations.map((d) => {
-                      const isSelected = selectedDestObject?.id === d.id || selectedDestObject?.slug === d.slug || selectedDestId === d.id || selectedDestId === d.slug;
-                      return (
-                        <button
-                          key={d.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedDestId(d.id);
-                            setSelectedDestObject(d);
-                            setResolveError(null);
-                          }}
-                          className={`p-3 rounded-2xl border-2 text-left transition-all flex flex-col justify-between min-h-[85px] relative overflow-hidden group cursor-pointer active:scale-95 ${
-                            isSelected
-                              ? "border-[#173B32] bg-[#173B32] text-[#EFE5D2] shadow-md"
-                              : "border-[#E5D5BA] bg-[#FAF7F0] text-[#20211D] hover:border-[#173B32]/50 hover:bg-[#EFE5D2]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-bold uppercase tracking-wider opacity-80">
-                              {d.state || "SANCTUARY"}
-                            </span>
-                            {isSelected && <Check className="w-3 h-3 text-[#B49252]" />}
-                          </div>
-                          <div>
-                            <div className="font-serif font-bold text-sm leading-tight">{d.name}</div>
-                            <span className="text-[10px] opacity-75 font-serif">{destHindiMap[d.slug] || ""}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
-          {/* STEP 2: PLANNING MODE & DATES (योजना मोड और तारीखें) */}
-          {step === 2 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+          {/* ======================================================== */}
+          {/* 02 / 06: WHEN ARE YOU GOING?                             */}
+          {/* ======================================================== */}
+          {currentStep === 2 && (
+            <div className="space-y-5 animate-fadeIn">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">योजना मोड</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 2</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
-                  How would you like to travel?
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  QUESTION 02
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  When are you going?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">Select your expedition pace &amp; planning archetype.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  Heading to <strong className="text-[#173B32]">{currentDestName}</strong>.
+                </p>
               </div>
 
-              {/* Planning Mode Selector Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+              {/* Quick Timing Options */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {[
-                  { id: "one_day", title: "One-Day Return", hindi: "एक दिवसीय", desc: "Dawn-to-dusk loop with zero rush", days: "1 Day" },
-                  { id: "weekend", title: "Weekend Escape", hindi: "सप्ताहांत यात्रा", desc: "2-Day curated sanctuary weekend", days: "2 Days" },
-                  { id: "multi_day", title: "Multi-Day Expedition", hindi: "विस्तृत यात्रा", desc: "Deep exploratory regional route", days: "3+ Days" },
-                  { id: "trek", title: "Trek Expedition", hindi: "ट्रेक अभियान", desc: "Trailheads, elevation & camps", days: "Trail Focus" },
-                  { id: "relaxed", title: "Slow & Relaxed", hindi: "सुकून भरा सफ़र", desc: "Unrushed cafes & hammocks", days: "Low Density" },
-                  { id: "adventure", title: "High Adventure", hindi: "साहसिक सफ़र", desc: "Packed summits, rafting & action", days: "High Intensity" },
-                ].map((m) => {
-                  const isSelected = planningMode === m.id;
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => handleModeSelect(m.id as any)}
-                      className={`p-3.5 rounded-2xl border-2 text-left transition-all flex flex-col justify-between min-h-[95px] relative ${
-                        isSelected
-                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
-                          : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-[10px] font-serif opacity-80">{m.hindi}</span>
-                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                          isSelected ? "bg-[#B49252] text-[#173B32]" : "bg-[#E5D5BA] text-[#173B32]"
-                        }`}>
-                          {m.days}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-serif font-bold text-sm leading-tight mt-1">{m.title}</div>
-                        <div className="text-[11px] opacity-80 mt-0.5 line-clamp-1">{m.desc}</div>
-                      </div>
-                    </button>
-                  );
-                })}
+                  { id: "this_weekend", label: "This Weekend", desc: "Upcoming Sat–Sun" },
+                  { id: "next_week", label: "Next Week", desc: "In 7 days" },
+                  { id: "next_month", label: "Next Month", desc: "In ~30 days" },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => handleDatePresetSelect(opt.id as any)}
+                    className="p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#173B32] text-left transition-all cursor-pointer shadow-xs"
+                  >
+                    <div className="font-serif font-bold text-sm text-[#173B32]">{opt.label}</div>
+                    <div className="text-[10px] text-[#7B4D36] mt-0.5">{opt.desc}</div>
+                  </button>
+                ))}
               </div>
 
-              {/* Date Pickers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="p-4 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-1">
-                  <label className="text-xs font-bold text-[#173B32] uppercase tracking-wider block flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    रवाना होने की तारीख • Start Date
-                  </label>
+              {/* Custom Date Input */}
+              <div className="pt-2 border-t border-[#E5D5BA]">
+                <label className="block text-xs font-mono font-bold uppercase text-[#7B4D36] mb-1.5">
+                  Or pick exact start date:
+                </label>
+                <div className="flex gap-2">
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#E5D5BA] rounded-xl text-sm font-semibold text-[#20211D] bg-white focus:outline-none focus:border-[#173B32]"
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      const s = new Date(e.target.value);
+                      const end = new Date(s);
+                      end.setDate(s.getDate() + (daysCount - 1));
+                      setEndDate(end.toISOString().split("T")[0]);
+                    }}
+                    className="flex-1 p-2.5 bg-white border-2 border-[#E5D5BA] rounded-xl text-xs font-bold text-[#173B32] focus:outline-none focus:border-[#173B32]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(3)}
+                    className="px-4 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider cursor-pointer"
+                  >
+                    Continue →
+                  </button>
                 </div>
-
-                <div className="p-4 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-1">
-                  <label className="text-xs font-bold text-[#173B32] uppercase tracking-wider block flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    वापसी की तारीख • End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#E5D5BA] rounded-xl text-sm font-semibold text-[#20211D] bg-white focus:outline-none focus:border-[#173B32]"
-                  />
-                </div>
-              </div>
-
-              {/* Calculated Days Banner */}
-              <div className="p-4 rounded-2xl bg-[#EFE5D2] border-2 border-[#E5D5BA] flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold uppercase text-[#7B4D36]">Calculated Journey</span>
-                  <div className="font-serif font-black text-xl text-[#173B32]">{numDays} Days in the Valley</div>
-                </div>
-                <TravelStamp label={`${numDays} DAYS`} variant="forest" />
               </div>
             </div>
           )}
 
-          {/* STEP 3: BUDGET (कितना खर्च करना है?) */}
-          {step === 3 && (
-            <div className="space-y-6 relative z-10 animate-fadeIn">
+          {/* ======================================================== */}
+          {/* 03 / 06: HOW LONG?                                       */}
+          {/* ======================================================== */}
+          {currentStep === 3 && (
+            <div className="space-y-5 animate-fadeIn">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black text-[#B65E3C]">कितना खर्च?</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 3</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#17352C] mt-1">
-                  What is your total expedition budget?
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  QUESTION 03
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  How many days?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-1">Approximate budget for stays, scooter, food &amp; local sights.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  Select trip duration for {currentDestName}.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[5000, 8000, 10000, 15000, 25000, 40000].map((amt) => (
+              {/* Days options (Single tap -> Auto-advance) */}
+              <div className="grid grid-cols-5 gap-2">
+                {[2, 3, 4, 5, 6].map((d) => (
                   <button
-                    key={amt}
-                    onClick={() => {
-                      setBudget(amt);
-                      setCustomBudget("");
-                    }}
-                    className={`py-4 px-4 rounded-2xl border-2 text-center font-bold text-sm transition-all ${
-                      budget === amt && !customBudget
+                    key={d}
+                    type="button"
+                    onClick={() => handleDaysSelect(d)}
+                    className={`py-4 rounded-2xl font-serif font-black text-center transition-all cursor-pointer border-2 ${
+                      daysCount === d
                         ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
-                        : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                        : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
                     }`}
                   >
-                    <span className="block font-mono text-base">₹{amt.toLocaleString()}</span>
+                    <span className="text-xl block">{d === 6 ? "6+" : d}</span>
+                    <span className="text-[10px] font-mono font-normal uppercase text-[#7B4D36]">
+                      {d === 1 ? "Day" : "Days"}
+                    </span>
                   </button>
                 ))}
-              </div>
-
-              <div className="pt-2">
-                <label className="text-xs font-bold text-[#173B32] uppercase tracking-wider block mb-1">
-                  Or enter Custom Budget (₹):
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 18000"
-                  value={customBudget}
-                  onChange={(e) => setCustomBudget(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border-2 border-[#E5D5BA] rounded-xl text-sm font-semibold text-[#20211D] focus:outline-none focus:border-[#173B32]"
-                />
               </div>
             </div>
           )}
 
-          {/* STEP 4: COMPANIONS (किसके साथ?) */}
-          {step === 4 && (
-            <div className="space-y-5 relative z-10 animate-fadeIn">
+          {/* ======================================================== */}
+          {/* 04 / 06: WHO'S COMING?                                   */}
+          {/* ======================================================== */}
+          {currentStep === 4 && (
+            <div className="space-y-5 animate-fadeIn">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">किसके साथ?</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 4</span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
-                  Who is travelling with you?
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  QUESTION 04
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  Who&apos;s coming?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5">Select your party archetype and headcount.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  This helps tailor stays, pace &amp; split settings.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Companions (Single tap -> Auto-advance) */}
+              <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { type: "Solo", hindi: "अकेले", icon: "🧭", count: 1, desc: "Soul-searching & quiet trails" },
-                  { type: "Couple", hindi: "हमसफ़र", icon: "✨", count: 2, desc: "Romantic stays & sunset dinners" },
-                  { type: "Friends", hindi: "यार-दोस्त", icon: "🎒", count: 3, desc: "Cafés, scooters & hikes" },
-                  { type: "Family", hindi: "परिवार", icon: "🏡", count: 4, desc: "Comfortable pacing & heritage" },
-                ].map((comp) => (
+                  { type: "Solo", label: "Just me", count: 1, desc: "Solo adventure & flexible pace" },
+                  { type: "Couple", label: "Partner", count: 2, desc: "Scenic cafes & slow evenings" },
+                  { type: "Friends", label: "Friends", count: 3, desc: "Adventure, dhabas & shared stays" },
+                  { type: "Family", label: "Family", count: 4, desc: "Comfort, verified food & gentle timing" },
+                ].map((c) => (
                   <button
-                    key={comp.type}
+                    key={c.type}
                     type="button"
-                    onClick={() => {
-                      setCompanionType(comp.type);
-                      setTravellersCount(comp.count);
-                    }}
-                    className={`p-3 rounded-2xl border-2 text-left transition-all space-y-1 cursor-pointer ${
-                      companionType === comp.type
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
-                        : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                    onClick={() => handleCompanionSelect(c.type, c.count)}
+                    className={`p-4 rounded-2xl text-left transition-all cursor-pointer border-2 ${
+                      companionType === c.type
+                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                        : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">{comp.icon}</span>
-                      <span className="text-[10px] font-serif opacity-80">{comp.hindi}</span>
-                    </div>
-                    <div className="font-serif font-bold text-base leading-tight">{comp.type}</div>
-                    <div className="text-[10px] opacity-75 line-clamp-1">{comp.desc}</div>
+                    <div className="font-serif font-bold text-base">{c.label}</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">{c.desc}</div>
                   </button>
                 ))}
-              </div>
-
-              {/* Number of Travellers Stepper */}
-              <div className="p-3.5 rounded-2xl bg-[#EFE5D2] border-2 border-[#E5D5BA] flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#7B4D36] block">Exact Travellers</span>
-                  <span className="font-serif font-bold text-sm text-[#173B32]">Headcount: {travellersCount} {travellersCount === 1 ? "Person" : "People"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setTravellersCount((prev) => Math.max(1, prev - 1))}
-                    disabled={travellersCount <= 1}
-                    className="w-8 h-8 rounded-xl bg-white border border-[#E5D5BA] text-[#173B32] disabled:opacity-40 flex items-center justify-center font-bold hover:bg-[#FAF7F0] shadow-xs"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="w-8 text-center font-mono font-bold text-base text-[#173B32]">
-                    {travellersCount}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setTravellersCount((prev) => Math.min(20, prev + 1))}
-                    className="w-8 h-8 rounded-xl bg-white border border-[#E5D5BA] text-[#173B32] flex items-center justify-center font-bold hover:bg-[#FAF7F0] shadow-xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
               </div>
             </div>
           )}
 
-          {/* STEP 5: VIBES & INTERESTS (कैसा सफ़र?) */}
-          {step === 5 && (
-            <div className="space-y-5 relative z-10 animate-fadeIn">
+          {/* ======================================================== */}
+          {/* 05 / 06: WHAT'S YOUR VIBE? (Multi-select)                */}
+          {/* ======================================================== */}
+          {currentStep === 5 && (
+            <div className="space-y-5 animate-fadeIn">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">कैसा सफ़र?</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 5</span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
-                  What vibes are you seeking?
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  QUESTION 05
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  What&apos;s your vibe?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5">Select the elements you want in your daily stops.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  Select all that you enjoy.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {/* Vibe Chips */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
-                  { name: "Nature", icon: "🌲", hindi: "प्रकृति", desc: "Pine forests & ridges" },
-                  { name: "Cafés", icon: "☕", hindi: "कैफे", desc: "Artisan coffee & bakeries" },
-                  { name: "Mountains", icon: "🏔️", hindi: "पहाड़", desc: "High summits & peaks" },
-                  { name: "Culture", icon: "🛕", hindi: "संस्कृति", desc: "Heritage temples & havelis" },
-                  { name: "Adventure", icon: "🏄", hindi: "रोमांच", desc: "Hikes, rafting & thrills" },
-                  { name: "Slow Travel", icon: "🌿", hindi: "सुकून", desc: "Quiet walks & hammocks" },
-                  { name: "Local Food", icon: "🍛", hindi: "स्थानीय स्वाद", desc: "Siddu, thali & street bites" },
-                  { name: "Photography", icon: "📷", hindi: "फोटोग्राफी", desc: "Golden hour viewpoints" },
-                ].map((item) => {
-                  const isSelected = selectedInterests.includes(item.name);
+                  { name: "Nature", desc: "Pine woods & streams" },
+                  { name: "Food", desc: "Authentic dhabas & local bites" },
+                  { name: "Adventure", desc: "Hikes & viewpoints" },
+                  { name: "Culture", desc: "Heritage & temples" },
+                  { name: "Slow", desc: "Cafés & leisurely mornings" },
+                  { name: "Nightlife", desc: "Evening scenes & vibes" },
+                ].map((v) => {
+                  const isSelected = selectedVibes.includes(v.name);
                   return (
                     <button
-                      key={item.name}
+                      key={v.name}
                       type="button"
-                      onClick={() => handleInterestToggle(item.name)}
-                      className={`p-2.5 sm:p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                      onClick={() => handleVibeToggle(v.name)}
+                      className={`p-3 rounded-2xl text-left transition-all cursor-pointer border-2 ${
                         isSelected
                           ? "bg-[#B65E3C] text-[#EFE5D2] border-[#B65E3C] shadow-sm"
-                          : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-base">{item.icon}</span>
-                        {isSelected ? (
-                          <Check className="w-3.5 h-3.5 text-[#B49252]" />
-                        ) : (
-                          <span className="text-[9px] font-serif opacity-75">{item.hindi}</span>
-                        )}
+                      <div className="font-serif font-bold text-xs flex items-center justify-between">
+                        <span>{v.name}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#FAF4E8]" />}
                       </div>
-                      <div className="font-serif font-bold text-xs sm:text-sm mt-1">{item.name}</div>
-                      <div className="text-[10px] opacity-75 line-clamp-1">{item.desc}</div>
+                      <div className="text-[10px] opacity-80 mt-0.5 line-clamp-1">{v.desc}</div>
                     </button>
                   );
                 })}
               </div>
+
+              <div className="pt-2 border-t border-[#E5D5BA] flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(6)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                >
+                  <span>Continue ({selectedVibes.length} selected)</span>
+                  <ArrowRight className="w-4 h-4 text-[#B49252]" />
+                </button>
+              </div>
             </div>
           )}
 
-          {/* STEP 6: TRAVEL STYLE (सफ़र का अंदाज़) */}
-          {step === 6 && (
-            <div className="space-y-5 relative z-10 animate-fadeIn">
+          {/* ======================================================== */}
+          {/* 06 / 06: HOW DO YOU WANT TO TRAVEL?                      */}
+          {/* ======================================================== */}
+          {currentStep === 6 && (
+            <div className="space-y-5 animate-fadeIn">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">सफ़र का अंदाज़</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 6</span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
-                  What is your travel style?
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  QUESTION 06
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  How do you want to travel?
                 </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5">Determines stay categories and dining choices.</p>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  Pick your comfort &amp; budget preference.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Travel Style options (Single tap -> Auto-advance to Review) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {[
-                  { style: "Budget", icon: "🎒", desc: "Hostels & local dhabas" },
-                  { style: "Balanced", icon: "☕", desc: "Boutique stays & cafés" },
-                  { style: "Comfort", icon: "🏡", desc: "Heritage resorts & cabs" },
-                  { style: "Premium", icon: "✨", desc: "Luxury mountain suites" },
+                  { style: "Budget", label: "Budget", desc: "Clean hostels, dhabas & shared rides", est: `~₹${(daysCount * travellersCount * 2200).toLocaleString()}` },
+                  { style: "Balanced", label: "Balanced", desc: "Boutique stays, local cafes & cabs", est: `~₹${(daysCount * travellersCount * 3800).toLocaleString()}` },
+                  { style: "Comfort", label: "Comfort", desc: "Heritage resorts, private cabs & fine dining", est: `~₹${(daysCount * travellersCount * 6500).toLocaleString()}` },
                 ].map((s) => (
                   <button
                     key={s.style}
                     type="button"
-                    onClick={() => setTravelStyle(s.style)}
-                    className={`p-3 sm:p-3.5 rounded-2xl border-2 text-left transition-all space-y-1 cursor-pointer ${
+                    onClick={() => handleStyleSelect(s.style)}
+                    className={`p-4 rounded-2xl text-left transition-all cursor-pointer border-2 ${
                       travelStyle === s.style
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
-                        : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                        : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
                     }`}
                   >
-                    <span className="text-base">{s.icon}</span>
-                    <div className="font-serif font-bold text-sm sm:text-base">{s.style}</div>
-                    <div className="text-[10px] opacity-75 line-clamp-1">{s.desc}</div>
+                    <div className="font-serif font-bold text-base">{s.label}</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">{s.desc}</div>
+                    <div className="text-xs font-mono font-bold text-[#B49252] mt-2">{s.est} est.</div>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* STEP 7: WAKE-UP PREFERENCE (सुबह का मिज़ाज) */}
-          {step === 7 && (
-            <div className="space-y-5 relative z-10 animate-fadeIn">
+          {/* ======================================================== */}
+          {/* REVIEW SUMMARY & BUILD TRIP                             */}
+          {/* ======================================================== */}
+          {currentStep === 7 && (
+            <div className="space-y-6 animate-fadeIn">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">सुबह का मिज़ाज</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 7</span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
-                  When do you prefer waking up?
-                </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5">We align morning activity timings to your rhythm.</p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2.5">
-                {[
-                  { pref: "Early", time: "07:30 AM", icon: "🌅", desc: "Sunrise & morning mist" },
-                  { pref: "Normal", time: "08:30 AM", icon: "☕", desc: "Leisurely breakfast" },
-                  { pref: "Late", time: "10:00 AM", icon: "🥞", desc: "Late brunch start" },
-                ].map((w) => (
-                  <button
-                    key={w.pref}
-                    type="button"
-                    onClick={() => setWakeUpPref(w.pref)}
-                    className={`p-3 rounded-2xl border-2 text-left transition-all space-y-1 cursor-pointer ${
-                      wakeUpPref === w.pref
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
-                        : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                    }`}
-                  >
-                    <span className="text-base">{w.icon}</span>
-                    <div className="font-serif font-bold text-sm">{w.pref}</div>
-                    <div className="text-[11px] text-[#B49252] font-mono font-semibold">{w.time}</div>
-                    <div className="text-[10px] opacity-75 line-clamp-1">{w.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 8: ACTIVITY INTENSITY (दिन की रफ़्तार) */}
-          {step === 8 && (
-            <div className="space-y-5 relative z-10 animate-fadeIn">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">दिन की रफ़्तार</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Step 8</span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-1">
-                  How packed should your days be?
-                </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5">Control daily stops and exploration pacing.</p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2.5">
-                {[
-                  { intensity: "Relaxed", stops: "3 stops/day", icon: "🌿", desc: "Slow café downtime" },
-                  { intensity: "Balanced", stops: "4 stops/day", icon: "🧭", desc: "Optimal trail & food mix" },
-                  { intensity: "Packed", stops: "5+ stops/day", icon: "⚡", desc: "Max daylight hours" },
-                ].map((i) => (
-                  <button
-                    key={i.intensity}
-                    type="button"
-                    onClick={() => setActivityIntensity(i.intensity)}
-                    className={`p-3 rounded-2xl border-2 text-left transition-all space-y-1 cursor-pointer ${
-                      activityIntensity === i.intensity
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
-                        : "bg-[#FAF7F0] text-[#20211D] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                    }`}
-                  >
-                    <span className="text-base">{i.icon}</span>
-                    <div className="font-serif font-bold text-sm">{i.intensity}</div>
-                    <div className="text-[11px] text-[#B49252] font-semibold font-mono">{i.stops}</div>
-                    <div className="text-[10px] opacity-75 line-clamp-1">{i.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 9: CONFIRMATION (डायरी का सारांश) */}
-          {step === 9 && (
-            <div className="space-y-4 relative z-10 animate-fadeIn">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl font-serif font-black text-[#B65E3C]">डायरी का सारांश</span>
-                  <span className="text-xs font-mono text-[#7B4D36] uppercase">• Ready</span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-serif font-black text-[#17352C] mt-0.5">
-                  Trip Summary
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  JOURNEY SUMMARY
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  Ready to explore {currentDestName}?
                 </h2>
               </div>
 
-              {(() => {
-                const selectedDest = destinations.find(
-                  (d) => d.id === selectedDestId || d.slug === selectedDestId
-                );
-                const destName = selectedDest ? selectedDest.name : (selectedDestObject?.name || destHindiMap[selectedDestId] || selectedDestId);
-                const finalBudget = customBudget ? parseFloat(customBudget) : budget;
-                const formattedBudget = finalBudget >= 1000 ? `₹${(finalBudget / 1000).toFixed(finalBudget % 1000 === 0 ? 0 : 1)}K` : `₹${finalBudget}`;
-
-                return (
-                  <div className="space-y-3">
-                    {/* Concise Summary Banner */}
-                    <div className="p-4 rounded-2xl bg-[#173B32] text-[#EFE5D2] border border-[#173B32] shadow-md">
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#B49252]">EXPEDITION OVERVIEW</div>
-                      <div className="text-lg sm:text-xl font-serif font-black uppercase tracking-wide mt-0.5">
-                        {destName}
-                      </div>
-                      <div className="text-xs sm:text-sm font-mono font-semibold text-[#E5D5BA] mt-1">
-                        {numDays} {numDays === 1 ? "DAY" : "DAYS"} · {travellersCount} {travellersCount === 1 ? "TRAVELLER" : "TRAVELLERS"} ({companionType.toUpperCase()}) · {formattedBudget}
-                      </div>
-                    </div>
-
-                    {/* Metadata Chips Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                        <span className="text-[10px] text-[#7B4D36] block font-bold uppercase">Dates</span>
-                        <span className="font-mono font-semibold text-xs text-[#173B32]">{startDate} → {endDate}</span>
-                      </div>
-                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                        <span className="text-[10px] text-[#7B4D36] block font-bold uppercase">Style</span>
-                        <span className="font-serif font-bold text-xs text-[#173B32]">{travelStyle}</span>
-                      </div>
-                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                        <span className="text-[10px] text-[#7B4D36] block font-bold uppercase">Rhythm</span>
-                        <span className="font-serif font-bold text-xs text-[#173B32]">{wakeUpPref} · {activityIntensity}</span>
-                      </div>
-                      <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
-                        <span className="text-[10px] text-[#7B4D36] block font-bold uppercase">Interests</span>
-                        <span className="font-serif font-bold text-xs text-[#173B32] line-clamp-1">{selectedInterests.slice(0, 3).join(", ")}</span>
-                      </div>
-                    </div>
+              {/* Clean Ticket Card */}
+              <div className="p-5 rounded-2xl bg-[#EFE5D2] border-2 border-[#173B32] space-y-3">
+                <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-2">
+                  <div>
+                    <span className="text-[9px] font-mono uppercase text-[#7B4D36] font-bold">DESTINATION</span>
+                    <h3 className="font-serif font-black text-2xl text-[#173B32]">{currentDestName}</h3>
                   </div>
-                );
-              })()}
-            </div>
-          )}
+                  <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+                    {travelStyle} Tier
+                  </span>
+                </div>
 
-          {/* Navigation Controls */}
-          <div className="pt-8 border-t border-[#E5D5BA] flex items-center justify-between relative z-10">
-            {step > 1 ? (
-              <button
-                type="button"
-                onClick={() => setStep(step - 1)}
-                className="px-5 py-2.5 rounded-xl border-2 border-[#E5D5BA] bg-[#FAF7F0] text-xs font-bold text-[#173B32] hover:bg-[#E5D5BA] flex items-center gap-1.5 transition-all"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
-              </button>
-            ) : (
-              <div />
-            )}
+                <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                  <div>
+                    <span className="text-[#7B4D36] block text-[10px]">DURATION</span>
+                    <strong className="text-[#173B32]">{daysCount} Days</strong>
+                  </div>
+                  <div>
+                    <span className="text-[#7B4D36] block text-[10px]">TRAVELLERS</span>
+                    <strong className="text-[#173B32]">{travellersCount} ({companionType})</strong>
+                  </div>
+                  <div>
+                    <span className="text-[#7B4D36] block text-[10px]">EST. BUDGET</span>
+                    <strong className="text-[#173B32]">₹{(budgetEstimate / 1000).toFixed(0)}K</strong>
+                  </div>
+                </div>
 
-            {step < 9 ? (
+                <div className="pt-1 text-[11px] text-[#7B4D36]">
+                  <strong>Vibes:</strong> {selectedVibes.join(" • ")}
+                </div>
+              </div>
+
+              {/* Build My Trip Button */}
               <button
                 type="button"
-                onClick={() => setStep(step + 1)}
-                className="px-7 py-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase flex items-center gap-2 shadow-md transition-all"
-              >
-                <span>Continue</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleGenerateTrip}
+                onClick={handleBuildTrip}
                 disabled={isGenerating}
-                className="px-8 py-3.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase flex items-center gap-2 shadow-xl transition-all transform active:scale-95"
+                className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl transition-all transform active:scale-95 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-[#B49252]" />
-                <span>चलो निकलते हैं • Generate My Trip</span>
+                <span>Build My Trip →</span>
               </button>
-            )}
-          </div>
-        </div>
-        </div>
-      )}
 
-      {/* Atmospheric Fog Loading Screen */}
-      {isGenerating && (
-        <div className="fixed inset-0 z-50 bg-[#0F2924]/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-[#EFE5D2] animate-fadeIn">
-          <div className="w-16 h-16 rounded-3xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-2xl mb-6 animate-bounce">
-            <Sparkles className="w-8 h-8 text-[#B49252]" />
-          </div>
-          <span className="text-xs font-bold uppercase tracking-widest text-[#B49252] mb-1">
-            सफ़रनामा तैयार हो रहा है
-          </span>
-          <h3 className="text-3xl sm:text-4xl font-serif font-black tracking-tight mb-2">
-            Binding Your Expedition Journal
-          </h3>
-          <p className="text-sm text-[#D8DED5] max-w-md h-6 font-light transition-opacity duration-300">
-            {generationMessages[generationMsgIndex]}
-          </p>
-          <div className="mt-8 w-56 bg-[#173B32] h-2 rounded-full overflow-hidden border border-[#536B52]/40">
-            <div className="bg-[#B49252] h-full w-2/3 animate-pulse rounded-full" />
-          </div>
+              <button
+                type="button"
+                onClick={() => setCurrentStep(1)}
+                className="w-full text-center text-xs font-mono text-[#7B4D36] hover:text-[#173B32] underline"
+              >
+                Edit all preferences
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
 export default function PlanTripPage() {
   return (
-    <React.Suspense
+    <Suspense
       fallback={
-        <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-3">
-          <div className="w-10 h-10 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-serif italic text-[#7B4D36]">Unrolling travel journal...</span>
+        <div className="min-h-screen bg-[#EFE5D2] flex items-center justify-center text-[#173B32]">
+          <Loader2 className="w-8 h-8 animate-spin text-[#B65E3C]" />
         </div>
       }
     >
-      <PlanTripContent />
-    </React.Suspense>
+      <PlanWizard />
+    </Suspense>
   );
 }

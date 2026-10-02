@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Compass, ArrowRight, Sparkles, Mountain, Search, Waves, Castle, RefreshCw, AlertCircle } from "lucide-react";
+import {
+  Compass, ArrowRight, Sparkles, Mountain, Search, Waves, Castle, RefreshCw, AlertCircle, Trees, Coffee
+} from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
@@ -45,9 +47,13 @@ export default function ExploreIndexPage() {
 
   const curatedJourneys = [
     { id: "All", label: "All Destinations", hindi: "सभी रास्ते", icon: Compass },
-    { id: "Himalayan", label: "Himalayan Escapes", hindi: "पहाड़ी रास्ते", icon: Mountain },
-    { id: "Royal", label: "Desert & Heritage", hindi: "शाही राजस्थान", icon: Castle },
-    { id: "Coastal", label: "Coastal & Ghats", hindi: "समुद्री किनारे", icon: Waves },
+    { id: "Mountains", label: "Mountains", hindi: "पहाड़ी रास्ते", icon: Mountain },
+    { id: "Beaches", label: "Beaches", hindi: "समुद्री किनारे", icon: Waves },
+    { id: "Heritage", label: "Heritage", hindi: "शाही विरासत", icon: Castle },
+    { id: "Spiritual", label: "Spiritual", hindi: "आध्यात्मिक", icon: Compass },
+    { id: "Wildlife", label: "Wildlife", hindi: "वन्यजीव", icon: Trees },
+    { id: "Slow Travel", label: "Slow Travel", hindi: "सुकून भरा सफ़र", icon: Coffee },
+    { id: "Road Trips", label: "Road Trips", hindi: "सड़क यात्रा", icon: Castle },
   ];
 
   // Destination Metadata Enhancements for rich editorial storytelling
@@ -235,18 +241,27 @@ export default function ExploreIndexPage() {
   );
 
   const filtered = uniqueDestinations.filter((d) => {
-    const isHim = [
+    const slug = d.slug.toLowerCase();
+    const isMountains = [
       "manali", "rishikesh", "kasol", "dharamshala", "mussoorie",
       "spiti", "spiti-valley", "leh", "tungnath-chandrashila", "kainchi-dham",
-      "dehradun", "lansdowne", "morni-hills"
-    ].includes(d.slug);
-    const isDes = ["jaipur", "udaipur", "varanasi", "neemrana", "alwar-siliserh", "sariska-bhangarh", "agra", "mathura-vrindavan", "murthal"].includes(d.slug);
-    const isCoast = ["goa", "munnar", "damdama-sohna", "chandigarh"].includes(d.slug);
+      "dehradun", "lansdowne", "morni-hills", "munnar"
+    ].includes(slug);
+    const isBeaches = ["goa", "alibaug", "gokarna", "varkala", "puri"].includes(slug);
+    const isHeritage = ["jaipur", "udaipur", "varanasi", "neemrana", "alwar-siliserh", "agra", "hampi"].includes(slug);
+    const isSpiritual = ["rishikesh", "varanasi", "kainchi-dham", "tungnath-chandrashila", "mathura-vrindavan", "amritsar"].includes(slug);
+    const isWildlife = ["sariska-bhangarh", "jim-corbett", "kaziranga", "ranthambore", "kabini"].includes(slug);
+    const isSlow = ["kasol", "munnar", "lansdowne", "goa", "dharamshala", "udaipur"].includes(slug);
+    const isRoadTrips = ["spiti", "leh", "manali", "jaipur", "udaipur", "morni-hills"].includes(slug);
 
     let matchCat = true;
-    if (selectedCategory === "Himalayan") matchCat = isHim;
-    else if (selectedCategory === "Royal") matchCat = isDes;
-    else if (selectedCategory === "Coastal") matchCat = isCoast;
+    if (selectedCategory === "Mountains") matchCat = isMountains;
+    else if (selectedCategory === "Beaches") matchCat = isBeaches;
+    else if (selectedCategory === "Heritage") matchCat = isHeritage;
+    else if (selectedCategory === "Spiritual") matchCat = isSpiritual;
+    else if (selectedCategory === "Wildlife") matchCat = isWildlife;
+    else if (selectedCategory === "Slow Travel") matchCat = isSlow;
+    else if (selectedCategory === "Road Trips") matchCat = isRoadTrips;
 
     const s = search.toLowerCase().trim();
     if (!s) return matchCat;

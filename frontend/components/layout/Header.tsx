@@ -8,10 +8,9 @@ import { useAuth } from "@/context/AuthContext";
 import {
   Compass, Calendar, MapPin, Sparkles, Menu, X, SlidersHorizontal,
   User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield,
-  Mountain, Clock
+  Mountain, Clock, Navigation
 } from "lucide-react";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
-import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
 import { Avatar } from "@/components/ui/Avatar";
 import { useDensity } from "@/context/DensityContext";
 
@@ -45,11 +44,10 @@ export const Header: React.FC = () => {
 
   const navLinks = [
     { name: "Explore", devanagari: "खोज", href: "/explore", icon: Compass },
-    { name: "Solo", devanagari: "स्वतंत्र", href: "/solo", icon: Compass },
-    { name: "Treks", devanagari: "पदयात्रा", href: "/treks", icon: Mountain },
-    { name: "One Day", devanagari: "एक दिवसीय", href: "/one-day", icon: Clock },
+    { name: "Plan a Trip", devanagari: "योजना", href: "/plan", icon: Sparkles },
+    { name: "Road Trip", devanagari: "सड़क यात्रा", href: "/road-trip", icon: Navigation },
+    { name: "Day Escape", devanagari: "एक दिवसीय", href: "/one-day", icon: Clock },
     { name: "Trips", devanagari: "यात्रा", href: "/trips", icon: Calendar },
-    { name: "Plan", devanagari: "योजना", href: "/plan", icon: Sparkles },
     { name: "Nearby", devanagari: "आस-पास", href: "/nearby", icon: MapPin },
   ];
 
@@ -340,12 +338,6 @@ export const Header: React.FC = () => {
           </div>
         )}
       </header>
-
-      {/* Mobile Floating AI Copilot Trigger */}
-      <FloatingCopilotTrigger
-        isOpen={askVanvasOpen}
-        onClick={() => setAskVanvasOpen(true)}
-      />
 
       {/* Global Ask VANVAS AI Copilot Modal */}
       <AskVanvasModal

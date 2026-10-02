@@ -3,9 +3,13 @@ from typing import List, Dict, Any, Optional, Tuple
 from datetime import date, timedelta
 from app.schemas.schemas import (
     RoadTripPlanRequest, RoadTripPlanResponse, RoadTripDay, RoadTripStop,
-    RoadTripFuelBreakdown, RoadTripBudgetEstimate, ItineraryItemResponse,
-    HotelResponse
+    RoadTripLeg, RoadTripFuelBreakdown, RoadTripBudgetEstimate,
+    ItineraryItemResponse, HotelResponse
 )
+from app.providers.routing_provider import (
+    RoutingProviderDispatcher, haversine_km, RouteResult, RouteLeg
+)
+from app.services.route_stop_discovery import RouteStopDiscoveryEngine
 
 # Coordinates of major Indian cities / hubs
 INDIAN_CITIES_COORDS = {
@@ -51,18 +55,37 @@ INDIAN_CITIES_COORDS = {
     "puducherry": (11.9416, 79.8083),
     "hyderabad": (17.3850, 78.4867),
     "ahmedabad": (23.0225, 72.5714),
+    "surat": (21.1702, 72.8311),
     "kolkata": (22.5726, 88.3639),
     "varanasi": (25.3176, 82.9739),
     "amritsar": (31.6340, 74.8723),
 }
 
-def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    R = 6371.0
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat / 2.0) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2.0) ** 2
-    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
-    return R * c
+# Flagship Highway Waypoints & Corridors
+CORRIDOR_WAYPOINTS: Dict[str, List[Tuple[str, float, float]]] = {
+    "delhi-goa": [
+        ("Jaipur", 26.9124, 75.7873),
+        ("Udaipur", 24.5854, 73.7125),
+        ("Mumbai", 19.0760, 72.8777),
+    ],
+    "delhi-manali": [
+        ("Chandigarh", 30.7333, 76.7794),
+        ("Bilaspur", 31.3400, 76.7550),
+        ("Kullu", 31.9579, 77.1095),
+    ],
+    "delhi-rishikesh": [
+        ("Meerut", 28.9845, 77.7064),
+        ("Haridwar", 29.9457, 78.1642),
+    ],
+    "bangalore-goa": [
+        ("Chitradurga", 14.2250, 76.4010),
+        ("Hubli", 15.3647, 75.1240),
+    ],
+    "chennai-pondicherry": [
+        ("Mahabalipuram", 12.6160, 80.1990),
+    ],
+}
+
 
 class RoadTripService:
     @staticmethod
@@ -71,12 +94,12 @@ class RoadTripService:
         if key in INDIAN_CITIES_COORDS:
             lat, lng = INDIAN_CITIES_COORDS[key]
             return lat, lng, name.strip().title()
-        
+
         # Partial match
         for k, coords in INDIAN_CITIES_COORDS.items():
             if k in key or key in k:
                 return coords[0], coords[1], name.strip().title()
-        
+
         # Default fallback
         return 28.6139, 77.2090, name.strip().title()
 
@@ -103,22 +126,49 @@ class RoadTripService:
         return f"{orig} to {dest} Highway Corridor"
 
     @staticmethod
+    def get_corridor_key(orig: str, dest: str) -> Optional[str]:
+        o = orig.lower()
+        d = dest.lower()
+        if "delhi" in o and "goa" in d:
+            return "delhi-goa"
+        elif "delhi" in o and "manali" in d:
+            return "delhi-manali"
+        elif "delhi" in o and "rishikesh" in d:
+            return "delhi-rishikesh"
+        elif "bangalore" in o and "goa" in d:
+            return "bangalore-goa"
+        elif "chennai" in o and "pondicherry" in d:
+            return "chennai-pondicherry"
+        return None
+
+    @staticmethod
     def plan_road_trip(req: RoadTripPlanRequest, db_session=None) -> RoadTripPlanResponse:
         o_lat, o_lng, o_name = RoadTripService.resolve_city_coords(req.origin)
         d_lat, d_lng, d_name = RoadTripService.resolve_city_coords(req.destination)
 
-        # Straight line baseline vs realistic road distance factor
-        straight_dist = haversine_km(o_lat, o_lng, d_lat, d_lng)
-        # Indian road factor: hills = 1.35x, plains/expressways = 1.18x - 1.25x
-        is_hill = any(h in req.destination.lower() or h in req.origin.lower() for h in ["manali", "shimla", "spiti", "leh", "kasol", "rishikesh", "dehradun", "mussoorie", "ooty", "munnar", "coorg"])
-        road_factor = 1.38 if is_hill else 1.24
-        total_road_km = max(35.0, round(straight_dist * road_factor, 1))
+        corridor_name = RoadTripService.get_corridor_name(o_name, d_name)
+        corridor_key = RoadTripService.get_corridor_key(o_name, d_name)
 
-        # Speed estimation
-        avg_speed_kph = 42.0 if is_hill else (68.0 if req.trip_style == "Fast" else 58.0)
-        total_driving_hours = round(total_road_km / avg_speed_kph, 1)
+        # 1. Fetch real road routing via RoutingProvider architecture
+        provider = RoutingProviderDispatcher.get_provider()
+        
+        intermediate_waypoints: List[Tuple[float, float]] = []
+        waypoint_stops_meta: List[Tuple[str, float, float]] = []
+        if corridor_key and corridor_key in CORRIDOR_WAYPOINTS:
+            waypoint_stops_meta = CORRIDOR_WAYPOINTS[corridor_key]
+            intermediate_waypoints = [(w[1], w[2]) for w in waypoint_stops_meta]
 
-        # Determine number of days & overnight stops
+        route_res: RouteResult = provider.route(
+            origin_coords=(o_lat, o_lng),
+            destination_coords=(d_lat, d_lng),
+            origin_name=o_name,
+            destination_name=d_name,
+            waypoints=intermediate_waypoints if intermediate_waypoints else None,
+        )
+
+        total_road_km = max(35.0, route_res.distance_km)
+        total_driving_hours = round(route_res.duration_minutes / 60.0, 1)
+
         # Driving limit: ~350-500km per day for comfortable road trip
         daily_km_limit = 500 if req.trip_style == "Fast" else 350
         recommended_days = max(1, math.ceil(total_road_km / daily_km_limit))
@@ -128,20 +178,38 @@ class RoadTripService:
         else:
             num_days = recommended_days
 
-        corridor_name = RoadTripService.get_corridor_name(o_name, d_name)
-
-        # Generate route geometry interpolation with realistic road waypoints
-        geometry = RoadTripService._generate_route_geometry(o_lat, o_lng, d_lat, d_lng, corridor_name)
-
-        # Generate Day by Day Road Timeline
-        days, all_stops = RoadTripService._generate_days_and_stops(
-            o_name, d_name, o_lat, o_lng, d_lat, d_lng, num_days, total_road_km, req, corridor_name
+        # 2. Discover Verified Stops along the real route corridor
+        discovered_stops_raw = RouteStopDiscoveryEngine.discover_stops_for_route(
+            route_geometry=route_res.geometry,
+            origin_coords=(o_lat, o_lng),
+            dest_coords=(d_lat, d_lng),
+            preferences=req.preferences,
+            trip_style=req.trip_style,
+            max_stops=12,
+            db_session=db_session
         )
 
-        # Vehicle Fuel & Consumption calculations
+        # 3. Generate Day-by-Day Road Timeline & Segregated Legs
+        days, all_stops, schema_legs = RoadTripService._build_days_and_legs(
+            o_name=o_name,
+            d_name=d_name,
+            o_lat=o_lat,
+            o_lng=o_lng,
+            d_lat=d_lat,
+            d_lng=d_lng,
+            num_days=num_days,
+            total_km=total_road_km,
+            total_hours=total_driving_hours,
+            route_res=route_res,
+            discovered_stops=discovered_stops_raw,
+            waypoint_meta=waypoint_stops_meta,
+            req=req
+        )
+
+        # 4. Transparent Fuel & Vehicle Breakdown
         fuel_breakdown = RoadTripService._calculate_fuel(total_road_km, req.vehicle_type)
 
-        # Trip Budget Estimates
+        # 5. Trip Budget Estimates
         budget_estimate = RoadTripService._calculate_budget(
             fuel_cost=fuel_breakdown.estimated_fuel_cost_inr,
             total_km=total_road_km,
@@ -151,11 +219,11 @@ class RoadTripService:
         )
 
         travel_tips = [
-            f"Road distance is {total_road_km} km with approx {total_driving_hours} hours total wheel time.",
-            "Start early between 05:30 AM – 06:30 AM to bypass city exit bottlenecks.",
-            "Keep Fastag topped up with at least ₹2,000 before starting.",
-            "Avoid night driving through mountain passes or unlit state highways.",
-            "Fuel prices fluctuate slightly between state borders; fuel up before entering remote mountain sectors."
+            f"Road distance: {total_road_km:,.1f} km · Total driving time: ~{total_driving_hours} hrs.",
+            "Start early between 05:30 AM – 06:30 AM to bypass city exit choke points.",
+            "Keep Fastag topped up with at least ₹2,000 before departure.",
+            "Avoid night driving through mountain passes or unlit state highway links.",
+            "Fuel prices fluctuate between states; top up before entering remote mountain sectors."
         ]
 
         end_d = req.end_date or (req.start_date + timedelta(days=num_days - 1))
@@ -172,8 +240,12 @@ class RoadTripService:
             total_driving_time_hours=total_driving_hours,
             vehicle_type=req.vehicle_type,
             trip_style=req.trip_style,
-            route_geometry=geometry,
+            route_geometry=route_res.geometry,
+            route_source=route_res.route_source,
+            is_live_route=route_res.is_live,
+            routing_warning=route_res.warning,
             corridor_name=corridor_name,
+            legs=schema_legs,
             days=days,
             fuel_breakdown=fuel_breakdown,
             budget_estimate=budget_estimate,
@@ -182,20 +254,272 @@ class RoadTripService:
         )
 
     @staticmethod
-    def _generate_route_geometry(o_lat: float, o_lng: float, d_lat: float, d_lng: float, corridor: str) -> List[List[float]]:
-        # Interpolate waypoints with realistic curvature
-        points = [[o_lat, o_lng]]
-        steps = 10
-        for i in range(1, steps):
-            frac = i / steps
-            # Add slight realistic sine curve to avoid straight stick line
-            curve_lat = math.sin(frac * math.pi) * 0.15
-            curve_lng = math.cos(frac * math.pi * 0.5) * 0.12
-            lat = o_lat + (d_lat - o_lat) * frac + curve_lat
-            lng = o_lng + (d_lng - o_lng) * frac + curve_lng
-            points.append([round(lat, 5), round(lng, 5)])
-        points.append([d_lat, d_lng])
-        return points
+    def _build_days_and_legs(
+        o_name: str, d_name: str, o_lat: float, o_lng: float, d_lat: float, d_lng: float,
+        num_days: int, total_km: float, total_hours: float, route_res: RouteResult,
+        discovered_stops: List[Dict[str, Any]], waypoint_meta: List[Tuple[str, float, float]],
+        req: RoadTripPlanRequest
+    ) -> Tuple[List[RoadTripDay], List[RoadTripStop], List[RoadTripLeg]]:
+        days: List[RoadTripDay] = []
+        all_schema_stops: List[RoadTripStop] = []
+        all_schema_legs: List[RoadTripLeg] = []
+
+        # Determine intermediate overnight halts
+        halts: List[Tuple[str, float, float]] = []
+        if waypoint_meta and len(waypoint_meta) >= (num_days - 1):
+            halts = waypoint_meta[:num_days - 1]
+        else:
+            # Generate intermediate geographic halts along route
+            for d in range(1, num_days):
+                frac = d / num_days
+                h_lat = round(o_lat + (d_lat - o_lat) * frac, 4)
+                h_lng = round(o_lng + (d_lng - o_lng) * frac, 4)
+                h_name = f"Overnight Halt #{d}"
+                if waypoint_meta and (d - 1) < len(waypoint_meta):
+                    h_name, h_lat, h_lng = waypoint_meta[d - 1]
+                halts.append((h_name, h_lat, h_lng))
+
+        # Build day-by-day segments
+        waypoints_chain = [(o_name, o_lat, o_lng)] + halts + [(d_name, d_lat, d_lng)]
+        
+        stops_pool = list(discovered_stops)
+        stops_per_day = max(1, math.ceil(len(stops_pool) / max(1, num_days)))
+
+        for d_idx in range(num_days):
+            day_num = d_idx + 1
+            leg_orig_name, leg_orig_lat, leg_orig_lng = waypoints_chain[d_idx]
+            leg_dest_name, leg_dest_lat, leg_dest_lng = waypoints_chain[d_idx + 1]
+
+            # Approximate or extract leg metrics from route_res if matching
+            if route_res.legs and d_idx < len(route_res.legs):
+                r_leg = route_res.legs[d_idx]
+                leg_dist = r_leg.distance_km
+                leg_dur_hours = round(r_leg.duration_minutes / 60.0, 1)
+                leg_geom = r_leg.geometry
+                leg_source = r_leg.route_source
+                leg_is_live = r_leg.is_live
+            else:
+                leg_dist = round(total_km / num_days, 1)
+                leg_dur_hours = round(total_hours / num_days, 1)
+                leg_geom = route_res.geometry if num_days == 1 else []
+                leg_source = route_res.route_source
+                leg_is_live = route_res.is_live
+
+            dep_time = "06:30"
+            arr_hour = min(21, 7 + int(leg_dur_hours))
+            arr_time = f"{arr_hour:02d}:30"
+
+            schema_leg = RoadTripLeg(
+                origin=leg_orig_name,
+                destination=leg_dest_name,
+                origin_lat=leg_orig_lat,
+                origin_lng=leg_orig_lng,
+                dest_lat=leg_dest_lat,
+                dest_lng=leg_dest_lng,
+                distance_km=leg_dist,
+                duration_minutes=round(leg_dur_hours * 60.0, 1),
+                geometry=leg_geom,
+                departure_time=dep_time,
+                arrival_time=arr_time,
+                route_source=leg_source,
+                is_live=leg_is_live,
+                warning=route_res.warning
+            )
+            all_schema_legs.append(schema_leg)
+
+            # Assign stops to this day
+            day_raw_stops = stops_pool[d_idx * stops_per_day : (d_idx + 1) * stops_per_day]
+            day_schema_stops: List[RoadTripStop] = []
+
+            for st in day_raw_stops:
+                stop_obj = RoadTripStop(
+                    id=st["id"],
+                    name=st["name"],
+                    type=st.get("type", "Attraction"),
+                    category=st.get("category", "Culture"),
+                    distance_off_route_km=st.get("distance_off_route_km", 0.0),
+                    route_offset_km=st.get("route_offset_km", 0.0),
+                    detour_km=st.get("detour_km", 0.0),
+                    detour_time_mins=st.get("detour_time_mins", 15),
+                    time_needed_mins=st.get("time_needed_mins", 45),
+                    approx_cost=st.get("approx_cost", 0.0),
+                    cost_label=st.get("cost_label", "Free / Minimal"),
+                    why_stop=st.get("why_stop", "Scenic waypoint along route."),
+                    opening_status=st.get("opening_status", "Open"),
+                    lat=st["lat"],
+                    lng=st["lng"],
+                    action_label=st.get("action_label", "Add stop"),
+                    action_type=st.get("action_type", "add_stop"),
+                    data_state=st.get("data_state", "CURATED"),
+                    next_leg_info=f"{st['name']} → {leg_dest_name}"
+                )
+                day_schema_stops.append(stop_obj)
+                all_schema_stops.append(stop_obj)
+
+            # Build Day Timeline
+            timeline = [
+                ItineraryItemResponse(
+                    id=f"road-tl-{day_num}-start",
+                    itinerary_id=f"day-{day_num}",
+                    place_id=None,
+                    title=f"Leave {leg_orig_name}",
+                    category="Transit",
+                    start_time=dep_time,
+                    end_time="07:00",
+                    duration_mins=30,
+                    estimated_cost=0.0,
+                    travel_time_from_prev_mins=0,
+                    distance_from_prev_km=0.0,
+                    notes=f"Early departure from {leg_orig_name}. Clear city limits before morning rush.",
+                    reason_for_recommendation="Saves 45 mins of traffic congestion.",
+                    status="upcoming",
+                    is_locked=True
+                )
+            ]
+
+            curr_mins = 7 * 60
+            for s_idx, st_item in enumerate(day_schema_stops):
+                curr_mins += int(st_item.time_needed_mins + 45)
+                s_hour = f"{(curr_mins // 60) % 24:02d}:{(curr_mins % 60):02d}"
+                e_mins = curr_mins + st_item.time_needed_mins
+                e_hour = f"{(e_mins // 60) % 24:02d}:{(e_mins % 60):02d}"
+
+                timeline.append(ItineraryItemResponse(
+                    id=f"road-tl-{day_num}-{s_idx+1}",
+                    itinerary_id=f"day-{day_num}",
+                    place_id=None,
+                    title=st_item.name,
+                    category=st_item.category,
+                    start_time=s_hour,
+                    end_time=e_hour,
+                    duration_mins=st_item.time_needed_mins,
+                    estimated_cost=st_item.approx_cost,
+                    travel_time_from_prev_mins=45,
+                    distance_from_prev_km=st_item.distance_off_route_km,
+                    notes=st_item.why_stop,
+                    reason_for_recommendation=f"{st_item.type} stop (+{st_item.distance_off_route_km} km detour, +{st_item.detour_time_mins} min drive).",
+                    map_lat=st_item.lat,
+                    map_lng=st_item.lng,
+                    status="upcoming",
+                    is_locked=False
+                ))
+
+            # Final Arrival
+            timeline.append(ItineraryItemResponse(
+                id=f"road-tl-{day_num}-arr",
+                itinerary_id=f"day-{day_num}",
+                place_id=None,
+                title=f"Arrive in {leg_dest_name} & Check-in",
+                category="Stay",
+                start_time=arr_time,
+                end_time=f"{int(arr_time[:2])+1:02d}:30",
+                duration_mins=60,
+                estimated_cost=0.0,
+                travel_time_from_prev_mins=60,
+                distance_from_prev_km=leg_dist,
+                notes=f"Check into accommodation in {leg_dest_name}. Evening dinner & unwind.",
+                reason_for_recommendation="End driving day before sunset.",
+                status="upcoming",
+                is_locked=True
+            ))
+
+            # Overnight Stays (Part 8: 2-3 useful stays with property, type, price, area, action, amenities)
+            stay_options = [
+                HotelResponse(
+                    id=f"stay-{day_num}-1",
+                    destination_id="highway",
+                    name=f"Heritage Highway Retreat ({leg_dest_name})",
+                    address=f"NH Express Bypass, {leg_dest_name}",
+                    latitude=leg_dest_lat,
+                    longitude=leg_dest_lng,
+                    price_per_night=2800.0,
+                    hotel_style="Comfort Highway Stay",
+                    amenities="Parking,24h Check-in,Hot Water,Fastag Friendly",
+                    check_in_time="12:00 PM",
+                    check_out_time="11:00 AM",
+                    badge="Best Highway Access",
+                    trust_source="VANVAS_CURATED",
+                    is_live=False,
+                    price_verified=True
+                ),
+                HotelResponse(
+                    id=f"stay-{day_num}-2",
+                    destination_id="highway",
+                    name=f"Boutique City Inn ({leg_dest_name})",
+                    address=f"City Center Boulevard, {leg_dest_name}",
+                    latitude=leg_dest_lat,
+                    longitude=leg_dest_lng,
+                    price_per_night=3500.0,
+                    hotel_style="Boutique Heritage",
+                    amenities="WiFi,Breakfast Included,Safe Parking,Restaurant",
+                    check_in_time="01:00 PM",
+                    check_out_time="11:00 AM",
+                    badge="City Center Pick",
+                    trust_source="VANVAS_CURATED",
+                    is_live=False,
+                    price_verified=True
+                )
+            ]
+
+            # Food along the way (Part 7: Breakfast 1-2, Lunch 1-2, Tea/Snack 1, Dinner 1-2)
+            food_options = [
+                {
+                    "meal": "BREAKFAST",
+                    "name": f"Highway Dhaba ({leg_orig_name} Exit)",
+                    "type": "Dhaba",
+                    "price_band": "₹150 - ₹250",
+                    "route_detour": "0.5 km off NH",
+                    "why": "Fresh hot stuffed parathas with white butter and kulhad masala chai.",
+                    "action": "Breakfast stop"
+                },
+                {
+                    "meal": "LUNCH",
+                    "name": "Midway Garden Express Restaurant",
+                    "type": "Casual Dining",
+                    "price_band": "₹350 - ₹500",
+                    "route_detour": "Right on corridor",
+                    "why": "Air-conditioned dining hall, North Indian thali, clean restrooms.",
+                    "action": "Lunch stop"
+                },
+                {
+                    "meal": "TEA / SNACK",
+                    "name": "Expressway Highway Tea Point & Bakery",
+                    "type": "Cafe",
+                    "price_band": "₹100 - ₹180",
+                    "route_detour": "0.2 km off NH",
+                    "why": "Filter coffee, bun maska, and quick energy snacks.",
+                    "action": "Tea break"
+                },
+                {
+                    "meal": "DINNER",
+                    "name": f"Local Specialty Kitchen ({leg_dest_name})",
+                    "type": "Local Cuisine",
+                    "price_band": "₹400 - ₹700",
+                    "route_detour": "Near hotel",
+                    "why": "Authentic regional dinner and relaxing family atmosphere.",
+                    "action": "Dinner"
+                }
+            ]
+
+            days.append(RoadTripDay(
+                day_number=day_num,
+                title=f"{leg_orig_name} → {leg_dest_name}",
+                theme=f"Day {day_num} Highway Leg ({leg_dist} km)",
+                origin=leg_orig_name,
+                destination=leg_dest_name,
+                driving_distance_km=leg_dist,
+                driving_time_hours=leg_dur_hours,
+                route_source=leg_source,
+                geometry=leg_geom,
+                legs=[schema_leg],
+                timeline=timeline,
+                stops=day_schema_stops,
+                food_options=food_options,
+                stay_options=stay_options,
+                fuel_estimated_inr=round((leg_dist / 16.0) * 95.5, 0)
+            ))
+
+        return days, all_schema_stops, all_schema_legs
 
     @staticmethod
     def _calculate_fuel(distance_km: float, vehicle_type: str) -> RoadTripFuelBreakdown:
@@ -209,13 +533,13 @@ class RoadTripService:
         elif "electric" in v_type or "ev" in v_type:
             mileage = 7.0  # km/kWh
             fuel_rate = 14.00  # ₹/kWh approx fast charging
-        else: # Standard Sedan / Hatchback car
+        else:  # Standard Sedan / Hatchback car
             mileage = 16.0  # km/L
             fuel_rate = 95.50
 
         litres_needed = distance_km / mileage
         fuel_cost = round(litres_needed * fuel_rate, 2)
-        calc_text = f"{distance_km:,.0f} km · {mileage} km/L assumed · ₹{fuel_rate:.2f}/L"
+        calc_text = f"{distance_km:,.1f} km · {mileage} km/L assumed · ₹{fuel_rate:.2f}/L (ESTIMATED)"
 
         return RoadTripFuelBreakdown(
             total_distance_km=distance_km,
@@ -228,16 +552,18 @@ class RoadTripService:
         )
 
     @staticmethod
-    def _calculate_budget(fuel_cost: float, total_km: float, num_days: int, travellers: int, custom_budget: Optional[float]) -> RoadTripBudgetEstimate:
-        # Tolls: ~₹1.2 to ₹1.8 per km on NH
+    def _calculate_budget(
+        fuel_cost: float, total_km: float, num_days: int, travellers: int, custom_budget: Optional[float]
+    ) -> RoadTripBudgetEstimate:
+        # Tolls: ~₹1.45 per km on NH (ESTIMATED)
         tolls_est = round(total_km * 1.45, 0)
-        # Stays: ~₹2,200/night per room (assume 2 travellers per room)
+        # Stays: ~₹2,400/night per room (assume 2 travellers per room)
         rooms_needed = max(1, math.ceil(travellers / 2))
         stay_nights = max(1, num_days - 1)
         stay_est = round(stay_nights * rooms_needed * 2400.0, 0)
-        # Food: ~₹800/day per person (highway dhabas & dinners)
+        # Food: ~₹750/day per person
         food_est = round(num_days * travellers * 750.0, 0)
-        # Activities & Sightseeing tickets
+        # Activities & Sightseeing
         act_est = round(num_days * travellers * 350.0, 0)
         # Parking & Misc
         parking_est = round(num_days * 300.0 + 400.0, 0)
@@ -258,250 +584,3 @@ class RoadTripService:
             travellers_count=travellers,
             is_custom_budget=bool(custom_budget and custom_budget > 1000)
         )
-
-    @staticmethod
-    def _generate_days_and_stops(
-        o_name: str, d_name: str, o_lat: float, o_lng: float, d_lat: float, d_lng: float,
-        num_days: int, total_km: float, req: RoadTripPlanRequest, corridor: str
-    ) -> Tuple[List[RoadTripDay], List[RoadTripStop]]:
-        days: List[RoadTripDay] = []
-        all_stops: List[RoadTripStop] = []
-
-        is_delhi_goa = "delhi" in o_name.lower() and "goa" in d_name.lower()
-        is_delhi_manali = "delhi" in o_name.lower() and "manali" in d_name.lower()
-        is_delhi_rishikesh = "delhi" in o_name.lower() and "rishikesh" in d_name.lower()
-        is_bangalore_goa = "bangalore" in o_name.lower() and "goa" in d_name.lower()
-
-        # Day breakdown logic
-        if is_delhi_goa:
-            # Multi-day flagship road trip: Delhi -> Jaipur -> Udaipur -> Pune/Kolhapur -> Goa
-            legs = [
-                ("Delhi", "Jaipur", 280, 5.0, "Heritage Highway & Fort Gateways", [
-                    RoadTripStop(
-                        id="stop-neemrana", name="Neemrana Fort-Palace", type="Fort", category="Heritage",
-                        distance_off_route_km=4.5, time_needed_mins=45, approx_cost=250.0,
-                        why_stop="15th century step fortress & scenic ridge tea stop right along NH48.",
-                        lat=27.9940, lng=76.3880, action_label="Add stop", action_type="add_stop",
-                        next_leg_info="Neemrana → Jaipur (2h 10m · 145 km)"
-                    ),
-                    RoadTripStop(
-                        id="stop-amrik-rao", name="Old Rao Dhaba (Dharuhera)", type="Dhaba", category="Food",
-                        distance_off_route_km=0.5, time_needed_mins=35, approx_cost=180.0,
-                        why_stop="Iconic tandoori parathas with white butter and kulhad chai.",
-                        lat=28.2050, lng=76.7900, action_label="Breakfast stop", action_type="food_stop",
-                        next_leg_info="Dharuhera → Neemrana (45m · 48 km)"
-                    )
-                ]),
-                ("Jaipur", "Udaipur", 395, 6.5, "Royal Mewar Transit & Lake Vistas", [
-                    RoadTripStop(
-                        id="stop-ajmer-pushkar", name="Pushkar Ghats & Stepwells", type="Heritage Site", category="Culture",
-                        distance_off_route_km=12.0, time_needed_mins=60, approx_cost=0.0,
-                        why_stop="Historic sacred lake & desert bazaar detour (+12 km from Ajmer bypass).",
-                        lat=26.4897, lng=74.5511, action_label="Add stop", action_type="add_stop",
-                        next_leg_info="Pushkar → Udaipur (4h 45m · 280 km)"
-                    ),
-                    RoadTripStop(
-                        id="stop-chittorgarh", name="Chittorgarh Fort Viewpoint", type="Fort", category="Heritage",
-                        distance_off_route_km=6.0, time_needed_mins=50, approx_cost=100.0,
-                        why_stop="Largest hill fort complex in India visible right from the bypass highway.",
-                        lat=24.8879, lng=74.6454, action_label="Viewpoint stop", action_type="viewpoint",
-                        next_leg_info="Chittor → Udaipur (1h 45m · 112 km)"
-                    )
-                ]),
-                ("Udaipur", "Ahmedabad / Surat", 450, 7.0, "Aravalli Ghats to Coastal Plains", [
-                    RoadTripStop(
-                        id="stop-shamlaji", name="Shamlaji Temple & Riverfront", type="Temple", category="Culture",
-                        distance_off_route_km=2.0, time_needed_mins=30, approx_cost=0.0,
-                        why_stop="Ancient stone carvings by the Meshwo River right on Gujarat border.",
-                        lat=23.6870, lng=73.3850, action_label="Add stop", action_type="add_stop"
-                    )
-                ]),
-                ("Surat / Mumbai", "Goa", 540, 8.5, "Western Ghats to Arabian Palms", [
-                    RoadTripStop(
-                        id="stop-amboli", name="Amboli Ghat Waterfall & Mist Point", type="Waterfall", category="Nature",
-                        distance_off_route_km=8.0, time_needed_mins=40, approx_cost=0.0,
-                        why_stop="Lush evergreen mountain pass before descending into North Goa.",
-                        lat=15.9580, lng=73.9990, action_label="Add stop", action_type="add_stop"
-                    )
-                ])
-            ]
-        elif is_delhi_manali:
-            legs = [
-                ("Delhi", "Chandigarh", 245, 4.5, "Grand Trunk Highway & Murthal Dhabas", [
-                    RoadTripStop(
-                        id="stop-murthal", name="Amrik Sukhdev (Murthal)", type="Dhaba", category="Food",
-                        distance_off_route_km=0.2, time_needed_mins=45, approx_cost=250.0,
-                        why_stop="Legendary highway breakfast stop on NH44: hot aloo pyaaz parathas with fresh makhan.",
-                        lat=29.0250, lng=77.0700, action_label="Breakfast stop", action_type="food_stop"
-                    ),
-                    RoadTripStop(
-                        id="stop-kurukshetra", name="Brahma Sarovar Ghat", type="Lake", category="Heritage",
-                        distance_off_route_km=6.0, time_needed_mins=30, approx_cost=0.0,
-                        why_stop="Sprawling historic water sanctuary and quiet walking esplanade.",
-                        lat=29.9650, lng=76.8370, action_label="Add stop", action_type="add_stop"
-                    )
-                ]),
-                ("Chandigarh", "Manali", 295, 7.0, "Beas River Canyons & Aut Tunnel", [
-                    RoadTripStop(
-                        id="stop-bilaspur", name="Gobind Sagar Lake Viewpoint", type="Lake", category="Viewpoint",
-                        distance_off_route_km=2.5, time_needed_mins=25, approx_cost=0.0,
-                        why_stop="Wide emerald reservoir viewpoint before the steep hill curves begin.",
-                        lat=31.3400, lng=76.7550, action_label="Viewpoint", action_type="viewpoint"
-                    ),
-                    RoadTripStop(
-                        id="stop-pandoh", name="Pandoh Dam Spillway", type="Viewpoint", category="Nature",
-                        distance_off_route_km=1.0, time_needed_mins=20, approx_cost=0.0,
-                        why_stop="Massive water discharge point surrounded by pine-covered cliffs.",
-                        lat=31.6700, lng=77.0580, action_label="Add stop", action_type="add_stop"
-                    )
-                ])
-            ]
-        elif is_delhi_rishikesh:
-            legs = [
-                ("Delhi", "Rishikesh", 240, 5.0, "Meerut Expressway to Himalayan Foothills", [
-                    RoadTripStop(
-                        id="stop-cheetal", name="Cheetal Grand (Khatauli Bypass)", type="Café", category="Food",
-                        distance_off_route_km=0.5, time_needed_mins=40, approx_cost=300.0,
-                        why_stop="Green manicured garden café with filter coffee, paneer cutlets, and clean restrooms.",
-                        lat=29.2800, lng=77.7200, action_label="Snack stop", action_type="food_stop"
-                    ),
-                    RoadTripStop(
-                        id="stop-haridwar-ghat", name="Har Ki Pauri Ghat (Haridwar)", type="Heritage Site", category="Culture",
-                        distance_off_route_km=4.0, time_needed_mins=45, approx_cost=0.0,
-                        why_stop="Sacred riverbank right before the final 20 km drive up into Rishikesh.",
-                        lat=29.9560, lng=78.1700, action_label="Add stop", action_type="add_stop"
-                    )
-                ])
-            ]
-        elif is_bangalore_goa:
-            legs = [
-                ("Bangalore", "Hubli / Dharwad", 410, 6.0, "Deccan Plains & NH48 Expressway", [
-                    RoadTripStop(
-                        id="stop-chitradurga", name="Chitradurga Fort of Seven Circles", type="Fort", category="Heritage",
-                        distance_off_route_km=3.5, time_needed_mins=60, approx_cost=50.0,
-                        why_stop="Massive 17th century stone fortification built into boulder hills.",
-                        lat=14.2250, lng=76.4010, action_label="Add stop", action_type="add_stop"
-                    )
-                ]),
-                ("Hubli", "Goa", 160, 4.0, "Dandeli Forest & Anmod Ghat Pass", [
-                    RoadTripStop(
-                        id="stop-dudhsagar-view", name="Anmod Ghat Forest Canopy", type="Viewpoint", category="Nature",
-                        distance_off_route_km=2.0, time_needed_mins=30, approx_cost=0.0,
-                        why_stop="Misty mountain switchbacks descending from Karnataka into Goa palms.",
-                        lat=15.4300, lng=74.3800, action_label="Add stop", action_type="add_stop"
-                    )
-                ])
-            ]
-        else:
-            # Generic synthetic realistic corridor
-            km_per_day = round(total_km / num_days, 1)
-            legs = []
-            for d in range(1, num_days + 1):
-                d_orig = o_name if d == 1 else f"Overnight Halt #{d-1}"
-                d_dest = d_name if d == num_days else f"Overnight Halt #{d}"
-                legs.append((
-                    d_orig, d_dest, km_per_day, round(km_per_day / 55.0, 1),
-                    f"Day {d}: Highway Leg ({km_per_day} km)",
-                    [
-                        RoadTripStop(
-                            id=f"stop-gen-{d}-1", name=f"Scenic Highway Rest Stop (NH)", type="Rest Stop", category="Transit",
-                            distance_off_route_km=1.0, time_needed_mins=30, approx_cost=150.0,
-                            why_stop="Clean highway fuel, food & tea pavilion along the corridor.",
-                            lat=round(o_lat + (d_lat - o_lat) * (d / (num_days + 1)), 4),
-                            lng=round(o_lng + (d_lng - o_lng) * (d / (num_days + 1)), 4),
-                            action_label="Rest stop", action_type="food_stop"
-                        )
-                    ]
-                ))
-
-        # Build day objects
-        for idx, leg_data in enumerate(legs[:num_days]):
-            d_num = idx + 1
-            orig_leg, dest_leg, dist_leg, time_leg, theme_leg, leg_stops = leg_data
-            all_stops.extend(leg_stops)
-
-            # Build timeline items for this day
-            timeline = [
-                ItineraryItemResponse(
-                    id=f"road-tl-{d_num}-1", itinerary_id=f"day-{d_num}", place_id=None,
-                    title=f"Leave {orig_leg}", category="Transit",
-                    start_time="06:30", end_time="07:00", duration_mins=30, estimated_cost=0.0,
-                    travel_time_from_prev_mins=0, distance_from_prev_km=0.0,
-                    notes=f"Early start from {orig_leg}. Clear city limits before rush hour.",
-                    reason_for_recommendation="Saves 45 mins in morning traffic.",
-                    status="upcoming", is_locked=True
-                )
-            ]
-
-            curr_mins = 7 * 60
-            for s_idx, st in enumerate(leg_stops):
-                curr_mins += int(st.time_needed_mins + 60)
-                start_h = f"{(curr_mins // 60) % 24:02d}:{(curr_mins % 60):02d}"
-                end_m = curr_mins + st.time_needed_mins
-                end_h = f"{(end_m // 60) % 24:02d}:{(end_m % 60):02d}"
-
-                timeline.append(ItineraryItemResponse(
-                    id=f"road-tl-{d_num}-{s_idx+2}", itinerary_id=f"day-{d_num}", place_id=None,
-                    title=st.name, category=st.category,
-                    start_time=start_h, end_time=end_h, duration_mins=st.time_needed_mins,
-                    estimated_cost=st.approx_cost, travel_time_from_prev_mins=45, distance_from_prev_km=st.distance_off_route_km,
-                    notes=st.why_stop, reason_for_recommendation=f"{st.type} stop along route (+{st.distance_off_route_km} km detour).",
-                    map_lat=st.lat, map_lng=st.lng,
-                    status="upcoming", is_locked=False
-                ))
-
-            # Arrival at day's destination
-            arr_time_h = f"{min(21, 8 + int(time_leg)):02d}:30"
-            timeline.append(ItineraryItemResponse(
-                id=f"road-tl-{d_num}-arr", itinerary_id=f"day-{d_num}", place_id=None,
-                title=f"Arrive in {dest_leg} & Check-in", category="Stay",
-                start_time=arr_time_h, end_time=f"{int(arr_time_h[:2])+1:02d}:30", duration_mins=60,
-                estimated_cost=0.0, travel_time_from_prev_mins=60, distance_from_prev_km=dist_leg,
-                notes=f"Check into overnight stay in {dest_leg}. Evening walk & hot dinner.",
-                reason_for_recommendation="End of driving day before sunset.",
-                status="upcoming", is_locked=True
-            ))
-
-            # Curated overnight stay option
-            stay_options = [
-                HotelResponse(
-                    id=f"stay-{d_num}-1", destination_id="highway",
-                    name=f"Heritage Highway Retreat ({dest_leg})", address=f"Main Highway Junction, {dest_leg}",
-                    latitude=d_lat, longitude=d_lng, price_per_night=2800.0,
-                    hotel_style="Comfort Highway Stay", amenities="Parking,24h Check-in,Hot Water,Restaurant",
-                    check_in_time="12:00 PM", check_out_time="11:00 AM",
-                    badge="Best Highway Access", trust_source="VANVAS_CURATED", is_live=False, price_verified=True
-                ),
-                HotelResponse(
-                    id=f"stay-{d_num}-2", destination_id="highway",
-                    name=f"Boutique City Inn ({dest_leg})", address=f"Old City Center, {dest_leg}",
-                    latitude=d_lat, longitude=d_lng, price_per_night=3500.0,
-                    hotel_style="Boutique Heritage", amenities="WiFi,Breakfast Included,Safe Parking",
-                    check_in_time="01:00 PM", check_out_time="11:00 AM",
-                    badge="City Center Pick", trust_source="VANVAS_CURATED", is_live=False, price_verified=True
-                )
-            ]
-
-            # Curated food options
-            food_options = [
-                {"name": f"Highway Dhaba ({orig_leg} Exit)", "type": "Dhaba", "price": "₹150 - ₹250", "timing": "06:00 - 23:00", "specialty": "Hot Tandoori Parathas & Masala Chai"},
-                {"name": f"Midway Garden Restaurant", "type": "Casual Dining", "price": "₹350 - ₹500", "timing": "11:00 - 22:30", "specialty": "Dal Makhani & Thali Lunch"},
-                {"name": f"Evening Dhaba & Tea Point ({dest_leg})", "type": "Local Food", "price": "₹200 - ₹350", "timing": "18:00 - 00:00", "specialty": "Biryani & Fresh Tawa Roti"}
-            ]
-
-            days.append(RoadTripDay(
-                day_number=d_num,
-                title=f"{orig_leg} → {dest_leg}",
-                theme=theme_leg,
-                origin=orig_leg,
-                destination=dest_leg,
-                driving_distance_km=dist_leg,
-                driving_time_hours=time_leg,
-                timeline=timeline,
-                stops=leg_stops,
-                food_options=food_options,
-                stay_options=stay_options,
-                fuel_estimated_inr=round((dist_leg / 15.0) * 95.5, 0)
-            ))
-
-        return days, all_stops

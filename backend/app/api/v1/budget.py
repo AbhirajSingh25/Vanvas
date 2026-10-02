@@ -49,9 +49,9 @@ def _calculate_shares(
     payer_id: str,
     participant_ids: List[str],
     custom_shares: Optional[List[Any]],
-    all_members: List[User]
+    all_members: List[Any]
 ) -> List[Dict[str, Any]]:
-    participants = [m for m in all_members if m.id in participant_ids] if participant_ids else all_members
+    participants = [m for m in all_members if getattr(m, "id", None) in participant_ids] if participant_ids else all_members
     if not participants:
         participants = all_members
 
@@ -65,8 +65,8 @@ def _calculate_shares(
         for idx, m in enumerate(participants):
             owed = equal_amt + (diff if idx == 0 else 0.0)
             shares_data.append({
-                "user_id": m.id,
-                "user_name": m.full_name,
+                "user_id": getattr(m, "id", f"user-{idx}"),
+                "user_name": getattr(m, "full_name", f"Traveller {idx+1}"),
                 "owed_amount": max(0.0, owed),
                 "percentage": round(100.0 / n, 2),
                 "shares_count": 1.0,
@@ -75,66 +75,88 @@ def _calculate_shares(
 
     elif split_method == "EXACT" and custom_shares:
         for cs in custom_shares:
-            u = next((m for m in all_members if m.id == cs.user_id), None)
+            u_id = getattr(cs, "user_id", None) or (cs.get("user_id") if isinstance(cs, dict) else None)
+            u_name = getattr(cs, "user_name", None) or (cs.get("user_name") if isinstance(cs, dict) else None)
+            owed = getattr(cs, "owed_amount", None) or (cs.get("owed_amount", 0.0) if isinstance(cs, dict) else 0.0)
+            sh_count = getattr(cs, "shares_count", None) or (cs.get("shares_count", 1.0) if isinstance(cs, dict) else 1.0)
+            item_json = getattr(cs, "item_details_json", None) or (cs.get("item_details_json") if isinstance(cs, dict) else None)
+            u = next((m for m in all_members if getattr(m, "id", None) == u_id), None)
             shares_data.append({
-                "user_id": cs.user_id,
-                "user_name": cs.user_name or (u.full_name if u else "Traveller"),
-                "owed_amount": max(0.0, cs.owed_amount),
-                "percentage": round((cs.owed_amount / amount * 100.0) if amount > 0 else 0, 2),
-                "shares_count": cs.shares_count or 1.0,
-                "item_details_json": cs.item_details_json
+                "user_id": u_id,
+                "user_name": u_name or (getattr(u, "full_name", None) if u else "Traveller"),
+                "owed_amount": max(0.0, owed),
+                "percentage": round((owed / amount * 100.0) if amount > 0 else 0, 2),
+                "shares_count": sh_count,
+                "item_details_json": item_json
             })
 
     elif split_method == "PERCENTAGE" and custom_shares:
         for cs in custom_shares:
-            pct = cs.percentage or 0.0
+            u_id = getattr(cs, "user_id", None) or (cs.get("user_id") if isinstance(cs, dict) else None)
+            u_name = getattr(cs, "user_name", None) or (cs.get("user_name") if isinstance(cs, dict) else None)
+            pct = getattr(cs, "percentage", None) or (cs.get("percentage", 0.0) if isinstance(cs, dict) else 0.0)
             owed = round(amount * (pct / 100.0), 2)
-            u = next((m for m in all_members if m.id == cs.user_id), None)
+            item_json = getattr(cs, "item_details_json", None) or (cs.get("item_details_json") if isinstance(cs, dict) else None)
+            u = next((m for m in all_members if getattr(m, "id", None) == u_id), None)
             shares_data.append({
-                "user_id": cs.user_id,
-                "user_name": cs.user_name or (u.full_name if u else "Traveller"),
+                "user_id": u_id,
+                "user_name": u_name or (getattr(u, "full_name", None) if u else "Traveller"),
                 "owed_amount": max(0.0, owed),
                 "percentage": pct,
                 "shares_count": None,
-                "item_details_json": cs.item_details_json
+                "item_details_json": item_json
             })
 
     elif split_method == "SHARES" and custom_shares:
-        total_shares_count = sum(cs.shares_count or 1.0 for cs in custom_shares)
+        total_shares_count = sum(
+            getattr(cs, "shares_count", None) or (cs.get("shares_count") or cs.get("shares", 1.0) if isinstance(cs, dict) else 1.0)
+            for cs in custom_shares
+        )
         total_shares_count = max(1.0, total_shares_count)
         for cs in custom_shares:
-            sh = cs.shares_count or 1.0
+            u_id = getattr(cs, "user_id", None) or (cs.get("user_id") if isinstance(cs, dict) else None)
+            u_name = getattr(cs, "user_name", None) or (cs.get("user_name") if isinstance(cs, dict) else None)
+            sh = getattr(cs, "shares_count", None) or (cs.get("shares_count") or cs.get("shares", 1.0) if isinstance(cs, dict) else 1.0)
             owed = round(amount * (sh / total_shares_count), 2)
-            u = next((m for m in all_members if m.id == cs.user_id), None)
+            item_json = getattr(cs, "item_details_json", None) or (cs.get("item_details_json") if isinstance(cs, dict) else None)
+            u = next((m for m in all_members if getattr(m, "id", None) == u_id), None)
             shares_data.append({
-                "user_id": cs.user_id,
-                "user_name": cs.user_name or (u.full_name if u else "Traveller"),
+                "user_id": u_id,
+                "user_name": u_name or (getattr(u, "full_name", None) if u else "Traveller"),
                 "owed_amount": max(0.0, owed),
                 "percentage": round((sh / total_shares_count) * 100.0, 2),
                 "shares_count": sh,
-                "item_details_json": cs.item_details_json
+                "item_details_json": item_json
             })
+
 
     elif split_method == "ITEMIZED" and custom_shares:
         for cs in custom_shares:
-            u = next((m for m in all_members if m.id == cs.user_id), None)
+            u_id = getattr(cs, "user_id", None) or (cs.get("user_id") if isinstance(cs, dict) else None)
+            u_name = getattr(cs, "user_name", None) or (cs.get("user_name") if isinstance(cs, dict) else None)
+            owed = getattr(cs, "owed_amount", None) or (cs.get("owed_amount", 0.0) if isinstance(cs, dict) else 0.0)
+            if owed == 0.0 and isinstance(cs, dict) and "cost" in cs:
+                owed = cs["cost"]
+            sh_count = getattr(cs, "shares_count", None) or (cs.get("shares_count", 1.0) if isinstance(cs, dict) else 1.0)
+            item_json = getattr(cs, "item_details_json", None) or (cs.get("item_details_json") if isinstance(cs, dict) else None)
+            u = next((m for m in all_members if getattr(m, "id", None) == u_id), None)
             shares_data.append({
-                "user_id": cs.user_id,
-                "user_name": cs.user_name or (u.full_name if u else "Traveller"),
-                "owed_amount": max(0.0, cs.owed_amount),
-                "percentage": round((cs.owed_amount / amount * 100.0) if amount > 0 else 0, 2),
-                "shares_count": cs.shares_count or 1.0,
-                "item_details_json": cs.item_details_json
+                "user_id": u_id,
+                "user_name": u_name or (getattr(u, "full_name", None) if u else "Traveller"),
+                "owed_amount": max(0.0, owed),
+                "percentage": round((owed / amount * 100.0) if amount > 0 else 0, 2),
+                "shares_count": sh_count,
+                "item_details_json": item_json
             })
 
-    else: # Fallback to equal
+    else:  # Fallback to equal
         equal_amt = round(amount / n, 2)
         diff = round(amount - (equal_amt * n), 2)
         for idx, m in enumerate(participants):
             owed = equal_amt + (diff if idx == 0 else 0.0)
             shares_data.append({
-                "user_id": m.id,
-                "user_name": m.full_name,
+                "user_id": getattr(m, "id", f"user-{idx}"),
+                "user_name": getattr(m, "full_name", f"Traveller {idx+1}"),
                 "owed_amount": max(0.0, owed),
                 "percentage": round(100.0 / n, 2),
                 "shares_count": 1.0,
@@ -142,6 +164,86 @@ def _calculate_shares(
             })
 
     return shares_data
+
+def calculate_shares(
+    amount: float,
+    split_method: str,
+    payer_id: str = "",
+    participant_ids: Optional[List[str]] = None,
+    participant_user_ids: Optional[List[str]] = None,
+    custom_shares: Optional[List[Any]] = None,
+    all_members: Optional[List[Any]] = None
+) -> List[Dict[str, Any]]:
+    """Public helper for calculating individual shares across various split methods."""
+    p_ids = participant_ids or participant_user_ids or []
+    
+    # If all_members not provided as ORM objects, construct minimal stubs
+    members_list = []
+    if all_members:
+        members_list = all_members
+    elif p_ids:
+        class MinimalMember:
+            def __init__(self, uid):
+                self.id = uid
+                self.full_name = f"User {uid}"
+        members_list = [MinimalMember(uid) for uid in p_ids]
+    
+    return _calculate_shares(
+        amount=amount,
+        split_method=split_method,
+        payer_id=payer_id,
+        participant_ids=p_ids,
+        custom_shares=custom_shares,
+        all_members=members_list
+    )
+
+
+def simplify_debts_algorithm(
+    net_balances: Dict[str, float],
+    user_names: Optional[Dict[str, str]] = None
+) -> List[Dict[str, Any]]:
+    """
+    Greedy debt minimization algorithm.
+    Minimizes transaction count while keeping every traveller's net balance exact.
+    """
+    names = user_names or {}
+    simplified: List[Dict[str, Any]] = []
+    debtors = []   # list of [user_id, abs(negative_balance)]
+    creditors = [] # list of [user_id, positive_balance]
+
+    for u_id, bal in net_balances.items():
+        if bal < -0.01:
+            debtors.append([u_id, abs(bal)])
+        elif bal > 0.01:
+            creditors.append([u_id, bal])
+
+    d_idx = 0
+    c_idx = 0
+    while d_idx < len(debtors) and c_idx < len(creditors):
+        d_id, d_amt = debtors[d_idx]
+        c_id, c_amt = creditors[c_idx]
+
+        settle_amt = min(d_amt, c_amt)
+        if settle_amt > 0.01:
+            simplified.append({
+                "debtor_user_id": d_id,
+                "debtor_name": names.get(d_id, f"User {d_id}"),
+                "creditor_user_id": c_id,
+                "creditor_name": names.get(c_id, f"User {c_id}"),
+                "amount": round(settle_amt, 2)
+            })
+
+        debtors[d_idx][1] -= settle_amt
+        creditors[c_idx][1] -= settle_amt
+
+        if debtors[d_idx][1] < 0.01:
+            d_idx += 1
+        if creditors[c_idx][1] < 0.01:
+            c_idx += 1
+
+    return simplified
+
+
 
 def _format_expense_response(e: Expense) -> ExpenseResponse:
     payer_name = e.user.full_name if e.user else "Traveller"

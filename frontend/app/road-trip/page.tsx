@@ -1,55 +1,142 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Navigation, Compass, Fuel, Clock, MapPin, Users,
-  Sparkles, ArrowRight, BedDouble, Coffee, Check,
+  Sparkles, ArrowRight, ArrowLeft, BedDouble, Coffee, Check,
   ShieldCheck, AlertCircle, Share2, Plus, Calendar,
-  ChevronDown, ChevronUp, Mountain, Car
+  ChevronDown, ChevronUp, Mountain, Car, Utensils,
+  Landmark, Trees, Waves, Eye, ShoppingBag, Loader2,
+  RefreshCw, DollarSign
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
-  RoadTripPlanRequest, RoadTripPlanResponse, RoadTripCorridor,
-  RoadTripStop, RoadTripDay
+  RoadTripPlanResponse, RoadTripCorridor, RoadTripStop, RoadTripLeg, RoadTripDay
 } from "@/types";
-import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { useDensity } from "@/context/DensityContext";
 
-export default function RoadTripPage() {
+function RoadTripCockpit() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isCompact } = useDensity();
 
-  // Planning Form State
-  const [origin, setOrigin] = useState("Delhi");
-  const [destination, setDestination] = useState("Goa");
+  // Progressive Step State: 1 to 7, plus Review (8) & Result View
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [origin, setOrigin] = useState<string>("Delhi");
+  const [destination, setDestination] = useState<string>("Goa");
+  const [startDate, setStartDate] = useState<string>(() => {
+    const today = new Date();
+    const day = today.getDay();
+    const daysUntilSat = (6 - day + 7) % 7 || 7;
+    const sat = new Date();
+    sat.setDate(today.getDate() + daysUntilSat);
+    return sat.toISOString().split("T")[0];
+  });
   const [travellersCount, setTravellersCount] = useState<number>(4);
+  const [companionType, setCompanionType] = useState<string>("Friends");
   const [vehicleType, setVehicleType] = useState<string>("Car");
   const [tripStyle, setTripStyle] = useState<string>("Balanced");
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
-  const [customBudget, setCustomBudget] = useState<string>("");
-  const [selectedPrefs, setSelectedPrefs] = useState<string[]>(["scenic", "food_focus"]);
-  
-  // Results & UI State
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>(["Food", "Nature", "Scenic Roads"]);
+
+  // Custom search inputs
+  const [originSearch, setOriginSearch] = useState("");
+  const [destSearch, setDestSearch] = useState("");
+
+  // Results state
   const [corridors, setCorridors] = useState<RoadTripCorridor[]>([]);
   const [plan, setPlan] = useState<RoadTripPlanResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedDayTab, setSelectedDayTab] = useState<number>(1);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+  const [showAllStops, setShowAllStops] = useState(false);
 
+  // Load popular corridors
   useEffect(() => {
     api.getRoadTripCorridors()
       .then(setCorridors)
       .catch(() => {});
   }, []);
 
-  const handleGeneratePlan = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!origin.trim() || !destination.trim() || loading) return;
+  // Step 1: Origin selection (Auto-advance)
+  const handleSelectOrigin = (city: string) => {
+    setOrigin(city);
+    setTimeout(() => setCurrentStep(2), 150);
+  };
 
+  // Step 2: Destination selection (Auto-advance)
+  const handleSelectDestination = (city: string) => {
+    setDestination(city);
+    setTimeout(() => setCurrentStep(3), 150);
+  };
+
+  // Step 3: Timing (Auto-advance)
+  const handleSelectTiming = (daysFromNow: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + daysFromNow);
+    setStartDate(d.toISOString().split("T")[0]);
+    setTimeout(() => setCurrentStep(4), 150);
+  };
+
+  // Step 4: Companions (Auto-advance)
+  const handleSelectCompanions = (type: string, count: number) => {
+    setCompanionType(type);
+    setTravellersCount(count);
+    setTimeout(() => setCurrentStep(5), 150);
+  };
+
+  // Step 5: Vehicle (Auto-advance)
+  const handleSelectVehicle = (vehicle: string) => {
+    setVehicleType(vehicle);
+    setTimeout(() => setCurrentStep(6), 150);
+  };
+
+  // Step 6: Trip Pace (Auto-advance)
+  const handleSelectPace = (pace: string) => {
+    setTripStyle(pace);
+    setTimeout(() => setCurrentStep(7), 150);
+  };
+
+  // Step 7: Priorities toggle
+  const handleTogglePriority = (p: string) => {
+    if (selectedPriorities.includes(p)) {
+      if (selectedPriorities.length > 1) {
+        setSelectedPriorities(selectedPriorities.filter((item) => item !== p));
+      }
+    } else {
+      setSelectedPriorities([...selectedPriorities, p]);
+    }
+  };
+
+  // Select pre-curated corridor directly
+  const handleSelectCorridor = (c: RoadTripCorridor) => {
+    setOrigin(c.origin);
+    setDestination(c.destination);
+    setLoading(true);
+    api.planRoadTrip({
+      origin: c.origin,
+      destination: c.destination,
+      travellers_count: travellersCount,
+      vehicle_type: vehicleType,
+      trip_style: tripStyle,
+      start_date: startDate,
+      preferences: selectedPriorities,
+    })
+      .then((resp) => {
+        setPlan(resp);
+        setSelectedDayTab(1);
+      })
+      .catch((err) => {
+        alert(err.message || "Failed to calculate corridor route.");
+      })
+      .finally(() => setLoading(false));
+  };
+
+  // Execute Road Trip Plan
+  const handleBuildRoadTrip = async () => {
     setLoading(true);
     try {
       const resp = await api.planRoadTrip({
@@ -59,37 +146,19 @@ export default function RoadTripPage() {
         vehicle_type: vehicleType,
         trip_style: tripStyle,
         start_date: startDate,
-        budget_inr: customBudget ? parseFloat(customBudget) : undefined,
-        preferences: selectedPrefs
+        preferences: selectedPriorities,
       });
       setPlan(resp);
       setSelectedDayTab(1);
     } catch (err: any) {
-      alert("Could not plan road trip. Please check your inputs.");
+      alert(err.message || "Failed to calculate road route. Please verify your locations.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSelectCorridor = (corridor: RoadTripCorridor) => {
-    setOrigin(corridor.origin);
-    setDestination(corridor.destination);
-    setLoading(true);
-    api.planRoadTrip({
-      origin: corridor.origin,
-      destination: corridor.destination,
-      travellers_count: travellersCount,
-      vehicle_type: vehicleType,
-      trip_style: tripStyle,
-      start_date: startDate,
-      preferences: selectedPrefs
-    }).then((resp) => {
-      setPlan(resp);
-      setSelectedDayTab(1);
-    }).finally(() => setLoading(false));
-  };
-
-  const handleSaveToMyTrips = async () => {
+  // Save Road Trip
+  const handleSaveTrip = async () => {
     if (!plan || saving) return;
     setSaving(true);
     try {
@@ -101,573 +170,799 @@ export default function RoadTripPage() {
         trip_style: tripStyle,
         start_date: plan.start_date,
         budget_inr: plan.budget_estimate.total_estimated,
-        preferences: selectedPrefs
+        preferences: selectedPriorities,
       });
       setNotificationMsg(`Road trip saved! Opening ${savedTrip.title}...`);
       setTimeout(() => {
         router.push(`/trips/${savedTrip.id}`);
-      }, 1200);
+      }, 1000);
     } catch (err: any) {
-      alert(err?.message || "Please login or register to save this road trip.");
+      alert(err?.message || "Please log in to save this road trip to your journeys.");
       setSaving(false);
     }
   };
 
-  const togglePref = (pref: string) => {
-    if (selectedPrefs.includes(pref)) {
-      setSelectedPrefs(selectedPrefs.filter((p) => p !== pref));
-    } else {
-      setSelectedPrefs([...selectedPrefs, pref]);
-    }
+  const getStopIcon = (category?: string, type?: string) => {
+    const key = (category || type || "").toLowerCase();
+    if (key.includes("food") || key.includes("dhaba")) return <Utensils className="w-3.5 h-3.5 text-[#B65E3C]" />;
+    if (key.includes("cafe")) return <Coffee className="w-3.5 h-3.5 text-[#B49252]" />;
+    if (key.includes("fort") || key.includes("heritage") || key.includes("monument")) return <Landmark className="w-3.5 h-3.5 text-[#8C6D37]" />;
+    if (key.includes("lake") || key.includes("waterfall")) return <Waves className="w-3.5 h-3.5 text-[#2A9D8F]" />;
+    if (key.includes("viewpoint")) return <Eye className="w-3.5 h-3.5 text-[#52B788]" />;
+    if (key.includes("nature")) return <Trees className="w-3.5 h-3.5 text-[#2D6A4F]" />;
+    if (key.includes("fuel")) return <Fuel className="w-3.5 h-3.5 text-[#E63946]" />;
+    return <Compass className="w-3.5 h-3.5 text-[#173B32]" />;
   };
 
   return (
     <div className="min-h-screen bg-[#EFE5D2] pb-32">
       {/* Toast Notification */}
       {notificationMsg && (
-        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 bg-[#173B32] text-[#EFE5D2] px-6 py-3 rounded-2xl shadow-2xl text-xs font-semibold border-2 border-[#B49252] flex items-center gap-2 animate-fadeIn">
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-[#173B32] text-[#EFE5D2] px-6 py-3 rounded-2xl shadow-2xl text-xs font-semibold border-2 border-[#B49252] flex items-center gap-2 animate-fadeIn">
           <Sparkles className="w-4 h-4 text-[#B49252]" />
           <span>{notificationMsg}</span>
         </div>
       )}
 
-      {/* Header Banner */}
-      <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 py-12 sm:py-16 border-b-2 border-[#E5D5BA]">
-        <div className="max-w-7xl mx-auto space-y-4 text-center sm:text-left">
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-            <TravelStamp label="VANVAS ROAD TRIP MODE" variant="terracotta" />
-            <span className="text-xs font-mono text-[#B49252] tracking-wider uppercase">
-              [ HIGHWAY CORRIDOR &amp; PROXIMITY STOPS ENGINE ]
-            </span>
-          </div>
-
-          <div className="space-y-1">
-            <span className="font-devanagari text-xl sm:text-2xl text-[#B49252] font-bold block">
-              सड़क का सफ़र • Plan the road between two places
-            </span>
-            <h1 className="text-3xl sm:text-5xl font-serif font-black tracking-tight text-[#FAF4E8]">
-              Road Trip Expedition Cockpit
-            </h1>
-          </div>
-
-          <p className="max-w-2xl text-xs sm:text-sm text-[#D8DED5]/90 font-light leading-relaxed">
-            VANVAS plans the journey itself: highway routes, verified dhaba breakfasts, fort detours,
-            transparent fuel consumption, overnight stays, and group split.
-          </p>
-        </div>
-      </section>
-
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Curated Highway Corridors Pills */}
-        {corridors.length > 0 && (
-          <div className="space-y-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7B4D36]">
-              Popular Indian Highway Corridors:
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {corridors.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => handleSelectCorridor(c)}
-                  className="p-3.5 rounded-2xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#173B32] text-left transition-all flex flex-col justify-between space-y-2 cursor-pointer shadow-2xs group"
+      {/* ======================================================== */}
+      {/* VIEW A: ROAD TRIP RESULTS & HIGHWAY COCKPIT VIEW         */}
+      {/* ======================================================== */}
+      {plan ? (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fadeIn">
+          {/* Top Bar with Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 shadow-md">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C]">
+                  {plan.corridor_name || "HIGHWAY CORRIDOR"}
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
+                    plan.is_live_route
+                      ? "bg-emerald-800 text-emerald-100"
+                      : "bg-[#7B4D36] text-[#EFE5D2]"
+                  }`}
                 >
-                  <div>
+                  {plan.is_live_route ? "LIVE ROUTE (OSRM)" : "ESTIMATED ROUTE"}
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-0.5">
+                {plan.origin} → {plan.destination}
+              </h1>
+              <p className="text-xs font-mono text-[#7B4D36] mt-0.5">
+                {plan.total_distance_km} km • {Math.floor(plan.total_driving_time_hours)}h {Math.round((plan.total_driving_time_hours % 1) * 60)}m driving • {plan.days.length} Days • {plan.vehicle_type}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPlan(null)}
+                className="px-4 py-2.5 rounded-xl bg-white border border-[#E5D5BA] hover:bg-[#EFE5D2] text-[#173B32] font-bold text-xs cursor-pointer"
+              >
+                Replan
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveTrip}
+                disabled={saving}
+                className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-md cursor-pointer flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>{saving ? "Saving..." : "Save Trip"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Day Navigation Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {plan.days.map((day) => (
+              <button
+                key={day.day_number}
+                type="button"
+                onClick={() => setSelectedDayTab(day.day_number)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+                  selectedDayTab === day.day_number
+                    ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
+                    : "bg-[#FAF7F0] text-[#7B4D36] border-[#E5D5BA] hover:bg-white"
+                }`}
+              >
+                Day {day.day_number}: {day.origin} → {day.destination} ({day.driving_distance_km} km)
+              </button>
+            ))}
+          </div>
+
+          {/* Active Day Content */}
+          {(() => {
+            const currentDay = plan.days.find((d) => d.day_number === selectedDayTab) || plan.days[0];
+            if (!currentDay) return null;
+
+            const stopsToShow = showAllStops ? currentDay.stops : currentDay.stops.slice(0, 3);
+
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left 2 Cols: Route Timeline & Along-The-Way Stops */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Highway Leg Header */}
+                  <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-3">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C]">
+                          DAY {currentDay.day_number} HIGHWAY LEG
+                        </span>
+                        <h2 className="font-serif font-black text-xl text-[#173B32]">
+                          {currentDay.title}
+                        </h2>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-mono font-bold text-[#173B32]">
+                          {currentDay.driving_distance_km} km
+                        </span>
+                        <span className="text-[10px] font-mono text-[#7B4D36] block">
+                          ~{currentDay.driving_time_hours.toFixed(1)}h road time
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Along The Way Stops (1-3 recommended with Detour info) */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-serif font-bold text-sm text-[#173B32] flex items-center gap-1.5">
+                          <Compass className="w-4 h-4 text-[#B65E3C]" />
+                          <span>Along the Way • Recommended Stops</span>
+                        </h3>
+                        {currentDay.stops.length > 3 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllStops(!showAllStops)}
+                            className="text-xs font-mono font-bold text-[#B65E3C] hover:underline cursor-pointer"
+                          >
+                            {showAllStops ? "Show less" : `View all (${currentDay.stops.length})`}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {stopsToShow.map((stop) => (
+                          <div
+                            key={stop.id}
+                            className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] hover:border-[#173B32] transition-colors flex items-start justify-between gap-3 shadow-2xs"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-xl bg-[#EFE5D2] flex items-center justify-center shrink-0 mt-0.5">
+                                {getStopIcon(stop.category, stop.type)}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-serif font-bold text-sm text-[#173B32]">
+                                    {stop.name}
+                                  </h4>
+                                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#EFE5D2] text-[#7B4D36] uppercase font-bold">
+                                    {stop.type}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-[#7B4D36] mt-0.5 line-clamp-2">
+                                  {stop.why_stop}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 block">
+                                {stop.detour_km ? `+${stop.detour_km} km detour` : `${stop.time_needed_mins}m stop`}
+                              </span>
+                              <span className="text-[9px] font-mono text-[#7B4D36] mt-1 block">
+                                {stop.approx_cost > 0 ? `₹${stop.approx_cost}` : "Free entry"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Food & Dhabas Along This Leg */}
+                    {currentDay.food_options && currentDay.food_options.length > 0 && (
+                      <div className="space-y-3 pt-3 border-t border-[#E5D5BA]">
+                        <h3 className="font-serif font-bold text-sm text-[#173B32] flex items-center gap-1.5">
+                          <Utensils className="w-4 h-4 text-[#B65E3C]" />
+                          <span>Highway Food &amp; Dhabas</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {currentDay.food_options.slice(0, 2).map((food, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3 rounded-2xl bg-white border border-[#E5D5BA] space-y-1 text-xs"
+                            >
+                              <div className="flex items-center justify-between font-serif font-bold text-[#173B32]">
+                                <span>{food.name}</span>
+                                <span className="text-[10px] font-mono text-[#B65E3C]">{food.price || "₹250/p"}</span>
+                              </div>
+                              <p className="text-[11px] text-[#7B4D36]">{food.why || food.specialty || food.type}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Col: Overnight Stays & Trip Budget */}
+                <div className="space-y-6">
+                  {/* Overnight Stays */}
+                  <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 space-y-3">
+                    <h3 className="font-serif font-bold text-sm text-[#173B32] flex items-center gap-1.5">
+                      <BedDouble className="w-4 h-4 text-[#B65E3C]" />
+                      <span>Overnight Halt: {currentDay.destination}</span>
+                    </h3>
+
+                    {currentDay.stay_options && currentDay.stay_options.length > 0 ? (
+                      <div className="space-y-2">
+                        {currentDay.stay_options.slice(0, 2).map((hotel, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 rounded-2xl bg-white border border-[#E5D5BA] space-y-1 text-xs"
+                          >
+                            <div className="flex items-center justify-between font-serif font-bold text-[#173B32]">
+                              <span>{hotel.name}</span>
+                              <span className="font-mono text-[#B65E3C]">₹{hotel.price_per_night}/night</span>
+                            </div>
+                            <p className="text-[10px] text-[#7B4D36]">{hotel.address || hotel.badge || "Verified sanctuary stay"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[#7B4D36]">No verified stay required for this daytime segment.</p>
+                    )}
+                  </div>
+
+                  {/* Budget Breakdown */}
+                  <div className="bg-[#173B32] text-[#EFE5D2] rounded-3xl p-5 space-y-3 border-2 border-[#243E36]">
+                    <div className="flex items-center justify-between border-b border-[#243E36] pb-2">
+                      <span className="text-[10px] font-mono font-bold uppercase text-[#B49252]">
+                        TRIP BUDGET
+                      </span>
+                      <span className="text-xs font-mono font-bold text-[#FAF4E8]">
+                        ₹{plan.budget_estimate.total_estimated.toLocaleString()} TOTAL
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs font-mono">
+                      <div className="flex items-center justify-between text-[#D8DED5]">
+                        <span>Fuel Estimate</span>
+                        <span>₹{plan.fuel_breakdown.estimated_fuel_cost_inr.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#D8DED5]">
+                        <span>Highway Tolls</span>
+                        <span>₹{plan.budget_estimate.tolls_estimated.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#D8DED5]">
+                        <span>Stays &amp; Halts</span>
+                        <span>₹{plan.budget_estimate.stay_estimated.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#D8DED5]">
+                        <span>Food &amp; Dhabas</span>
+                        <span>₹{plan.budget_estimate.food_estimated.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#D8DED5]">
+                        <span>Activities &amp; Parking</span>
+                        <span>₹{(plan.budget_estimate.activities_estimated + (plan.budget_estimate.parking_other_estimated || 0)).toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#243E36] flex items-center justify-between">
+                      <span className="text-xs text-[#D8DED5]">Cost Per Person:</span>
+                      <strong className="text-base font-mono font-black text-[#B49252]">
+                        ₹{plan.budget_estimate.per_person_estimated.toLocaleString()}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      ) : (
+        /* ======================================================== */
+        /* VIEW B: PROGRESSIVE 1-QUESTION-AT-A-TIME FLOW            */
+        /* ======================================================== */
+        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          {/* Loading Indicator */}
+          {loading && (
+            <div className="fixed inset-0 z-50 bg-[#0F2924]/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-[#EFE5D2] animate-fadeIn">
+              <div className="w-14 h-14 rounded-2xl bg-[#B65E3C] flex items-center justify-center shadow-2xl mb-4">
+                <Navigation className="w-7 h-7 text-[#FAF4E8] animate-spin" />
+              </div>
+              <h3 className="font-serif font-black text-2xl text-[#FAF4E8] mb-2">
+                Plotting Highway Corridor: {origin} → {destination}
+              </h3>
+              <p className="text-xs sm:text-sm font-mono text-[#D8DED5] animate-pulse">
+                Fetching real OSRM road geometry, highway stops &amp; fuel stops...
+              </p>
+            </div>
+          )}
+
+          {/* Popular Corridors Quick Access */}
+          {currentStep === 1 && corridors.length > 0 && (
+            <div className="mb-5 space-y-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7B4D36]">
+                Popular Road Corridors:
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {corridors.slice(0, 4).map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleSelectCorridor(c)}
+                    className="p-3 rounded-2xl bg-white hover:bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#B65E3C] text-left transition-all cursor-pointer shadow-2xs"
+                  >
                     <span className="text-[9px] font-mono font-bold text-[#B65E3C] uppercase block">
                       {c.origin} → {c.destination}
                     </span>
-                    <h4 className="font-serif font-bold text-sm text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
+                    <h4 className="font-serif font-bold text-xs text-[#173B32]">
                       {c.title}
                     </h4>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] font-mono text-[#7B4D36] pt-1 border-t border-[#E5D5BA]">
-                    <span>{c.distance_km} km · {c.days_suggested} days</span>
-                    <span className="text-[#B65E3C] font-bold">Plan →</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Interactive Road Trip Planner Form Card */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-6">
-          <form onSubmit={handleGeneratePlan} className="space-y-5">
-            {/* Origin & Destination Inputs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10.5px] font-mono font-bold uppercase text-[#7B4D36] mb-1">
-                  Starting Point (Origin)
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-[#B65E3C] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    value={origin}
-                    onChange={(e) => setOrigin(e.target.value)}
-                    placeholder="e.g. Delhi, Bangalore, Mumbai, Chandigarh"
-                    className="w-full pl-10 pr-4 py-3 bg-white border-2 border-[#E5D5BA] rounded-2xl text-sm font-bold text-[#173B32] focus:outline-none focus:border-[#173B32]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10.5px] font-mono font-bold uppercase text-[#7B4D36] mb-1">
-                  Final Destination
-                </label>
-                <div className="relative">
-                  <Navigation className="w-4 h-4 text-[#173B32] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    placeholder="e.g. Goa, Manali, Udaipur, Rishikesh, Spiti"
-                    className="w-full pl-10 pr-4 py-3 bg-white border-2 border-[#E5D5BA] rounded-2xl text-sm font-bold text-[#173B32] focus:outline-none focus:border-[#173B32]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Travellers, Vehicle & Trip Style Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-[#E5D5BA]">
-              {/* Travellers */}
-              <div>
-                <label className="block text-[10px] font-mono font-bold uppercase text-[#7B4D36] mb-1">
-                  Travellers
-                </label>
-                <div className="grid grid-cols-5 gap-1">
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <button
-                      key={num}
-                      type="button"
-                      onClick={() => setTravellersCount(num)}
-                      className={`py-2 rounded-xl text-center font-bold text-xs transition-colors cursor-pointer border ${
-                        travellersCount === num
-                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32]"
-                          : "bg-white text-[#7B4D36] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                      }`}
-                    >
-                      {num === 5 ? "5+" : num}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Vehicle Type */}
-              <div>
-                <label className="block text-[10px] font-mono font-bold uppercase text-[#7B4D36] mb-1">
-                  Vehicle
-                </label>
-                <div className="grid grid-cols-4 gap-1">
-                  {["Car", "Bike", "SUV", "Rental"].map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setVehicleType(v)}
-                      className={`py-2 rounded-xl text-center font-bold text-xs transition-colors cursor-pointer border ${
-                        vehicleType === v
-                          ? "bg-[#B65E3C] text-[#EFE5D2] border-[#B65E3C]"
-                          : "bg-white text-[#7B4D36] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                      }`}
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Trip Style */}
-              <div>
-                <label className="block text-[10px] font-mono font-bold uppercase text-[#7B4D36] mb-1">
-                  Driving Style
-                </label>
-                <div className="grid grid-cols-3 gap-1">
-                  {["Fast", "Balanced", "Explore"].map((st) => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => setTripStyle(st)}
-                      className={`py-2 rounded-xl text-center font-bold text-xs transition-colors cursor-pointer border ${
-                        tripStyle === st
-                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32]"
-                          : "bg-white text-[#7B4D36] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Dates & Route Preferences */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[#E5D5BA]">
-              <div>
-                <label className="block text-[10px] font-mono font-bold uppercase text-[#7B4D36] mb-1">
-                  Departure Date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#E5D5BA] text-xs font-mono font-bold text-[#173B32]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-mono font-bold uppercase text-[#7B4D36] mb-1">
-                  Route Focus / Preferences
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { id: "scenic", label: "Scenic Roads" },
-                    { id: "food_focus", label: "Highway Dhabas" },
-                    { id: "avoid_tolls", label: "Avoid Tolls" },
-                    { id: "less_driving", label: "Shorter Daily Legs" },
-                    { id: "adventure", label: "Ghats & Passes" },
-                  ].map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => togglePref(p.id)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                        selectedPrefs.includes(p.id)
-                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32]"
-                          : "bg-white text-[#7B4D36] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Calculate Button */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Navigation className="w-4 h-4 text-[#B49252]" />
-                <span>{loading ? "Calculating Highway Route & Detours..." : "Calculate Road Route & Discover Stops"}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Plan Results Section */}
-        {plan && (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Expedition Summary Header Card */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-[#173B32] text-[#EFE5D2] shadow-xl space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                  <span className="text-[10.5px] font-mono text-[#B49252] font-bold uppercase tracking-wider block">
-                    {plan.corridor_name}
-                  </span>
-                  <h2 className="text-2xl sm:text-4xl font-serif font-black text-[#FAF4E8] mt-1">
-                    {plan.origin} → {plan.destination}
-                  </h2>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSaveToMyTrips}
-                    disabled={saving}
-                    className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md cursor-pointer transition-colors"
-                  >
-                    <Check className="w-4 h-4 text-[#B49252]" />
-                    <span>{saving ? "Saving..." : "Save to My Trips & Open Ledger"}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Road Metrics: Total km · Drive Time · Days · Travellers */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10">
-                  <span className="text-[9.5px] text-[#D8DED5]/70 uppercase block">Road Distance</span>
-                  <strong className="text-base text-[#B49252] font-bold">{plan.total_distance_km.toLocaleString()} km</strong>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10">
-                  <span className="text-[9.5px] text-[#D8DED5]/70 uppercase block">Total Drive Time</span>
-                  <strong className="text-base text-[#FAF4E8] font-bold">{plan.total_driving_time_hours} Hours</strong>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10">
-                  <span className="text-[9.5px] text-[#D8DED5]/70 uppercase block">Expedition Length</span>
-                  <strong className="text-base text-[#FAF4E8] font-bold">{plan.num_days} Days ({plan.vehicle_type})</strong>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10">
-                  <span className="text-[9.5px] text-[#D8DED5]/70 uppercase block">Cost Per Person</span>
-                  <strong className="text-base text-emerald-300 font-bold">₹{Math.round(plan.budget_estimate.per_person_estimated).toLocaleString()}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Fuel Calculator & Transparent Road Trip Budget Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Fuel & Vehicle Consumption */}
-              <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif font-black text-lg text-[#173B32] flex items-center gap-2">
-                    <Fuel className="w-5 h-5 text-[#B65E3C]" />
-                    <span>Estimated Fuel Consumption</span>
-                  </h3>
-                  <span className="px-2 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] text-[9px] font-mono font-bold uppercase">
-                    ESTIMATED
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] space-y-2">
-                  <div className="text-2xl font-mono font-bold text-[#173B32]">
-                    ₹{plan.fuel_breakdown.estimated_fuel_cost_inr.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-[#7B4D36] font-mono leading-relaxed">
-                    {plan.fuel_breakdown.calculation_text}
-                  </p>
-                </div>
-
-                <div className="text-[11px] text-[#7B4D36] leading-relaxed font-light">
-                  Calculation based on realistic Indian highway speeds, elevation shifts, and current fuel averages.
-                </div>
-              </div>
-
-              {/* Complete Trip Budget Breakdown */}
-              <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif font-black text-lg text-[#173B32] flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-[#B49252]" />
-                    <span>Road Trip Budget Breakdown</span>
-                  </h3>
-                  <span className="font-mono font-bold text-sm text-[#173B32]">
-                    Total: ₹{plan.budget_estimate.total_estimated.toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E5D5BA]">
-                    <span>Fuel (Estimated)</span>
-                    <strong>₹{plan.budget_estimate.fuel_estimated.toLocaleString()}</strong>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E5D5BA]">
-                    <span>Tolls &amp; Highway Fastag</span>
-                    <strong>₹{plan.budget_estimate.tolls_estimated.toLocaleString()}</strong>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E5D5BA]">
-                    <span>Overnight Stays ({plan.num_days - 1} nights)</span>
-                    <strong>₹{plan.budget_estimate.stay_estimated.toLocaleString()}</strong>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E5D5BA]">
-                    <span>Food &amp; Highway Dhabas</span>
-                    <strong>₹{plan.budget_estimate.food_estimated.toLocaleString()}</strong>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E5D5BA]">
-                    <span>Activities &amp; Sightseeing</span>
-                    <strong>₹{plan.budget_estimate.activities_estimated.toLocaleString()}</strong>
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-bold text-[#173B32] flex items-center justify-between font-mono">
-                  <span>{plan.budget_estimate.travellers_count} Travellers</span>
-                  <span className="text-[#B65E3C]">₹{plan.budget_estimate.per_person_estimated.toLocaleString()} / person</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Day-by-Day Road Timeline */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-[#D8CBB2] pb-3">
-                <DevanagariHeading
-                  devanagari="दिन-ब-दिन सड़क योजना"
-                  english="Day-by-Day Road Timeline"
-                  subtitle="Sequenced driving legs, curated stop detours, and overnight halts."
-                />
-              </div>
-
-              {/* Day Selector Pills */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {plan.days.map((d) => (
-                  <button
-                    key={d.day_number}
-                    type="button"
-                    onClick={() => setSelectedDayTab(d.day_number)}
-                    className={`px-5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                      selectedDayTab === d.day_number
-                        ? "bg-[#173B32] text-[#EFE5D2] shadow-md border-2 border-[#173B32]"
-                        : "bg-[#FAF7F0] text-[#7B4D36] border-2 border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                    }`}
-                  >
-                    <span className="font-serif block text-sm">Day {d.day_number}</span>
-                    <span className="text-[10px] font-mono opacity-80">{d.title}</span>
                   </button>
                 ))}
               </div>
+            </div>
+          )}
 
-              {/* Selected Day Content */}
-              {(() => {
-                const currentDay = plan.days.find((d) => d.day_number === selectedDayTab) || plan.days[0];
-                if (!currentDay) return null;
+          {/* Card Container */}
+          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden transition-all duration-300">
+            {/* Top Progress & Navigation Header */}
+            <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4 mb-6">
+              <div className="flex items-center gap-2">
+                {currentStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
+                    className="p-1.5 rounded-xl hover:bg-[#EFE5D2] text-[#173B32] transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
+                    aria-label="Previous question"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
+                )}
+                {currentStep === 1 && (
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                    ROAD TRIP EXPEDITION
+                  </span>
+                )}
+              </div>
 
-                return (
-                  <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-6 animate-fadeIn">
-                    {/* Day Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5D5BA] pb-4">
-                      <div>
-                        <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C]">
-                          DAY {currentDay.day_number} • {currentDay.theme}
-                        </span>
-                        <h3 className="text-2xl font-serif font-black text-[#173B32] mt-0.5">
-                          {currentDay.title}
-                        </h3>
-                      </div>
-
-                      <div className="flex items-center gap-3 text-xs font-mono font-bold text-[#173B32]">
-                        <span className="px-3 py-1.5 rounded-xl bg-white border border-[#E5D5BA]">
-                          {currentDay.driving_distance_km} km drive
-                        </span>
-                        <span className="px-3 py-1.5 rounded-xl bg-white border border-[#E5D5BA]">
-                          ~{currentDay.driving_time_hours} hrs wheel time
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Timeline stops */}
-                    <div className="space-y-3">
-                      <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">
-                        Daily Road Timeline:
-                      </span>
-                      {currentDay.timeline.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="p-4 rounded-2xl bg-white border border-[#E5D5BA] flex items-start gap-3.5 hover:border-[#173B32]/40 transition-colors"
-                        >
-                          <span className="px-2.5 py-1 rounded bg-[#173B32] text-[#EFE5D2] text-xs font-bold font-mono shrink-0">
-                            {item.start_time}
-                          </span>
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-serif font-bold text-sm text-[#173B32]">{item.title}</h4>
-                              <span className="px-2 py-0.2 rounded bg-[#EFE5D2] text-[#7B4D36] text-[9px] font-mono font-bold uppercase">
-                                {item.category}
-                              </span>
-                            </div>
-                            <p className="text-xs text-[#20211D]/80 leading-relaxed font-light">{item.notes}</p>
-                            {item.reason_for_recommendation && (
-                              <div className="text-[10.5px] font-mono text-[#B65E3C]">
-                                ★ {item.reason_for_recommendation}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Curated Food Along Day's Route */}
-                    {currentDay.food_options && currentDay.food_options.length > 0 && (
-                      <div className="space-y-3 pt-3 border-t border-[#E5D5BA]">
-                        <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] flex items-center gap-1.5">
-                          <Coffee className="w-3.5 h-3.5 text-[#B65E3C]" />
-                          <span>Curated Highway Food &amp; Dhabas for this Day:</span>
-                        </span>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {currentDay.food_options.map((f, fIdx) => (
-                            <div key={fIdx} className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] space-y-1">
-                              <div className="flex items-center justify-between text-xs font-bold text-[#173B32]">
-                                <span className="truncate">{f.name}</span>
-                                <span className="font-mono text-[#B65E3C] text-[11px]">{f.price}</span>
-                              </div>
-                              <p className="text-[11px] text-[#7B4D36] line-clamp-2">{f.specialty || f.type}</p>
-                              <div className="text-[9.5px] text-[#7B4D36] font-mono">Hours: {f.timing}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Overnight Stays for this Day */}
-                    {currentDay.stay_options && currentDay.stay_options.length > 0 && (
-                      <div className="space-y-3 pt-3 border-t border-[#E5D5BA]">
-                        <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] flex items-center gap-1.5">
-                          <BedDouble className="w-3.5 h-3.5 text-[#B65E3C]" />
-                          <span>Overnight Halt Stay Options ({currentDay.destination}):</span>
-                        </span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {currentDay.stay_options.map((st, sIdx) => (
-                            <div key={sIdx} className="p-4 rounded-2xl bg-white border border-[#E5D5BA] flex items-center justify-between gap-3">
-                              <div>
-                                <span className="text-[9px] font-mono text-[#B65E3C] uppercase font-bold">{st.badge}</span>
-                                <h5 className="font-serif font-bold text-sm text-[#173B32]">{st.name}</h5>
-                                <p className="text-[11px] text-[#7B4D36]">{st.address}</p>
-                              </div>
-                              <div className="text-right shrink-0 font-mono font-bold text-xs text-[#173B32]">
-                                ₹{st.price_per_night?.toLocaleString()}/night
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold text-[#173B32]">
+                  {currentStep <= 7 ? `0${currentStep} / 07` : "REVIEW"}
+                </span>
+                <div className="w-16 sm:w-24 bg-[#E5D5BA] h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-[#173B32] h-full transition-all duration-300 rounded-full"
+                    style={{ width: `${(Math.min(currentStep, 7) / 7) * 100}%` }}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Proximity Stops / "Local Along The Way" */}
-            {plan.recommended_stops && plan.recommended_stops.length > 0 && (
-              <div className="space-y-4">
-                <DevanagariHeading
-                  devanagari="रास्ते में क्या मिलेगा?"
-                  english="Local Along the Way (Worthwhile Detours)"
-                  subtitle="Things you would miss if you only rushed from origin to destination."
-                />
+            {/* ======================================================== */}
+            {/* 01 / 07: WHERE ARE YOU STARTING?                         */}
+            {/* ======================================================== */}
+            {currentStep === 1 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                    ROAD TRIP • 01 / 07
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                    Where are you starting?
+                  </h2>
+                  <p className="text-xs text-[#7B4D36] mt-0.5">
+                    Select your departure city or hub.
+                  </p>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {plan.recommended_stops.map((stop) => (
-                    <div
-                      key={stop.id}
-                      className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xs space-y-3 flex flex-col justify-between hover:border-[#173B32]/50 transition-all"
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {["Delhi", "Mumbai", "Bengaluru", "Chandigarh", "Jaipur", "Pune"].map((city) => {
+                    const isSelected = origin.toLowerCase() === city.toLowerCase();
+                    return (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => handleSelectOrigin(city)}
+                        className={`p-3.5 rounded-2xl text-xs font-bold text-center transition-all cursor-pointer border-2 ${
+                          isSelected
+                            ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                            : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
+                        }`}
+                      >
+                        {city}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-1 flex gap-2">
+                  <input
+                    type="text"
+                    value={originSearch}
+                    onChange={(e) => setOriginSearch(e.target.value)}
+                    placeholder="Or enter other starting city..."
+                    className="flex-1 px-3 py-2 bg-white border-2 border-[#E5D5BA] rounded-xl text-xs font-medium text-[#20211D] focus:outline-none focus:border-[#173B32]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (originSearch.trim()) handleSelectOrigin(originSearch.trim());
+                    }}
+                    className="px-4 py-2 bg-[#173B32] text-[#EFE5D2] font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    Select
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ======================================================== */}
+            {/* 02 / 07: WHERE ARE YOU GOING?                            */}
+            {/* ======================================================== */}
+            {currentStep === 2 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                    ROAD TRIP • 02 / 07
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                    Where are you heading?
+                  </h2>
+                  <p className="text-xs text-[#7B4D36] mt-0.5">
+                    Starting from <strong className="text-[#173B32]">{origin}</strong>.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {["Manali", "Goa", "Udaipur", "Spiti", "Agra", "Jaipur"].map((city) => {
+                    const isSelected = destination.toLowerCase() === city.toLowerCase();
+                    return (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => handleSelectDestination(city)}
+                        className={`p-3.5 rounded-2xl text-xs font-bold text-center transition-all cursor-pointer border-2 ${
+                          isSelected
+                            ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                            : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
+                        }`}
+                      >
+                        {city}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-1 flex gap-2">
+                  <input
+                    type="text"
+                    value={destSearch}
+                    onChange={(e) => setDestSearch(e.target.value)}
+                    placeholder="Or enter destination city..."
+                    className="flex-1 px-3 py-2 bg-white border-2 border-[#E5D5BA] rounded-xl text-xs font-medium text-[#20211D] focus:outline-none focus:border-[#173B32]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (destSearch.trim()) handleSelectDestination(destSearch.trim());
+                    }}
+                    className="px-4 py-2 bg-[#173B32] text-[#EFE5D2] font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    Select
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ======================================================== */}
+            {/* 03 / 07: WHEN?                                           */}
+            {/* ======================================================== */}
+            {currentStep === 3 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                    ROAD TRIP • 03 / 07
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                    When is departure?
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    { days: 2, label: "This Weekend", desc: "Start upcoming weekend" },
+                    { days: 7, label: "Next Week", desc: "In 7 days" },
+                    { days: 20, label: "Next Month", desc: "In ~3 weeks" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => handleSelectTiming(opt.days)}
+                      className="p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#173B32] text-left transition-all cursor-pointer shadow-xs"
                     >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="px-2.5 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] text-[9.5px] font-mono font-bold uppercase">
-                            {stop.type}
-                          </span>
-                          <span className="text-xs font-mono font-bold text-[#B65E3C]">
-                            +{stop.distance_off_route_km} km detour
-                          </span>
-                        </div>
+                      <div className="font-serif font-bold text-sm text-[#173B32]">{opt.label}</div>
+                      <div className="text-[10px] text-[#7B4D36] mt-0.5">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
 
-                        <h4 className="font-serif font-black text-base text-[#173B32]">
-                          {stop.name}
-                        </h4>
+                <div className="pt-2 border-t border-[#E5D5BA]">
+                  <label className="block text-xs font-mono font-bold uppercase text-[#7B4D36] mb-1.5">
+                    Or pick exact date:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={startDate}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="flex-1 p-2.5 bg-white border-2 border-[#E5D5BA] rounded-xl text-xs font-bold text-[#173B32] focus:outline-none focus:border-[#173B32]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(4)}
+                      className="px-4 py-2.5 rounded-xl bg-[#173B32] text-[#EFE5D2] font-bold text-xs uppercase cursor-pointer"
+                    >
+                      Continue →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                        <p className="text-xs text-[#20211D]/80 leading-relaxed font-light">
-                          {stop.why_stop}
-                        </p>
-                      </div>
+            {/* ======================================================== */}
+            {/* 04 / 07: WHO'S COMING?                                   */}
+            {/* ======================================================== */}
+            {currentStep === 4 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                    ROAD TRIP • 04 / 07
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                    Who&apos;s on board?
+                  </h2>
+                </div>
 
-                      <div className="pt-2 border-t border-[#E5D5BA] flex items-center justify-between text-[11px] font-mono text-[#7B4D36]">
-                        <span>Time: {stop.time_needed_mins}m</span>
-                        <span className="text-[#173B32] font-bold">
-                          {stop.cost_label || (stop.approx_cost > 0 ? `₹${stop.approx_cost}` : "Free")}
-                        </span>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { type: "Solo", label: "Solo Ride", count: 1, desc: "Fast pacing & freedom" },
+                    { type: "Couple", label: "Partner", count: 2, desc: "Scenic routes & slow dhabas" },
+                    { type: "Friends", label: "Friends Squad", count: 4, desc: "Shared fuel & adventure" },
+                    { type: "Family", label: "Family Road Trip", count: 4, desc: "Comfortable halts & safe hours" },
+                  ].map((c) => (
+                    <button
+                      key={c.type}
+                      type="button"
+                      onClick={() => handleSelectCompanions(c.type, c.count)}
+                      className={`p-4 rounded-2xl text-left transition-all cursor-pointer border-2 ${
+                        companionType === c.type
+                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                      }`}
+                    >
+                      <div className="font-serif font-bold text-base">{c.label}</div>
+                      <div className="text-[10px] opacity-80 mt-0.5">{c.desc}</div>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* ======================================================== */}
+            {/* 05 / 07: WHAT ARE YOU DRIVING?                           */}
+            {/* ======================================================== */}
+            {currentStep === 5 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                    ROAD TRIP • 05 / 07
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                    What are you driving?
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { id: "Car", label: "Personal Car / Sedan", desc: "Petrol / Diesel / EV (~15 km/l)" },
+                    { id: "SUV", label: "SUV / 4x4", desc: "High clearance for ghats (~12 km/l)" },
+                    { id: "Bike", label: "Motorcycle / Touring Bike", desc: "Single/pillion touring (~32 km/l)" },
+                    { id: "Rental", label: "Self-Drive Rental", desc: "Zoomcar / Revv / Myles" },
+                  ].map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => handleSelectVehicle(v.id)}
+                      className={`p-4 rounded-2xl text-left transition-all cursor-pointer border-2 ${
+                        vehicleType === v.id
+                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                      }`}
+                    >
+                      <div className="font-serif font-bold text-base">{v.label}</div>
+                      <div className="text-[10px] opacity-80 mt-0.5">{v.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ======================================================== */}
+            {/* 06 / 07: WHAT KIND OF ROAD TRIP?                         */}
+            {/* ======================================================== */}
+            {currentStep === 6 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                    ROAD TRIP • 06 / 07
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                    What kind of road trip?
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    { id: "Fast", label: "Fast & Direct", desc: "Expressways, minimal detours & quick halts" },
+                    { id: "Balanced", label: "Balanced Journey", desc: "Optimal mix of scenic bypasses & dhabas" },
+                    { id: "Explore", label: "Deep Exploration", desc: "Heritage stepwells, forts & rural detours" },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handleSelectPace(p.id)}
+                      className={`p-4 rounded-2xl text-left transition-all cursor-pointer border-2 ${
+                        tripStyle === p.id
+                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                      }`}
+                    >
+                      <div className="font-serif font-bold text-base">{p.label}</div>
+                      <div className="text-[10px] opacity-80 mt-0.5">{p.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ======================================================== */}
+            {/* 07 / 07: WHAT MATTERS MOST? (Multi-select)               */}
+            {/* ======================================================== */}
+            {currentStep === 7 && (
+              <div className="space-y-5 animate-fadeIn">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                    ROAD TRIP • 07 / 07
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                    What matters most?
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { name: "Food", desc: "Iconic dhabas & chai" },
+                    { name: "Nature", desc: "Rivers, waterfalls & ridges" },
+                    { name: "Heritage", desc: "Forts & ancient architecture" },
+                    { name: "Scenic Roads", desc: "Panoramic passes & views" },
+                    { name: "Nightlife", desc: "Evening hubs & halts" },
+                    { name: "Local Culture", desc: "Bazaars & handicrafts" },
+                  ].map((p) => {
+                    const isSelected = selectedPriorities.includes(p.name);
+                    return (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => handleTogglePriority(p.name)}
+                        className={`p-3 rounded-2xl text-left transition-all cursor-pointer border-2 ${
+                          isSelected
+                            ? "bg-[#B65E3C] text-[#EFE5D2] border-[#B65E3C] shadow-sm"
+                            : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                        }`}
+                      >
+                        <div className="font-serif font-bold text-xs flex items-center justify-between">
+                          <span>{p.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#FAF4E8]" />}
+                        </div>
+                        <div className="text-[10px] opacity-80 mt-0.5 line-clamp-1">{p.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2 border-t border-[#E5D5BA] flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(8)}
+                    className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                  >
+                    <span>Review Corridor →</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ======================================================== */}
+            {/* STEP 8: ROAD TRIP REVIEW                                 */}
+            {/* ======================================================== */}
+            {currentStep === 8 && (
+              <div className="space-y-6 animate-fadeIn">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                    ROAD TRIP REVIEW
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                    Ready to hit the road?
+                  </h2>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-[#EFE5D2] border-2 border-[#173B32] space-y-3">
+                  <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-2">
+                    <div>
+                      <span className="text-[9px] font-mono uppercase text-[#7B4D36] font-bold">ROUTE CORRIDOR</span>
+                      <h3 className="font-serif font-black text-2xl text-[#173B32]">
+                        {origin} → {destination}
+                      </h3>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+                      {vehicleType} • {tripStyle}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-mono">
+                    <div>
+                      <span className="text-[#7B4D36] block text-[10px]">DEPARTURE</span>
+                      <strong className="text-[#173B32]">{startDate}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[#7B4D36] block text-[10px]">TRAVELLERS</span>
+                      <strong className="text-[#173B32]">{travellersCount} ({companionType})</strong>
+                    </div>
+                    <div>
+                      <span className="text-[#7B4D36] block text-[10px]">VEHICLE</span>
+                      <strong className="text-[#173B32]">{vehicleType}</strong>
+                    </div>
+                  </div>
+
+                  <div className="pt-1 text-[11px] text-[#7B4D36]">
+                    <strong>Priorities:</strong> {selectedPriorities.join(" • ")}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleBuildRoadTrip}
+                  disabled={loading}
+                  className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl transition-all transform active:scale-95 cursor-pointer"
+                >
+                  <Navigation className="w-4 h-4 text-[#FAF4E8]" />
+                  <span>Build Road Trip →</span>
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function RoadTripPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#EFE5D2] flex items-center justify-center text-[#173B32]">
+          <Loader2 className="w-8 h-8 animate-spin text-[#B65E3C]" />
+        </div>
+      }
+    >
+      <RoadTripCockpit />
+    </Suspense>
   );
 }

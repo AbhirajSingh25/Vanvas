@@ -1520,24 +1520,43 @@ class DestinationResearchResponse(BaseModel):
 
 
 # ----------------- Road Trip Mode Schemas -----------------
+class RoadTripLeg(BaseModel):
+    origin: str
+    destination: str
+    origin_lat: float
+    origin_lng: float
+    dest_lat: float
+    dest_lng: float
+    distance_km: float
+    duration_minutes: float
+    geometry: List[List[float]] = []  # [[lat, lng], ...]
+    departure_time: str = "06:30"
+    arrival_time: str = "12:00"
+    route_source: str = "OSRM_OPENSTREETMAP"
+    is_live: bool = True
+    warning: Optional[str] = None
+
 class RoadTripStop(BaseModel):
     id: str
     name: str
     type: str  # Viewpoint, Fort, Temple, Waterfall, Lake, Beach, National Park, Heritage Site, Local Market, Café, Dhaba, Restaurant, Fuel, Rest Stop, Hotel, Campsite, Activity
     category: str = "attraction"
     distance_off_route_km: float = 0.0
+    route_offset_km: float = 0.0
+    detour_km: float = 0.0
+    detour_time_mins: int = 0
     time_needed_mins: int = 45
     approx_cost: float = 0.0
     cost_label: Optional[str] = "Free / Minimal"
     why_stop: str
     opening_hours: Optional[str] = None
+    opening_status: Optional[str] = "Open"
     lat: float
     lng: float
     image_url: Optional[str] = None
     action_label: str = "Add stop"
     action_type: str = "add_stop"
-    data_state: str = "VERIFIED"
-    detour_time_mins: int = 0
+    data_state: str = "CURATED"  # CURATED, LIVE, ESTIMATED, USER ENTERED
     next_leg_info: Optional[str] = None
 
 class RoadTripDay(BaseModel):
@@ -1548,6 +1567,9 @@ class RoadTripDay(BaseModel):
     destination: str
     driving_distance_km: float
     driving_time_hours: float
+    route_source: str = "OSRM_OPENSTREETMAP"
+    geometry: List[List[float]] = []
+    legs: List[RoadTripLeg] = []
     timeline: List[ItineraryItemResponse] = []
     stops: List[RoadTripStop] = []
     food_options: List[Dict[str, Any]] = []
@@ -1601,13 +1623,18 @@ class RoadTripPlanResponse(BaseModel):
     vehicle_type: str
     trip_style: str
     route_geometry: List[List[float]] = []  # [[lat, lng], ...]
+    route_source: str = "OSRM_OPENSTREETMAP"  # OSRM_OPENSTREETMAP, LIVE, ROUTING_PROVIDER_UNAVAILABLE
+    is_live_route: bool = True
+    routing_warning: Optional[str] = None
     corridor_name: str
+    legs: List[RoadTripLeg] = []
     days: List[RoadTripDay] = []
     fuel_breakdown: RoadTripFuelBreakdown
     budget_estimate: RoadTripBudgetEstimate
     recommended_stops: List[RoadTripStop] = []
     travel_tips: List[str] = []
     created_trip_id: Optional[str] = None
+
 
 
 

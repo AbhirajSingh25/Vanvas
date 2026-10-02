@@ -495,25 +495,58 @@ export interface ReceiptOcrResponse {
 }
 
 // ----------------- Road Trip Mode Types -----------------
+export interface RoadTripLeg {
+  origin: string;
+  destination: string;
+  origin_lat: number;
+  origin_lng: number;
+  dest_lat: number;
+  dest_lng: number;
+  distance_km: number;
+  duration_minutes: number;
+  geometry: Array<[number, number]>;
+  departure_time: string;
+  arrival_time: string;
+  route_source: string;
+  is_live: boolean;
+  warning?: string;
+}
+
 export interface RoadTripStop {
   id: string;
   name: string;
   type: string;
   category?: string;
   distance_off_route_km: number;
+  route_offset_km?: number;
+  detour_km?: number;
+  detour_time_mins?: number;
   time_needed_mins: number;
   approx_cost: number;
   cost_label?: string;
   why_stop: string;
   opening_hours?: string;
+  opening_status?: string;
   lat: number;
   lng: number;
   image_url?: string;
   action_label: string;
   action_type: string;
-  data_state?: string;
-  detour_time_mins?: number;
+  data_state?: "CURATED" | "LIVE" | "ESTIMATED" | "USER ENTERED" | string;
   next_leg_info?: string;
+}
+
+export interface RoadTripFoodOption {
+  meal?: string;
+  name: string;
+  type: string;
+  price_band?: string;
+  price?: string;
+  route_detour?: string;
+  why?: string;
+  specialty?: string;
+  timing?: string;
+  action?: string;
 }
 
 export interface RoadTripDay {
@@ -524,15 +557,12 @@ export interface RoadTripDay {
   destination: string;
   driving_distance_km: number;
   driving_time_hours: number;
+  route_source?: string;
+  geometry?: Array<[number, number]>;
+  legs?: RoadTripLeg[];
   timeline: ItineraryItem[];
   stops: RoadTripStop[];
-  food_options: Array<{
-    name: string;
-    type: string;
-    price: string;
-    timing: string;
-    specialty?: string;
-  }>;
+  food_options: RoadTripFoodOption[];
   stay_options: Hotel[];
   fuel_estimated_inr: number;
 }
@@ -587,7 +617,11 @@ export interface RoadTripPlanResponse {
   vehicle_type: string;
   trip_style: string;
   route_geometry: Array<[number, number]>;
+  route_source?: string;
+  is_live_route?: boolean;
+  routing_warning?: string;
   corridor_name: string;
+  legs?: RoadTripLeg[];
   days: RoadTripDay[];
   fuel_breakdown: RoadTripFuelBreakdown;
   budget_estimate: RoadTripBudgetEstimate;
@@ -606,6 +640,7 @@ export interface RoadTripCorridor {
   highlights: string[];
   image: string;
 }
+
 
 export interface BudgetCategory {
   category: string;
