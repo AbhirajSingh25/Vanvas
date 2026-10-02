@@ -5,14 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Compass, Calendar, MapPin, Sparkles } from "lucide-react";
 import { useDensity } from "@/context/DensityContext";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 import { ChaloLauncherModal } from "@/components/layout/ChaloLauncherModal";
-import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 
 export const MobileNav: React.FC = () => {
   const pathname = usePathname();
   const { isCompact } = useDensity();
+  const { openAskVanvas } = useAskVanvas();
   const [chaloLauncherOpen, setChaloLauncherOpen] = useState(false);
-  const [askVanvasOpen, setAskVanvasOpen] = useState(false);
 
   const navItems = [
     { label: "Home", hindi: "होम", href: "/", icon: Home },
@@ -81,13 +81,9 @@ export const MobileNav: React.FC = () => {
       <ChaloLauncherModal
         isOpen={chaloLauncherOpen}
         onClose={() => setChaloLauncherOpen(false)}
-        onOpenAskVanvas={() => setAskVanvasOpen(true)}
-      />
-
-      <AskVanvasModal
-        isOpen={askVanvasOpen}
-        onClose={() => setAskVanvasOpen(false)}
+        onOpenAskVanvas={() => openAskVanvas()}
       />
     </>
   );
 };
+

@@ -10,7 +10,7 @@ import {
   User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield,
   Mountain, Clock, Navigation
 } from "lucide-react";
-import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 import { Avatar } from "@/components/ui/Avatar";
 import { useDensity } from "@/context/DensityContext";
 
@@ -19,9 +19,9 @@ export const Header: React.FC = () => {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { isCompact } = useDensity();
+  const { openAskVanvas } = useAskVanvas();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [askVanvasOpen, setAskVanvasOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close profile dropdown on click outside
@@ -97,9 +97,9 @@ export const Header: React.FC = () => {
             {/* Ask VANVAS AI Copilot Button */}
             <button
               type="button"
-              onClick={() => setAskVanvasOpen(true)}
+              onClick={() => openAskVanvas()}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#B49252]/60 bg-[#173B32] text-xs font-semibold text-[#FAF7F0] hover:bg-[#20453B] hover:shadow-md transition-all group cursor-pointer shadow-xs"
-              title="Ask VANVAS Gemini Copilot"
+              title="Ask VANVAS Travel Assistant"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#B49252] group-hover:rotate-12 transition-transform" />
               <span>Ask VANVAS</span>
@@ -230,7 +230,7 @@ export const Header: React.FC = () => {
               type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
-                setAskVanvasOpen(true);
+                openAskVanvas();
               }}
               className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#173B32] text-[#FAF7F0] font-semibold text-sm shadow-sm cursor-pointer"
             >
@@ -338,13 +338,6 @@ export const Header: React.FC = () => {
           </div>
         )}
       </header>
-
-      {/* Global Ask VANVAS AI Copilot Modal */}
-      <AskVanvasModal
-        isOpen={askVanvasOpen}
-        onClose={() => setAskVanvasOpen(false)}
-        defaultDestination={pathname.startsWith("/explore/") ? pathname.replace("/explore/", "").split("/")[0].replace(/-/g, " ") : undefined}
-      />
     </>
   );
 };

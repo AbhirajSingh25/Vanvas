@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, Sparkles, X, Compass, ArrowRight, Bot, MapPin, Clock, Coins, Calendar, Navigation, ShieldCheck } from "lucide-react";
-import { api } from "@/lib/api";
-import { CopilotChatResponse } from "@/types";
-import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
+import React, { useEffect } from "react";
+import { AskVanvasModal } from "./AskVanvasModal";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 
 interface TripAssistantModalProps {
   tripId?: string;
@@ -16,394 +14,41 @@ interface TripAssistantModalProps {
   trip?: any;
 }
 
-interface MessageItem {
-  role: "user" | "assistant";
-  text: string;
-  actions?: Array<{ label: string; action: string; payload?: any }>;
-  places?: any[];
-  plan?: any;
-  metadata?: any;
-}
-
+/**
+ * Unified TripAssistantModal: delegates directly to rebuilt Ask VANVAS assistant.
+ * Eliminates duplicate assistant interfaces across the product.
+ */
 export const TripAssistantModal: React.FC<TripAssistantModalProps> = ({
   tripId,
-  destinationName = "Manali",
+  destinationName,
   destinationSlug,
   isOpen,
   onClose,
-  onTriggerAction,
   trip,
 }) => {
-  const resolvedTripId = trip?.id || tripId || "";
-  const resolvedDest = trip?.destination?.name || destinationName;
-  const resolvedSlug = trip?.destination?.slug || destinationSlug || "";
-
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<MessageItem[]>([
-    {
-      role: "assistant",
-      text: `नमस्ते! I'm your VANVAS expedition copilot for ${resolvedDest}. How can I assist your journey today?`,
-      actions: [
-        { label: "कहाँ खाएं? • Where to eat?", action: "find_food" },
-        { label: "3-Hour Micro Plan", action: "quick_plan" },
-        { label: "Live Weather & Advice", action: "check_weather" },
-        { label: "Quiet Cafes Nearby", action: "quiet_cafes" },
-      ],
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Lock body scroll while modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  const context = useAskVanvas();
 
   useEffect(() => {
     if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      context.setTravelContext({
+        type: "trip",
+        tripId: tripId || trip?.id,
+        trip,
+        destinationName: destinationName || trip?.destination?.name,
+        destinationSlug: destinationSlug || trip?.destination?.slug,
+        title: trip?.title ? `ASK VANVAS · ${trip.title.toUpperCase()}` : "ASK VANVAS · YOUR TRIP",
+        subtitle: `Trip · ${trip?.num_days || 4} days · Active itinerary`,
+      });
     }
-  }, [messages, isOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  const handleSend = async (msgText?: string) => {
-    const textToSend = msgText || input;
-    if (!textToSend.trim() || loading) return;
-
-    const newMessages: MessageItem[] = [...messages, { role: "user", text: textToSend }];
-    setMessages(newMessages);
-    if (!msgText) setInput("");
-    setLoading(true);
-
-    try {
-      let res: CopilotChatResponse;
-      if (resolvedTripId) {
-        res = await api.askCopilot(resolvedTripId, textToSend, undefined, conversationId || undefined);
-      } else {
-        res = await api.copilotChat({
-          message: textToSend,
-          conversation_id: conversationId || undefined,
-          destination_slug: resolvedSlug,
-        });
-      }
-
-      if (res.conversation_id) {
-        setConversationId(res.conversation_id);
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: res.message || "I have gathered your mountain details.",
-          actions: res.actions?.map((a: any) => ({
-            label: a.title || a.label,
-            action: a.action_type || a.action,
-            payload: a.payload,
-          })),
-          places: res.places || [],
-          plan: res.plan || null,
-          metadata: res.metadata,
-        },
-      ]);
-    } catch (err: any) {
-      console.error(err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: "I encountered a minor trail disruption. Your saved places and offline maps remain fully available.",
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleActionClick = async (action: string, label: string, payload?: any) => {
-    if (action === "view_quick_plan" && onTriggerAction) {
-      onTriggerAction("view_quick_plan", payload);
-      onClose();
-    } else if ((action === "replan" || action === "dynamic_replan") && onTriggerAction) {
-      onTriggerAction("replan", payload);
-      onClose();
-    } else if (action === "im_here" && onTriggerAction) {
-      onTriggerAction("im_here", payload);
-      onClose();
-    } else if ((action === "expense" || action === "log_expense") && onTriggerAction) {
-      onTriggerAction("expense", payload);
-      onClose();
-    } else if ((action === "invite" || action === "share_trip") && onTriggerAction) {
-      onTriggerAction("invite", payload);
-      onClose();
-    } else if (action === "quick_plan") {
-      handleSend("Generate a 3-hour quick plan for me");
-    } else if (action === "find_food") {
-      handleSend("Recommend top local cafes and food places nearby along my route");
-    } else if (action === "check_weather") {
-      handleSend("What is the current mountain weather and forecast?");
-    } else if (action === "quiet_cafes") {
-      handleSend("Find quiet scenic spots or cafes to relax");
-    } else if (action === "make_cheaper" || action === "budget_friendly") {
-      handleSend("Give me budget-friendly recommendations and cheaper options for this trip");
-    } else if (action === "slower_pace" || action === "relaxed_pace") {
-      handleSend("Give me a slower, more relaxed version of today's plan with fewer stops");
-    } else if (action === "add_food_experiences") {
-      handleSend("Add authentic local food and tea stops to this trip");
-    } else if (onTriggerAction) {
-      onTriggerAction(action, payload);
-      onClose();
-    } else {
-      handleSend(label);
-    }
-  };
+  }, [isOpen, tripId, trip, destinationName, destinationSlug]);
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center p-0 md:p-4 bg-[#0F2924]/80 backdrop-blur-md animate-fadeIn"
-      onClick={onClose}
-    >
-      <div 
-        className="bg-[#FAF7F0] border-t-2 md:border-2 border-[#E5D5BA] rounded-t-3xl md:rounded-3xl w-full max-w-full md:max-w-xl shadow-2xl flex flex-col h-[100dvh] md:h-[640px] max-h-[100dvh] md:max-h-[90vh] overflow-hidden transition-all"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Handle Pill */}
-        <div className="md:hidden w-full flex justify-center pt-2 pb-1 bg-[#0F2924] shrink-0">
-          <div className="w-10 h-1 rounded-full bg-[#E5D5BA]/40" />
-        </div>
-
-        {/* Header */}
-        <div className="p-3.5 sm:p-5 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36] shrink-0">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-inner border border-[#D8CBB2]/20 shrink-0">
-              <Bot className="w-5 h-5 text-[#FAF7F0]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-serif font-bold text-base text-[#FAF7F0]">VANVAS Trail Copilot</h3>
-                <span className="text-[9px] font-mono tracking-wider px-2 py-0.5 rounded-full bg-[#173B32] border border-[#B49252]/40 text-[#B49252]">
-                  GEMINI AI
-                </span>
-              </div>
-              <p className="text-[11px] text-[#D8DED5]/80 font-mono flex items-center gap-1.5 mt-0.5">
-                <Compass className="w-3 h-3 text-[#B49252]" />
-                {resolvedDest} Valley • Verified Local Knowledge
-              </p>
-            </div>
-          </div>
-          <button 
-            onClick={onClose} 
-            aria-label="Close" 
-            className="p-2 rounded-xl text-[#D8DED5] hover:bg-[#173B32] hover:text-white transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Message Thread (Independently Scrollable with min-h-0) */}
-        <div className="flex-1 min-h-0 p-3.5 sm:p-5 overflow-y-auto space-y-3.5 sm:space-y-4 text-sm bg-radial-gradient overscroll-contain">
-          {messages.map((m, idx) => (
-            <div key={idx} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
-              {/* Message Bubble */}
-              <div
-                className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-3 shadow-sm leading-relaxed ${
-                  m.role === "user"
-                    ? "bg-[#173B32] text-[#FAF7F0] rounded-br-xs font-medium"
-                    : "bg-[#EFE5D2] text-[#20211D] rounded-bl-xs border border-[#E5D5BA] font-normal"
-                }`}
-              >
-                <p className="whitespace-pre-line text-[13px] leading-relaxed">{m.text}</p>
-
-                {/* Referenced Places Cards */}
-                {m.places && m.places.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-[#D8CBB2]/60 space-y-2">
-                    <p className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">
-                      Referenced Verified Spots ({m.places.length})
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {m.places.map((place: any, pIdx: number) => (
-                        <div 
-                          key={pIdx} 
-                          className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] shadow-2xs hover:border-[#173B32] transition-colors relative"
-                        >
-                          {(() => {
-                            const visual = resolvePlaceArtwork(
-                              place.name,
-                              destinationName || place.destination || "",
-                              place.category || "Sight",
-                              place.image_url,
-                              place.is_live,
-                              place.source
-                            );
-                            return (
-                              <img 
-                                src={visual.imageUrl} 
-                                alt={place.name} 
-                                className="w-12 h-12 rounded-lg object-cover border border-[#E5D5BA]"
-                                onError={(e: any) => { 
-                                  if (visual.fallbackUrl && e.currentTarget.src !== visual.fallbackUrl) {
-                                    e.currentTarget.src = visual.fallbackUrl;
-                                  }
-                                }}
-                              />
-                            );
-                          })()}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <p className="text-xs font-serif font-bold text-[#173B32] truncate">{place.name}</p>
-                              {place.is_open_now === true ? (
-                                <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded shrink-0">Open</span>
-                              ) : place.is_open_now === false ? (
-                                <span className="text-[9px] font-mono font-bold text-[#7B4D36] bg-[#EFE5D2] px-1.5 py-0.2 rounded shrink-0">Closed</span>
-                              ) : null}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-[#7B4D36] font-mono mt-0.5">
-                              <span className="capitalize">{place.category || "Sight"}</span>
-                              {place.distance_km !== undefined && (
-                                <span>• {place.distance_km} km</span>
-                              )}
-                              {place.approx_cost ? (
-                                <span>• ₹{place.approx_cost}</span>
-                              ) : null}
-                            </div>
-                          </div>
-                          {place.latitude && place.longitude && (
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#173B32] hover:text-[#B65E3C] p-1 shrink-0"
-                              title="Directions"
-                            >
-                              <Navigation className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Plan Preview Card */}
-                {m.plan && (
-                  <div className="mt-3 p-3 rounded-2xl bg-[#FAF7F0] border border-[#B49252]/50 shadow-xs">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[11px] font-bold font-serif text-[#173B32] flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[#B65E3C]" />
-                        {m.plan.headline || "Generated Micro-Plan"}
-                      </span>
-                      <span className="text-[10px] font-mono text-[#7B4D36] px-2 py-0.5 rounded-full bg-[#EFE5D2]">
-                        {m.plan.duration_hours || 3} Hours
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#20211D]/80 mb-2 leading-tight">{m.plan.summary}</p>
-                    {m.plan.items && m.plan.items.length > 0 && (
-                      <div className="space-y-1">
-                        {m.plan.items.map((item: any, iIdx: number) => (
-                          <div key={iIdx} className="flex items-center gap-2 text-[11px] text-[#173B32] font-mono">
-                            <span className="w-4 h-4 rounded-full bg-[#EFE5D2] text-[9px] flex items-center justify-center font-bold">
-                              {iIdx + 1}
-                            </span>
-                            <span className="font-semibold truncate">{item.title || item.name}</span>
-                            <span className="text-[#7B4D36] text-[10px]">({item.time || `${item.duration_mins || 45}m`})</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* AI Metadata Pill */}
-                {m.metadata && (
-                  <div className="mt-2.5 flex items-center justify-between text-[9px] font-mono text-[#7B4D36]/80 pt-1.5 border-t border-[#D8CBB2]/40">
-                    <span className="flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3 text-[#173B32]" />
-                      Data Source: VANVAS Verified DB
-                    </span>
-                    <span>
-                      {m.metadata.model || "Gemini"} • {m.metadata.latency_ms ? `${m.metadata.latency_ms}ms` : "Live"}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Chips */}
-              {m.actions && m.actions.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2.5 max-w-[95%]">
-                  {m.actions.map((act, aIdx) => (
-                    <button
-                      key={aIdx}
-                      onClick={() => handleActionClick(act.action, act.label, act.payload)}
-                      className="text-xs bg-[#FAF7F0] hover:bg-[#173B32] hover:text-[#FAF7F0] text-[#173B32] px-3.5 py-1.5 rounded-full border border-[#E5D5BA] font-semibold transition-all flex items-center gap-1.5 shadow-2xs group cursor-pointer active:scale-95"
-                    >
-                      <span>{act.label}</span>
-                      <ArrowRight className="w-3 h-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-
-          {loading && (
-            <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-[#EFE5D2] text-xs text-[#7B4D36] border border-[#E5D5BA] animate-pulse w-fit">
-              <Sparkles className="w-4 h-4 text-[#B65E3C] animate-spin" />
-              <span className="font-serif italic font-medium">Scouting mountain coordinates &amp; verified spots...</span>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Footer Composer (Fixed at Bottom, Above Mobile Safe Area) */}
-        <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] border-t border-[#E5D5BA] bg-[#EFE5D2] shrink-0">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
-            className="flex items-center gap-2"
-          >
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask anything about ${resolvedDest}... (e.g. Scenic sunset trek? Best cafe?)`}
-              className="flex-1 bg-white border border-[#E5D5BA] rounded-2xl px-4 py-2.5 text-base sm:text-sm text-[#20211D] placeholder:text-[#20211D]/45 focus:outline-none focus:border-[#173B32] focus:ring-1 focus:ring-[#173B32] transition-all"
-            />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              className="p-3 rounded-2xl bg-[#173B32] hover:bg-[#B65E3C] text-[#FAF7F0] disabled:opacity-40 transition-all shadow-sm cursor-pointer active:scale-95 flex items-center justify-center shrink-0"
-              aria-label="Send Message"
-            >
-              <Send className="w-4 h-4 text-[#B49252]" />
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+    <AskVanvasModal
+      isOpen={isOpen}
+      onClose={onClose}
+      tripId={tripId}
+      trip={trip}
+      defaultDestination={destinationName}
+    />
   );
 };
-

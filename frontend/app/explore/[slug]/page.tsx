@@ -32,6 +32,7 @@ import {
   DestinationDayTrip
 } from "@/lib/destinationContentModel";
 import { useDensity } from "@/context/DensityContext";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 import { CompactPlaceCard, CompactStayCard, CompactRentalCard, CompactTrekStrip } from "@/components/compact";
 
 const DISCOVERY_MESSAGES = [
@@ -159,12 +160,39 @@ export default function DestinationDetailPage() {
   const routeParams = useParams();
   const slug = (Array.isArray(routeParams?.slug) ? routeParams.slug[0] : (routeParams?.slug as string)) || "";
   const { isCompact } = useDensity();
-
+  const { openAskVanvas, setTravelContext } = useAskVanvas();
 
   const [mounted, setMounted] = useState(false);
   const [destination, setDestination] = useState<Destination | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
   const [weather, setWeather] = useState<any[]>([]);
+
+  // Sync Destination context to Ask VANVAS
+  useEffect(() => {
+    if (destination) {
+      setTravelContext({
+        type: "destination",
+        destinationName: destination.name,
+        destinationSlug: destination.slug || slug,
+        title: `ASK VANVAS · ${destination.name.toUpperCase()}`,
+        subtitle: `Curated places, food & stays in ${destination.name}`,
+        coordinates: destination.latitude && destination.longitude ? {
+          lat: destination.latitude,
+          lng: destination.longitude,
+          label: destination.name,
+        } : undefined,
+      });
+    } else if (slug) {
+      const formattedName = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      setTravelContext({
+        type: "destination",
+        destinationName: formattedName,
+        destinationSlug: slug,
+        title: `ASK VANVAS · ${formattedName.toUpperCase()}`,
+        subtitle: `Curated places, food & stays in ${formattedName}`,
+      });
+    }
+  }, [destination, slug, setTravelContext]);
   
   // Independent Section Data & Loading States
   const [destLoading, setDestLoading] = useState(true);

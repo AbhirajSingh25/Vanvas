@@ -399,15 +399,29 @@ export const api = {
     });
   },
 
-  async replanTrip(tripId: string, actionType: string, dayNumber = 1, current_time?: string, target_item_id?: string): Promise<{ success: boolean; message: string; trip: Trip }> {
+  async replanTrip(
+    tripId: string,
+    actionTypeOrData: string | { action_type: string; day_number?: number; target_item_id?: string; current_time?: string },
+    dayNumber = 1,
+    current_time?: string,
+    target_item_id?: string
+  ): Promise<{ success: boolean; message: string; trip: Trip }> {
+    const payload = typeof actionTypeOrData === "object"
+      ? {
+          action_type: actionTypeOrData.action_type,
+          day_number: actionTypeOrData.day_number ?? 1,
+          current_time: actionTypeOrData.current_time,
+          target_item_id: actionTypeOrData.target_item_id,
+        }
+      : {
+          action_type: actionTypeOrData,
+          day_number: dayNumber,
+          current_time,
+          target_item_id,
+        };
     return fetchApi(`/trips/${tripId}/replan`, {
       method: "POST",
-      body: JSON.stringify({
-        action_type: actionType,
-        day_number: dayNumber,
-        current_time,
-        target_item_id,
-      }),
+      body: JSON.stringify(payload),
     });
   },
 
@@ -774,6 +788,33 @@ export const api = {
       suggested_actions: res.actions?.map((a) => ({ label: a.title, action: a.action_type })) || [],
       relevant_places: res.places || [],
     };
+  },
+
+
+  async savePlace(placeId: string): Promise<any> {
+    return fetchApi(`/places/saved/${placeId}`, {
+      method: "POST",
+    });
+  },
+
+  async addPlaceToItinerary(tripId: string, placeId: string, day: number): Promise<any> {
+    return fetchApi("/copilot/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        message: `Add place ${placeId} to day ${day}`,
+        trip_id: tripId,
+      }),
+    });
+  },
+
+  async deleteItineraryItem(tripId: string, itemId: string): Promise<any> {
+    return fetchApi("/copilot/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        message: `Remove item ${itemId} from trip`,
+        trip_id: tripId,
+      }),
+    });
   },
 
   // Checklist

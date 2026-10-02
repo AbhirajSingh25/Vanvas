@@ -4,9 +4,12 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { DensityProvider } from "@/context/DensityContext";
+import { AskVanvasProvider } from "@/context/AskVanvasContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
+import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
 import { Analytics } from "@vercel/analytics/next";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -104,11 +107,15 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <DensityProvider>
-              <Header />
-              <main className="flex-1 pb-16 md:pb-0">{children}</main>
-              <Footer />
-              <MobileNav />
-              <Analytics />
+              <AskVanvasProvider>
+                <Header />
+                <main className="flex-1 pb-16 md:pb-0">{children}</main>
+                <Footer />
+                <MobileNav />
+                <FloatingCopilotTrigger />
+                <AskVanvasModal />
+                <Analytics />
+              </AskVanvasProvider>
             </DensityProvider>
           </ThemeProvider>
         </AuthProvider>

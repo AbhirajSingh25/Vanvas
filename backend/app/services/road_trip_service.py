@@ -356,7 +356,13 @@ class RoadTripService:
                 day_schema_stops.append(stop_obj)
                 all_schema_stops.append(stop_obj)
 
-            # Build Day Timeline
+            # Build Day Timeline with mathematically consistent schedule
+            dep_mins = 6 * 60 + 30  # 06:30 AM
+            dep_time = f"{dep_mins // 60:02d}:{dep_mins % 60:02d}"
+
+            num_segments = len(day_schema_stops) + 1
+            segment_drive_mins = max(15, int(round((leg_dur_hours * 60.0) / max(1, num_segments))))
+
             timeline = [
                 ItineraryItemResponse(
                     id=f"road-tl-{day_num}-start",
@@ -365,24 +371,25 @@ class RoadTripService:
                     title=f"Leave {leg_orig_name}",
                     category="Transit",
                     start_time=dep_time,
-                    end_time="07:00",
-                    duration_mins=30,
+                    end_time=f"{(dep_mins + 15) // 60:02d}:{(dep_mins + 15) % 60:02d}",
+                    duration_mins=15,
                     estimated_cost=0.0,
                     travel_time_from_prev_mins=0,
                     distance_from_prev_km=0.0,
-                    notes=f"Early departure from {leg_orig_name}. Clear city limits before morning rush.",
-                    reason_for_recommendation="Saves 45 mins of traffic congestion.",
+                    notes=f"Early departure from {leg_orig_name}. Clear city exit corridors before morning rush.",
+                    reason_for_recommendation="Saves 45 mins of city traffic.",
                     status="upcoming",
                     is_locked=True
                 )
             ]
 
-            curr_mins = 7 * 60
+            curr_mins = dep_mins
             for s_idx, st_item in enumerate(day_schema_stops):
-                curr_mins += int(st_item.time_needed_mins + 45)
+                curr_mins += segment_drive_mins
                 s_hour = f"{(curr_mins // 60) % 24:02d}:{(curr_mins % 60):02d}"
-                e_mins = curr_mins + st_item.time_needed_mins
-                e_hour = f"{(e_mins // 60) % 24:02d}:{(e_mins % 60):02d}"
+                dwell = st_item.time_needed_mins or 30
+                curr_mins += dwell
+                e_hour = f"{(curr_mins // 60) % 24:02d}:{(curr_mins % 60):02d}"
 
                 timeline.append(ItineraryItemResponse(
                     id=f"road-tl-{day_num}-{s_idx+1}",
@@ -392,9 +399,9 @@ class RoadTripService:
                     category=st_item.category,
                     start_time=s_hour,
                     end_time=e_hour,
-                    duration_mins=st_item.time_needed_mins,
+                    duration_mins=dwell,
                     estimated_cost=st_item.approx_cost,
-                    travel_time_from_prev_mins=45,
+                    travel_time_from_prev_mins=segment_drive_mins,
                     distance_from_prev_km=st_item.distance_off_route_km,
                     notes=st_item.why_stop,
                     reason_for_recommendation=f"{st_item.type} stop (+{st_item.distance_off_route_km} km detour, +{st_item.detour_time_mins} min drive).",
@@ -404,6 +411,15 @@ class RoadTripService:
                     is_locked=False
                 ))
 
+            # Final Leg segment to destination
+            curr_mins += segment_drive_mins
+            dest_arr_mins = curr_mins
+            dest_arr_time = f"{(dest_arr_mins // 60) % 24:02d}:{(dest_arr_mins % 60):02d}"
+            checkin_end_mins = dest_arr_mins + 60
+            checkin_end_time = f"{(checkin_end_mins // 60) % 24:02d}:{(checkin_end_mins % 60):02d}"
+
+            schema_leg.arrival_time = dest_arr_time
+
             # Final Arrival
             timeline.append(ItineraryItemResponse(
                 id=f"road-tl-{day_num}-arr",
@@ -411,14 +427,14 @@ class RoadTripService:
                 place_id=None,
                 title=f"Arrive in {leg_dest_name} & Check-in",
                 category="Stay",
-                start_time=arr_time,
-                end_time=f"{int(arr_time[:2])+1:02d}:30",
+                start_time=dest_arr_time,
+                end_time=checkin_end_time,
                 duration_mins=60,
                 estimated_cost=0.0,
-                travel_time_from_prev_mins=60,
+                travel_time_from_prev_mins=segment_drive_mins,
                 distance_from_prev_km=leg_dist,
-                notes=f"Check into accommodation in {leg_dest_name}. Evening dinner & unwind.",
-                reason_for_recommendation="End driving day before sunset.",
+                notes=f"Check into accommodation in {leg_dest_name}. Evening dinner & rest.",
+                reason_for_recommendation="Conclude driving day safely before dusk.",
                 status="upcoming",
                 is_locked=True
             ))

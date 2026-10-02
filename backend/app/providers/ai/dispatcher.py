@@ -53,6 +53,8 @@ class AIToolDispatcher:
             "get_place_reviews": self._get_place_reviews,
             "search_commerce_offers": self._search_commerce_offers,
             "get_user_bookings": self._get_user_bookings,
+            "replan_day": self._replan_day,
+            "get_split_balances": self._get_split_balances,
         }
 
 
@@ -1124,5 +1126,154 @@ class AIToolDispatcher:
             "total_bookings": len(results),
             "bookings": results,
             "message": f"Retrieved {len(results)} verified booking record(s).",
+        }
+
+    async def _replan_day(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Dynamically replan an authorized trip day schedule."""
+        trip_id = args.get("trip_id")
+        action_type = args.get("action_type") or "late"
+        day_number = int(args.get("day_number") or 1)
+        current_time = args.get("current_time")
+        target_item_id = args.get("target_item_id")
+
+        if not trip_id:
+            return {"error": "Missing trip_id"}
+
+        trip = self.db.query(Trip).filter(Trip.id == trip_id).first()
+        if not trip:
+            return {"error": "Trip not found"}
+
+        if self.user:
+            is_creator = (trip.user_id == self.user.id)
+            is_member = bool(self.db.query(TripMember).filter(
+                TripMember.trip_id == trip.id, TripMember.user_id == self.user.id
+            ).first())
+            if not is_creator and not is_member and getattr(self.user, "role", "") != "admin":
+                return {"error": "Unauthorized: Cannot replan this trip."}
+
+        target_itin = None
+        for it in trip.itineraries:
+            if it.day_number == day_number:
+                target_itin = it
+                break
+
+        if not target_itin and trip.itineraries:
+            target_itin = trip.itineraries[0]
+
+        if not target_itin:
+            return {"error": f"No active itinerary found for Day {day_number}."}
+
+        from app.itinerary.dynamic_replanner import DynamicReplanner
+        replanner = DynamicReplanner()
+        available_places = self.db.query(Place).filter(Place.destination_id == trip.destination_id).all()
+        if not available_places:
+            available_places = self.db.query(Place).all()
+
+        res = replanner.replan_day(
+            itinerary=target_itin,
+            action_type=action_type,
+            available_places=available_places,
+            target_item_id=target_item_id,
+            current_time_str=current_time,
+        )
+        self.db.commit()
+
+        items_summary = []
+        for item in target_itin.items:
+            items_summary.append({
+                "item_id": item.id,
+                "title": item.title,
+                "category": item.category,
+                "start_time": item.start_time,
+                "end_time": item.end_time,
+                "duration_mins": item.duration_mins,
+                "status": item.status,
+            })
+
+        return {
+            "success": True,
+            "action": "replan_day",
+            "trip_id": trip.id,
+            "day_number": target_itin.day_number,
+            "action_type": action_type,
+            "message": res.get("message", "Schedule updated."),
+            "items": items_summary,
+        }
+
+    async def _get_split_balances(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch verified trip ledger balances and pairwise debts."""
+        trip_id = args.get("trip_id")
+        if not trip_id:
+            return {"error": "Missing trip_id"}
+
+        trip = self.db.query(Trip).filter(Trip.id == trip_id).first()
+        if not trip:
+            return {"error": "Trip not found"}
+
+        if self.user:
+            is_creator = (trip.user_id == self.user.id)
+            is_member = bool(self.db.query(TripMember).filter(
+                TripMember.trip_id == trip.id, TripMember.user_id == self.user.id
+            ).first())
+            if not is_creator and not is_member and getattr(self.user, "role", "") != "admin":
+                return {"error": "Unauthorized: Cannot access budget for this trip."}
+
+        from app.api.v1.budget import _get_trip_members
+        members = _get_trip_members(trip, self.db)
+        expenses = self.db.query(Expense).filter(Expense.trip_id == trip_id).all()
+
+        total_spent = sum(e.amount for e in expenses)
+        paid_by_user: Dict[str, float] = {m.id: 0.0 for m in members}
+        owed_by_user: Dict[str, float] = {m.id: 0.0 for m in members}
+        pairwise_debts: Dict[str, Dict[str, float]] = {m.id: {m2.id: 0.0 for m2 in members} for m in members}
+
+        for e in expenses:
+            payer = e.user_id
+            if payer in paid_by_user:
+                paid_by_user[payer] += e.amount
+
+            if e.shares:
+                for s in e.shares:
+                    u_id = s.user_id
+                    if u_id in owed_by_user:
+                        owed_by_user[u_id] += s.owed_amount
+                        if u_id != payer:
+                            pairwise_debts[u_id][payer] = pairwise_debts[u_id].get(payer, 0.0) + s.owed_amount
+            else:
+                n_m = max(1, len(members))
+                eq = e.amount / n_m
+                for m in members:
+                    owed_by_user[m.id] += eq
+                    if m.id != payer:
+                        pairwise_debts[m.id][payer] = pairwise_debts[m.id].get(payer, 0.0) + eq
+
+        member_names = {m.id: m.full_name or "Explorer" for m in members}
+        current_uid = self.user.id if self.user else ""
+
+        you_owe = []
+        you_are_owed = []
+
+        for other_id, debt in pairwise_debts.get(current_uid, {}).items():
+            if debt > 0.01:
+                you_owe.append({"user_name": member_names.get(other_id, "Member"), "amount": round(debt, 2)})
+
+        for debtor_id, debts in pairwise_debts.items():
+            if debtor_id != current_uid:
+                amt = debts.get(current_uid, 0.0)
+                if amt > 0.01:
+                    you_are_owed.append({"user_name": member_names.get(debtor_id, "Member"), "amount": round(amt, 2)})
+
+        net_balance = round(paid_by_user.get(current_uid, 0.0) - owed_by_user.get(current_uid, 0.0), 2)
+
+        return {
+            "trip_id": trip.id,
+            "total_spent": round(total_spent, 2),
+            "total_budget": trip.budget_total or 0.0,
+            "remaining_budget": max(0.0, (trip.budget_total or 0.0) - total_spent),
+            "per_person_average": round(total_spent / max(1, len(members)), 2),
+            "net_balance": net_balance,
+            "you_owe": you_owe,
+            "you_are_owed": you_are_owed,
+            "total_members": len(members),
         }
 

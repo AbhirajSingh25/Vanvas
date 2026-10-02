@@ -17,11 +17,13 @@ import {
 } from "@/types";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { useDensity } from "@/context/DensityContext";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 
 function RoadTripCockpit() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isCompact } = useDensity();
+  const { openAskVanvas, setTravelContext } = useAskVanvas();
 
   // Progressive Step State: 1 to 7, plus Review (8) & Result View
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -60,6 +62,24 @@ function RoadTripCockpit() {
       .then(setCorridors)
       .catch(() => {});
   }, []);
+
+  // Sync Road Trip context to Ask VANVAS
+  useEffect(() => {
+    setTravelContext({
+      type: "road_trip",
+      title: `ASK VANVAS · ${origin.toUpperCase()} → ${destination.toUpperCase()}`,
+      subtitle: plan
+        ? `Road Trip · ${plan.total_distance_km} km · ${plan.total_driving_time_hours} hrs · ${plan.recommended_stops?.length || 0} stops`
+        : `Road Trip Route · ${origin} to ${destination}`,
+      roadTripData: {
+        origin,
+        destination,
+        distanceKm: plan?.total_distance_km,
+        durationHours: plan?.total_driving_time_hours,
+        stops: plan?.recommended_stops,
+      },
+    });
+  }, [origin, destination, plan, setTravelContext]);
 
   // Step 1: Origin selection (Auto-advance)
   const handleSelectOrigin = (city: string) => {

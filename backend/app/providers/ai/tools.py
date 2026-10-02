@@ -389,6 +389,52 @@ VANVAS_COPILOT_TOOLS: List[Dict[str, Any]] = [
                 }
             }
         }
+    },
+    {
+        "name": "replan_day",
+        "description": "Dynamically replan an authorized trip day schedule based on user situation ('late', 'rain', 'less_money', 'tired', 'more_adventure', 'skip').",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "trip_id": {
+                    "type": "string",
+                    "description": "The unique authorized trip ID."
+                },
+                "day_number": {
+                    "type": "integer",
+                    "description": "Day number to replan (e.g. 1, 2, 3). Defaults to 1.",
+                    "default": 1
+                },
+                "action_type": {
+                    "type": "string",
+                    "description": "Replan action reason: 'late', 'rain', 'less_money', 'tired', 'more_adventure', 'skip'."
+                },
+                "current_time": {
+                    "type": "string",
+                    "description": "Optional current time in HH:MM format (e.g. '14:30')."
+                },
+                "target_item_id": {
+                    "type": "string",
+                    "description": "Optional target item ID to skip or replace."
+                }
+            },
+            "required": ["trip_id", "action_type"]
+        }
+    },
+    {
+        "name": "get_split_balances",
+        "description": "Fetch verified group trip ledger balances, pairwise debts, and who owes whom for an authorized trip.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "trip_id": {
+                    "type": "string",
+                    "description": "The unique authorized trip ID."
+                }
+            },
+            "required": ["trip_id"]
+        }
     }
 ]
+
 

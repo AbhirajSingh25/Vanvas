@@ -16,7 +16,6 @@ import { QuickPlanModal } from "@/components/trip/QuickPlanModal";
 import { ExpenseModal } from "@/components/trip/ExpenseModal";
 import { VotingCard } from "@/components/trip/VotingCard";
 import { ArrivalOptimizerCard } from "@/components/trip/ArrivalOptimizerCard";
-import { TripAssistantModal } from "@/components/copilot/TripAssistantModal";
 import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
@@ -24,6 +23,7 @@ import { TripInviteModal } from "@/components/trip/TripInviteModal";
 import { TripMembersSection } from "@/components/trip/TripMembersSection";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 import { useDensity } from "@/context/DensityContext";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 import { CompactItineraryItem, CompactStayCard, CompactRentalCard } from "@/components/compact";
 import { VanvasSplitView } from "@/components/trip/VanvasSplitView";
 
@@ -55,12 +55,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  // Ask VANVAS Unified Copilot
+  const { openAskVanvas, setTravelContext, registerTripRefreshCallback } = useAskVanvas();
+
   // Modals
   const [imHereOpen, setImHereOpen] = useState(false);
   const [replanOpen, setReplanOpen] = useState(false);
   const [quickPlanOpen, setQuickPlanOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
-  const [copilotOpen, setCopilotOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [newChecklistInput, setNewChecklistInput] = useState("");
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
@@ -72,6 +74,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       if (t.itineraries && t.itineraries.length > 0) {
         setSelectedDayNumber(t.itineraries[0].day_number);
       }
+
+      // Sync Trip Context to Ask VANVAS
+      setTravelContext({
+        type: "trip",
+        tripId: t.id,
+        trip: t,
+        destinationName: t.destination?.name,
+        destinationSlug: t.destination?.slug,
+        title: `ASK VANVAS · ${t.title?.toUpperCase() || "YOUR TRIP"}`,
+        subtitle: `Trip · ${t.num_days || 4} days · Active itinerary`,
+      });
 
       // Fetch supplementary data
       api.getBudget(tripId).then(setBudgetData).catch(() => {});
@@ -88,6 +101,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     loadTripData();
   }, [tripId]);
+
+  // Register real-time trip refresh callback when Ask VANVAS mutates itinerary
+  useEffect(() => {
+    return registerTripRefreshCallback(() => {
+      loadTripData();
+    });
+  }, [registerTripRefreshCallback]);
 
   const handleToggleItemStatus = async (itemId: string, currentStatus: string) => {
     const newStatus = currentStatus === "completed" ? "upcoming" : "completed";
@@ -351,11 +371,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               </Link>
 
               <button
-                onClick={() => setCopilotOpen(true)}
+                onClick={() => openAskVanvas()}
                 className="px-3.5 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs flex items-center gap-1.5 ml-auto cursor-pointer"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Copilot</span>
+                <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>Ask VANVAS</span>
               </button>
             </div>
           </div>
@@ -471,11 +491,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
               {/* AI Copilot Trigger */}
               <button
-                onClick={() => setCopilotOpen(true)}
-                className="px-5 py-2.5 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
+                onClick={() => openAskVanvas()}
+                className="px-5 py-2.5 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 ml-auto cursor-pointer shadow-xs"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span>Ask Copilot</span>
+                <Sparkles className="w-4 h-4" />
+                <span>Ask VANVAS</span>
               </button>
             </div>
           </div>
@@ -1093,14 +1113,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         onClose={() => setExpenseModalOpen(false)}
         tripId={trip.id}
         onExpenseAdded={loadTripData}
-      />
-
-      <TripAssistantModal
-        tripId={trip.id}
-        isOpen={copilotOpen}
-        onClose={() => setCopilotOpen(false)}
-        trip={trip}
-        onTriggerAction={handleCopilotTriggerAction}
       />
 
       <TripInviteModal

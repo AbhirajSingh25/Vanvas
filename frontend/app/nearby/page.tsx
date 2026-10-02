@@ -18,6 +18,7 @@ import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
 import { NearbySoloSection } from "@/components/solo/NearbySoloSection";
 import { Layers, LayoutGrid } from "lucide-react";
 import { useDensity } from "@/context/DensityContext";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 import { CompactNearbyItem } from "@/components/compact";
 
 type LocationStatus = "idle" | "locating" | "located" | "denied" | "error" | "unsupported";
@@ -98,6 +99,7 @@ const INITIAL_VISIBLE_COUNT = 9;
 
 function NearbyInner() {
   const { isCompact } = useDensity();
+  const { setTravelContext } = useAskVanvas();
   const searchParams = useSearchParams();
   const [places, setPlaces] = useState<Place[]>([]);
   const [visibleCount, setVisibleCount] = useState<number>(INITIAL_VISIBLE_COUNT);
@@ -132,6 +134,21 @@ function NearbyInner() {
 
     return PRESET_HUBS[0];
   });
+
+  // Sync Nearby Context to Ask VANVAS
+  useEffect(() => {
+    setTravelContext({
+      type: "nearby",
+      title: `ASK VANVAS · ${searchCenter.name.toUpperCase()}`,
+      subtitle: `Nearby places, food & services around ${searchCenter.name}`,
+      coordinates: {
+        lat: searchCenter.lat,
+        lng: searchCenter.lng,
+        label: searchCenter.name,
+      },
+    });
+  }, [searchCenter, setTravelContext]);
+
 
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [locationError, setLocationError] = useState<string>("");

@@ -371,6 +371,27 @@ async def copilot_chat(
                     "category": p.get("category", "Attraction"),
                 })
 
+        elif name == "replan_day" and isinstance(res, dict):
+            actions.append({
+                "action_type": "replan_applied",
+                "title": res.get("message", "Schedule Updated"),
+                "payload": res
+            })
+
+        elif name in ["get_budget_summary", "get_split_balances"] and isinstance(res, dict):
+            actions.append({
+                "action_type": "open_wallet",
+                "title": "Open Wallet & Split",
+                "payload": res
+            })
+
+        elif name == "search_stays" and isinstance(res, dict) and "stays" in res:
+            actions.append({
+                "action_type": "view_stays",
+                "title": "Explore Verified Stays",
+                "payload": res
+            })
+
         elif name in ["search_places", "get_nearby_places"] and isinstance(res, dict) and "places" in res:
             for p in res.get("places", []):
                 pid = p.get("place_id")
