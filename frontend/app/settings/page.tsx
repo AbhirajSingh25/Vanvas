@@ -78,6 +78,7 @@ function SettingsContent() {
 
   // Export & Delete Modals
   const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -194,6 +195,7 @@ function SettingsContent() {
 
   const handleExportData = async () => {
     setExportLoading(true);
+    setExportError(null);
     try {
       const exportBundle = await exportData();
       const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
@@ -206,7 +208,7 @@ function SettingsContent() {
       downloadAnchor.click();
       downloadAnchor.remove();
     } catch (err: any) {
-      alert("Failed to export data: " + (err.message || "Please try again later."));
+      setExportError("Failed to export data: " + (err.message || "Please try again later."));
     } finally {
       setExportLoading(false);
     }
@@ -970,6 +972,13 @@ function SettingsContent() {
                       <span>Export My Data</span>
                     </button>
                   </div>
+
+                  {exportError && (
+                    <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                      <span>{exportError}</span>
+                    </div>
+                  )}
                 </div>
               )}
 

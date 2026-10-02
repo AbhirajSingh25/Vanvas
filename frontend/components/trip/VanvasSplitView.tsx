@@ -5,7 +5,7 @@ import {
   Wallet, Plus, ArrowRight, CheckCircle2, DollarSign,
   Receipt, Users, Search, Filter, Trash2, Edit2, Sparkles,
   ArrowUpRight, ArrowDownLeft, ShieldCheck, RefreshCw, Layers,
-  ChevronRight, Check
+  ChevronRight, Check, AlertCircle
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -41,6 +41,7 @@ export const VanvasSplitView: React.FC<VanvasSplitViewProps> = ({
   const [settlePaymentMethod, setSettlePaymentMethod] = useState<string>("UPI");
   const [isSettling, setIsSettling] = useState(false);
   const [settleSuccessMsg, setSettleSuccessMsg] = useState<string | null>(null);
+  const [splitActionError, setSplitActionError] = useState<string | null>(null);
 
   const loadLedgerData = async () => {
     try {
@@ -67,12 +68,14 @@ export const VanvasSplitView: React.FC<VanvasSplitViewProps> = ({
 
   const handleDeleteExpense = async (expenseId: string) => {
     if (!confirm("Are you sure you want to remove this expense?")) return;
+    setSplitActionError(null);
     try {
       await api.deleteExpense(trip.id, expenseId);
       loadLedgerData();
       onExpenseMutated();
     } catch (err: any) {
-      alert(err?.message || "Could not delete expense");
+      setSplitActionError(err?.message || "Could not delete expense");
+      setTimeout(() => setSplitActionError(null), 4000);
     }
   };
 
@@ -86,6 +89,7 @@ export const VanvasSplitView: React.FC<VanvasSplitViewProps> = ({
     e.preventDefault();
     if (!settleModalDebt) return;
     const parsedAmt = parseFloat(settleAmount) || settleModalDebt.amount;
+    setSplitActionError(null);
     try {
       setIsSettling(true);
       await api.recordSettlementPayment(trip.id, {
@@ -100,7 +104,8 @@ export const VanvasSplitView: React.FC<VanvasSplitViewProps> = ({
       onExpenseMutated();
       setTimeout(() => setSettleSuccessMsg(null), 3500);
     } catch (err: any) {
-      alert(err?.message || "Could not record settlement");
+      setSplitActionError(err?.message || "Could not record settlement");
+      setTimeout(() => setSplitActionError(null), 4000);
     } finally {
       setIsSettling(false);
     }
@@ -128,6 +133,13 @@ export const VanvasSplitView: React.FC<VanvasSplitViewProps> = ({
         <div className="p-3 rounded-2xl bg-emerald-800 text-emerald-100 text-xs font-semibold flex items-center gap-2 shadow-lg animate-fadeIn border border-emerald-600">
           <CheckCircle2 className="w-4 h-4 text-emerald-300" />
           <span>{settleSuccessMsg}</span>
+        </div>
+      )}
+
+      {splitActionError && (
+        <div className="p-3 rounded-2xl bg-red-800 text-red-100 text-xs font-semibold flex items-center gap-2 shadow-lg animate-fadeIn border border-red-600">
+          <AlertCircle className="w-4 h-4 text-red-300 shrink-0" />
+          <span>{splitActionError}</span>
         </div>
       )}
 

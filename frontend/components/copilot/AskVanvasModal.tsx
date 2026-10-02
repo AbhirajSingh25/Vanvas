@@ -52,6 +52,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
 
   const [input, setInput] = useState("");
   const [attachedImage, setAttachedImage] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isGettingGps, setIsGettingGps] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -105,10 +106,12 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   if (!isModalOpen) return null;
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError(null);
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      alert("Image must be smaller than 10MB");
+      setImageError("Image must be smaller than 10MB");
+      setTimeout(() => setImageError(null), 4000);
       return;
     }
     const previewUrl = URL.createObjectURL(file);
@@ -116,6 +119,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   };
 
   const handleRemoveImage = () => {
+    setImageError(null);
     if (attachedImage) {
       URL.revokeObjectURL(attachedImage.previewUrl);
     }
@@ -397,6 +401,13 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               >
                 <X className="w-3.5 h-3.5" />
               </button>
+            </div>
+          )}
+
+          {/* Image Error Notice */}
+          {imageError && (
+            <div className="text-[11px] font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/50 w-fit">
+              {imageError}
             </div>
           )}
 

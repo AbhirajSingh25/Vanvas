@@ -137,6 +137,7 @@ def get_destinations(
     existing_slugs = {d.slug for d in destinations}
     results = []
     for d in destinations:
+        is_canon = d.slug in {cd["slug"] for cd in CANONICAL_26_DESTINATIONS}
         d_dict = {
             "id": d.id,
             "name": d.name,
@@ -166,7 +167,9 @@ def get_destinations(
             "is_featured": d.is_featured,
             "places_count": len(d.places),
             "hotels_count": len(d.hotels),
-            "rentals_count": len(d.rentals)
+            "rentals_count": len(d.rentals),
+            "is_canonical": is_canon,
+            "is_dynamic": not is_canon
         }
         results.append(d_dict)
 
@@ -205,7 +208,9 @@ def get_destinations(
                 "is_featured": cd.get("is_featured", True),
                 "places_count": len(c_places),
                 "hotels_count": len(c_hotels),
-                "rentals_count": len(c_rentals)
+                "rentals_count": len(c_rentals),
+                "is_canonical": True,
+                "is_dynamic": False
             })
 
     CANONICAL_SLUG_ORDER = [

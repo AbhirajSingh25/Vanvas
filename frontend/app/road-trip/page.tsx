@@ -136,6 +136,7 @@ function RoadTripCockpit() {
     setOrigin(c.origin);
     setDestination(c.destination);
     setLoading(true);
+    setErrorState(null);
     api.planRoadTrip({
       origin: c.origin,
       destination: c.destination,
@@ -150,7 +151,7 @@ function RoadTripCockpit() {
         setSelectedDayTab(1);
       })
       .catch((err) => {
-        alert(err.message || "Failed to calculate corridor route.");
+        setErrorState(err.message || "Failed to calculate corridor route.");
       })
       .finally(() => setLoading(false));
   };
@@ -201,7 +202,8 @@ function RoadTripCockpit() {
         router.push(`/trips/${savedTrip.id}`);
       }, 1000);
     } catch (err: any) {
-      alert(err?.message || "Please log in to save this road trip to your journeys.");
+      setNotificationMsg(err?.message || "Please log in to save this road trip to your journeys.");
+      setTimeout(() => setNotificationMsg(null), 4000);
       setSaving(false);
     }
   };

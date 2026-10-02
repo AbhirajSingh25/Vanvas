@@ -128,25 +128,33 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
 
     try:
         from app.models.models import Destination, Place, Hotel, RentalOption
+        from app.seed.canonical_dataset import CANONICAL_26_DESTINATIONS
         db.execute(text("SELECT 1"))
         
-        dest_count = db.query(Destination).count()
+        canonical_slugs = {d["slug"] for d in CANONICAL_26_DESTINATIONS}
+        canonical_dest_count = db.query(Destination).filter(Destination.slug.in_(canonical_slugs)).count()
+        total_dest_count = db.query(Destination).count()
+        dynamic_dest_count = max(0, total_dest_count - canonical_dest_count)
+
         places_count = db.query(Place).count()
         hotels_count = db.query(Hotel).count()
         rentals_count = db.query(RentalOption).count()
 
         # Check canonical baseline
-        if dest_count < 26 or places_count < 208 or hotels_count < 104 or rentals_count < 53:
+        if canonical_dest_count < 26 or places_count < 208 or hotels_count < 104 or rentals_count < 53:
             response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
             return {
                 "status": "not_ready",
                 "database": "inventory_incomplete",
                 "inventory": {
-                    "destinations": dest_count,
+                    "canonical_destinations": canonical_dest_count,
+                    "dynamic_destinations": dynamic_dest_count,
+                    "total_destinations": total_dest_count,
+                    "destinations": total_dest_count,
                     "places": places_count,
                     "hotels": hotels_count,
                     "rentals": rentals_count,
-                    "expected": {"destinations": 26, "places": 208, "hotels": 104, "rentals": 53}
+                    "expected": {"canonical_destinations": 26, "places": 208, "hotels": 104, "rentals": 53}
                 },
                 "service": "vanvas-core-api",
                 "version": settings.VERSION,
@@ -158,7 +166,10 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
             "status": "ready",
             "database": "connected",
             "inventory": {
-                "destinations": dest_count,
+                "canonical_destinations": canonical_dest_count,
+                "dynamic_destinations": dynamic_dest_count,
+                "total_destinations": total_dest_count,
+                "destinations": total_dest_count,
                 "places": places_count,
                 "hotels": hotels_count,
                 "rentals": rentals_count
@@ -188,8 +199,14 @@ def health_diagnostics(response: Response, db: Session = Depends(get_db)):
     """
     try:
         from app.models.models import Destination, Place, Hotel, RentalOption, User
+        from app.seed.canonical_dataset import CANONICAL_26_DESTINATIONS
         db.execute(text("SELECT 1"))
-        dest_count = db.query(Destination).count()
+        
+        canonical_slugs = {d["slug"] for d in CANONICAL_26_DESTINATIONS}
+        canonical_dest_count = db.query(Destination).filter(Destination.slug.in_(canonical_slugs)).count()
+        total_dest_count = db.query(Destination).count()
+        dynamic_dest_count = max(0, total_dest_count - canonical_dest_count)
+
         places_count = db.query(Place).count()
         hotels_count = db.query(Hotel).count()
         rentals_count = db.query(RentalOption).count()
@@ -203,7 +220,10 @@ def health_diagnostics(response: Response, db: Session = Depends(get_db)):
                 "connected": True,
                 "engine": "postgresql" if "postgresql" in settings.DATABASE_URL.lower() else "sqlite",
                 "counts": {
-                    "destinations": dest_count,
+                    "canonical_destinations": canonical_dest_count,
+                    "dynamic_destinations": dynamic_dest_count,
+                    "total_destinations": total_dest_count,
+                    "destinations": total_dest_count,
                     "places": places_count,
                     "hotels": hotels_count,
                     "rentals": rentals_count,

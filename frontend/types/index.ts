@@ -805,6 +805,8 @@ export interface CopilotChatResponse {
 export interface AdminStats {
   total_users: number;
   total_trips: number;
+  canonical_destinations?: number;
+  dynamic_destinations?: number;
   total_destinations: number;
   total_places: number;
   active_trips_count: number;

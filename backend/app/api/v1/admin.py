@@ -37,6 +37,7 @@ async def get_system_diagnostics(db: Session = Depends(get_db)):
     PROVIDER UNAVAILABLE, DATABASE ERROR, NO RESULTS, and OPERATIONAL state.
     """
     from datetime import datetime, timezone
+    from app.seed.canonical_dataset import CANONICAL_26_DESTINATIONS
     diagnostics = {
         "status": "OPERATIONAL",
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -46,13 +47,26 @@ async def get_system_diagnostics(db: Session = Depends(get_db)):
             "fallback": "OpenStreetMap (Keyless)",
             "status": "OPERATIONAL"
         },
-        "destinations": {"count": 0, "status": "OPERATIONAL"},
+        "destinations": {
+            "canonical_count": 0,
+            "dynamic_count": 0,
+            "total_count": 0,
+            "count": 0,
+            "status": "OPERATIONAL"
+        },
         "providers": ProviderFactory.get_provider_health()
     }
     try:
-        dest_count = db.query(Destination).count()
-        diagnostics["destinations"]["count"] = dest_count
-        if dest_count == 0:
+        canonical_slugs = {d["slug"] for d in CANONICAL_26_DESTINATIONS}
+        canonical_dest = db.query(Destination).filter(Destination.slug.in_(canonical_slugs)).count()
+        total_dest = db.query(Destination).count()
+        dynamic_dest = max(0, total_dest - canonical_dest)
+
+        diagnostics["destinations"]["canonical_count"] = canonical_dest
+        diagnostics["destinations"]["dynamic_count"] = dynamic_dest
+        diagnostics["destinations"]["total_count"] = total_dest
+        diagnostics["destinations"]["count"] = total_dest
+        if total_dest == 0:
             diagnostics["destinations"]["status"] = "NO RESULTS"
     except Exception as e:
         diagnostics["database"]["status"] = "DATABASE ERROR"
@@ -143,9 +157,15 @@ def get_admin_stats(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin)
 ):
+    from app.seed.canonical_dataset import CANONICAL_26_DESTINATIONS
     total_users = db.query(User).count()
     total_trips = db.query(Trip).count()
+    
+    canonical_slugs = {d["slug"] for d in CANONICAL_26_DESTINATIONS}
+    canonical_dest = db.query(Destination).filter(Destination.slug.in_(canonical_slugs)).count()
     total_dest = db.query(Destination).count()
+    dynamic_dest = max(0, total_dest - canonical_dest)
+
     total_places = db.query(Place).count()
     active_trips = db.query(Trip).filter(Trip.status == "active").count()
 
@@ -155,6 +175,8 @@ def get_admin_stats(
     return AdminDashboardStats(
         total_users=total_users,
         total_trips=total_trips,
+        canonical_destinations=canonical_dest,
+        dynamic_destinations=dynamic_dest,
         total_destinations=total_dest,
         total_places=total_places,
         active_trips_count=active_trips,

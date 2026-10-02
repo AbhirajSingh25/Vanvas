@@ -311,6 +311,7 @@ function NearbyInner() {
     if (!searchQuery.trim()) return;
 
     setIsSearchingLocation(true);
+    setLocationError("");
     try {
       const resolved = await api.geocodeLocation(searchQuery.trim());
       if (resolved) {
@@ -324,11 +325,14 @@ function NearbyInner() {
         setSearchQuery("");
         setShowSuggestions(false);
         setLocationStatus("idle");
+        setLocationError("");
       } else {
-        alert(`Could not find coordinates for "${searchQuery}". Please check the spelling or select a suggested base.`);
+        setLocationStatus("error");
+        setLocationError(`Could not find coordinates for "${searchQuery}". Please check the spelling or select a suggested base.`);
       }
     } catch {
-      alert(`Location lookup failed for "${searchQuery}".`);
+      setLocationStatus("error");
+      setLocationError(`Location lookup failed for "${searchQuery}".`);
     } finally {
       setIsSearchingLocation(false);
     }
@@ -528,7 +532,7 @@ function NearbyInner() {
               </span>
             </div>
 
-            {locationStatus === "denied" && (
+            {(locationStatus === "denied" || locationStatus === "error") && locationError && (
               <div className="text-amber-800 text-xs flex items-center gap-1 font-medium bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-300">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>{locationError}</span>

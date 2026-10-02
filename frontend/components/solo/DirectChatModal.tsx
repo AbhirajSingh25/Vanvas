@@ -89,7 +89,8 @@ export function DirectChatModal({
       if (onBlock) onBlock(partner.user_id);
       onClose();
     } catch (err: any) {
-      alert(err.message || "Could not block user.");
+      setActionNotice(err.message || "Could not block user.");
+      setTimeout(() => setActionNotice(null), 4000);
     }
   };
 
@@ -98,11 +99,13 @@ export function DirectChatModal({
     if (!reason || !reason.trim()) return;
     try {
       await api.reportTraveler({ reported_user_id: partner.user_id, reason: reason.trim() });
-      alert("Report submitted to VANVAS Safety Desk. Thank you for keeping solo travel safe.");
+      setActionNotice("Report submitted to VANVAS Safety Desk. Thank you for keeping solo travel safe.");
       if (onReport) onReport(partner.user_id);
       setShowSafetyMenu(false);
+      setTimeout(() => setActionNotice(null), 4000);
     } catch (err: any) {
-      alert(err.message || "Could not submit report.");
+      setActionNotice(err.message || "Could not submit report.");
+      setTimeout(() => setActionNotice(null), 4000);
     }
   };
 

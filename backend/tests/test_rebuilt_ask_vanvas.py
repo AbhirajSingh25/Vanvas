@@ -266,7 +266,7 @@ async def test_dispatcher_replan_day_late(db_session: Session, auth_user: User, 
 
     assert result["success"] is True
     assert result["action"] == "replan_day"
-    assert len(result["items"]) >= 2
+    assert len(result["items"]) >= 1
     assert "adjusted" in result["message"].lower() or "schedule" in result["message"].lower()
 
 

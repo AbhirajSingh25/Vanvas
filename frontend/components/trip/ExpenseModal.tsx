@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   PlusCircle, Wallet, X, Check, Users, Receipt, Percent,
-  Split, DollarSign, Sparkles, FileText, ChevronDown, Plus, Trash2
+  Split, DollarSign, Sparkles, FileText, ChevronDown, Plus, Trash2, AlertCircle
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Expense, TripMemberItem } from "@/types";
@@ -55,6 +55,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   const [ocrTotal, setOcrTotal] = useState("1850");
 
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (members.length > 0) {
@@ -168,6 +169,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       });
     }
 
+    setSubmitError(null);
     try {
       const newExp = await api.addExpense(tripId, {
         title: title.trim(),
@@ -182,7 +184,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       onExpenseAdded(newExp);
       onClose();
     } catch (err: any) {
-      alert(err?.message || "Could not add expense");
+      setSubmitError(err?.message || "Could not add expense");
     } finally {
       setLoading(false);
     }
@@ -477,6 +479,13 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {submitError && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+              <span>{submitError}</span>
             </div>
           )}
 

@@ -187,6 +187,8 @@ class DestinationResponse(DestinationBase):
     places_count: Optional[int] = 0
     hotels_count: Optional[int] = 0
     rentals_count: Optional[int] = 0
+    is_canonical: Optional[bool] = True
+    is_dynamic: Optional[bool] = False
 
     class Config:
         from_attributes = True
@@ -899,6 +901,8 @@ class ProviderHealthStatus(BaseModel):
 class AdminDashboardStats(BaseModel):
     total_users: int
     total_trips: int
+    canonical_destinations: Optional[int] = 26
+    dynamic_destinations: Optional[int] = 0
     total_destinations: int
     total_places: int
     active_trips_count: int

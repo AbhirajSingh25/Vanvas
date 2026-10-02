@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles, MapPin, Calendar, Wallet, Users, Compass, Check,
-  ArrowRight, ArrowLeft, Search, Loader2, RefreshCw
+  ArrowRight, ArrowLeft, Search, Loader2, RefreshCw, AlertCircle
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination } from "@/types";
@@ -38,6 +38,7 @@ function PlanWizard() {
   const [selectedDestId, setSelectedDestId] = useState<string>(initialDest);
   const [selectedDestObject, setSelectedDestObject] = useState<Destination | any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
@@ -256,6 +257,7 @@ function PlanWizard() {
       setGenMessage(msgs[idx]);
     }, 700);
 
+    setGenerationError(null);
     try {
       const targetSlug =
         selectedDestObject?.canonical_slug ||
@@ -290,7 +292,7 @@ function PlanWizard() {
     } catch (err: any) {
       clearInterval(timer);
       setIsGenerating(false);
-      alert(err.message || "Failed to generate trip. Please try again.");
+      setGenerationError(err.message || "Failed to generate trip. Please try again.");
     }
   };
 
@@ -750,6 +752,15 @@ function PlanWizard() {
                   <strong>Vibes:</strong> {selectedVibes.join(" • ")}
                 </div>
               </div>
+
+              {generationError && (
+                <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2.5 shadow-sm">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                  <div className="flex-1">
+                    <span>{generationError}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Build My Trip Button */}
               <button

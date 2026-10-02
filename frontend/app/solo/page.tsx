@@ -70,6 +70,7 @@ function SoloPageContent() {
   const [isSearching, setIsSearching] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
   const [researchStage, setResearchStage] = useState<string>("");
+  const [researchError, setResearchError] = useState<string | null>(null);
 
   // Travel Styles (Multi-select)
   const [selectedStyles, setSelectedStyles] = useState<string[]>(["slow_travel"]);
@@ -229,6 +230,7 @@ function SoloPageContent() {
     const query = searchInputValue.trim();
     if (!query) return;
 
+    setResearchError(null);
     try {
       setIsResearching(true);
       setResearchStage("Geocoding & resolving destination...");
@@ -242,7 +244,7 @@ function SoloPageContent() {
         router.push(`/solo?dest=${encodeURIComponent(res.canonical_slug)}`, { scroll: false });
       }
     } catch (err: any) {
-      alert(`Could not research '${query}': ${err.message || "Please check spelling and try again."}`);
+      setResearchError(`Could not research '${query}': ${err.message || "Please check spelling and try again."}`);
     } finally {
       setIsResearching(false);
       setResearchStage("");
@@ -352,6 +354,14 @@ function SoloPageContent() {
             <div className="p-4 rounded-2xl bg-[#E05A2B]/10 border border-[#E05A2B]/20 text-xs text-[#E05A2B] font-medium flex items-center gap-3 animate-pulse">
               <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
               <span>{researchStage || "Researching this place for your solo trip..."}</span>
+            </div>
+          )}
+
+          {/* Research Error Notice */}
+          {researchError && (
+            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium flex items-center gap-3">
+              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+              <span>{researchError}</span>
             </div>
           )}
 
