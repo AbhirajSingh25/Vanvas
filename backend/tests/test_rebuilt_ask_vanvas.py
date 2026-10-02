@@ -123,6 +123,7 @@ def sample_places(db_session: Session, sample_destination: Destination):
             approx_cost=0,
             recommended_duration_mins=60,
             is_must_visit=True,
+            image_url="/images/places/manali/hadimba-temple.webp"
         )
         db_session.add(p1)
 
@@ -140,6 +141,7 @@ def sample_places(db_session: Session, sample_destination: Destination):
             approx_cost=450,
             recommended_duration_mins=75,
             is_indoor=True,
+            image_url="/images/places/manali/cafe-1947.webp"
         )
         db_session.add(p2)
 

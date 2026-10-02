@@ -159,7 +159,7 @@ def seed_database(engine_to_use=None, db: Optional[Session] = None) -> bool:
                 # Clean up non-canonical transient/test records erroneously attached to this canonical destination
                 for p in db.query(Place).filter(Place.destination_id == dest_obj.id).all():
                     if p.slug not in canonical_slugs_for_dest and (
-                        p.id.startswith("osm-") or p.id.startswith("gp-") or p.id.startswith("live-") or p.id.startswith("temp-") or p.id == "mussoorie_landour_bakehouse"
+                        p.id.startswith("osm-") or p.id.startswith("gp-") or p.id.startswith("live-") or p.id.startswith("temp-") or p.id.startswith("place-") or p.id.startswith("test-") or p.id == "mussoorie_landour_bakehouse"
                     ):
                         db.query(Vote).filter(Vote.place_id == p.id).delete()
                         db.query(ItineraryItem).filter(ItineraryItem.place_id == p.id).delete()
