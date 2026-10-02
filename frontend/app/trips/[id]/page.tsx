@@ -661,14 +661,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
         {/* ITINERARY TAB */}
         {activeTab === "itinerary" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-6 animate-vanvas-fade">
             {/* Day Selector Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {trip.itineraries.map((it) => (
                 <button
                   key={it.id}
                   onClick={() => setSelectedDayNumber(it.day_number)}
-                  className={`px-6 py-3 rounded-2xl text-xs font-bold tracking-wide transition-all ${
+                  className={`px-6 py-3 rounded-2xl text-xs font-bold tracking-wide interactive-pill cursor-pointer ${
                     selectedDayNumber === it.day_number
                       ? "bg-[#173B32] text-[#EFE5D2] shadow-md scale-102 border-2 border-[#173B32]"
                       : "bg-[#FAF7F0] text-[#20211D] border-2 border-[#E5D5BA] hover:bg-[#EFE5D2]"
@@ -682,7 +682,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
             {/* Day Theme Header */}
             {currentDayItinerary && (
-              <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs animate-vanvas-slide-up">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-[#B65E3C]">
                     THEME: {currentDayItinerary.theme}
@@ -693,7 +693,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
                 <button
                   onClick={() => setReplanOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] hover:border-[#173B32] text-xs font-bold text-[#173B32] flex items-center gap-1.5 self-start sm:self-auto transition-colors"
+                  className="px-4 py-2 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] hover:border-[#173B32] interactive-btn text-xs font-bold text-[#173B32] flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#B65E3C]" />
                   <span>Adjust Stops</span>
@@ -704,13 +704,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             {/* Timeline Items */}
             {isCompact ? (
               <div className="space-y-2.5">
-                {currentDayItinerary?.items.map((item) => (
-                  <CompactItineraryItem
-                    key={item.id}
-                    item={item}
-                    onToggleStatus={handleToggleItemStatus}
-                    onToggleLock={handleToggleLock}
-                  />
+                {currentDayItinerary?.items.map((item, idx) => (
+                  <div key={`${selectedDayNumber}-${item.id}`} className={`animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)}`}>
+                    <CompactItineraryItem
+                      item={item}
+                      onToggleStatus={handleToggleItemStatus}
+                      onToggleLock={handleToggleLock}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -721,13 +722,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
                 return (
                   <div
-                    key={item.id}
-                    className={`p-6 rounded-3xl border-2 transition-all flex flex-col sm:flex-row items-start gap-4 ${
+                    key={`${selectedDayNumber}-${item.id}`}
+                    className={`p-6 rounded-3xl border-2 transition-all flex flex-col sm:flex-row items-start gap-4 animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)} ${
                       isCompleted
                         ? "bg-[#E5D5BA]/40 border-[#E5D5BA] opacity-75"
                         : isSkipped
                         ? "bg-stone-100 border-stone-200 line-through opacity-50"
-                        : "bg-[#FAF7F0] border-[#E5D5BA] shadow-xs hover:border-[#173B32]/50"
+                        : "bg-[#FAF7F0] border-[#E5D5BA] shadow-xs hover:border-[#173B32]/50 interactive-card"
                     }`}
                   >
                     {/* Status & Timing */}

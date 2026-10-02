@@ -31,6 +31,7 @@ function PlanWizard() {
 
   // Progressive Step State: 1 to 6, plus Step 7 (Review)
   const [currentStep, setCurrentStep] = useState<number>(() => (hasExplicitDest ? 2 : 1));
+  const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
 
   // Destination Resolution State
   const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
@@ -174,6 +175,7 @@ function PlanWizard() {
         setSelectedDestObject(res);
         if (autoAdvance) {
           // Micro-delay for visual acknowledgement
+          setStepDirection("next");
           setTimeout(() => setCurrentStep(2), 150);
         }
       } else {
@@ -205,6 +207,7 @@ function PlanWizard() {
 
     setStartDate(start.toISOString().split("T")[0]);
     setEndDate(end.toISOString().split("T")[0]);
+    setStepDirection("next");
     setTimeout(() => setCurrentStep(3), 150);
   };
 
@@ -215,6 +218,7 @@ function PlanWizard() {
     const end = new Date(start);
     end.setDate(start.getDate() + (days - 1));
     setEndDate(end.toISOString().split("T")[0]);
+    setStepDirection("next");
     setTimeout(() => setCurrentStep(4), 150);
   };
 
@@ -222,6 +226,7 @@ function PlanWizard() {
   const handleCompanionSelect = (type: string, count: number) => {
     setCompanionType(type);
     setTravellersCount(count);
+    setStepDirection("next");
     setTimeout(() => setCurrentStep(5), 150);
   };
 
@@ -239,6 +244,7 @@ function PlanWizard() {
   // Handle Travel Style selection with AUTO-ADVANCE to Review
   const handleStyleSelect = (style: string) => {
     setTravelStyle(style);
+    setStepDirection("next");
     setTimeout(() => setCurrentStep(7), 150);
   };
 
@@ -324,8 +330,11 @@ function PlanWizard() {
               {currentStep > 1 && (
                 <button
                   type="button"
-                  onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
-                  className="p-1.5 rounded-xl hover:bg-[#EFE5D2] text-[#173B32] transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
+                  onClick={() => {
+                    setStepDirection("prev");
+                    setCurrentStep((prev) => Math.max(1, prev - 1));
+                  }}
+                  className="p-1.5 rounded-xl hover:bg-[#EFE5D2] interactive-btn text-[#173B32] cursor-pointer flex items-center gap-1 text-xs font-bold"
                   aria-label="Previous question"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -345,7 +354,7 @@ function PlanWizard() {
               </span>
               <div className="w-16 sm:w-24 bg-[#E5D5BA] h-1.5 rounded-full overflow-hidden">
                 <div
-                  className="bg-[#173B32] h-full transition-all duration-300 rounded-full"
+                  className="bg-[#173B32] h-full transition-all duration-300 ease-out rounded-full"
                   style={{ width: `${(Math.min(currentStep, 6) / 6) * 100}%` }}
                 />
               </div>
@@ -356,7 +365,7 @@ function PlanWizard() {
           {/* 01 / 06: WHERE ARE YOU GOING?                            */}
           {/* ======================================================== */}
           {currentStep === 1 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
                   QUESTION 01
@@ -387,7 +396,7 @@ function PlanWizard() {
                       key={d.slug}
                       type="button"
                       onClick={() => handleSelectDestination(d)}
-                      className={`p-3 rounded-2xl text-xs font-bold text-center transition-all cursor-pointer border-2 ${
+                      className={`p-3 rounded-2xl text-xs font-bold text-center interactive-pill cursor-pointer border-2 ${
                         isSelected
                           ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
                           : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
@@ -413,7 +422,7 @@ function PlanWizard() {
                       }
                     }}
                     placeholder="Or search any destination: Munnar, Leh, Ooty..."
-                    className="w-full pl-9 pr-9 py-2.5 bg-white border-2 border-[#E5D5BA] rounded-2xl text-xs font-medium text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32]"
+                    className="w-full pl-9 pr-9 py-2.5 bg-white border-2 border-[#E5D5BA] rounded-2xl text-xs font-medium text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32] transition-colors"
                   />
                   <Search className="w-4 h-4 text-[#7B4D36] absolute left-3 pointer-events-none" />
                   {(isSearching || isResolving) && (
@@ -422,7 +431,7 @@ function PlanWizard() {
                 </div>
 
                 {searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border-2 border-[#E5D5BA] rounded-2xl shadow-xl overflow-hidden divide-y divide-[#E5D5BA] max-h-52 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border-2 border-[#E5D5BA] rounded-2xl shadow-xl overflow-hidden divide-y divide-[#E5D5BA] max-h-52 overflow-y-auto animate-vanvas-scale">
                     {searchResults.map((item, idx) => (
                       <button
                         key={idx}
@@ -445,7 +454,7 @@ function PlanWizard() {
               </div>
 
               {resolveError && (
-                <p className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 p-2.5 rounded-xl">
+                <p className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 p-2.5 rounded-xl animate-vanvas-fade">
                   {resolveError}
                 </p>
               )}
@@ -456,7 +465,7 @@ function PlanWizard() {
           {/* 02 / 06: WHEN ARE YOU GOING?                             */}
           {/* ======================================================== */}
           {currentStep === 2 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
                   QUESTION 02
@@ -480,7 +489,7 @@ function PlanWizard() {
                     key={opt.id}
                     type="button"
                     onClick={() => handleDatePresetSelect(opt.id as any)}
-                    className="p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#173B32] text-left transition-all cursor-pointer shadow-xs"
+                    className="p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#173B32] interactive-card text-left cursor-pointer shadow-xs"
                   >
                     <div className="font-serif font-bold text-sm text-[#173B32]">{opt.label}</div>
                     <div className="text-[10px] text-[#7B4D36] mt-0.5">{opt.desc}</div>
@@ -509,8 +518,11 @@ function PlanWizard() {
                   />
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(3)}
-                    className="px-4 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider cursor-pointer"
+                    onClick={() => {
+                      setStepDirection("next");
+                      setCurrentStep(3);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] interactive-btn text-[#EFE5D2] font-bold text-xs uppercase tracking-wider cursor-pointer"
                   >
                     Continue →
                   </button>
@@ -523,7 +535,7 @@ function PlanWizard() {
           {/* 03 / 06: HOW LONG?                                       */}
           {/* ======================================================== */}
           {currentStep === 3 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
                   QUESTION 03
@@ -543,7 +555,7 @@ function PlanWizard() {
                     key={d}
                     type="button"
                     onClick={() => handleDaysSelect(d)}
-                    className={`py-4 rounded-2xl font-serif font-black text-center transition-all cursor-pointer border-2 ${
+                    className={`py-4 rounded-2xl font-serif font-black text-center interactive-pill cursor-pointer border-2 ${
                       daysCount === d
                         ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
                         : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
@@ -563,7 +575,7 @@ function PlanWizard() {
           {/* 04 / 06: WHO'S COMING?                                   */}
           {/* ======================================================== */}
           {currentStep === 4 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
                   QUESTION 04
@@ -588,7 +600,7 @@ function PlanWizard() {
                     key={c.type}
                     type="button"
                     onClick={() => handleCompanionSelect(c.type, c.count)}
-                    className={`p-4 rounded-2xl text-left transition-all cursor-pointer border-2 ${
+                    className={`p-4 rounded-2xl text-left interactive-card cursor-pointer border-2 ${
                       companionType === c.type
                         ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
                         : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
@@ -606,7 +618,7 @@ function PlanWizard() {
           {/* 05 / 06: WHAT'S YOUR VIBE? (Multi-select)                */}
           {/* ======================================================== */}
           {currentStep === 5 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
                   QUESTION 05
@@ -635,7 +647,7 @@ function PlanWizard() {
                       key={v.name}
                       type="button"
                       onClick={() => handleVibeToggle(v.name)}
-                      className={`p-3 rounded-2xl text-left transition-all cursor-pointer border-2 ${
+                      className={`p-3 rounded-2xl text-left interactive-card cursor-pointer border-2 ${
                         isSelected
                           ? "bg-[#B65E3C] text-[#EFE5D2] border-[#B65E3C] shadow-sm"
                           : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
@@ -643,7 +655,7 @@ function PlanWizard() {
                     >
                       <div className="font-serif font-bold text-xs flex items-center justify-between">
                         <span>{v.name}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#FAF4E8]" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#FAF4E8] animate-check-pop" />}
                       </div>
                       <div className="text-[10px] opacity-80 mt-0.5 line-clamp-1">{v.desc}</div>
                     </button>
@@ -654,8 +666,11 @@ function PlanWizard() {
               <div className="pt-2 border-t border-[#E5D5BA] flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(6)}
-                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                  onClick={() => {
+                    setStepDirection("next");
+                    setCurrentStep(6);
+                  }}
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#173B32] hover:bg-[#20453B] interactive-btn text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md cursor-pointer"
                 >
                   <span>Continue ({selectedVibes.length} selected)</span>
                   <ArrowRight className="w-4 h-4 text-[#B49252]" />
@@ -668,7 +683,7 @@ function PlanWizard() {
           {/* 06 / 06: HOW DO YOU WANT TO TRAVEL?                      */}
           {/* ======================================================== */}
           {currentStep === 6 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
                   QUESTION 06
@@ -692,7 +707,7 @@ function PlanWizard() {
                     key={s.style}
                     type="button"
                     onClick={() => handleStyleSelect(s.style)}
-                    className={`p-4 rounded-2xl text-left transition-all cursor-pointer border-2 ${
+                    className={`p-4 rounded-2xl text-left interactive-card cursor-pointer border-2 ${
                       travelStyle === s.style
                         ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
                         : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
@@ -711,7 +726,7 @@ function PlanWizard() {
           {/* REVIEW SUMMARY & BUILD TRIP                             */}
           {/* ======================================================== */}
           {currentStep === 7 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className={`space-y-6 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
                   JOURNEY SUMMARY
@@ -722,7 +737,7 @@ function PlanWizard() {
               </div>
 
               {/* Clean Ticket Card */}
-              <div className="p-5 rounded-2xl bg-[#EFE5D2] border-2 border-[#173B32] space-y-3">
+              <div className="p-5 rounded-2xl bg-[#EFE5D2] border-2 border-[#173B32] space-y-3 shadow-md animate-vanvas-scale">
                 <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-2">
                   <div>
                     <span className="text-[9px] font-mono uppercase text-[#7B4D36] font-bold">DESTINATION</span>
@@ -754,7 +769,7 @@ function PlanWizard() {
               </div>
 
               {generationError && (
-                <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2.5 shadow-sm">
+                <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2.5 shadow-sm animate-vanvas-fade">
                   <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                   <div className="flex-1">
                     <span>{generationError}</span>
@@ -767,7 +782,7 @@ function PlanWizard() {
                 type="button"
                 onClick={handleBuildTrip}
                 disabled={isGenerating}
-                className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl transition-all transform active:scale-95 cursor-pointer"
+                className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] interactive-btn text-[#EFE5D2] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-[#B49252]" />
                 <span>Build My Trip →</span>
@@ -775,8 +790,11 @@ function PlanWizard() {
 
               <button
                 type="button"
-                onClick={() => setCurrentStep(1)}
-                className="w-full text-center text-xs font-mono text-[#7B4D36] hover:text-[#173B32] underline"
+                onClick={() => {
+                  setStepDirection("prev");
+                  setCurrentStep(1);
+                }}
+                className="w-full text-center text-xs font-mono text-[#7B4D36] hover:text-[#173B32] underline cursor-pointer"
               >
                 Edit all preferences
               </button>

@@ -77,7 +77,7 @@ export const AskVanvasResponseCard: React.FC<AskVanvasResponseCardProps> = ({
   };
 
   return (
-    <div className="w-full rounded-2xl bg-[#FAF7F0] dark:bg-[#1E2620] border border-[#E5D5BA] dark:border-[#384A3E] p-3.5 sm:p-4 shadow-sm space-y-3 font-sans text-[#20211D] dark:text-[#EFE5D2] transition-all">
+    <div className="w-full rounded-2xl bg-[#FAF7F0] dark:bg-[#1E2620] border border-[#E5D5BA] dark:border-[#384A3E] p-3.5 sm:p-4 shadow-sm space-y-3 font-sans text-[#20211D] dark:text-[#EFE5D2] transition-all animate-vanvas-slide-up">
       {/* 1. HEADER: TYPE TITLE + PROVENANCE BADGE */}
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-2">

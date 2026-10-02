@@ -60,7 +60,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           if (onSelect) onSelect(place);
         }
       }}
-      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/50 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 ${
+      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/50 overflow-hidden shadow-xs hover:shadow-lg interactive-card cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 ${
         isCompact ? "card-compact" : ""
       }`}
     >
@@ -70,7 +70,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           src={visualRes.imageUrl}
           fallbackSrc={visualRes.fallbackUrl}
           alt={destinationName ? `${place.name} in ${destinationName}` : place.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500 ease-out"
         />
 
         {/* Crisp Bottom Vignette for Text Contrast */}
@@ -116,9 +116,9 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           onClick={handleToggleSave}
           disabled={saving}
           aria-label="Save Place"
-          className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-[#EFE5D2]/90 backdrop-blur-md text-[#173B32] hover:text-[#B65E3C] hover:scale-110 shadow-xs transition-all"
+          className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-[#EFE5D2]/90 backdrop-blur-md text-[#173B32] hover:text-[#B65E3C] interactive-btn shadow-xs transition-all"
         >
-          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-[#B65E3C] text-[#B65E3C]" : ""}`} />
+          <Bookmark className={`w-3.5 h-3.5 transition-transform ${isSaved ? "fill-[#B65E3C] text-[#B65E3C] animate-check-pop" : ""}`} />
         </button>
 
         {/* Bottom Image Overlay: Honest Rating, Distance & Price */}

@@ -345,7 +345,7 @@ export default function ExploreIndexPage() {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap interactive-pill flex items-center gap-2 cursor-pointer ${
                     isActive
                       ? "bg-[#173B32] text-[#EFE5D2] shadow-xs scale-102 border-2 border-[#173B32]"
                       : "bg-[#FAF7F0] text-[#20211D]/80 border-2 border-[#E5D5BA] hover:bg-[#E5D5BA]"
@@ -368,21 +368,21 @@ export default function ExploreIndexPage() {
               <span className="text-xs font-serif italic text-[#7B4D36]">Unrolling illustrated expedition maps...</span>
             </div>
           ) : loadError && destinations.length === 0 ? (
-            <div className="py-12 text-center space-y-3 max-w-md mx-auto bg-[#FAF7F0] p-6 rounded-3xl border-2 border-[#E5D5BA]">
+            <div className="py-12 text-center space-y-3 max-w-md mx-auto bg-[#FAF7F0] p-6 rounded-3xl border-2 border-[#E5D5BA] animate-vanvas-scale">
               <AlertCircle className="w-8 h-8 text-[#B65E3C] mx-auto" />
               <h3 className="text-lg font-serif font-black text-[#173B32]">
                 VANVAS couldn&rsquo;t load destinations right now.
               </h3>
               <button
                 onClick={loadDestinations}
-                className="px-5 py-2 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#204E43] transition-all flex items-center gap-2 mx-auto cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#204E43] interactive-btn flex items-center gap-2 mx-auto cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Retry</span>
               </button>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center space-y-3 max-w-md mx-auto bg-[#FAF7F0] p-6 rounded-3xl border-2 border-[#E5D5BA]">
+            <div className="py-12 text-center space-y-3 max-w-md mx-auto bg-[#FAF7F0] p-6 rounded-3xl border-2 border-[#E5D5BA] animate-vanvas-scale">
               <Compass className="w-8 h-8 text-[#7B4D36] mx-auto opacity-60" />
               <h3 className="text-base font-serif font-black text-[#173B32]">
                 No sanctuaries match your criteria
@@ -392,7 +392,7 @@ export default function ExploreIndexPage() {
                   setSearch("");
                   setSelectedCategory("All");
                 }}
-                className="px-4 py-2 rounded-xl bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#9E4D2E] transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#9E4D2E] interactive-btn cursor-pointer"
               >
                 Reset Filters
               </button>
@@ -401,12 +401,13 @@ export default function ExploreIndexPage() {
             /* COMPACT MODE: 2-COLUMN (MOBILE) / 4-COLUMN (DESKTOP) FIELD GUIDE CATALOGUE */
             <div id="all-destinations" className="space-y-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                {filtered.map((dest) => (
-                  <CompactDestinationCard
-                    key={dest.id || dest.slug}
-                    destination={dest}
-                    daysEstimate={dest.slug === "manali" ? 4 : dest.slug === "rishikesh" ? 3 : 3}
-                  />
+                {filtered.map((dest, idx) => (
+                  <div key={dest.id || dest.slug} className={`animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)}`}>
+                    <CompactDestinationCard
+                      destination={dest}
+                      daysEstimate={dest.slug === "manali" ? 4 : dest.slug === "rishikesh" ? 3 : 3}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
@@ -415,10 +416,10 @@ export default function ExploreIndexPage() {
             <div id="all-destinations" className="space-y-12">
               {/* Top Featured Hero Card */}
               {filtered.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch animate-vanvas-fade">
                   <Link
                     href={`/explore/${filtered[0].slug}`}
-                    className="lg:col-span-8 group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-4 sm:p-6 shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col md:flex-row gap-6 relative overflow-hidden"
+                    className="lg:col-span-8 group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-4 sm:p-6 shadow-sm hover:shadow-xl interactive-card flex flex-col md:flex-row gap-6 relative overflow-hidden"
                   >
                     <div className="w-full md:w-1/2 h-72 sm:h-96 rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
                       <DestinationArtwork
@@ -464,7 +465,7 @@ export default function ExploreIndexPage() {
                         <span className="text-xs font-bold text-[#173B32]">
                           {filtered[0].places_count || 12} Curated Places
                         </span>
-                        <span className="px-5 py-2.5 rounded-xl bg-[#B65E3C] group-hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase transition-all flex items-center gap-1.5 shadow-sm">
+                        <span className="px-5 py-2.5 rounded-xl bg-[#B65E3C] group-hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase interactive-btn flex items-center gap-1.5 shadow-sm">
                           <span>Step Inside</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </span>
@@ -480,7 +481,7 @@ export default function ExploreIndexPage() {
                       tapeColor="mustard"
                     />
 
-                    <div className="p-6 rounded-3xl bg-[#173B32] text-[#EFE5D2] space-y-4 shadow-md">
+                    <div className="p-6 rounded-3xl bg-[#173B32] text-[#EFE5D2] space-y-4 shadow-md interactive-card">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-[#B49252]">
                         SPONTANEOUS EXPLORER
                       </span>
@@ -492,7 +493,7 @@ export default function ExploreIndexPage() {
                       </p>
                       <Link
                         href="/plan"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs uppercase tracking-wider transition-all"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] interactive-btn text-[#0F2924] font-bold text-xs uppercase tracking-wider shadow-sm"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Plan My Journey</span>
@@ -504,11 +505,11 @@ export default function ExploreIndexPage() {
 
               {/* Asymmetrical Destination Posters Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filtered.slice(1, visibleDestCount).map((dest) => (
+                {filtered.slice(1, visibleDestCount).map((dest, idx) => (
                   <Link
                     key={dest.id || dest.slug}
                     href={`/explore/${dest.slug}`}
-                    className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between p-4"
+                    className={`group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs hover:shadow-xl interactive-card flex flex-col justify-between p-4 animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)}`}
                   >
                     <div className="h-72 w-full rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
                       <DestinationArtwork

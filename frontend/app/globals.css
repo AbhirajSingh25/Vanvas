@@ -314,6 +314,254 @@ html.dark textarea::placeholder {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* ===================================================
+   VANVAS MOTION & MICRO-INTERACTION SYSTEM
+   =================================================== */
+:root {
+  --ease-out-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring-subtle: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --dur-instant: 100ms;
+  --dur-micro: 180ms;
+  --dur-component: 280ms;
+  --dur-page: 380ms;
+}
+
+/* Standardized Keyframes */
+@keyframes vanvas-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vanvas-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vanvas-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vanvas-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes vanvas-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes vanvas-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes vanvas-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes vanvas-drawer-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes vanvas-check-pop {
+  0% {
+    transform: scale(0.85);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes vanvas-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Animation Utility Classes */
+.animate-fadeIn,
+.animate-vanvas-fade {
+  animation: vanvas-fade-in var(--dur-component) var(--ease-out-editorial) both;
+}
+
+.animate-slideUp,
+.animate-vanvas-slide-up {
+  animation: vanvas-slide-up var(--dur-component) var(--ease-out-editorial) both;
+}
+
+.animate-slideDown,
+.animate-vanvas-slide-down {
+  animation: vanvas-slide-down var(--dur-component) var(--ease-out-editorial) both;
+}
+
+.animate-slideLeft,
+.animate-vanvas-slide-left {
+  animation: vanvas-slide-left var(--dur-component) var(--ease-out-editorial) both;
+}
+
+.animate-vanvas-scale {
+  animation: vanvas-scale-in var(--dur-component) var(--ease-out-editorial) both;
+}
+
+.animate-vanvas-sheet {
+  animation: vanvas-sheet-up 320ms var(--ease-out-editorial) both;
+}
+
+.animate-vanvas-drawer {
+  animation: vanvas-drawer-right var(--dur-component) var(--ease-out-editorial) both;
+}
+
+.animate-check-pop {
+  animation: vanvas-check-pop 240ms var(--ease-spring-subtle) both;
+}
+
+/* Stagger Delays for Catalogue & List Reveals */
+.stagger-1 { animation-delay: 35ms; }
+.stagger-2 { animation-delay: 70ms; }
+.stagger-3 { animation-delay: 105ms; }
+.stagger-4 { animation-delay: 140ms; }
+.stagger-5 { animation-delay: 175ms; }
+.stagger-6 { animation-delay: 210ms; }
+.stagger-7 { animation-delay: 245ms; }
+.stagger-8 { animation-delay: 280ms; }
+
+/* Micro-interaction Helper Classes */
+.interactive-card {
+  transition: transform 220ms var(--ease-out-editorial), box-shadow 220ms ease, border-color 220ms ease;
+  will-change: transform;
+}
+.interactive-card:hover {
+  transform: translateY(-2px);
+}
+.interactive-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.interactive-btn {
+  transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.interactive-btn:active {
+  transform: scale(0.97);
+}
+
+.interactive-pill {
+  transition: transform 180ms var(--ease-out-editorial), background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+.interactive-pill:hover {
+  transform: scale(1.02);
+}
+.interactive-pill:active {
+  transform: scale(0.97);
+}
+
+/* Skeleton Loading Shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(229, 213, 186, 0.4) 0%, rgba(229, 213, 186, 0.8) 50%, rgba(229, 213, 186, 0.4) 100%);
+  background-size: 200% 100%;
+  animation: vanvas-shimmer 2s ease-in-out infinite;
+}
+
+html.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(26, 44, 36, 0.4) 0%, rgba(34, 56, 46, 0.8) 50%, rgba(26, 44, 36, 0.4) 100%);
+  background-size: 200% 100%;
+  animation: vanvas-shimmer 2s ease-in-out infinite;
+}
+
+/* ===================================================
+   ACCESSIBILITY: PREFERS REDUCED MOTION
+   =================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .interactive-card:hover,
+  .interactive-card:active,
+  .interactive-btn:active,
+  .interactive-pill:hover,
+  .interactive-pill:active {
+    transform: none !important;
+  }
+
+  .animate-mist,
+  .animate-route,
+  .animate-float,
+  .animate-fadeIn,
+  .animate-slideUp,
+  .animate-slideDown,
+  .animate-slideLeft,
+  .animate-vanvas-fade,
+  .animate-vanvas-slide-up,
+  .animate-vanvas-slide-down,
+  .animate-vanvas-slide-left,
+  .animate-vanvas-scale,
+  .animate-vanvas-sheet,
+  .animate-vanvas-drawer,
+  .animate-check-pop,
+  .skeleton-shimmer {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 /* Atmospheric Mist & Route Animations */
 @keyframes mist-drift {
   0% {

@@ -235,13 +235,13 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Ask VANVAS Travel Assistant"
-      className="fixed inset-0 z-50 flex justify-end items-end sm:items-stretch bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn"
+      className="fixed inset-0 z-50 flex justify-end items-end sm:items-stretch bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-vanvas-fade"
     >
       {/* Background Click to Dismiss */}
       <div className="absolute inset-0" onClick={handleClose} />
 
       {/* Main Assistant Drawer / Bottom Sheet Container */}
-      <div className="relative z-10 w-full sm:max-w-xl md:max-w-2xl h-[92vh] sm:h-full bg-[#FAF7F0] dark:bg-[#172019] text-[#20211D] dark:text-[#EFE5D2] rounded-t-3xl sm:rounded-none border-t sm:border-t-0 sm:border-l border-[#E5D5BA] dark:border-[#384A3E] shadow-2xl flex flex-col overflow-hidden animate-slideUp sm:animate-slideLeft">
+      <div className="relative z-10 w-full sm:max-w-xl md:max-w-2xl h-[92vh] sm:h-full bg-[#FAF7F0] dark:bg-[#172019] text-[#20211D] dark:text-[#EFE5D2] rounded-t-3xl sm:rounded-none border-t sm:border-t-0 sm:border-l border-[#E5D5BA] dark:border-[#384A3E] shadow-2xl flex flex-col overflow-hidden animate-vanvas-sheet sm:animate-vanvas-slide-left">
         {/* Mobile Swipe Handle */}
         <div className="sm:hidden flex items-center justify-center pt-2.5 pb-1">
           <div className="w-10 h-1.5 rounded-full bg-[#D8CBB2] dark:bg-[#384A3E]" />
@@ -270,7 +270,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               onClick={handleUseGPS}
               disabled={isGettingGps}
               title="Use current GPS location"
-              className="p-1.5 rounded-xl bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#B49252] hover:text-[#FAF7F0] text-[#173B32] dark:text-[#FAF7F0] transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#B49252] hover:text-[#FAF7F0] text-[#173B32] dark:text-[#FAF7F0] interactive-btn cursor-pointer"
             >
               <LocateFixed className={`w-4 h-4 ${isGettingGps ? "animate-spin text-[#B65E3C]" : ""}`} />
             </button>
@@ -278,7 +278,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               type="button"
               onClick={handleClose}
               aria-label="Close Ask VANVAS"
-              className="p-1.5 rounded-xl bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-red-500 hover:text-white text-[#173B32] dark:text-[#FAF7F0] transition-colors cursor-pointer"
+              className="p-1.5 rounded-xl bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-red-500 hover:text-white text-[#173B32] dark:text-[#FAF7F0] interactive-btn cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

@@ -77,7 +77,7 @@ export const Header: React.FC = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide interactive-pill flex items-center gap-1.5 ${
                     isActive
                       ? "bg-[#173B32] text-[#EFE5D2] shadow-sm font-bold"
                       : "text-[#20211D]/80 hover:text-[#173B32] hover:bg-[#E5D5BA]/60"
@@ -98,7 +98,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => openAskVanvas()}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#B49252]/60 bg-[#173B32] text-xs font-semibold text-[#FAF7F0] hover:bg-[#20453B] hover:shadow-md transition-all group cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#B49252]/60 bg-[#173B32] text-xs font-semibold text-[#FAF7F0] hover:bg-[#20453B] hover:shadow-md interactive-btn group cursor-pointer shadow-xs"
               title="Ask VANVAS Travel Assistant"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#B49252] group-hover:rotate-12 transition-transform" />
@@ -112,7 +112,7 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs text-[#20211D] hover:border-[#173B32] hover:shadow-sm transition-all group cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs text-[#20211D] hover:border-[#173B32] hover:shadow-sm interactive-btn group cursor-pointer"
                   aria-expanded={profileDropdownOpen}
                   aria-haspopup="true"
                 >
@@ -123,7 +123,7 @@ export const Header: React.FC = () => {
 
                 {/* Profile Dropdown Menu */}
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl py-2 z-50 animate-fadeIn">
+                  <div className="absolute right-0 mt-2 w-64 bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl py-2 z-50 animate-vanvas-scale">
                     {/* User Header */}
                     <div className="px-4 py-3 border-b border-[#D8CBB2]/60">
                       <div className="font-serif font-bold text-sm text-[#173B32] truncate">

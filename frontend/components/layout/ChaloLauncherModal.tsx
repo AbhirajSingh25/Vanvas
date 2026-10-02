@@ -56,11 +56,11 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-vanvas-fade"
       onClick={onClose}
     >
       <div
-        className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-slideUp flex flex-col"
+        className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-vanvas-sheet sm:animate-vanvas-scale flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -79,7 +79,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-2 rounded-full text-[#D8DED5] hover:bg-[#20453B] transition-colors cursor-pointer"
+            className="p-2 rounded-full text-[#D8DED5] hover:bg-[#20453B] interactive-btn cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -91,7 +91,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
           <button
             type="button"
             onClick={() => handleLaunch("/plan")}
-            className="w-full p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#173B32] text-left transition-all duration-200 flex items-center justify-between group cursor-pointer shadow-xs"
+            className="w-full p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#173B32] text-left interactive-card flex items-center justify-between group cursor-pointer shadow-xs"
           >
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -118,7 +118,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
           <button
             type="button"
             onClick={() => handleLaunch("/road-trip")}
-            className="w-full p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#B65E3C] text-left transition-all duration-200 flex items-center justify-between group cursor-pointer shadow-xs"
+            className="w-full p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#B65E3C] text-left interactive-card flex items-center justify-between group cursor-pointer shadow-xs"
           >
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -145,7 +145,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
           <button
             type="button"
             onClick={() => handleLaunch("/one-day")}
-            className="w-full p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#8C6D37] text-left transition-all duration-200 flex items-center justify-between group cursor-pointer shadow-xs"
+            className="w-full p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#8C6D37] text-left interactive-card flex items-center justify-between group cursor-pointer shadow-xs"
           >
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-xl bg-[#8C6D37] text-[#EFE5D2] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -173,7 +173,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
             <button
               type="button"
               onClick={handleAsk}
-              className="w-full py-3 px-4 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3 px-4 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-semibold text-xs interactive-btn flex items-center justify-center gap-2 cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5 text-[#B65E3C]" />
               <span>Have a specific travel question? Ask VANVAS</span>

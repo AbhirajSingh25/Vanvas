@@ -133,7 +133,7 @@ export default function HomePage() {
           {/* Action 1: Explore */}
           <Link
             href="/explore"
-            className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between group cursor-pointer shadow-xs min-h-[140px]"
+            className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#173B32] interactive-card flex flex-col justify-between group cursor-pointer shadow-xs min-h-[140px] animate-vanvas-slide-up stagger-1"
           >
             <div className="w-10 h-10 rounded-2xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center group-hover:scale-105 transition-transform">
               <Compass className="w-5 h-5 text-[#B49252]" />
@@ -151,7 +151,7 @@ export default function HomePage() {
           {/* Action 2: Plan a Trip */}
           <Link
             href="/plan"
-            className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#B65E3C] transition-all flex flex-col justify-between group cursor-pointer shadow-xs min-h-[140px]"
+            className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#B65E3C] interactive-card flex flex-col justify-between group cursor-pointer shadow-xs min-h-[140px] animate-vanvas-slide-up stagger-2"
           >
             <div className="w-10 h-10 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center group-hover:scale-105 transition-transform">
               <Sparkles className="w-5 h-5 text-[#FAF4E8]" />
@@ -169,7 +169,7 @@ export default function HomePage() {
           {/* Action 3: Road Trip */}
           <Link
             href="/road-trip"
-            className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between group cursor-pointer shadow-xs min-h-[140px]"
+            className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#173B32] interactive-card flex flex-col justify-between group cursor-pointer shadow-xs min-h-[140px] animate-vanvas-slide-up stagger-3"
           >
             <div className="w-10 h-10 rounded-2xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center group-hover:scale-105 transition-transform">
               <Navigation className="w-5 h-5 text-[#B49252]" />
@@ -187,7 +187,7 @@ export default function HomePage() {
           {/* Action 4: Day Escape */}
           <Link
             href="/one-day"
-            className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#8C6D37] transition-all flex flex-col justify-between group cursor-pointer shadow-xs min-h-[140px]"
+            className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#8C6D37] interactive-card flex flex-col justify-between group cursor-pointer shadow-xs min-h-[140px] animate-vanvas-slide-up stagger-4"
           >
             <div className="w-10 h-10 rounded-2xl bg-[#8C6D37] text-[#EFE5D2] flex items-center justify-center group-hover:scale-105 transition-transform">
               <Clock className="w-5 h-5 text-[#FAF4E8]" />
@@ -219,7 +219,7 @@ export default function HomePage() {
           </div>
           <Link
             href="/explore"
-            className="text-xs font-mono font-bold text-[#B65E3C] hover:underline flex items-center gap-1"
+            className="text-xs font-mono font-bold text-[#B65E3C] hover:underline flex items-center gap-1 transition-transform hover:translate-x-0.5"
           >
             <span>All Destinations</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -227,11 +227,11 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {destinations.slice(0, 8).map((dest) => (
+          {destinations.slice(0, 8).map((dest, idx) => (
             <Link
               key={dest.id}
               href={`/explore/${dest.slug}`}
-              className="p-3.5 rounded-2xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between group shadow-2xs min-h-[100px]"
+              className={`p-3.5 rounded-2xl bg-[#FAF7F0] hover:bg-white border-2 border-[#E5D5BA] hover:border-[#173B32] interactive-card flex flex-col justify-between group shadow-2xs min-h-[100px] animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)}`}
             >
               <div>
                 <span className="text-[9px] font-mono uppercase text-[#7B4D36] block">
@@ -243,7 +243,7 @@ export default function HomePage() {
               </div>
               <div className="flex items-center justify-between text-[10px] font-mono text-[#7B4D36] pt-1.5 border-t border-[#E5D5BA]">
                 <span>{CANONICAL_HINDI_NAMES[dest.slug] || ""}</span>
-                <span className="text-[#B65E3C] font-bold">Explore →</span>
+                <span className="text-[#B65E3C] font-bold group-hover:translate-x-0.5 transition-transform">Explore →</span>
               </div>
             </Link>
           ))}
@@ -254,7 +254,7 @@ export default function HomePage() {
       {/* SECTION 4: NEARBY UTILITY PROMPT                         */}
       {/* ======================================================== */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] interactive-card flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-2xl bg-[#EFE5D2] flex items-center justify-center text-[#173B32] shrink-0">
               <MapPin className="w-5 h-5 text-[#B65E3C]" />
@@ -271,7 +271,7 @@ export default function HomePage() {
 
           <Link
             href="/nearby"
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider shadow-md shrink-0 text-center"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] interactive-btn text-[#EFE5D2] text-xs font-bold uppercase tracking-wider shadow-md shrink-0 text-center"
           >
             Explore Nearby
           </Link>

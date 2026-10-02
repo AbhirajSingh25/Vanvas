@@ -66,12 +66,17 @@ export const MobileNav: React.FC = () => {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition-colors ${
-                  isActive ? "text-[#173B32] font-bold" : "text-[#20211D]/65 hover:text-[#173B32]"
+                className={`flex flex-col items-center py-1 px-3 rounded-xl transition-all duration-180 active:scale-95 relative ${
+                  isActive
+                    ? "text-[#173B32] font-bold bg-[#E5D5BA]/40"
+                    : "text-[#20211D]/65 hover:text-[#173B32] hover:bg-[#E5D5BA]/20"
                 }`}
               >
-                <Icon className={`${isCompact ? "w-4 h-4" : "w-5 h-5"} ${isActive ? "stroke-[2.5]" : ""}`} />
+                <Icon className={`${isCompact ? "w-4 h-4" : "w-5 h-5"} transition-transform duration-180 ${isActive ? "stroke-[2.5] scale-105" : ""}`} />
                 <span className="text-[10px] mt-0.5 font-medium">{item.label}</span>
+                {isActive && (
+                  <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#173B32] animate-vanvas-scale" />
+                )}
               </Link>
             );
           })}
