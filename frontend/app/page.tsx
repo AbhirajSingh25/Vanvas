@@ -135,7 +135,7 @@ export default function HomePage() {
 
         {/* Compact Mode vs Original Mode Architecture */}
         {isCompact ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             <CompactTravelModeCard
               href="/explore"
               layer="LAYER 01"
@@ -146,17 +146,26 @@ export default function HomePage() {
               accentColor="text-[#173B32]"
             />
             <CompactTravelModeCard
-              href="/solo"
+              href="/road-trip"
               layer="LAYER 02"
-              title="Solo Travel"
-              subtitle="Find compatible travellers"
-              icon={Users}
+              title="Road Trip"
+              subtitle="Plan the road between two places"
+              icon={Navigation}
               badgeColor="bg-[#B65E3C] text-white"
               accentColor="text-[#173B32]"
             />
             <CompactTravelModeCard
-              href="/treks"
+              href="/solo"
               layer="LAYER 03"
+              title="Solo Travel"
+              subtitle="Find compatible travellers"
+              icon={Users}
+              badgeColor="bg-[#173B32] text-[#B49252]"
+              accentColor="text-[#173B32]"
+            />
+            <CompactTravelModeCard
+              href="/treks"
+              layer="LAYER 04"
               title="Trek Mode"
               subtitle="Trails & mountain data"
               icon={Mountain}
@@ -165,7 +174,7 @@ export default function HomePage() {
             />
             <CompactTravelModeCard
               href="/one-day"
-              layer="LAYER 04"
+              layer="LAYER 05"
               title="Day Escape"
               subtitle="Go. Return tonight."
               icon={Clock}
@@ -174,7 +183,7 @@ export default function HomePage() {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Card 1: CORE EXPLORER'S DESK */}
             <Link
               href="/explore"
@@ -202,18 +211,45 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Card 2: SOLO TRAVEL MODE */}
+            {/* Card 2: ROAD TRIP EXPEDITION MODE */}
             <Link
-              href="/solo"
+              href="/road-trip"
               className="group bg-[#FAF7F0] rounded-3xl p-7 border-2 border-[#D8CBB2] hover:border-[#B65E3C] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
             >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-[#B65E3C] text-[#FAF7F0] flex items-center justify-center shadow-md">
-                  <Users className="w-6 h-6 text-[#B49252]" />
+                  <Navigation className="w-6 h-6 text-[#B49252]" />
                 </div>
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-[#B65E3C] font-bold">
-                    LAYER 02 • FIELD COMPANION
+                    LAYER 02 • HIGHWAY ROUTE ENGINE
+                  </span>
+                  <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
+                    Road Trip Mode
+                  </h3>
+                </div>
+                <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
+                  Plan the journey between two places. Route distance, dhaba breakfasts, fort detours, transparent fuel calculations &amp; stays along the way.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#B65E3C]">
+                <span>Plan Road Trip</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            {/* Card 3: SOLO TRAVEL MODE */}
+            <Link
+              href="/solo"
+              className="group bg-[#FAF7F0] rounded-3xl p-7 border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#FAF7F0] flex items-center justify-center shadow-md">
+                  <Users className="w-6 h-6 text-[#B49252]" />
+                </div>
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#7B4D36] font-bold">
+                    LAYER 03 • FIELD COMPANION
                   </span>
                   <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
                     Solo Travel
@@ -223,13 +259,13 @@ export default function HomePage() {
                   &ldquo;Go alone. Never feel unprepared.&rdquo; Safe quarters, communal tables, walkable loops, and trusted local stays without uncertainty.
                 </p>
               </div>
-              <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#B65E3C]">
+              <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
                 <span>Solo Mode</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
 
-            {/* Card 3: TREK EXPEDITION MODE */}
+            {/* Card 4: TREK EXPEDITION MODE */}
             <Link
               href="/treks"
               className="group bg-[#111A16] text-[#EFE5D2] rounded-3xl p-7 border-2 border-[#2C3E35] hover:border-[#E05A2B] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
@@ -240,7 +276,7 @@ export default function HomePage() {
                 </div>
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
-                    LAYER 03 • FIELD JOURNAL
+                    LAYER 04 • FIELD JOURNAL
                   </span>
                   <h3 className="text-2xl font-serif font-black text-white group-hover:text-[#E05A2B] transition-colors">
                     Trek Mode
@@ -256,10 +292,10 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Card 4: DAY ESCAPE MODE */}
+            {/* Card 5: DAY ESCAPE MODE */}
             <Link
               href="/one-day"
-              className="group bg-[#FFF9F0] rounded-3xl p-7 border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6"
+              className="group bg-[#FFF9F0] rounded-3xl p-7 border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6 sm:col-span-2 lg:col-span-2"
             >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-white flex items-center justify-center shadow-md">
@@ -267,7 +303,7 @@ export default function HomePage() {
                 </div>
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-[#7B4D36] font-bold">
-                    LAYER 04 • DAY ESCAPE COCKPIT
+                    LAYER 05 • DAY ESCAPE COCKPIT
                   </span>
                   <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
                     Day Escape Mode

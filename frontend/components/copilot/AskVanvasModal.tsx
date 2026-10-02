@@ -442,18 +442,19 @@ function FormattedTravelIntelligence({
     else generalLines.push(cleanLine);
   }
 
+  const [showMore, setShowMore] = useState(false);
+
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-3">
       {/* RESOLVED CONTEXT HEADER BADGE */}
       {resolvedContext && (
-        <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#173B32] text-[#FAF7F0] border border-[#B49252]/40 shadow-xs">
+        <div className="flex items-center justify-between p-2 rounded-xl bg-[#173B32] text-[#FAF7F0] border border-[#B49252]/40 shadow-xs">
           <div className="flex items-center gap-1.5 text-xs font-mono font-bold">
             <MapPin className="w-3.5 h-3.5 text-[#B49252]" />
-            <span>📍 {resolvedContext.location.toUpperCase()}</span>
-            {resolvedContext.duration && <span>• {resolvedContext.duration.toUpperCase()}</span>}
-            <span className="text-[10px] text-[#B49252] hidden sm:inline">• CURRENT LOCATION / USER QUERY</span>
+            <span>{resolvedContext.location.toUpperCase()}</span>
+            {resolvedContext.duration && <span>· {resolvedContext.duration.toUpperCase()}</span>}
           </div>
-          <span className="px-2 py-0.5 rounded-md bg-[#FAF7F0]/10 text-[#B49252] text-[9px] font-mono font-bold tracking-wider uppercase border border-[#B49252]/30">
+          <span className="px-1.5 py-0.5 rounded bg-[#FAF7F0]/10 text-[#B49252] text-[8.5px] font-mono font-bold uppercase border border-[#B49252]/30">
             {resolvedContext.provenance}
           </span>
         </div>
@@ -461,22 +462,19 @@ function FormattedTravelIntelligence({
 
       {/* METRIC CHIPS HEADER */}
       {(budgetMatch || timeMatch || distMatch) && (
-        <div className="flex flex-wrap items-center gap-1.5 pb-1">
-          {budgetMatch && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] text-[11px] font-mono font-bold shadow-2xs">
-              <Coins className="w-3.5 h-3.5 text-[#B65E3C]" />
-              {budgetMatch[0]}
-            </span>
-          )}
+        <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
           {timeMatch && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] text-[11px] font-mono font-semibold shadow-2xs">
-              <Clock className="w-3.5 h-3.5 text-[#B65E3C]" />
+            <span className="px-2 py-0.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] font-semibold">
               {timeMatch[0]}
             </span>
           )}
+          {budgetMatch && (
+            <span className="px-2 py-0.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-bold">
+              {budgetMatch[0]}
+            </span>
+          )}
           {distMatch && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] text-[11px] font-mono font-semibold shadow-2xs">
-              <Route className="w-3.5 h-3.5 text-[#B49252]" />
+            <span className="px-2 py-0.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-semibold">
               {distMatch[0]}
             </span>
           )}
@@ -485,9 +483,9 @@ function FormattedTravelIntelligence({
 
       {/* QUICK TAKE SUMMARY */}
       {quickTakes.length > 0 && (
-        <div className="p-3 rounded-2xl bg-[#FAF7F0] border-l-4 border-l-[#173B32] border border-[#E5D5BA] shadow-2xs space-y-1">
-          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-[#173B32] flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-[#B49252]" /> Quick Take
+        <div className="p-3 rounded-2xl bg-[#FAF7F0] border-l-3 border-l-[#173B32] border border-[#E5D5BA] shadow-2xs space-y-1">
+          <span className="text-[9.5px] font-mono font-black uppercase tracking-wider text-[#173B32] flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-[#B49252]" /> QUICK TAKE
           </span>
           {quickTakes.map((qt, i) => (
             <p key={i} className="text-xs font-serif text-[#20211D] leading-relaxed">{qt}</p>
@@ -495,25 +493,16 @@ function FormattedTravelIntelligence({
         </div>
       )}
 
-      {/* GENERAL PROSE (If any) */}
-      {generalLines.length > 0 && (
-        <div className="space-y-1.5 text-xs sm:text-sm font-serif leading-relaxed text-[#20211D]">
-          {generalLines.map((gl, i) => (
-            <p key={i}>{gl}</p>
-          ))}
-        </div>
-      )}
-
-      {/* WHAT TO DO (Structured Cards) */}
+      {/* TOP PICKS / HIGHLIGHTS (Compact List) */}
       {whatToDo.length > 0 && (
-        <div className="p-3.5 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-2">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[#173B32] font-bold flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#B65E3C]" /> What To Do &amp; Highlights
+        <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-2">
+          <span className="text-[9.5px] font-mono uppercase tracking-wider text-[#173B32] font-bold flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#B65E3C]" /> TOP PICKS
           </span>
-          <div className="grid grid-cols-1 gap-1.5">
-            {whatToDo.map((todo, i) => (
-              <div key={i} className="p-2.5 rounded-xl bg-[#EFE5D2]/60 border border-[#E5D5BA] text-xs font-serif text-[#20211D] flex items-start gap-2">
-                <span className="w-4 h-4 rounded-full bg-[#173B32] text-[#FAF7F0] text-[10px] font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">
+          <div className="grid grid-cols-1 gap-1">
+            {(showMore ? whatToDo : whatToDo.slice(0, 4)).map((todo, i) => (
+              <div key={i} className="p-2 rounded-xl bg-[#EFE5D2]/50 border border-[#E5D5BA] text-xs font-serif text-[#20211D] flex items-start gap-2">
+                <span className="w-4 h-4 rounded-full bg-[#173B32] text-[#FAF7F0] text-[9.5px] font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">
                   {i + 1}
                 </span>
                 <span className="leading-snug">{todo}</span>
@@ -523,48 +512,14 @@ function FormattedTravelIntelligence({
         </div>
       )}
 
-      {/* GETTING THERE & TRANSIT */}
-      {gettingThere.length > 0 && (
-        <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1.5">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold flex items-center gap-1">
-            <Route className="w-3.5 h-3.5 text-[#B65E3C]" /> Getting There &amp; Transit
-          </span>
-          <ul className="space-y-1 text-xs text-[#20211D] font-serif">
-            {gettingThere.map((gt, i) => (
-              <li key={i} className="flex items-start gap-1.5 leading-snug">
-                <span className="text-[#B65E3C] font-bold shrink-0">→</span>
-                <span>{gt}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* WHERE TO EAT */}
-      {whereToEat.length > 0 && (
-        <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1.5">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[#173B32] font-bold flex items-center gap-1">
-            <Utensils className="w-3.5 h-3.5 text-[#B65E3C]" /> Where To Eat &amp; Iconic Stalls
-          </span>
-          <ul className="space-y-1 text-xs text-[#20211D] font-serif">
-            {whereToEat.map((food, i) => (
-              <li key={i} className="flex items-start gap-1.5 leading-snug">
-                <span className="text-[#173B32] font-bold shrink-0">•</span>
-                <span>{food}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {/* WATCH OUT / WARNINGS */}
       {warnings.length > 0 && (
-        <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 text-[#7B4D36] space-y-1">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-amber-900 font-bold flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-700" /> Watch Out / Important Warnings
+        <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-[#7B4D36] space-y-1">
+          <span className="text-[9.5px] font-mono uppercase tracking-wider text-amber-900 font-bold flex items-center gap-1">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-700" /> WATCH OUT
           </span>
-          <div className="space-y-1 text-xs font-serif text-[#7B4D36]">
-            {warnings.map((w, i) => (
+          <div className="space-y-0.5 text-xs font-serif text-[#7B4D36]">
+            {warnings.slice(0, showMore ? undefined : 2).map((w, i) => (
               <p key={i} className="leading-snug">{w}</p>
             ))}
           </div>
@@ -573,18 +528,78 @@ function FormattedTravelIntelligence({
 
       {/* PACKING ESSENTIALS */}
       {packing.length > 0 && (
-        <div className="p-3 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-1.5">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[#173B32] font-bold flex items-center gap-1">
-            <Check className="w-3.5 h-3.5 text-[#B65E3C]" /> What To Pack
+        <div className="p-2.5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-1">
+          <span className="text-[9.5px] font-mono uppercase tracking-wider text-[#173B32] font-bold flex items-center gap-1">
+            <Check className="w-3.5 h-3.5 text-[#B65E3C]" /> PACK
           </span>
-          <div className="flex flex-wrap gap-1.5">
-            {packing.map((item, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-md bg-[#FAF7F0] text-[11px] font-mono text-[#173B32] border border-[#E5D5BA]">
+          <div className="flex flex-wrap gap-1">
+            {packing.slice(0, showMore ? undefined : 4).map((item, i) => (
+              <span key={i} className="px-2 py-0.5 rounded-md bg-[#FAF7F0] text-[10.5px] font-mono text-[#173B32] border border-[#E5D5BA]">
                 {item}
               </span>
             ))}
           </div>
         </div>
+      )}
+
+      {/* IN-DEPTH EXPANDED SECTIONS (Shown when showMore is true) */}
+      {showMore && (
+        <div className="space-y-3 pt-2 border-t border-[#E5D5BA]/60 animate-fadeIn">
+          {/* GENERAL PROSE */}
+          {generalLines.length > 0 && (
+            <div className="space-y-1 text-xs font-serif leading-relaxed text-[#20211D]">
+              {generalLines.map((gl, i) => (
+                <p key={i}>{gl}</p>
+              ))}
+            </div>
+          )}
+
+          {/* GETTING THERE & TRANSIT */}
+          {gettingThere.length > 0 && (
+            <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1.5">
+              <span className="text-[9.5px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold flex items-center gap-1">
+                <Route className="w-3.5 h-3.5 text-[#B65E3C]" /> GETTING THERE &amp; TRANSIT
+              </span>
+              <ul className="space-y-1 text-xs text-[#20211D] font-serif">
+                {gettingThere.map((gt, i) => (
+                  <li key={i} className="flex items-start gap-1.5 leading-snug">
+                    <span className="text-[#B65E3C] font-bold shrink-0">→</span>
+                    <span>{gt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* WHERE TO EAT */}
+          {whereToEat.length > 0 && (
+            <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1.5">
+              <span className="text-[9.5px] font-mono uppercase tracking-wider text-[#173B32] font-bold flex items-center gap-1">
+                <Utensils className="w-3.5 h-3.5 text-[#B65E3C]" /> WHERE TO EAT
+              </span>
+              <ul className="space-y-1 text-xs text-[#20211D] font-serif">
+                {whereToEat.map((food, i) => (
+                  <li key={i} className="flex items-start gap-1.5 leading-snug">
+                    <span className="text-[#173B32] font-bold shrink-0">•</span>
+                    <span>{food}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SHOW MORE / SHOW LESS TOGGLE BUTTON */}
+      {(gettingThere.length > 0 || whereToEat.length > 0 || whatToDo.length > 4 || generalLines.length > 0) && (
+        <button
+          type="button"
+          onClick={() => setShowMore(!showMore)}
+          className="w-full py-1.5 px-3 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] text-xs font-mono font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+        >
+          <span>{showMore ? "Show less" : "Show more details & transit"}</span>
+          {showMore ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5 text-[#B65E3C]" />}
+        </button>
       )}
     </div>
   );

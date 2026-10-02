@@ -156,6 +156,44 @@ def ensure_database_schema(eng=engine):
                         conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col_name} {col_def}"))
                         logger.info(f"Migrated schema: added {col_name} to user_preferences table.")
 
+            # Check and migrate `trips` table
+            if "trips" in existing_tables:
+                trip_cols = {col["name"] for col in inspector.get_columns("trips")}
+                trip_additions = {
+                    "origin_city": "VARCHAR(255) NULL",
+                    "trip_mode": "VARCHAR(50) DEFAULT 'standard'",
+                    "vehicle_type": "VARCHAR(50) NULL",
+                    "vehicle_mileage_kpl": "FLOAT NULL",
+                    "fuel_price_per_litre": "FLOAT NULL",
+                    "route_geometry_json": "TEXT NULL",
+                    "road_trip_stops_json": "TEXT NULL",
+                    "budget_breakdown_json": "TEXT NULL",
+                }
+                for col_name, col_def in trip_additions.items():
+                    if col_name not in trip_cols:
+                        conn.execute(text(f"ALTER TABLE trips ADD COLUMN {col_name} {col_def}"))
+                        conn.commit()
+                        logger.info(f"Migrated schema: added {col_name} to trips table.")
+
+            # Check and migrate `expenses` table
+            if "expenses" in existing_tables:
+                exp_cols = {col["name"] for col in inspector.get_columns("expenses")}
+                exp_additions = {
+                    "split_method": "VARCHAR(50) DEFAULT 'EQUAL'",
+                    "receipt_url": "VARCHAR(500) NULL",
+                    "receipt_data_json": "TEXT NULL",
+                    "is_recurring": "BOOLEAN DEFAULT FALSE",
+                    "recurring_frequency": "VARCHAR(50) NULL",
+                    "tax_amount": "FLOAT DEFAULT 0.0",
+                    "tip_amount": "FLOAT DEFAULT 0.0",
+                    "discount_amount": "FLOAT DEFAULT 0.0",
+                }
+                for col_name, col_def in exp_additions.items():
+                    if col_name not in exp_cols:
+                        conn.execute(text(f"ALTER TABLE expenses ADD COLUMN {col_name} {col_def}"))
+                        conn.commit()
+                        logger.info(f"Migrated schema: added {col_name} to expenses table.")
+
             # Check and migrate `mobility_providers` table
             if "mobility_providers" in existing_tables:
                 mob_cols = {col["name"] for col in inspector.get_columns("mobility_providers")}

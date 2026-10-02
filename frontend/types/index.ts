@@ -397,17 +397,214 @@ export interface TripSummary {
   status: string;
 }
 
+export interface ExpenseShare {
+  id: string;
+  expense_id: string;
+  user_id: string;
+  user_name?: string;
+  owed_amount: number;
+  percentage?: number | null;
+  shares_count?: number | null;
+  item_details_json?: string | null;
+  created_at?: string;
+}
+
 export interface Expense {
   id: string;
   trip_id: string;
+  user_id?: string;
   user_name: string;
+  payer_name?: string;
   title: string;
   category: string;
   amount: number;
   payment_method: string;
   date: string;
   notes?: string;
+  split_method?: "EQUAL" | "EXACT" | "PERCENTAGE" | "SHARES" | "CUSTOM" | "ITEMIZED" | string;
+  tax_amount?: number;
+  tip_amount?: number;
+  discount_amount?: number;
+  is_recurring?: boolean;
+  recurring_frequency?: string | null;
+  receipt_url?: string | null;
+  receipt_data_json?: string | null;
   created_at: string;
+  shares?: ExpenseShare[];
+}
+
+export interface SettlementPayment {
+  id: string;
+  trip_id: string;
+  payer_user_id: string;
+  payer_name: string;
+  receiver_user_id: string;
+  receiver_name: string;
+  amount: number;
+  payment_method: "Cash" | "UPI" | "Bank Transfer" | "Other" | string;
+  notes?: string;
+  settled_at: string;
+  created_at: string;
+}
+
+export interface DebtSimplificationItem {
+  debtor_user_id: string;
+  debtor_name: string;
+  creditor_user_id: string;
+  creditor_name: string;
+  amount: number;
+}
+
+export interface UserBalanceItem {
+  user_id: string;
+  user_name: string;
+  avatar_url?: string;
+  total_paid: number;
+  total_share: number;
+  net_balance: number;
+}
+
+export interface TripLedgerBalancesResponse {
+  trip_id: string;
+  total_spent: number;
+  per_person_average: number;
+  current_user_id: string;
+  user_net_balance: number;
+  user_you_owe: number;
+  user_you_are_owed: number;
+  balances: UserBalanceItem[];
+  direct_debts: DebtSimplificationItem[];
+  simplified_debts: DebtSimplificationItem[];
+  settlement_history: SettlementPayment[];
+}
+
+export interface ReceiptOcrItem {
+  title: string;
+  amount: number;
+  category?: string;
+}
+
+export interface ReceiptOcrResponse {
+  merchant?: string;
+  date?: string;
+  total_amount: number;
+  tax_amount: number;
+  items: ReceiptOcrItem[];
+  confidence: number;
+  raw_text?: string;
+}
+
+// ----------------- Road Trip Mode Types -----------------
+export interface RoadTripStop {
+  id: string;
+  name: string;
+  type: string;
+  category?: string;
+  distance_off_route_km: number;
+  time_needed_mins: number;
+  approx_cost: number;
+  cost_label?: string;
+  why_stop: string;
+  opening_hours?: string;
+  lat: number;
+  lng: number;
+  image_url?: string;
+  action_label: string;
+  action_type: string;
+  data_state?: string;
+  detour_time_mins?: number;
+  next_leg_info?: string;
+}
+
+export interface RoadTripDay {
+  day_number: number;
+  title: string;
+  theme: string;
+  origin: string;
+  destination: string;
+  driving_distance_km: number;
+  driving_time_hours: number;
+  timeline: ItineraryItem[];
+  stops: RoadTripStop[];
+  food_options: Array<{
+    name: string;
+    type: string;
+    price: string;
+    timing: string;
+    specialty?: string;
+  }>;
+  stay_options: Hotel[];
+  fuel_estimated_inr: number;
+}
+
+export interface RoadTripFuelBreakdown {
+  total_distance_km: number;
+  vehicle_type: string;
+  assumed_mileage_kpl: number;
+  assumed_fuel_rate_per_litre: number;
+  estimated_fuel_cost_inr: number;
+  data_state: string;
+  calculation_text: string;
+}
+
+export interface RoadTripBudgetEstimate {
+  fuel_estimated: number;
+  tolls_estimated: number;
+  stay_estimated: number;
+  food_estimated: number;
+  activities_estimated: number;
+  parking_other_estimated: number;
+  total_estimated: number;
+  per_person_estimated: number;
+  travellers_count: number;
+  is_custom_budget: boolean;
+}
+
+export interface RoadTripPlanRequest {
+  origin: string;
+  destination: string;
+  travellers_count: number;
+  vehicle_type: "Car" | "Bike" | "SUV" | "Rental" | string;
+  trip_style: "Fast" | "Balanced" | "Explore" | string;
+  budget_inr?: number;
+  start_date: string;
+  end_date?: string;
+  overnight_mode?: "auto" | "manual";
+  manual_overnights?: string[];
+  preferences?: string[];
+}
+
+export interface RoadTripPlanResponse {
+  id: string;
+  title: string;
+  origin: string;
+  destination: string;
+  start_date: string;
+  end_date: string;
+  num_days: number;
+  total_distance_km: number;
+  total_driving_time_hours: number;
+  vehicle_type: string;
+  trip_style: string;
+  route_geometry: Array<[number, number]>;
+  corridor_name: string;
+  days: RoadTripDay[];
+  fuel_breakdown: RoadTripFuelBreakdown;
+  budget_estimate: RoadTripBudgetEstimate;
+  recommended_stops: RoadTripStop[];
+  travel_tips: string[];
+  created_trip_id?: string;
+}
+
+export interface RoadTripCorridor {
+  id: string;
+  title: string;
+  origin: string;
+  destination: string;
+  distance_km: number;
+  days_suggested: number;
+  highlights: string[];
+  image: string;
 }
 
 export interface BudgetCategory {
@@ -423,6 +620,8 @@ export interface BudgetSummary {
   total_remaining: number;
   daily_average_budget: number;
   daily_average_spent: number;
+  per_person_estimated?: number;
+  per_person_spent?: number;
   categories: BudgetCategory[];
   recent_expenses: Expense[];
 }

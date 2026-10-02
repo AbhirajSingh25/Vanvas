@@ -687,25 +687,86 @@ class TripMemberActionResponse(BaseModel):
     already_joined: Optional[bool] = None
 
 # ----------------- Budget & Expense Schemas -----------------
+class ExpenseShareCreate(BaseModel):
+    user_id: str
+    user_name: Optional[str] = None
+    owed_amount: float
+    percentage: Optional[float] = None
+    shares_count: Optional[float] = None
+    item_details_json: Optional[str] = None
+
+class ExpenseShareResponse(BaseModel):
+    id: str
+    expense_id: str
+    user_id: str
+    user_name: Optional[str] = None
+    owed_amount: float
+    percentage: Optional[float] = None
+    shares_count: Optional[float] = None
+    item_details_json: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class ExpenseCreateRequest(BaseModel):
     title: str
-    category: str  # Transport, Hotel, Food, Local transport, Scooter/rental, Activities, Shopping, Misc
+    category: str = "Food"  # Transport, Fuel, Tolls, Stay, Food, Activities, Shopping, Parking, Tickets, Permits, Other
     amount: float
+    payer_user_id: Optional[str] = None
     payment_method: str = "UPI"
     notes: Optional[str] = None
     date: Optional[date] = None
+    split_method: str = "EQUAL"  # EQUAL, EXACT, PERCENTAGE, SHARES, CUSTOM, ITEMIZED
+    participant_user_ids: List[str] = []
+    custom_shares: Optional[List[ExpenseShareCreate]] = None
+    tax_amount: Optional[float] = 0.0
+    tip_amount: Optional[float] = 0.0
+    discount_amount: Optional[float] = 0.0
+    receipt_url: Optional[str] = None
+    receipt_data_json: Optional[str] = None
+    is_recurring: Optional[bool] = False
+    recurring_frequency: Optional[str] = None  # weekly, fortnightly, monthly
+
+class ExpenseUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    amount: Optional[float] = None
+    payer_user_id: Optional[str] = None
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
+    date: Optional[date] = None
+    split_method: Optional[str] = None
+    participant_user_ids: Optional[List[str]] = None
+    custom_shares: Optional[List[ExpenseShareCreate]] = None
+    tax_amount: Optional[float] = None
+    tip_amount: Optional[float] = None
+    discount_amount: Optional[float] = None
+    receipt_url: Optional[str] = None
+    receipt_data_json: Optional[str] = None
 
 class ExpenseResponse(BaseModel):
     id: str
     trip_id: str
+    user_id: Optional[str] = None
     user_name: str
+    payer_name: Optional[str] = None
     title: str
     category: str
     amount: float
     payment_method: str
     date: date
     notes: Optional[str] = None
+    split_method: str = "EQUAL"
+    tax_amount: float = 0.0
+    tip_amount: float = 0.0
+    discount_amount: float = 0.0
+    is_recurring: bool = False
+    recurring_frequency: Optional[str] = None
+    receipt_url: Optional[str] = None
+    receipt_data_json: Optional[str] = None
     created_at: datetime
+    shares: List[ExpenseShareResponse] = []
 
     class Config:
         from_attributes = True
@@ -722,8 +783,75 @@ class BudgetSummaryResponse(BaseModel):
     total_remaining: float
     daily_average_budget: float
     daily_average_spent: float
+    per_person_estimated: float = 0.0
+    per_person_spent: float = 0.0
     categories: List[BudgetBreakdownCategory]
     recent_expenses: List[ExpenseResponse]
+
+class SettlementPaymentCreate(BaseModel):
+    receiver_user_id: str
+    amount: float
+    payment_method: str = "UPI"  # Cash, UPI, Bank Transfer, Other
+    notes: Optional[str] = None
+    settled_at: Optional[datetime] = None
+
+class SettlementPaymentResponse(BaseModel):
+    id: str
+    trip_id: str
+    payer_user_id: str
+    payer_name: str
+    receiver_user_id: str
+    receiver_name: str
+    amount: float
+    payment_method: str
+    notes: Optional[str] = None
+    settled_at: datetime
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class DebtSimplificationItem(BaseModel):
+    debtor_user_id: str
+    debtor_name: str
+    creditor_user_id: str
+    creditor_name: str
+    amount: float
+
+class UserBalanceItem(BaseModel):
+    user_id: str
+    user_name: str
+    avatar_url: Optional[str] = None
+    total_paid: float
+    total_share: float
+    net_balance: float  # positive = owed to user, negative = user owes
+
+class TripLedgerBalancesResponse(BaseModel):
+    trip_id: str
+    total_spent: float
+    per_person_average: float
+    current_user_id: str
+    user_net_balance: float
+    user_you_owe: float
+    user_you_are_owed: float
+    balances: List[UserBalanceItem]
+    direct_debts: List[DebtSimplificationItem]
+    simplified_debts: List[DebtSimplificationItem]
+    settlement_history: List[SettlementPaymentResponse] = []
+
+class ReceiptOcrItem(BaseModel):
+    title: str
+    amount: float
+    category: Optional[str] = "Food"
+
+class ReceiptOcrResponse(BaseModel):
+    merchant: Optional[str] = None
+    date: Optional[str] = None
+    total_amount: float
+    tax_amount: float = 0.0
+    items: List[ReceiptOcrItem] = []
+    confidence: float = 0.9
+    raw_text: Optional[str] = None
 
 # ----------------- Checklist Schemas -----------------
 class ChecklistItemResponse(BaseModel):
@@ -1389,5 +1517,97 @@ class DestinationResearchResponse(BaseModel):
     rentals_count: int
     intelligence: SoloDestinationIntelligenceResponse
     source_trail: List[Dict[str, Any]] = []
+
+
+# ----------------- Road Trip Mode Schemas -----------------
+class RoadTripStop(BaseModel):
+    id: str
+    name: str
+    type: str  # Viewpoint, Fort, Temple, Waterfall, Lake, Beach, National Park, Heritage Site, Local Market, Café, Dhaba, Restaurant, Fuel, Rest Stop, Hotel, Campsite, Activity
+    category: str = "attraction"
+    distance_off_route_km: float = 0.0
+    time_needed_mins: int = 45
+    approx_cost: float = 0.0
+    cost_label: Optional[str] = "Free / Minimal"
+    why_stop: str
+    opening_hours: Optional[str] = None
+    lat: float
+    lng: float
+    image_url: Optional[str] = None
+    action_label: str = "Add stop"
+    action_type: str = "add_stop"
+    data_state: str = "VERIFIED"
+    detour_time_mins: int = 0
+    next_leg_info: Optional[str] = None
+
+class RoadTripDay(BaseModel):
+    day_number: int
+    title: str
+    theme: str
+    origin: str
+    destination: str
+    driving_distance_km: float
+    driving_time_hours: float
+    timeline: List[ItineraryItemResponse] = []
+    stops: List[RoadTripStop] = []
+    food_options: List[Dict[str, Any]] = []
+    stay_options: List[HotelResponse] = []
+    fuel_estimated_inr: float = 0.0
+
+class RoadTripPlanRequest(BaseModel):
+    origin: str = Field(..., min_length=2, max_length=255)
+    destination: str = Field(..., min_length=2, max_length=255)
+    travellers_count: int = 2
+    vehicle_type: str = "Car"  # Car, Bike, SUV, Rental
+    trip_style: str = "Balanced"  # Fast, Balanced, Explore
+    budget_inr: Optional[float] = None
+    start_date: date
+    end_date: Optional[date] = None
+    overnight_mode: str = "auto"  # auto, manual
+    manual_overnights: Optional[List[str]] = None
+    preferences: List[str] = []  # avoid_tolls, avoid_highways, scenic, food_focus, less_driving, nightlife, family_friendly, adventure
+
+class RoadTripFuelBreakdown(BaseModel):
+    total_distance_km: float
+    vehicle_type: str
+    assumed_mileage_kpl: float
+    assumed_fuel_rate_per_litre: float
+    estimated_fuel_cost_inr: float
+    data_state: str = "ESTIMATED"
+    calculation_text: str
+
+class RoadTripBudgetEstimate(BaseModel):
+    fuel_estimated: float
+    tolls_estimated: float
+    stay_estimated: float
+    food_estimated: float
+    activities_estimated: float
+    parking_other_estimated: float
+    total_estimated: float
+    per_person_estimated: float
+    travellers_count: int
+    is_custom_budget: bool = False
+
+class RoadTripPlanResponse(BaseModel):
+    id: str
+    title: str
+    origin: str
+    destination: str
+    start_date: date
+    end_date: date
+    num_days: int
+    total_distance_km: float
+    total_driving_time_hours: float
+    vehicle_type: str
+    trip_style: str
+    route_geometry: List[List[float]] = []  # [[lat, lng], ...]
+    corridor_name: str
+    days: List[RoadTripDay] = []
+    fuel_breakdown: RoadTripFuelBreakdown
+    budget_estimate: RoadTripBudgetEstimate
+    recommended_stops: List[RoadTripStop] = []
+    travel_tips: List[str] = []
+    created_trip_id: Optional[str] = None
+
 
 

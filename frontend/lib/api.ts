@@ -6,7 +6,9 @@ import {
   TripInvitePreview, TripMemberItem,
   Review, ReviewAggregate, ReviewCreateInput, ReviewReportInput,
   Booking, Offer, BookingIntentInput,
-  RegistrationResult, VerifyEmailResult, ResendVerificationResult
+  RegistrationResult, VerifyEmailResult, ResendVerificationResult,
+  TripLedgerBalancesResponse, SettlementPayment, ReceiptOcrResponse,
+  RoadTripPlanRequest, RoadTripPlanResponse, RoadTripCorridor
 } from "@/types";
 
 function getApiBaseUrl(): string {
@@ -446,18 +448,38 @@ export const api = {
     });
   },
 
-  // Budget & Expenses
+  // Budget & Expenses & VANVAS Split
   async getBudget(tripId: string): Promise<BudgetSummary> {
     return fetchApi(`/trips/${tripId}/budget`);
   },
 
+  async getExpenses(tripId: string, params?: { category?: string; payer_id?: string; search?: string }): Promise<Expense[]> {
+    const q = new URLSearchParams();
+    if (params?.category) q.append("category", params.category);
+    if (params?.payer_id) q.append("payer_id", params.payer_id);
+    if (params?.search) q.append("search", params.search);
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    return fetchApi(`/trips/${tripId}/expenses${qs}`);
+  },
+
   async addExpense(tripId: string, expense: {
     title: string;
-    category: string;
+    category?: string;
     amount: number;
-    payment_method: string;
+    payer_user_id?: string;
+    payment_method?: string;
     notes?: string;
     date?: string;
+    split_method?: string;
+    participant_user_ids?: string[];
+    custom_shares?: any[];
+    tax_amount?: number;
+    tip_amount?: number;
+    discount_amount?: number;
+    receipt_url?: string;
+    receipt_data_json?: string;
+    is_recurring?: boolean;
+    recurring_frequency?: string;
   }): Promise<Expense> {
     return fetchApi(`/trips/${tripId}/expenses`, {
       method: "POST",
@@ -465,10 +487,82 @@ export const api = {
     });
   },
 
-  async deleteExpense(tripId: string, expenseId: string): Promise<{ success: boolean }> {
+  async updateExpense(tripId: string, expenseId: string, data: Partial<{
+    title: string;
+    category: string;
+    amount: number;
+    payer_user_id: string;
+    payment_method: string;
+    notes: string;
+    date: string;
+    split_method: string;
+    participant_user_ids: string[];
+    custom_shares: any[];
+    tax_amount: number;
+    tip_amount: number;
+    discount_amount: number;
+    receipt_url: string;
+    receipt_data_json: string;
+  }>): Promise<Expense> {
+    return fetchApi(`/trips/${tripId}/expenses/${expenseId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteExpense(tripId: string, expenseId: string): Promise<{ success: boolean; message?: string }> {
     return fetchApi(`/trips/${tripId}/expenses/${expenseId}`, {
       method: "DELETE",
     });
+  },
+
+  async getTripBalances(tripId: string): Promise<TripLedgerBalancesResponse> {
+    return fetchApi(`/trips/${tripId}/balances`);
+  },
+
+  async recordSettlementPayment(tripId: string, data: {
+    receiver_user_id: string;
+    amount: number;
+    payment_method?: string;
+    notes?: string;
+    settled_at?: string;
+  }): Promise<SettlementPayment> {
+    return fetchApi(`/trips/${tripId}/settlements`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async parseReceiptOcr(tripId: string, payload: {
+    text?: string;
+    raw_text?: string;
+    merchant?: string;
+    amount?: number;
+    total?: number;
+  }): Promise<ReceiptOcrResponse> {
+    return fetchApi(`/trips/${tripId}/receipt-ocr`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Road Trip Mode
+  async planRoadTrip(data: RoadTripPlanRequest): Promise<RoadTripPlanResponse> {
+    return fetchApi("/road-trip/plan", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async saveRoadTrip(data: RoadTripPlanRequest): Promise<Trip> {
+    return fetchApi("/road-trip/save", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getRoadTripCorridors(): Promise<RoadTripCorridor[]> {
+    return fetchApi("/road-trip/corridors");
   },
 
   // Group & Voting & Collaboration

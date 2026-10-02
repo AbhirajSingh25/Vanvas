@@ -326,6 +326,14 @@ class Trip(Base):
     wake_up_preference = Column(String(50), default="Normal")  # Early, Normal, Late
     activity_intensity = Column(String(50), default="Balanced")  # Relaxed, Balanced, Packed
     interests = Column(String(500), default="Nature,Cafés,Adventure,Food")
+    origin_city = Column(String(255), nullable=True)
+    trip_mode = Column(String(50), default="standard")  # standard, road_trip, trek, one_day
+    vehicle_type = Column(String(50), nullable=True)  # Car, Bike, SUV, Rental
+    vehicle_mileage_kpl = Column(Float, nullable=True)
+    fuel_price_per_litre = Column(Float, nullable=True)
+    route_geometry_json = Column(Text, nullable=True)
+    road_trip_stops_json = Column(Text, nullable=True)
+    budget_breakdown_json = Column(Text, nullable=True)
     hotel_id = Column(String(36), ForeignKey("hotels.id"), nullable=True)
     rental_id = Column(String(36), ForeignKey("rental_options.id"), nullable=True)
     status = Column(String(50), default="active")  # planned, active, completed, archived
@@ -343,6 +351,7 @@ class Trip(Base):
     itineraries = relationship("Itinerary", back_populates="trip", cascade="all, delete-orphan", order_by="Itinerary.day_number")
     votes = relationship("Vote", back_populates="trip", cascade="all, delete-orphan")
     expenses = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
+    settlement_payments = relationship("SettlementPayment", back_populates="trip", cascade="all, delete-orphan")
     checklist_items = relationship("ChecklistItem", back_populates="trip", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="trip")
     bookings = relationship("Booking", back_populates="trip", cascade="all, delete-orphan")
@@ -432,15 +441,57 @@ class Expense(Base):
     trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     title = Column(String(255), nullable=False)
-    category = Column(String(100), default="Food")  # Transport, Hotel, Food, Local transport, Scooter/rental, Activities, Shopping, Misc
+    category = Column(String(100), default="Food")  # Transport, Fuel, Tolls, Stay, Food, Activities, Shopping, Parking, Tickets, Permits, Other
     amount = Column(Float, nullable=False)
-    payment_method = Column(String(50), default="UPI")  # UPI, Cash, Card
+    payment_method = Column(String(50), default="UPI")  # UPI, Cash, Card, Bank Transfer, Other
     date = Column(Date, default=lambda: datetime.now(timezone.utc).date())
     notes = Column(String(500), nullable=True)
+    split_method = Column(String(50), default="EQUAL")  # EQUAL, EXACT, PERCENTAGE, SHARES, CUSTOM, ITEMIZED
+    receipt_url = Column(String(500), nullable=True)
+    receipt_data_json = Column(Text, nullable=True)
+    is_recurring = Column(Boolean, default=False)
+    recurring_frequency = Column(String(50), nullable=True)  # weekly, fortnightly, monthly
+    tax_amount = Column(Float, default=0.0)
+    tip_amount = Column(Float, default=0.0)
+    discount_amount = Column(Float, default=0.0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     trip = relationship("Trip", back_populates="expenses")
     user = relationship("User", back_populates="expenses")
+    shares = relationship("ExpenseShare", back_populates="expense", cascade="all, delete-orphan")
+
+class ExpenseShare(Base):
+    __tablename__ = "expense_shares"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    expense_id = Column(String(36), ForeignKey("expenses.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    user_name = Column(String(255), nullable=True)
+    owed_amount = Column(Float, nullable=False)
+    percentage = Column(Float, nullable=True)
+    shares_count = Column(Float, nullable=True)
+    item_details_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    expense = relationship("Expense", back_populates="shares")
+    user = relationship("User")
+
+class SettlementPayment(Base):
+    __tablename__ = "settlement_payments"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
+    payer_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    receiver_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    payment_method = Column(String(50), default="UPI")  # Cash, UPI, Bank Transfer, Other
+    notes = Column(String(500), nullable=True)
+    settled_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    trip = relationship("Trip", back_populates="settlement_payments")
+    payer = relationship("User", foreign_keys=[payer_user_id])
+    receiver = relationship("User", foreign_keys=[receiver_user_id])
 
 class SavedPlace(Base):
     __tablename__ = "saved_places"

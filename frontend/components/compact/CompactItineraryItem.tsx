@@ -91,13 +91,13 @@ export const CompactItineraryItem: React.FC<CompactItineraryItemProps> = ({
         </div>
       </div>
 
-      {/* Progressively Disclosed Structured UI (WHY, GETTING THERE, COST, NOTES) */}
+      {/* Progressively Disclosed Structured UI (Compact 2-column metadata row) */}
       {expanded && (
         <div className="px-3.5 pb-3.5 pt-2 border-t border-[#E5D5BA]/80 space-y-2.5 text-xs animate-fadeIn bg-white/40 rounded-b-2xl">
           {stop.whyThisStop && (
             <div className="space-y-0.5">
               <span className="text-[9.5px] font-mono font-bold text-[#B65E3C] uppercase tracking-wider block">
-                WHY THIS STOP
+                WHY
               </span>
               <p className="text-[#20211D]/90 text-xs font-serif leading-relaxed">
                 {stop.whyThisStop}
@@ -105,39 +105,32 @@ export const CompactItineraryItem: React.FC<CompactItineraryItemProps> = ({
             </div>
           )}
 
+          {/* Compact 2-column metadata row */}
+          <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA] flex items-center justify-between">
+              <span className="text-[#7B4D36]">
+                {stop.time}{stop.endTime ? `–${stop.endTime}` : ` (${stop.durationMins}m)`}
+              </span>
+              <span className="text-[#173B32] font-bold">{stop.costFormatted}</span>
+            </div>
+            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA] flex items-center justify-between">
+              <span className="text-[#7B4D36]">
+                {stop.travelTimeMins > 0 ? `${stop.travelTimeMins} min` : "Walking / on-site"}
+              </span>
+              <span className="text-[#173B32] font-bold">{stop.distanceFormatted}</span>
+            </div>
+          </div>
+
           {stop.notes && stop.notes !== stop.whyThisStop && (
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 pt-1 border-t border-[#E5D5BA]/40">
               <span className="text-[9.5px] font-mono font-bold text-[#7B4D36] uppercase tracking-wider block">
-                NOTES &amp; RECOMMENDATIONS
+                NOTES
               </span>
               <p className="text-[#20211D]/80 text-xs leading-relaxed font-light">
                 {stop.notes}
               </p>
             </div>
           )}
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[10.5px]">
-            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]">
-              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Time Window</span>
-              <span className="text-[#173B32] font-bold">
-                {stop.time}{stop.endTime ? ` – ${stop.endTime}` : ` (${stop.durationMins}m)`}
-              </span>
-            </div>
-            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]">
-              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Cost</span>
-              <span className="text-[#173B32] font-bold">{stop.costFormatted}</span>
-            </div>
-            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]">
-              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Transit &amp; Distance</span>
-              <span className="text-[#173B32] font-bold">{stop.distanceFormatted}</span>
-            </div>
-            <div className="bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]">
-              <span className="text-[#7B4D36] uppercase block text-[8.5px]">Transit Time</span>
-              <span className="text-[#173B32] font-bold">
-                {stop.travelTimeMins > 0 ? `${stop.travelTimeMins} mins` : "On-site / walking"}
-              </span>
-            </div>
-          </div>
         </div>
       )}
     </div>
