@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 
 import { api } from "@/lib/api";
-import { Destination, Place, Hotel, RentalOption, Offer } from "@/types";
+import { Destination, Place, Hotel, RentalOption, Offer, StructuredWeather, WeatherSnapshot } from "@/types";
+import { VanvasWeatherCard, VanvasWeatherVisual } from "@/components/weather";
 import { PlaceCard } from "@/components/places/PlaceCard";
 import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
@@ -165,7 +166,8 @@ export default function DestinationDetailPage() {
   const [mounted, setMounted] = useState(false);
   const [destination, setDestination] = useState<Destination | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
-  const [weather, setWeather] = useState<any[]>([]);
+  const [weather, setWeather] = useState<WeatherSnapshot[]>([]);
+  const [currentWeather, setCurrentWeather] = useState<StructuredWeather | null>(null);
 
   // Sync Destination context to Ask VANVAS
   useEffect(() => {
@@ -365,6 +367,18 @@ export default function DestinationDetailPage() {
         setDestination(resolvedDest);
         setPlaces(data.places || []);
         setWeather(data.weather || []);
+        if (data.current_weather) {
+          setCurrentWeather(data.current_weather);
+        } else {
+          api.getDestinationWeather(slug)
+            .then((w) => {
+              if (w) {
+                setCurrentWeather(w);
+                if (w.daily && w.daily.length > 0) setWeather(w.daily);
+              }
+            })
+            .catch(() => {});
+        }
         setDestLoading(false);
 
         const destId = data.destination.id || slug;
@@ -790,26 +804,13 @@ export default function DestinationDetailPage() {
             </div>
           </div>
 
-          {/* Compact Weather Summary Strip */}
-          {weather && weather.length > 0 && (
-            <div className="bg-[#173B32] text-[#EFE5D2] p-3 sm:p-4 rounded-2xl border border-[#2D5A43] shadow-xs">
-              <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-2 shrink-0">
-                  <Sun className="w-4 h-4 text-[#B49252]" />
-                  <span className="text-xs font-mono font-bold uppercase">5-Day Weather:</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs font-mono">
-                  {weather.slice(0, 5).map((w, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5 shrink-0 bg-white/10 px-2.5 py-1 rounded-lg">
-                      <span className="font-bold text-[#FAF4E8]">{idx === 0 ? "Today" : `D${idx + 1}`}</span>
-                      <span className="text-[#B49252]">{Math.round(w.temp_c)}°C</span>
-                      <span className="text-[10px] text-[#D8DED5]/80">{w.is_rain ? "Rain" : "Clear"}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Compact Weather Summary Module */}
+          <VanvasWeatherCard
+            destinationName={destination.name}
+            structuredWeather={currentWeather}
+            weatherSnapshots={weather}
+            isCompact={true}
+          />
 
           {/* PLACES SECTION (COMPACT 2-COLUMN GRID) */}
           {(activeMode === "overview" || activeMode === "places") && (
@@ -1186,112 +1187,13 @@ export default function DestinationDetailPage() {
               })()}
             </div>
 
-            {/* Live Open-Meteo Weather Intelligence */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-[#0F2924] text-[#EFE5D2] border-2 border-[#173B32] shadow-xl space-y-6 relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold uppercase tracking-wider">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      LIVE OPEN-METEO WEATHER
-                    </span>
-                    <span className="text-[11px] font-mono text-[#B49252]">
-                      {destination.latitude.toFixed(2)}°N, {destination.longitude.toFixed(2)}°E
-                    </span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#FAF4E8]">
-                    Current Climate &amp; 5-Day Forecast for {destination.name}
-                  </h3>
-                </div>
-                <div className="text-xs text-[#D8DED5]/70 font-mono text-right">
-                  Updated Hourly from Open-Meteo Meteorological Satellite
-                </div>
-              </div>
-
-              {weather.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                    <div className="md:col-span-4 flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-                      <div className="text-4xl sm:text-5xl font-serif font-black text-[#FAF4E8]">
-                        {Math.round(weather[0].temp_c)}°<span className="text-lg text-[#B49252]">C</span>
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-bold text-[#FAF4E8] block">{weather[0].condition}</span>
-                        <span className="text-[11px] text-[#D8DED5]/80 font-mono">
-                          Wind: {weather[0].wind_kph} km/h • Humidity: {weather[0].humidity}%
-                        </span>
-                        {weather[0].is_rain && (
-                          <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-blue-500/30 text-blue-200 font-mono">
-                            Rain Advisory Active
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="md:col-span-8 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
-                      <Sun className="w-5 h-5 text-[#B49252] shrink-0 mt-0.5" />
-                      <div>
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
-                          METEOROLOGICAL ADVISORY
-                        </span>
-                        <p className="text-xs text-[#EFE5D2] leading-relaxed mt-0.5">
-                          {weather[0].advisory || `Live meteorological conditions for ${destination.name}. High altitude mountain conditions can change rapidly.`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
-                    {weather.slice(0, 5).map((w, idx) => {
-                      let dayName = idx === 0 ? "Today" : `Day ${idx + 1}`;
-                      let dateStr = w.forecast_date || "";
-                      try {
-                        const parts = (w.forecast_date || "").split("T")[0].split("-");
-                        if (parts.length === 3) {
-                          const yr = parseInt(parts[0], 10);
-                          const mIdx = parseInt(parts[1], 10) - 1;
-                          const dy = parseInt(parts[2], 10);
-                          const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                          const dayOfWeekNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                          const dt = new Date(yr, mIdx, dy);
-                          if (idx > 0) dayName = dayOfWeekNames[dt.getDay()] || dayName;
-                          dateStr = `${mNames[mIdx] || ""} ${dy}`;
-                        }
-                      } catch {
-                        // fallback
-                      }
-
-                      return (
-                        <div
-                          key={w.id || idx}
-                          className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-2 hover:bg-white/10 transition-colors"
-                        >
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-[#FAF4E8]">{dayName}</span>
-                            <span className="text-[10px] font-mono text-[#D8DED5]/70">{dateStr}</span>
-                          </div>
-                          <div className="flex items-baseline justify-between">
-                            <span className="text-lg font-serif font-bold text-[#FAF4E8]">
-                              {Math.round(w.temp_c)}°C
-                            </span>
-                            <span className="text-[11px] font-mono text-[#B49252]">
-                              {w.is_rain ? "Rain" : "Clear"}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-[#D8DED5]/80 line-clamp-1">
-                            {w.condition}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 rounded-2xl bg-white/5 text-xs text-[#D8DED5]/80">
-                  Fetching meteorological satellite data for {destination.name}...
-                </div>
-              )}
-            </div>
+            {/* VANVAS METEOROLOGICAL COCKPIT */}
+            <VanvasWeatherCard
+              destinationName={destination.name}
+              structuredWeather={currentWeather}
+              weatherSnapshots={weather}
+              isCompact={false}
+            />
             {/* Contextual Experience Bridges: Trek Mode & One-Day Escape */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
               {/* Contextual Trek CTA */}

@@ -8,7 +8,8 @@ import {
   Booking, Offer, BookingIntentInput,
   RegistrationResult, VerifyEmailResult, ResendVerificationResult,
   TripLedgerBalancesResponse, SettlementPayment, ReceiptOcrResponse,
-  RoadTripPlanRequest, RoadTripPlanResponse, RoadTripCorridor
+  RoadTripPlanRequest, RoadTripPlanResponse, RoadTripCorridor,
+  WeatherSnapshot, StructuredWeather
 } from "@/types";
 
 function getApiBaseUrl(): string {
@@ -348,7 +349,8 @@ export const api = {
     places: Place[];
     hotels: Hotel[];
     rentals: RentalOption[];
-    weather: any[];
+    weather: WeatherSnapshot[];
+    current_weather?: StructuredWeather;
     places_count: number;
   }> {
     const cacheKey = `dest_detail:${slugOrId.toLowerCase()}`;
@@ -356,6 +358,18 @@ export const api = {
     if (cached) return cached;
 
     const res = await fetchApi<any>(`/destinations/${slugOrId}`, { signal });
+    if (res) {
+      setCached(cacheKey, res, 180000);
+    }
+    return res;
+  },
+
+  async getDestinationWeather(slugOrId: string, signal?: AbortSignal): Promise<StructuredWeather> {
+    const cacheKey = `dest_weather:${slugOrId.toLowerCase()}`;
+    const cached = getCached<StructuredWeather>(cacheKey);
+    if (cached) return cached;
+
+    const res = await fetchApi<StructuredWeather>(`/destinations/${slugOrId}/weather`, { signal });
     if (res) {
       setCached(cacheKey, res, 180000);
     }

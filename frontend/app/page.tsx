@@ -18,6 +18,7 @@ import { CompactTravelModeCard, CompactDestinationCard } from "@/components/comp
 import { api } from "@/lib/api";
 import { Destination, TripSummary } from "@/types";
 import { CANONICAL_DESTINATIONS, CANONICAL_HINDI_NAMES, getCanonicalHindiName } from "@/lib/canonicalDestinations";
+import { CANONICAL_EXPEDITION_MODES } from "@/lib/expeditionModes";
 import { useAuth } from "@/context/AuthContext";
 import { useDensity } from "@/context/DensityContext";
 
@@ -172,11 +173,12 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Editorial Route Annotation Pin */}
-          <div className="pt-4">
-            <span className="text-[11px] font-mono tracking-widest text-[#B49252] uppercase bg-[#0F2924]/60 px-4 py-1.5 rounded-full border border-[#B49252]/30">
-              Leave Delhi at night. Wake up somewhere in the pines.
-            </span>
+          {/* Editorial Route Annotation Pin - Robust & responsive across 375, 390, 430 mobile viewports */}
+          <div className="pt-4 max-w-full px-3 sm:px-4 flex justify-center">
+            <div className="text-[11px] sm:text-xs font-mono tracking-wider sm:tracking-widest text-[#B49252] uppercase bg-[#0F2924]/85 px-4 py-2 sm:px-5 sm:py-1.5 rounded-2xl sm:rounded-full border border-[#B49252]/40 text-center max-w-[340px] xs:max-w-sm sm:max-w-md shadow-inner backdrop-blur-xs leading-relaxed">
+              <span>Leave Delhi at night.</span>{" "}
+              <span className="text-[#EFE5D2]/90">Wake up somewhere in the pines.</span>
+            </div>
           </div>
         </div>
       </section>
@@ -199,187 +201,56 @@ export default function HomePage() {
         </div>
 
         {isCompact ? (
-          /* COMPACT EXPEDITION CARDS */
+          /* COMPACT EXPEDITION CARDS (Canonical single source of truth) */
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3">
-            <CompactTravelModeCard
-              href="/explore"
-              layer="EXPLORE"
-              title="Explorer's Desk"
-              subtitle="Hill stations, coasts & heritage"
-              icon={Compass}
-            />
-            <CompactTravelModeCard
-              href="/plan"
-              layer="CHALO"
-              title="Plan a Trip"
-              subtitle="Guided step-by-step itinerary"
-              icon={Sparkles}
-              badgeColor="bg-[#B65E3C] text-[#FAF4E8]"
-              accentColor="text-[#B65E3C]"
-            />
-            <CompactTravelModeCard
-              href="/road-trip"
-              layer="HIGHWAYS"
-              title="Road Trip"
-              subtitle="Live routing & dhabas"
-              icon={Navigation}
-            />
-            <CompactTravelModeCard
-              href="/solo"
-              layer="SOLO"
-              title="Solo Travel"
-              subtitle="Safe stays & community"
-              icon={Users}
-              badgeColor="bg-[#7B4D36] text-[#FAF4E8]"
-              accentColor="text-[#7B4D36]"
-            />
-            <CompactTravelModeCard
-              href="/one-day"
-              layer="MICROTIP"
-              title="Day Escape"
-              subtitle="Morning out, night return"
-              icon={Clock}
-              badgeColor="bg-[#8C6D37] text-[#FAF4E8]"
-              accentColor="text-[#8C6D37]"
-            />
+            {CANONICAL_EXPEDITION_MODES.map((mode) => (
+              <CompactTravelModeCard
+                key={mode.id}
+                href={mode.href}
+                layer={mode.layerNumber}
+                title={mode.compactTitle}
+                subtitle={mode.subtitle}
+                icon={mode.icon}
+                badgeColor={`${mode.badgeBg} ${mode.badgeText}`}
+                accentColor={mode.theme === "dark" ? "text-[#ECEAE4]" : "text-[#173B32]"}
+              />
+            ))}
           </div>
         ) : (
-          /* ORIGINAL IMMERSIVE EXPEDITION CARDS */
+          /* ORIGINAL IMMERSIVE EXPEDITION CARDS (Canonical single source of truth) */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-            {/* Card 1: CORE EXPLORER'S DESK */}
-            <Link
-              href="/explore"
-              className="group bg-[#FAF4E8] rounded-3xl p-7 border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-sm hover:shadow-xl interactive-card transition-all flex flex-col justify-between space-y-6 animate-vanvas-slide-up stagger-1"
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                  <Compass className="w-6 h-6 text-[#B49252]" />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#7B4D36] font-bold">
-                    LAYER 01 • EXPLORER&apos;S DESK
-                  </span>
-                  <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
-                    Explore India
-                  </h3>
-                </div>
-                <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                  Discover curated sanctuaries, river ghats, royal palaces, tea plantations, and hidden mountain valleys across India.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
-                <span>Explore Catalogue</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            {/* Card 2: ROAD TRIP MODE */}
-            <Link
-              href="/road-trip"
-              className="group bg-[#FAF7F0] rounded-3xl p-7 border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-sm hover:shadow-xl interactive-card transition-all flex flex-col justify-between space-y-6 animate-vanvas-slide-up stagger-2"
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-[#FAF7F0] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                  <Navigation className="w-6 h-6 text-[#B49252]" />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#B65E3C] font-bold">
-                    LAYER 02 • HIGHWAYS &amp; DHABAS
-                  </span>
-                  <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
-                    Road Trip Mode
-                  </h3>
-                </div>
-                <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                  Live highway routing, authentic dhabas, fuel stops, and verified driving corridors across India.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
-                <span>Launch Road Trip</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            {/* Card 3: SOLO TRAVEL MODE */}
-            <Link
-              href="/solo"
-              className="group bg-[#FAF7F0] rounded-3xl p-7 border-2 border-[#D8CBB2] hover:border-[#B65E3C] shadow-sm hover:shadow-xl interactive-card transition-all flex flex-col justify-between space-y-6 animate-vanvas-slide-up stagger-3"
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#B65E3C] text-[#FAF7F0] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                  <Users className="w-6 h-6 text-[#B49252]" />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#B65E3C] font-bold">
-                    LAYER 03 • FIELD COMPANION
-                  </span>
-                  <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
-                    Solo Travel
-                  </h3>
-                </div>
-                <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                  &ldquo;Go alone. Never feel unprepared.&rdquo; Safe quarters, communal tables, walkable loops, and trusted local stays without uncertainty.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#B65E3C]">
-                <span>Solo Mode</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            {/* Card 4: TREK EXPEDITION MODE */}
-            <Link
-              href="/treks"
-              className="group bg-[#111A16] text-[#EFE5D2] rounded-3xl p-7 border-2 border-[#2C3E35] hover:border-[#E05A2B] shadow-sm hover:shadow-xl interactive-card transition-all flex flex-col justify-between space-y-6 animate-vanvas-slide-up stagger-4"
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#E05A2B] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                  <Mountain className="w-6 h-6" />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#B49252] font-bold">
-                    LAYER 04 • FIELD JOURNAL
-                  </span>
-                  <h3 className="text-2xl font-serif font-black text-white group-hover:text-[#E05A2B] transition-colors">
-                    Trek Mode
-                  </h3>
-                </div>
-                <p className="text-xs text-[#A6BAAE] font-serif leading-relaxed">
-                  Understand the mountain before you climb it. Elevation profiles, route comparisons, gear checklists &amp; live trail cockpit.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-[#25372D] flex items-center justify-between text-xs font-bold text-[#E05A2B]">
-                <span>Find Your Mountain</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            {/* Card 5: DAY ESCAPE MODE */}
-            <Link
-              href="/one-day"
-              className="group bg-[#FFF9F0] rounded-3xl p-7 border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-sm hover:shadow-xl interactive-card transition-all flex flex-col justify-between space-y-6 animate-vanvas-slide-up stagger-5"
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#173B32] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                  <Clock className="w-6 h-6 text-[#B49252]" />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#7B4D36] font-bold">
-                    LAYER 05 • DAY ESCAPE COCKPIT
-                  </span>
-                  <h3 className="text-2xl font-serif font-black text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
-                    Day Escape Mode
-                  </h3>
-                </div>
-                <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                  &ldquo;Leave in the morning. Come back tonight.&rdquo; Editorial day-trip cockpit, road journal spine, group budget split &amp; verified stops.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-bold text-[#173B32]">
-                <span>Launch Day Escape</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
+            {CANONICAL_EXPEDITION_MODES.map((mode) => {
+              const Icon = mode.icon;
+              const isDark = mode.theme === "dark";
+              return (
+                <Link
+                  key={mode.id}
+                  href={mode.href}
+                  className={`group ${mode.cardBg} ${mode.cardBgDark} rounded-3xl p-7 border-2 ${mode.borderColor} ${mode.hoverBorderColor} shadow-sm hover:shadow-xl interactive-card transition-all flex flex-col justify-between space-y-6 animate-vanvas-slide-up ${mode.staggerClass} no-underline`}
+                >
+                  <div className="space-y-4">
+                    <div className={`w-12 h-12 rounded-2xl ${mode.badgeBg} ${mode.badgeText} flex items-center justify-center shadow-md group-hover:scale-105 transition-transform`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className={`text-[10px] font-mono uppercase tracking-widest ${isDark ? "text-[#B49252]" : "text-[#7B4D36]"} font-bold`}>
+                        {mode.layer}
+                      </span>
+                      <h3 className={`text-2xl font-serif font-black ${isDark ? "text-white" : "text-[#173B32]"} group-hover:text-[#B65E3C] transition-colors`}>
+                        {mode.title}
+                      </h3>
+                    </div>
+                    <p className={`text-xs ${isDark ? "text-[#A6BAAE]" : "text-[#7B4D36]"} font-serif leading-relaxed`}>
+                      {mode.description}
+                    </p>
+                  </div>
+                  <div className={`pt-4 border-t ${isDark ? "border-[#25372D]" : "border-[#E5D5BA]"} flex items-center justify-between text-xs font-bold ${isDark ? "text-[#E05A2B]" : "text-[#173B32]"}`}>
+                    <span>{mode.ctaText}</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

@@ -719,17 +719,43 @@ export interface ChecklistItem {
 }
 
 export interface WeatherSnapshot {
-  id: string;
-  destination_id: string;
-  forecast_date: string;
+  id?: string;
+  destination_id?: string;
+  forecast_date?: string;
+  date?: string;
   temp_c: number;
+  temperature_max?: number;
+  temperature_min?: number;
   condition: string;
+  weatherCode?: number;
   is_rain: boolean;
-  is_snow: boolean;
+  is_snow?: boolean;
   humidity: number;
   wind_kph: number;
-  advisory: string;
-  icon: string;
+  precipitation_prob?: number;
+  advisory?: string;
+  icon?: string;
+  data_state?: string;
+  trust_source?: string;
+}
+
+export interface StructuredWeather {
+  temperature: number | null;
+  apparentTemperature?: number | null;
+  weatherCode?: number | null;
+  condition: string;
+  isDay?: boolean;
+  windSpeed?: number | null;
+  precipitation?: number | null;
+  humidity?: number | null;
+  updatedAt?: string;
+  location?: string;
+  is_available: boolean;
+  advisory?: string;
+  icon?: string;
+  daily: WeatherSnapshot[];
+  data_state?: string;
+  trust_source?: string;
 }
 
 export interface ImHereResponse {

@@ -9,7 +9,8 @@ import {
   CheckSquare, ArrowRight, ShieldCheck, Sun, Info, Heart, Printer
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { Trip, BudgetSummary, GroupSummary, ChecklistItem, ArrivalOptimizerResponse } from "@/types";
+import { Trip, BudgetSummary, GroupSummary, ChecklistItem, ArrivalOptimizerResponse, StructuredWeather } from "@/types";
+import { VanvasWeatherCard } from "@/components/weather";
 import { ImHereDrawer } from "@/components/trip/ImHereDrawer";
 import { DynamicReplanModal } from "@/components/trip/DynamicReplanModal";
 import { QuickPlanModal } from "@/components/trip/QuickPlanModal";
@@ -32,6 +33,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const { isCompact } = useDensity();
 
   const [trip, setTrip] = useState<Trip | null>(null);
+  const [tripWeather, setTripWeather] = useState<StructuredWeather | null>(null);
   const [budgetData, setBudgetData] = useState<BudgetSummary | null>(null);
   const [groupData, setGroupData] = useState<GroupSummary | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
@@ -91,6 +93,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       api.getGroupDetails(tripId).then(setGroupData).catch(() => {});
       api.getChecklist(tripId).then(setChecklist).catch(() => {});
       api.optimizeArrival(t.destination_id, "Delhi", t.start_date).then(setArrivalData).catch(() => {});
+      if (t.destination?.slug || t.destination_id) {
+        api.getDestinationWeather(t.destination?.slug || t.destination_id).then(setTripWeather).catch(() => {});
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -320,7 +325,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-left flex items-center justify-between">
                 <div>
                   <span className="text-[9px] uppercase text-[#7B4D36] block font-bold">WEATHER</span>
-                  <span className="font-bold text-[#173B32]">18–22°C</span>
+                  <span className="font-bold text-[#173B32]">
+                    {tripWeather && tripWeather.temperature !== null
+                      ? `${Math.round(tripWeather.temperature)}°C`
+                      : (trip.destination?.weather_type || "Live feed")}
+                  </span>
                 </div>
                 <Sun className="w-4 h-4 text-amber-600 shrink-0" />
               </div>
@@ -597,6 +606,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
               {/* Weather & Stay Card */}
               <div className="space-y-4">
+                {/* Destination Weather Live Card */}
+                {trip.destination && (
+                  <VanvasWeatherCard
+                    destinationName={trip.destination.name}
+                    structuredWeather={tripWeather}
+                    isCompact={isCompact}
+                  />
+                )}
+
                 {/* Stay Card */}
                 {trip.hotel && (
                   isCompact ? (

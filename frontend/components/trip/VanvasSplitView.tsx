@@ -316,8 +316,8 @@ export const VanvasSplitView: React.FC<VanvasSplitViewProps> = ({
 
       {/* SETTLE UP MODAL (Part 15) */}
       {settleModalDebt && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xl p-6 space-y-4 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-vanvas-fade">
+          <div className="w-full max-w-sm rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xl p-6 space-y-4 animate-vanvas-scale">
             <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-3">
               <h3 className="font-serif font-black text-lg text-[#173B32]">
                 Settle Balance

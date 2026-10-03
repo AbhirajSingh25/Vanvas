@@ -23,15 +23,60 @@ logger = logging.getLogger("vanvas.providers")
 
 class LiveWeatherProvider(WeatherProvider):
     """
-    Open-Meteo Live Weather Provider with Safe Caching & Stale-Data Fallback.
-    Free, highly accurate real-time & 7-day forecast API supporting any coordinate globally and in Indian mountain ranges.
+    Open-Meteo Live Weather Provider with Real-Time Current Conditions, Safe Caching & Honest Failure State.
+    Provides destination-specific live temperature, apparent temperature, WMO conditions, humidity, wind, and 5-day forecasts.
     """
     def __init__(self, api_key: str = ""):
         self.api_key = api_key
         self.demo_fallback = DemoWeatherProvider()
 
-    async def get_forecast(self, lat: float, lng: float, days: int = 5) -> List[Dict[str, Any]]:
-        cache_key = cache_service.make_weather_key(lat, lng, days)
+    @staticmethod
+    def interpret_wmo_code(code: int, is_day: bool = True) -> Tuple[str, str, bool, bool]:
+        """Returns (condition_name, icon_name, is_rain, is_snow)"""
+        if code == 0:
+            return ("Clear Sky", "sun" if is_day else "moon", False, False)
+        elif code == 1:
+            return ("Mainly Clear", "sun" if is_day else "moon-stars", False, False)
+        elif code == 2:
+            return ("Partly Cloudy", "cloud-sun" if is_day else "cloud-moon", False, False)
+        elif code == 3:
+            return ("Overcast", "cloud", False, False)
+        elif code in (45, 48):
+            return ("Mountain Fog / Mist", "cloud-fog", False, False)
+        elif code in (51, 53, 55):
+            return ("Light Drizzle", "cloud-drizzle", True, False)
+        elif code in (56, 57):
+            return ("Freezing Drizzle", "cloud-snow", True, True)
+        elif code in (61, 63):
+            return ("Rain Showers", "cloud-rain", True, False)
+        elif code == 65:
+            return ("Heavy Rain", "cloud-rain-heavy", True, False)
+        elif code in (66, 67):
+            return ("Freezing Rain", "cloud-snow", True, True)
+        elif code in (71, 73, 75, 77):
+            return ("Snow Flurries", "snowflake", False, True)
+        elif code in (80, 81):
+            return ("Rain Showers", "cloud-rain", True, False)
+        elif code == 82:
+            return ("Violent Rain Showers", "cloud-rain-heavy", True, False)
+        elif code in (85, 86):
+            return ("Snow Showers", "snowflake", False, True)
+        elif code == 95:
+            return ("Thunderstorm", "cloud-lightning", True, False)
+        elif code in (96, 99):
+            return ("Severe Thunderstorm & Hail", "cloud-lightning", True, True)
+        return ("Pleasant", "sun" if is_day else "moon", False, False)
+
+    async def get_structured_weather(self, lat: float, lng: float, location_name: str = "", days: int = 5) -> Dict[str, Any]:
+        """
+        Returns structured weather data:
+        {
+          temperature, apparentTemperature, weatherCode, condition, isDay,
+          windSpeed, precipitation, humidity, updatedAt, location, is_available,
+          daily: [...]
+        }
+        """
+        cache_key = f"structured_weather:{round(lat, 4)}:{round(lng, 4)}:{days}"
         cached_val, is_stale = cache_service.get(cache_key)
         if cached_val is not None and not is_stale:
             return cached_val
@@ -40,79 +85,142 @@ class LiveWeatherProvider(WeatherProvider):
         try:
             url = (
                 f"https://api.open-meteo.com/v1/forecast?"
-                f"latitude={lat}&longitude={lng}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max&timezone=auto"
+                f"latitude={lat}&longitude={lng}"
+                f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m"
+                f"&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max"
+                f"&timezone=auto"
             )
             async with httpx.AsyncClient(timeout=4.5) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
                     data = res.json()
+                    curr = data.get("current", {})
                     daily = data.get("daily", {})
+
+                    curr_temp = curr.get("temperature_2m", 20.0)
+                    curr_apparent = curr.get("apparent_temperature", curr_temp)
+                    curr_code = curr.get("weather_code", 0)
+                    curr_is_day = bool(curr.get("is_day", 1))
+                    curr_humidity = curr.get("relative_humidity_2m", 50)
+                    curr_wind = curr.get("wind_speed_10m", 5.0)
+                    curr_precip = curr.get("precipitation", 0.0)
+                    curr_time = curr.get("time", datetime.now(timezone.utc).isoformat())
+
+                    condition, icon_name, is_rain, is_snow = self.interpret_wmo_code(curr_code, curr_is_day)
+
                     times = daily.get("time", [])
                     t_max = daily.get("temperature_2m_max", [])
                     t_min = daily.get("temperature_2m_min", [])
-                    precip = daily.get("precipitation_probability_max", [])
+                    precip_prob = daily.get("precipitation_probability_max", [])
                     w_codes = daily.get("weathercode", [])
-                    wind = daily.get("windspeed_10m_max", [])
+                    winds = daily.get("windspeed_10m_max", [])
 
-                    forecasts = []
+                    forecast_days = []
                     for i in range(min(days, len(times))):
-                        code = w_codes[i] if i < len(w_codes) else 0
-                        p_prob = precip[i] if i < len(precip) else 0
-                        is_rain = code in [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99] or (p_prob is not None and p_prob > 40)
-                        
-                        # Interpret WMO weather codes
-                        condition = "Clear Sky"
-                        if code in [1, 2, 3]:
-                            condition = "Partly Cloudy"
-                        elif code in [45, 48]:
-                            condition = "Mountain Fog / Mist"
-                        elif code in [51, 53, 55, 61, 63, 65]:
-                            condition = "Rain Showers"
-                        elif code in [71, 73, 75, 77, 85, 86]:
-                            condition = "Snow Flurries"
-                        elif code in [95, 96, 99]:
-                            condition = "Thunderstorm"
+                        d_code = w_codes[i] if i < len(w_codes) else curr_code
+                        d_cond, d_icon, d_rain, d_snow = self.interpret_wmo_code(d_code, True)
+                        d_p_prob = precip_prob[i] if i < len(precip_prob) else 0
+                        d_t_max = t_max[i] if i < len(t_max) else curr_temp + 3
+                        d_t_min = t_min[i] if i < len(t_min) else curr_temp - 5
+                        d_avg = round((d_t_max + d_t_min) / 2.0, 1) if i > 0 else round(curr_temp, 1)
+                        d_wind = round(winds[i], 1) if i < len(winds) and winds[i] is not None else round(curr_wind, 1)
 
-                        avg_temp = round(((t_max[i] if i < len(t_max) else 22) + (t_min[i] if i < len(t_min) else 12)) / 2, 1)
+                        if d_rain:
+                            d_advisory = "Rain advisory: keep waterproof layers accessible. Mountain trails may be slippery."
+                        elif d_snow:
+                            d_advisory = "Snow/frost alert: cold alpine temperatures. Warm thermal layers required."
+                        elif "Fog" in d_cond:
+                            d_advisory = "Mountain mist & fog: reduce driving speeds on hill passes."
+                        else:
+                            d_advisory = f"Pleasant conditions in {location_name or 'the valley'}. Great for exploration."
 
-                        forecasts.append({
+                        forecast_days.append({
                             "date": times[i],
-                            "temp_c": avg_temp,
-                            "condition": condition,
-                            "is_rain": is_rain,
-                            "humidity": 65 if is_rain else 45,
-                            "wind_kph": round(wind[i], 1) if i < len(wind) and wind[i] is not None else 8.0,
-                            "advisory": "Live mountain weather from Open-Meteo." if not is_rain else "Rain advisory: carry rain gear, outdoor treks may shift.",
-                            "icon": "cloud-rain" if is_rain else ("cloud-fog" if "Fog" in condition else "sun"),
+                            "forecast_date": times[i],
+                            "temp_c": d_avg,
+                            "temperature_max": round(d_t_max, 1),
+                            "temperature_min": round(d_t_min, 1),
+                            "condition": d_cond,
+                            "weatherCode": d_code,
+                            "is_rain": d_rain,
+                            "is_snow": d_snow,
+                            "humidity": curr_humidity if i == 0 else (65 if d_rain else 50),
+                            "wind_kph": d_wind,
+                            "precipitation_prob": d_p_prob,
+                            "advisory": d_advisory,
+                            "icon": d_icon,
                             "source": "live_open_meteo",
                             "data_state": "LIVE",
                             "trust_source": "OPEN_METEO",
                         })
-                    if forecasts:
-                        latency_ms = (time.time() - start_time) * 1000
-                        health_tracker.record_success("weather", latency_ms)
-                        cache_service.set(cache_key, forecasts, ttl_seconds=900)
-                        return forecasts
+
+                    structured = {
+                        "temperature": round(curr_temp, 1),
+                        "apparentTemperature": round(curr_apparent, 1),
+                        "weatherCode": curr_code,
+                        "condition": condition,
+                        "isDay": curr_is_day,
+                        "windSpeed": round(curr_wind, 1),
+                        "precipitation": round(curr_precip, 1),
+                        "humidity": int(curr_humidity),
+                        "updatedAt": curr_time,
+                        "location": location_name or f"{lat:.4f}, {lng:.4f}",
+                        "is_available": True,
+                        "advisory": forecast_days[0]["advisory"] if forecast_days else "Live weather from Open-Meteo.",
+                        "icon": icon_name,
+                        "daily": forecast_days,
+                        "source": "live_open_meteo",
+                        "trust_source": "OPEN_METEO",
+                        "data_state": "LIVE",
+                    }
+
+                    latency_ms = (time.time() - start_time) * 1000
+                    health_tracker.record_success("weather", latency_ms)
+                    cache_service.set(cache_key, structured, ttl_seconds=900)
+                    return structured
+
         except Exception as e:
             health_tracker.record_failure("weather", str(e))
-            logger.warning(f"Open-Meteo live forecast request failed: {e}. Checking stale cache or verified fallback.")
+            logger.warning(f"Open-Meteo live weather request failed for ({lat}, {lng}): {e}")
 
-        # Check stale cache first
+        # Check stale cache
         stale_data = cache_service.get_stale(cache_key)
         if stale_data:
-            stale_results = []
-            for item in stale_data:
-                stale_item = dict(item)
-                stale_item["data_state"] = "STALE"
-                stale_item["advisory"] = f"(Stale weather snapshot) {stale_item.get('advisory', '')}"
-                stale_results.append(stale_item)
-            return stale_results
-            
-        demo_forecasts = await self.demo_fallback.get_forecast(lat, lng, days)
-        for d in demo_forecasts:
-            d["data_state"] = "ESTIMATED"
-            d["trust_source"] = "VANVAS_CLIMATE_INDEX"
-        return demo_forecasts
+            stale_copy = dict(stale_data)
+            stale_copy["data_state"] = "STALE"
+            stale_copy["advisory"] = f"(Cached snapshot) {stale_copy.get('advisory', '')}"
+            return stale_copy
+
+        # Honest failure state - Never manufacture fake 20°C data
+        return {
+            "temperature": None,
+            "apparentTemperature": None,
+            "weatherCode": None,
+            "condition": "Weather unavailable",
+            "isDay": True,
+            "windSpeed": None,
+            "precipitation": None,
+            "humidity": None,
+            "updatedAt": datetime.now(timezone.utc).isoformat(),
+            "location": location_name or f"{lat:.4f}, {lng:.4f}",
+            "is_available": False,
+            "advisory": "Weather unavailable. Updated when live data returns.",
+            "icon": "cloud-off",
+            "daily": [],
+            "source": "unavailable",
+            "trust_source": "UNAVAILABLE",
+            "data_state": "UNAVAILABLE",
+        }
+
+    async def get_forecast(self, lat: float, lng: float, days: int = 5) -> List[Dict[str, Any]]:
+        """Backward-compatible list of daily weather snapshots"""
+        structured = await self.get_structured_weather(lat, lng, days=days)
+        if structured.get("is_available") and structured.get("daily"):
+            return structured["daily"]
+        
+        # If unavailable, return empty list rather than fake 20°C
+        return []
+
 
 
 import re

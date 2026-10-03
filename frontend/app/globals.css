@@ -541,6 +541,23 @@ html.dark .skeleton-shimmer {
     transform: none !important;
   }
 
+  .animate-vanvas-sun-glow,
+  .animate-vanvas-sun-pulse,
+  .animate-vanvas-sun-rays,
+  .animate-vanvas-cloud-drift,
+  .animate-vanvas-cloud-drift-slow,
+  .animate-vanvas-cloud-bob,
+  .animate-vanvas-rain-drop,
+  .animate-vanvas-rain-heavy,
+  .animate-vanvas-storm-cloud,
+  .animate-vanvas-lightning,
+  .animate-vanvas-snow-drift,
+  .animate-vanvas-fog-layer-1,
+  .animate-vanvas-fog-layer-2,
+  .animate-vanvas-fog-layer-3,
+  .animate-vanvas-wind-gust,
+  .animate-vanvas-moon-glow,
+  .animate-vanvas-star-twinkle,
   .animate-mist,
   .animate-route,
   .animate-float,
@@ -561,6 +578,116 @@ html.dark .skeleton-shimmer {
     transform: none !important;
   }
 }
+
+/* ===================================================
+   VANVAS WEATHER ANIMATION LAYER (EXPLORER'S DESK)
+   =================================================== */
+@keyframes vanvas-sun-glow {
+  0%, 100% { transform: scale(1); opacity: 0.25; }
+  50% { transform: scale(1.15); opacity: 0.45; }
+}
+
+@keyframes vanvas-sun-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes vanvas-sun-rays {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes vanvas-cloud-drift {
+  0%, 100% { transform: translateX(-4px); }
+  50% { transform: translateX(6px); }
+}
+
+@keyframes vanvas-cloud-drift-slow {
+  0%, 100% { transform: translateX(-6px); }
+  50% { transform: translateX(8px); }
+}
+
+@keyframes vanvas-cloud-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes vanvas-rain-drop {
+  0% { transform: translateY(-8px); opacity: 0; }
+  50% { opacity: 0.9; }
+  100% { transform: translateY(12px); opacity: 0; }
+}
+
+@keyframes vanvas-rain-heavy {
+  0% { transform: translateY(-10px); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(16px); opacity: 0; }
+}
+
+@keyframes vanvas-storm-cloud {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes vanvas-lightning {
+  0%, 85%, 92%, 100% { opacity: 0; transform: translate(-50%, 0) scale(0.9); }
+  88%, 90% { opacity: 1; transform: translate(-50%, 0) scale(1.05); }
+}
+
+@keyframes vanvas-snow-drift {
+  0% { transform: translateY(-6px) translateX(-2px); opacity: 0; }
+  40% { opacity: 0.9; }
+  100% { transform: translateY(14px) translateX(3px); opacity: 0; }
+}
+
+@keyframes vanvas-fog-layer-1 {
+  0%, 100% { transform: translateX(-8px); opacity: 0.5; }
+  50% { transform: translateX(8px); opacity: 0.8; }
+}
+
+@keyframes vanvas-fog-layer-2 {
+  0%, 100% { transform: translateX(6px); opacity: 0.7; }
+  50% { transform: translateX(-6px); opacity: 0.4; }
+}
+
+@keyframes vanvas-fog-layer-3 {
+  0%, 100% { transform: translateX(-4px); opacity: 0.6; }
+  50% { transform: translateX(6px); opacity: 0.85; }
+}
+
+@keyframes vanvas-wind-gust {
+  0% { transform: translateX(-12px); opacity: 0; }
+  50% { opacity: 0.85; }
+  100% { transform: translateX(12px); opacity: 0; }
+}
+
+@keyframes vanvas-moon-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(250, 244, 232, 0.4)); }
+  50% { filter: drop-shadow(0 0 10px rgba(180, 146, 82, 0.6)); }
+}
+
+@keyframes vanvas-star-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.animate-vanvas-sun-glow { animation: vanvas-sun-glow 6s ease-in-out infinite; }
+.animate-vanvas-sun-pulse { animation: vanvas-sun-pulse 4s ease-in-out infinite; }
+.animate-vanvas-sun-rays { animation: vanvas-sun-rays 32s linear infinite; }
+.animate-vanvas-cloud-drift { animation: vanvas-cloud-drift 8s ease-in-out infinite; }
+.animate-vanvas-cloud-drift-slow { animation: vanvas-cloud-drift-slow 14s ease-in-out infinite; }
+.animate-vanvas-cloud-bob { animation: vanvas-cloud-bob 5s ease-in-out infinite; }
+.animate-vanvas-rain-drop { animation: vanvas-rain-drop 1.1s linear infinite; }
+.animate-vanvas-rain-heavy { animation: vanvas-rain-heavy 0.75s linear infinite; }
+.animate-vanvas-storm-cloud { animation: vanvas-storm-cloud 4s ease-in-out infinite; }
+.animate-vanvas-lightning { animation: vanvas-lightning 5s ease-in-out infinite; }
+.animate-vanvas-snow-drift { animation: vanvas-snow-drift 2.6s ease-in-out infinite; }
+.animate-vanvas-fog-layer-1 { animation: vanvas-fog-layer-1 10s ease-in-out infinite; }
+.animate-vanvas-fog-layer-2 { animation: vanvas-fog-layer-2 13s ease-in-out infinite; }
+.animate-vanvas-fog-layer-3 { animation: vanvas-fog-layer-3 9s ease-in-out infinite; }
+.animate-vanvas-wind-gust { animation: vanvas-wind-gust 2.8s ease-in-out infinite; }
+.animate-vanvas-moon-glow { animation: vanvas-moon-glow 5s ease-in-out infinite; }
+.animate-vanvas-star-twinkle { animation: vanvas-star-twinkle 3s ease-in-out infinite; }
 
 /* Atmospheric Mist & Route Animations */
 @keyframes mist-drift {

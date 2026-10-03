@@ -291,12 +291,26 @@ async def get_destination_detail(
                         "trust_source": "VANVAS_CURATED",
                     })
         
-        if not weather_snapshots:
-            try:
-                await DestinationIntelligenceService._ensure_weather(dest, db)
-                weather_snapshots = db.query(WeatherSnapshot).filter(WeatherSnapshot.destination_id == dest.id).all()
-            except Exception:
-                weather_snapshots = []
+        # Fetch destination-specific live structured weather
+        structured_weather = {}
+        try:
+            weather_provider = ProviderFactory.get_weather_provider()
+            if hasattr(weather_provider, "get_structured_weather"):
+                structured_weather = await weather_provider.get_structured_weather(
+                    lat=float(dest.latitude or 32.2396),
+                    lng=float(dest.longitude or 77.1887),
+                    location_name=dest.name,
+                    days=5
+                )
+                if structured_weather.get("is_available") and structured_weather.get("daily"):
+                    weather_snapshots = structured_weather["daily"]
+                else:
+                    weather_snapshots = []
+            else:
+                weather_snapshots = await weather_provider.get_forecast(float(dest.latitude or 32.2396), float(dest.longitude or 77.1887), days=5)
+        except Exception as e:
+            logger.warning(f"Could not load live weather for {dest.name}: {e}")
+            weather_snapshots = []
         
         def _get_field(item, field, default=None):
             if isinstance(item, dict):
@@ -430,6 +444,7 @@ async def get_destination_detail(
             "hotels": hotels_list,
             "rentals": rentals_list,
             "weather": weather_snapshots,
+            "current_weather": structured_weather,
             "places_count": len(places_list),
             "hotels_count": len(hotels_list),
             "rentals_count": len(rentals_list)
@@ -446,6 +461,25 @@ async def get_destination_detail(
         c_hotels = ADDITIONAL_HOTELS_BY_DEST.get(canon["slug"], [])
         c_rentals = ADDITIONAL_RENTALS_BY_DEST.get(canon["slug"], [])
         from app.services.mobility_service import MobilityService
+        
+        canon_weather = {}
+        c_snapshots = []
+        try:
+            weather_provider = ProviderFactory.get_weather_provider()
+            if hasattr(weather_provider, "get_structured_weather"):
+                canon_weather = await weather_provider.get_structured_weather(
+                    lat=float(canon["latitude"]),
+                    lng=float(canon["longitude"]),
+                    location_name=canon["name"],
+                    days=5
+                )
+                if canon_weather.get("is_available") and canon_weather.get("daily"):
+                    c_snapshots = canon_weather["daily"]
+            else:
+                c_snapshots = await weather_provider.get_forecast(float(canon["latitude"]), float(canon["longitude"]), days=5)
+        except Exception as e:
+            logger.warning(f"Could not load live weather for canonical fallback {canon['name']}: {e}")
+
         return {
             "destination": {
                 "id": f"dest-{canon['slug']}",
@@ -492,7 +526,8 @@ async def get_destination_detail(
                 }
                 for idx, r in enumerate(c_rentals)
             ],
-            "weather": [],
+            "weather": c_snapshots,
+            "current_weather": canon_weather,
             "places_count": len(c_places),
             "hotels_count": len(c_hotels),
             "rentals_count": len(c_rentals)
@@ -547,6 +582,19 @@ async def get_destination_detail(
     except Exception as e:
         logger.warning(f"Could not load live places for {dyn_dest['name']}: {e}")
 
+    dyn_weather = {}
+    try:
+        weather_provider = ProviderFactory.get_weather_provider()
+        if hasattr(weather_provider, "get_structured_weather"):
+            dyn_weather = await weather_provider.get_structured_weather(
+                lat=dyn_dest["latitude"],
+                lng=dyn_dest["longitude"],
+                location_name=dyn_dest["name"],
+                days=5
+            )
+    except Exception:
+        pass
+
     return {
         "destination": dyn_dest,
         "is_curated": False,
@@ -554,11 +602,44 @@ async def get_destination_detail(
         "places": live_places,
         "hotels": live_hotels,
         "rentals": [],
-        "weather": dyn_dest.get("weather", []),
+        "weather": dyn_weather.get("daily", dyn_dest.get("weather", [])),
+        "current_weather": dyn_weather,
         "places_count": len(live_places),
         "hotels_count": len(live_hotels),
         "rentals_count": 0
     }
+
+
+@router.get("/{slug_or_id}/weather")
+async def get_destination_weather(
+    slug_or_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Returns live structured destination-specific weather.
+    """
+    dest = db.query(Destination).filter(
+        (Destination.slug == slug_or_id) | (Destination.id == slug_or_id)
+    ).first()
+    
+    lat, lng, name = 32.2396, 77.1887, slug_or_id
+    if dest:
+        lat, lng, name = float(dest.latitude or 32.2396), float(dest.longitude or 77.1887), dest.name
+    else:
+        clean_slug = slug_or_id.lower().replace("dest-", "").strip()
+        canon = next((d for d in CANONICAL_26_DESTINATIONS if d["slug"] == clean_slug or d["name"].lower() == clean_slug), None)
+        if canon:
+            lat, lng, name = float(canon["latitude"]), float(canon["longitude"]), canon["name"]
+        else:
+            geocoder = ProviderFactory.get_geocoding_provider()
+            geo = await geocoder.geocode(slug_or_id)
+            if geo:
+                lat, lng, name = geo.get("lat", 32.2396), geo.get("lng", 77.1887), geo.get("name", slug_or_id)
+                
+    weather_provider = ProviderFactory.get_weather_provider()
+    if hasattr(weather_provider, "get_structured_weather"):
+        return await weather_provider.get_structured_weather(lat=lat, lng=lng, location_name=name, days=5)
+    return await weather_provider.get_forecast(lat=lat, lng=lng, days=5)
 
 from app.services.operating_hours_engine import OperatingHoursEngine
 from app.services.action_link_generator import ActionLinkGenerator
