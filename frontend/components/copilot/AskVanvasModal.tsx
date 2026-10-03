@@ -165,21 +165,24 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
           lng: res.coords.longitude,
           label: "Detected GPS Location",
         },
+        currentLocationProvenance: "explicit_geolocation",
       });
       await context.sendMessage(
         `What can I explore near my GPS location [${res.coords.latitude.toFixed(3)}°N, ${res.coords.longitude.toFixed(3)}°E]?`
       );
     } else {
-      await context.sendMessage("Where should we go near me?");
+      await context.sendMessage("What should I do nearby?");
     }
   };
 
   // Dynamic Suggested Prompts based on Context
   const getSuggestedPrompts = () => {
     if (context.currentContext.type === "trip") {
+      const dest = context.currentContext.destinationName || context.currentContext.trip?.destination?.name;
       return [
         { label: "What's next?", query: "What is next on our itinerary right now?" },
-        { label: "Good food nearby?", query: "Where should we eat nearby?" },
+        { label: dest ? `Places in ${dest}` : "Trip places", query: dest ? `Top places in ${dest}` : "What places should we visit next on our trip?" },
+        { label: dest ? `Food in ${dest}` : "Good food", query: dest ? `Best food and cafes in ${dest}` : "Where should we eat nearby?" },
         { label: "Replan today", query: "I'm 2 hours late. Replan today" },
         { label: "Who owes me?", query: "Who owes me money on this trip?" },
       ];
@@ -198,12 +201,21 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         { label: "Split an expense", query: "How do we split our latest expense?" },
       ];
     }
-    const dest = context.currentContext.destinationName || "Manali";
+    if (context.currentContext.destinationName) {
+      const dest = context.currentContext.destinationName;
+      return [
+        { label: "Things to do", query: `What should I do in ${dest} today?` },
+        { label: "Food & Cafes", query: `Where should we eat in ${dest}?` },
+        { label: "Stays", query: `Find verified stays in ${dest}` },
+        { label: "Plan my day", query: `Build a 1-day plan for ${dest}` },
+      ];
+    }
     return [
-      { label: "What should I do?", query: `What should I do in ${dest} today?` },
-      { label: "Good food nearby?", query: `Where should we eat in ${dest}?` },
-      { label: "Find verified stays", query: `Find verified stays in ${dest}` },
-      { label: "What's next?", query: `What are the best afternoon highlights in ${dest}?` },
+      { label: "Things to do", query: "Things to do" },
+      { label: "Food nearby", query: "Food nearby" },
+      { label: "Stays", query: "Find verified stays" },
+      { label: "Plan my day", query: "Plan my day" },
+      { label: "I'm travelling", query: "I'm planning a trip" },
     ];
   };
 
@@ -222,11 +234,13 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
 
   const headerSubtitle =
     context.currentContext.subtitle ||
-    (context.currentContext.type === "trip"
-      ? "Trip · Today · 2 travellers"
+    (context.currentContext.destinationName
+      ? `Curated places, food & stays in ${context.currentContext.destinationName}`
+      : context.currentContext.type === "trip"
+      ? "Trip itinerary & live assistance"
       : context.currentContext.type === "road_trip"
       ? "Route · Scenic waypoints & stops"
-      : "Spontaneous expedition companion");
+      : "Universal travel copilot across India");
 
   const promptChips = getSuggestedPrompts();
 

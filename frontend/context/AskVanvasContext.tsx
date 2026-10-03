@@ -152,56 +152,97 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [tripRefreshCallbacks]);
 
   const getWelcomeMessage = (ctx: TravelContext): MessageItem => {
-    const dest = ctx.destinationName || "Manali";
-    let title = `${dest.toUpperCase()} · TODAY`;
-    let summary = `4 good options for your afternoon in ${dest}.`;
-    let actions: ActionContract[] = [
-      { id: "w-1", label: "Build Today", action: "build_day_plan", payload: { destination: ctx.destinationSlug || "manali" }, icon: "compass", variant: "primary" },
-      { id: "w-2", label: "Explore Places", action: "navigate_destination", payload: { slug: ctx.destinationSlug || "manali" }, icon: "compass", variant: "secondary" },
-    ];
-
-    if (ctx.type === "trip") {
-      title = "YOUR TRIP · TODAY";
-      summary = ctx.trip?.title ? `Ready for ${ctx.trip.title}. What do you need right now?` : "Itinerary active. What do you need next?";
-      actions = [
+    if (ctx.type === "trip" && (ctx.destinationName || ctx.trip?.destination?.name)) {
+      const dest = ctx.destinationName || ctx.trip?.destination?.name;
+      const title = `YOUR ${dest.toUpperCase()} TRIP`;
+      const summary = `Your ${dest} trip itinerary is active. What do you need next?`;
+      const actions: ActionContract[] = [
         { id: "wt-1", label: "What's next?", action: "query", payload: "What is next on our itinerary right now?", icon: "compass", variant: "primary" },
         { id: "wt-2", label: "Replan today", action: "replan_today", payload: { trip_id: ctx.tripId, action_type: "late" }, icon: "refresh", variant: "secondary" },
       ];
+
+      return {
+        id: "welcome-msg",
+        role: "assistant",
+        text: summary,
+        structured: {
+          type: "QUICK_TAKE",
+          title,
+          summary,
+          items: [],
+          actions,
+          provenance: "CURATED",
+        },
+        timestamp: new Date().toISOString(),
+      };
+    } else if (ctx.type === "destination" && ctx.destinationName) {
+      const dest = ctx.destinationName;
+      const title = `${dest.toUpperCase()} · EXPLORATION`;
+      const summary = `Curated guide for ${dest}. What are you looking for?`;
+      const actions: ActionContract[] = [
+        { id: "wd-1", label: "Things to do", action: "query", payload: `Top things to do in ${dest}`, icon: "compass", variant: "primary" },
+        { id: "wd-2", label: "Food & Cafes", action: "query", payload: `Best cafes and food in ${dest}`, icon: "food", variant: "secondary" },
+        { id: "wd-3", label: "Verified Stays", action: "query", payload: `Verified stays in ${dest}`, icon: "bed", variant: "secondary" },
+        { id: "wd-4", label: "Build a day", action: "build_day_plan", payload: { destination: ctx.destinationSlug }, icon: "compass", variant: "primary" },
+      ];
+
+      return {
+        id: "welcome-msg",
+        role: "assistant",
+        text: summary,
+        structured: {
+          type: "QUICK_TAKE",
+          title,
+          summary,
+          items: [],
+          actions,
+          provenance: "CURATED",
+        },
+        timestamp: new Date().toISOString(),
+      };
     } else if (ctx.type === "road_trip") {
-      title = "ROAD TRIP ROUTE";
-      summary = "Where should we stop next along your driving route?";
-      actions = [
-        { id: "wr-1", label: "Where to stop?", action: "view_road_trip_stops", icon: "map", variant: "primary" },
-        { id: "wr-2", label: "Find Dhaba", action: "query", payload: "Best dhaba for lunch on this road trip?", icon: "food", variant: "secondary" },
-      ];
+      return {
+        id: "welcome-msg",
+        role: "assistant",
+        text: "Where should we stop next along your driving route?",
+        structured: {
+          type: "ROUTE",
+          title: "ROAD TRIP ROUTE",
+          summary: "Where should we stop next along your driving route?",
+          items: [],
+          actions: [
+            { id: "wr-1", label: "Where to stop?", action: "view_road_trip_stops", icon: "map", variant: "primary" },
+            { id: "wr-2", label: "Find Dhaba", action: "query", payload: "Best dhaba for lunch on this road trip?", icon: "food", variant: "secondary" },
+          ],
+          provenance: "ESTIMATED",
+        },
+        timestamp: new Date().toISOString(),
+      };
     } else if (ctx.type === "budget") {
-      title = "BUDGET & SPLIT";
-      summary = "Check balances, who owes whom, or record a shared expense.";
-      actions = [
-        { id: "wb-1", label: "Open Wallet", action: "open_wallet", icon: "wallet", variant: "primary" },
-        { id: "wb-2", label: "Who owes me?", action: "query", payload: "Who owes me money on this trip?", icon: "wallet", variant: "secondary" },
-      ];
+      return {
+        id: "welcome-msg",
+        role: "assistant",
+        text: "Check balances, who owes whom, or record a shared expense.",
+        structured: {
+          type: "BUDGET",
+          title: "BUDGET & SPLIT",
+          summary: "Check balances, who owes whom, or record a shared expense.",
+          items: [],
+          actions: [
+            { id: "wb-1", label: "Open Wallet", action: "open_wallet", icon: "wallet", variant: "primary" },
+            { id: "wb-2", label: "Who owes me?", action: "query", payload: "Who owes me money on this trip?", icon: "wallet", variant: "secondary" },
+          ],
+          provenance: "USER ENTERED",
+        },
+        timestamp: new Date().toISOString(),
+      };
     }
 
-    const structured: StructuredAssistantResponse = {
-      type: "QUICK_TAKE",
-      title,
-      summary,
-      items: [
-        { id: "wi-1", name: "Old Quarter Walk", category: "Walk", distance: "0.8 km", reason: "Cafes & cedar pine trail" },
-        { id: "wi-2", name: "Ancient Temple Sanctuary", category: "Culture", distance: "1.2 km", reason: "Best visited before noon" },
-        { id: "wi-3", name: "Sunset Viewpoint", category: "Nature", distance: "2.4 km", reason: "Panoramic mountain sunset" },
-      ],
-      actions,
-      provenance: "CURATED",
-      watchOut: "Afternoon traffic slows near central valley bridges.",
-    };
-
+    // Default conversational welcome with NO assumed destination or pre-baked place cards
     return {
       id: "welcome-msg",
       role: "assistant",
-      text: summary,
-      structured,
+      text: "What are you looking for?",
       timestamp: new Date().toISOString(),
     };
   };
@@ -254,6 +295,32 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const textToSend = (queryText || "").trim();
     if (!textToSend && !imageUrl) return;
     if (loading) return;
+
+    // Check if user explicitly stated their current location (e.g., "I'm in Indore", "I am in Dehradun")
+    const inCityMatch = textToSend.match(/\bi(?:'m| am|m) in ([a-zA-Z\s]+?)(?:\.|$|,|\!)/i) ||
+                        textToSend.match(/\bcurrently in ([a-zA-Z\s]+?)(?:\.|$|,|\!)/i);
+    if (inCityMatch && inCityMatch[1] && !textToSend.toLowerCase().includes("travelling to") && !textToSend.toLowerCase().includes("traveling to")) {
+      const explicitCity = inCityMatch[1].trim().replace(/\b\w/g, (c) => c.toUpperCase());
+      setCurrentContext((prev) => ({
+        ...prev,
+        currentLocation: explicitCity,
+        currentLocationProvenance: "user_explicit",
+      }));
+    }
+
+    // Check if user explicitly stated a destination they are travelling to (e.g. "I'm travelling to Manali")
+    const travelToMatch = textToSend.match(/\bi(?:'m| am|m) (?:travelling|traveling|heading|going) to ([a-zA-Z\s]+?)(?:\.|$|,|\!)/i) ||
+                          textToSend.match(/\bplanning a trip to ([a-zA-Z\s]+?)(?:\.|$|,|\!)/i);
+    if (travelToMatch && travelToMatch[1]) {
+      const explicitDest = travelToMatch[1].trim().replace(/\b\w/g, (c) => c.toUpperCase());
+      const explicitSlug = explicitDest.toLowerCase().replace(/\s+/g, "-");
+      setCurrentContext((prev) => ({
+        ...prev,
+        destinationName: explicitDest,
+        destinationSlug: explicitSlug,
+        destinationProvenance: "user_explicit",
+      }));
+    }
 
     // Conversational follow-up resolution (e.g. "Which one is closest?", "Add it")
     const qLower = textToSend.toLowerCase();
@@ -359,6 +426,53 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const executeAction = async (actionItem: ActionContract) => {
     const act = actionItem.action;
     const payload = actionItem.payload || {};
+
+    // Explicit Geolocation Permission & Query
+    if (act === "request_explicit_gps") {
+      try {
+        const { getCurrentGPSPosition } = await import("@/lib/locationService");
+        const res = await getCurrentGPSPosition();
+        if (res.status === "GRANTED" && res.coords) {
+          const lat = res.coords.latitude;
+          const lng = res.coords.longitude;
+          setCurrentContext((prev) => ({
+            ...prev,
+            coordinates: { lat, lng, label: "Detected GPS Location" },
+            currentLocationProvenance: "explicit_geolocation",
+          }));
+          await sendMessage(`What can I explore near my GPS location [${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E]?`);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `assistant-${Date.now()}`,
+              role: "assistant",
+              text: "Tell me your area or city instead.",
+              timestamp: new Date().toISOString(),
+            },
+          ]);
+        }
+      } catch (e) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            text: "Tell me your area or city instead.",
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      }
+      return;
+    }
+
+    if (act === "focus_input") {
+      const inputEl = document.querySelector<HTMLInputElement>('input[placeholder*="Ask"]');
+      if (inputEl) {
+        inputEl.focus();
+      }
+      return;
+    }
 
     // 1. Direct Query / Follow-up Action
     if (act === "query") {

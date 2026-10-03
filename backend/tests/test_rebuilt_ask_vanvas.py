@@ -379,3 +379,18 @@ def test_extract_session_decisions_pace_and_budget():
 
     dec3 = extract_session_decisions("It's raining so keep things indoors")
     assert dec3.get("indoor_only") is True
+
+
+def test_copilot_context_engine_no_implicit_location(db_session: Session, auth_user: User):
+    """Verify context engine does not invent or default destination when none is specified."""
+    ctx = CopilotContextEngine.build_full_context(
+        db=db_session,
+        user=auth_user,
+        trip_id=None,
+        destination_slug=None,
+    )
+    assert ctx["destination"] is None
+    assert ctx["trip_context"] is None
+    assert "CURRENT LOCATION ≠ TRIP DESTINATION" in ctx["system_instruction"]
+    assert "Where are you right now?" in ctx["system_instruction"]
+

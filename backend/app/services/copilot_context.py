@@ -611,7 +611,13 @@ class CopilotContextEngine:
             "   - BEST FOR: 2-4 tags/highlights.\n"
             "   - TOP PICKS: 3-4 top recommendations maximum with exact verified names and a short 1-line reason.\n"
             "   - WATCH OUT: 1 crisp warning/advisory if relevant (traffic, weather, steep trek, closing time).\n"
-            "   Use direct human language ('Best before noon', '15 min detour', 'Easy walk', '₹0 entry', 'Crowded after 6 PM'). Avoid words like 'nestled', 'embark', 'discover a world', 'immersive'.\n\n"
+            "   Use direct human language ('Best before noon', '15 min detour', 'Easy walk', '₹0 entry', 'Crowded after 6 PM'). Avoid words like 'nestled', 'embark', 'discover a world', 'immersive'.\n"
+            "13. LOCATION CONTEXT & STRICT PROVENANCE:\n"
+            "   - CURRENT LOCATION ≠ TRIP DESTINATION. You must NEVER assume or infer the user's current physical location from their trip destination, browser IP, previous chats, database defaults, or seed data.\n"
+            "   - If the user has an active trip to Manali, refer to it as 'Your Manali trip' or 'For your Manali trip'—NEVER say 'You are in Manali' or 'Your trip today in Manali' unless the user explicitly stated they are currently in Manali.\n"
+            "   - If the user asks 'What should I do nearby?' or 'What's nearby?' or 'What should I do today?' and no explicit location is known, you MUST explicitly ASK: 'Where are you right now?' or 'What city or place are you in?'.\n"
+            "   - If the user explicitly says 'I am in Indore' (or any other city), their current location is Indore. Acknowledge: 'Got it. What are you in the mood for?'\n"
+            "   - If the user explicitly says 'I am travelling to Manali' (or planning a trip), acknowledge: 'Got it. Want ideas for Manali?' without claiming they are physically in Manali.\n\n"
             f"1. VERIFIED TRAVELLER PROFILE: {verified_facts['user_preferences']}\n"
         )
 

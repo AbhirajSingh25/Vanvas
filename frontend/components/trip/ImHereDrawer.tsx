@@ -19,7 +19,7 @@ interface ImHereDrawerProps {
 export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({ tripId, isOpen, onClose }) => {
   const [data, setData] = useState<ImHereResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [geoStatus, setGeoStatus] = useState<"detecting" | "granted" | "denied" | "unavailable">("detecting");
+  const [geoStatus, setGeoStatus] = useState<"idle" | "detecting" | "granted" | "denied" | "unavailable">("idle");
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
@@ -34,30 +34,31 @@ export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({ tripId, isOpen, onCl
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
+  const handleRequestGPS = () => {
+    if (typeof window !== "undefined" && "geolocation" in navigator) {
+      setGeoStatus("detecting");
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setGeoStatus("granted");
+          setUserCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn("Geolocation permission:", error.message);
+          setGeoStatus("denied");
+        },
+        { timeout: 8000, enableHighAccuracy: true }
+      );
+    } else {
+      setGeoStatus("unavailable");
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
-      // Attempt browser geolocation
-      if (typeof window !== "undefined" && "geolocation" in navigator) {
-        setGeoStatus("detecting");
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setGeoStatus("granted");
-            setUserCoords({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-          },
-          (error) => {
-            console.warn("Geolocation permission:", error.message);
-            setGeoStatus("denied");
-          },
-          { timeout: 8000, enableHighAccuracy: true }
-        );
-      } else {
-        setGeoStatus("unavailable");
-      }
-
       api.getImHereContext(tripId)
         .then((res) => setData(res))
         .catch((err) => console.error(err))
@@ -115,12 +116,20 @@ export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({ tripId, isOpen, onCl
                 </span>
               ) : geoStatus === "denied" ? (
                 <span className="text-[#7B4D36]">
-                  GPS permission denied • Using destination center
+                  Tell me your area or city instead.
                 </span>
-              ) : (
+              ) : geoStatus === "detecting" ? (
                 <span className="text-[#7B4D36] flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin" /> Detecting your coordinates...
                 </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRequestGPS}
+                  className="text-[#173B32] font-bold underline hover:text-[#B65E3C] cursor-pointer"
+                >
+                  [Use my location]
+                </button>
               )}
             </div>
 
