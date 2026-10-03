@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Star, Clock, Bookmark, MapPin, Sparkles, Compass, ArrowRight } from "lucide-react";
+import { Star, Clock, Bookmark, MapPin, Sparkles, ArrowRight } from "lucide-react";
 import { Place } from "@/types";
 import { api } from "@/lib/api";
 import { VanvasImage } from "@/components/ui/VanvasImage";
@@ -60,25 +60,25 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           if (onSelect) onSelect(place);
         }
       }}
-      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/50 overflow-hidden shadow-xs hover:shadow-lg interactive-card cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 ${
+      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 ${
         isCompact ? "card-compact" : ""
       }`}
     >
       {/* Image Container */}
-      <div className={`relative w-full overflow-hidden bg-[#E5D5BA] ${isCompact ? "h-36 sm:h-40" : "h-52"}`}>
+      <div className={`relative w-full overflow-hidden bg-[#E5D5BA] ${isCompact ? "h-36 sm:h-40" : "h-52 sm:h-56"}`}>
         <VanvasImage
           src={visualRes.imageUrl}
           fallbackSrc={visualRes.fallbackUrl}
           alt={destinationName ? `${place.name} in ${destinationName}` : place.name}
-          className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500 ease-out"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
         />
 
         {/* Crisp Bottom Vignette for Text Contrast */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924]/80 via-transparent to-black/15 pointer-events-none" />
 
         {/* Category Stamp & Source Badge */}
-        <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1">
-          <span className="px-2 py-0.5 rounded-md bg-[#173B32]/90 backdrop-blur-md text-[#EFE5D2] text-[9px] font-bold tracking-wider uppercase border border-[#536B52]/40">
+        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
+          <span className="px-2.5 py-0.5 rounded-md bg-[#173B32]/90 backdrop-blur-md text-[#EFE5D2] text-[10px] font-bold tracking-wider uppercase border border-[#536B52]/40">
             {safeCategory}
           </span>
           {!isCompact && (
@@ -105,8 +105,8 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
             </span>
           )}
           {place.is_hidden_gem && (
-            <span className="px-2 py-0.5 rounded-md bg-[#B49252] text-[#0F2924] text-[9px] font-black uppercase tracking-wider shadow-xs">
-              Gem
+            <span className="px-2 py-0.5 rounded-md bg-[#B49252] text-[#0F2924] text-[10px] font-black uppercase tracking-wider shadow-xs">
+              Hidden Gem
             </span>
           )}
         </div>
@@ -116,36 +116,36 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           onClick={handleToggleSave}
           disabled={saving}
           aria-label="Save Place"
-          className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-[#EFE5D2]/90 backdrop-blur-md text-[#173B32] hover:text-[#B65E3C] interactive-btn shadow-xs transition-all"
+          className="absolute top-3 right-3 p-2 rounded-full bg-[#EFE5D2]/90 backdrop-blur-md text-[#173B32] hover:text-[#B65E3C] hover:scale-110 interactive-btn shadow-xs transition-all"
         >
-          <Bookmark className={`w-3.5 h-3.5 transition-transform ${isSaved ? "fill-[#B65E3C] text-[#B65E3C] animate-check-pop" : ""}`} />
+          <Bookmark className={`w-4 h-4 transition-transform ${isSaved ? "fill-[#B65E3C] text-[#B65E3C] animate-check-pop" : ""}`} />
         </button>
 
         {/* Bottom Image Overlay: Honest Rating, Distance & Price */}
-        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[#EFE5D2] text-[11px] font-semibold">
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[#EFE5D2] text-xs font-semibold">
           {place.rating !== undefined && place.rating !== null ? (
-            <div className="flex items-center gap-1 bg-[#0F2924]/75 px-2 py-0.5 rounded-md backdrop-blur-xs border border-white/10">
-              <Star className="w-3 h-3 text-[#B49252] fill-current" />
+            <div className="flex items-center gap-1.5 bg-[#0F2924]/75 px-2.5 py-1 rounded-md backdrop-blur-xs border border-white/10">
+              <Star className="w-3.5 h-3.5 text-[#B49252] fill-current" />
               <span className="font-bold">{place.rating}</span>
               {place.review_count !== undefined && place.review_count !== null && (
-                <span className="text-[#D8DED5]/70 text-[9px]">({place.review_count})</span>
+                <span className="text-[#D8DED5]/70 text-[10px]">({place.review_count})</span>
               )}
             </div>
           ) : (
-            <div className="bg-[#0F2924]/75 px-2 py-0.5 rounded-md backdrop-blur-xs border border-white/10 text-[10px] text-[#D8DED5]/80">
-              {isLive ? "POI" : "Sanctuary"}
+            <div className="bg-[#0F2924]/75 px-2.5 py-1 rounded-md backdrop-blur-xs border border-white/10 text-[11px] text-[#D8DED5]/80">
+              {isLive ? "Live POI" : "Curated Sanctuary"}
             </div>
           )}
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {typeof place.distance_km === "number" && (
-              <span className="bg-[#0F2924]/75 px-2 py-0.5 rounded-md backdrop-blur-xs text-[#FAF4E8] font-mono text-[9px] border border-white/10 flex items-center gap-1">
+              <span className="bg-[#0F2924]/75 px-2.5 py-1 rounded-md backdrop-blur-xs text-[#FAF4E8] font-mono text-[10px] border border-white/10 flex items-center gap-1">
                 <MapPin className="w-2.5 h-2.5 text-[#B49252]" />
                 <span>{place.distance_km} km</span>
               </span>
             )}
             {place.price_level && (
-              <span className="bg-[#0F2924]/75 px-2 py-0.5 rounded-md backdrop-blur-xs text-[#EFE5D2] font-mono text-[10px] border border-white/10">
+              <span className="bg-[#0F2924]/75 px-2.5 py-1 rounded-md backdrop-blur-xs text-[#EFE5D2] font-mono text-[11px] border border-white/10">
                 {place.price_level} {(place.approx_cost ?? 0) > 0 ? `• ₹${place.approx_cost}` : ""}
               </span>
             )}
@@ -156,13 +156,13 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
       {/* Body */}
       <div className={`flex-1 flex flex-col justify-between ${isCompact ? "p-3 sm:p-3.5 space-y-2" : "p-5 space-y-3.5"}`}>
         <div>
-          <h3 className={`font-serif font-bold text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug ${
-            isCompact ? "text-base" : "text-lg font-black"
+          <h3 className={`font-serif text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug ${
+            isCompact ? "text-base font-bold" : "text-lg font-black"
           }`}>
             {place.name}
           </h3>
-          <p className={`text-[#20211D]/75 mt-1 leading-relaxed font-light ${
-            isCompact ? "text-[11px] line-clamp-1" : "text-xs line-clamp-2"
+          <p className={`text-[#20211D]/75 leading-relaxed font-light ${
+            isCompact ? "text-[11px] mt-1 line-clamp-1" : "text-xs mt-1.5 line-clamp-2"
           }`}>
             {place.description || "Authentic destination landmark."}
           </p>
@@ -211,19 +211,19 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           isCompact ? "pt-2 text-[10px]" : "pt-3 text-[11px]"
         }`}>
           <div className="flex items-center gap-1.5">
-            <Clock className={`w-3 h-3 ${place.is_open_now === true ? "text-emerald-600" : place.is_open_now === false ? "text-[#7B4D36]" : "text-[#B65E3C]"}`} />
+            <Clock className={`w-3.5 h-3.5 ${place.is_open_now === true ? "text-emerald-600" : place.is_open_now === false ? "text-[#7B4D36]" : "text-[#B65E3C]"}`} />
             {place.is_open_now === true ? (
               <span className="font-bold text-emerald-700 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                Open
+                Open Now
               </span>
             ) : place.is_open_now === false ? (
               <span className="font-semibold text-[#7B4D36]">
-                Closed
+                Closed Now
               </span>
             ) : (
               <span className="text-[#536B52]">
-                {place.opening_time ? `${place.opening_time}` : "Open hours"}
+                {place.opening_time ? `${place.opening_time} - ${place.closing_time || "Close"}` : "Hours not listed"}
               </span>
             )}
           </div>
