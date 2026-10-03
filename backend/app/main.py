@@ -47,7 +47,7 @@ app = FastAPI(
 
 # Strict CORS origin configuration
 cors_origins = settings.get_allowed_cors_origins()
-allow_origin_regex = None if settings.is_production else r"https://.*\.vercel\.app"
+allow_origin_regex = r"https://vanvas[a-z0-9-]*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,

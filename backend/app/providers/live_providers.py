@@ -23,12 +23,18 @@ logger = logging.getLogger("vanvas.providers")
 
 class LiveWeatherProvider(WeatherProvider):
     """
-    Open-Meteo Live Weather Provider with Real-Time Current Conditions, Safe Caching & Honest Failure State.
-    Provides destination-specific live temperature, apparent temperature, WMO conditions, humidity, wind, and 5-day forecasts.
+    Genuine Live Weather Provider with Real-Time Meteorological Intelligence,
+    Multi-Tier Provider Fallback (Open-Meteo -> wttr.in), Safe Caching & Honest Provenance.
+    Provides destination-specific live temperature, apparent temperature, WMO conditions, humidity, wind, and multi-day forecasts.
     """
     def __init__(self, api_key: str = ""):
         self.api_key = api_key
         self.demo_fallback = DemoWeatherProvider()
+        self.headers = {
+            "User-Agent": "VANVAS-Travel-App/1.0 (https://vanvasai.vercel.app; support@vanvas.app)",
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip, deflate",
+        }
 
     @staticmethod
     def interpret_wmo_code(code: int, is_day: bool = True) -> Tuple[str, str, bool, bool]:
@@ -67,6 +73,215 @@ class LiveWeatherProvider(WeatherProvider):
             return ("Severe Thunderstorm & Hail", "cloud-lightning", True, True)
         return ("Pleasant", "sun" if is_day else "moon", False, False)
 
+    @staticmethod
+    def _map_wttr_code_to_wmo(code_val: Any) -> int:
+        try:
+            code = int(code_val)
+        except (ValueError, TypeError):
+            return 0
+        if code in (113,):
+            return 0
+        elif code in (116,):
+            return 2
+        elif code in (119, 122):
+            return 3
+        elif code in (143, 248, 260):
+            return 45
+        elif code in (176, 263, 266, 281, 293, 296, 302, 353, 356):
+            return 61
+        elif code in (308, 359, 386, 389):
+            return 65
+        elif code in (392, 395, 200):
+            return 95
+        elif code in (179, 182, 227, 230, 323, 326, 329, 332, 335, 338, 368, 371):
+            return 71
+        return 0
+
+    async def _fetch_open_meteo(self, lat: float, lng: float, location_name: str, days: int) -> Optional[Dict[str, Any]]:
+        url = (
+            f"https://api.open-meteo.com/v1/forecast?"
+            f"latitude={lat}&longitude={lng}"
+            f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m"
+            f"&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max"
+            f"&timezone=auto"
+        )
+        timeout = httpx.Timeout(8.0, connect=4.0, read=8.0)
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            res = await client.get(url, headers=self.headers)
+            if res.status_code == 200:
+                data = res.json()
+                curr = data.get("current", {})
+                daily = data.get("daily", {})
+
+                curr_temp = curr.get("temperature_2m", 20.0)
+                curr_apparent = curr.get("apparent_temperature", curr_temp)
+                curr_code = curr.get("weather_code", 0)
+                curr_is_day = bool(curr.get("is_day", 1))
+                curr_humidity = curr.get("relative_humidity_2m", 50)
+                curr_wind = curr.get("wind_speed_10m", 5.0)
+                curr_precip = curr.get("precipitation", 0.0)
+                curr_time = curr.get("time", datetime.now(timezone.utc).isoformat())
+
+                condition, icon_name, is_rain, is_snow = self.interpret_wmo_code(curr_code, curr_is_day)
+
+                times = daily.get("time", [])
+                t_max = daily.get("temperature_2m_max", [])
+                t_min = daily.get("temperature_2m_min", [])
+                precip_prob = daily.get("precipitation_probability_max", [])
+                w_codes = daily.get("weathercode", [])
+                winds = daily.get("windspeed_10m_max", [])
+
+                forecast_days = []
+                for i in range(min(days, len(times))):
+                    d_code = w_codes[i] if i < len(w_codes) else curr_code
+                    d_cond, d_icon, d_rain, d_snow = self.interpret_wmo_code(d_code, True)
+                    d_p_prob = precip_prob[i] if i < len(precip_prob) else 0
+                    d_t_max = t_max[i] if i < len(t_max) else curr_temp + 3
+                    d_t_min = t_min[i] if i < len(t_min) else curr_temp - 5
+                    d_avg = round((d_t_max + d_t_min) / 2.0, 1) if i > 0 else round(curr_temp, 1)
+                    d_wind = round(winds[i], 1) if i < len(winds) and winds[i] is not None else round(curr_wind, 1)
+
+                    if d_rain:
+                        d_advisory = "Rain advisory: keep waterproof layers accessible. Mountain trails may be slippery."
+                    elif d_snow:
+                        d_advisory = "Snow/frost alert: cold alpine temperatures. Warm thermal layers required."
+                    elif "Fog" in d_cond:
+                        d_advisory = "Mountain mist & fog: reduce driving speeds on hill passes."
+                    else:
+                        d_advisory = f"Pleasant conditions in {location_name or 'the valley'}. Great for exploration."
+
+                    forecast_days.append({
+                        "date": times[i],
+                        "forecast_date": times[i],
+                        "temp_c": d_avg,
+                        "temperature_max": round(d_t_max, 1),
+                        "temperature_min": round(d_t_min, 1),
+                        "condition": d_cond,
+                        "weatherCode": d_code,
+                        "is_rain": d_rain,
+                        "is_snow": d_snow,
+                        "humidity": curr_humidity if i == 0 else (65 if d_rain else 50),
+                        "wind_kph": d_wind,
+                        "precipitation_prob": d_p_prob,
+                        "advisory": d_advisory,
+                        "icon": d_icon,
+                        "source": "live_open_meteo",
+                        "data_state": "LIVE",
+                        "trust_source": "OPEN_METEO",
+                    })
+
+                return {
+                    "temperature": round(curr_temp, 1),
+                    "apparentTemperature": round(curr_apparent, 1),
+                    "weatherCode": curr_code,
+                    "condition": condition,
+                    "isDay": curr_is_day,
+                    "windSpeed": round(curr_wind, 1),
+                    "precipitation": round(curr_precip, 1),
+                    "humidity": int(curr_humidity),
+                    "updatedAt": curr_time if "T" in str(curr_time) else datetime.now(timezone.utc).isoformat(),
+                    "location": location_name or f"{lat:.4f}, {lng:.4f}",
+                    "is_available": True,
+                    "advisory": forecast_days[0]["advisory"] if forecast_days else "Live weather from Open-Meteo satellite feed.",
+                    "icon": icon_name,
+                    "daily": forecast_days,
+                    "source": "live_open_meteo",
+                    "trust_source": "OPEN_METEO",
+                    "data_state": "LIVE",
+                }
+        return None
+
+    async def _fetch_wttr_fallback(self, lat: float, lng: float, location_name: str, days: int) -> Optional[Dict[str, Any]]:
+        url = f"https://wttr.in/{lat},{lng}?format=j1"
+        timeout = httpx.Timeout(8.0, connect=4.0, read=8.0)
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            res = await client.get(url, headers=self.headers)
+            if res.status_code == 200:
+                data = res.json()
+                current_cond_list = data.get("current_condition", [])
+                curr = current_cond_list[0] if current_cond_list else {}
+                weather_days = data.get("weather", [])
+
+                curr_temp = float(curr.get("temp_C", 20.0))
+                curr_apparent = float(curr.get("FeelsLikeC", curr_temp))
+                wttr_code = curr.get("weatherCode", "113")
+                wmo_code = self._map_wttr_code_to_wmo(wttr_code)
+                
+                # Check day/night
+                now_hour = datetime.now(timezone.utc).hour + 5.5 # IST approximation
+                curr_is_day = 6 <= (now_hour % 24) <= 19
+                
+                raw_desc = curr.get("weatherDesc", [{}])[0].get("value", "Pleasant")
+                condition, icon_name, is_rain, is_snow = self.interpret_wmo_code(wmo_code, curr_is_day)
+                if raw_desc and len(raw_desc) > 3:
+                    condition = raw_desc
+
+                curr_humidity = int(curr.get("humidity", 50))
+                curr_wind = float(curr.get("windspeedKmph", 5.0))
+                curr_precip = float(curr.get("precipMM", 0.0))
+
+                forecast_days = []
+                for i, d in enumerate(weather_days[:days]):
+                    d_date = d.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+                    d_max = float(d.get("maxtempC", curr_temp + 3))
+                    d_min = float(d.get("mintempC", curr_temp - 5))
+                    d_avg = float(d.get("avgtempC", (d_max + d_min) / 2.0))
+                    
+                    hourly = d.get("hourly", [])
+                    mid_hour = hourly[len(hourly) // 2] if hourly else {}
+                    d_wttr_code = mid_hour.get("weatherCode", wttr_code)
+                    d_wmo_code = self._map_wttr_code_to_wmo(d_wttr_code)
+                    d_cond, d_icon, d_rain, d_snow = self.interpret_wmo_code(d_wmo_code, True)
+                    d_p_prob = float(mid_hour.get("chanceofrain", 0) or 0)
+
+                    if d_rain or d_p_prob > 50:
+                        d_advisory = "Rain advisory: keep waterproof layers accessible. Mountain trails may be slippery."
+                    elif d_snow:
+                        d_advisory = "Snow/frost alert: cold alpine temperatures. Warm thermal layers required."
+                    else:
+                        d_advisory = f"Pleasant conditions in {location_name or 'the valley'}. Great for exploration."
+
+                    forecast_days.append({
+                        "date": d_date,
+                        "forecast_date": d_date,
+                        "temp_c": round(d_avg, 1),
+                        "temperature_max": round(d_max, 1),
+                        "temperature_min": round(d_min, 1),
+                        "condition": d_cond,
+                        "weatherCode": d_wmo_code,
+                        "is_rain": d_rain or d_p_prob > 50,
+                        "is_snow": d_snow,
+                        "humidity": curr_humidity,
+                        "wind_kph": round(curr_wind, 1),
+                        "precipitation_prob": int(d_p_prob),
+                        "advisory": d_advisory,
+                        "icon": d_icon,
+                        "source": "live_wttr",
+                        "data_state": "LIVE",
+                        "trust_source": "WTTR",
+                    })
+
+                return {
+                    "temperature": round(curr_temp, 1),
+                    "apparentTemperature": round(curr_apparent, 1),
+                    "weatherCode": wmo_code,
+                    "condition": condition,
+                    "isDay": curr_is_day,
+                    "windSpeed": round(curr_wind, 1),
+                    "precipitation": round(curr_precip, 1),
+                    "humidity": curr_humidity,
+                    "updatedAt": datetime.now(timezone.utc).isoformat(),
+                    "location": location_name or f"{lat:.4f}, {lng:.4f}",
+                    "is_available": True,
+                    "advisory": forecast_days[0]["advisory"] if forecast_days else "Live weather from global meteorological feed.",
+                    "icon": icon_name,
+                    "daily": forecast_days,
+                    "source": "live_wttr",
+                    "trust_source": "WTTR",
+                    "data_state": "LIVE",
+                }
+        return None
+
     async def get_structured_weather(self, lat: float, lng: float, location_name: str = "", days: int = 5) -> Dict[str, Any]:
         """
         Returns structured weather data:
@@ -82,108 +297,32 @@ class LiveWeatherProvider(WeatherProvider):
             return cached_val
 
         start_time = time.time()
+
+        # 1. Primary Live Provider: Open-Meteo
         try:
-            url = (
-                f"https://api.open-meteo.com/v1/forecast?"
-                f"latitude={lat}&longitude={lng}"
-                f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m"
-                f"&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max"
-                f"&timezone=auto"
-            )
-            async with httpx.AsyncClient(timeout=4.5) as client:
-                res = await client.get(url)
-                if res.status_code == 200:
-                    data = res.json()
-                    curr = data.get("current", {})
-                    daily = data.get("daily", {})
-
-                    curr_temp = curr.get("temperature_2m", 20.0)
-                    curr_apparent = curr.get("apparent_temperature", curr_temp)
-                    curr_code = curr.get("weather_code", 0)
-                    curr_is_day = bool(curr.get("is_day", 1))
-                    curr_humidity = curr.get("relative_humidity_2m", 50)
-                    curr_wind = curr.get("wind_speed_10m", 5.0)
-                    curr_precip = curr.get("precipitation", 0.0)
-                    curr_time = curr.get("time", datetime.now(timezone.utc).isoformat())
-
-                    condition, icon_name, is_rain, is_snow = self.interpret_wmo_code(curr_code, curr_is_day)
-
-                    times = daily.get("time", [])
-                    t_max = daily.get("temperature_2m_max", [])
-                    t_min = daily.get("temperature_2m_min", [])
-                    precip_prob = daily.get("precipitation_probability_max", [])
-                    w_codes = daily.get("weathercode", [])
-                    winds = daily.get("windspeed_10m_max", [])
-
-                    forecast_days = []
-                    for i in range(min(days, len(times))):
-                        d_code = w_codes[i] if i < len(w_codes) else curr_code
-                        d_cond, d_icon, d_rain, d_snow = self.interpret_wmo_code(d_code, True)
-                        d_p_prob = precip_prob[i] if i < len(precip_prob) else 0
-                        d_t_max = t_max[i] if i < len(t_max) else curr_temp + 3
-                        d_t_min = t_min[i] if i < len(t_min) else curr_temp - 5
-                        d_avg = round((d_t_max + d_t_min) / 2.0, 1) if i > 0 else round(curr_temp, 1)
-                        d_wind = round(winds[i], 1) if i < len(winds) and winds[i] is not None else round(curr_wind, 1)
-
-                        if d_rain:
-                            d_advisory = "Rain advisory: keep waterproof layers accessible. Mountain trails may be slippery."
-                        elif d_snow:
-                            d_advisory = "Snow/frost alert: cold alpine temperatures. Warm thermal layers required."
-                        elif "Fog" in d_cond:
-                            d_advisory = "Mountain mist & fog: reduce driving speeds on hill passes."
-                        else:
-                            d_advisory = f"Pleasant conditions in {location_name or 'the valley'}. Great for exploration."
-
-                        forecast_days.append({
-                            "date": times[i],
-                            "forecast_date": times[i],
-                            "temp_c": d_avg,
-                            "temperature_max": round(d_t_max, 1),
-                            "temperature_min": round(d_t_min, 1),
-                            "condition": d_cond,
-                            "weatherCode": d_code,
-                            "is_rain": d_rain,
-                            "is_snow": d_snow,
-                            "humidity": curr_humidity if i == 0 else (65 if d_rain else 50),
-                            "wind_kph": d_wind,
-                            "precipitation_prob": d_p_prob,
-                            "advisory": d_advisory,
-                            "icon": d_icon,
-                            "source": "live_open_meteo",
-                            "data_state": "LIVE",
-                            "trust_source": "OPEN_METEO",
-                        })
-
-                    structured = {
-                        "temperature": round(curr_temp, 1),
-                        "apparentTemperature": round(curr_apparent, 1),
-                        "weatherCode": curr_code,
-                        "condition": condition,
-                        "isDay": curr_is_day,
-                        "windSpeed": round(curr_wind, 1),
-                        "precipitation": round(curr_precip, 1),
-                        "humidity": int(curr_humidity),
-                        "updatedAt": curr_time,
-                        "location": location_name or f"{lat:.4f}, {lng:.4f}",
-                        "is_available": True,
-                        "advisory": forecast_days[0]["advisory"] if forecast_days else "Live weather from Open-Meteo.",
-                        "icon": icon_name,
-                        "daily": forecast_days,
-                        "source": "live_open_meteo",
-                        "trust_source": "OPEN_METEO",
-                        "data_state": "LIVE",
-                    }
-
-                    latency_ms = (time.time() - start_time) * 1000
-                    health_tracker.record_success("weather", latency_ms)
-                    cache_service.set(cache_key, structured, ttl_seconds=900)
-                    return structured
-
+            structured = await self._fetch_open_meteo(lat, lng, location_name, days)
+            if structured:
+                latency_ms = (time.time() - start_time) * 1000
+                health_tracker.record_success("weather", latency_ms)
+                cache_service.set(cache_key, structured, ttl_seconds=900)
+                return structured
         except Exception as e:
-            health_tracker.record_failure("weather", str(e))
-            logger.warning(f"Open-Meteo live weather request failed for ({lat}, {lng}): {e}")
+            logger.warning(f"Open-Meteo live request failed for ({lat}, {lng}): {e}")
 
-        # Check stale cache
+        # 2. Secondary Live Provider: wttr.in fallback
+        try:
+            structured = await self._fetch_wttr_fallback(lat, lng, location_name, days)
+            if structured:
+                latency_ms = (time.time() - start_time) * 1000
+                health_tracker.record_success("weather", latency_ms)
+                cache_service.set(cache_key, structured, ttl_seconds=900)
+                return structured
+        except Exception as e:
+            logger.warning(f"wttr.in live fallback failed for ({lat}, {lng}): {e}")
+
+        health_tracker.record_failure("weather", "All live weather providers failed")
+
+        # 3. Check stale cache
         stale_data = cache_service.get_stale(cache_key)
         if stale_data:
             stale_copy = dict(stale_data)
@@ -191,7 +330,7 @@ class LiveWeatherProvider(WeatherProvider):
             stale_copy["advisory"] = f"(Cached snapshot) {stale_copy.get('advisory', '')}"
             return stale_copy
 
-        # Honest failure state - Never manufacture fake 20°C data
+        # 4. Honest failure state - Never manufacture fake 20°C data
         return {
             "temperature": None,
             "apparentTemperature": None,

@@ -8,6 +8,22 @@ import {
 import { StructuredWeather, WeatherSnapshot } from "@/types";
 import { VanvasWeatherVisual } from "./VanvasWeatherVisual";
 
+function formatFreshness(updatedAt?: string): string {
+  if (!updatedAt) return "Live Satellite Feed";
+  try {
+    const d = new Date(updatedAt);
+    if (isNaN(d.getTime())) return "Live Satellite Feed";
+    const diffMinutes = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (diffMinutes <= 1) return "Live • Updated just now";
+    if (diffMinutes < 60) return `Live • Updated ${diffMinutes}m ago`;
+    const hours = d.getHours().toString().padStart(2, "0");
+    const mins = d.getMinutes().toString().padStart(2, "0");
+    return `Live • Updated at ${hours}:${mins}`;
+  } catch {
+    return "Live Satellite Feed";
+  }
+}
+
 interface VanvasWeatherCardProps {
   destinationName: string;
   structuredWeather?: StructuredWeather | null;
@@ -40,6 +56,8 @@ export const VanvasWeatherCard: React.FC<VanvasWeatherCardProps> = ({
   const humidity = structuredWeather?.humidity ?? firstDay?.humidity ?? 55;
   const precipitation = structuredWeather?.precipitation ?? (firstDay?.is_rain ? 2.5 : 0.0);
   const advisory = structuredWeather?.advisory || firstDay?.advisory || `Live meteorological intelligence for ${destinationName}. High altitude mountain conditions can change rapidly.`;
+  const freshnessText = formatFreshness(structuredWeather?.updatedAt || firstDay?.date);
+  const sourceLabel = structuredWeather?.trust_source === "WTTR" ? "Global Meteorological Radar" : "Open-Meteo Satellite Feed";
 
   // Honest unavailable fallback
   if (!isAvailable || currentTemp === null) {
@@ -80,7 +98,7 @@ export const VanvasWeatherCard: React.FC<VanvasWeatherCardProps> = ({
               </div>
             </div>
             <span className="text-[9px] font-mono uppercase bg-white/10 px-2 py-0.5 rounded text-[#B49252]">
-              Live Feed
+              {freshnessText}
             </span>
           </div>
 
@@ -90,7 +108,7 @@ export const VanvasWeatherCard: React.FC<VanvasWeatherCardProps> = ({
                 <div key={idx} className="flex items-center gap-1.5 shrink-0 bg-white/10 px-2 py-1 rounded-lg text-[11px] font-mono">
                   <span className="font-bold text-[#FAF4E8]">{idx === 0 ? "Today" : `D${idx + 1}`}</span>
                   <span className="text-[#B49252]">{Math.round(w.temp_c)}°C</span>
-                  <span className="text-[9px] text-[#D8DED5]/80">{w.is_rain ? "Rain" : "Clear"}</span>
+                  <span className="text-[9px] text-[#D8DED5]/80">{w.is_rain ? "Rain" : (w.is_snow ? "Snow" : "Clear")}</span>
                 </div>
               ))}
             </div>
@@ -122,7 +140,7 @@ export const VanvasWeatherCard: React.FC<VanvasWeatherCardProps> = ({
           </div>
           <div className="text-[11px] text-[#D8DED5]/70 font-mono sm:text-right flex items-center sm:justify-end gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Open-Meteo Satellite Feed • Real-Time</span>
+            <span>{sourceLabel} • {freshnessText}</span>
           </div>
         </div>
 
