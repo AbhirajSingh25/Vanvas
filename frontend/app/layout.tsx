@@ -83,7 +83,7 @@ export default function RootLayout({
                     document.documentElement.style.colorScheme = 'light';
                   }
 
-                  var storedDensity = localStorage.getItem('vanvas_density');
+                  var storedDensity = localStorage.getItem('vanvas_density') || localStorage.getItem('vanvas-density');
                   var isCompact = storedDensity === 'compact';
                   if (isCompact) {
                     document.documentElement.setAttribute('data-density', 'compact');

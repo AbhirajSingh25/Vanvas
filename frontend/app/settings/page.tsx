@@ -19,11 +19,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useDensity } from "@/context/DensityContext";
 
 export default function SettingsPage() {
-  return (
-    <ProtectedRoute>
-      <SettingsContent />
-    </ProtectedRoute>
-  );
+  return <SettingsContent />;
 }
 
 function SettingsContent() {
@@ -298,6 +294,7 @@ function SettingsContent() {
                 return (
                   <button
                     key={sec.id}
+                    id={`settings-nav-${sec.id}`}
                     type="button"
                     onClick={() => setActiveSection(sec.id as any)}
                     className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left cursor-pointer ${
@@ -887,13 +884,14 @@ function SettingsContent() {
                           title: "Compact",
                           subtitle: "More information, less scrolling",
                           desc: "Information-efficient cards, inline tags, tighter section gaps, and scannable itineraries.",
-                          tag: "Optimized for Mobile",
+                          tag: "High Density / Catalogue",
                         },
                       ].map((item) => {
                         const isSel = density === item.id;
                         return (
                           <button
                             key={item.id}
+                            id={`density-setting-${item.id}`}
                             type="button"
                             onClick={() => setDensity(item.id as any)}
                             className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative ${

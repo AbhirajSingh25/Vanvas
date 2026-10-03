@@ -16,6 +16,7 @@ interface DensityContextType {
 const DensityContext = createContext<DensityContextType | undefined>(undefined);
 
 const DENSITY_STORAGE_KEY = "vanvas_density";
+const DENSITY_STORAGE_KEY_ALT = "vanvas-density";
 
 function applyDensityToDOM(mode: DensityMode) {
   if (typeof window === "undefined") return;
@@ -32,18 +33,24 @@ function applyDensityToDOM(mode: DensityMode) {
 
 export function DensityProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  // Default mode is strictly "original" for every new user, logged out, or clean state
   const [density, setDensityState] = useState<DensityMode>("original");
   const [mounted, setMounted] = useState(false);
 
   // Initialize density on client mount
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem(DENSITY_STORAGE_KEY) as DensityMode | null;
     let initial: DensityMode = "original";
-    if (stored === "original" || stored === "compact") {
-      initial = stored;
-    } else if (user?.preferences?.layout_density === "compact" || user?.preferences?.layout_density === "original") {
-      initial = user.preferences.layout_density as DensityMode;
+
+    try {
+      const stored = (localStorage.getItem(DENSITY_STORAGE_KEY) || localStorage.getItem(DENSITY_STORAGE_KEY_ALT)) as DensityMode | null;
+      if (stored === "compact" || stored === "original") {
+        initial = stored;
+      } else if (user?.preferences?.layout_density === "compact" || user?.preferences?.layout_density === "original") {
+        initial = user.preferences.layout_density as DensityMode;
+      }
+    } catch {
+      initial = "original";
     }
 
     setDensityState(initial);
@@ -54,11 +61,18 @@ export function DensityProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (user?.preferences?.layout_density) {
       const userPref = user.preferences.layout_density as DensityMode;
-      const stored = localStorage.getItem(DENSITY_STORAGE_KEY) as DensityMode | null;
+      let stored: DensityMode | null = null;
+      try {
+        stored = (localStorage.getItem(DENSITY_STORAGE_KEY) || localStorage.getItem(DENSITY_STORAGE_KEY_ALT)) as DensityMode | null;
+      } catch {}
+
       if ((userPref === "original" || userPref === "compact") && !stored) {
         setDensityState(userPref);
         applyDensityToDOM(userPref);
-        localStorage.setItem(DENSITY_STORAGE_KEY, userPref);
+        try {
+          localStorage.setItem(DENSITY_STORAGE_KEY, userPref);
+          localStorage.setItem(DENSITY_STORAGE_KEY_ALT, userPref);
+        } catch {}
       }
     }
   }, [user?.preferences?.layout_density]);
@@ -68,7 +82,10 @@ export function DensityProvider({ children }: { children: React.ReactNode }) {
     const validMode: DensityMode = newDensity === "compact" ? "compact" : "original";
     setDensityState(validMode);
     if (typeof window !== "undefined") {
-      localStorage.setItem(DENSITY_STORAGE_KEY, validMode);
+      try {
+        localStorage.setItem(DENSITY_STORAGE_KEY, validMode);
+        localStorage.setItem(DENSITY_STORAGE_KEY_ALT, validMode);
+      } catch {}
     }
     applyDensityToDOM(validMode);
 

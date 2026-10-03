@@ -26,7 +26,7 @@ function getApiBaseUrl(): string {
         }
         return base;
       }
-      return "http://localhost:8000/api/v1";
+      return "http://127.0.0.1:8000/api/v1";
     }
 
     // In production browser:
