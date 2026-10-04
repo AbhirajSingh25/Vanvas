@@ -373,6 +373,10 @@ export interface Trip {
   wake_up_preference: string;
   activity_intensity: string;
   interests: string;
+  origin_city?: string;
+  trip_mode?: string;
+  transport_mode?: string;
+  transport_details_json?: string;
   status: string;
   invite_code: string;
   hotel?: Hotel;
@@ -395,6 +399,9 @@ export interface TripSummary {
   budget_spent: number;
   companion_type: string;
   travel_style: string;
+  origin_city?: string;
+  trip_mode?: string;
+  transport_mode?: string;
   status: string;
 }
 

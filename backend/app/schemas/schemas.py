@@ -520,6 +520,9 @@ class TripCreateRequest(BaseModel):
     activity_intensity: str = "Balanced"  # Relaxed, Balanced, Packed
     interests: List[str] = ["Nature", "Cafés", "Adventure", "Food"]
     origin_city: Optional[str] = "Delhi"
+    transport_mode: Optional[str] = "bus"  # bus, train, flight, road_trip, cab
+    transport_details: Optional[Dict[str, Any]] = None
+    transport_option_id: Optional[str] = None
     planning_mode: Optional[str] = "multi_day"  # one_day, weekend, multi_day, trek, relaxed, adventure
 
 class TripSummaryResponse(BaseModel):
@@ -535,6 +538,9 @@ class TripSummaryResponse(BaseModel):
     budget_spent: float
     companion_type: str
     travel_style: str
+    origin_city: Optional[str] = "Delhi"
+    trip_mode: Optional[str] = "standard"
+    transport_mode: Optional[str] = "bus"
     status: str
 
     class Config:
@@ -557,6 +563,11 @@ class TripDetailResponse(BaseModel):
     wake_up_preference: str
     activity_intensity: str
     interests: str
+    origin_city: Optional[str] = "Delhi"
+    trip_mode: Optional[str] = "standard"
+    transport_mode: Optional[str] = "bus"
+    transport_details_json: Optional[str] = None
+    transport: Optional[TransportOptionResponse] = None
     status: str
     invite_code: str
     hotel: Optional[HotelResponse] = None

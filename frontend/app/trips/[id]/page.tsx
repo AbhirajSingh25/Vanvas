@@ -6,7 +6,8 @@ import {
   Sparkles, Navigation, Clock, CloudRain, Wallet, Users, Compass,
   MapPin, CheckCircle2, Circle, Lock, Unlock, Plus, Trash2,
   ExternalLink, Share2, MessageSquare, Coffee, BedDouble, Bike,
-  CheckSquare, ArrowRight, ShieldCheck, Sun, Info, Heart, Printer
+  CheckSquare, ArrowRight, ShieldCheck, Sun, Info, Heart, Printer,
+  Bus, Train, Plane, Car, CarTaxiFront
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Trip, BudgetSummary, GroupSummary, ChecklistItem, ArrivalOptimizerResponse, StructuredWeather } from "@/types";
@@ -858,10 +859,35 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
 
-        {/* STAYS & RENTALS TAB */}
+        {/* STAYS & RENTALS & TRANSIT TAB */}
         {activeTab === "stays_rentals" && (
           isCompact ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fadeIn">
+              {/* Transit Card (Compact) */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">Primary Transit</span>
+                <div className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-serif font-bold text-sm text-[#173B32] uppercase">
+                      {trip.transport_mode || "Bus"} Transit
+                    </span>
+                    <span className="text-[10px] font-mono text-[#B65E3C]">{trip.origin_city || "Delhi"} → {trip.destination?.name}</span>
+                  </div>
+                  {trip.transport_mode === "road_trip" ? (
+                    <Link
+                      href={`/road-trip?origin=${encodeURIComponent(trip.origin_city || "Delhi")}&dest=${encodeURIComponent(trip.destination?.slug || "manali")}&tripId=${trip.id}`}
+                      className="block text-center py-2 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold font-mono"
+                    >
+                      Open Road Trip Cockpit →
+                    </Link>
+                  ) : (
+                    <p className="text-xs text-[#7B4D36]">
+                      Direct valley transit scheduled from {trip.origin_city || "Delhi"}.
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {trip.hotel ? (
                 <div className="space-y-2">
                   <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">Booked Stay</span>
@@ -881,12 +907,73 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
-              {/* Hotel Section */}
+            <div className="space-y-6 animate-fadeIn">
+              {/* Primary Transit Card */}
               <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif font-bold text-lg text-[#173B32] flex items-center gap-2">
-                    <BedDouble className="w-5 h-5 text-[#B65E3C]" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5D5BA] pb-3">
+                  <div className="flex items-center gap-2.5">
+                    {trip.transport_mode === "road_trip" ? (
+                      <Car className="w-5 h-5 text-[#B65E3C]" />
+                    ) : trip.transport_mode === "train" ? (
+                      <Train className="w-5 h-5 text-[#B65E3C]" />
+                    ) : trip.transport_mode === "flight" ? (
+                      <Plane className="w-5 h-5 text-[#B65E3C]" />
+                    ) : trip.transport_mode === "cab" ? (
+                      <CarTaxiFront className="w-5 h-5 text-[#B65E3C]" />
+                    ) : (
+                      <Bus className="w-5 h-5 text-[#B65E3C]" />
+                    )}
+                    <h3 className="font-serif font-bold text-lg text-[#173B32]">
+                      Selected Primary Transit: <span className="uppercase">{trip.transport_mode || "Bus"}</span>
+                    </h3>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-[#B49252]">
+                    Route: {trip.origin_city || "Delhi"} → {trip.destination?.name || "Manali"}
+                  </span>
+                </div>
+
+                {trip.transport_mode === "road_trip" ? (
+                  <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                      <h4 className="font-serif font-bold text-base text-[#173B32]">
+                        Self-Drive Mountain Road Trip
+                      </h4>
+                      <p className="text-xs text-[#7B4D36] mt-0.5">
+                        Interactive route map, highway dhabas, scenic viewpoints, fuel calculations, and day halts.
+                      </p>
+                    </div>
+                    <Link
+                      href={`/road-trip?origin=${encodeURIComponent(trip.origin_city || "Delhi")}&dest=${encodeURIComponent(trip.destination?.slug || "manali")}&tripId=${trip.id}`}
+                      className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-xs shrink-0"
+                    >
+                      <span>Open Road Trip Cockpit →</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h4 className="font-serif font-bold text-base text-[#173B32]">
+                          {trip.destination?.name} Transit Corridor
+                        </h4>
+                        <p className="text-xs text-[#7B4D36]">
+                          Departing from {trip.origin_city || "Delhi"} • Direct valley connection
+                        </p>
+                      </div>
+                      <span className="text-xs font-mono px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
+                        VERIFIED SCHEDULE
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Hotel Section */}
+                <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-serif font-bold text-lg text-[#173B32] flex items-center gap-2">
+                      <BedDouble className="w-5 h-5 text-[#B65E3C]" />
                     <span>Your Stay / Hotel</span>
                   </h3>
                   <span className="text-xs text-[#7B4D36]">Official check-in ready</span>
@@ -953,6 +1040,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 )}
               </div>
             </div>
+          </div>
           )
         )}
 

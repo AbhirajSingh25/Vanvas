@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -61,6 +62,9 @@ def get_user_trips(
             budget_spent=t.budget_spent,
             companion_type=t.companion_type,
             travel_style=t.travel_style,
+            origin_city=t.origin_city or "Delhi",
+            trip_mode=t.trip_mode or "standard",
+            transport_mode=t.transport_mode or "bus",
             status=t.status
         ))
     return summaries
@@ -156,6 +160,10 @@ async def create_trip(
         hotel = db.query(Hotel).filter(Hotel.destination_id == destination.id).first()
         rental = db.query(RentalOption).filter(RentalOption.destination_id == destination.id).first()
 
+        # Map transport_mode and details
+        chosen_transport_mode = (trip_in.transport_mode or "bus").lower().replace(" ", "_")
+        transport_details_str = json.dumps(trip_in.transport_details) if trip_in.transport_details else None
+
         trip = Trip(
             user_id=current_user.id,
             destination_id=destination.id,
@@ -171,6 +179,10 @@ async def create_trip(
             wake_up_preference=trip_in.wake_up_preference,
             activity_intensity=trip_in.activity_intensity,
             interests=",".join(trip_in.interests),
+            origin_city=trip_in.origin_city or "Delhi",
+            trip_mode="road_trip" if chosen_transport_mode == "road_trip" else "standard",
+            transport_mode=chosen_transport_mode,
+            transport_details_json=transport_details_str,
             hotel_id=hotel.id if hotel else None,
             rental_id=rental.id if rental else None,
             status="active"

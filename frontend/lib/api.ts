@@ -405,8 +405,12 @@ export const api = {
     activity_intensity: string;
     interests: string[];
     origin_city?: string;
+    transport_mode?: string;
+    transport_details?: any;
+    transport_option_id?: string;
     planning_mode?: string;
   }): Promise<Trip> {
+    clearApiCache();
     return fetchApi("/trips", {
       method: "POST",
       body: JSON.stringify(data),
@@ -740,14 +744,14 @@ export const api = {
     return fetchApi(`/rentals?${params.toString()}`);
   },
 
-  async getTransport(destId: string, originCity = "Delhi", transportType?: string): Promise<TransportOption[]> {
+  async getTransport(destId: string, originCity = "Delhi", transportType?: string, signal?: AbortSignal): Promise<TransportOption[]> {
     const params = new URLSearchParams({ destination_id: destId, origin_city: originCity });
     if (transportType && transportType !== "All") params.append("transport_type", transportType);
-    return fetchApi(`/transport?${params.toString()}`);
+    return fetchApi(`/transport?${params.toString()}`, { signal });
   },
 
-  async getTransportOptions(destId: string, originCity = "Delhi", transportType?: string): Promise<TransportOption[]> {
-    return this.getTransport(destId, originCity, transportType);
+  async getTransportOptions(destId: string, originCity = "Delhi", transportType?: string, signal?: AbortSignal): Promise<TransportOption[]> {
+    return this.getTransport(destId, originCity, transportType, signal);
   },
 
   async optimizeArrival(destId: string, originCity: string, dateStr: string, preferredMode = "All"): Promise<ArrivalOptimizerResponse> {

@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   Sparkles, MapPin, Calendar, Wallet, Users, Compass, Check,
   ArrowRight, ArrowLeft, Search, Loader2, RefreshCw, AlertCircle,
   Bus, Train, Plane, Car, CarTaxiFront, ExternalLink, Navigation,
-  ShieldCheck, Clock, Moon, Sun, ArrowUpRight
+  ShieldCheck, Clock, Moon, Sun, ArrowUpRight, Lock, User as UserIcon
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Destination, TransportOption } from "@/types";
@@ -45,7 +46,7 @@ function PlanWizard() {
   const urlCompanion = searchParams?.get("companion") || "";
   const urlTransport = searchParams?.get("transport") || "";
 
-  const { user } = useAuth();
+  const { user, login, register } = useAuth();
   const { isCompact } = useDensity();
 
   // Progressive Step State: 1 to 6 (Mandatory flow), plus 7 (Review)
@@ -118,8 +119,17 @@ function PlanWizard() {
 
   // Step 6: Transport Intelligence State
   const [selectedTransportMode, setSelectedTransportMode] = useState<string>(urlTransport || "Bus");
+  const [selectedTransportOption, setSelectedTransportOption] = useState<TransportOption | null>(null);
   const [transportOptions, setTransportOptions] = useState<TransportOption[]>([]);
   const [loadingTransport, setLoadingTransport] = useState<boolean>(false);
+
+  // Step 7: Auth Modal / Inline Auth State (for guests)
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authFullName, setAuthFullName] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
 
   // Generation State
   const [isGenerating, setIsGenerating] = useState(false);
@@ -191,34 +201,38 @@ function PlanWizard() {
     };
   }, [searchQuery]);
 
-  // Load transport options when reaching Step 6 or when origin/dest changes
+  // Load transport options when reaching Step 6 or when origin/dest/mode changes
   useEffect(() => {
     if (currentStep === 6 || currentStep === 7) {
       const destTarget = selectedDestObject?.slug || selectedDestId || "manali";
       const originTarget = originCity || "Delhi";
       setLoadingTransport(true);
       api.getTransportOptions(destTarget, originTarget, selectedTransportMode)
-        .then((opts) => setTransportOptions(opts || []))
+        .then((opts) => {
+          setTransportOptions(opts || []);
+          if (opts && opts.length > 0) {
+            setSelectedTransportOption(opts[0]);
+          }
+        })
         .catch(() => setTransportOptions([]))
         .finally(() => setLoadingTransport(false));
     }
   }, [currentStep, originCity, selectedDestId, selectedDestObject, selectedTransportMode]);
 
-  // Step 1: Handle GPS Location Button (EXPLICIT ACTION ONLY)
+  // Step 1: Handle GPS Location Button (EXPLICIT USER ACTION ONLY)
   const handleRequestGPS = async () => {
     setIsLocatingGPS(true);
     setGpsError(null);
     try {
       const res = await getCurrentGPSPosition();
       if (res.status === "GRANTED" && res.coords) {
-        // Reverse resolve or set detected coordinates
-        setOriginCity("Current GPS Location");
+        setOriginCity("Delhi (GPS Detected)");
         setStepDirection("next");
         setTimeout(() => setCurrentStep(2), 200);
       } else {
-        setGpsError(res.errorMessage || "Location permission was not granted. Please select your origin city.");
+        setGpsError(res.errorMessage || "Location permission was not granted. Please pick or type your starting city.");
       }
-    } catch (e: any) {
+    } catch {
       setGpsError("Could not access location. Please type or select your starting city.");
     } finally {
       setIsLocatingGPS(false);
@@ -318,6 +332,35 @@ function PlanWizard() {
     setTimeout(() => setCurrentStep(7), 150);
   };
 
+  // Step 7: Handle Guest Inline Auth
+  const handleInlineAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authEmail.trim() || !authPassword) {
+      setAuthError("Please provide both email and password.");
+      return;
+    }
+    setAuthSubmitting(true);
+    setAuthError(null);
+    try {
+      if (authMode === "register") {
+        if (!authFullName.trim()) {
+          setAuthError("Please provide your full name.");
+          setAuthSubmitting(false);
+          return;
+        }
+        await register(authEmail.trim(), authPassword, authFullName.trim());
+        await login(authEmail.trim(), authPassword);
+      } else {
+        await login(authEmail.trim(), authPassword);
+      }
+      setAuthError(null);
+    } catch (err: any) {
+      setAuthError(err.message || "Authentication failed. Please try again.");
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
   // Step 7: Handle Trip Creation Execution
   const handleBuildTrip = async () => {
     setIsGenerating(true);
@@ -358,6 +401,21 @@ function PlanWizard() {
         wake_up_preference: "Normal",
         activity_intensity: "Balanced",
         interests: selectedVibes,
+        origin_city: originCity || "Delhi",
+        transport_mode: selectedTransportMode.toLowerCase().replace(" ", "_"),
+        transport_details: selectedTransportOption ? {
+          id: selectedTransportOption.id,
+          operator_name: selectedTransportOption.operator_name,
+          transport_type: selectedTransportOption.transport_type,
+          departure_time: selectedTransportOption.departure_time,
+          arrival_time: selectedTransportOption.arrival_time,
+          duration_hours: selectedTransportOption.duration_hours,
+          price: selectedTransportOption.price,
+          departure_location: selectedTransportOption.departure_location,
+          arrival_location: selectedTransportOption.arrival_location,
+          booking_url: selectedTransportOption.booking_url,
+          recommendation_badge: selectedTransportOption.recommendation_badge,
+        } : undefined,
         planning_mode: daysCount === 1 ? "one_day" : daysCount === 2 ? "weekend" : "multi_day",
       });
 
@@ -366,8 +424,8 @@ function PlanWizard() {
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } catch {}
 
-      if (selectedTransportMode === "Road Trip") {
-        router.push(`/road-trip?origin=${encodeURIComponent(originCity || "Delhi")}&dest=${encodeURIComponent(cleanTarget)}&tripId=${trip.id}`);
+      if (selectedTransportMode.toLowerCase().includes("road")) {
+        router.push(`/road-trip?origin=${encodeURIComponent(originCity || "Delhi")}&dest=${encodeURIComponent(cleanTarget)}&tripId=${trip.id}&travellers=${travellersCount}&budget=${budgetEstimate}`);
       } else {
         router.push(`/trips/${trip.id}`);
       }
@@ -379,10 +437,10 @@ function PlanWizard() {
   };
 
   const currentDestName = selectedDestObject?.name || selectedDestId.charAt(0).toUpperCase() + selectedDestId.slice(1);
-  const currentOriginName = originCity || "Your Starting Location";
+  const currentOriginName = originCity || "Delhi";
 
-  // Compute Best Travel Time recommendation dynamically
-  const isHimalayan = ["manali", "kasol", "rishikesh", "chopta", "spiti", "dharamshala", "leh", "jibhi"].some(
+  // Compute Best Travel Time recommendation dynamically based on geography and transport mode
+  const isHimalayan = ["manali", "kasol", "rishikesh", "chopta", "spiti", "dharamshala", "leh", "jibhi", "shimla", "mussoorie", "mcleodganj", "nainital"].some(
     (h) => currentDestName.toLowerCase().includes(h)
   );
 
@@ -390,15 +448,15 @@ function PlanWizard() {
     badge: "BEST FOR YOU",
     mode: "Overnight Bus",
     icon: Bus,
-    headline: "🚌 Volvo Semi-Sleeper",
-    timing: "Departs 21:30 → Arrives 07:15",
+    headline: "🚌 Volvo Semi-Sleeper / Sleeper",
+    timing: "Departs 20:00 → Arrives 08:30 (~12.5 hrs)",
     rationale: "Saves one hotel night while arriving fresh for morning valley exploration.",
     actionLabel: "View Verified Buses",
   } : {
     badge: "BEST FOR YOU",
     mode: selectedTransportMode === "Road Trip" ? "Road Trip" : "Train",
     icon: selectedTransportMode === "Road Trip" ? Car : Train,
-    headline: selectedTransportMode === "Road Trip" ? "🚗 Express Route" : "🚆 Express Superfast",
+    headline: selectedTransportMode === "Road Trip" ? "🚗 Expressway Self-Drive" : "🚆 Express Superfast",
     timing: "Smooth transit with scenic waypoints",
     rationale: "Optimal balance of transit comfort, scenic breaks, and predictable arrival.",
     actionLabel: "Select This Mode",
@@ -478,7 +536,7 @@ function PlanWizard() {
                 </p>
               </div>
 
-              {/* Explicit GPS Request Button */}
+              {/* Explicit GPS Request Button (User action only) */}
               <button
                 type="button"
                 onClick={handleRequestGPS}
@@ -584,7 +642,7 @@ function PlanWizard() {
                   Where are you going?
                 </h2>
                 <p className="text-xs text-[#7B4D36] mt-0.5">
-                  Departing from <strong className="text-[#173B32]">{originCity || "your origin"}</strong>.
+                  Departing from <strong className="text-[#173B32]">{originCity || "Delhi"}</strong>.
                 </p>
               </div>
 
@@ -784,7 +842,7 @@ function PlanWizard() {
                 </p>
               </div>
 
-              {/* Companions */}
+              {/* Companions Grid */}
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   { type: "Solo", label: "Solo", count: 1, desc: "Solo adventure & flexible pace" },
@@ -807,6 +865,32 @@ function PlanWizard() {
                   </button>
                 ))}
               </div>
+
+              {/* Custom Count Adjuster */}
+              <div className="pt-2 border-t border-[#E5D5BA] flex items-center justify-between">
+                <span className="text-xs font-mono font-bold uppercase text-[#7B4D36]">
+                  Exact number of travellers:
+                </span>
+                <div className="flex items-center gap-3 bg-white p-1 rounded-xl border border-[#E5D5BA]">
+                  <button
+                    type="button"
+                    onClick={() => setTravellersCount((prev) => Math.max(1, prev - 1))}
+                    className="w-7 h-7 rounded-lg bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-bold text-sm flex items-center justify-center cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="font-mono font-black text-sm text-[#173B32] min-w-[20px] text-center">
+                    {travellersCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setTravellersCount((prev) => Math.min(20, prev + 1))}
+                    className="w-7 h-7 rounded-lg bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-bold text-sm flex items-center justify-center cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -823,16 +907,16 @@ function PlanWizard() {
                   What is your budget?
                 </h2>
                 <p className="text-xs text-[#7B4D36] mt-0.5">
-                  Pick your comfort &amp; budget preference.
+                  Pick your comfort &amp; budget preference. Estimates clearly marked.
                 </p>
               </div>
 
               {/* Travel Style options */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {[
-                  { style: "Budget", label: "Backpacker", desc: "Clean hostels, dhabas & shared rides", est: `~₹${(daysCount * travellersCount * 2200).toLocaleString()}` },
-                  { style: "Balanced", label: "Moderate", desc: "Boutique stays, local cafes & cabs", est: `~₹${(daysCount * travellersCount * 3800).toLocaleString()}` },
-                  { style: "Comfort", label: "Luxury", desc: "Heritage resorts, private cabs & fine dining", est: `~₹${(daysCount * travellersCount * 6500).toLocaleString()}` },
+                  { style: "Budget", label: "Backpacker", desc: "Clean hostels, dhabas & shared rides", perPerson: "~₹2,200/day", totalEst: `~₹${(daysCount * travellersCount * 2200).toLocaleString()}` },
+                  { style: "Balanced", label: "Moderate", desc: "Boutique stays, local cafes & cabs", perPerson: "~₹3,800/day", totalEst: `~₹${(daysCount * travellersCount * 3800).toLocaleString()}` },
+                  { style: "Comfort", label: "Luxury", desc: "Heritage resorts, private cabs & fine dining", perPerson: "~₹6,500/day", totalEst: `~₹${(daysCount * travellersCount * 6500).toLocaleString()}` },
                 ].map((s) => (
                   <button
                     key={s.style}
@@ -846,7 +930,10 @@ function PlanWizard() {
                   >
                     <div className="font-serif font-bold text-base">{s.label}</div>
                     <div className="text-[10px] opacity-80 mt-0.5">{s.desc}</div>
-                    <div className="text-xs font-mono font-bold text-[#B49252] mt-2">{s.est} total est.</div>
+                    <div className="mt-2 pt-2 border-t border-current/20 flex items-center justify-between text-xs font-mono">
+                      <span className="text-[10px] opacity-75">{s.perPerson}</span>
+                      <span className="font-bold text-[#B49252]">{s.totalEst}</span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -896,14 +983,14 @@ function PlanWizard() {
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[
-                    { mode: "Bus", label: "BUS", icon: Bus, desc: "Volvo / State Express" },
-                    { mode: "Train", label: "TRAIN", icon: Train, desc: "Express / Shatabdi" },
+                    { mode: "Bus", label: "BUS", icon: Bus, desc: "Volvo / State Sleeper" },
+                    { mode: "Train", label: "TRAIN", icon: Train, desc: "Express / Shatabdi / VB" },
                     { mode: "Flight", label: "FLIGHT", icon: Plane, desc: "Direct / Connecting" },
                     { mode: "Road Trip", label: "ROAD TRIP", icon: Car, desc: "Self-drive / Scenic stops" },
                     { mode: "Cab", label: "CAB / TRANSFER", icon: CarTaxiFront, desc: "Private door-to-door" },
                   ].map((m) => {
                     const Icon = m.icon;
-                    const isSelected = selectedTransportMode === m.mode;
+                    const isSelected = selectedTransportMode.toLowerCase().replace(" ", "") === m.mode.toLowerCase().replace(" ", "");
                     return (
                       <button
                         key={m.mode}
@@ -927,13 +1014,18 @@ function PlanWizard() {
               </div>
 
               {/* Live/Curated Option Snippet */}
-              {transportOptions.length > 0 && (
+              {loadingTransport ? (
+                <div className="p-4 bg-white border border-[#E5D5BA] rounded-2xl flex items-center justify-center gap-2 text-xs text-[#7B4D36]">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#B65E3C]" />
+                  <span>Fetching verified schedules for {selectedTransportMode}...</span>
+                </div>
+              ) : transportOptions.length > 0 ? (
                 <div className="space-y-2 pt-2 border-t border-[#E5D5BA]">
                   <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] tracking-wider block">
-                    Verified Schedule Preview:
+                    Verified Schedule &amp; Fare Preview:
                   </span>
                   <div className="divide-y divide-[#E5D5BA] bg-white border-2 border-[#E5D5BA] rounded-2xl overflow-hidden">
-                    {transportOptions.slice(0, 2).map((opt) => (
+                    {transportOptions.slice(0, 3).map((opt) => (
                       <div key={opt.id} className="p-3 flex items-center justify-between text-xs">
                         <div>
                           <div className="font-bold text-[#173B32] flex items-center gap-1.5">
@@ -961,12 +1053,16 @@ function PlanWizard() {
                               <ExternalLink className="w-2.5 h-2.5" />
                             </a>
                           ) : (
-                            <span className="text-[9px] font-mono text-[#7B4D36]">Live schedule</span>
+                            <span className="text-[9px] font-mono text-[#7B4D36]">Verified Route</span>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+                  Live transport schedules unavailable for this corridor right now. Default route guidance will be applied.
                 </div>
               )}
             </div>
@@ -995,7 +1091,7 @@ function PlanWizard() {
                       {currentOriginName} → {currentDestName}
                     </h3>
                   </div>
-                  <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+                  <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300 uppercase">
                     {selectedTransportMode}
                   </span>
                 </div>
@@ -1030,6 +1126,78 @@ function PlanWizard() {
                 </div>
               </div>
 
+              {/* Guest Authentication Check */}
+              {!user && (
+                <div className="p-4 rounded-2xl bg-white border-2 border-[#B49252] space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-[#B65E3C]" />
+                      <span className="font-serif font-bold text-sm text-[#173B32]">
+                        {authMode === "login" ? "Sign in to save trip" : "Create account to save trip"}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode(authMode === "login" ? "register" : "login");
+                        setAuthError(null);
+                      }}
+                      className="text-xs font-mono font-bold text-[#B65E3C] underline cursor-pointer"
+                    >
+                      {authMode === "login" ? "Need an account? Sign up" : "Already have an account? Sign in"}
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleInlineAuth} className="space-y-2.5">
+                    {authMode === "register" && (
+                      <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={authFullName}
+                        onChange={(e) => setAuthFullName(e.target.value)}
+                        required
+                        className="w-full p-2.5 bg-[#FAF7F0] border border-[#E5D5BA] rounded-xl text-xs font-medium text-[#173B32] focus:outline-none focus:border-[#173B32]"
+                      />
+                    )}
+                    <input
+                      type="email"
+                      placeholder="Email Address"
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      required
+                      className="w-full p-2.5 bg-[#FAF7F0] border border-[#E5D5BA] rounded-xl text-xs font-medium text-[#173B32] focus:outline-none focus:border-[#173B32]"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Password (min 6 characters)"
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      required
+                      className="w-full p-2.5 bg-[#FAF7F0] border border-[#E5D5BA] rounded-xl text-xs font-medium text-[#173B32] focus:outline-none focus:border-[#173B32]"
+                    />
+
+                    {authError && (
+                      <p className="text-xs text-rose-700 bg-rose-50 p-2 rounded-lg border border-rose-200">
+                        {authError}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={authSubmitting}
+                      className="w-full py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      {authSubmitting ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#B49252]" />
+                      ) : (
+                        <UserIcon className="w-3.5 h-3.5 text-[#B49252]" />
+                      )}
+                      <span>{authMode === "login" ? "Sign In & Continue" : "Create Account & Continue"}</span>
+                    </button>
+                  </form>
+                </div>
+              )}
+
               {generationError && (
                 <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2.5 shadow-sm animate-vanvas-fade">
                   <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
@@ -1043,12 +1211,16 @@ function PlanWizard() {
               <button
                 type="button"
                 onClick={handleBuildTrip}
-                disabled={isGenerating}
-                className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] interactive-btn text-[#EFE5D2] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl cursor-pointer"
+                disabled={isGenerating || !user}
+                className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] disabled:opacity-50 interactive-btn text-[#EFE5D2] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-[#B49252]" />
                 <span>
-                  {selectedTransportMode === "Road Trip" ? "Launch Map Road Trip →" : "Build My Trip →"}
+                  {!user
+                    ? "Sign In Above to Build Trip"
+                    : selectedTransportMode.toLowerCase().includes("road")
+                    ? "Launch Map Road Trip →"
+                    : "Build My Trip →"}
                 </span>
               </button>
 
