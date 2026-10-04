@@ -33,7 +33,7 @@ jobs:
       - name: Next.js Build
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: https://api.vanvas.app
+          NEXT_PUBLIC_API_URL: https://vanvas-api.onrender.com
 
   backend-check:
     name: Backend Test Suite & Production Safety
