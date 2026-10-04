@@ -228,6 +228,8 @@ def ensure_database_schema(eng=engine):
                 "CREATE INDEX IF NOT EXISTS ix_circle_messages_circle ON circle_messages(circle_id, created_at)",
                 "CREATE INDEX IF NOT EXISTS ix_traveler_blocks_lookup ON traveler_blocks(blocker_user_id, blocked_user_id)",
                 "CREATE INDEX IF NOT EXISTS ix_user_notifications_user_read ON user_notifications(user_id, is_read)",
+                "CREATE INDEX IF NOT EXISTS ix_trip_revisions_trip_id ON trip_revisions(trip_id)",
+                "CREATE INDEX IF NOT EXISTS ix_trip_revisions_user_id ON trip_revisions(user_id)",
             ]:
                 try:
                     conn.execute(text(idx_stmt))

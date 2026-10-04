@@ -386,7 +386,96 @@ export interface Trip {
   transport?: TransportOption;
   rental?: RentalOption;
   itineraries: ItineraryDay[];
+  revisions?: TripRevision[];
   created_at: string;
+}
+
+export interface TripRevision {
+  id: string;
+  trip_id: string;
+  user_id?: string | null;
+  revision_number: number;
+  action_type: string;
+  reason: string;
+  changes: {
+    action_type?: string;
+    target_day?: number;
+    reason?: string;
+    items_count?: number;
+    travellers_count?: number;
+    moved_to_day?: number;
+    applied_at?: string;
+    [key: string]: any;
+  };
+  created_at: string;
+}
+
+export interface ActionImpactSummary {
+  time_impact_mins: number;
+  cost_impact_inr: number;
+  items_added: Array<{ title: string; time?: string; cost?: number; [key: string]: any }>;
+  items_removed: Array<{ title: string; time?: string; cost?: number; reason?: string; [key: string]: any }>;
+  items_moved: Array<{ title: string; old_time?: string; new_time?: string; [key: string]: any }>;
+  items_kept: Array<{ title: string; time?: string; [key: string]: any }>;
+  weather_note?: string | null;
+  budget_note?: string | null;
+  safety_note?: string | null;
+}
+
+export interface ActionPreviewRequest {
+  action_type: string;
+  target_item_id?: string | null;
+  target_day_number?: number;
+  parameters?: Record<string, any>;
+  current_time?: string | null;
+  current_lat?: number | null;
+  current_lng?: number | null;
+}
+
+export interface ActionPreviewResponse {
+  action_type: string;
+  target_day_number: number;
+  headline: string;
+  summary: string;
+  requires_confirmation: boolean;
+  impact: ActionImpactSummary;
+  proposed_items: ItineraryItem[];
+  payload_for_apply: Record<string, any>;
+}
+
+export interface ActionApplyRequest {
+  action_type: string;
+  target_day_number?: number;
+  reason: string;
+  target_item_id?: string | null;
+  parameters?: Record<string, any>;
+  payload_for_apply?: Record<string, any>;
+}
+
+export interface ActionApplyResponse {
+  success: boolean;
+  message: string;
+  revision: TripRevision;
+  trip: Trip;
+}
+
+export interface CurrentStateResponse {
+  trip_id: string;
+  active_day_number: number;
+  current_time_str: string;
+  current_location_name?: string | null;
+  current_weather?: Record<string, any> | null;
+  budget_spent: number;
+  budget_total: number;
+  budget_projected: number;
+  budget_remaining: number;
+  completed_count: number;
+  missed_count: number;
+  pending_count: number;
+  total_items_count: number;
+  upcoming_item?: ItineraryItem | null;
+  safety_alerts: string[];
+  recent_revisions: TripRevision[];
 }
 
 export interface TripSummary {

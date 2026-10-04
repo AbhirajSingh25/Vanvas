@@ -13,7 +13,9 @@ from app.schemas.schemas import (
     DynamicReplanRequest, QuickPlanRequest, QuickPlanResponse,
     ImHereRequest, ImHereResponse, PlaceResponse, ItineraryItemResponse,
     TripInvitePreviewResponse, TripInviteCreateResponse, TripMemberActionResponse,
-    TripMemberResponse
+    TripMemberResponse, ActionPreviewRequest, ActionPreviewResponse,
+    ActionApplyRequest, ActionApplyResponse, TripRevisionResponse,
+    CurrentStateResponse
 )
 from app.api.deps import get_current_user, get_current_user_optional
 from app.itinerary.generator import ItineraryEngine
@@ -21,6 +23,7 @@ from app.itinerary.dynamic_replanner import DynamicReplanner
 from app.itinerary.clustering import haversine_distance_km
 
 from app.services.destination_intelligence import DestinationIntelligenceService
+from app.services.dynamic_intelligence import DynamicIntelligenceService
 from app.providers.provider_factory import ProviderFactory
 
 router = APIRouter()
@@ -519,6 +522,97 @@ def get_trip_detail(
         )
 
     return trip
+ 
+@router.post("/{trip_id}/actions/preview", response_model=ActionPreviewResponse)
+async def preview_trip_action(
+    trip_id: str,
+    req: ActionPreviewRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_member = db.query(TripMember).filter(TripMember.trip_id == trip.id, TripMember.user_id == current_user.id).first()
+    if not is_member and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only trip members can adapt the itinerary.")
+
+    try:
+        return await DynamicIntelligenceService.preview_action(db=db, trip=trip, req=req)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger = logging.getLogger("vanvas.trips")
+        logger.error(f"Action preview failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Action preview could not complete: {str(e)}")
+
+@router.post("/{trip_id}/actions/apply", response_model=ActionApplyResponse)
+def apply_trip_action(
+    trip_id: str,
+    req: ActionApplyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_member = db.query(TripMember).filter(TripMember.trip_id == trip.id, TripMember.user_id == current_user.id).first()
+    if not is_member and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only trip members can mutate the itinerary.")
+
+    try:
+        return DynamicIntelligenceService.apply_action(db=db, trip=trip, user=current_user, req=req)
+    except ValueError as ve:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        db.rollback()
+        logger = logging.getLogger("vanvas.trips")
+        logger.error(f"Action apply failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Action apply could not complete: {str(e)}")
+
+@router.get("/{trip_id}/revisions", response_model=List[TripRevisionResponse])
+def get_trip_revisions(
+    trip_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_member = db.query(TripMember).filter(TripMember.trip_id == trip.id, TripMember.user_id == current_user.id).first()
+    if not is_member and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only trip members can view revision history.")
+
+    return DynamicIntelligenceService.get_trip_revisions(db=db, trip_id=trip_id)
+
+@router.get("/{trip_id}/current-state", response_model=CurrentStateResponse)
+async def get_current_trip_state(
+    trip_id: str,
+    current_time: Optional[str] = None,
+    current_lat: Optional[float] = None,
+    current_lng: Optional[float] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_member = db.query(TripMember).filter(TripMember.trip_id == trip.id, TripMember.user_id == current_user.id).first()
+    if not is_member and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only trip members can view current trip state.")
+
+    return await DynamicIntelligenceService.get_current_state(
+        db=db,
+        trip=trip,
+        current_time_str=current_time,
+        current_lat=current_lat,
+        current_lng=current_lng
+    )
 
 @router.post("/{trip_id}/replan")
 def replan_trip(

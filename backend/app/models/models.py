@@ -44,6 +44,7 @@ class User(Base):
     solo_intents = relationship("SoloTripIntent", back_populates="user", cascade="all, delete-orphan")
     circle_memberships = relationship("CircleMember", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("UserNotification", back_populates="user", cascade="all, delete-orphan")
+    trip_revisions = relationship("TripRevision", back_populates="user", cascade="all, delete-orphan")
 
     @property
     def is_verified(self) -> bool:
@@ -357,6 +358,23 @@ class Trip(Base):
     checklist_items = relationship("ChecklistItem", back_populates="trip", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="trip")
     bookings = relationship("Booking", back_populates="trip", cascade="all, delete-orphan")
+    revisions = relationship("TripRevision", back_populates="trip", cascade="all, delete-orphan", order_by="TripRevision.revision_number.desc()")
+
+class TripRevision(Base):
+    __tablename__ = "trip_revisions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
+    revision_number = Column(Integer, nullable=False, default=1)
+    action_type = Column(String(100), nullable=False)
+    reason = Column(String(500), nullable=False)
+    changes_json = Column(Text, nullable=True)
+    snapshot_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    trip = relationship("Trip", back_populates="revisions")
+    user = relationship("User", back_populates="trip_revisions")
 
 class TripMember(Base):
     __tablename__ = "trip_members"

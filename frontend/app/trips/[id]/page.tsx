@@ -7,14 +7,24 @@ import {
   MapPin, CheckCircle2, Circle, Lock, Unlock, Plus, Trash2,
   ExternalLink, Share2, MessageSquare, Coffee, BedDouble, Bike,
   CheckSquare, ArrowRight, ShieldCheck, Sun, Info, Heart, Printer,
-  Bus, Train, Plane, Car, CarTaxiFront
+  Bus, Train, Plane, Car, CarTaxiFront, History, FastForward,
+  AlertTriangle, RefreshCw, X
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { Trip, BudgetSummary, GroupSummary, ChecklistItem, ArrivalOptimizerResponse, StructuredWeather } from "@/types";
+import {
+  Trip, BudgetSummary, GroupSummary, ChecklistItem,
+  ArrivalOptimizerResponse, StructuredWeather, ActionPreviewResponse,
+  ItineraryItem
+} from "@/types";
 import { VanvasWeatherCard } from "@/components/weather";
 import { ImHereDrawer } from "@/components/trip/ImHereDrawer";
 import { DynamicReplanModal } from "@/components/trip/DynamicReplanModal";
 import { QuickPlanModal } from "@/components/trip/QuickPlanModal";
+import { ActionPreviewModal } from "@/components/trip/ActionPreviewModal";
+import { RunningLateModal } from "@/components/trip/RunningLateModal";
+import { MissedActivityModal } from "@/components/trip/MissedActivityModal";
+import { AddPlaceModal } from "@/components/trip/AddPlaceModal";
+import { TripRevisionsModal } from "@/components/trip/TripRevisionsModal";
 import { ExpenseModal } from "@/components/trip/ExpenseModal";
 import { VotingCard } from "@/components/trip/VotingCard";
 import { ArrivalOptimizerCard } from "@/components/trip/ArrivalOptimizerCard";
@@ -70,8 +80,46 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [quickPlanOpen, setQuickPlanOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [actionPreview, setActionPreview] = useState<ActionPreviewResponse | null>(null);
+  const [lateModalOpen, setLateModalOpen] = useState(false);
+  const [missedItem, setMissedItem] = useState<ItineraryItem | null>(null);
+  const [addPlaceOpen, setAddPlaceOpen] = useState(false);
+  const [revisionsOpen, setRevisionsOpen] = useState(false);
   const [newChecklistInput, setNewChecklistInput] = useState("");
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+
+  const handleActionApplied = (updatedTrip: Trip, message: string) => {
+    setTrip(updatedTrip);
+    setNotificationMsg(message);
+    setTimeout(() => setNotificationMsg(null), 5000);
+    loadTripData();
+  };
+
+  const handleSwapItem = async (item: ItineraryItem) => {
+    try {
+      const prev = await api.previewTripAction(tripId, {
+        action_type: "SWAP_ACTIVITY",
+        target_day_number: selectedDayNumber,
+        target_item_id: item.id
+      });
+      setActionPreview(prev);
+    } catch (err: any) {
+      console.error("Failed to preview swap:", err);
+    }
+  };
+
+  const handleRemoveItem = async (item: ItineraryItem) => {
+    try {
+      const prev = await api.previewTripAction(tripId, {
+        action_type: "REMOVE_ACTIVITY",
+        target_day_number: selectedDayNumber,
+        target_item_id: item.id
+      });
+      setActionPreview(prev);
+    } catch (err: any) {
+      console.error("Failed to preview remove:", err);
+    }
+  };
 
   const loadTripData = async () => {
     try {
@@ -581,6 +629,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               onOpenExpenseModal={() => setExpenseModalOpen(true)}
               onOpenReplanModal={() => setReplanOpen(true)}
               onOpenImHereModal={() => setImHereOpen(true)}
+              onOpenQuickPlanModal={() => setQuickPlanOpen(true)}
+              onOpenLateModal={() => setLateModalOpen(true)}
+              onOpenRevisionsModal={() => setRevisionsOpen(true)}
               onToggleItemStatus={handleToggleItemStatus}
               onOpenAskVanvas={() => openAskVanvas()}
             />
@@ -755,6 +806,49 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
 
+            {/* Quick Intelligence Actions Bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setAddPlaceOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#173B32] hover:bg-[#0F2924] text-[#FAF4E8] text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>+ Add Place</span>
+              </button>
+
+              <button
+                onClick={() => setQuickPlanOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Clock className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>I Have X Hours</span>
+              </button>
+
+              <button
+                onClick={() => setLateModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <FastForward className="w-3.5 h-3.5 text-amber-600" />
+                <span>Running Late</span>
+              </button>
+
+              <button
+                onClick={() => setReplanOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>Replan Day</span>
+              </button>
+
+              <button
+                onClick={() => setRevisionsOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] border border-[#E5D5BA] text-[#7B4D36] text-xs font-mono font-bold flex items-center gap-1.5 ml-auto cursor-pointer shadow-xs"
+              >
+                <History className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>Revisions {trip.revisions && trip.revisions.length > 0 ? `(v${trip.revisions.length + 1})` : "(v1)"}</span>
+              </button>
+            </div>
+
             {/* Timeline Items */}
             {isCompact ? (
               <div className="space-y-2.5">
@@ -771,8 +865,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             ) : (
               <div className="space-y-4">
                 {currentDayItinerary?.items.map((item, idx) => {
-                  const isCompleted = item.status === "completed";
-                  const isSkipped = item.status === "skipped";
+                  const isCompleted = item.status === "completed" || item.status === "COMPLETED";
+                  const isSkipped = item.status === "skipped" || item.status === "SKIPPED";
+                  const isMissed = item.status === "missed" || item.status === "MISSED";
 
                 return (
                   <div
@@ -780,6 +875,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     className={`p-6 rounded-3xl border-2 transition-all flex flex-col sm:flex-row items-start gap-4 animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)} ${
                       isCompleted
                         ? "bg-[#E5D5BA]/40 border-[#E5D5BA] opacity-75"
+                        : isMissed
+                        ? "bg-red-50/70 border-red-200"
                         : isSkipped
                         ? "bg-stone-100 border-stone-200 line-through opacity-50"
                         : "bg-[#FAF7F0] border-[#E5D5BA] shadow-xs hover:border-[#173B32]/50 interactive-card"
@@ -789,7 +886,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     <div className="flex sm:flex-col items-center justify-between sm:justify-start gap-2 w-full sm:w-28 shrink-0">
                       <button
                         onClick={() => handleToggleItemStatus(item.id, item.status)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-[#173B32] hover:text-[#B65E3C]"
+                        className="flex items-center gap-1.5 text-xs font-bold text-[#173B32] hover:text-[#B65E3C] cursor-pointer"
                       >
                         {isCompleted ? (
                           <CheckCircle2 className="w-5 h-5 text-emerald-700 fill-emerald-100" />
@@ -806,20 +903,24 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 w-full">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] text-[10px] font-bold uppercase tracking-wider">
-                            {item.category}
+                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                            isMissed ? "bg-red-800 text-white" : "bg-[#173B32] text-[#EFE5D2]"
+                          }`}>
+                            {isMissed ? "MISSED" : item.category}
                           </span>
-                          <h4 className="font-serif font-bold text-lg text-[#173B32]">{item.title}</h4>
+                          <h4 className={`font-serif font-bold text-lg text-[#173B32] ${isCompleted ? "line-through opacity-70" : ""}`}>
+                            {item.title}
+                          </h4>
                         </div>
 
                         {/* Lock Button */}
                         <button
                           onClick={() => handleToggleLock(item.id, item.is_locked)}
                           title={item.is_locked ? "Locked: Protected from dynamic replanning" : "Flexible"}
-                          className={`p-1.5 rounded-lg border transition-colors ${
+                          className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
                             item.is_locked
                               ? "bg-amber-100 text-amber-900 border-amber-300"
                               : "bg-[#EFE5D2] text-[#7B4D36] border-[#E5D5BA] hover:bg-[#E5D5BA]"
@@ -831,29 +932,67 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
                       <p className="text-xs text-[#20211D]/80 leading-relaxed font-light">{item.notes}</p>
 
-                      {/* Travel info & Reason */}
-                      <div className="pt-2 flex flex-wrap items-center gap-4 text-[11px] text-[#7B4D36] border-t border-[#E5D5BA]/60">
-                        {item.distance_from_prev_km > 0 && (
-                          <span className="flex items-center gap-1 font-mono">
-                            <Navigation className="w-3 h-3 text-[#173B32]" />
-                            <span>{item.distance_from_prev_km} km ({item.travel_time_from_prev_mins}m transit)</span>
-                          </span>
-                        )}
-                        {item.estimated_cost > 0 && (
-                          <span className="font-mono font-semibold text-[#173B32]">
-                            Est. ₹{item.estimated_cost}
-                          </span>
-                        )}
-                        {item.reason_for_recommendation && (
-                          <span className="text-[#B65E3C] italic font-serif">
-                            ★ {item.reason_for_recommendation}
-                          </span>
-                        )}
+                      {/* Travel info & Item Actions */}
+                      <div className="pt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-[#E5D5BA]/60 text-[11px] font-mono">
+                        <div className="flex flex-wrap items-center gap-3 text-[#7B4D36]">
+                          {item.distance_from_prev_km > 0 && (
+                            <span className="flex items-center gap-1">
+                              <Navigation className="w-3 h-3 text-[#173B32]" />
+                              <span>{item.distance_from_prev_km} km ({item.travel_time_from_prev_mins}m transit)</span>
+                            </span>
+                          )}
+                          {item.estimated_cost > 0 && (
+                            <span className="font-semibold text-[#173B32]">
+                              Est. ₹{item.estimated_cost}
+                            </span>
+                          )}
+                          {item.reason_for_recommendation && (
+                            <span className="text-[#B65E3C] italic font-serif">
+                              ★ {item.reason_for_recommendation}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Quick Mutation Actions */}
+                        <div className="flex items-center gap-1.5 ml-auto">
+                          <button
+                            onClick={() => setMissedItem(item)}
+                            className="px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-bold cursor-pointer"
+                            title="Mark as missed and choose resolution"
+                          >
+                            Missed
+                          </button>
+                          <button
+                            onClick={() => handleSwapItem(item)}
+                            className="px-2 py-0.5 rounded-lg bg-[#EFE5D2] hover:bg-[#E5D5BA] border border-[#E5D5BA] text-[#173B32] text-[10px] font-bold cursor-pointer"
+                            title="Swap with nearby alternative"
+                          >
+                            Swap
+                          </button>
+                          <button
+                            onClick={() => handleRemoveItem(item)}
+                            className="p-1 rounded-lg hover:bg-red-50 text-red-600 cursor-pointer"
+                            title="Remove stop"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 );
               })}
+
+              {/* Add Stop Button */}
+              <div className="pt-2 flex justify-center">
+                <button
+                  onClick={() => setAddPlaceOpen(true)}
+                  className="px-5 py-3 rounded-2xl bg-[#EFE5D2] hover:bg-[#E5D5BA] border-2 border-dashed border-[#B49252]/60 text-[#173B32] font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+                >
+                  <Plus className="w-4 h-4 text-[#B65E3C]" />
+                  <span>+ Add Stop to Day {selectedDayNumber}</span>
+                </button>
+              </div>
             </div>
             )}
           </div>
@@ -1299,17 +1438,60 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
       <DynamicReplanModal
         tripId={trip.id}
+        dayNumber={selectedDayNumber}
         isOpen={replanOpen}
         onClose={() => setReplanOpen(false)}
         trip={trip}
-        onReplanSuccess={handleReplanSuccess}
+        onPreviewGenerated={(p) => setActionPreview(p)}
       />
 
       <QuickPlanModal
         tripId={trip.id}
+        dayNumber={selectedDayNumber}
         isOpen={quickPlanOpen}
         onClose={() => setQuickPlanOpen(false)}
         trip={trip}
+        onApplied={handleActionApplied}
+      />
+
+      <ActionPreviewModal
+        tripId={trip.id}
+        isOpen={Boolean(actionPreview)}
+        preview={actionPreview}
+        onClose={() => setActionPreview(null)}
+        onApplied={handleActionApplied}
+      />
+
+      <RunningLateModal
+        tripId={trip.id}
+        dayNumber={selectedDayNumber}
+        isOpen={lateModalOpen}
+        onClose={() => setLateModalOpen(false)}
+        onPreviewGenerated={(p) => setActionPreview(p)}
+      />
+
+      <MissedActivityModal
+        tripId={trip.id}
+        dayNumber={selectedDayNumber}
+        item={missedItem}
+        isOpen={Boolean(missedItem)}
+        onClose={() => setMissedItem(null)}
+        onPreviewGenerated={(p) => setActionPreview(p)}
+      />
+
+      <AddPlaceModal
+        tripId={trip.id}
+        destinationId={trip.destination_id}
+        dayNumber={selectedDayNumber}
+        isOpen={addPlaceOpen}
+        onClose={() => setAddPlaceOpen(false)}
+        onPreviewGenerated={(p) => setActionPreview(p)}
+      />
+
+      <TripRevisionsModal
+        tripId={trip.id}
+        isOpen={revisionsOpen}
+        onClose={() => setRevisionsOpen(false)}
       />
 
       <ExpenseModal
@@ -1338,6 +1520,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         isOpen={offlinePackOpen}
         onClose={() => setOfflinePackOpen(false)}
       />
+
+      {notificationMsg && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#173B32] border-2 border-[#B49252] text-[#FAF4E8] shadow-2xl flex items-center gap-3 animate-slideUp font-mono text-xs max-w-md">
+          <Sparkles className="w-5 h-5 text-[#B49252] shrink-0" />
+          <span className="flex-1">{notificationMsg}</span>
+          <button onClick={() => setNotificationMsg(null)} className="text-[#D8DED5] hover:text-white cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
   Compass, Navigation, Clock, Sun, Wallet, Plus, Sparkles,
   MapPin, AlertTriangle, ShieldCheck, Phone, CheckCircle2,
   BookOpen, ArrowRight, ExternalLink, Coffee, BedDouble, Bike,
-  Droplets, Wind, Share2, Layers
+  Droplets, Wind, Share2, Layers, History, FastForward
 } from "lucide-react";
 import { Trip, ItineraryItem, StructuredWeather, BudgetSummary } from "@/types";
 
@@ -18,6 +18,9 @@ interface TravelModeCockpitProps {
   onOpenExpenseModal: () => void;
   onOpenReplanModal: () => void;
   onOpenImHereModal: () => void;
+  onOpenQuickPlanModal?: () => void;
+  onOpenLateModal?: () => void;
+  onOpenRevisionsModal?: () => void;
   onToggleItemStatus: (itemId: string, currentStatus: string) => void;
   onOpenAskVanvas: () => void;
 }
@@ -30,6 +33,9 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
   onOpenExpenseModal,
   onOpenReplanModal,
   onOpenImHereModal,
+  onOpenQuickPlanModal,
+  onOpenLateModal,
+  onOpenRevisionsModal,
   onToggleItemStatus,
   onOpenAskVanvas,
 }) => {
@@ -39,8 +45,8 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
   const items = dayItinerary?.items || [];
   
   // Find current and next item
-  const upcomingItems = items.filter((i) => i.status !== "completed");
-  const completedItems = items.filter((i) => i.status === "completed");
+  const upcomingItems = items.filter((i) => i.status !== "completed" && i.status !== "COMPLETED");
+  const completedItems = items.filter((i) => i.status === "completed" || i.status === "COMPLETED");
   const nextItem = upcomingItems[0] || items[items.length - 1] || null;
   const currentItem = completedItems.length > 0 && upcomingItems.length > 0 
     ? completedItems[completedItems.length - 1] 
@@ -48,7 +54,7 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
 
   const destName = trip.destination?.name || "Valley";
   const stateName = trip.destination?.state || "India";
-  const whereAmI = activeLocationOverride || currentItem?.title || `${destName} Basecamp`;
+  const whereAmI = activeLocationOverride || currentItem?.title || `${destName} Sanctuary`;
 
   const todaySpend = budget?.total_spent || trip.budget_spent || 0;
   const tempC = weather?.temperature !== null && weather?.temperature !== undefined 
@@ -61,6 +67,8 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${nextItem.title}, ${destName}`)}`
     : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destName)}`;
 
+  const revisionsCount = trip.revisions?.length || 0;
+
   return (
     <div className="space-y-4 animate-fadeIn">
       {/* 1. TOP LIVE STATUS BAR (Sticky feel, high information density, calm aesthetics) */}
@@ -70,21 +78,50 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
 
         <div className="relative z-10 space-y-3">
           {/* Badge & Active Day */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] font-mono font-black uppercase tracking-widest text-[#B49252]">
                 TRAVEL MODE ACTIVE · DAY {String(currentDayNumber).padStart(2, "0")}
               </span>
+              {revisionsCount > 0 && (
+                <button
+                  onClick={onOpenRevisionsModal}
+                  className="px-2 py-0.5 rounded-md bg-[#B49252]/20 border border-[#B49252]/40 text-[#B49252] text-[9px] font-mono font-bold hover:bg-[#B49252]/30 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <History className="w-2.5 h-2.5" />
+                  <span>v{revisionsCount + 1} Revisions</span>
+                </button>
+              )}
             </div>
 
-            <button
-              onClick={onOpenReplanModal}
-              className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[10px] font-mono font-bold text-[#EFE5D2] flex items-center gap-1 cursor-pointer transition-colors"
-            >
-              <Sparkles className="w-3 h-3 text-[#B49252]" />
-              <span>Adjust / Replan</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              {onOpenLateModal && (
+                <button
+                  onClick={onOpenLateModal}
+                  className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-[10px] font-mono font-bold text-amber-300 flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <FastForward className="w-3 h-3" />
+                  <span>Running Late</span>
+                </button>
+              )}
+              {onOpenQuickPlanModal && (
+                <button
+                  onClick={onOpenQuickPlanModal}
+                  className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[10px] font-mono font-bold text-[#EFE5D2] flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Clock className="w-3 h-3 text-[#B49252]" />
+                  <span>I Have X Hours</span>
+                </button>
+              )}
+              <button
+                onClick={onOpenReplanModal}
+                className="px-2.5 py-1 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+              >
+                <Sparkles className="w-3 h-3 text-[#B49252]" />
+                <span>Replan</span>
+              </button>
+            </div>
           </div>
 
           {/* 5 Core Questions Grid */}
@@ -107,7 +144,7 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
                 className="mt-2 text-[10px] font-mono font-bold text-[#B49252] hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <MapPin className="w-3 h-3" />
-                <span>Update / Set Stop →</span>
+                <span>I&apos;m Here / Live Radius →</span>
               </button>
             </div>
 
@@ -141,7 +178,7 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
                     className="flex-1 py-1.5 px-3 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-bold font-mono text-center flex items-center justify-center gap-1 shadow-xs transition-colors"
                   >
                     <Navigation className="w-3.5 h-3.5" />
-                    <span>Navigate Now</span>
+                    <span>Navigate</span>
                   </a>
                   <button
                     onClick={() => onToggleItemStatus(nextItem.id, nextItem.status)}
@@ -154,49 +191,47 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
               )}
             </div>
 
-            {/* Q3: WHAT DOES IT COST? & Q4: WEATHER */}
+            {/* Q4 & Q5: WEATHER & EXPENSE SNAPSHOT */}
             <div className="md:col-span-3 grid grid-cols-2 md:grid-cols-1 gap-2">
-              {/* Cost snippet */}
               <div className="p-2.5 rounded-2xl bg-black/30 border border-white/10 flex items-center justify-between">
                 <div>
-                  <span className="text-[8.5px] font-mono uppercase text-[#B49252] font-bold block">
-                    SPEND TODAY
+                  <span className="text-[8px] font-mono uppercase text-[#B49252] font-bold block">
+                    WEATHER NOW
                   </span>
-                  <span className="font-mono font-black text-base text-[#FAF4E8]">
-                    ₹{todaySpend.toLocaleString()}
+                  <div className="text-sm font-bold font-mono text-[#FAF4E8]">
+                    {tempC}°C · {condition}
+                  </div>
+                </div>
+                <Sun className="w-4 h-4 text-[#B49252] shrink-0" />
+              </div>
+
+              <div className="p-2.5 rounded-2xl bg-black/30 border border-white/10 flex items-center justify-between">
+                <div>
+                  <span className="text-[8px] font-mono uppercase text-[#B49252] font-bold block">
+                    EXPENSES LOGGED
                   </span>
+                  <div className="text-sm font-bold font-mono text-[#FAF4E8]">
+                    ₹{Math.round(todaySpend).toLocaleString("en-IN")}
+                  </div>
                 </div>
                 <button
                   onClick={onOpenExpenseModal}
-                  className="w-7 h-7 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white flex items-center justify-center cursor-pointer shadow-xs"
+                  className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-[#B49252] text-[10px] font-mono font-bold cursor-pointer"
                   title="Add Expense"
                 >
-                  <Plus className="w-4 h-4" />
+                  + Add
                 </button>
-              </div>
-
-              {/* Weather snippet */}
-              <div className="p-2.5 rounded-2xl bg-black/30 border border-white/10 flex items-center justify-between">
-                <div>
-                  <span className="text-[8.5px] font-mono uppercase text-[#B49252] font-bold block">
-                    WEATHER
-                  </span>
-                  <span className="font-mono font-bold text-xs text-[#FAF4E8]">
-                    {tempC}°C · {condition}
-                  </span>
-                </div>
-                <Sun className="w-5 h-5 text-amber-400 shrink-0" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. TODAY'S HORIZONTAL ITINERARY RAIL (Quick tap, swipe, checklist status) */}
+      {/* 2. LIVE ITINERARY CARD STRIP */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#173B32]">
-            Today&apos;s Timeline ({items.length} Stops)
+          <span className="text-xs font-mono font-bold text-[#173B32] uppercase tracking-wider">
+            DAY {currentDayNumber} TIMELINE
           </span>
           <span className="text-[10px] font-mono text-[#7B4D36]">
             {completedItems.length}/{items.length} Completed
@@ -205,7 +240,8 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
 
         <div className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-none">
           {items.map((it, idx) => {
-            const isDone = it.status === "completed";
+            const isDone = it.status === "completed" || it.status === "COMPLETED";
+            const isMissed = it.status === "missed" || it.status === "MISSED";
             const isNext = nextItem?.id === it.id;
             return (
               <div
@@ -215,12 +251,16 @@ export const TravelModeCockpit: React.FC<TravelModeCockpitProps> = ({
                     ? "bg-[#FAF7F0] border-[#173B32] shadow-md ring-2 ring-[#173B32]/20"
                     : isDone
                     ? "bg-[#EAE4D7] border-[#D5C9B3] opacity-75"
+                    : isMissed
+                    ? "bg-red-50 border-red-200"
                     : "bg-[#FAF7F0] border-[#E5D5BA]"
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#173B32] text-[#EFE5D2]">
+                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                      isMissed ? "bg-red-800 text-white" : "bg-[#173B32] text-[#EFE5D2]"
+                    }`}>
                       {it.start_time}
                     </span>
                     <button

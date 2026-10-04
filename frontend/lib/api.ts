@@ -9,7 +9,9 @@ import {
   RegistrationResult, VerifyEmailResult, ResendVerificationResult,
   TripLedgerBalancesResponse, SettlementPayment, ReceiptOcrResponse,
   RoadTripPlanRequest, RoadTripPlanResponse, RoadTripCorridor,
-  WeatherSnapshot, StructuredWeather
+  WeatherSnapshot, StructuredWeather,
+  ActionPreviewRequest, ActionPreviewResponse, ActionApplyRequest,
+  ActionApplyResponse, TripRevision, CurrentStateResponse
 } from "@/types";
 
 function getApiBaseUrl(): string {
@@ -478,6 +480,33 @@ export const api = {
     return fetchApi(`/trips/${tripId}/items/${itemId}?${params.toString()}`, {
       method: "PUT",
     });
+  },
+
+  async previewTripAction(tripId: string, req: ActionPreviewRequest): Promise<ActionPreviewResponse> {
+    return fetchApi(`/trips/${tripId}/actions/preview`, {
+      method: "POST",
+      body: JSON.stringify(req),
+    });
+  },
+
+  async applyTripAction(tripId: string, req: ActionApplyRequest): Promise<ActionApplyResponse> {
+    return fetchApi(`/trips/${tripId}/actions/apply`, {
+      method: "POST",
+      body: JSON.stringify(req),
+    });
+  },
+
+  async getTripRevisions(tripId: string): Promise<TripRevision[]> {
+    return fetchApi(`/trips/${tripId}/revisions`);
+  },
+
+  async getCurrentTripState(tripId: string, params?: { current_time?: string; current_lat?: number; current_lng?: number }): Promise<CurrentStateResponse> {
+    const q = new URLSearchParams();
+    if (params?.current_time) q.append("current_time", params.current_time);
+    if (params?.current_lat !== undefined) q.append("current_lat", String(params.current_lat));
+    if (params?.current_lng !== undefined) q.append("current_lng", String(params.current_lng));
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    return fetchApi(`/trips/${tripId}/current-state${qs}`);
   },
 
   // Budget & Expenses & VANVAS Split

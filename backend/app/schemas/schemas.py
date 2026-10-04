@@ -567,6 +567,19 @@ class TripSummaryResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class TripRevisionResponse(BaseModel):
+    id: str
+    trip_id: str
+    user_id: Optional[str] = None
+    revision_number: int
+    action_type: str
+    reason: str
+    changes: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class TripDetailResponse(BaseModel):
     id: str
     user_id: str
@@ -594,6 +607,7 @@ class TripDetailResponse(BaseModel):
     hotel: Optional[HotelResponse] = None
     rental: Optional[RentalOptionResponse] = None
     itineraries: List[ItineraryDayResponse] = []
+    revisions: List[TripRevisionResponse] = []
     created_at: datetime
 
     class Config:
@@ -606,6 +620,68 @@ class DynamicReplanRequest(BaseModel):
     current_time: Optional[str] = None  # e.g., "14:30"
     day_number: Optional[int] = 1
     custom_note: Optional[str] = None
+
+class ActionImpactSummary(BaseModel):
+    time_impact_mins: int = 0
+    cost_impact_inr: float = 0.0
+    items_added: List[Dict[str, Any]] = Field(default_factory=list)
+    items_removed: List[Dict[str, Any]] = Field(default_factory=list)
+    items_moved: List[Dict[str, Any]] = Field(default_factory=list)
+    items_kept: List[Dict[str, Any]] = Field(default_factory=list)
+    weather_note: Optional[str] = None
+    budget_note: Optional[str] = None
+    safety_note: Optional[str] = None
+
+class ActionPreviewRequest(BaseModel):
+    action_type: str  # REPLAN_DAY, REPLAN_TRIP, SHORT_PLAN, RUNNING_LATE, MISSED_ACTIVITY, ADD_PLACE, REMOVE_ACTIVITY, SWAP_ACTIVITY, MAKE_TODAY_EASIER, MAKE_TODAY_CHEAPER, MAKE_TODAY_MORE_ACTIVE, ADJUST_FOR_WEATHER, ADJUST_FOR_TRAVELLER_COUNT, MARK_COMPLETE
+    target_item_id: Optional[str] = None
+    target_day_number: Optional[int] = 1
+    parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    current_time: Optional[str] = None
+    current_lat: Optional[float] = None
+    current_lng: Optional[float] = None
+
+class ActionPreviewResponse(BaseModel):
+    action_type: str
+    target_day_number: int
+    headline: str
+    summary: str
+    requires_confirmation: bool = True
+    impact: ActionImpactSummary
+    proposed_items: List[ItineraryItemResponse] = Field(default_factory=list)
+    payload_for_apply: Dict[str, Any] = Field(default_factory=dict)
+
+class ActionApplyRequest(BaseModel):
+    action_type: str
+    target_day_number: Optional[int] = 1
+    reason: str
+    target_item_id: Optional[str] = None
+    parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    payload_for_apply: Optional[Dict[str, Any]] = None
+
+class ActionApplyResponse(BaseModel):
+    success: bool
+    message: str
+    revision: TripRevisionResponse
+    trip: TripDetailResponse
+
+class CurrentStateResponse(BaseModel):
+    trip_id: str
+    active_day_number: int
+    current_time_str: str
+    current_location_name: Optional[str] = None
+    current_weather: Optional[Dict[str, Any]] = None
+    budget_spent: float
+    budget_total: float
+    budget_projected: float
+    budget_remaining: float
+    completed_count: int
+    missed_count: int
+    pending_count: int
+    total_items_count: int
+    upcoming_item: Optional[ItineraryItemResponse] = None
+    safety_alerts: List[str] = Field(default_factory=list)
+    recent_revisions: List[TripRevisionResponse] = Field(default_factory=list)
 
 class QuickPlanRequest(BaseModel):
     hours_available: float = 3.0  # 1, 2, 3, 4, etc.
