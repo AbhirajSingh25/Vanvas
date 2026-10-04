@@ -189,6 +189,8 @@ def test_phase7_and_8_planning_engine(client):
         "destination_id": "manali",
         "start_date": "2026-10-10",
         "end_date": "2026-10-12",
+        "origin_city": "Delhi",
+        "transport_mode": "bus",
         "travellers_count": 2,
         "budget": 25000.0,
         "interests": ["Nature", "Cafes", "Adventure"],

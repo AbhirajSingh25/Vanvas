@@ -219,6 +219,8 @@ def test_collaboration_security_constraints():
         "destination_id": "manali",
         "start_date": str(date.today()),
         "end_date": str(date.today() + timedelta(days=2)),
+        "origin_city": "Delhi",
+        "transport_mode": "bus",
         "budget": 10000,
         "travellers_count": 1,
         "companion_type": "Solo",
