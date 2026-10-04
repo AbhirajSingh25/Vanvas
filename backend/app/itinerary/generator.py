@@ -529,8 +529,8 @@ class ItineraryEngine:
                 })
                 current_time_minutes += 65
 
-            # Add Daytime Activities (2 for 1-day trip, 3-4 for multi-day)
-            max_act = 2 if num_days == 1 else (items_per_day - 1)
+            # Add Daytime Activities (1 for 1-day arrival trip, 2-4 for multi-day)
+            max_act = 1 if (num_days == 1 and day_idx == 0) else (items_per_day - 1)
             if not ordered_day_places:
                 # Synthesize destination-appropriate daytime exploration stops
                 d_name = destination.name
@@ -607,31 +607,8 @@ class ItineraryEngine:
                     current_time_minutes = end_time_min + travel_mins
                     prev_lat, prev_lng = p.latitude, p.longitude
 
-                day_items.append({
-                    "place_id": p.id,
-                    "title": p.name,
-                    "category": p.category,
-                    "start_time": start_str,
-                    "end_time": end_str,
-                    "duration_mins": dur_mins,
-                    "estimated_cost": p.approx_cost or 0.0,
-                    "travel_time_from_prev_mins": travel_mins,
-                    "distance_from_prev_km": dist_km,
-                    "notes": (p.description[:140] + "...") if p.description and len(p.description) > 140 else (p.description or p.why_vanvas_recommends or "Exploration point."),
-                    "reason_for_recommendation": p.why_vanvas_recommends or "Geographically optimized match for your trip style.",
-                    "map_lat": p.latitude,
-                    "map_lng": p.longitude,
-                    "booking_url": p.booking_url,
-                    "opening_hours": f"{p.opening_time} - {p.closing_time}",
-                    "status": "upcoming",
-                    "is_locked": False
-                })
-
-                current_time_minutes = end_time_min + travel_mins
-                prev_lat, prev_lng = p.latitude, p.longitude
-
-                # Midday Lunch insertion
-                if 12 * 60 <= current_time_minutes <= 14 * 60:
+                # Midday Lunch insertion (for Day 2 onwards, as Day 1 has arrival meal)
+                if day_idx > 0 and 12 * 60 <= current_time_minutes <= 14 * 60:
                     lunch_place = food_places[(day_idx + 1) % len(food_places)] if food_places else None
                     l_title = f"Local Lunch & Siddu at {lunch_place.name}" if lunch_place else "Authentic Valley Lunch"
                     l_cost = lunch_place.approx_cost if lunch_place else 320.0
