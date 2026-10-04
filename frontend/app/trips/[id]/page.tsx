@@ -121,6 +121,20 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const parsedTransport = React.useMemo(() => {
+    if (!trip) return null;
+    if (trip.transport_details_json) {
+      try {
+        return typeof trip.transport_details_json === "string"
+          ? JSON.parse(trip.transport_details_json)
+          : trip.transport_details_json;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [trip]);
+
   const loadTripData = async () => {
     try {
       const t = await api.getTrip(tripId);
@@ -129,13 +143,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         setSelectedDayNumber(t.itineraries[0].day_number);
       }
 
-      // Sync Trip Context to Ask VANVAS
+      // Sync Trip Context to Ask VANVAS with active day
       setTravelContext({
         type: "trip",
         tripId: t.id,
         trip: t,
         destinationName: t.destination?.name,
         destinationSlug: t.destination?.slug,
+        activeDayNumber: t.itineraries && t.itineraries.length > 0 ? t.itineraries[0].day_number : 1,
         title: `ASK VANVAS · ${t.title?.toUpperCase() || "YOUR TRIP"}`,
         subtitle: `Trip · ${t.num_days || 4} days · Active itinerary`,
       });
@@ -158,6 +173,22 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     loadTripData();
   }, [tripId]);
+
+  // Sync selectedDayNumber to Ask VANVAS context whenever it changes
+  useEffect(() => {
+    if (trip) {
+      setTravelContext({
+        type: "trip",
+        tripId: trip.id,
+        trip: trip,
+        destinationName: trip.destination?.name,
+        destinationSlug: trip.destination?.slug,
+        activeDayNumber: selectedDayNumber || 1,
+        title: `ASK VANVAS · ${trip.title?.toUpperCase() || "YOUR TRIP"}`,
+        subtitle: `Trip · Day ${selectedDayNumber || 1} of ${trip.num_days || 4} · Active itinerary`,
+      });
+    }
+  }, [selectedDayNumber, trip?.id, setTravelContext]);
 
   // Register real-time trip refresh callback when Ask VANVAS mutates itinerary
   useEffect(() => {
@@ -636,11 +667,65 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               onOpenAskVanvas={() => openAskVanvas()}
             />
 
+            {/* Travel Leg Card */}
+            {(trip.transport_mode || parsedTransport) && (
+              <div className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-[#E5D5BA]/70 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-[#B65E3C] text-[#FAF4E8] text-[9px] font-mono font-bold tracking-wider uppercase">
+                      TRAVEL LEG
+                    </span>
+                    <h3 className="font-serif font-black text-sm sm:text-base text-[#173B32]">
+                      {trip.origin_city || "Starting City"} → {trip.destination?.name || "Destination"}
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300 uppercase">
+                    {trip.transport_mode?.replace("_", " ") || "TRANSPORT"}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-[#173B32]">
+                  <div className="space-y-0.5">
+                    <div className="font-bold flex items-center gap-1.5">
+                      {trip.transport_mode?.toLowerCase().includes("bus") && <Bus className="w-3.5 h-3.5 text-[#B65E3C]" />}
+                      {trip.transport_mode?.toLowerCase().includes("train") && <Train className="w-3.5 h-3.5 text-[#B65E3C]" />}
+                      {trip.transport_mode?.toLowerCase().includes("flight") && <Plane className="w-3.5 h-3.5 text-[#B65E3C]" />}
+                      {trip.transport_mode?.toLowerCase().includes("road") && <Car className="w-3.5 h-3.5 text-[#B65E3C]" />}
+                      {trip.transport_mode?.toLowerCase().includes("cab") && <CarTaxiFront className="w-3.5 h-3.5 text-[#B65E3C]" />}
+                      <span>{parsedTransport?.operator_name || (trip.transport_mode?.toLowerCase().includes("road") ? "Self-Drive Expressway" : "Curated Transit")}</span>
+                      <span className="text-[9px] bg-[#173B32] text-[#EFE5D2] px-1.5 py-0.5 rounded font-bold uppercase">
+                        {parsedTransport?.data_state || "CURATED"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#7B4D36]">
+                      {parsedTransport?.departure_location && parsedTransport?.arrival_location
+                        ? `${parsedTransport.departure_location} → ${parsedTransport.arrival_location}`
+                        : trip.transport_mode?.toLowerCase().includes("road")
+                        ? "05:30 Early Departure Window recommended for mountain daylight"
+                        : "Direct corridor transit"}
+                    </div>
+                  </div>
+                  <div className="text-left sm:text-right shrink-0">
+                    <div className="font-mono font-bold text-[#173B32]">
+                      {parsedTransport?.departure_time && parsedTransport?.arrival_time
+                        ? `${parsedTransport.departure_time} → ${parsedTransport.arrival_time} (~${parsedTransport.duration_hours}h)`
+                        : trip.transport_mode?.toLowerCase().includes("road")
+                        ? "05:30 → ~17:30 (~11.5h)"
+                        : "Scheduled Departure"}
+                    </div>
+                    <div className="text-[9px] text-[#7B4D36]">
+                      {parsedTransport?.price ? `₹${parsedTransport.price.toLocaleString()} / traveller · VERIFY WITH OPERATOR` : "ESTIMATED ROUTE"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Arrival Optimizer Card */}
             {arrivalData && <ArrivalOptimizerCard data={arrivalData} />}
 
             {/* Today's Highlight Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
               {/* Active Day Highlight */}
               <div className="md:col-span-2 p-5 sm:p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-3.5">
                 <div className="flex items-center justify-between border-b border-[#E5D5BA]/70 pb-2.5">

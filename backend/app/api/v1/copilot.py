@@ -273,6 +273,155 @@ async def copilot_chat(
         destination_slug=explicit_dest or req.destination_slug or conv.destination_slug,
     )
 
+    # 5.5. FAST PATH ROUTING: Deterministic Intent Handling (< 1s Latency)
+    msg_clean_lower = clean_msg.lower().strip()
+    dest_target_slug = explicit_dest or req.destination_slug or (trip.destination.slug if trip and trip.destination else None) or conv.destination_slug
+
+    # A. "What's Next" Fast Path
+    if msg_clean_lower in ["what's next", "whats next", "what is next", "next stop", "what is next on our itinerary right now?"]:
+        if trip and trip.itineraries:
+            # Look for upcoming item across itineraries
+            upcoming = []
+            for it in trip.itineraries:
+                for item in it.items:
+                    if item.status != "completed" and item.status != "COMPLETED":
+                        upcoming.append((it.day_number, item))
+            if upcoming:
+                day_num, next_it = upcoming[0]
+                fast_resp_text = f"Next on Day {day_num} at {next_it.start_time}: {next_it.title}. {next_it.notes or 'Enjoy your visit!'}"
+                fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "whats_next"}
+                assistant_msg = ConversationMessage(
+                    conversation_id=conv.id,
+                    role="assistant",
+                    content=fast_resp_text,
+                    metadata_json=json.dumps(fast_meta),
+                )
+                db.add(assistant_msg)
+                db.commit()
+                return CopilotChatResponse(
+                    conversation_id=conv.id,
+                    message=fast_resp_text,
+                    actions=[{"action_type": "navigate_trip", "title": "View Itinerary", "payload": {"trip_id": trip.id}}],
+                    places=[{
+                        "place_id": next_it.place_id or next_it.id,
+                        "name": next_it.title,
+                        "category": next_it.category or "Stop",
+                        "approx_cost": next_it.estimated_cost,
+                    }],
+                    metadata=fast_meta
+                )
+
+    # B. "Where are we staying" / "Hotel" Fast Path
+    if any(k in msg_clean_lower for k in ["where are we staying", "where am i staying", "our hotel", "our stay", "where's my hotel"]):
+        hotel_obj = trip.hotel if trip and trip.hotel else None
+        if not hotel_obj and dest_target_slug:
+            dest_rec = db.query(Destination).filter((Destination.slug == dest_target_slug) | (Destination.id == dest_target_slug)).first()
+            if dest_rec and getattr(dest_rec, "hotels", None):
+                hotel_obj = dest_rec.hotels[0]
+        if hotel_obj:
+            fast_resp_text = f"You are staying at {hotel_obj.name} in {hotel_obj.address}. Check-in is at {hotel_obj.check_in_time}."
+            fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "stay_info"}
+            assistant_msg = ConversationMessage(
+                conversation_id=conv.id,
+                role="assistant",
+                content=fast_resp_text,
+                metadata_json=json.dumps(fast_meta),
+            )
+            db.add(assistant_msg)
+            db.commit()
+            return CopilotChatResponse(
+                conversation_id=conv.id,
+                message=fast_resp_text,
+                actions=[{"action_type": "view_stays", "title": "View Stays", "payload": {"destination": dest_target_slug}}],
+                places=[],
+                metadata=fast_meta
+            )
+
+    # C. "Departure / Leave Timing" Fast Path
+    if any(k in msg_clean_lower for k in ["what time should i leave", "when should i leave", "what time should we leave", "when to depart", "departure time"]):
+        t_json = trip.transport_details_json if trip else None
+        t_mode = (trip.transport_mode if trip else "bus") or "bus"
+        if t_json:
+            try:
+                t_data = json.loads(t_json) if isinstance(t_json, str) else t_json
+                dep_time = t_data.get("departure_time", "20:00")
+                dep_loc = t_data.get("departure_location", "Origin Terminal")
+                arr_time = t_data.get("arrival_time", "08:30")
+                fast_resp_text = f"For your {t_mode.replace('_', ' ').title()}, your departure is scheduled for {dep_time} from {dep_loc}, arriving at {arr_time}."
+            except Exception:
+                fast_resp_text = f"Your {t_mode.replace('_', ' ').title()} departure is set. For road trips, 05:30–06:30 AM is recommended for clear city exit."
+        elif "road" in t_mode:
+            fast_resp_text = "We recommend departing between 05:30 AM and 06:30 AM to beat city exit traffic and arrive before mountain dusk."
+        else:
+            fast_resp_text = "For overnight Volvo buses, recommended departure is around 20:00 to 21:00 to arrive fresh in the morning at 08:30."
+
+        fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "departure_timing"}
+        assistant_msg = ConversationMessage(
+            conversation_id=conv.id,
+            role="assistant",
+            content=fast_resp_text,
+            metadata_json=json.dumps(fast_meta),
+        )
+        db.add(assistant_msg)
+        db.commit()
+        return CopilotChatResponse(
+            conversation_id=conv.id,
+            message=fast_resp_text,
+            actions=[],
+            places=[],
+            metadata=fast_meta
+        )
+
+    # D. Simple Food / Cafes Fast Path
+    is_simple_food_query = any(k in msg_clean_lower for k in [
+        "best food", "food in ", "best cafes", "where to eat", "good food", "top cafes", "cafes in "
+    ]) or msg_clean_lower in ["food", "cafes", "cafés", "dinner", "breakfast", "lunch"]
+
+    if is_simple_food_query and dest_target_slug:
+        dest_rec = db.query(Destination).filter((Destination.slug == dest_target_slug) | (Destination.id == dest_target_slug)).first()
+        if dest_rec:
+            food_places = db.query(Place).filter(
+                Place.destination_id == dest_rec.id,
+                Place.is_active == True,
+                Place.category.in_(["Café", "Food", "Restaurant", "Local Food", "Cafés & Bakery"])
+            ).order_by(Place.rating.desc().nullslast()).limit(4).all()
+
+            if not food_places:
+                food_places = db.query(Place).filter(
+                    Place.destination_id == dest_rec.id,
+                    Place.is_active == True
+                ).order_by(Place.rating.desc().nullslast()).limit(4).all()
+
+            if food_places:
+                places_data = [{
+                    "place_id": p.id,
+                    "name": p.name,
+                    "category": p.category,
+                    "approx_cost": p.approx_cost,
+                    "rating": p.rating,
+                    "latitude": p.latitude,
+                    "longitude": p.longitude,
+                    "description": p.description or f"Curated dining in {dest_rec.name}",
+                } for p in food_places]
+
+                fast_resp_text = f"Top verified dining & cafes in {dest_rec.name}:"
+                fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "food_places"}
+                assistant_msg = ConversationMessage(
+                    conversation_id=conv.id,
+                    role="assistant",
+                    content=fast_resp_text,
+                    metadata_json=json.dumps(fast_meta),
+                )
+                db.add(assistant_msg)
+                db.commit()
+                return CopilotChatResponse(
+                    conversation_id=conv.id,
+                    message=fast_resp_text,
+                    actions=[{"action_type": "navigate_destination", "title": f"Explore {dest_rec.name}", "payload": {"slug": dest_rec.slug}}],
+                    places=places_data,
+                    metadata=fast_meta
+                )
+
     # 6. Initialize AI Provider & Tool Dispatcher
     ai_provider = AIFactory.get_provider()
     dispatcher = AIToolDispatcher(db=db, user=current_user)
@@ -306,7 +455,7 @@ async def copilot_chat(
             tool_dispatcher=dispatcher,
             system_instruction=context_data["system_instruction"],
             temperature=0.6,
-            max_turns=3,
+            max_turns=1,
         )
     except Exception as e:
         logger.error(f"Copilot reasoning exception: {e}")

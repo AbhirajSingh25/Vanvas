@@ -324,11 +324,12 @@ function PlanWizard() {
     setTimeout(() => setCurrentStep(6), 150);
   };
 
-  // Step 6: Handle Transport Mode selection
+  // Step 6: Handle Transport Mode selection (Explicit user choice, no auto-advance)
   const handleTransportSelect = (mode: string) => {
-    setSelectedTransportMode(mode);
-    setStepDirection("next");
-    setTimeout(() => setCurrentStep(7), 150);
+    if (mode !== selectedTransportMode) {
+      setSelectedTransportMode(mode);
+      setSelectedTransportOption(null);
+    }
   };
 
   // Step 7: Handle Guest Inline Auth
@@ -452,28 +453,110 @@ function PlanWizard() {
   const currentDestName = selectedDestObject?.name || selectedDestId.charAt(0).toUpperCase() + selectedDestId.slice(1);
   const currentOriginName = originCity || "Your Starting Location";
 
-  // Compute Best Travel Time recommendation dynamically based on geography and transport mode
+  // Compute Best Travel Time recommendation dynamically based on geography, selected mode, and option
   const isHimalayan = ["manali", "kasol", "rishikesh", "chopta", "spiti", "dharamshala", "leh", "jibhi", "shimla", "mussoorie", "mcleodganj", "nainital"].some(
     (h) => currentDestName.toLowerCase().includes(h)
   );
 
-  const bestTravelRecommendation = isHimalayan ? {
-    badge: "BEST FOR YOU",
-    mode: "Overnight Bus",
-    icon: Bus,
-    headline: "🚌 Volvo Semi-Sleeper / Sleeper",
-    timing: "Departs 20:00 → Arrives 08:30 (~12.5 hrs)",
-    rationale: "Saves one hotel night while arriving fresh for morning valley exploration.",
-    actionLabel: "View Curated Buses",
-  } : {
-    badge: "BEST FOR YOU",
-    mode: selectedTransportMode === "Road Trip" ? "Road Trip" : "Train",
-    icon: selectedTransportMode === "Road Trip" ? Car : Train,
-    headline: selectedTransportMode === "Road Trip" ? "🚗 Expressway Self-Drive" : "🚆 Express Superfast",
-    timing: "Smooth transit with scenic waypoints",
-    rationale: "Optimal balance of transit comfort, scenic breaks, and predictable arrival.",
-    actionLabel: "Select This Mode",
+  const getModeSpecificRecommendation = () => {
+    const modeKey = selectedTransportMode.toLowerCase().replace(/\s+/g, "");
+    if (modeKey.includes("bus")) {
+      if (selectedTransportOption) {
+        return {
+          badge: selectedTransportOption.recommendation_badge || "RECOMMENDED BUS",
+          mode: "Bus",
+          headline: `🚌 ${selectedTransportOption.operator_name || "Volvo Semi-Sleeper"}`,
+          timing: `${selectedTransportOption.departure_time} → ${selectedTransportOption.arrival_time} (~${selectedTransportOption.duration_hours}h)`,
+          rationale: isHimalayan
+            ? `Arrives around ${selectedTransportOption.arrival_time}, leaving the morning free for hotel check-in, breakfast, and mountain exploration without daylight fatigue.`
+            : `Direct coach connection with comfortable overnight transit.`,
+        };
+      }
+      return {
+        badge: "BEST FOR YOU",
+        mode: "Overnight Bus",
+        headline: "🚌 Volvo AC Semi-Sleeper / Sleeper",
+        timing: isHimalayan ? "20:00 → 08:30 (~12.5 hrs)" : "Scheduled Intercity Coach",
+        rationale: isHimalayan
+          ? "Saves a hotel night and reaches the valley early in the morning so Day 1 is fully usable."
+          : "Direct budget-friendly transit with predictable arrival.",
+      };
+    }
+
+    if (modeKey.includes("train")) {
+      if (isHimalayan) {
+        return {
+          badge: "RAILHEAD + TRANSFER",
+          mode: "Train",
+          headline: "🚆 Train to Railhead + Onward Hill Transfer",
+          timing: "Express to Chandigarh/Kalka (~4h) + Onward Hill Cab/Bus (~7.5h)",
+          rationale: "No direct rail track reaches high mountain valleys. Disembark at Chandigarh/Kalka railhead and continue via NH3/NH205 scenic hill road.",
+        };
+      }
+      if (selectedTransportOption) {
+        return {
+          badge: "RECOMMENDED TRAIN",
+          mode: "Train",
+          headline: `🚆 ${selectedTransportOption.operator_name || "Vande Bharat / Superfast Express"}`,
+          timing: `${selectedTransportOption.departure_time} → ${selectedTransportOption.arrival_time} (~${selectedTransportOption.duration_hours}h)`,
+          rationale: "Punctual rail transit with scenic daytime corridor views and high passenger comfort.",
+        };
+      }
+      return {
+        badge: "EXPRESS RAIL",
+        mode: "Train",
+        headline: "🚆 Vande Bharat / Superfast Express",
+        timing: "Morning departure with fast arrival",
+        rationale: "Fastest ground transit with onboard dining and zero road congestion.",
+      };
+    }
+
+    if (modeKey.includes("flight")) {
+      if (selectedTransportOption) {
+        return {
+          badge: isHimalayan ? "AIR TRANSIT (WEATHER DEPENDENT)" : "FASTEST TRANSIT",
+          mode: "Flight",
+          headline: `✈ ${selectedTransportOption.operator_name || "Commercial Airline"}`,
+          timing: `${selectedTransportOption.departure_location} (${selectedTransportOption.departure_time}) → ${selectedTransportOption.arrival_location} (${selectedTransportOption.arrival_time})`,
+          rationale: isHimalayan
+            ? "Fastest transit to nearby valley airport (e.g. Bhuntar/Kullu). Requires ~1.5h onward road transfer to stay. Morning departures are recommended for calmer mountain winds."
+            : "Direct airport-to-airport transit maximizing active trip time.",
+        };
+      }
+      return {
+        badge: "AIR TRAVEL",
+        mode: "Flight",
+        headline: "✈ Morning Flight + Local Transfer",
+        timing: isHimalayan ? "DEL → KUU (Bhuntar) + ~1.5h cab to valley" : "Direct Flight Connection",
+        rationale: isHimalayan
+          ? "Short flight duration followed by scenic valley road transfer. Ideal when time is limited."
+          : "Quickest transit between major transit hubs.",
+      };
+    }
+
+    if (modeKey.includes("road")) {
+      return {
+        badge: "RECOMMENDED DEPARTURE WINDOW",
+        mode: "Road Trip",
+        headline: "🚗 05:30 – 06:30 Early Departure Window",
+        timing: isHimalayan ? "Depart 05:30 → Arrive ~17:30 (~530 km, ~11h45m with halts)" : "Flexible expressway transit at your own pace",
+        rationale: isHimalayan
+          ? "WHY: Cleaner city exit avoiding metro traffic, smooth plains cruising before midday, and maximum daylight for hill switchbacks."
+          : "Complete freedom for spontaneous dhabas, viewpoint breaks, and scenic detours.",
+      };
+    }
+
+    // Cab / Transfer
+    return {
+      badge: "PRIVATE DOOR-TO-DOOR",
+      mode: "Cab",
+      headline: "🚕 Dedicated Outstation Cab Transfer",
+      timing: isHimalayan ? "06:00 Recommended Departure (~11.5h door-to-door)" : "Doorstep pickup to destination stay",
+      rationale: "Private air-conditioned ride with doorstep pickup and verified driver experienced in highway and hill driving.",
+    };
   };
+
+  const bestTravelRecommendation = getModeSpecificRecommendation();
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#EFE5D2] flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -521,12 +604,12 @@ function PlanWizard() {
 
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold text-[#173B32]">
-                {currentStep <= 6 ? `0${currentStep} / 06` : "REVIEW"}
+                {currentStep <= 7 ? `0${currentStep} / 07` : "07 / 07"}
               </span>
               <div className="w-16 sm:w-24 bg-[#E5D5BA] h-1.5 rounded-full overflow-hidden">
                 <div
                   className="bg-[#173B32] h-full transition-all duration-300 ease-out rounded-full"
-                  style={{ width: `${(Math.min(currentStep, 6) / 6) * 100}%` }}
+                  style={{ width: `${(Math.min(currentStep, 7) / 7) * 100}%` }}
                 />
               </div>
             </div>
@@ -966,7 +1049,7 @@ function PlanWizard() {
                   How are you getting there?
                 </h2>
                 <p className="text-xs text-[#7B4D36] mt-0.5">
-                  Route: <strong className="text-[#173B32]">{currentOriginName} → {currentDestName}</strong>.
+                  Route: <strong className="text-[#173B32]">{currentOriginName} → {currentDestName}</strong>
                 </p>
               </div>
 
@@ -976,7 +1059,7 @@ function PlanWizard() {
                   <span className="px-2 py-0.5 rounded bg-[#B49252] text-[#173B32] text-[9px] font-mono font-black uppercase tracking-wider">
                     {bestTravelRecommendation.badge}
                   </span>
-                  <span className="text-[10px] font-mono text-[#E5D5BA]">Intelligent Transit Match</span>
+                  <span className="text-[10px] font-mono text-[#E5D5BA]">Mode-Specific Timing</span>
                 </div>
                 <div className="font-serif font-bold text-base text-[#FAF4E8]">
                   {bestTravelRecommendation.headline}
@@ -1009,7 +1092,7 @@ function PlanWizard() {
                         key={m.mode}
                         type="button"
                         onClick={() => handleTransportSelect(m.mode)}
-                        className={`p-3 rounded-2xl text-left interactive-card cursor-pointer border-2 ${
+                        className={`p-3 rounded-2xl text-left interactive-card cursor-pointer border-2 transition-all ${
                           isSelected
                             ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
                             : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
@@ -1026,8 +1109,32 @@ function PlanWizard() {
                 </div>
               </div>
 
-              {/* Live/Curated Option Snippet */}
-              {loadingTransport ? (
+              {/* Road Trip Specific Departure Guidance Card */}
+              {selectedTransportMode.toLowerCase().includes("road") ? (
+                <div className="p-4 bg-white border-2 border-[#173B32]/30 rounded-2xl space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-serif font-black text-[#173B32]">
+                      🚗 SELF-DRIVE / ROAD TRIP PLAN
+                    </span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                      ESTIMATED ROUTE
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs font-mono text-[#173B32]">
+                    <div className="bg-[#FAF7F0] p-2.5 rounded-xl border border-[#E5D5BA]">
+                      <span className="text-[10px] text-[#7B4D36] block">RECOMMENDED DEPARTURE</span>
+                      <strong>05:30 – 06:30 AM</strong>
+                    </div>
+                    <div className="bg-[#FAF7F0] p-2.5 rounded-xl border border-[#E5D5BA]">
+                      <span className="text-[10px] text-[#7B4D36] block">EST. DRIVE TIME</span>
+                      <strong>~11.5 – 12.5 hrs</strong>
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-[#7B4D36] bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/60 leading-relaxed">
+                    <strong>Why early departure?</strong> Exits city before morning gridlock, crosses highway toll plazas smoothly, and ensures you navigate mountain ascent roads in full daylight.
+                  </div>
+                </div>
+              ) : loadingTransport ? (
                 <div className="p-4 bg-white border border-[#E5D5BA] rounded-2xl flex items-center justify-center gap-2 text-xs text-[#7B4D36]">
                   <Loader2 className="w-4 h-4 animate-spin text-[#B65E3C]" />
                   <span>Fetching route options for {selectedTransportMode}...</span>
@@ -1036,70 +1143,100 @@ function PlanWizard() {
                 <div className="space-y-2 pt-2 border-t border-[#E5D5BA]">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] tracking-wider block">
-                      Route &amp; Fare Options ({transportOptions[0]?.data_state === "ESTIMATED" ? "ESTIMATED" : "CURATED"}):
+                      Select Your Preferred Option ({transportOptions[0]?.data_state === "ESTIMATED" ? "ESTIMATED" : "CURATED"}):
                     </span>
                     <span className="text-[9px] font-mono text-[#7B4D36] bg-[#EFE5D2] px-2 py-0.5 rounded">
-                      Indicative Planning
+                      Click an option to select
                     </span>
                   </div>
-                  <div className="divide-y divide-[#E5D5BA] bg-white border-2 border-[#E5D5BA] rounded-2xl overflow-hidden">
-                    {transportOptions.slice(0, 3).map((opt) => (
-                      <div key={opt.id} className="p-3.5 space-y-2 text-xs">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-0.5">
-                            <div className="font-bold text-[#173B32] flex items-center gap-1.5 flex-wrap">
-                              <span>{opt.operator_name}</span>
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] uppercase font-bold">
-                                {opt.data_state || "CURATED"}
+                  <div className="divide-y divide-[#E5D5BA] bg-white border-2 border-[#E5D5BA] rounded-2xl overflow-hidden shadow-xs">
+                    {transportOptions.slice(0, 4).map((opt) => {
+                      const isOptionSelected = selectedTransportOption?.id === opt.id;
+                      return (
+                        <div
+                          key={opt.id}
+                          onClick={() => setSelectedTransportOption(opt)}
+                          className={`p-3.5 space-y-2 text-xs cursor-pointer transition-colors ${
+                            isOptionSelected
+                              ? "bg-[#173B32]/5 border-l-4 border-l-[#173B32]"
+                              : "hover:bg-[#FAF7F0]"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-0.5">
+                              <div className="font-bold text-[#173B32] flex items-center gap-1.5 flex-wrap">
+                                <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                  isOptionSelected ? "border-[#173B32] bg-[#173B32]" : "border-[#B65E3C]"
+                                }`}>
+                                  {isOptionSelected && <span className="w-1.5 h-1.5 bg-[#FAF4E8] rounded-full" />}
+                                </div>
+                                <span>{opt.operator_name}</span>
+                                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] uppercase font-bold">
+                                  {opt.data_state || "CURATED"}
+                                </span>
+                                {opt.recommendation_badge && (
+                                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#B49252]/20 text-[#85611B] font-bold">
+                                    {opt.recommendation_badge}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-[#7B4D36] pl-5">
+                                {opt.departure_location} → {opt.arrival_location}
+                              </div>
+                              <div className="text-[10px] font-mono text-[#B65E3C] pl-5">
+                                {opt.departure_time} → {opt.arrival_time} ({opt.duration_hours}h duration)
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="font-mono font-black text-sm text-[#173B32] block">
+                                ₹{opt.price.toLocaleString()}
                               </span>
-                              {opt.recommendation_badge && (
-                                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#B49252]/20 text-[#85611B] font-bold">
-                                  {opt.recommendation_badge}
+                              {opt.booking_url ? (
+                                <a
+                                  href={opt.booking_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-1 text-[10px] font-mono font-bold text-[#B65E3C] hover:underline inline-flex items-center gap-0.5"
+                                >
+                                  <span>{opt.booking_label || "Book with operator"}</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              ) : (
+                                <span className="mt-1 text-[9px] font-mono text-[#7B4D36] block">
+                                  {opt.booking_label || "Route Guidance"}
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-[#7B4D36]">
-                              {opt.departure_location} → {opt.arrival_location}
-                            </div>
-                            <div className="text-[10px] font-mono text-[#B65E3C]">
-                              {opt.departure_time} → {opt.arrival_time} ({opt.duration_hours}h duration)
-                            </div>
                           </div>
-                          <div className="text-right shrink-0">
-                            <span className="font-mono font-black text-sm text-[#173B32] block">
-                              ₹{opt.price.toLocaleString()}
-                            </span>
-                            {opt.booking_url ? (
-                              <a
-                                href={opt.booking_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-1 text-[10px] font-mono font-bold text-[#B65E3C] hover:underline inline-flex items-center gap-0.5"
-                              >
-                                <span>{opt.booking_label || "Book with operator"}</span>
-                                <ExternalLink className="w-2.5 h-2.5" />
-                              </a>
-                            ) : (
-                              <span className="mt-1 text-[9px] font-mono text-[#7B4D36] block">
-                                {opt.booking_label || "Route Guidance"}
-                              </span>
-                            )}
-                          </div>
+                          {opt.disclaimer && (
+                            <div className="text-[10px] text-[#7B4D36]/90 italic bg-[#FAF7F0] p-1.5 rounded-lg border border-[#E5D5BA]/60 ml-5">
+                              ⓘ {opt.disclaimer}
+                            </div>
+                          )}
                         </div>
-                        {opt.disclaimer && (
-                          <div className="text-[10px] text-[#7B4D36]/90 italic bg-[#FAF7F0] p-1.5 rounded-lg border border-[#E5D5BA]/60">
-                            ⓘ {opt.disclaimer}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-                  Direct transport schedules unavailable for this corridor right now. Calculated route guidance will be applied.
+                  Direct transport schedules unavailable for this corridor. Calculated route guidance and buffer estimates will be applied.
                 </div>
               )}
+
+              {/* Explicit Continue Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setStepDirection("next");
+                  setCurrentStep(7);
+                }}
+                className="w-full py-3.5 rounded-2xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md interactive-btn transition-all mt-4"
+              >
+                <span>Continue to Review</span>
+                <ArrowRight className="w-4 h-4 text-[#B49252]" />
+              </button>
             </div>
           )}
 
@@ -1110,18 +1247,18 @@ function PlanWizard() {
             <div className={`space-y-6 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
-                  JOURNEY SUMMARY
+                  STEP 07 · JOURNEY REVIEW
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
                   Ready to travel to {currentDestName}?
                 </h2>
               </div>
 
-              {/* Clean Ticket Card */}
-              <div className="p-5 rounded-2xl bg-[#EFE5D2] border-2 border-[#173B32] space-y-3 shadow-md animate-vanvas-scale">
-                <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-2">
+              {/* Compact Travel Leg Ticket Card */}
+              <div className="p-5 rounded-2xl bg-[#FAF7F0] border-2 border-[#173B32] space-y-3.5 shadow-md animate-vanvas-scale relative">
+                <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-3">
                   <div>
-                    <span className="text-[9px] font-mono uppercase text-[#7B4D36] font-bold">ROUTE</span>
+                    <span className="text-[9px] font-mono uppercase text-[#7B4D36] font-bold tracking-wider">YOUR TRAVEL LEG</span>
                     <h3 className="font-serif font-black text-xl text-[#173B32]">
                       {currentOriginName} → {currentDestName}
                     </h3>
@@ -1131,16 +1268,48 @@ function PlanWizard() {
                   </span>
                 </div>
 
+                {/* Specific Option Details or Road Guidance */}
+                <div className="p-3 bg-[#EFE5D2]/70 rounded-xl border border-[#E5D5BA] space-y-1.5 text-xs font-mono">
+                  <div className="flex items-center justify-between font-bold text-[#173B32]">
+                    <span>
+                      {selectedTransportOption?.operator_name || (
+                        selectedTransportMode.toLowerCase().includes("road")
+                          ? "Self-Drive Highway Route"
+                          : `${selectedTransportMode} Route Guidance`
+                      )}
+                    </span>
+                    <span className="text-sm font-black">
+                      {selectedTransportOption ? `₹${selectedTransportOption.price.toLocaleString()} / traveller` : "Est. Route"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[#7B4D36] text-[11px]">
+                    <span>
+                      ⏱ {selectedTransportOption ? `${selectedTransportOption.departure_time} → ${selectedTransportOption.arrival_time} (~${selectedTransportOption.duration_hours} hrs)` : "05:30 Departure Window (~11.5h)"}
+                    </span>
+                    <span className="text-[9px] bg-white px-1.5 py-0.5 rounded border border-[#E5D5BA] font-bold text-[#173B32]">
+                      {selectedTransportOption?.data_state || "CURATED"} · VERIFY BEFORE TRAVEL
+                    </span>
+                  </div>
+
+                  {selectedTransportOption?.departure_location && (
+                    <div className="text-[10px] text-[#7B4D36] pt-1 border-t border-[#E5D5BA]/60 flex justify-between">
+                      <span><strong>DEPART:</strong> {selectedTransportOption.departure_location}</span>
+                      <span><strong>ARRIVE:</strong> {selectedTransportOption.arrival_location}</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-3 gap-2 text-xs font-mono">
-                  <div>
+                  <div className="bg-white p-2 rounded-xl border border-[#E5D5BA]">
                     <span className="text-[#7B4D36] block text-[10px]">DURATION</span>
                     <strong className="text-[#173B32]">{daysCount} Days</strong>
                   </div>
-                  <div>
+                  <div className="bg-white p-2 rounded-xl border border-[#E5D5BA]">
                     <span className="text-[#7B4D36] block text-[10px]">TRAVELLERS</span>
                     <strong className="text-[#173B32]">{travellersCount} ({companionType})</strong>
                   </div>
-                  <div>
+                  <div className="bg-white p-2 rounded-xl border border-[#E5D5BA]">
                     <span className="text-[#7B4D36] block text-[10px]">EST. BUDGET</span>
                     <strong className="text-[#173B32]">₹{(budgetEstimate / 1000).toFixed(0)}K ({travelStyle})</strong>
                   </div>
@@ -1154,9 +1323,9 @@ function PlanWizard() {
                       setStepDirection("prev");
                       setCurrentStep(6);
                     }}
-                    className="text-[#B65E3C] font-bold text-xs underline cursor-pointer"
+                    className="text-[#B65E3C] font-bold text-xs underline cursor-pointer hover:text-[#173B32]"
                   >
-                    Change Transport
+                    ← Change Transport
                   </button>
                 </div>
               </div>

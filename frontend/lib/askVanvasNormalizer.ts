@@ -63,6 +63,7 @@ export interface TravelContext {
   };
   placeId?: string;
   placeName?: string;
+  activeDayNumber?: number;
 }
 
 export interface ActionContract {
@@ -114,7 +115,7 @@ export interface StructuredAssistantResponse {
       weather?: string;
     };
   };
-  provenance: "LIVE" | "CURATED" | "ESTIMATED" | "USER ENTERED";
+  provenance: "LIVE" | "CURATED" | "ESTIMATED" | "USER ENTERED" | "UNAVAILABLE";
   details?: {
     morePicks?: AssistantItem[];
     transit?: string[];
@@ -331,29 +332,36 @@ export function normalizeAssistantResponse(
     });
   }
 
-  // If no places returned from tools, construct deterministic items only when contextually grounded
+  // If no places returned from tools, construct deterministic items only when contextually grounded in verified user data
   if (items.length === 0) {
     if (responseType === "REPLAN") {
-      items.push(
-        { id: "replan-1", name: "Shift afternoon stops", category: "Schedule", reason: "Moves remaining stops by 90 mins" },
-        { id: "replan-2", name: "Skip low-priority detour", category: "Optimization", reason: "Recovers 1.5 hrs daylight" },
-        { id: "replan-3", name: "Preserve stay check-in", category: "Stay", reason: "Check-in at 6:30 PM preserved" }
-      );
+      summary = summary || "Schedule timing refreshed for today.";
     } else if (responseType === "BUDGET") {
       const b = context?.budgetData;
-      const spent = b?.totalSpent || 18450;
-      const total = b?.totalBudget || 30000;
-      const rem = b?.remaining || Math.max(0, total - spent);
-      items.push(
-        { id: "b-1", name: "Total Budget", cost: `₹${total.toLocaleString()}`, category: "Budget", reason: "Target allocation" },
-        { id: "b-2", name: "Total Spent", cost: `₹${spent.toLocaleString()}`, category: "Expenses", reason: "Verified ledger transactions" },
-        { id: "b-3", name: "Remaining Balance", cost: `₹${rem.toLocaleString()}`, category: "Balance", reason: "Available funds" }
-      );
+      if (b && (b.totalSpent !== undefined || b.totalBudget !== undefined)) {
+        const spent = b.totalSpent || 0;
+        const total = b.totalBudget || 0;
+        const rem = b.remaining !== undefined ? b.remaining : Math.max(0, total - spent);
+        items.push(
+          { id: "b-1", name: "Total Budget", cost: `₹${total.toLocaleString()}`, category: "Budget", reason: "Target allocation" },
+          { id: "b-2", name: "Total Spent", cost: `₹${spent.toLocaleString()}`, category: "Expenses", reason: "Verified ledger transactions" },
+          { id: "b-3", name: "Remaining Balance", cost: `₹${rem.toLocaleString()}`, category: "Balance", reason: "Available funds" }
+        );
+      } else {
+        summary = "No expense ledger transactions recorded for this trip yet.";
+      }
     } else if (responseType === "ROUTE") {
-      items.push(
-        { id: "route-1", name: "Heritage Hilltop Fort", category: "Scenic Stop", distance: "+4 km detour", reason: "45 min · Scenic views & tea stop" },
-        { id: "route-2", name: "Riverside Dhaba Stop", category: "Food & Tea", distance: "On Route", reason: "Fresh local meals & chai" }
-      );
+      if (context?.roadTripData?.stops && context.roadTripData.stops.length > 0) {
+        context.roadTripData.stops.slice(0, 3).forEach((s, idx) => {
+          items.push({
+            id: `route-${idx}`,
+            name: s.name || s.title || `Stop ${idx + 1}`,
+            category: s.category || "Scenic Waypoint",
+            distance: s.distance || `${s.distanceKm || 0} km`,
+            reason: s.notes || "Waypoint along driving corridor",
+          });
+        });
+      }
     }
   }
 
@@ -366,7 +374,7 @@ export function normalizeAssistantResponse(
         ? `${items.length} verified options for your expedition in ${activePlace}.`
         : `Explore curated options for ${activePlace}.`;
     } else {
-      summary = text || "How can I help with your journey today?";
+      summary = text || "I don't have verified data for that right now.";
     }
   }
 
@@ -389,7 +397,7 @@ export function normalizeAssistantResponse(
       id: "apply-replan-action",
       label: "Apply Replan",
       action: "replan_today",
-      payload: { trip_id: context?.tripId, action_type: "late", day_number: 1 },
+      payload: { trip_id: context?.tripId, action_type: "late", day_number: context?.activeDayNumber || 1 },
       icon: "refresh",
       variant: "primary",
     });

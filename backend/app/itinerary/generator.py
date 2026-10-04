@@ -24,6 +24,8 @@ class ItineraryEngine:
         hotel: Optional[Hotel] = None,
         rental: Optional[RentalOption] = None,
         planning_mode: str = "multi_day",
+        transport_mode: Optional[str] = None,
+        transport_details: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         num_days = max(1, (end_date - start_date).days + 1)
         dest_slug = (destination.slug or "").lower().strip()
@@ -354,55 +356,155 @@ class ItineraryEngine:
 
             # Day 1 Arrival & Luggage check-in handling
             if day_idx == 0:
-                # 08:30 Arrival / Breakfast
-                bf_place = food_places[0] if food_places else None
-                bf_title = f"Arrival Breakfast at {bf_place.name}" if bf_place else "Morning Breakfast & Fresh Himalayan Chai"
-                bf_cost = bf_place.approx_cost if bf_place else 180.0
+                # 1. Parse transport arrival timing
+                t_mode = (transport_mode or (transport_details.get("transport_type") if transport_details else "") or "bus").lower().replace(" ", "_")
+                t_arrival_str = transport_details.get("arrival_time") if transport_details else None
+                t_arrival_loc = (transport_details.get("arrival_location") if transport_details else None) or f"{destination.name} Main Arrival Hub"
+                t_operator = transport_details.get("operator_name") if transport_details else None
 
+                # Calculate arrival minutes
+                arr_h = 8
+                arr_m = 30
+                if t_arrival_str and ":" in str(t_arrival_str):
+                    try:
+                        arr_parts = str(t_arrival_str).split(":")
+                        arr_h = int(arr_parts[0])
+                        arr_m = int(arr_parts[1])
+                    except Exception:
+                        arr_h, arr_m = 8, 30
+                elif "flight" in t_mode or "plane" in t_mode:
+                    arr_h, arr_m = 9, 30
+                elif "train" in t_mode:
+                    arr_h, arr_m = 10, 30
+                elif "road" in t_mode or "car" in t_mode or "cab" in t_mode:
+                    arr_h, arr_m = 17, 0  # Typical mountain driving arrival afternoon/evening
+                else:
+                    arr_h, arr_m = 8, 30
+
+                current_time_minutes = arr_h * 60 + arr_m
+
+                # 1. Arrival Block
+                arr_end_mins = current_time_minutes + 25
                 day_items.append({
-                    "place_id": bf_place.id if bf_place else None,
-                    "title": bf_title,
-                    "category": "Food",
+                    "place_id": None,
+                    "title": f"Arrive in {destination.name} ({t_arrival_loc})",
+                    "category": "Transit",
                     "start_time": f"{current_time_minutes // 60:02d}:{current_time_minutes % 60:02d}",
-                    "end_time": f"{(current_time_minutes + 60) // 60:02d}:{(current_time_minutes + 60) % 60:02d}",
-                    "duration_mins": 60,
-                    "estimated_cost": bf_cost,
-                    "travel_time_from_prev_mins": 10,
-                    "distance_from_prev_km": 1.5,
-                    "notes": "Arrive in the valley, stretch your legs, and grab a hot breakfast with fresh mountain air.",
-                    "reason_for_recommendation": "Perfect stop immediately after your journey before hotel check-in opens.",
-                    "map_lat": bf_place.latitude if bf_place else start_lat,
-                    "map_lng": bf_place.longitude if bf_place else start_lng,
+                    "end_time": f"{arr_end_mins // 60:02d}:{arr_end_mins % 60:02d}",
+                    "duration_mins": 25,
+                    "estimated_cost": 0.0,
+                    "travel_time_from_prev_mins": 0,
+                    "distance_from_prev_km": 0.0,
+                    "notes": f"Arrival via {t_operator or t_mode.title()}. Collect luggage and stretch legs after the journey.",
+                    "reason_for_recommendation": "Verified arrival checkpoint.",
+                    "map_lat": start_lat,
+                    "map_lng": start_lng,
                     "booking_url": None,
-                    "opening_hours": "07:30 - 22:00",
+                    "opening_hours": "24/7 Hub",
                     "status": "upcoming",
-                    "is_locked": False
+                    "is_locked": True
                 })
-                current_time_minutes += 75 # 60 min + 15 transit
+                current_time_minutes = arr_end_mins
 
-                # 10:00 Luggage Drop / Hotel check-in preparation (for multi-day trips)
-                if num_days > 1:
-                    hotel_name = hotel.name if hotel else "Hotel / Mountain Stay"
+                # 2. Transfer to Stay Block
+                transfer_dur = 25
+                transfer_end = current_time_minutes + transfer_dur
+                hotel_name = hotel.name if hotel else f"{destination.name} Mountain Stay"
+                day_items.append({
+                    "place_id": None,
+                    "title": f"Transfer to {hotel_name}",
+                    "category": "Transit",
+                    "start_time": f"{current_time_minutes // 60:02d}:{current_time_minutes % 60:02d}",
+                    "end_time": f"{transfer_end // 60:02d}:{transfer_end % 60:02d}",
+                    "duration_mins": transfer_dur,
+                    "estimated_cost": 150.0 if "flight" in t_mode or "train" in t_mode else 100.0,
+                    "travel_time_from_prev_mins": transfer_dur,
+                    "distance_from_prev_km": 3.5,
+                    "notes": f"Local taxi / auto transfer from {t_arrival_loc} to {hotel_name}.",
+                    "reason_for_recommendation": "Seamless transit directly to your basecamp.",
+                    "map_lat": start_lat,
+                    "map_lng": start_lng,
+                    "booking_url": None,
+                    "opening_hours": "All Day",
+                    "status": "upcoming",
+                    "is_locked": True
+                })
+                current_time_minutes = transfer_end
+
+                # 3. Luggage Drop / Check-in Prep
+                prep_dur = 30
+                prep_end = current_time_minutes + prep_dur
+                day_items.append({
+                    "place_id": None,
+                    "title": f"Drop Luggage & Refresh at {hotel_name}",
+                    "category": "Stay",
+                    "start_time": f"{current_time_minutes // 60:02d}:{current_time_minutes % 60:02d}",
+                    "end_time": f"{prep_end // 60:02d}:{prep_end % 60:02d}",
+                    "duration_mins": prep_dur,
+                    "estimated_cost": 0.0,
+                    "travel_time_from_prev_mins": 5,
+                    "distance_from_prev_km": 0.5,
+                    "notes": "Drop heavy backpacks at the front desk safely while rooms are prepped. Freshen up with mountain water.",
+                    "reason_for_recommendation": "Frees you up to explore without carrying heavy luggage.",
+                    "map_lat": start_lat,
+                    "map_lng": start_lng,
+                    "booking_url": hotel.booking_url if hotel else None,
+                    "opening_hours": "24/7 Desk",
+                    "status": "upcoming",
+                    "is_locked": True
+                })
+                current_time_minutes = prep_end + 15  # Buffer before first experience
+
+                # 4. First Meal / Experience strictly AFTER arrival + transfer + buffer
+                bf_place = food_places[0] if food_places else None
+                if current_time_minutes < 15 * 60:
+                    # Morning/Early Afternoon Arrival -> Breakfast / Brunch
+                    bf_title = f"Arrival Brunch & Fresh Chai at {bf_place.name}" if bf_place else "Morning Breakfast & Fresh Himalayan Chai"
+                    bf_cost = bf_place.approx_cost if bf_place else 180.0
                     day_items.append({
-                        "place_id": None,
-                        "title": f"Luggage Drop at {hotel_name}",
-                        "category": "Stay",
+                        "place_id": bf_place.id if bf_place else None,
+                        "title": bf_title,
+                        "category": "Food",
                         "start_time": f"{current_time_minutes // 60:02d}:{current_time_minutes % 60:02d}",
-                        "end_time": f"{(current_time_minutes + 30) // 60:02d}:{(current_time_minutes + 30) % 60:02d}",
-                        "duration_mins": 30,
-                        "estimated_cost": 0.0,
-                        "travel_time_from_prev_mins": 15,
-                        "distance_from_prev_km": 2.2,
-                        "notes": "Drop backpacks at the front desk safely while rooms are prepped for 11:00 AM check-in.",
-                        "reason_for_recommendation": "Keeps you lightweight and agile for morning exploration.",
-                        "map_lat": start_lat,
-                        "map_lng": start_lng,
-                        "booking_url": hotel.booking_url if hotel else None,
-                        "opening_hours": "24/7 Desk",
+                        "end_time": f"{(current_time_minutes + 60) // 60:02d}:{(current_time_minutes + 60) % 60:02d}",
+                        "duration_mins": 60,
+                        "estimated_cost": bf_cost,
+                        "travel_time_from_prev_mins": 10,
+                        "distance_from_prev_km": 1.5,
+                        "notes": "Enjoy hot breakfast, steaming chai, and majestic valley views.",
+                        "reason_for_recommendation": "First culinary experience in the valley.",
+                        "map_lat": bf_place.latitude if bf_place else start_lat,
+                        "map_lng": bf_place.longitude if bf_place else start_lng,
+                        "booking_url": None,
+                        "opening_hours": "07:30 - 22:00",
                         "status": "upcoming",
-                        "is_locked": True
+                        "is_locked": False
                     })
-                    current_time_minutes += 45
+                    current_time_minutes += 75
+                else:
+                    # Late Afternoon / Evening Arrival -> Sunset Dinner & Chai
+                    bf_title = f"Sunset Dinner & Mountain Flavours at {bf_place.name}" if bf_place else "Welcome Dinner & Mountain Cuisine"
+                    bf_cost = bf_place.approx_cost if bf_place else 350.0
+                    day_items.append({
+                        "place_id": bf_place.id if bf_place else None,
+                        "title": bf_title,
+                        "category": "Food",
+                        "start_time": f"{current_time_minutes // 60:02d}:{current_time_minutes % 60:02d}",
+                        "end_time": f"{(current_time_minutes + 75) // 60:02d}:{(current_time_minutes + 75) % 60:02d}",
+                        "duration_mins": 75,
+                        "estimated_cost": bf_cost,
+                        "travel_time_from_prev_mins": 15,
+                        "distance_from_prev_km": 1.5,
+                        "notes": "Unwind after travel with a hot hearty meal and serene mountain evening atmosphere.",
+                        "reason_for_recommendation": "Relaxed evening dining after road journey.",
+                        "map_lat": bf_place.latitude if bf_place else start_lat,
+                        "map_lng": bf_place.longitude if bf_place else start_lng,
+                        "booking_url": None,
+                        "opening_hours": "17:00 - 23:00",
+                        "status": "upcoming",
+                        "is_locked": False
+                    })
+                    current_time_minutes += 90
             else:
                 # Breakfast for other days
                 bf_place = food_places[day_idx % len(food_places)] if food_places else None

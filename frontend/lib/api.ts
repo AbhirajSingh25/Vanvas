@@ -848,23 +848,15 @@ export const api = {
     });
   },
 
-  async addPlaceToItinerary(tripId: string, placeId: string, day: number): Promise<any> {
-    return fetchApi("/copilot/chat", {
+  async addPlaceToItinerary(tripId: string, placeId: string, day: number = 1): Promise<any> {
+    return fetchApi(`/trips/${tripId}/itineraries/${day}/places/${placeId}`, {
       method: "POST",
-      body: JSON.stringify({
-        message: `Add place ${placeId} to day ${day}`,
-        trip_id: tripId,
-      }),
     });
   },
 
   async deleteItineraryItem(tripId: string, itemId: string): Promise<any> {
-    return fetchApi("/copilot/chat", {
-      method: "POST",
-      body: JSON.stringify({
-        message: `Remove item ${itemId} from trip`,
-        trip_id: tripId,
-      }),
+    return fetchApi(`/trips/${tripId}/items/${itemId}`, {
+      method: "DELETE",
     });
   },
 

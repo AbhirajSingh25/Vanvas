@@ -212,7 +212,9 @@ async def create_trip(
             interests=trip_in.interests,
             hotel=hotel,
             rental=rental,
-            planning_mode=getattr(trip_in, "planning_mode", "multi_day") or "multi_day"
+            planning_mode=getattr(trip_in, "planning_mode", "multi_day") or "multi_day",
+            transport_mode=chosen_transport_mode,
+            transport_details=trip_in.transport_details
         )
 
         for day_dict in generated_days:
@@ -871,3 +873,147 @@ def update_itinerary_item(
 
     db.commit()
     return {"success": True, "item_id": item.id, "status": item.status, "is_locked": item.is_locked}
+
+@router.post("/{trip_id}/itineraries/{day_number}/places/{place_id}", response_model=ItineraryItemResponse)
+def add_place_to_trip_itinerary(
+    trip_id: str,
+    day_number: int,
+    place_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Deterministic REST endpoint to add a canonical place to a trip's day itinerary.
+    Authenticates, authorizes membership, computes scheduling slot, and creates item.
+    """
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_member = db.query(TripMember).filter(TripMember.trip_id == trip.id, TripMember.user_id == current_user.id).first()
+    if not is_member and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Unauthorized: You must be a member of this trip to add places.")
+
+    place = db.query(Place).filter(Place.id == place_id).first()
+    if not place:
+        # Check by slug
+        place = db.query(Place).filter(Place.slug == place_id).first()
+    if not place:
+        raise HTTPException(status_code=404, detail=f"Place '{place_id}' not found")
+
+    itinerary = db.query(Itinerary).filter(Itinerary.trip_id == trip.id, Itinerary.day_number == day_number).first()
+    if not itinerary:
+        raise HTTPException(status_code=404, detail=f"Day {day_number} itinerary not found for trip")
+
+    # Check if place already added to this day
+    existing_item = db.query(ItineraryItem).filter(
+        ItineraryItem.itinerary_id == itinerary.id,
+        ItineraryItem.place_id == place.id
+    ).first()
+    if existing_item:
+        return ItineraryItemResponse.model_validate(existing_item)
+
+    # Determine start and end time based on existing items
+    existing_items = sorted(itinerary.items, key=lambda x: x.start_time or "09:00")
+    if existing_items:
+        last_item = existing_items[-1]
+        try:
+            last_end_parts = (last_item.end_time or "16:00").split(":")
+            start_mins = int(last_end_parts[0]) * 60 + int(last_end_parts[1]) + 15
+        except Exception:
+            start_mins = 16 * 60
+    else:
+        start_mins = 10 * 60
+
+    duration = place.recommended_duration_mins or 60
+    end_mins = start_mins + duration
+
+    start_str = f"{(start_mins // 60) % 24:02d}:{start_mins % 60:02d}"
+    end_str = f"{(end_mins // 60) % 24:02d}:{end_mins % 60:02d}"
+
+    new_item = ItineraryItem(
+        itinerary_id=itinerary.id,
+        place_id=place.id,
+        title=place.name,
+        category=place.category or "Attraction",
+        start_time=start_str,
+        end_time=end_str,
+        duration_mins=duration,
+        estimated_cost=place.approx_cost or 0.0,
+        travel_time_from_prev_mins=15,
+        distance_from_prev_km=1.5,
+        notes=place.description[:120] if place.description else f"Explore {place.name}",
+        reason_for_recommendation=f"Added by explorer to Day {day_number}.",
+        map_lat=place.latitude,
+        map_lng=place.longitude,
+        booking_url=place.booking_url,
+        opening_hours=f"{place.opening_time or '09:00'} - {place.closing_time or '20:00'}",
+        status="upcoming",
+        is_locked=False
+    )
+    db.add(new_item)
+
+    # Record revision
+    try:
+        from app.models.models import TripRevision
+        revision = TripRevision(
+            trip_id=trip.id,
+            user_id=current_user.id,
+            action_type="ADD_ACTIVITY",
+            description=f"Added '{place.name}' to Day {day_number}",
+            payload_json=json.dumps({"place_id": place.id, "day_number": day_number})
+        )
+        db.add(revision)
+    except Exception:
+        pass
+
+    db.commit()
+    db.refresh(new_item)
+    return ItineraryItemResponse.model_validate(new_item)
+
+@router.delete("/{trip_id}/items/{item_id}")
+def delete_trip_itinerary_item(
+    trip_id: str,
+    item_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Deterministic REST endpoint to delete an itinerary item from a trip.
+    Authenticates, authorizes membership, removes item, records revision.
+    """
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_member = db.query(TripMember).filter(TripMember.trip_id == trip.id, TripMember.user_id == current_user.id).first()
+    if not is_member and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Unauthorized: You must be a member of this trip to delete items.")
+
+    item = db.query(ItineraryItem).join(Itinerary).filter(
+        ItineraryItem.id == item_id,
+        Itinerary.trip_id == trip.id
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Itinerary item not found in this trip")
+
+    deleted_title = item.title
+    db.delete(item)
+
+    # Record revision
+    try:
+        from app.models.models import TripRevision
+        revision = TripRevision(
+            trip_id=trip.id,
+            user_id=current_user.id,
+            action_type="REMOVE_ACTIVITY",
+            description=f"Removed '{deleted_title}' from itinerary",
+            payload_json=json.dumps({"item_id": item_id, "title": deleted_title})
+        )
+        db.add(revision)
+    except Exception:
+        pass
+
+    db.commit()
+    return {"success": True, "message": f"Successfully removed '{deleted_title}' from trip.", "item_id": item_id}
+

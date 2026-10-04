@@ -91,7 +91,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           tripId,
         };
       });
-    } else if (pathname.startsWith("/destinations/")) {
+    } else if (pathname.startsWith("/explore/") || pathname.startsWith("/destinations/")) {
       const slug = pathname.split("/")[2];
       const formattedName = slug ? slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Destination";
       setCurrentContext({
@@ -329,11 +329,12 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (qLower === "add it" || qLower === "add this" || qLower === "add that") {
       const targetItem = selectedEntity || lastResponse?.items?.[0];
       if (targetItem && currentContext.tripId) {
+        const targetDay = currentContext.activeDayNumber || 1;
         await executeAction({
           id: `add-it-${Date.now()}`,
           label: `Add ${targetItem.name}`,
           action: "add_place_to_itinerary",
-          payload: { place_id: targetItem.placeId || targetItem.id, title: targetItem.name, day: 1 },
+          payload: { place_id: targetItem.placeId || targetItem.id, title: targetItem.name, day: targetDay },
         });
         return;
       }
@@ -404,15 +405,27 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         triggerTripRefresh();
       }
     } catch (err: any) {
-      console.warn("Copilot API fallback engaged:", err);
-      const structured = normalizeAssistantResponse(effectiveQuery, undefined, currentContext, effectiveQuery);
-      setLastResponse(structured);
+      console.warn("Copilot API service unavailable:", err);
+      const fallbackMsg = "VANVAS COULDN'T REACH THE TRAVEL INTELLIGENCE SERVICE";
+      const fallbackSummary = "Your trip data is still safe. Please check connection and try again.";
+      const errorStructured: StructuredAssistantResponse = {
+        type: "CLARIFICATION",
+        title: "TRAVEL INTELLIGENCE TEMPORARILY OFFLINE",
+        summary: fallbackSummary,
+        items: [],
+        actions: [
+          { id: "retry-query", label: "Retry", action: "query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
+        ],
+        provenance: "UNAVAILABLE",
+        rawText: fallbackMsg,
+      };
+      setLastResponse(errorStructured);
 
       const assistantMessage: MessageItem = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        text: structured.summary,
-        structured,
+        text: fallbackSummary,
+        structured: errorStructured,
         timestamp: new Date().toISOString(),
       };
 
@@ -483,13 +496,72 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // 2. Navigation Actions
     if (act === "navigate_destination" && payload.slug) {
-      router.push(`/destinations/${payload.slug}`);
+      router.push(`/explore/${payload.slug}`);
       closeAskVanvas();
       return;
     }
 
     if (act === "navigate_trip" && payload.trip_id) {
       router.push(`/trips/${payload.trip_id}`);
+      closeAskVanvas();
+      return;
+    }
+
+    if (act === "open_place" && (payload.slug || payload.id)) {
+      const destSlug = currentContext.destinationSlug || "manali";
+      router.push(`/explore/${destSlug}?place=${payload.slug || payload.id}`);
+      closeAskVanvas();
+      return;
+    }
+
+    if (act === "open_stays" || act === "view_stays") {
+      if (currentContext.tripId) {
+        router.push(`/trips/${currentContext.tripId}?tab=stays_rentals`);
+      } else {
+        const destSlug = currentContext.destinationSlug || payload.destination || "manali";
+        router.push(`/explore/${destSlug}?tab=stays`);
+      }
+      closeAskVanvas();
+      return;
+    }
+
+    if (act === "open_rentals" || act === "view_rentals") {
+      if (currentContext.tripId) {
+        router.push(`/trips/${currentContext.tripId}?tab=stays_rentals`);
+      } else {
+        const destSlug = currentContext.destinationSlug || payload.destination || "manali";
+        router.push(`/explore/${destSlug}?tab=rentals`);
+      }
+      closeAskVanvas();
+      return;
+    }
+
+    if (act === "open_journal") {
+      if (currentContext.tripId) {
+        router.push(`/trips/${currentContext.tripId}/journal`);
+      } else {
+        router.push("/trips");
+      }
+      closeAskVanvas();
+      return;
+    }
+
+    if (act === "open_checklist") {
+      if (currentContext.tripId) {
+        router.push(`/trips/${currentContext.tripId}?tab=checklist`);
+      } else {
+        router.push("/plan");
+      }
+      closeAskVanvas();
+      return;
+    }
+
+    if (act === "open_messages") {
+      if (currentContext.tripId) {
+        router.push(`/trips/${currentContext.tripId}?tab=group`);
+      } else {
+        router.push("/circles");
+      }
       closeAskVanvas();
       return;
     }
@@ -512,8 +584,23 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     if (act === "build_day_plan" || act === "build_plan") {
       const destSlug = payload.destination || currentContext.destinationSlug || "manali";
-      router.push(`/destinations/${destSlug}`);
-      closeAskVanvas();
+      if (currentContext.tripId) {
+        setStatusMessage("Building today's plan...");
+        setLoading(true);
+        try {
+          await api.getQuickPlan(currentContext.tripId, 8);
+          setActionFeedback({ type: "success", message: "Curated 1-day plan prepared for your trip!" });
+          triggerTripRefresh();
+        } catch (e: any) {
+          setActionFeedback({ type: "error", message: e.message || "Could not generate day plan." });
+        } finally {
+          setLoading(false);
+          setStatusMessage(null);
+        }
+      } else {
+        router.push(`/explore/${destSlug}`);
+        closeAskVanvas();
+      }
       return;
     }
 
@@ -552,7 +639,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         await api.savePlace(placeId);
         setActionFeedback({ type: "success", message: `Saved to your travel collection.` });
       } catch (err: any) {
-        setActionFeedback({ type: "info", message: "Place saved to your profile." });
+        setActionFeedback({ type: "error", message: err.message || "Could not save place." });
       }
       return;
     }
@@ -561,19 +648,22 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (act === "add_place_to_itinerary" || act === "add_to_itinerary") {
       const tripId = payload.trip_id || currentContext.tripId;
       const placeId = payload.place_id || payload.id;
-      const day = payload.day || 1;
+      const day = payload.day || currentContext.activeDayNumber || 1;
 
       if (!tripId || !placeId) {
         setActionFeedback({ type: "error", message: "Trip or Place not specified." });
         return;
       }
 
+      setStatusMessage("Adding to your itinerary...");
       try {
         await api.addPlaceToItinerary(tripId, placeId, day);
         setActionFeedback({ type: "success", message: `Added to Day ${day} of your trip.` });
         triggerTripRefresh();
       } catch (err: any) {
         setActionFeedback({ type: "error", message: err.message || "Could not add place to trip." });
+      } finally {
+        setStatusMessage(null);
       }
       return;
     }
@@ -598,16 +688,10 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               setActionFeedback({ type: "success", message: `Removed '${stopTitle}' from trip.` });
               triggerTripRefresh();
             } else {
-              await api.copilotChat({
-                message: `Remove ${stopTitle} from my trip`,
-                trip_id: tripId,
-                conversation_id: conversationId || undefined,
-              });
-              setActionFeedback({ type: "success", message: `Removed '${stopTitle}'.` });
-              triggerTripRefresh();
+              setActionFeedback({ type: "error", message: "Item ID missing for removal." });
             }
           } catch (err: any) {
-            setActionFeedback({ type: "error", message: "Could not remove stop." });
+            setActionFeedback({ type: "error", message: err.message || "Could not remove stop." });
           }
         },
         onCancel: clearConfirmation,
@@ -619,7 +703,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (act === "replan_today" || act === "replan_trip" || act === "replan_applied") {
       const tripId = payload.trip_id || currentContext.tripId;
       const reason = payload.reason || payload.action_type || "late";
-      const dayNumber = payload.day_number || 1;
+      const dayNumber = payload.day_number || currentContext.activeDayNumber || 1;
 
       if (!tripId) {
         setActionFeedback({ type: "error", message: "No active trip to replan." });
@@ -633,7 +717,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           action_type: reason,
           day_number: dayNumber,
         });
-        setActionFeedback({ type: "success", message: "Your trip itinerary has been updated!" });
+        setActionFeedback({ type: "success", message: `Day ${dayNumber} itinerary updated!` });
         triggerTripRefresh();
 
         const resMsg: MessageItem = {
@@ -644,10 +728,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             type: "REPLAN",
             title: "SCHEDULE UPDATED",
             summary: `Day ${dayNumber} timetable compressed and refreshed.`,
-            items: [
-              { id: "r-1", name: "Afternoon stops compressed", category: "Schedule", reason: "Adjusted by 90 minutes" },
-              { id: "r-2", name: "Stay check-in preserved", category: "Stay", reason: "Confirmed booking intact" },
-            ],
+            items: [],
             actions: [
               { id: "v-trip", label: "View Updated Itinerary", action: "navigate_trip", payload: { trip_id: tripId }, icon: "compass", variant: "primary" },
             ],
@@ -657,7 +738,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
         setMessages((prev) => [...prev, resMsg]);
       } catch (err: any) {
-        setActionFeedback({ type: "error", message: "Replan failed. Please try again." });
+        setActionFeedback({ type: "error", message: err.message || "Replan failed. Please try again." });
       } finally {
         setLoading(false);
         setStatusMessage(null);
@@ -666,13 +747,13 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     // 8. External Booking Handoff
-    if (act === "book_externally" || act === "view_stays") {
+    if (act === "book_externally") {
       const url = payload.booking_url || payload.url;
       if (url) {
         window.open(url, "_blank", "noopener,noreferrer");
-      } else if (payload.destination || currentContext.destinationSlug) {
-        const d = payload.destination || currentContext.destinationSlug;
-        router.push(`/destinations/${d}`);
+      } else {
+        const d = payload.destination || currentContext.destinationSlug || "manali";
+        router.push(`/explore/${d}?tab=stays`);
         closeAskVanvas();
       }
       return;
