@@ -13,6 +13,7 @@ import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrig
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { ConnectivityBanner } from "@/components/pwa/ConnectivityBanner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { CapacitorInit } from "@/components/capacitor/CapacitorInit";
 import { Analytics } from "@vercel/analytics/next";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -153,6 +154,7 @@ export default function RootLayout({
                 <FloatingCopilotTrigger />
                 <AskVanvasModal />
                 <InstallPrompt />
+                <CapacitorInit />
                 <Analytics />
               </AskVanvasProvider>
             </DensityProvider>

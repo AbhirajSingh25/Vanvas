@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VANVAS</string>
+    <string name="title_activity_main">VANVAS</string>
+    <string name="package_name">ai.vanvas.app</string>
+    <string name="custom_url_scheme">ai.vanvas.app</string>
+</resources>
