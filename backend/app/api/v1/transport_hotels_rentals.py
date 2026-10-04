@@ -22,19 +22,22 @@ arrival_optimizer = ArrivalOptimizer()
 @router.get("/transport", response_model=List[TransportOptionResponse])
 async def get_transport_options(
     destination_id: str,
-    origin_city: Optional[str] = "Delhi",
+    origin_city: Optional[str] = Query(None, description="Origin starting city"),
     transport_type: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    origin_clean = origin_city.strip() if origin_city and origin_city.strip() else ""
+
     dest = db.query(Destination).filter(
         (Destination.id == destination_id) | (Destination.slug == destination_id)
     ).first()
     dest_id = dest.id if dest else destination_id
 
     query = db.query(TransportOption).filter(
-        TransportOption.destination_id == dest_id,
-        TransportOption.origin_city.ilike(f"%{origin_city}%")
+        TransportOption.destination_id == dest_id
     )
+    if origin_clean:
+        query = query.filter(TransportOption.origin_city.ilike(f"%{origin_clean}%"))
     if transport_type and transport_type != "All":
         query = query.filter(TransportOption.transport_type.ilike(f"%{transport_type}%"))
     
@@ -59,14 +62,17 @@ async def get_transport_options(
             departure_location=opt.departure_location,
             arrival_location=opt.arrival_location,
             booking_url=opt.booking_url,
-            recommendation_badge=opt.recommendation_badge or "Best Arrival Time",
+            booking_label="Book with operator" if opt.booking_url else "Route Guidance",
+            recommendation_badge=opt.recommendation_badge,
             source="vanvas_curated",
             source_id=opt.id,
             is_live=False,
             schedule_type="curated_schedule",
-            action_links=action_links,
-            data_state="VERIFIED",
+            availability_state="INDICATIVE",
+            data_state="CURATED",
             trust_source="VANVAS_CURATED",
+            disclaimer="Curated timetable for indicative planning. Please verify departure times directly with operator.",
+            action_links=action_links,
         ))
 
     if not results:
@@ -76,7 +82,7 @@ async def get_transport_options(
         try:
             live_routes = await asyncio.wait_for(
                 transport_provider.search_routes(
-                    origin=origin_city or "Delhi",
+                    origin=origin_clean,
                     destination=target_name,
                     transport_type=transport_type
                 ),
@@ -91,7 +97,7 @@ async def get_transport_options(
             )
             results.append(TransportOptionResponse(
                 id=r.get("id", f"curated-{r['operator_name'].lower().replace(' ', '-')[:12]}"),
-                origin_city=r.get("origin_city", origin_city or "Delhi"),
+                origin_city=r.get("origin_city", origin_clean),
                 destination_id=dest_id,
                 transport_type=r["transport_type"],
                 operator_name=r["operator_name"],
@@ -102,14 +108,17 @@ async def get_transport_options(
                 departure_location=r["departure_location"],
                 arrival_location=r["arrival_location"],
                 booking_url=r.get("booking_url"),
-                recommendation_badge=r.get("recommendation_badge", "Curated Schedule"),
+                booking_label=r.get("booking_label", "Book with operator" if r.get("booking_url") else "Route Guidance"),
+                recommendation_badge=r.get("recommendation_badge"),
                 source=r.get("source", "vanvas_curated"),
                 source_id=r.get("source_id", "curated-schedule"),
                 is_live=r.get("is_live", False),
                 schedule_type=r.get("schedule_type", "curated_schedule"),
-                action_links=action_links,
-                data_state=r.get("data_state", "VERIFIED"),
+                availability_state=r.get("availability_state", "INDICATIVE"),
+                data_state=r.get("data_state", "CURATED"),
                 trust_source=r.get("trust_source", "VANVAS_CURATED"),
+                disclaimer=r.get("disclaimer"),
+                action_links=action_links,
             ))
 
     return results

@@ -162,6 +162,8 @@ def ensure_database_schema(eng=engine):
                 trip_additions = {
                     "origin_city": "VARCHAR(255) NULL",
                     "trip_mode": "VARCHAR(50) DEFAULT 'standard'",
+                    "transport_mode": "VARCHAR(50) NULL",
+                    "transport_details_json": "TEXT NULL",
                     "vehicle_type": "VARCHAR(50) NULL",
                     "vehicle_mileage_kpl": "FLOAT NULL",
                     "fuel_price_per_litre": "FLOAT NULL",

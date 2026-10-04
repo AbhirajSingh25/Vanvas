@@ -188,6 +188,8 @@ def test_create_trip_arbitrary_destination(test_user):
             "destination_id": "pune",
             "start_date": str(start_d),
             "end_date": str(end_d),
+            "origin_city": "Mumbai",
+            "transport_mode": "road_trip",
             "budget": 12000,
             "travellers_count": 2,
             "companion_type": "Friends",

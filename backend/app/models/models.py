@@ -328,7 +328,7 @@ class Trip(Base):
     interests = Column(String(500), default="Nature,Cafés,Adventure,Food")
     origin_city = Column(String(255), nullable=True)
     trip_mode = Column(String(50), default="standard")  # standard, road_trip, trek, one_day
-    transport_mode = Column(String(50), default="bus")  # bus, train, flight, road_trip, cab
+    transport_mode = Column(String(50), nullable=True)  # bus, train, flight, road_trip, cab
     transport_details_json = Column(Text, nullable=True)
     vehicle_type = Column(String(50), nullable=True)  # Car, Bike, SUV, Rental
     vehicle_mileage_kpl = Column(Float, nullable=True)

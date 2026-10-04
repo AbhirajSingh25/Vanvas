@@ -62,9 +62,9 @@ def get_user_trips(
             budget_spent=t.budget_spent,
             companion_type=t.companion_type,
             travel_style=t.travel_style,
-            origin_city=t.origin_city or "Delhi",
+            origin_city=t.origin_city,
             trip_mode=t.trip_mode or "standard",
-            transport_mode=t.transport_mode or "bus",
+            transport_mode=t.transport_mode,
             status=t.status
         ))
     return summaries
@@ -161,7 +161,7 @@ async def create_trip(
         rental = db.query(RentalOption).filter(RentalOption.destination_id == destination.id).first()
 
         # Map transport_mode and details
-        chosen_transport_mode = (trip_in.transport_mode or "bus").lower().replace(" ", "_")
+        chosen_transport_mode = trip_in.transport_mode.strip().lower().replace(" ", "_")
         transport_details_str = json.dumps(trip_in.transport_details) if trip_in.transport_details else None
 
         trip = Trip(
@@ -179,7 +179,7 @@ async def create_trip(
             wake_up_preference=trip_in.wake_up_preference,
             activity_intensity=trip_in.activity_intensity,
             interests=",".join(trip_in.interests),
-            origin_city=trip_in.origin_city or "Delhi",
+            origin_city=trip_in.origin_city.strip(),
             trip_mode="road_trip" if chosen_transport_mode == "road_trip" else "standard",
             transport_mode=chosen_transport_mode,
             transport_details_json=transport_details_str,

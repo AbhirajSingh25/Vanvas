@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import date, datetime
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # ----------------- User & Auth Schemas -----------------
@@ -457,14 +457,17 @@ class TransportOptionResponse(BaseModel):
     departure_location: str
     arrival_location: str
     booking_url: Optional[str] = None
-    recommendation_badge: Optional[str] = "Best Arrival Time"
+    booking_label: Optional[str] = "Book with operator"
+    recommendation_badge: Optional[str] = None
     source: Optional[str] = "vanvas_curated"
     source_id: Optional[str] = None
     is_live: Optional[bool] = False
     schedule_type: Optional[str] = "curated_schedule"
-    action_links: List[ActionLink] = []
-    data_state: Optional[str] = "VERIFIED"
+    availability_state: Optional[str] = "INDICATIVE"  # INDICATIVE, AVAILABLE, ESTIMATED, UNAVAILABLE
+    data_state: Optional[str] = "CURATED"  # CURATED, LIVE, ESTIMATED, UNAVAILABLE
     trust_source: Optional[str] = "VANVAS_CURATED"
+    disclaimer: Optional[str] = None
+    action_links: List[ActionLink] = []
 
     class Config:
         from_attributes = True
@@ -512,6 +515,8 @@ class TripCreateRequest(BaseModel):
     destination_id: str
     start_date: date
     end_date: date
+    origin_city: str  # Explicit user input required, no silent defaults
+    transport_mode: str  # Explicit transport mode required (bus, train, flight, road_trip, cab)
     budget: float = 10000.0
     travellers_count: int = 1
     companion_type: str = "Solo"  # Solo, Couple, Friends, Family
@@ -519,11 +524,27 @@ class TripCreateRequest(BaseModel):
     wake_up_preference: str = "Normal"  # Early, Normal, Late
     activity_intensity: str = "Balanced"  # Relaxed, Balanced, Packed
     interests: List[str] = ["Nature", "Cafés", "Adventure", "Food"]
-    origin_city: Optional[str] = "Delhi"
-    transport_mode: Optional[str] = "bus"  # bus, train, flight, road_trip, cab
     transport_details: Optional[Dict[str, Any]] = None
     transport_option_id: Optional[str] = None
     planning_mode: Optional[str] = "multi_day"  # one_day, weekend, multi_day, trek, relaxed, adventure
+
+    @field_validator("origin_city")
+    @classmethod
+    def validate_origin_city(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Starting location (origin_city) is required and cannot be empty.")
+        return v.strip()
+
+    @field_validator("transport_mode")
+    @classmethod
+    def validate_transport_mode(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Transport mode (transport_mode) is required.")
+        v_clean = v.strip().lower().replace(" ", "_")
+        valid_modes = {"bus", "train", "flight", "road_trip", "cab"}
+        if v_clean not in valid_modes:
+            raise ValueError(f"transport_mode must be one of: {', '.join(sorted(valid_modes))}")
+        return v_clean
 
 class TripSummaryResponse(BaseModel):
     id: str
@@ -538,9 +559,9 @@ class TripSummaryResponse(BaseModel):
     budget_spent: float
     companion_type: str
     travel_style: str
-    origin_city: Optional[str] = "Delhi"
+    origin_city: Optional[str] = None
     trip_mode: Optional[str] = "standard"
-    transport_mode: Optional[str] = "bus"
+    transport_mode: Optional[str] = None
     status: str
 
     class Config:
@@ -563,9 +584,9 @@ class TripDetailResponse(BaseModel):
     wake_up_preference: str
     activity_intensity: str
     interests: str
-    origin_city: Optional[str] = "Delhi"
+    origin_city: Optional[str] = None
     trip_mode: Optional[str] = "standard"
-    transport_mode: Optional[str] = "bus"
+    transport_mode: Optional[str] = None
     transport_details_json: Optional[str] = None
     transport: Optional[TransportOptionResponse] = None
     status: str

@@ -312,15 +312,18 @@ export interface TransportOption {
   price: number;
   departure_location: string;
   arrival_location: string;
-  booking_url?: string;
-  recommendation_badge?: string;
+  booking_url?: string | null;
+  booking_label?: string;
+  recommendation_badge?: string | null;
   source?: "vanvas_curated" | "openstreetmap" | string;
   source_id?: string;
   is_live?: boolean;
-  schedule_type?: "curated_schedule" | "live_realtime" | string;
-  action_links?: ActionLink[];
-  data_state?: string;
+  schedule_type?: "curated_schedule" | "live_realtime" | "calculated_route" | "estimated_transfer" | string;
+  availability_state?: "INDICATIVE" | "AVAILABLE" | "ESTIMATED" | "UNAVAILABLE" | string;
+  data_state?: "CURATED" | "LIVE" | "ESTIMATED" | "UNAVAILABLE" | string;
   trust_source?: string;
+  disclaimer?: string;
+  action_links?: ActionLink[];
 }
 
 export interface ItineraryItem {

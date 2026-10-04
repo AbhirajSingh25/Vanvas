@@ -203,11 +203,10 @@ function PlanWizard() {
 
   // Load transport options when reaching Step 6 or when origin/dest/mode changes
   useEffect(() => {
-    if (currentStep === 6 || currentStep === 7) {
+    if ((currentStep === 6 || currentStep === 7) && originCity) {
       const destTarget = selectedDestObject?.slug || selectedDestId || "manali";
-      const originTarget = originCity || "Delhi";
       setLoadingTransport(true);
-      api.getTransportOptions(destTarget, originTarget, selectedTransportMode)
+      api.getTransportOptions(destTarget, originCity.trim(), selectedTransportMode)
         .then((opts) => {
           setTransportOptions(opts || []);
           if (opts && opts.length > 0) {
@@ -240,7 +239,7 @@ function PlanWizard() {
   };
 
   const handleSelectOrigin = (city: string) => {
-    setOriginCity(city);
+    setOriginCity(city.trim());
     setOriginSearch("");
     setGpsError(null);
     setStepDirection("next");
@@ -363,6 +362,17 @@ function PlanWizard() {
 
   // Step 7: Handle Trip Creation Execution
   const handleBuildTrip = async () => {
+    if (!originCity || !originCity.trim()) {
+      setGenerationError("Starting city is required. Please choose where you are starting.");
+      setCurrentStep(1);
+      return;
+    }
+    if (!selectedTransportMode) {
+      setGenerationError("Transport mode is required. Please choose how you want to travel.");
+      setCurrentStep(6);
+      return;
+    }
+
     setIsGenerating(true);
     const msgs = [
       "Securing route transit details...",
@@ -401,7 +411,7 @@ function PlanWizard() {
         wake_up_preference: "Normal",
         activity_intensity: "Balanced",
         interests: selectedVibes,
-        origin_city: originCity || "Delhi",
+        origin_city: originCity.trim(),
         transport_mode: selectedTransportMode.toLowerCase().replace(" ", "_"),
         transport_details: selectedTransportOption ? {
           id: selectedTransportOption.id,
@@ -414,7 +424,10 @@ function PlanWizard() {
           departure_location: selectedTransportOption.departure_location,
           arrival_location: selectedTransportOption.arrival_location,
           booking_url: selectedTransportOption.booking_url,
+          booking_label: selectedTransportOption.booking_label,
           recommendation_badge: selectedTransportOption.recommendation_badge,
+          data_state: selectedTransportOption.data_state,
+          disclaimer: selectedTransportOption.disclaimer,
         } : undefined,
         planning_mode: daysCount === 1 ? "one_day" : daysCount === 2 ? "weekend" : "multi_day",
       });
@@ -425,7 +438,7 @@ function PlanWizard() {
       } catch {}
 
       if (selectedTransportMode.toLowerCase().includes("road")) {
-        router.push(`/road-trip?origin=${encodeURIComponent(originCity || "Delhi")}&dest=${encodeURIComponent(cleanTarget)}&tripId=${trip.id}&travellers=${travellersCount}&budget=${budgetEstimate}`);
+        router.push(`/road-trip?origin=${encodeURIComponent(originCity.trim())}&dest=${encodeURIComponent(cleanTarget)}&tripId=${trip.id}&travellers=${travellersCount}&budget=${budgetEstimate}`);
       } else {
         router.push(`/trips/${trip.id}`);
       }
@@ -437,7 +450,7 @@ function PlanWizard() {
   };
 
   const currentDestName = selectedDestObject?.name || selectedDestId.charAt(0).toUpperCase() + selectedDestId.slice(1);
-  const currentOriginName = originCity || "Delhi";
+  const currentOriginName = originCity || "Your Starting Location";
 
   // Compute Best Travel Time recommendation dynamically based on geography and transport mode
   const isHimalayan = ["manali", "kasol", "rishikesh", "chopta", "spiti", "dharamshala", "leh", "jibhi", "shimla", "mussoorie", "mcleodganj", "nainital"].some(
@@ -451,7 +464,7 @@ function PlanWizard() {
     headline: "🚌 Volvo Semi-Sleeper / Sleeper",
     timing: "Departs 20:00 → Arrives 08:30 (~12.5 hrs)",
     rationale: "Saves one hotel night while arriving fresh for morning valley exploration.",
-    actionLabel: "View Verified Buses",
+    actionLabel: "View Curated Buses",
   } : {
     badge: "BEST FOR YOU",
     mode: selectedTransportMode === "Road Trip" ? "Road Trip" : "Train",
@@ -1017,52 +1030,74 @@ function PlanWizard() {
               {loadingTransport ? (
                 <div className="p-4 bg-white border border-[#E5D5BA] rounded-2xl flex items-center justify-center gap-2 text-xs text-[#7B4D36]">
                   <Loader2 className="w-4 h-4 animate-spin text-[#B65E3C]" />
-                  <span>Fetching verified schedules for {selectedTransportMode}...</span>
+                  <span>Fetching route options for {selectedTransportMode}...</span>
                 </div>
               ) : transportOptions.length > 0 ? (
                 <div className="space-y-2 pt-2 border-t border-[#E5D5BA]">
-                  <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] tracking-wider block">
-                    Verified Schedule &amp; Fare Preview:
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] tracking-wider block">
+                      Route &amp; Fare Options ({transportOptions[0]?.data_state === "ESTIMATED" ? "ESTIMATED" : "CURATED"}):
+                    </span>
+                    <span className="text-[9px] font-mono text-[#7B4D36] bg-[#EFE5D2] px-2 py-0.5 rounded">
+                      Indicative Planning
+                    </span>
+                  </div>
                   <div className="divide-y divide-[#E5D5BA] bg-white border-2 border-[#E5D5BA] rounded-2xl overflow-hidden">
                     {transportOptions.slice(0, 3).map((opt) => (
-                      <div key={opt.id} className="p-3 flex items-center justify-between text-xs">
-                        <div>
-                          <div className="font-bold text-[#173B32] flex items-center gap-1.5">
-                            <span>{opt.operator_name}</span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#EFE5D2] text-[#7B4D36]">
-                              {opt.departure_time} → {opt.arrival_time} ({opt.duration_hours}h)
+                      <div key={opt.id} className="p-3.5 space-y-2 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-0.5">
+                            <div className="font-bold text-[#173B32] flex items-center gap-1.5 flex-wrap">
+                              <span>{opt.operator_name}</span>
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] uppercase font-bold">
+                                {opt.data_state || "CURATED"}
+                              </span>
+                              {opt.recommendation_badge && (
+                                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#B49252]/20 text-[#85611B] font-bold">
+                                  {opt.recommendation_badge}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-[#7B4D36]">
+                              {opt.departure_location} → {opt.arrival_location}
+                            </div>
+                            <div className="text-[10px] font-mono text-[#B65E3C]">
+                              {opt.departure_time} → {opt.arrival_time} ({opt.duration_hours}h duration)
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="font-mono font-black text-sm text-[#173B32] block">
+                              ₹{opt.price.toLocaleString()}
                             </span>
-                          </div>
-                          <div className="text-[10px] text-[#7B4D36] mt-0.5">
-                            {opt.departure_location} → {opt.arrival_location}
+                            {opt.booking_url ? (
+                              <a
+                                href={opt.booking_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1 text-[10px] font-mono font-bold text-[#B65E3C] hover:underline inline-flex items-center gap-0.5"
+                              >
+                                <span>{opt.booking_label || "Book with operator"}</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            ) : (
+                              <span className="mt-1 text-[9px] font-mono text-[#7B4D36] block">
+                                {opt.booking_label || "Route Guidance"}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className="font-mono font-black text-sm text-[#173B32] block">
-                            ₹{opt.price}
-                          </span>
-                          {opt.booking_url ? (
-                            <a
-                              href={opt.booking_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[10px] font-mono font-bold text-[#B65E3C] hover:underline flex items-center gap-0.5"
-                            >
-                              <span>View / Book</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
-                          ) : (
-                            <span className="text-[9px] font-mono text-[#7B4D36]">Verified Route</span>
-                          )}
-                        </div>
+                        {opt.disclaimer && (
+                          <div className="text-[10px] text-[#7B4D36]/90 italic bg-[#FAF7F0] p-1.5 rounded-lg border border-[#E5D5BA]/60">
+                            ⓘ {opt.disclaimer}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-                  Live transport schedules unavailable for this corridor right now. Default route guidance will be applied.
+                  Direct transport schedules unavailable for this corridor right now. Calculated route guidance will be applied.
                 </div>
               )}
             </div>

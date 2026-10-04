@@ -932,40 +932,102 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   </span>
                 </div>
 
-                {trip.transport_mode === "road_trip" ? (
-                  <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                      <h4 className="font-serif font-bold text-base text-[#173B32]">
-                        Self-Drive Mountain Road Trip
-                      </h4>
-                      <p className="text-xs text-[#7B4D36] mt-0.5">
-                        Interactive route map, highway dhabas, scenic viewpoints, fuel calculations, and day halts.
-                      </p>
-                    </div>
-                    <Link
-                      href={`/road-trip?origin=${encodeURIComponent(trip.origin_city || "Delhi")}&dest=${encodeURIComponent(trip.destination?.slug || "manali")}&tripId=${trip.id}`}
-                      className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-xs shrink-0"
-                    >
-                      <span>Open Road Trip Cockpit →</span>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <h4 className="font-serif font-bold text-base text-[#173B32]">
-                          {trip.destination?.name} Transit Corridor
-                        </h4>
-                        <p className="text-xs text-[#7B4D36]">
-                          Departing from {trip.origin_city || "Delhi"} • Direct valley connection
-                        </p>
+                {(() => {
+                  let tDetails: any = null;
+                  try {
+                    if (trip.transport_details_json) {
+                      tDetails = JSON.parse(trip.transport_details_json);
+                    }
+                  } catch {}
+
+                  if (trip.transport_mode === "road_trip") {
+                    return (
+                      <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-3">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-serif font-bold text-base text-[#173B32]">
+                                {tDetails?.operator_name || "Self-Drive Highway & Mountain Corridor"}
+                              </h4>
+                              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] uppercase font-bold">
+                                {tDetails?.data_state || "ESTIMATED"}
+                              </span>
+                            </div>
+                            <p className="text-xs text-[#7B4D36] mt-0.5">
+                              {tDetails?.departure_location || trip.origin_city || "Origin"} → {tDetails?.arrival_location || trip.destination?.name || "Destination"} • Est. {tDetails?.duration_hours ? `${tDetails.duration_hours}h driving` : "Interactive Route"}
+                            </p>
+                            {tDetails?.price && (
+                              <p className="text-xs font-mono font-bold text-[#173B32] mt-1">
+                                Est. Fuel &amp; Tolls: ₹{tDetails.price.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                          <Link
+                            href={`/road-trip?origin=${encodeURIComponent(trip.origin_city || "Delhi")}&dest=${encodeURIComponent(trip.destination?.slug || "manali")}&tripId=${trip.id}`}
+                            className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-xs shrink-0"
+                          >
+                            <span>Open Road Trip Cockpit →</span>
+                          </Link>
+                        </div>
+                        {tDetails?.disclaimer && (
+                          <p className="text-[10px] text-[#7B4D36] italic bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]/60">
+                            ⓘ {tDetails.disclaimer}
+                          </p>
+                        )}
                       </div>
-                      <span className="text-xs font-mono px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
-                        VERIFIED SCHEDULE
-                      </span>
+                    );
+                  }
+
+                  return (
+                    <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-serif font-bold text-base text-[#173B32]">
+                              {tDetails?.operator_name || `${(trip.transport_mode || "Bus").toUpperCase()} Transit Option`}
+                            </h4>
+                            <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] uppercase font-bold">
+                              {tDetails?.data_state || "CURATED"}
+                            </span>
+                            <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#B49252]/20 text-[#85611B] font-bold">
+                              INDICATIVE
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#7B4D36]">
+                            {tDetails?.departure_location || trip.origin_city || "Origin"} → {tDetails?.arrival_location || trip.destination?.name || "Destination"}
+                          </p>
+                          {tDetails?.departure_time && (
+                            <p className="text-xs font-mono font-bold text-[#B65E3C]">
+                              {tDetails.departure_time} → {tDetails.arrival_time} ({tDetails.duration_hours}h) • ₹{tDetails.price?.toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+
+                        {tDetails?.booking_url ? (
+                          <a
+                            href={tDetails.booking_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-xs shrink-0"
+                          >
+                            <span>{tDetails.booking_label || "Open Operator Site"}</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <span className="text-xs font-mono text-[#7B4D36] bg-[#FAF7F0] px-3 py-1.5 rounded-xl border border-[#E5D5BA]">
+                            {tDetails?.booking_label || "Indicative Route"}
+                          </span>
+                        )}
+                      </div>
+
+                      {tDetails?.disclaimer && (
+                        <p className="text-[10px] text-[#7B4D36] italic bg-[#FAF7F0] p-2 rounded-xl border border-[#E5D5BA]/60">
+                          ⓘ {tDetails.disclaimer}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

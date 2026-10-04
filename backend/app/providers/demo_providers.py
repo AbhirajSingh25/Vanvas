@@ -146,207 +146,279 @@ class DemoTransportProvider(TransportProvider):
         orig_clean = origin.strip().title() if origin else "Delhi"
         dest_clean = destination.strip().title() if destination else "Manali"
         
+        orig_lower = orig_clean.lower()
+        dest_lower = dest_clean.lower()
+
+        # Origin terminal mapping
+        if "delhi" in orig_lower:
+            bus_orig = "Delhi (ISBT Kashmiri Gate / Majnu Ka Tilla)"
+            train_orig = "New Delhi Railway Station (NDLS)"
+            flight_orig = "Delhi IGI Airport (DEL T1/T3)"
+        elif "chandigarh" in orig_lower:
+            bus_orig = "Chandigarh (ISBT Sector 43)"
+            train_orig = "Chandigarh Junction (CDG)"
+            flight_orig = "Chandigarh International Airport (IXC)"
+        elif "dehradun" in orig_lower:
+            bus_orig = "Dehradun ISBT"
+            train_orig = "Dehradun Railway Station (DDN)"
+            flight_orig = "Dehradun Jolly Grant Airport (DED)"
+        elif "mumbai" in orig_lower:
+            bus_orig = "Mumbai (Borivali / Dadar)"
+            train_orig = "Mumbai CSMT / Bandra Terminus (BDTS)"
+            flight_orig = "Chhatrapati Shivaji Maharaj Airport (BOM)"
+        elif "ahmedabad" in orig_lower:
+            bus_orig = "Ahmedabad (Paldi / Geeta Mandir)"
+            train_orig = "Ahmedabad Kalupur Junction (ADI)"
+            flight_orig = "Sardar Vallabhbhai Patel Airport (AMD)"
+        elif "bengaluru" in orig_lower or "bangalore" in orig_lower:
+            bus_orig = "Bangalore (Majestic / Shantinagar)"
+            train_orig = "KSR Bengaluru City Junction (SBC)"
+            flight_orig = "Kempegowda International Airport (BLR)"
+        elif "jaipur" in orig_lower:
+            bus_orig = "Jaipur (Sindhi Camp)"
+            train_orig = "Jaipur Junction (JP)"
+            flight_orig = "Jaipur International Airport (JAI)"
+        else:
+            bus_orig = f"{orig_clean} Central Bus Terminal"
+            train_orig = f"{orig_clean} Railway Junction"
+            flight_orig = f"{orig_clean} Regional Airport"
+
         # Determine mountain destination
-        is_mountain = any(m in dest_clean.lower() for m in ["manali", "kasol", "rishikesh", "chopta", "spiti", "dharamshala", "leh", "jibhi", "shimla", "mussoorie", "mcleodganj", "nainital", "kullu"])
-        
+        is_mountain = any(m in dest_lower for m in [
+            "manali", "kasol", "rishikesh", "chopta", "spiti", "dharamshala",
+            "leh", "jibhi", "shimla", "mussoorie", "mcleodganj", "nainital", "kullu", "almora", "lansdowne"
+        ])
+
+        # Configure Destination specific endpoints
+        if "manali" in dest_lower or "kasol" in dest_lower or "jibhi" in dest_lower:
+            bus_dest = f"{dest_clean} Private Volvo Stand"
+            train_dest = f"Chandigarh Junction (CDG) / Una Station → Onward 8h Scenic Road Transit to {dest_clean}"
+            train_op = "Vande Bharat Express (to Railhead Hub + Connecting Transit)"
+            train_dur = 5.25 + 7.5
+            train_price = 1180.0 + 850.0
+            flight_dest = f"Bhuntar (KUU) Valley Airstrip (50km from {dest_clean}) or Chandigarh (IXC)"
+            flight_op = "Alliance Air / IndiGo (to Valley Hub Airport)"
+            flight_dur = 1.35
+            flight_price = 5200.0
+            road_time = 10.5 if "delhi" in orig_lower else 6.5 if "chandigarh" in orig_lower else 14.0
+            road_dist = 520 if "delhi" in orig_lower else 280 if "chandigarh" in orig_lower else 800
+            cab_fare = 8500.0 if "delhi" in orig_lower else 4800.0 if "chandigarh" in orig_lower else 14000.0
+        elif "rishikesh" in dest_lower:
+            bus_dest = "Rishikesh Bus Stand / Tapovan Drop"
+            train_dest = "Yog Nagari Rishikesh (YNRK) / Haridwar (HW)"
+            train_op = "Vande Bharat Express (22457 to Anand Vihar - Dehradun)"
+            train_dur = 4.2
+            train_price = 1060.0
+            flight_dest = "Dehradun Jolly Grant Airport (DED) (22km to Rishikesh)"
+            flight_op = "IndiGo Direct Shuttle"
+            flight_dur = 0.95
+            flight_price = 3400.0
+            road_time = 5.0 if "delhi" in orig_lower else 7.0
+            road_dist = 245 if "delhi" in orig_lower else 350
+            cab_fare = 4200.0 if "delhi" in orig_lower else 6500.0
+        elif "mussoorie" in dest_lower:
+            bus_dest = "Mussoorie Library Bus Stand"
+            train_dest = "Dehradun Railway Station (DDN) → 35km Hill Taxi to Mussoorie"
+            train_op = "Dehradun Shatabdi Express (12017) + Hill Transfer"
+            train_dur = 5.8
+            train_price = 980.0 + 400.0
+            flight_dest = "Dehradun Jolly Grant Airport (DED) (58km to Mussoorie)"
+            flight_op = "IndiGo Shuttle to DED"
+            flight_dur = 1.0
+            flight_price = 3600.0
+            road_time = 6.0 if "delhi" in orig_lower else 8.0
+            road_dist = 280 if "delhi" in orig_lower else 400
+            cab_fare = 4800.0 if "delhi" in orig_lower else 7000.0
+        elif "dharamshala" in dest_lower or "mcleodganj" in dest_lower:
+            bus_dest = f"{dest_clean} ISBT / Main Square"
+            train_dest = f"Pathankot Junction (PTK) / Una Station → 3h Connecting Transit to {dest_clean}"
+            train_op = "Dhauladhar Express / Vande Bharat (to Railhead)"
+            train_dur = 8.5
+            train_price = 1100.0 + 500.0
+            flight_dest = f"Kangra Gaggal Airport (DHM) (14km to {dest_clean})"
+            flight_op = "SpiceJet / Alliance Air Direct to Kangra"
+            flight_dur = 1.2
+            flight_price = 4800.0
+            road_time = 9.5 if "delhi" in orig_lower else 5.5 if "chandigarh" in orig_lower else 15.0
+            road_dist = 480 if "delhi" in orig_lower else 245 if "chandigarh" in orig_lower else 850
+            cab_fare = 7800.0 if "delhi" in orig_lower else 4500.0 if "chandigarh" in orig_lower else 13500.0
+        elif "goa" in dest_lower:
+            bus_dest = "Panaji Kadamba Bus Stand / Mapusa"
+            train_dest = "Madgaon Junction (MAO) / Thivim (THVM)"
+            train_op = "Vande Bharat / Tejas Superfast Express"
+            train_dur = 8.0 if "mumbai" in orig_lower else 14.0
+            train_price = 1850.0
+            flight_dest = "Goa Dabolim (GOI) / Manohar International MOPA (GOX)"
+            flight_op = "IndiGo / Akasa Air Direct Flight"
+            flight_dur = 1.25 if "mumbai" in orig_lower or "bengaluru" in orig_lower else 2.5
+            flight_price = 3800.0
+            road_time = 11.0 if "mumbai" in orig_lower else 10.0 if "bengaluru" in orig_lower else 24.0
+            road_dist = 580 if "mumbai" in orig_lower else 560 if "bengaluru" in orig_lower else 1800
+            cab_fare = 12000.0 if "mumbai" in orig_lower else 11000.0 if "bengaluru" in orig_lower else 28000.0
+        else:
+            bus_dest = f"{dest_clean} Main Bus Stand"
+            train_dest = f"{dest_clean} Railway Station"
+            train_op = "Intercity Superfast Express"
+            train_dur = 6.0
+            train_price = 750.0
+            flight_dest = f"{dest_clean} Airport"
+            flight_op = "Domestic Airline Shuttle"
+            flight_dur = 1.5
+            flight_price = 4200.0
+            road_time = 7.0
+            road_dist = 360
+            cab_fare = 5500.0
+
         routes = [
-            # 1. BUS OPTIONS
+            # 1. BUS OPTION 1: State / Flagship RTC
             {
-                "id": f"curated-bus-hptdc-{orig_clean.lower()}-{dest_clean.lower()}",
+                "id": f"curated-bus-rtc-{orig_clean.lower()[:4]}-{dest_clean.lower()[:4]}",
                 "origin_city": orig_clean,
                 "destination_id": dest_clean,
                 "transport_type": "Bus",
-                "operator_name": "HPTDC HimSutra Volvo AC",
+                "operator_name": "State RTC HimSutra Volvo AC Sleeper",
                 "departure_time": "20:00",
                 "arrival_time": "08:30",
-                "duration_hours": 12.5,
-                "price": 1450.0,
-                "departure_location": f"{orig_clean} ISBT Kashmiri Gate / Majnu Ka Tilla",
-                "arrival_location": f"{dest_clean} Private Bus Stand",
+                "duration_hours": 12.5 if is_mountain and "delhi" in orig_lower else 7.5,
+                "price": 1450.0 if is_mountain else 850.0,
+                "departure_location": bus_orig,
+                "arrival_location": bus_dest,
                 "booking_url": "https://online.hptdc.in",
-                "recommendation_badge": "Best Overnight Saver",
+                "booking_label": "Book with operator",
+                "recommendation_badge": "Overnight Transit (Saves 1 Night Stay)",
                 "source": "vanvas_curated",
-                "source_id": "hptdc-schedule",
+                "source_id": "rtc-schedule",
                 "is_live": False,
                 "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "Curated schedule. Please verify departure times directly with operator."
+                "availability_state": "INDICATIVE",
+                "data_state": "CURATED",
+                "trust_source": "VANVAS_CURATED",
+                "disclaimer": "Indicative curated schedule. Verify exact departures and seat availability on operator website."
             },
+            # 2. BUS OPTION 2: Private Electric / Multi-Axle Lounge
             {
-                "id": f"curated-bus-zingbus-{orig_clean.lower()}-{dest_clean.lower()}",
+                "id": f"curated-bus-zingbus-{orig_clean.lower()[:4]}-{dest_clean.lower()[:4]}",
                 "origin_city": orig_clean,
                 "destination_id": dest_clean,
                 "transport_type": "Bus",
                 "operator_name": "Zingbus Electric Lounge Multi-Axle",
                 "departure_time": "19:15",
                 "arrival_time": "07:45",
-                "duration_hours": 12.5,
-                "price": 1290.0,
-                "departure_location": f"{orig_clean} Majnu Ka Tilla Boarding Hub",
-                "arrival_location": f"{dest_clean} Mall Road Drop Point",
+                "duration_hours": 12.5 if is_mountain and "delhi" in orig_lower else 7.0,
+                "price": 1290.0 if is_mountain else 780.0,
+                "departure_location": bus_orig,
+                "arrival_location": bus_dest,
                 "booking_url": "https://www.zingbus.com",
-                "recommendation_badge": "Cheapest Option",
+                "booking_label": "Book with operator",
+                "recommendation_badge": "Best for Budget",
                 "source": "vanvas_curated",
                 "source_id": "zingbus-schedule",
                 "is_live": False,
                 "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "Curated schedule. Please verify departure times directly with operator."
+                "availability_state": "INDICATIVE",
+                "data_state": "CURATED",
+                "trust_source": "VANVAS_CURATED",
+                "disclaimer": "Indicative curated schedule. Check live boarding points on operator website."
             },
+            # 3. TRAIN OPTION
             {
-                "id": f"curated-bus-intrcity-{orig_clean.lower()}-{dest_clean.lower()}",
-                "origin_city": orig_clean,
-                "destination_id": dest_clean,
-                "transport_type": "Bus",
-                "operator_name": "IntrCity SmartBus Premium Sleeper",
-                "departure_time": "21:30",
-                "arrival_time": "10:15",
-                "duration_hours": 12.75,
-                "price": 1650.0,
-                "departure_location": f"{orig_clean} RK Ashram Metro",
-                "arrival_location": f"{dest_clean} Volvo Stand",
-                "booking_url": "https://www.intrcity.com",
-                "recommendation_badge": "Direct Check-In Fit",
-                "source": "vanvas_curated",
-                "source_id": "intrcity-schedule",
-                "is_live": False,
-                "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "Curated schedule. Please verify departure times directly with operator."
-            },
-
-            # 2. TRAIN OPTIONS
-            {
-                "id": f"curated-train-vb-{orig_clean.lower()}-{dest_clean.lower()}",
+                "id": f"curated-train-{orig_clean.lower()[:4]}-{dest_clean.lower()[:4]}",
                 "origin_city": orig_clean,
                 "destination_id": dest_clean,
                 "transport_type": "Train",
-                "operator_name": "Vande Bharat Express (22447)",
+                "operator_name": train_op,
                 "departure_time": "05:50",
-                "arrival_time": "11:05",
-                "duration_hours": 5.25,
-                "price": 1180.0,
-                "departure_location": f"{orig_clean} New Delhi Railway Station (NDLS)",
-                "arrival_location": f"{dest_clean if not is_mountain else 'Chandigarh / Una Station'} Railway Junction",
+                "arrival_time": "11:05 (Railhead)",
+                "duration_hours": round(train_dur, 2),
+                "price": train_price,
+                "departure_location": train_orig,
+                "arrival_location": train_dest,
                 "booking_url": "https://www.irctc.co.in",
+                "booking_label": "Book rail with IRCTC",
                 "recommendation_badge": "Fastest Rail Transit",
                 "source": "vanvas_curated",
                 "source_id": "irctc-schedule",
                 "is_live": False,
                 "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "Indian Railways verified timetable. Followed by scenic valley cab."
+                "availability_state": "INDICATIVE",
+                "data_state": "CURATED",
+                "trust_source": "VANVAS_CURATED",
+                "disclaimer": "Indicative Indian Railways timetable. Verify seat availability and book on IRCTC."
             },
+            # 4. FLIGHT OPTION
             {
-                "id": f"curated-train-shatabdi-{orig_clean.lower()}-{dest_clean.lower()}",
-                "origin_city": orig_clean,
-                "destination_id": dest_clean,
-                "transport_type": "Train",
-                "operator_name": "Kalka Shatabdi Express (12005)",
-                "departure_time": "17:15",
-                "arrival_time": "21:20",
-                "duration_hours": 4.1,
-                "price": 945.0,
-                "departure_location": f"{orig_clean} New Delhi (NDLS)",
-                "arrival_location": f"{dest_clean if not is_mountain else 'Kalka / Chandigarh Station'}",
-                "booking_url": "https://www.irctc.co.in",
-                "recommendation_badge": "Evening Superfast",
-                "source": "vanvas_curated",
-                "source_id": "irctc-shatabdi",
-                "is_live": False,
-                "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "Indian Railways verified timetable."
-            },
-
-            # 3. FLIGHT OPTIONS
-            {
-                "id": f"curated-flight-indigo-{orig_clean.lower()}-{dest_clean.lower()}",
+                "id": f"curated-flight-{orig_clean.lower()[:4]}-{dest_clean.lower()[:4]}",
                 "origin_city": orig_clean,
                 "destination_id": dest_clean,
                 "transport_type": "Flight",
-                "operator_name": "IndiGo Direct / Connecting Shuttle",
+                "operator_name": flight_op,
                 "departure_time": "07:20",
                 "arrival_time": "08:45",
-                "duration_hours": 1.4,
-                "price": 4200.0,
-                "departure_location": f"{orig_clean} Domestic Airport (Terminal 1/2)",
-                "arrival_location": f"{dest_clean if not is_mountain else 'Kullu Bhuntar (KUU) / Chandigarh (IXC)'} Airport",
+                "duration_hours": flight_dur,
+                "price": flight_price,
+                "departure_location": flight_orig,
+                "arrival_location": flight_dest,
                 "booking_url": "https://www.goindigo.in",
+                "booking_label": "Check airline site",
                 "recommendation_badge": "Fastest Travel Time",
                 "source": "vanvas_curated",
-                "source_id": "indigo-schedule",
+                "source_id": "airline-schedule",
                 "is_live": False,
                 "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "Airlines timetable. Baggage allowance: 15kg check-in + 7kg cabin."
+                "availability_state": "INDICATIVE",
+                "data_state": "CURATED",
+                "trust_source": "VANVAS_CURATED",
+                "disclaimer": "Indicative airline schedule. Mountain airstrip flights are subject to visual flight weather conditions."
             },
+            # 5. ROAD TRIP OPTION
             {
-                "id": f"curated-flight-alliance-{orig_clean.lower()}-{dest_clean.lower()}",
-                "origin_city": orig_clean,
-                "destination_id": dest_clean,
-                "transport_type": "Flight",
-                "operator_name": "Alliance Air Himalayan Shuttle",
-                "departure_time": "06:45",
-                "arrival_time": "08:05",
-                "duration_hours": 1.35,
-                "price": 5450.0,
-                "departure_location": f"{orig_clean} Airport (IGI T3)",
-                "arrival_location": f"{dest_clean if not is_mountain else 'Bhuntar (KUU) Valley Airstrip'}",
-                "booking_url": "https://www.allianceair.in",
-                "recommendation_badge": "Direct Mountain Landing",
-                "source": "vanvas_curated",
-                "source_id": "alliance-schedule",
-                "is_live": False,
-                "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "Direct valley turboprop service. Weather subject."
-            },
-
-            # 4. ROAD TRIP OPTION
-            {
-                "id": f"curated-roadtrip-{orig_clean.lower()}-{dest_clean.lower()}",
+                "id": f"curated-roadtrip-{orig_clean.lower()[:4]}-{dest_clean.lower()[:4]}",
                 "origin_city": orig_clean,
                 "destination_id": dest_clean,
                 "transport_type": "Road Trip",
-                "operator_name": "Self-Drive Expressway Route (NH44 / Kiratpur-Nerchowk)",
+                "operator_name": f"Self-Drive Highway & Mountain Corridor ({road_dist} km)",
                 "departure_time": "05:00 (Suggested Early Departure)",
                 "arrival_time": "15:30 (Estimated)",
-                "duration_hours": 10.5,
-                "price": 4800.0,  # Estimated Fuel + Tolls
-                "departure_location": f"{orig_clean} City Origin",
-                "arrival_location": f"{dest_clean} Destination",
+                "duration_hours": round(road_time, 1),
+                "price": round(road_dist * 7.5 + 450.0, 0),  # Fuel + Fastag Toll Estimate
+                "departure_location": f"{orig_clean} Origin Point",
+                "arrival_location": f"{dest_clean} Destination Stay",
                 "booking_url": None,
-                "recommendation_badge": "Maximum Route Freedom",
+                "booking_label": "View Route Guidance",
+                "recommendation_badge": "Best for Flexibility",
                 "source": "vanvas_curated",
                 "source_id": "road-trip-engine",
                 "is_live": False,
-                "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "Estimated fuel + fastag toll calculation based on 520km highway corridor."
+                "schedule_type": "calculated_route",
+                "availability_state": "ESTIMATED",
+                "data_state": "ESTIMATED",
+                "trust_source": "VANVAS_CURATED",
+                "disclaimer": f"Estimated fuel and toll calculation based on {road_dist}km road corridor. Route navigation powered by Vanvas engine."
             },
-
-            # 5. CAB / PRIVATE TRANSFER
+            # 6. CAB / PRIVATE TRANSFER
             {
-                "id": f"curated-cab-{orig_clean.lower()}-{dest_clean.lower()}",
+                "id": f"curated-cab-{orig_clean.lower()[:4]}-{dest_clean.lower()[:4]}",
                 "origin_city": orig_clean,
                 "destination_id": dest_clean,
                 "transport_type": "Cab",
-                "operator_name": "Verified Private Mountain Transfer (Sedan / Innova)",
+                "operator_name": f"Private Outstation Taxi ({orig_clean} → {dest_clean})",
                 "departure_time": "Flexible / On-Demand Pickup",
                 "arrival_time": "Door-to-Door Direct",
-                "duration_hours": 11.0,
-                "price": 8500.0,
+                "duration_hours": round(road_time + 0.5, 1),
+                "price": cab_fare,
                 "departure_location": f"{orig_clean} Doorstep Pickup",
-                "arrival_location": f"{dest_clean} Resort / Stay Drop",
+                "arrival_location": f"{dest_clean} Stay Direct",
                 "booking_url": None,
+                "booking_label": "Estimated Route Guidance",
                 "recommendation_badge": "Door-to-Door Comfort",
                 "source": "vanvas_curated",
                 "source_id": "cab-network",
                 "is_live": False,
-                "schedule_type": "curated_schedule",
-                "data_state": "VERIFIED",
-                "disclaimer": "All-inclusive private transfer with hill-experienced commercial driver."
+                "schedule_type": "estimated_transfer",
+                "availability_state": "ESTIMATED",
+                "data_state": "ESTIMATED",
+                "trust_source": "VANVAS_CURATED",
+                "disclaimer": "Indicative outstation cab fare estimate. Booking is arranged directly with local taxi unions or outstation operators."
             }
         ]
         
