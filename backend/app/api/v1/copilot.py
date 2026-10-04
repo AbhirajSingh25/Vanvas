@@ -280,15 +280,55 @@ async def copilot_chat(
     # A. "What's Next" Fast Path
     if msg_clean_lower in ["what's next", "whats next", "what is next", "next stop", "what is next on our itinerary right now?"]:
         if trip and trip.itineraries:
-            # Look for upcoming item across itineraries
-            upcoming = []
-            for it in trip.itineraries:
-                for item in it.items:
-                    if item.status != "completed" and item.status != "COMPLETED":
-                        upcoming.append((it.day_number, item))
-            if upcoming:
-                day_num, next_it = upcoming[0]
-                fast_resp_text = f"Next on Day {day_num} at {next_it.start_time}: {next_it.title}. {next_it.notes or 'Enjoy your visit!'}"
+            # 1. Determine active itinerary day
+            req_ctx = req.context or {}
+            active_day_num = req_ctx.get("activeDayNumber") or req_ctx.get("selected_day") or req_ctx.get("day_number")
+            if not active_day_num and trip.start_date:
+                try:
+                    today_d = datetime.now(timezone.utc).date()
+                    trip_start_d = trip.start_date.date() if isinstance(trip.start_date, datetime) else trip.start_date
+                    day_diff = (today_d - trip_start_d).days + 1
+                    if 1 <= day_diff <= len(trip.itineraries):
+                        active_day_num = day_diff
+                except Exception:
+                    pass
+            if not active_day_num:
+                active_day_num = 1
+
+            # 2. Determine current local time in minutes (IST +5:30)
+            now_dt = datetime.now(timezone.utc)
+            ist_hour = (now_dt.hour + 5 + (now_dt.minute + 30) // 60) % 24
+            ist_min = (now_dt.minute + 30) % 60
+            curr_time_mins = ist_hour * 60 + ist_min
+
+            # Find active day itinerary
+            active_it = next((it for it in trip.itineraries if it.day_number == active_day_num), trip.itineraries[0])
+
+            # 3. Sort today's items chronologically, ignoring completed/skipped/cancelled
+            today_items = sorted(
+                [item for item in active_it.items if (item.status or "").lower() not in ["completed", "skipped", "cancelled"]],
+                key=lambda x: x.start_time or "00:00"
+            )
+
+            # 4. Find the next upcoming item
+            next_it = None
+            for item in today_items:
+                try:
+                    parts = (item.end_time or item.start_time or "23:59").split(":")
+                    item_end_mins = int(parts[0]) * 60 + int(parts[1])
+                    if item_end_mins >= curr_time_mins:
+                        next_it = item
+                        break
+                except Exception:
+                    next_it = item
+                    break
+
+            if not next_it and today_items:
+                # If all upcoming today are uncompleted, take the first uncompleted
+                next_it = today_items[0]
+
+            if next_it:
+                fast_resp_text = f"Next on Day {active_it.day_number} at {next_it.start_time}: {next_it.title}. {next_it.notes or 'Enjoy your visit!'}"
                 fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "whats_next"}
                 assistant_msg = ConversationMessage(
                     conversation_id=conv.id,
@@ -308,6 +348,32 @@ async def copilot_chat(
                         "category": next_it.category or "Stop",
                         "approx_cost": next_it.estimated_cost,
                     }],
+                    metadata=fast_meta
+                )
+            else:
+                # 5. If all today is finished: show "Today is done" and next planned day summary
+                next_day_num = active_it.day_number + 1
+                next_day_it = next((it for it in trip.itineraries if it.day_number == next_day_num), None)
+                if next_day_it and next_day_it.items:
+                    first_tm = next_day_it.items[0]
+                    fast_resp_text = f"Today is done! Rest well tonight. Tomorrow (Day {next_day_num}) begins at {first_tm.start_time} with {first_tm.title}."
+                else:
+                    fast_resp_text = "Today is done! All planned activities for today are complete. Rest well and enjoy your evening."
+
+                fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "whats_next_day_done"}
+                assistant_msg = ConversationMessage(
+                    conversation_id=conv.id,
+                    role="assistant",
+                    content=fast_resp_text,
+                    metadata_json=json.dumps(fast_meta),
+                )
+                db.add(assistant_msg)
+                db.commit()
+                return CopilotChatResponse(
+                    conversation_id=conv.id,
+                    message=fast_resp_text,
+                    actions=[{"action_type": "navigate_trip", "title": "View Itinerary", "payload": {"trip_id": trip.id}}],
+                    places=[],
                     metadata=fast_meta
                 )
 
@@ -340,20 +406,28 @@ async def copilot_chat(
     # C. "Departure / Leave Timing" Fast Path
     if any(k in msg_clean_lower for k in ["what time should i leave", "when should i leave", "what time should we leave", "when to depart", "departure time"]):
         t_json = trip.transport_details_json if trip else None
-        t_mode = (trip.transport_mode if trip else "bus") or "bus"
+        t_mode = ((trip.transport_mode if trip else "") or "bus").lower()
         if t_json:
             try:
                 t_data = json.loads(t_json) if isinstance(t_json, str) else t_json
-                dep_time = t_data.get("departure_time", "20:00")
-                dep_loc = t_data.get("departure_location", "Origin Terminal")
-                arr_time = t_data.get("arrival_time", "08:30")
-                fast_resp_text = f"For your {t_mode.replace('_', ' ').title()}, your departure is scheduled for {dep_time} from {dep_loc}, arriving at {arr_time}."
+                dep_time = t_data.get("departure_time")
+                dep_loc = t_data.get("departure_location")
+                arr_time = t_data.get("arrival_time")
+                op_name = t_data.get("operator_name")
+                if dep_time and dep_loc:
+                    op_prefix = f"This {op_name or t_mode.replace('_', ' ').title()}"
+                    arr_suffix = f", arriving at {arr_time}" if arr_time else ""
+                    fast_resp_text = f"{op_prefix} departs at {dep_time} from {dep_loc}{arr_suffix}."
+                elif dep_time:
+                    fast_resp_text = f"This {t_mode.replace('_', ' ').title()} departs at {dep_time}."
+                else:
+                    fast_resp_text = f"VANVAS recommends leaving around 05:30–06:30 AM based on estimated route timing for your journey."
             except Exception:
-                fast_resp_text = f"Your {t_mode.replace('_', ' ').title()} departure is set. For road trips, 05:30–06:30 AM is recommended for clear city exit."
-        elif "road" in t_mode:
-            fast_resp_text = "We recommend departing between 05:30 AM and 06:30 AM to beat city exit traffic and arrive before mountain dusk."
+                fast_resp_text = "VANVAS recommends leaving around 05:30–06:30 AM based on estimated route timing."
+        elif "road" in t_mode or "car" in t_mode or "cab" in t_mode or "drive" in t_mode:
+            fast_resp_text = "VANVAS recommends leaving around 05:30–06:30 AM based on estimated route timing to beat city exit traffic and arrive before mountain dusk."
         else:
-            fast_resp_text = "For overnight Volvo buses, recommended departure is around 20:00 to 21:00 to arrive fresh in the morning at 08:30."
+            fast_resp_text = "VANVAS recommends leaving around 05:30–06:30 AM based on estimated route timing (or around 20:00–21:00 for overnight bus options)."
 
         fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "departure_timing"}
         assistant_msg = ConversationMessage(

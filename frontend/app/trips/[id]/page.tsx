@@ -88,6 +88,22 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [newChecklistInput, setNewChecklistInput] = useState("");
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 
+  // Sync active trip & selected day to Ask VANVAS copilot context
+  useEffect(() => {
+    if (trip) {
+      setTravelContext({
+        type: "trip",
+        title: `ASK VANVAS · ${trip.title.toUpperCase()}`,
+        subtitle: `Trip · Day ${selectedDayNumber} · Active itinerary`,
+        tripId: trip.id,
+        trip: trip,
+        activeDayNumber: selectedDayNumber,
+        destinationName: trip.destination?.name,
+        destinationSlug: trip.destination?.slug,
+      });
+    }
+  }, [trip, selectedDayNumber, setTravelContext]);
+
   const handleActionApplied = (updatedTrip: Trip, message: string) => {
     setTrip(updatedTrip);
     setNotificationMsg(message);

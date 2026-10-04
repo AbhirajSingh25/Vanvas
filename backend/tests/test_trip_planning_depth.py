@@ -229,10 +229,33 @@ def test_one_day_trip_planning_not_overpacked(manali_destination, manali_places)
 
     assert len(itinerary) == 1
     day1 = itinerary[0]
-    # Realistic stop count (3 to 5 items including meals)
-    assert 3 <= len(day1["items"]) <= 6
+    items = day1["items"]
+
+    # Classify experience stops vs logistics
+    logistics_categories = {"transit", "arrival", "transfer", "stay", "luggage", "logistics"}
+    logistics_titles = ["arrive", "transfer", "luggage", "check-in", "check in", "base camp"]
+
+    def is_logistics(it):
+        cat = (it.get("category") or "").lower()
+        title = (it.get("title") or "").lower()
+        if cat in logistics_categories:
+            return True
+        if any(w in title for w in logistics_titles):
+            return True
+        return False
+
+    experience_items = [it for it in items if not is_logistics(it)]
+    logistics_items = [it for it in items if is_logistics(it)]
+
+    # 3–6 experience stops for a one-day trip
+    assert 3 <= len(experience_items) <= 6, f"Expected 3-6 experience stops, got {len(experience_items)}: {[it['title'] for it in experience_items]}"
+    # Total timeline entries have a reasonable maximum
+    assert len(items) <= 10
+    # Arrival-aware logistics do not count as overpacking
+    assert len(logistics_items) >= 1
+
     # No negative times or duplicate consecutive stops
-    times = [it["start_time"] for it in day1["items"]]
+    times = [it["start_time"] for it in items]
     assert sorted(times) == times
 
 

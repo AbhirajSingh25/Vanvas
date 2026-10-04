@@ -406,25 +406,25 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     } catch (err: any) {
       console.warn("Copilot API service unavailable:", err);
-      const fallbackMsg = "VANVAS COULDN'T REACH THE TRAVEL INTELLIGENCE SERVICE";
-      const fallbackSummary = "Your trip data is still safe. Please check connection and try again.";
+      const fallbackTitle = "TRAVEL INTELLIGENCE TEMPORARILY UNAVAILABLE";
+      const fallbackText = "TRAVEL INTELLIGENCE TEMPORARILY UNAVAILABLE\n\nYour trip data is safe.";
       const errorStructured: StructuredAssistantResponse = {
         type: "CLARIFICATION",
-        title: "TRAVEL INTELLIGENCE TEMPORARILY OFFLINE",
-        summary: fallbackSummary,
+        title: fallbackTitle,
+        summary: "Your trip data is safe.",
         items: [],
         actions: [
           { id: "retry-query", label: "Retry", action: "query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
         ],
         provenance: "UNAVAILABLE",
-        rawText: fallbackMsg,
+        rawText: fallbackText,
       };
       setLastResponse(errorStructured);
 
       const assistantMessage: MessageItem = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        text: fallbackSummary,
+        text: fallbackText,
         structured: errorStructured,
         timestamp: new Date().toISOString(),
       };
@@ -585,14 +585,46 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (act === "build_day_plan" || act === "build_plan") {
       const destSlug = payload.destination || currentContext.destinationSlug || "manali";
       if (currentContext.tripId) {
-        setStatusMessage("Building today's plan...");
+        const activeDay = currentContext.activeDayNumber || payload.day_number || 1;
+        setStatusMessage("Preparing day plan preview...");
         setLoading(true);
         try {
-          await api.getQuickPlan(currentContext.tripId, 8);
-          setActionFeedback({ type: "success", message: "Curated 1-day plan prepared for your trip!" });
-          triggerTripRefresh();
+          const preview = await api.previewTripAction(currentContext.tripId, {
+            action_type: "SHORT_PLAN",
+            target_day_number: activeDay,
+          });
+
+          const proposedCount = preview.proposed_items?.length || 0;
+          setConfirmation({
+            isOpen: true,
+            title: `Apply Curated Plan for Day ${activeDay}?`,
+            message: `We've prepared a realistic ${proposedCount}-stop plan. Would you like to apply and save this to Day ${activeDay} of your trip?`,
+            confirmLabel: "Apply Plan to Trip",
+            cancelLabel: "Cancel",
+            onConfirm: async () => {
+              clearConfirmation();
+              setStatusMessage("Applying day plan to your itinerary...");
+              setLoading(true);
+              try {
+                await api.applyTripAction(currentContext.tripId!, {
+                  action_type: "SHORT_PLAN",
+                  target_day_number: activeDay,
+                  reason: "Curated day plan applied via Ask VANVAS",
+                  payload_for_apply: preview.payload_for_apply,
+                });
+                setActionFeedback({ type: "success", message: `Curated plan applied to Day ${activeDay} of your trip!` });
+                triggerTripRefresh();
+              } catch (err: any) {
+                setActionFeedback({ type: "error", message: err.message || "Failed to persist day plan changes." });
+              } finally {
+                setLoading(false);
+                setStatusMessage(null);
+              }
+            },
+            onCancel: clearConfirmation,
+          });
         } catch (e: any) {
-          setActionFeedback({ type: "error", message: e.message || "Could not generate day plan." });
+          setActionFeedback({ type: "error", message: e.message || "Could not generate day plan preview." });
         } finally {
           setLoading(false);
           setStatusMessage(null);

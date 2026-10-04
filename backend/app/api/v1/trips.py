@@ -860,16 +860,42 @@ def update_itinerary_item(
     item_id: str,
     status: Optional[str] = None,
     is_locked: Optional[bool] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    item = db.query(ItineraryItem).filter(ItineraryItem.id == item_id).first()
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_member = db.query(TripMember).filter(TripMember.trip_id == trip.id, TripMember.user_id == current_user.id).first()
+    if not is_member and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Unauthorized: You must be a member of this trip to update items.")
+
+    item = db.query(ItineraryItem).join(Itinerary).filter(
+        ItineraryItem.id == item_id,
+        Itinerary.trip_id == trip.id
+    ).first()
     if not item:
-        raise HTTPException(status_code=404, detail="Itinerary item not found")
+        raise HTTPException(status_code=404, detail="Itinerary item not found in this trip")
 
     if status is not None:
         item.status = status
     if is_locked is not None:
         item.is_locked = is_locked
+
+    # Record revision
+    try:
+        from app.models.models import TripRevision
+        revision = TripRevision(
+            trip_id=trip.id,
+            user_id=current_user.id,
+            action_type="UPDATE_ACTIVITY",
+            description=f"Updated '{item.title}' (status={item.status}, locked={item.is_locked})",
+            payload_json=json.dumps({"item_id": item_id, "status": item.status, "is_locked": item.is_locked})
+        )
+        db.add(revision)
+    except Exception:
+        pass
 
     db.commit()
     return {"success": True, "item_id": item.id, "status": item.status, "is_locked": item.is_locked}
@@ -913,13 +939,35 @@ def add_place_to_trip_itinerary(
     if existing_item:
         return ItineraryItemResponse.model_validate(existing_item)
 
-    # Determine start and end time based on existing items
+    # Determine distance and travel time from previous item or basecamp/hotel
     existing_items = sorted(itinerary.items, key=lambda x: x.start_time or "09:00")
+    prev_lat, prev_lng = None, None
+    if existing_items:
+        last_item = existing_items[-1]
+        prev_lat = last_item.map_lat
+        prev_lng = last_item.map_lng
+
+    if prev_lat is None or prev_lng is None:
+        if trip.hotel and trip.hotel.latitude and trip.hotel.longitude:
+            prev_lat = trip.hotel.latitude
+            prev_lng = trip.hotel.longitude
+        elif trip.destination and trip.destination.latitude and trip.destination.longitude:
+            prev_lat = trip.destination.latitude
+            prev_lng = trip.destination.longitude
+
+    if prev_lat is not None and prev_lng is not None and place.latitude is not None and place.longitude is not None:
+        dist_km = round(haversine_distance_km(prev_lat, prev_lng, place.latitude, place.longitude), 2)
+        travel_time_mins = max(5, int((dist_km / 25.0) * 60) + 5) if dist_km > 0 else 0
+    else:
+        dist_km = None
+        travel_time_mins = None
+
     if existing_items:
         last_item = existing_items[-1]
         try:
             last_end_parts = (last_item.end_time or "16:00").split(":")
-            start_mins = int(last_end_parts[0]) * 60 + int(last_end_parts[1]) + 15
+            buf = travel_time_mins if travel_time_mins is not None else 15
+            start_mins = int(last_end_parts[0]) * 60 + int(last_end_parts[1]) + buf
         except Exception:
             start_mins = 16 * 60
     else:
@@ -940,8 +988,8 @@ def add_place_to_trip_itinerary(
         end_time=end_str,
         duration_mins=duration,
         estimated_cost=place.approx_cost or 0.0,
-        travel_time_from_prev_mins=15,
-        distance_from_prev_km=1.5,
+        travel_time_from_prev_mins=travel_time_mins,
+        distance_from_prev_km=dist_km,
         notes=place.description[:120] if place.description else f"Explore {place.name}",
         reason_for_recommendation=f"Added by explorer to Day {day_number}.",
         map_lat=place.latitude,
