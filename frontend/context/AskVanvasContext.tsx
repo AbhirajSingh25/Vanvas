@@ -364,6 +364,30 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     setMessages((prev) => [...prev, userMessage]);
+
+    // Offline safety guard: honestly report unavailable without endless network retries
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      const offlineMsg: MessageItem = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        text: "Ask VANVAS requires an active internet connection.\n\nLive AI queries and discovery are unavailable while offline. Your saved itineraries and offline trip packs remain fully accessible on your device.",
+        structured: {
+          type: "CLARIFICATION",
+          title: "ASK VANVAS UNAVAILABLE OFFLINE",
+          summary: "Connect to the internet to chat with Ask VANVAS. Your saved trip details remain accessible.",
+          items: [],
+          actions: [],
+          provenance: "UNAVAILABLE",
+          rawText: "Ask VANVAS requires an internet connection.",
+        },
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, offlineMsg]);
+      setLoading(false);
+      setStatusMessage(null);
+      return;
+    }
+
     setLoading(true);
 
     try {

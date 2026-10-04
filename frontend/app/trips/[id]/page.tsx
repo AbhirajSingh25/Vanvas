@@ -53,6 +53,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [arrivalData, setArrivalData] = useState<ArrivalOptimizerResponse | null>(null);
   const [offlinePackOpen, setOfflinePackOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   // Active Tab: 'overview' | 'itinerary' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist'
   const [activeTab, setActiveTab] = useState<string>("overview");
@@ -112,6 +113,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   const handleSwapItem = async (item: ItineraryItem) => {
+    if (isOfflineMode || (typeof navigator !== "undefined" && !navigator.onLine)) {
+      setNotificationMsg("Re-planning and modifications require an active internet connection.");
+      setTimeout(() => setNotificationMsg(null), 4000);
+      return;
+    }
     try {
       const prev = await api.previewTripAction(tripId, {
         action_type: "SWAP_ACTIVITY",
@@ -125,6 +131,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   const handleRemoveItem = async (item: ItineraryItem) => {
+    if (isOfflineMode || (typeof navigator !== "undefined" && !navigator.onLine)) {
+      setNotificationMsg("Re-planning and modifications require an active internet connection.");
+      setTimeout(() => setNotificationMsg(null), 4000);
+      return;
+    }
     try {
       const prev = await api.previewTripAction(tripId, {
         action_type: "REMOVE_ACTIVITY",
@@ -155,6 +166,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     try {
       const t = await api.getTrip(tripId);
       setTrip(t);
+      setIsOfflineMode(false);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(`vanvas_offline_trip_${tripId}`, JSON.stringify(t));
+          localStorage.setItem(`vanvas_trip_${tripId}`, JSON.stringify(t));
+        } catch {}
+      }
       if (t.itineraries && t.itineraries.length > 0) {
         setSelectedDayNumber(t.itineraries[0].day_number);
       }
@@ -172,15 +190,50 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       });
 
       // Fetch supplementary data
-      api.getBudget(tripId).then(setBudgetData).catch(() => {});
-      api.getGroupDetails(tripId).then(setGroupData).catch(() => {});
-      api.getChecklist(tripId).then(setChecklist).catch(() => {});
+      api.getBudget(tripId).then((b) => {
+        setBudgetData(b);
+        try { localStorage.setItem(`vanvas_offline_budget_${tripId}`, JSON.stringify(b)); } catch {}
+      }).catch(() => {});
+      api.getGroupDetails(tripId).then((g) => {
+        setGroupData(g);
+        try { localStorage.setItem(`vanvas_offline_group_${tripId}`, JSON.stringify(g)); } catch {}
+      }).catch(() => {});
+      api.getChecklist(tripId).then((c) => {
+        setChecklist(c);
+        try { localStorage.setItem(`vanvas_offline_checklist_${tripId}`, JSON.stringify(c)); } catch {}
+      }).catch(() => {});
       api.optimizeArrival(t.destination_id, "Delhi", t.start_date).then(setArrivalData).catch(() => {});
       if (t.destination?.slug || t.destination_id) {
-        api.getDestinationWeather(t.destination?.slug || t.destination_id).then(setTripWeather).catch(() => {});
+        api.getDestinationWeather(t.destination?.slug || t.destination_id).then((w) => {
+          setTripWeather(w);
+          try { localStorage.setItem(`vanvas_offline_weather_${tripId}`, JSON.stringify(w)); } catch {}
+        }).catch(() => {});
       }
     } catch (err) {
-      console.error(err);
+      console.warn("Network request failed, falling back to local offline trip store:", err);
+      if (typeof window !== "undefined") {
+        try {
+          const cachedRaw = localStorage.getItem(`vanvas_offline_trip_${tripId}`) || localStorage.getItem(`vanvas_trip_${tripId}`);
+          if (cachedRaw) {
+            const cachedTrip = JSON.parse(cachedRaw);
+            setTrip(cachedTrip);
+            setIsOfflineMode(true);
+            if (cachedTrip.itineraries && cachedTrip.itineraries.length > 0) {
+              setSelectedDayNumber(cachedTrip.itineraries[0].day_number);
+            }
+          }
+          const cachedBudget = localStorage.getItem(`vanvas_offline_budget_${tripId}`);
+          if (cachedBudget) setBudgetData(JSON.parse(cachedBudget));
+          const cachedGroup = localStorage.getItem(`vanvas_offline_group_${tripId}`);
+          if (cachedGroup) setGroupData(JSON.parse(cachedGroup));
+          const cachedChecklist = localStorage.getItem(`vanvas_offline_checklist_${tripId}`);
+          if (cachedChecklist) setChecklist(JSON.parse(cachedChecklist));
+          const cachedWeather = localStorage.getItem(`vanvas_offline_weather_${tripId}`);
+          if (cachedWeather) setTripWeather(JSON.parse(cachedWeather));
+        } catch (storageErr) {
+          console.error("Failed to load cached trip:", storageErr);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -313,6 +366,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-[#EFE5D2] pb-28">
+      {/* Offline Mode Alert */}
+      {isOfflineMode && (
+        <div className="bg-[#7B4D36] text-[#FAF7F0] px-4 py-2 text-xs font-mono flex items-center justify-between border-b border-[#B65E3C]">
+          <div className="flex items-center gap-2 max-w-7xl mx-auto w-full">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+            <span className="font-bold">OFFLINE TRIP MODE &bull; Showing locally saved itinerary &amp; basecamp details.</span>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification Banner */}
       {notificationMsg && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 bg-[#173B32] text-[#EFE5D2] px-6 py-3 rounded-2xl shadow-2xl text-xs font-semibold border-2 border-[#B49252] flex items-center gap-2 animate-fadeIn">

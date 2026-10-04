@@ -72,29 +72,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const u = await api.getMe();
       setUser(u);
       setToken(savedToken);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("vanvas_user_profile", JSON.stringify(u));
+      }
       return u;
-    } catch {
+    } catch (err: any) {
+      // If offline or network connection error, retain existing session and profile
+      const isNetworkError =
+        (typeof navigator !== "undefined" && !navigator.onLine) ||
+        err?.message?.includes("Failed to fetch") ||
+        err?.message?.includes("Unable to connect");
+
+      if (isNetworkError && typeof window !== "undefined") {
+        const cachedProfile = localStorage.getItem("vanvas_user_profile");
+        if (cachedProfile) {
+          try {
+            const parsed = JSON.parse(cachedProfile);
+            setUser(parsed);
+            setToken(savedToken);
+            return parsed;
+          } catch {}
+        }
+        return user;
+      }
+
+      // Explicit authentication failure (e.g. 401 / expired token)
       if (typeof window !== "undefined") {
         localStorage.removeItem("vanvas_token");
+        localStorage.removeItem("vanvas_user_profile");
       }
       setUser(null);
       setToken(null);
       return null;
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("vanvas_token");
+    const cachedProfile = localStorage.getItem("vanvas_user_profile");
+
     if (savedToken) {
       setToken(savedToken);
+      if (cachedProfile) {
+        try {
+          setUser(JSON.parse(cachedProfile));
+        } catch {}
+      }
+
       api.getMe()
         .then((u) => {
           setUser(u);
+          localStorage.setItem("vanvas_user_profile", JSON.stringify(u));
         })
-        .catch(() => {
-          localStorage.removeItem("vanvas_token");
-          setToken(null);
-          setUser(null);
+        .catch((err: any) => {
+          const isNetworkError =
+            (typeof navigator !== "undefined" && !navigator.onLine) ||
+            err?.message?.includes("Failed to fetch") ||
+            err?.message?.includes("Unable to connect");
+
+          if (!isNetworkError) {
+            localStorage.removeItem("vanvas_token");
+            localStorage.removeItem("vanvas_user_profile");
+            setToken(null);
+            setUser(null);
+          }
         })
         .finally(() => setIsLoading(false));
     } else {
@@ -109,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.login(email.trim().toLowerCase(), pass);
       localStorage.setItem("vanvas_token", res.access_token);
+      localStorage.setItem("vanvas_user_profile", JSON.stringify(res.user));
       setToken(res.access_token);
       setUser(res.user);
       return res.user;

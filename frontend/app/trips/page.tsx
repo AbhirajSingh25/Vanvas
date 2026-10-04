@@ -20,14 +20,72 @@ export default function TripsDashboardPage() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     Promise.all([api.getTrips(), api.getSavedPlaces()])
       .then(([tList, sList]) => {
         setTrips(tList);
         setSavedPlaces(sList);
+        setIsOffline(false);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("vanvas_cached_trips", JSON.stringify(tList));
+            localStorage.setItem("vanvas_cached_saved_places", JSON.stringify(sList));
+          } catch {}
+        }
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.warn("Failed to load online trips, loading offline fallback:", err);
+        if (typeof window !== "undefined") {
+          setIsOffline(true);
+          try {
+            const cachedTrips = localStorage.getItem("vanvas_cached_trips");
+            if (cachedTrips) {
+              setTrips(JSON.parse(cachedTrips));
+            } else {
+              // Reconstruct from any offline trip packs in storage
+              const reconstructed: TripSummary[] = [];
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith("vanvas_offline_trip_") || key.startsWith("vanvas_trip_"))) {
+                  const raw = localStorage.getItem(key);
+                  if (raw) {
+                    try {
+                      const data = JSON.parse(raw);
+                      const destName = data.destination || data.destination?.name || "Himalayan Sanctuary";
+                      const destSlug = data.destination?.slug || destName.toLowerCase().replace(/\s+/g, "-");
+                      reconstructed.push({
+                        id: data.tripId || data.id,
+                        title: data.title || "Saved Expedition",
+                        destination_name: destName,
+                        destination_slug: destSlug,
+                        start_date: data.start_date || data.dates?.split(" to ")[0] || "",
+                        end_date: data.end_date || data.dates?.split(" to ")[1] || "",
+                        num_days: data.num_days || data.itineraries?.length || 3,
+                        companion_type: data.companion_type || "Explorer",
+                        travel_style: data.travel_style || "Spontaneous",
+                        budget_total: data.budget_total || data.budget || 10000,
+                        budget_spent: data.budget_spent || 0,
+                        status: "offline_cached",
+                        hero_image: data.hero_image,
+                      });
+                    } catch {}
+                  }
+                }
+              }
+              if (reconstructed.length > 0) {
+                setTrips(reconstructed);
+              }
+            }
+
+            const cachedSaved = localStorage.getItem("vanvas_cached_saved_places");
+            if (cachedSaved) {
+              setSavedPlaces(JSON.parse(cachedSaved));
+            }
+          } catch {}
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 

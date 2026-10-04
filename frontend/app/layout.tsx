@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display, Noto_Serif_Devanagari } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
@@ -10,6 +10,9 @@ import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { ConnectivityBanner } from "@/components/pwa/ConnectivityBanner";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { Analytics } from "@vercel/analytics/next";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -34,14 +37,43 @@ const notoSerifDevanagari = Noto_Serif_Devanagari({
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAF4E8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0A100D" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "VANVAS • चलो निकलते हैं | AI Travel Companion by The Sorted Club",
   description: "Travel should feel spontaneous. The planning shouldn't. An expedition journal and AI travel operating layer across the Himalayas, ghats, deserts, and Indian coastlines.",
   keywords: ["VANVAS", "The Sorted Club", "Indian travel journal", "Himalayan expedition", "spontaneous trips", "Manali", "Rishikesh", "Kasol", "Jaipur", "Goa"],
+  manifest: "/manifest.webmanifest",
+  applicationName: "VANVAS",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "VANVAS",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
-    icon: "/icon.png",
+    icon: [
+      { url: "/icon.png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
     shortcut: "/favicon.ico",
-    apple: "/apple-icon.png",
+    apple: [
+      { url: "/apple-icon.png" },
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
@@ -57,6 +89,10 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${notoSerifDevanagari.variable}`}
     >
       <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="VANVAS" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -108,12 +144,15 @@ export default function RootLayout({
           <ThemeProvider>
             <DensityProvider>
               <AskVanvasProvider>
+                <ServiceWorkerRegister />
+                <ConnectivityBanner />
                 <Header />
                 <main className="flex-1 pb-16 md:pb-0">{children}</main>
                 <Footer />
                 <MobileNav />
                 <FloatingCopilotTrigger />
                 <AskVanvasModal />
+                <InstallPrompt />
                 <Analytics />
               </AskVanvasProvider>
             </DensityProvider>

@@ -196,6 +196,12 @@ export const RoadTripMap: React.FC<RoadTripMapProps> = ({
       setTimeout(() => {
         if (map) map.invalidateSize();
       }, 150);
+
+      const handleResize = () => {
+        if (map) map.invalidateSize();
+      };
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("orientationchange", handleResize);
     }
 
     initMap();

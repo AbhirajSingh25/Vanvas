@@ -9,6 +9,24 @@ import { StructuredWeather, WeatherSnapshot } from "@/types";
 import { VanvasWeatherVisual } from "./VanvasWeatherVisual";
 
 function formatFreshness(updatedAt?: string): string {
+  const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+  if (!isOnline) {
+    if (updatedAt) {
+      try {
+        const d = new Date(updatedAt);
+        if (!isNaN(d.getTime())) {
+          const diffMinutes = Math.floor((Date.now() - d.getTime()) / 60000);
+          if (diffMinutes <= 1) return "Offline • Cached just now";
+          if (diffMinutes < 60) return `Offline • Cached ${diffMinutes}m ago`;
+          const diffHours = Math.floor(diffMinutes / 60);
+          if (diffHours < 24) return `Offline • Cached ${diffHours}h ago`;
+          return `Offline • Cached ${d.toLocaleDateString()}`;
+        }
+      } catch {}
+    }
+    return "Offline • Cached weather snapshot";
+  }
+
   if (!updatedAt) return "Live Satellite Feed";
   try {
     const d = new Date(updatedAt);

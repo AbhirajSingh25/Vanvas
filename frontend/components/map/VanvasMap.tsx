@@ -312,6 +312,12 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
       setTimeout(() => {
         if (map) map.invalidateSize();
       }, 200);
+
+      const handleResize = () => {
+        if (map) map.invalidateSize();
+      };
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("orientationchange", handleResize);
     }
 
     initMap();
