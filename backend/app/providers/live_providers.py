@@ -1753,7 +1753,7 @@ class LiveImageProvider(ImageProvider):
 
 class HaversineRoutingProvider(RoutingProvider):
     """
-    Routing provider calculating realistic road distances, driving times, and turn-by-turn route polylines
+    Routing provider calculating realistic road distances, driving times, and real-road corridor route polylines
     using Open Source Routing Machine (OSRM) with resilient mountain tortuosity fallback.
     """
     def calculate_distance_matrix(self, points: List[Dict[str, float]]) -> List[List[Dict[str, Any]]]:

@@ -163,15 +163,29 @@ class DynamicIntelligenceService:
         added_summary: List[Dict[str, Any]] = []
         cost_sum = 0.0
 
+        prev_point_lat = lat
+        prev_point_lng = lng
+
         for i, p in enumerate(sorted_places[:4]):
             if timeline_mins >= end_limit_mins - 20:
                 break
-            dur = min(60, max(30, p.recommended_duration_mins or 45))
-            if timeline_mins + dur > end_limit_mins:
-                dur = max(25, end_limit_mins - timeline_mins)
 
-            start_str = _mins_to_str(timeline_mins)
-            end_mins = timeline_mins + dur
+            # Calculate actual distance from previous point using coordinates
+            dist_km = round(haversine_distance_km(prev_point_lat, prev_point_lng, p.latitude, p.longitude), 1)
+            # Mountain/urban road transit estimation rule: ~3.5 mins/km, minimum 5 mins buffer
+            travel_mins = max(5, min(45, int(dist_km * 3.5)))
+
+            # If transit buffer exceeds remaining window
+            if timeline_mins + (travel_mins if i > 0 else 0) >= end_limit_mins - 15:
+                break
+
+            start_mins = timeline_mins + (travel_mins if i > 0 else 0)
+            dur = min(60, max(25, p.recommended_duration_mins or 45))
+            if start_mins + dur > end_limit_mins:
+                dur = max(20, end_limit_mins - start_mins)
+
+            end_mins = start_mins + dur
+            start_str = _mins_to_str(start_mins)
             end_str = _mins_to_str(end_mins)
 
             item_res = ItineraryItemResponse(
@@ -184,10 +198,10 @@ class DynamicIntelligenceService:
                 end_time=end_str,
                 duration_mins=dur,
                 estimated_cost=p.approx_cost or 0.0,
-                travel_time_from_prev_mins=15 if i > 0 else 5,
-                distance_from_prev_km=1.2 if i > 0 else 0.4,
+                travel_time_from_prev_mins=travel_mins,
+                distance_from_prev_km=dist_km,
                 notes=p.description[:120] if p.description else "",
-                reason_for_recommendation=f"High proximity fit for your {hours:g}h free window.",
+                reason_for_recommendation=f"High proximity fit (~{dist_km} km, est. {travel_mins}m transit) for your {hours:g}h window.",
                 map_lat=p.latitude,
                 map_lng=p.longitude,
                 booking_url=p.booking_url,
@@ -198,7 +212,9 @@ class DynamicIntelligenceService:
             proposed.append(item_res)
             added_summary.append({"title": p.name, "time": f"{start_str} - {end_str}", "cost": p.approx_cost or 0.0})
             cost_sum += (p.approx_cost or 0.0)
-            timeline_mins = end_mins + 15
+            timeline_mins = end_mins
+            prev_point_lat = p.latitude
+            prev_point_lng = p.longitude
 
         removed_summary: List[Dict[str, Any]] = []
         if mode == "replace" and itinerary:
@@ -241,11 +257,13 @@ class DynamicIntelligenceService:
         delay_mins = int(req.parameters.get("delay_minutes") or 120)
         day_items = list(itinerary.items) if itinerary else []
 
-        shifted_mins = curr_mins + 15
         items_removed = []
         items_moved = []
         items_kept = []
         proposed_items: List[ItineraryItemResponse] = []
+
+        # Recalculate schedule starting from the actual delayed time
+        timeline_mins = curr_mins + delay_mins
 
         for item in day_items:
             if item.status in ["COMPLETED", "completed"]:
@@ -253,15 +271,46 @@ class DynamicIntelligenceService:
                 proposed_items.append(ItineraryItemResponse.model_validate(item))
                 continue
 
-            item_start = _str_to_mins(item.start_time, default=shifted_mins)
-            dur = item.duration_mins or 60
+            orig_start = _str_to_mins(item.start_time, default=curr_mins)
+            orig_end = _str_to_mins(item.end_time, default=orig_start + 60)
+            orig_dur = item.duration_mins or max(30, orig_end - orig_start)
+            travel_from_prev = item.travel_time_from_prev_mins if item.travel_time_from_prev_mins is not None else 15
 
-            # If the item was scheduled in the past or conflicts with late arrival
-            if item_start < shifted_mins:
-                # Check if it is locked
-                if item.is_locked:
-                    # Keep and move
-                    new_start = shifted_mins
+            # Target start time must reflect the real delayed arrival/resume time
+            target_start = max(timeline_mins, orig_start + delay_mins)
+
+            if item.is_locked:
+                # Keep and shift locked item
+                new_start = target_start
+                new_end = new_start + orig_dur
+                items_moved.append({
+                    "title": item.title,
+                    "old_time": f"{item.start_time} - {item.end_time}",
+                    "new_time": f"{_mins_to_str(new_start)} - {_mins_to_str(new_end)}"
+                })
+                item_copy = ItineraryItemResponse.model_validate(item)
+                item_copy.start_time = _mins_to_str(new_start)
+                item_copy.end_time = _mins_to_str(new_end)
+                proposed_items.append(item_copy)
+                timeline_mins = new_end + travel_from_prev
+            else:
+                # Mountain daylight & safety limit (21:00 / 9 PM)
+                if target_start >= 21 * 60:
+                    items_removed.append({
+                        "title": item.title,
+                        "time": f"{item.start_time} - {item.end_time}",
+                        "reason": f"Exceeded safe daylight & operational hours due to +{delay_mins}m delay."
+                    })
+                else:
+                    # If late in evening (past 19:00), compress flexible items slightly to fit
+                    if target_start + orig_dur > 21 * 60:
+                        dur = max(35, 21 * 60 - target_start)
+                    elif target_start >= 18 * 60 and orig_dur > 45:
+                        dur = max(40, int(orig_dur * 0.75))
+                    else:
+                        dur = orig_dur
+
+                    new_start = target_start
                     new_end = new_start + dur
                     items_moved.append({
                         "title": item.title,
@@ -271,40 +320,15 @@ class DynamicIntelligenceService:
                     item_copy = ItineraryItemResponse.model_validate(item)
                     item_copy.start_time = _mins_to_str(new_start)
                     item_copy.end_time = _mins_to_str(new_end)
+                    item_copy.duration_mins = dur
                     proposed_items.append(item_copy)
-                    shifted_mins = new_end + (item.travel_time_from_prev_mins or 15)
-                else:
-                    # Compress or drop if too late in evening
-                    if shifted_mins > 21 * 60:  # Past 9 PM
-                        items_removed.append({
-                            "title": item.title,
-                            "time": f"{item.start_time} - {item.end_time}",
-                            "reason": "Exceeded daylight & operational hours due to delay."
-                        })
-                    else:
-                        compressed_dur = max(40, int(dur * 0.75))
-                        new_start = shifted_mins
-                        new_end = new_start + compressed_dur
-                        items_moved.append({
-                            "title": item.title,
-                            "old_time": f"{item.start_time} - {item.end_time}",
-                            "new_time": f"{_mins_to_str(new_start)} - {_mins_to_str(new_end)}"
-                        })
-                        item_copy = ItineraryItemResponse.model_validate(item)
-                        item_copy.start_time = _mins_to_str(new_start)
-                        item_copy.end_time = _mins_to_str(new_end)
-                        item_copy.duration_mins = compressed_dur
-                        proposed_items.append(item_copy)
-                        shifted_mins = new_end + (item.travel_time_from_prev_mins or 15)
-            else:
-                items_kept.append({"title": item.title, "time": f"{item.start_time} - {item.end_time}"})
-                proposed_items.append(ItineraryItemResponse.model_validate(item))
+                    timeline_mins = new_end + travel_from_prev
 
         return ActionPreviewResponse(
             action_type="RUNNING_LATE",
             target_day_number=itinerary.day_number if itinerary else 1,
-            headline=f"Schedule Shifted for {delay_mins} min Delay",
-            summary=f"Recalculated time buffers, compressed flexible stops, and preserved your important bookings.",
+            headline=f"Schedule Shifted for +{delay_mins} min Delay",
+            summary=f"Recalculated downstream arrival buffers from {_mins_to_str(curr_mins + delay_mins)} onward, preserving locked bookings and adhering to mountain safety daylight limits.",
             requires_confirmation=True,
             impact=ActionImpactSummary(
                 time_impact_mins=delay_mins,
@@ -738,9 +762,10 @@ class DynamicIntelligenceService:
         req: ActionPreviewRequest
     ) -> ActionPreviewResponse:
         day_items = list(itinerary.items) if itinerary else []
+        # Filter genuine budget places (approx_cost <= 150 or Free / ₹)
         budget_places = [p for p in places if (p.price_level in ["₹", "Free"]) or ((p.approx_cost or 0) <= 150)]
         if not budget_places:
-            budget_places = places
+            budget_places = sorted(places, key=lambda p: (p.approx_cost or 0.0))
 
         items_removed = []
         items_added = []
@@ -756,50 +781,76 @@ class DynamicIntelligenceService:
                 continue
 
             cost = item.estimated_cost or 0.0
-            if cost > 300 and budget_places:
-                repl = budget_places[swapped_idx % len(budget_places)]
-                swapped_idx += 1
-                diff = (repl.approx_cost or 0.0) - cost
-                total_savings += abs(diff)
+            # Only consider swapping if the item has a positive cost and there is a strictly cheaper alternative
+            if cost > 200 and budget_places:
+                # Find candidates that are strictly cheaper than current cost
+                cheaper_candidates = [p for p in budget_places if (p.approx_cost or 0.0) < cost and p.id != item.place_id]
+                if cheaper_candidates:
+                    repl = cheaper_candidates[swapped_idx % len(cheaper_candidates)]
+                    swapped_idx += 1
+                    replacement_cost = repl.approx_cost or 0.0
+                    actual_saving = cost - replacement_cost
 
-                items_removed.append({"title": item.title, "time": f"{item.start_time} - {item.end_time}", "cost": cost})
-                cheap_item = ItineraryItemResponse(
-                    id=item.id,
-                    itinerary_id=item.itinerary_id,
-                    place_id=repl.id,
-                    title=f"Pocket-Friendly: {repl.name}",
-                    category=repl.category,
-                    start_time=item.start_time,
-                    end_time=item.end_time,
-                    duration_mins=item.duration_mins or 60,
-                    estimated_cost=repl.approx_cost or 0.0,
-                    travel_time_from_prev_mins=item.travel_time_from_prev_mins,
-                    distance_from_prev_km=item.distance_from_prev_km,
-                    notes=repl.description[:120] if repl.description else "Authentic local spot with zero overhead.",
-                    reason_for_recommendation="Cost optimized: Authentic local experience with near-zero entry cost.",
-                    map_lat=repl.latitude,
-                    map_lng=repl.longitude,
-                    booking_url=repl.booking_url,
-                    opening_hours=f"{repl.opening_time} - {repl.closing_time}",
-                    status="PLANNED",
-                    is_locked=False
-                )
-                items_added.append({"title": cheap_item.title, "time": f"{cheap_item.start_time} - {cheap_item.end_time}", "cost": repl.approx_cost or 0.0})
-                proposed.append(cheap_item)
-            else:
-                items_kept.append({"title": item.title, "time": f"{item.start_time} - {item.end_time}"})
-                proposed.append(ItineraryItemResponse.model_validate(item))
+                    if actual_saving > 0:
+                        total_savings += actual_saving
+                        items_removed.append({
+                            "title": item.title,
+                            "time": f"{item.start_time} - {item.end_time}",
+                            "cost": cost
+                        })
+                        cheap_item = ItineraryItemResponse(
+                            id=item.id,
+                            itinerary_id=item.itinerary_id,
+                            place_id=repl.id,
+                            title=f"Pocket-Friendly: {repl.name}",
+                            category=repl.category,
+                            start_time=item.start_time,
+                            end_time=item.end_time,
+                            duration_mins=item.duration_mins or 60,
+                            estimated_cost=replacement_cost,
+                            travel_time_from_prev_mins=item.travel_time_from_prev_mins,
+                            distance_from_prev_km=item.distance_from_prev_km,
+                            notes=repl.description[:120] if repl.description else "Authentic local spot with zero overhead.",
+                            reason_for_recommendation=f"Cost optimized: saves ₹{actual_saving:,.0f} with authentic local experience.",
+                            map_lat=repl.latitude,
+                            map_lng=repl.longitude,
+                            booking_url=repl.booking_url,
+                            opening_hours=f"{repl.opening_time} - {repl.closing_time}",
+                            status="PLANNED",
+                            is_locked=False
+                        )
+                        items_added.append({
+                            "title": cheap_item.title,
+                            "time": f"{cheap_item.start_time} - {cheap_item.end_time}",
+                            "cost": replacement_cost
+                        })
+                        proposed.append(cheap_item)
+                        continue
 
-        # Real budget stats
+            # Fallback: keep existing item without fake mutation or savings
+            items_kept.append({"title": item.title, "time": f"{item.start_time} - {item.end_time}"})
+            proposed.append(ItineraryItemResponse.model_validate(item))
+
+        # Real budget stats: projected remaining reflects current remaining + net savings
         spent = sum(e.amount for e in trip.expenses) if trip.expenses else 0.0
-        remaining_budget = max(0.0, (trip.budget_total or 10000.0) - spent)
+        current_remaining_budget = max(0.0, (trip.budget_total or 10000.0) - spent)
+        projected_remaining = current_remaining_budget + total_savings
+
+        if total_savings > 0:
+            headline = f"Optimized Savings Plan (-₹{total_savings:,.0f})"
+            summary = f"Swapped high-cost activities for authentic pocket-friendly local spots, saving ₹{total_savings:,.0f} today."
+            budget_note = f"Projected remaining budget: ₹{projected_remaining:,.0f} (+₹{total_savings:,.0f} saved today)."
+        else:
+            headline = "Budget Already Optimized"
+            summary = "Your itinerary already consists of budget-friendly or free stops. No cheaper replacements were required."
+            budget_note = f"Current remaining budget: ₹{current_remaining_budget:,.0f} (No cost changes)."
 
         return ActionPreviewResponse(
             action_type="MAKE_TODAY_CHEAPER",
             target_day_number=itinerary.day_number if itinerary else 1,
-            headline=f"Optimized Savings Plan (-₹{total_savings:,.0f})",
-            summary=f"Swapped high-cost activities with authentic local dhabas and free scenic viewpoints.",
-            requires_confirmation=True,
+            headline=headline,
+            summary=summary,
+            requires_confirmation=total_savings > 0,
             impact=ActionImpactSummary(
                 time_impact_mins=0,
                 cost_impact_inr=-total_savings,
@@ -807,7 +858,7 @@ class DynamicIntelligenceService:
                 items_removed=items_removed,
                 items_moved=[],
                 items_kept=items_kept,
-                budget_note=f"Projected remaining budget: ₹{remaining_budget:,.0f}. Daily savings: ₹{total_savings:,.0f}."
+                budget_note=budget_note
             ),
             proposed_items=proposed,
             payload_for_apply={

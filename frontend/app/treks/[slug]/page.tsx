@@ -469,7 +469,9 @@ function TrekDetailContent({ params }: PageProps) {
                   </div>
                   <div>
                     <span className="block text-[9px] uppercase text-[#6D8578]">Elevation Gain</span>
-                    <span className="text-[#E05A2B] font-bold">+{route.elevationGainMeters} m</span>
+                    <span className="text-[#E05A2B] font-bold">
+                      {route.elevationGainMeters ? `+${route.elevationGainMeters} m` : "Elevation gain unavailable"}
+                    </span>
                   </div>
                   <div>
                     <span className="block text-[9px] uppercase text-[#6D8578]">Estimated Time</span>

@@ -685,9 +685,9 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
       {
         id: "route-triund-gallu",
         name: "Route A: Gallu Devi Temple → Triund Ridge",
-        trailhead: "Gallu Devi Temple (Dharamkot)",
+        trailhead: "Gallu Devi Temple (2,100 m)",
         distanceKm: 7.0,
-        elevationGainMeters: 980,
+        elevationGainMeters: 728,
         estimatedTime: "3 – 4 hrs ascent",
         difficulty: "Moderate",
         sceneryScore: "HIGH",
@@ -702,9 +702,9 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
       {
         id: "route-triund-bhagsu",
         name: "Route B: Bhagsu Waterfall Steep Scramble",
-        trailhead: "Bhagsu Nag Village",
+        trailhead: "Bhagsu Nag Village (1,800 m)",
         distanceKm: 6.0,
-        elevationGainMeters: 1050,
+        elevationGainMeters: 1028,
         estimatedTime: "3.5 hrs ascent",
         difficulty: "Challenging",
         sceneryScore: "HIGH",
@@ -757,10 +757,10 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
       },
       {
         id: "wp-triund-ridge",
-        name: "Triund Ridge (22 Curves End)",
+        name: "Triund Ridge Summit (2,828 m)",
         hindiName: "त्रियुंड रिज टॉप",
-        elevationMeters: 2850,
-        elevationFormatted: "2,850 m",
+        elevationMeters: 2828,
+        elevationFormatted: "2,828 m",
         distanceFromStartKm: 6.5,
         timeFromPrev: "1.5 hrs",
         terrainType: "Alpine Meadow & Granite Boulders",
@@ -770,7 +770,7 @@ export const TREK_REGISTRY: Record<string, TrekItem> = {
         medicalHelp: false,
         latitude: 32.2612,
         longitude: 76.3533,
-        fieldNotes: "Dramatic edge standing beneath the vertical Dhauladhar cliff face.",
+        fieldNotes: "Summit altitude at 2,828 m (9,278 ft). Dramatic edge standing beneath the vertical Dhauladhar cliff face.",
         imageUrl: "/images/destinations/dharamshala/hero.jpg"
       },
       {

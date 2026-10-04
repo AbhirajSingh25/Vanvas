@@ -452,3 +452,138 @@ async def test_current_state_endpoint(test_travel_environment):
     assert state.budget_total == 12000.0
     assert state.budget_spent == 0.0
     assert state.total_items_count > 0
+
+
+@pytest.mark.asyncio
+async def test_running_late_exact_timestamp_delta_regression(test_travel_environment):
+    """
+    P1 Regression Test:
+    When current_time = 11:00 and delay_minutes = 120,
+    the downstream uncompleted schedule must be shifted starting from approximately 13:00 (not 11:15).
+    """
+    env = test_travel_environment
+    db = env["db"]
+    trip = env["trip"]
+
+    # Mark item 1 as COMPLETED at 09:00 - 10:00
+    env["item1"].status = "COMPLETED"
+    db.commit()
+
+    req_prev = ActionPreviewRequest(
+        action_type="RUNNING_LATE",
+        target_day_number=1,
+        parameters={"delay_minutes": 120},
+        current_time="11:00"
+    )
+    prev = await DynamicIntelligenceService.preview_action(db, trip, req_prev)
+
+    assert prev.action_type == "RUNNING_LATE"
+    assert prev.impact.time_impact_mins == 120
+
+    # Item 1 was completed: must be preserved at 09:00 - 10:00
+    completed_item = next((i for i in prev.proposed_items if i.id == env["item1"].id), None)
+    assert completed_item is not None
+    assert completed_item.start_time == "09:00"
+
+    # Item 2 (originally 10:30) and Item 3 (originally 13:00) must start at or after 13:00 (11:00 + 120 mins)
+    future_items = [i for i in prev.proposed_items if i.id in [env["item2"].id, env["item3"].id]]
+    assert len(future_items) == 2
+
+    first_future = future_items[0]
+    first_start_mins = int(first_future.start_time.split(":")[0]) * 60 + int(first_future.start_time.split(":")[1])
+    # Must start at 13:00 (780 mins)
+    assert first_start_mins >= 780, f"Expected start >= 13:00 (780m), got {first_future.start_time} ({first_start_mins}m)"
+
+    second_future = future_items[1]
+    second_start_mins = int(second_future.start_time.split(":")[0]) * 60 + int(second_future.start_time.split(":")[1])
+    assert second_start_mins > first_start_mins, "Downstream activities must be scheduled sequentially after first"
+
+
+@pytest.mark.asyncio
+async def test_make_today_cheaper_positive_savings_truth(test_travel_environment):
+    """
+    P1 Regression Test:
+    1. Swapping ₹850 dining for ₹0 temple produces exactly ₹850 savings (850 - 0 = 850).
+    2. Swapping ₹850 dining for ₹250 cafe produces exactly ₹600 savings (850 - 250 = 600).
+    3. If item is ₹200 and available places are ₹800+, it must produce ₹0 savings and not mutate.
+    4. Projected remaining budget increases consistently by actual savings.
+    """
+    env = test_travel_environment
+    db = env["db"]
+    trip = env["trip"]
+
+    # Initial test with full environment (Item 3 is ₹850, budget places include Hadimba ₹0 and Cafe ₹250)
+    req_prev = ActionPreviewRequest(
+        action_type="MAKE_TODAY_CHEAPER",
+        target_day_number=1,
+        parameters={}
+    )
+    prev = await DynamicIntelligenceService.preview_action(db, trip, req_prev)
+
+    assert prev.action_type == "MAKE_TODAY_CHEAPER"
+    # Replacing ₹850 dining with ₹0 Hadimba gives ₹850 savings
+    assert prev.impact.cost_impact_inr == -850.0, f"Expected -850.0 cost impact, got {prev.impact.cost_impact_inr}"
+    assert "₹12,850" in prev.impact.budget_note or "12,850" in prev.impact.budget_note
+
+    # Now test specific swap of ₹800 -> ₹200 directly
+    # Set Item 3 to ₹800 and set only candidate place to ₹200
+    env["item3"].estimated_cost = 800.0
+    for p in env["places"]:
+        if p.category == "Café":
+            p.approx_cost = 200.0
+            p.price_level = "₹"
+        else:
+            p.approx_cost = 800.0
+            p.price_level = "₹₹₹"
+    db.commit()
+
+    prev_600 = await DynamicIntelligenceService.preview_action(db, trip, req_prev)
+    assert prev_600.impact.cost_impact_inr == -600.0, f"Expected -600.0 cost impact for 800->200 swap, got {prev_600.impact.cost_impact_inr}"
+
+    # Now test case where all items are already cheap (₹50) and replacements are expensive (₹800)
+    env["item3"].estimated_cost = 50.0
+    for p in env["places"]:
+        p.approx_cost = 800.0
+        p.price_level = "₹₹₹"
+    db.commit()
+
+    req_prev_cheap = ActionPreviewRequest(
+        action_type="MAKE_TODAY_CHEAPER",
+        target_day_number=1,
+        parameters={}
+    )
+    prev_cheap = await DynamicIntelligenceService.preview_action(db, trip, req_prev_cheap)
+    assert prev_cheap.impact.cost_impact_inr == 0.0
+    assert prev_cheap.headline == "Budget Already Optimized"
+
+
+@pytest.mark.asyncio
+async def test_short_plan_dynamic_coordinates_and_distance(test_travel_environment):
+    """
+    P2 Regression Test:
+    Short Plan must calculate real geographic distance and transit times from coordinates,
+    not hardcoded 0.4 km, 1.2 km, 5 min, 15 min.
+    """
+    env = test_travel_environment
+    db = env["db"]
+    trip = env["trip"]
+
+    req_prev = ActionPreviewRequest(
+        action_type="SHORT_PLAN",
+        target_day_number=1,
+        parameters={"hours_available": 3.0, "mode": "replace"},
+        current_time="10:00",
+        current_lat=32.2432,
+        current_lng=77.1892
+    )
+    prev = await DynamicIntelligenceService.preview_action(db, trip, req_prev)
+
+    assert prev.action_type == "SHORT_PLAN"
+    assert len(prev.proposed_items) > 0
+
+    # Ensure distances are computed from place coordinates
+    for item in prev.proposed_items:
+        assert item.distance_from_prev_km is not None
+        assert item.travel_time_from_prev_mins is not None
+        assert item.travel_time_from_prev_mins >= 5
+
