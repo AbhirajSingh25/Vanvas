@@ -746,6 +746,10 @@ export const api = {
     return fetchApi(`/transport?${params.toString()}`);
   },
 
+  async getTransportOptions(destId: string, originCity = "Delhi", transportType?: string): Promise<TransportOption[]> {
+    return this.getTransport(destId, originCity, transportType);
+  },
+
   async optimizeArrival(destId: string, originCity: string, dateStr: string, preferredMode = "All"): Promise<ArrivalOptimizerResponse> {
     return fetchApi("/arrival-optimizer", {
       method: "POST",
@@ -1232,6 +1236,8 @@ export const api = {
       timeoutMs: 60000,
     });
   },
+
+
 
   // ----------------- 1-to-1 Solo Direct Chat -----------------
   async getSoloDirectMessages(partnerUserOrMatchId: string): Promise<any[]> {

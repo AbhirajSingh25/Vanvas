@@ -81,12 +81,37 @@ function RoadTripCockpit() {
   const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  // Load popular corridors on mount
+  // Load popular corridors on mount and handle query params
   useEffect(() => {
     api.getRoadTripCorridors()
       .then(setCorridors)
       .catch(() => {});
-  }, []);
+
+    const urlOrigin = searchParams?.get("origin");
+    const urlDest = searchParams?.get("dest") || searchParams?.get("destination");
+    if (urlOrigin && urlDest) {
+      setOrigin(urlOrigin);
+      setDestination(urlDest);
+      setLoading(true);
+      api.planRoadTrip({
+        origin: urlOrigin,
+        destination: urlDest,
+        travellers_count: 4,
+        vehicle_type: "SUV",
+        trip_style: "Balanced",
+        start_date: startDate,
+        preferences: ["Food", "Nature", "Scenic Roads"],
+      })
+        .then((resp) => {
+          setPlan(resp);
+          setSelectedDayTab(1);
+        })
+        .catch((err) => {
+          setErrorState(err.message || "Failed to calculate road trip route.");
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [searchParams]);
 
   // Sync Road Trip context to Ask VANVAS
   useEffect(() => {

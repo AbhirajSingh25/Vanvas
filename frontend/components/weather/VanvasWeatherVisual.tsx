@@ -160,33 +160,36 @@ export const VanvasWeatherVisual: React.FC<VanvasWeatherVisualProps> = ({
 
       {/* 2. SUNNY / CLEAR DAY SCENE */}
       {state === "SUNNY" && (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#12382c] via-[#1c4d3b] to-[#7a6435]">
-          {/* Radiant Solar Aura */}
-          <div className="absolute top-[-40px] right-[-40px] w-72 h-72 rounded-full bg-[#B49252]/25 blur-3xl animate-weather-sun-radiance" />
-          <div className="absolute top-[-20px] right-[-20px] w-48 h-48 rounded-full bg-[#E5B869]/30 blur-2xl animate-weather-sun-radiance" />
+        <div className="relative w-full h-full bg-gradient-to-br from-[#12382c] via-[#1c4d3b] to-[#7a6435] overflow-hidden">
+          {/* Concentric SunGroup: Glow + Rays + SunBody all aligned to identical center */}
+          <div className="absolute top-3 right-5 w-36 h-36 flex items-center justify-center">
+            {/* Centered Solar Aura Glow */}
+            <div className="absolute w-44 h-44 rounded-full bg-[#B49252]/25 blur-2xl animate-weather-sun-radiance pointer-events-none" />
+            <div className="absolute w-32 h-32 rounded-full bg-[#E5B869]/30 blur-xl animate-weather-sun-radiance pointer-events-none" />
 
-          {/* Rotating Solar Rays Corona */}
-          <div className="absolute top-2 right-4 w-44 h-44 animate-weather-sun-rays opacity-45">
-            <svg viewBox="0 0 200 200" className="w-full h-full text-[#FAF4E8]/60">
-              <circle cx="100" cy="100" r="36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 6" />
-              {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
-                <line
-                  key={deg}
-                  x1="100"
-                  y1="35"
-                  x2="100"
-                  y2="15"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  transform={`rotate(${deg} 100 100)`}
-                />
-              ))}
-            </svg>
+            {/* Geometrically Concentric Rotating Rays Corona */}
+            <div className="absolute inset-0 w-full h-full animate-weather-sun-rays opacity-60 flex items-center justify-center pointer-events-none">
+              <svg viewBox="0 0 160 160" className="w-full h-full text-[#FAF4E8]/70">
+                <circle cx="80" cy="80" r="32" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="3 5" opacity="0.6" />
+                {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
+                  <line
+                    key={deg}
+                    x1="80"
+                    y1="34"
+                    x2="80"
+                    y2="18"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    transform={`rotate(${deg} 80 80)`}
+                  />
+                ))}
+              </svg>
+            </div>
+
+            {/* Concentric Luminous Sun Orb */}
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-[#B65E3C] via-[#E5B869] to-[#FFFDF5] shadow-[0_0_30px_rgba(229,184,105,0.75)]" />
           </div>
-
-          {/* Luminous Sun Orb */}
-          <div className="absolute top-6 right-8 w-24 h-24 rounded-full bg-gradient-to-tr from-[#B65E3C] via-[#E5B869] to-[#FFFDF5] shadow-[0_0_35px_rgba(229,184,105,0.7)]" />
 
           {/* Gentle Mountain Mist Layer */}
           <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#12382c] via-[#12382c]/60 to-transparent" />
@@ -195,10 +198,29 @@ export const VanvasWeatherVisual: React.FC<VanvasWeatherVisualProps> = ({
 
       {/* 3. PARTLY CLOUDY SCENE */}
       {state === "PARTLY_CLOUDY" && (
-        <div className="relative w-full h-full bg-gradient-to-br from-[#133328] via-[#1d4738] to-[#425e4f]">
-          {/* Sun peeking from behind clouds */}
-          <div className="absolute top-2 right-12 w-28 h-28 rounded-full bg-[#E5B869]/25 blur-xl animate-weather-sun-radiance" />
-          <div className="absolute top-4 right-14 w-18 h-18 rounded-full bg-gradient-to-tr from-[#B65E3C] via-[#E5B869] to-[#FFFDF5] shadow-lg" />
+        <div className="relative w-full h-full bg-gradient-to-br from-[#133328] via-[#1d4738] to-[#425e4f] overflow-hidden">
+          {/* Concentric SunGroup peeking behind clouds */}
+          <div className="absolute top-2 right-8 w-28 h-28 flex items-center justify-center">
+            <div className="absolute w-32 h-32 rounded-full bg-[#E5B869]/25 blur-xl animate-weather-sun-radiance pointer-events-none" />
+            <div className="absolute inset-0 w-full h-full animate-weather-sun-rays opacity-40 flex items-center justify-center pointer-events-none">
+              <svg viewBox="0 0 120 120" className="w-full h-full text-[#FAF4E8]/60">
+                {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+                  <line
+                    key={deg}
+                    x1="60"
+                    y1="24"
+                    x2="60"
+                    y2="12"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    transform={`rotate(${deg} 60 60)`}
+                  />
+                ))}
+              </svg>
+            </div>
+            <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-[#B65E3C] via-[#E5B869] to-[#FFFDF5] shadow-md" />
+          </div>
 
           {/* Background Soft Cloud Layer */}
           <div className="absolute top-2 -left-12 w-[130%] h-36 opacity-60 animate-weather-cloud-2">

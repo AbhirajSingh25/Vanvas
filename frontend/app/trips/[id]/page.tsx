@@ -25,6 +25,8 @@ import { TripMembersSection } from "@/components/trip/TripMembersSection";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 import { useDensity } from "@/context/DensityContext";
 import { useAskVanvas } from "@/context/AskVanvasContext";
+import { TravelModeCockpit } from "@/components/trip/TravelModeCockpit";
+import { OfflineTripPackDrawer } from "@/components/trip/OfflineTripPackDrawer";
 import { CompactItineraryItem, CompactStayCard, CompactRentalCard } from "@/components/compact";
 import { VanvasSplitView } from "@/components/trip/VanvasSplitView";
 
@@ -38,6 +40,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [groupData, setGroupData] = useState<GroupSummary | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [arrivalData, setArrivalData] = useState<ArrivalOptimizerResponse | null>(null);
+  const [offlinePackOpen, setOfflinePackOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Active Tab: 'overview' | 'itinerary' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist'
@@ -371,6 +374,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 <span>Share</span>
               </button>
 
+              <button
+                onClick={() => setOfflinePackOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5 cursor-pointer"
+                title="Download or Print Offline Trip Pack"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Offline Pack</span>
+              </button>
+
               <Link
                 href={`/trips/${trip.id}/journal`}
                 className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5"
@@ -410,6 +422,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Offline Pack */}
+                <button
+                  onClick={() => setOfflinePackOpen(true)}
+                  className="px-4 py-1.5 rounded-xl bg-emerald-900/40 hover:bg-emerald-800/50 border border-emerald-500/40 text-xs text-emerald-200 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Offline Trip Pack & Safe Pass"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Offline Pack</span>
+                </button>
+
                 {/* Print / Export Journal Link */}
                 <Link
                   href={`/trips/${trip.id}/journal`}
@@ -549,6 +571,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
           <div className="space-y-6 animate-fadeIn">
+            {/* Travel Mode Cockpit (5 Core Questions: Where am I? What's next? How do I get there? Cost? Weather?) */}
+            <TravelModeCockpit
+              trip={trip}
+              weather={tripWeather}
+              budget={budgetData}
+              currentDayNumber={selectedDayNumber || 1}
+              onOpenExpenseModal={() => setExpenseModalOpen(true)}
+              onOpenReplanModal={() => setReplanOpen(true)}
+              onOpenImHereModal={() => setImHereOpen(true)}
+              onToggleItemStatus={handleToggleItemStatus}
+              onOpenAskVanvas={() => openAskVanvas()}
+            />
+
             {/* Arrival Optimizer Card */}
             {arrivalData && <ArrivalOptimizerCard data={arrivalData} />}
 
@@ -1145,6 +1180,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         endDate={trip.end_date}
         numDays={trip.num_days}
         inviteCode={trip.invite_code}
+      />
+
+      <OfflineTripPackDrawer
+        trip={trip}
+        checklist={checklist}
+        isOpen={offlinePackOpen}
+        onClose={() => setOfflinePackOpen(false)}
       />
     </div>
   );

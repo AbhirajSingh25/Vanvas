@@ -15,6 +15,7 @@ import { getTrekBySlug, TrekItem, TrekRouteOption, TrekWaypoint, TrekGearItem } 
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { VanvasMap, VanvasMapMarker, VanvasMapRouteSegment } from "@/components/ui/VanvasMap";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -32,6 +33,7 @@ function TrekDetailContent({ params }: PageProps) {
   const { slug } = use(params);
   const searchParams = useSearchParams();
   const trek = getTrekBySlug(slug);
+  const { openAskVanvas } = useAskVanvas();
 
   const [selectedRouteId, setSelectedRouteId] = useState<string>(
     trek?.routes[0]?.id || ""
@@ -286,14 +288,32 @@ function TrekDetailContent({ params }: PageProps) {
             <span className="text-[#FAF4E8] font-semibold truncate">{trek.title}</span>
           </div>
 
-          {/* Trail Mode Trigger */}
-          <button
-            onClick={() => setIsTrailModeActive(true)}
-            className="px-3.5 py-1.5 rounded-full bg-[#E05A2B] hover:bg-[#C8491D] text-white text-[11px] font-mono font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-md cursor-pointer transition-all active:scale-95"
-          >
-            <Crosshair className="w-3.5 h-3.5" />
-            <span>Launch Trail Mode</span>
-          </button>
+          {/* Primary Actions: Open Route, Ask VANVAS, Start Trek */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const el = document.getElementById("trek-route-section");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="px-3 py-1.5 rounded-full bg-[#1A2A22] hover:bg-[#25392F] text-[#FAF4E8] text-[11px] font-mono border border-[#344D3F] cursor-pointer transition-colors"
+            >
+              Open Route
+            </button>
+            <button
+              onClick={() => openAskVanvas({ destinationName: trek.title, title: `ASK VANVAS · ${trek.title.toUpperCase()}` }, `Tell me safety tips, gear essentials, and route advice for ${trek.title}`)}
+              className="px-3 py-1.5 rounded-full bg-[#B49252]/20 hover:bg-[#B49252]/30 text-[#B49252] text-[11px] font-mono border border-[#B49252]/40 flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>Ask VANVAS</span>
+            </button>
+            <button
+              onClick={() => setIsTrailModeActive(true)}
+              className="px-3.5 py-1.5 rounded-full bg-[#E05A2B] hover:bg-[#C8491D] text-white text-[11px] font-mono font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-md cursor-pointer transition-all active:scale-95"
+            >
+              <Crosshair className="w-3.5 h-3.5" />
+              <span>Start Trek</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -472,7 +492,7 @@ function TrekDetailContent({ params }: PageProps) {
       </section>
 
       {/* 5. TOPOGRAPHIC EXPEDITION MAP & WAYPOINT VISUALIZER */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <section id="trek-route-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="border-b border-[#2A3E33] pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
           <div className="space-y-1">
             <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">

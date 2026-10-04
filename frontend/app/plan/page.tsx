@@ -4,18 +4,34 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles, MapPin, Calendar, Wallet, Users, Compass, Check,
-  ArrowRight, ArrowLeft, Search, Loader2, RefreshCw, AlertCircle
+  ArrowRight, ArrowLeft, Search, Loader2, RefreshCw, AlertCircle,
+  Bus, Train, Plane, Car, CarTaxiFront, ExternalLink, Navigation,
+  ShieldCheck, Clock, Moon, Sun, ArrowUpRight
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { Destination } from "@/types";
+import { Destination, TransportOption } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { useDensity } from "@/context/DensityContext";
 import confetti from "canvas-confetti";
 import { TravelStamp } from "@/components/ui/TravelStamp";
+import { getCurrentGPSPosition } from "@/lib/locationService";
 import {
   CANONICAL_DESTINATIONS,
   CANONICAL_HINDI_NAMES,
 } from "@/lib/canonicalDestinations";
+
+const POPULAR_ORIGIN_HUBS = [
+  { name: "Delhi NCR", slug: "delhi", label: "Delhi" },
+  { name: "Chandigarh", slug: "chandigarh", label: "Chandigarh" },
+  { name: "Mumbai", slug: "mumbai", label: "Mumbai" },
+  { name: "Bengaluru", slug: "bengaluru", label: "Bengaluru" },
+  { name: "Jaipur", slug: "jaipur", label: "Jaipur" },
+  { name: "Dehradun", slug: "dehradun", label: "Dehradun" },
+  { name: "Kolkata", slug: "kolkata", label: "Kolkata" },
+  { name: "Pune", slug: "pune", label: "Pune" },
+  { name: "Hyderabad", slug: "hyderabad", label: "Hyderabad" },
+  { name: "Ahmedabad", slug: "ahmedabad", label: "Ahmedabad" },
+];
 
 function PlanWizard() {
   const router = useRouter();
@@ -23,33 +39,47 @@ function PlanWizard() {
   const rawInitial = searchParams?.get("dest") || searchParams?.get("destination") || "manali";
   const initialDest = rawInitial.replace(/^(dyn|dest)-/, "").trim() || "manali";
   const hasExplicitDest = Boolean(searchParams?.get("dest") || searchParams?.get("destination"));
+  const urlOrigin = searchParams?.get("origin") || "";
   const urlBudget = searchParams?.get("budget") || "";
   const urlDays = searchParams?.get("days") || "";
   const urlCompanion = searchParams?.get("companion") || "";
+  const urlTransport = searchParams?.get("transport") || "";
+
   const { user } = useAuth();
   const { isCompact } = useDensity();
 
-  // Progressive Step State: 1 to 6, plus Step 7 (Review)
-  const [currentStep, setCurrentStep] = useState<number>(() => (hasExplicitDest ? 2 : 1));
+  // Progressive Step State: 1 to 6 (Mandatory flow), plus 7 (Review)
+  // Step 1: WHERE ARE YOU STARTING FROM?
+  // Step 2: WHERE ARE YOU GOING?
+  // Step 3: WHEN?
+  // Step 4: WHO IS TRAVELLING?
+  // Step 5: WHAT IS YOUR BUDGET?
+  // Step 6: HOW ARE YOU GETTING THERE?
+  // Step 7: REVIEW & GENERATE
+  const [currentStep, setCurrentStep] = useState<number>(() => (urlOrigin ? (hasExplicitDest ? 3 : 2) : 1));
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
 
-  // Destination Resolution State
+  // Step 1: Origin State
+  const [originCity, setOriginCity] = useState<string>(urlOrigin || "");
+  const [originSearch, setOriginSearch] = useState<string>("");
+  const [isLocatingGPS, setIsLocatingGPS] = useState<boolean>(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+
+  // Step 2: Destination Resolution State
   const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
   const [loadingDestinations, setLoadingDestinations] = useState(true);
   const [selectedDestId, setSelectedDestId] = useState<string>(initialDest);
   const [selectedDestObject, setSelectedDestObject] = useState<Destination | any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [generationError, setGenerationError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
 
-  // Dates & Duration State
+  // Step 3: Dates & Duration State
   const [dateSelectionType, setDateSelectionType] = useState<"this_weekend" | "next_week" | "next_month" | "custom">("this_weekend");
   const [startDate, setStartDate] = useState<string>(() => {
     const today = new Date();
-    // Default to upcoming Saturday if weekend, or tomorrow
     const day = today.getDay();
     const daysUntilSat = (6 - day + 7) % 7 || 7;
     const sat = new Date();
@@ -64,7 +94,7 @@ function PlanWizard() {
   });
   const [daysCount, setDaysCount] = useState<number>(() => (urlDays ? parseInt(urlDays, 10) || 4 : 4));
 
-  // Companions State
+  // Step 4: Companions State
   const [companionType, setCompanionType] = useState<string>(() => {
     if (urlCompanion) {
       const match = ["Solo", "Couple", "Friends", "Family"].find(
@@ -81,16 +111,20 @@ function PlanWizard() {
     return 2;
   });
 
-  // Vibe & Interests State (Multi-select)
-  const [selectedVibes, setSelectedVibes] = useState<string[]>(["Nature", "Food", "Slow"]);
-
-  // Travel Style & Budget Tier
+  // Step 5: Travel Style & Budget Tier
   const [travelStyle, setTravelStyle] = useState<string>("Balanced");
   const [budgetEstimate, setBudgetEstimate] = useState<number>(25000);
+  const [selectedVibes, setSelectedVibes] = useState<string[]>(["Nature", "Food", "Slow"]);
+
+  // Step 6: Transport Intelligence State
+  const [selectedTransportMode, setSelectedTransportMode] = useState<string>(urlTransport || "Bus");
+  const [transportOptions, setTransportOptions] = useState<TransportOption[]>([]);
+  const [loadingTransport, setLoadingTransport] = useState<boolean>(false);
 
   // Generation State
   const [isGenerating, setIsGenerating] = useState(false);
   const [genMessage, setGenMessage] = useState("Drafting your itinerary...");
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Calculate estimated budget when days, travellers, and style change
   useEffect(() => {
@@ -157,7 +191,49 @@ function PlanWizard() {
     };
   }, [searchQuery]);
 
-  // Handle single-select destination selection with AUTO-ADVANCE
+  // Load transport options when reaching Step 6 or when origin/dest changes
+  useEffect(() => {
+    if (currentStep === 6 || currentStep === 7) {
+      const destTarget = selectedDestObject?.slug || selectedDestId || "manali";
+      const originTarget = originCity || "Delhi";
+      setLoadingTransport(true);
+      api.getTransportOptions(destTarget, originTarget, selectedTransportMode)
+        .then((opts) => setTransportOptions(opts || []))
+        .catch(() => setTransportOptions([]))
+        .finally(() => setLoadingTransport(false));
+    }
+  }, [currentStep, originCity, selectedDestId, selectedDestObject, selectedTransportMode]);
+
+  // Step 1: Handle GPS Location Button (EXPLICIT ACTION ONLY)
+  const handleRequestGPS = async () => {
+    setIsLocatingGPS(true);
+    setGpsError(null);
+    try {
+      const res = await getCurrentGPSPosition();
+      if (res.status === "GRANTED" && res.coords) {
+        // Reverse resolve or set detected coordinates
+        setOriginCity("Current GPS Location");
+        setStepDirection("next");
+        setTimeout(() => setCurrentStep(2), 200);
+      } else {
+        setGpsError(res.errorMessage || "Location permission was not granted. Please select your origin city.");
+      }
+    } catch (e: any) {
+      setGpsError("Could not access location. Please type or select your starting city.");
+    } finally {
+      setIsLocatingGPS(false);
+    }
+  };
+
+  const handleSelectOrigin = (city: string) => {
+    setOriginCity(city);
+    setOriginSearch("");
+    setGpsError(null);
+    setStepDirection("next");
+    setTimeout(() => setCurrentStep(2), 150);
+  };
+
+  // Step 2: Handle Destination selection
   const handleSelectDestination = async (destItem: any, autoAdvance = true) => {
     setResolveError(null);
     setSearchQuery("");
@@ -174,9 +250,8 @@ function PlanWizard() {
         setSelectedDestId(res.id || res.slug);
         setSelectedDestObject(res);
         if (autoAdvance) {
-          // Micro-delay for visual acknowledgement
           setStepDirection("next");
-          setTimeout(() => setCurrentStep(2), 150);
+          setTimeout(() => setCurrentStep(3), 150);
         }
       } else {
         setResolveError(`Could not resolve '${q}'. Try another location.`);
@@ -188,7 +263,7 @@ function PlanWizard() {
     }
   };
 
-  // Handle Dates selection with auto-advance for preset options
+  // Step 3: Handle Dates selection
   const handleDatePresetSelect = (preset: "this_weekend" | "next_week" | "next_month") => {
     setDateSelectionType(preset);
     const today = new Date();
@@ -208,10 +283,9 @@ function PlanWizard() {
     setStartDate(start.toISOString().split("T")[0]);
     setEndDate(end.toISOString().split("T")[0]);
     setStepDirection("next");
-    setTimeout(() => setCurrentStep(3), 150);
+    setTimeout(() => setCurrentStep(4), 150);
   };
 
-  // Handle Days count selection with AUTO-ADVANCE
   const handleDaysSelect = (days: number) => {
     setDaysCount(days);
     const start = new Date(startDate);
@@ -222,7 +296,7 @@ function PlanWizard() {
     setTimeout(() => setCurrentStep(4), 150);
   };
 
-  // Handle Companion selection with AUTO-ADVANCE
+  // Step 4: Handle Companion selection
   const handleCompanionSelect = (type: string, count: number) => {
     setCompanionType(type);
     setTravellersCount(count);
@@ -230,28 +304,25 @@ function PlanWizard() {
     setTimeout(() => setCurrentStep(5), 150);
   };
 
-  // Handle Vibe toggle (Multi-select)
-  const handleVibeToggle = (vibe: string) => {
-    if (selectedVibes.includes(vibe)) {
-      if (selectedVibes.length > 1) {
-        setSelectedVibes(selectedVibes.filter((v) => v !== vibe));
-      }
-    } else {
-      setSelectedVibes([...selectedVibes, vibe]);
-    }
-  };
-
-  // Handle Travel Style selection with AUTO-ADVANCE to Review
+  // Step 5: Handle Budget / Style selection
   const handleStyleSelect = (style: string) => {
     setTravelStyle(style);
+    setStepDirection("next");
+    setTimeout(() => setCurrentStep(6), 150);
+  };
+
+  // Step 6: Handle Transport Mode selection
+  const handleTransportSelect = (mode: string) => {
+    setSelectedTransportMode(mode);
     setStepDirection("next");
     setTimeout(() => setCurrentStep(7), 150);
   };
 
-  // Handle Generate Trip Execution
+  // Step 7: Handle Trip Creation Execution
   const handleBuildTrip = async () => {
     setIsGenerating(true);
     const msgs = [
+      "Securing route transit details...",
       "Clustering scenic stops & local trails...",
       "Matching verified stays & mountain dhabas...",
       "Calculating realistic day timing...",
@@ -294,7 +365,12 @@ function PlanWizard() {
       try {
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } catch {}
-      router.push(`/trips/${trip.id}`);
+
+      if (selectedTransportMode === "Road Trip") {
+        router.push(`/road-trip?origin=${encodeURIComponent(originCity || "Delhi")}&dest=${encodeURIComponent(cleanTarget)}&tripId=${trip.id}`);
+      } else {
+        router.push(`/trips/${trip.id}`);
+      }
     } catch (err: any) {
       clearInterval(timer);
       setIsGenerating(false);
@@ -303,6 +379,30 @@ function PlanWizard() {
   };
 
   const currentDestName = selectedDestObject?.name || selectedDestId.charAt(0).toUpperCase() + selectedDestId.slice(1);
+  const currentOriginName = originCity || "Your Starting Location";
+
+  // Compute Best Travel Time recommendation dynamically
+  const isHimalayan = ["manali", "kasol", "rishikesh", "chopta", "spiti", "dharamshala", "leh", "jibhi"].some(
+    (h) => currentDestName.toLowerCase().includes(h)
+  );
+
+  const bestTravelRecommendation = isHimalayan ? {
+    badge: "BEST FOR YOU",
+    mode: "Overnight Bus",
+    icon: Bus,
+    headline: "🚌 Volvo Semi-Sleeper",
+    timing: "Departs 21:30 → Arrives 07:15",
+    rationale: "Saves one hotel night while arriving fresh for morning valley exploration.",
+    actionLabel: "View Verified Buses",
+  } : {
+    badge: "BEST FOR YOU",
+    mode: selectedTransportMode === "Road Trip" ? "Road Trip" : "Train",
+    icon: selectedTransportMode === "Road Trip" ? Car : Train,
+    headline: selectedTransportMode === "Road Trip" ? "🚗 Express Route" : "🚆 Express Superfast",
+    timing: "Smooth transit with scenic waypoints",
+    rationale: "Optimal balance of transit comfort, scenic breaks, and predictable arrival.",
+    actionLabel: "Select This Mode",
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#EFE5D2] flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -314,7 +414,7 @@ function PlanWizard() {
               <Sparkles className="w-7 h-7 text-[#FAF4E8] animate-spin" />
             </div>
             <h3 className="font-serif font-black text-2xl text-[#FAF4E8] mb-2">
-              Building Your Trip to {currentDestName}
+              Building Your Trip from {currentOriginName} to {currentDestName}
             </h3>
             <p className="text-xs sm:text-sm font-mono text-[#D8DED5] animate-pulse">
               {genMessage}
@@ -362,19 +462,129 @@ function PlanWizard() {
           </div>
 
           {/* ======================================================== */}
-          {/* 01 / 06: WHERE ARE YOU GOING?                            */}
+          {/* STEP 1: WHERE ARE YOU STARTING FROM?                      */}
           {/* ======================================================== */}
           {currentStep === 1 && (
             <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
-                  QUESTION 01
+                  STEP 01
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  Where are you starting from?
+                </h2>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  Pick your departure city or share your current location.
+                </p>
+              </div>
+
+              {/* Explicit GPS Request Button */}
+              <button
+                type="button"
+                onClick={handleRequestGPS}
+                disabled={isLocatingGPS}
+                className="w-full p-3.5 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#173B32]/30 hover:border-[#173B32] text-left flex items-center justify-between cursor-pointer transition-all shadow-xs group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    {isLocatingGPS ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-[#B49252]" />
+                    ) : (
+                      <Navigation className="w-4 h-4 text-[#B49252]" />
+                    )}
+                  </div>
+                  <div>
+                    <span className="font-serif font-bold text-sm text-[#173B32] block">
+                      Use my location
+                    </span>
+                    <span className="text-[10px] text-[#7B4D36]">
+                      Explicit GPS check (never auto-requested)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs font-mono font-bold text-[#B65E3C] group-hover:translate-x-0.5 transition-transform">
+                  Detect →
+                </span>
+              </button>
+
+              {gpsError && (
+                <p className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 p-2.5 rounded-xl">
+                  {gpsError}
+                </p>
+              )}
+
+              {/* Popular Hubs Grid */}
+              <div className="space-y-2 pt-2">
+                <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] tracking-wider block">
+                  Popular Departure Hubs:
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {POPULAR_ORIGIN_HUBS.map((hub) => {
+                    const isSelected = originCity.toLowerCase() === hub.label.toLowerCase();
+                    return (
+                      <button
+                        key={hub.slug}
+                        type="button"
+                        onClick={() => handleSelectOrigin(hub.label)}
+                        className={`p-3 rounded-2xl text-xs font-bold text-center interactive-pill cursor-pointer border-2 ${
+                          isSelected
+                            ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                            : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
+                        }`}
+                      >
+                        {hub.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Search / Type Origin City */}
+              <div className="pt-2 border-t border-[#E5D5BA]">
+                <label className="block text-[10px] font-mono font-bold uppercase text-[#7B4D36] mb-1.5">
+                  Or type any city/town in India:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={originSearch}
+                    onChange={(e) => setOriginSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && originSearch.trim()) {
+                        e.preventDefault();
+                        handleSelectOrigin(originSearch.trim());
+                      }
+                    }}
+                    placeholder="e.g. Chandigarh, Lucknow, Indore..."
+                    className="flex-1 p-2.5 bg-white border-2 border-[#E5D5BA] rounded-xl text-xs font-bold text-[#173B32] focus:outline-none focus:border-[#173B32]"
+                  />
+                  <button
+                    type="button"
+                    disabled={!originSearch.trim()}
+                    onClick={() => handleSelectOrigin(originSearch.trim())}
+                    className="px-4 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] disabled:opacity-40 text-[#EFE5D2] font-bold text-xs uppercase tracking-wider cursor-pointer"
+                  >
+                    Set Origin →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* STEP 2: WHERE ARE YOU GOING?                              */}
+          {/* ======================================================== */}
+          {currentStep === 2 && (
+            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  STEP 02
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
                   Where are you going?
                 </h2>
                 <p className="text-xs text-[#7B4D36] mt-0.5">
-                  Pick a curated destination or search any town in India.
+                  Departing from <strong className="text-[#173B32]">{originCity || "your origin"}</strong>.
                 </p>
               </div>
 
@@ -421,7 +631,7 @@ function PlanWizard() {
                         handleSelectDestination(searchQuery.trim());
                       }
                     }}
-                    placeholder="Or search any destination: Munnar, Leh, Ooty..."
+                    placeholder="Or search any destination: Munnar, Leh, Ooty, Hampi..."
                     className="w-full pl-9 pr-9 py-2.5 bg-white border-2 border-[#E5D5BA] rounded-2xl text-xs font-medium text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32] transition-colors"
                   />
                   <Search className="w-4 h-4 text-[#7B4D36] absolute left-3 pointer-events-none" />
@@ -462,19 +672,19 @@ function PlanWizard() {
           )}
 
           {/* ======================================================== */}
-          {/* 02 / 06: WHEN ARE YOU GOING?                             */}
+          {/* STEP 3: WHEN ARE YOU GOING?                               */}
           {/* ======================================================== */}
-          {currentStep === 2 && (
+          {currentStep === 3 && (
             <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
-                  QUESTION 02
+                  STEP 03
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
-                  When are you going?
+                  When are you travelling?
                 </h2>
                 <p className="text-xs text-[#7B4D36] mt-0.5">
-                  Heading to <strong className="text-[#173B32]">{currentDestName}</strong>.
+                  Heading from {currentOriginName} to <strong className="text-[#173B32]">{currentDestName}</strong>.
                 </p>
               </div>
 
@@ -497,7 +707,33 @@ function PlanWizard() {
                 ))}
               </div>
 
-              {/* Custom Date Input */}
+              {/* Days duration selector */}
+              <div className="pt-2 border-t border-[#E5D5BA]">
+                <span className="block text-xs font-mono font-bold uppercase text-[#7B4D36] mb-2">
+                  Trip Duration (Days):
+                </span>
+                <div className="grid grid-cols-5 gap-2">
+                  {[2, 3, 4, 5, 6].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => handleDaysSelect(d)}
+                      className={`py-3 rounded-2xl font-serif font-black text-center interactive-pill cursor-pointer border-2 ${
+                        daysCount === d
+                          ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                      }`}
+                    >
+                      <span className="text-base block">{d === 6 ? "6+" : d}</span>
+                      <span className="text-[9px] font-mono font-normal uppercase text-[#7B4D36]">
+                        {d === 1 ? "Day" : "Days"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Exact start date */}
               <div className="pt-2 border-t border-[#E5D5BA]">
                 <label className="block text-xs font-mono font-bold uppercase text-[#7B4D36] mb-1.5">
                   Or pick exact start date:
@@ -520,7 +756,7 @@ function PlanWizard() {
                     type="button"
                     onClick={() => {
                       setStepDirection("next");
-                      setCurrentStep(3);
+                      setCurrentStep(4);
                     }}
                     className="px-4 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] interactive-btn text-[#EFE5D2] font-bold text-xs uppercase tracking-wider cursor-pointer"
                   >
@@ -532,67 +768,27 @@ function PlanWizard() {
           )}
 
           {/* ======================================================== */}
-          {/* 03 / 06: HOW LONG?                                       */}
-          {/* ======================================================== */}
-          {currentStep === 3 && (
-            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
-              <div>
-                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
-                  QUESTION 03
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
-                  How many days?
-                </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5">
-                  Select trip duration for {currentDestName}.
-                </p>
-              </div>
-
-              {/* Days options (Single tap -> Auto-advance) */}
-              <div className="grid grid-cols-5 gap-2">
-                {[2, 3, 4, 5, 6].map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => handleDaysSelect(d)}
-                    className={`py-4 rounded-2xl font-serif font-black text-center interactive-pill cursor-pointer border-2 ${
-                      daysCount === d
-                        ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
-                        : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
-                    }`}
-                  >
-                    <span className="text-xl block">{d === 6 ? "6+" : d}</span>
-                    <span className="text-[10px] font-mono font-normal uppercase text-[#7B4D36]">
-                      {d === 1 ? "Day" : "Days"}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ======================================================== */}
-          {/* 04 / 06: WHO'S COMING?                                   */}
+          {/* STEP 4: WHO IS TRAVELLING?                                */}
           {/* ======================================================== */}
           {currentStep === 4 && (
             <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
-                  QUESTION 04
+                  STEP 04
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
-                  Who&apos;s coming?
+                  Who is travelling?
                 </h2>
                 <p className="text-xs text-[#7B4D36] mt-0.5">
-                  This helps tailor stays, pace &amp; split settings.
+                  Tailors stay curation, pace, and split settings.
                 </p>
               </div>
 
-              {/* Companions (Single tap -> Auto-advance) */}
+              {/* Companions */}
               <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { type: "Solo", label: "Just me", count: 1, desc: "Solo adventure & flexible pace" },
-                  { type: "Couple", label: "Partner", count: 2, desc: "Scenic cafes & slow evenings" },
+                  { type: "Solo", label: "Solo", count: 1, desc: "Solo adventure & flexible pace" },
+                  { type: "Couple", label: "Couple", count: 2, desc: "Scenic cafes & slow evenings" },
                   { type: "Friends", label: "Friends", count: 3, desc: "Adventure, dhabas & shared stays" },
                   { type: "Family", label: "Family", count: 4, desc: "Comfort, verified food & gentle timing" },
                 ].map((c) => (
@@ -615,93 +811,28 @@ function PlanWizard() {
           )}
 
           {/* ======================================================== */}
-          {/* 05 / 06: WHAT'S YOUR VIBE? (Multi-select)                */}
+          {/* STEP 5: WHAT IS YOUR BUDGET?                              */}
           {/* ======================================================== */}
           {currentStep === 5 && (
             <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
-                  QUESTION 05
+                  STEP 05
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
-                  What&apos;s your vibe?
-                </h2>
-                <p className="text-xs text-[#7B4D36] mt-0.5">
-                  Select all that you enjoy.
-                </p>
-              </div>
-
-              {/* Vibe Chips */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {[
-                  { name: "Nature", desc: "Pine woods & streams" },
-                  { name: "Food", desc: "Authentic dhabas & local bites" },
-                  { name: "Adventure", desc: "Hikes & viewpoints" },
-                  { name: "Culture", desc: "Heritage & temples" },
-                  { name: "Slow", desc: "Cafés & leisurely mornings" },
-                  { name: "Nightlife", desc: "Evening scenes & vibes" },
-                ].map((v) => {
-                  const isSelected = selectedVibes.includes(v.name);
-                  return (
-                    <button
-                      key={v.name}
-                      type="button"
-                      onClick={() => handleVibeToggle(v.name)}
-                      className={`p-3 rounded-2xl text-left interactive-card cursor-pointer border-2 ${
-                        isSelected
-                          ? "bg-[#B65E3C] text-[#EFE5D2] border-[#B65E3C] shadow-sm"
-                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                      }`}
-                    >
-                      <div className="font-serif font-bold text-xs flex items-center justify-between">
-                        <span>{v.name}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#FAF4E8] animate-check-pop" />}
-                      </div>
-                      <div className="text-[10px] opacity-80 mt-0.5 line-clamp-1">{v.desc}</div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="pt-2 border-t border-[#E5D5BA] flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStepDirection("next");
-                    setCurrentStep(6);
-                  }}
-                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#173B32] hover:bg-[#20453B] interactive-btn text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                >
-                  <span>Continue ({selectedVibes.length} selected)</span>
-                  <ArrowRight className="w-4 h-4 text-[#B49252]" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ======================================================== */}
-          {/* 06 / 06: HOW DO YOU WANT TO TRAVEL?                      */}
-          {/* ======================================================== */}
-          {currentStep === 6 && (
-            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
-              <div>
-                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
-                  QUESTION 06
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
-                  How do you want to travel?
+                  What is your budget?
                 </h2>
                 <p className="text-xs text-[#7B4D36] mt-0.5">
                   Pick your comfort &amp; budget preference.
                 </p>
               </div>
 
-              {/* Travel Style options (Single tap -> Auto-advance to Review) */}
+              {/* Travel Style options */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {[
-                  { style: "Budget", label: "Budget", desc: "Clean hostels, dhabas & shared rides", est: `~₹${(daysCount * travellersCount * 2200).toLocaleString()}` },
-                  { style: "Balanced", label: "Balanced", desc: "Boutique stays, local cafes & cabs", est: `~₹${(daysCount * travellersCount * 3800).toLocaleString()}` },
-                  { style: "Comfort", label: "Comfort", desc: "Heritage resorts, private cabs & fine dining", est: `~₹${(daysCount * travellersCount * 6500).toLocaleString()}` },
+                  { style: "Budget", label: "Backpacker", desc: "Clean hostels, dhabas & shared rides", est: `~₹${(daysCount * travellersCount * 2200).toLocaleString()}` },
+                  { style: "Balanced", label: "Moderate", desc: "Boutique stays, local cafes & cabs", est: `~₹${(daysCount * travellersCount * 3800).toLocaleString()}` },
+                  { style: "Comfort", label: "Luxury", desc: "Heritage resorts, private cabs & fine dining", est: `~₹${(daysCount * travellersCount * 6500).toLocaleString()}` },
                 ].map((s) => (
                   <button
                     key={s.style}
@@ -715,7 +846,7 @@ function PlanWizard() {
                   >
                     <div className="font-serif font-bold text-base">{s.label}</div>
                     <div className="text-[10px] opacity-80 mt-0.5">{s.desc}</div>
-                    <div className="text-xs font-mono font-bold text-[#B49252] mt-2">{s.est} est.</div>
+                    <div className="text-xs font-mono font-bold text-[#B49252] mt-2">{s.est} total est.</div>
                   </button>
                 ))}
               </div>
@@ -723,7 +854,126 @@ function PlanWizard() {
           )}
 
           {/* ======================================================== */}
-          {/* REVIEW SUMMARY & BUILD TRIP                             */}
+          {/* STEP 6: HOW ARE YOU GETTING THERE? (Transport Intel)      */}
+          {/* ======================================================== */}
+          {currentStep === 6 && (
+            <div className={`space-y-5 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase text-[#B65E3C] tracking-wider block">
+                  STEP 06 · TRANSPORT INTELLIGENCE
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
+                  How are you getting there?
+                </h2>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  Route: <strong className="text-[#173B32]">{currentOriginName} → {currentDestName}</strong>.
+                </p>
+              </div>
+
+              {/* Best For You Intelligent Comparison Card */}
+              <div className="p-4 rounded-2xl bg-[#173B32] text-[#EFE5D2] border-2 border-[#B49252] space-y-2 shadow-md">
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 rounded bg-[#B49252] text-[#173B32] text-[9px] font-mono font-black uppercase tracking-wider">
+                    {bestTravelRecommendation.badge}
+                  </span>
+                  <span className="text-[10px] font-mono text-[#E5D5BA]">Intelligent Transit Match</span>
+                </div>
+                <div className="font-serif font-bold text-base text-[#FAF4E8]">
+                  {bestTravelRecommendation.headline}
+                </div>
+                <div className="text-xs font-mono text-[#B49252]">
+                  {bestTravelRecommendation.timing}
+                </div>
+                <p className="text-xs text-[#D8DED5] leading-relaxed">
+                  {bestTravelRecommendation.rationale}
+                </p>
+              </div>
+
+              {/* Transport Mode Options Grid */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] tracking-wider block">
+                  Choose Primary Transport:
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { mode: "Bus", label: "BUS", icon: Bus, desc: "Volvo / State Express" },
+                    { mode: "Train", label: "TRAIN", icon: Train, desc: "Express / Shatabdi" },
+                    { mode: "Flight", label: "FLIGHT", icon: Plane, desc: "Direct / Connecting" },
+                    { mode: "Road Trip", label: "ROAD TRIP", icon: Car, desc: "Self-drive / Scenic stops" },
+                    { mode: "Cab", label: "CAB / TRANSFER", icon: CarTaxiFront, desc: "Private door-to-door" },
+                  ].map((m) => {
+                    const Icon = m.icon;
+                    const isSelected = selectedTransportMode === m.mode;
+                    return (
+                      <button
+                        key={m.mode}
+                        type="button"
+                        onClick={() => handleTransportSelect(m.mode)}
+                        className={`p-3 rounded-2xl text-left interactive-card cursor-pointer border-2 ${
+                          isSelected
+                            ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-md scale-102"
+                            : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Icon className={`w-4 h-4 ${isSelected ? "text-[#B49252]" : "text-[#B65E3C]"}`} />
+                          <span className="font-serif font-black text-xs">{m.label}</span>
+                        </div>
+                        <div className="text-[10px] opacity-80">{m.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Live/Curated Option Snippet */}
+              {transportOptions.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-[#E5D5BA]">
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] tracking-wider block">
+                    Verified Schedule Preview:
+                  </span>
+                  <div className="divide-y divide-[#E5D5BA] bg-white border-2 border-[#E5D5BA] rounded-2xl overflow-hidden">
+                    {transportOptions.slice(0, 2).map((opt) => (
+                      <div key={opt.id} className="p-3 flex items-center justify-between text-xs">
+                        <div>
+                          <div className="font-bold text-[#173B32] flex items-center gap-1.5">
+                            <span>{opt.operator_name}</span>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#EFE5D2] text-[#7B4D36]">
+                              {opt.departure_time} → {opt.arrival_time} ({opt.duration_hours}h)
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-[#7B4D36] mt-0.5">
+                            {opt.departure_location} → {opt.arrival_location}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-black text-sm text-[#173B32] block">
+                            ₹{opt.price}
+                          </span>
+                          {opt.booking_url ? (
+                            <a
+                              href={opt.booking_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] font-mono font-bold text-[#B65E3C] hover:underline flex items-center gap-0.5"
+                            >
+                              <span>View / Book</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          ) : (
+                            <span className="text-[9px] font-mono text-[#7B4D36]">Live schedule</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* STEP 7: REVIEW SUMMARY & BUILD TRIP                       */}
           {/* ======================================================== */}
           {currentStep === 7 && (
             <div className={`space-y-6 ${stepDirection === "prev" ? "animate-vanvas-slide-right" : "animate-vanvas-slide-left"}`}>
@@ -732,7 +982,7 @@ function PlanWizard() {
                   JOURNEY SUMMARY
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32] mt-1">
-                  Ready to explore {currentDestName}?
+                  Ready to travel to {currentDestName}?
                 </h2>
               </div>
 
@@ -740,11 +990,13 @@ function PlanWizard() {
               <div className="p-5 rounded-2xl bg-[#EFE5D2] border-2 border-[#173B32] space-y-3 shadow-md animate-vanvas-scale">
                 <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-2">
                   <div>
-                    <span className="text-[9px] font-mono uppercase text-[#7B4D36] font-bold">DESTINATION</span>
-                    <h3 className="font-serif font-black text-2xl text-[#173B32]">{currentDestName}</h3>
+                    <span className="text-[9px] font-mono uppercase text-[#7B4D36] font-bold">ROUTE</span>
+                    <h3 className="font-serif font-black text-xl text-[#173B32]">
+                      {currentOriginName} → {currentDestName}
+                    </h3>
                   </div>
                   <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
-                    {travelStyle} Tier
+                    {selectedTransportMode}
                   </span>
                 </div>
 
@@ -759,12 +1011,22 @@ function PlanWizard() {
                   </div>
                   <div>
                     <span className="text-[#7B4D36] block text-[10px]">EST. BUDGET</span>
-                    <strong className="text-[#173B32]">₹{(budgetEstimate / 1000).toFixed(0)}K</strong>
+                    <strong className="text-[#173B32]">₹{(budgetEstimate / 1000).toFixed(0)}K ({travelStyle})</strong>
                   </div>
                 </div>
 
-                <div className="pt-1 text-[11px] text-[#7B4D36]">
-                  <strong>Vibes:</strong> {selectedVibes.join(" • ")}
+                <div className="pt-1 text-[11px] text-[#7B4D36] flex items-center justify-between">
+                  <span><strong>Dates:</strong> {startDate} → {endDate}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStepDirection("prev");
+                      setCurrentStep(6);
+                    }}
+                    className="text-[#B65E3C] font-bold text-xs underline cursor-pointer"
+                  >
+                    Change Transport
+                  </button>
                 </div>
               </div>
 
@@ -785,7 +1047,9 @@ function PlanWizard() {
                 className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] interactive-btn text-[#EFE5D2] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-[#B49252]" />
-                <span>Build My Trip →</span>
+                <span>
+                  {selectedTransportMode === "Road Trip" ? "Launch Map Road Trip →" : "Build My Trip →"}
+                </span>
               </button>
 
               <button

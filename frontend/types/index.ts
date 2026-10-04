@@ -376,6 +376,7 @@ export interface Trip {
   status: string;
   invite_code: string;
   hotel?: Hotel;
+  transport?: TransportOption;
   rental?: RentalOption;
   itineraries: ItineraryDay[];
   created_at: string;
