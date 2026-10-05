@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { isCapacitorNative } from "@/lib/capacitor";
 
 export type ConnectivityState = "UNKNOWN" | "CHECKING" | "ONLINE" | "OFFLINE" | "RECONNECTING";
@@ -17,7 +17,7 @@ let lastProbeResult = true;
  * Perform a lightweight, safe reachability check against the canonical VANVAS backend.
  * Uses /health or /api/v1/health with an abort controller timeout.
  */
-async function probeBackendReachability(force = false): Promise<boolean> {
+export async function probeBackendReachability(force = false): Promise<boolean> {
   const now = Date.now();
   if (!force && now - lastProbeTime < PROBE_THROTTLE_MS) {
     return lastProbeResult;
@@ -54,142 +54,183 @@ async function probeBackendReachability(force = false): Promise<boolean> {
 
     clearTimeout(timeoutId);
     lastProbeTime = Date.now();
-    // 2xx status or even 4xx/5xx confirms backend network path is reachable (distinguishes network vs server error)
+    // 2xx status or even 4xx/5xx confirms backend network path is reachable
     lastProbeResult = res.status < 500 || res.ok;
     return lastProbeResult;
   } catch (err: any) {
     lastProbeTime = Date.now();
-    // If it was an abort due to slow backend / cold start on Render, but navigator is online,
-    // do NOT falsely mark whole device offline if we have basic network
     if (err?.name === "AbortError") {
       const hasNetwork = typeof navigator !== "undefined" ? navigator.onLine : true;
       lastProbeResult = hasNetwork;
       return hasNetwork;
     }
-    // Network failure (no connection / DNS resolution failure)
+    // Network failure
     lastProbeResult = false;
     return false;
   }
 }
 
-export function useOnlineStatus() {
-  // Initial state: UNKNOWN to prevent false offline banner during hydration / cold start
-  const [status, setStatus] = useState<ConnectivityState>("UNKNOWN");
-  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+// ---------------------------------------------------------------------------
+// SINGLE SOURCE OF TRUTH: Global Singleton State & Event Normalization
+// ---------------------------------------------------------------------------
 
-  const checkReachability = useCallback(async (force = true) => {
-    setStatus((prev) => (prev === "UNKNOWN" ? "CHECKING" : prev));
-    const reachable = await probeBackendReachability(force);
-    setStatus(reachable ? "ONLINE" : "OFFLINE");
-    return reachable;
-  }, []);
+let globalStatus: ConnectivityState = "UNKNOWN";
+const subscribers = new Set<(status: ConnectivityState) => void>();
+let globalReconnectTimer: any = null;
+let isInitialized = false;
+let capacitorListenerCleanup: (() => void) | null = null;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+function notifySubscribers(nextStatus: ConnectivityState) {
+  if (globalStatus === nextStatus) return; // Ignore duplicate state transitions
+  globalStatus = nextStatus;
+  subscribers.forEach((cb) => {
+    try {
+      cb(globalStatus);
+    } catch {
+      // Ignore subscriber errors
+    }
+  });
+}
 
-    let isMounted = true;
+function transitionToReconnecting() {
+  if (globalStatus === "RECONNECTING" || globalStatus === "ONLINE") {
+    // If already online or already reconnecting, do not duplicate timer
+    if (globalStatus === "ONLINE") return;
+  }
 
-    // 1. Initial State Resolution
-    const initConnectivity = async () => {
-      // If Capacitor native is active, prioritize Capacitor Network plugin
-      if (isCapacitorNative()) {
-        try {
-          const { Network } = await import("@capacitor/network");
-          const nativeStatus = await Network.getStatus();
-          if (!isMounted) return;
+  // Clear existing reconnect timer if any
+  if (globalReconnectTimer) {
+    clearTimeout(globalReconnectTimer);
+    globalReconnectTimer = null;
+  }
 
-          if (!nativeStatus.connected) {
-            setStatus("OFFLINE");
-            return;
-          }
-          // Native reports connected -> verify backend reachability
-          const reachable = await probeBackendReachability(false);
-          if (isMounted) {
-            setStatus(reachable ? "ONLINE" : "ONLINE"); // Do not falsely mark offline during cold start if connected
-          }
-          return;
-        } catch {
-          // Fallback to web browser detection
-        }
-      }
+  notifySubscribers("RECONNECTING");
 
-      // Web/PWA detection
-      const browserOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
-      if (!browserOnline) {
-        // Quick verify
-        const reachable = await probeBackendReachability(true);
-        if (isMounted) {
-          setStatus(reachable ? "ONLINE" : "OFFLINE");
-        }
-      } else {
-        if (isMounted) {
-          setStatus("ONLINE");
-        }
-      }
-    };
+  // Verify backend path asynchronously
+  probeBackendReachability(true).catch(() => {});
 
-    initConnectivity();
+  // Exactly one 3.5s dismissal timer
+  globalReconnectTimer = setTimeout(() => {
+    globalReconnectTimer = null;
+    notifySubscribers("ONLINE");
+  }, 3500);
+}
 
-    // 2. Capacitor Network Listeners (if native)
-    let capacitorListenerRemove: (() => void) | null = null;
+function transitionToOffline() {
+  if (globalStatus === "OFFLINE") return; // OFFLINE -> OFFLINE ignored
+
+  if (globalReconnectTimer) {
+    clearTimeout(globalReconnectTimer);
+    globalReconnectTimer = null;
+  }
+
+  notifySubscribers("OFFLINE");
+}
+
+async function handleNetworkChange(connected: boolean) {
+  if (!connected) {
+    // Double check reachability before alarming user
+    const reachable = await probeBackendReachability(true);
+    if (!reachable) {
+      transitionToOffline();
+    }
+  } else {
+    // When connected event fires, only transition if we were offline or checking
+    if (globalStatus === "OFFLINE" || globalStatus === "UNKNOWN") {
+      transitionToReconnecting();
+    } else if (globalStatus === "RECONNECTING") {
+      // Keep existing reconnecting timer without restarting
+    } else {
+      notifySubscribers("ONLINE");
+    }
+  }
+}
+
+function initGlobalConnectivity() {
+  if (isInitialized || typeof window === "undefined") return;
+  isInitialized = true;
+
+  // 1. Initial State Resolution
+  const resolveInitial = async () => {
     if (isCapacitorNative()) {
-      import("@capacitor/network")
-        .then(({ Network }) => {
-          const handle = Network.addListener("networkStatusChange", async (netStatus) => {
-            if (!isMounted) return;
-            if (!netStatus.connected) {
-              if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-              setStatus("OFFLINE");
-            } else {
-              // Transitioning back online
-              setStatus("RECONNECTING");
-              await probeBackendReachability(true);
-              if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-              reconnectTimerRef.current = setTimeout(() => {
-                if (isMounted) setStatus("ONLINE");
-              }, 3500);
-            }
-          });
-          capacitorListenerRemove = () => {
-            handle.then((l) => l.remove());
-          };
-        })
-        .catch(() => {});
+      try {
+        const { Network } = await import("@capacitor/network");
+        const nativeStatus = await Network.getStatus();
+        if (!nativeStatus.connected) {
+          transitionToOffline();
+          return;
+        }
+        notifySubscribers("ONLINE");
+        return;
+      } catch {
+        // Fallback to browser
+      }
     }
 
-    // 3. Web Standard Event Listeners
-    const handleBrowserOnline = async () => {
-      if (!isMounted) return;
-      setStatus("RECONNECTING");
-      await probeBackendReachability(true);
-      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = setTimeout(() => {
-        if (isMounted) setStatus("ONLINE");
-      }, 3500);
-    };
-
-    const handleBrowserOffline = async () => {
-      if (!isMounted) return;
-      // Double check before alarming the user
+    const browserOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+    if (!browserOnline) {
       const reachable = await probeBackendReachability(true);
-      if (isMounted) {
-        if (!reachable) {
-          if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-          setStatus("OFFLINE");
-        }
+      if (!reachable) {
+        transitionToOffline();
+        return;
       }
+    }
+    notifySubscribers("ONLINE");
+  };
+
+  resolveInitial();
+
+  // 2. Capacitor Network Listener
+  if (isCapacitorNative()) {
+    import("@capacitor/network")
+      .then(({ Network }) => {
+        const handlePromise = Network.addListener("networkStatusChange", (netStatus) => {
+          handleNetworkChange(Boolean(netStatus.connected));
+        });
+        capacitorListenerCleanup = () => {
+          handlePromise.then((l) => l.remove()).catch(() => {});
+        };
+      })
+      .catch(() => {});
+  }
+
+  // 3. Browser Standard Event Listeners
+  const onBrowserOnline = () => handleNetworkChange(true);
+  const onBrowserOffline = () => handleNetworkChange(false);
+
+  window.addEventListener("online", onBrowserOnline);
+  window.addEventListener("offline", onBrowserOffline);
+}
+
+export function useOnlineStatus() {
+  const [status, setStatus] = useState<ConnectivityState>(globalStatus);
+
+  useEffect(() => {
+    initGlobalConnectivity();
+
+    // Sync current status
+    setStatus(globalStatus);
+
+    const callback = (newStatus: ConnectivityState) => {
+      setStatus(newStatus);
     };
 
-    window.addEventListener("online", handleBrowserOnline);
-    window.addEventListener("offline", handleBrowserOffline);
+    subscribers.add(callback);
 
     return () => {
-      isMounted = false;
-      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-      window.removeEventListener("online", handleBrowserOnline);
-      window.removeEventListener("offline", handleBrowserOffline);
-      if (capacitorListenerRemove) capacitorListenerRemove();
+      subscribers.delete(callback);
     };
+  }, []);
+
+  const checkReachability = useCallback(async (force = true) => {
+    notifySubscribers("CHECKING");
+    const reachable = await probeBackendReachability(force);
+    if (reachable) {
+      notifySubscribers("ONLINE");
+    } else {
+      transitionToOffline();
+    }
+    return reachable;
   }, []);
 
   const isOnline = status === "ONLINE" || status === "RECONNECTING" || status === "UNKNOWN" || status === "CHECKING";

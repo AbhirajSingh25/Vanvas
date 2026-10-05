@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from app.schemas.schemas import (
     RoadTripPlanRequest, RoadTripPlanResponse, RoadTripDay, RoadTripStop,
     RoadTripLeg, RoadTripFuelBreakdown, RoadTripBudgetEstimate,
-    ItineraryItemResponse, HotelResponse
+    ItineraryItemResponse, HotelResponse, CustomExpenseItem
 )
 from app.providers.routing_provider import (
     RoutingProviderDispatcher, haversine_km, RouteResult, RouteLeg
@@ -224,7 +224,14 @@ class RoadTripService:
 
         # 5. Transparent Fuel & Vehicle Breakdown
         t_budget_start = time.perf_counter()
-        fuel_breakdown = RoadTripService._calculate_fuel(total_road_km, req.vehicle_type)
+        fuel_breakdown = RoadTripService._calculate_fuel(
+            distance_km=total_road_km,
+            vehicle_type=req.vehicle_type,
+            fuel_type=req.fuel_type,
+            fuel_efficiency=req.fuel_efficiency,
+            fuel_rate=req.fuel_rate,
+            fuel_unit=req.fuel_unit,
+        )
 
         # 6. Trip Budget Estimates
         budget_estimate = RoadTripService._calculate_budget(
@@ -232,7 +239,26 @@ class RoadTripService:
             total_km=total_road_km,
             num_days=num_days,
             travellers=req.travellers_count,
-            custom_budget=req.budget_inr
+            custom_budget=req.budget_inr,
+            fuel_type=fuel_breakdown.fuel_type,
+            fuel_unit=fuel_breakdown.fuel_unit,
+            fuel_efficiency=fuel_breakdown.assumed_mileage_kpl,
+            fuel_rate=fuel_breakdown.assumed_fuel_rate_per_litre,
+            stay_nights=req.stay_nights,
+            stay_rate_per_night=req.stay_rate_per_night,
+            stay_rooms=req.stay_rooms,
+            food_per_person_per_day=req.food_per_person_per_day,
+            food_total_override=req.food_total_override,
+            include_fuel=getattr(req, "include_fuel", True) if getattr(req, "include_fuel", True) is not None else True,
+            include_tolls=getattr(req, "include_tolls", True) if getattr(req, "include_tolls", True) is not None else True,
+            tolls_amount=req.tolls_amount,
+            include_parking=getattr(req, "include_parking", True) if getattr(req, "include_parking", True) is not None else True,
+            parking_amount=req.parking_amount,
+            include_food=getattr(req, "include_food", True) if getattr(req, "include_food", True) is not None else True,
+            include_stay=getattr(req, "include_stay", True) if getattr(req, "include_stay", True) is not None else True,
+            include_activities=getattr(req, "include_activities", True) if getattr(req, "include_activities", True) is not None else True,
+            activities_amount=req.activities_amount,
+            custom_expenses=req.custom_expenses,
         )
         timing_metrics["BUDGET_MS"] = round((time.perf_counter() - t_budget_start) * 1000.0, 2)
 
@@ -559,30 +585,71 @@ class RoadTripService:
         return days, all_schema_stops, all_schema_legs
 
     @staticmethod
-    def _calculate_fuel(distance_km: float, vehicle_type: str) -> RoadTripFuelBreakdown:
-        v_type = vehicle_type.lower()
-        if "bike" in v_type or "motorcycle" in v_type:
-            mileage = 32.0  # km/L for Royal Enfield / Cruiser
-            fuel_rate = 96.50
-        elif "suv" in v_type or "4x4" in v_type:
-            mileage = 11.5  # km/L for Scorpio / Thar / Fortuner
-            fuel_rate = 94.00
-        elif "electric" in v_type or "ev" in v_type:
-            mileage = 7.0  # km/kWh
-            fuel_rate = 14.00  # ₹/kWh approx fast charging
-        else:  # Standard Sedan / Hatchback car
-            mileage = 16.0  # km/L
-            fuel_rate = 95.50
+    def _calculate_fuel(
+        distance_km: float,
+        vehicle_type: str = "Car",
+        fuel_type: Optional[str] = None,
+        fuel_efficiency: Optional[float] = None,
+        fuel_rate: Optional[float] = None,
+        fuel_unit: Optional[str] = None,
+    ) -> RoadTripFuelBreakdown:
+        v_type = (vehicle_type or "Car").lower()
+        f_type = (fuel_type or ("Electric" if ("electric" in v_type or "ev" in v_type) else "Petrol")).title()
 
-        litres_needed = distance_km / mileage
-        fuel_cost = round(litres_needed * fuel_rate, 2)
-        calc_text = f"{distance_km:,.1f} km · {mileage} km/L assumed · ₹{fuel_rate:.2f}/L (ESTIMATED)"
+        # Resolve defaults based on fuel type or vehicle
+        if "Electric" in f_type or "Ev" in f_type:
+            resolved_f_type = "Electric"
+            default_mileage = 7.0  # km/kWh
+            default_fuel_rate = 10.00  # ₹/kWh charging rate
+            resolved_unit = "km/kWh"
+            unit_label = "kWh"
+        elif "Diesel" in f_type:
+            resolved_f_type = "Diesel"
+            default_mileage = 18.0  # km/l
+            default_fuel_rate = 88.00  # ₹/l
+            resolved_unit = "km/l"
+            unit_label = "L"
+        elif "Cng" in f_type:
+            resolved_f_type = "CNG"
+            default_mileage = 22.0  # km/kg
+            default_fuel_rate = 78.00  # ₹/kg
+            resolved_unit = "km/kg"
+            unit_label = "kg"
+        elif "Custom" in f_type:
+            resolved_f_type = "Custom"
+            default_mileage = 15.0
+            default_fuel_rate = 90.00
+            resolved_unit = fuel_unit or "km/unit"
+            unit_label = "unit"
+        else:  # Petrol
+            resolved_f_type = "Petrol"
+            if "bike" in v_type or "motorcycle" in v_type:
+                default_mileage = 32.0  # km/L for Royal Enfield / Cruiser
+                default_fuel_rate = 96.50
+            elif "suv" in v_type or "4x4" in v_type:
+                default_mileage = 11.5  # km/L for Scorpio / Thar
+                default_fuel_rate = 95.00
+            else:
+                default_mileage = 16.0  # km/L
+                default_fuel_rate = 95.50
+            resolved_unit = "km/l"
+            unit_label = "L"
+
+        mileage = fuel_efficiency if (fuel_efficiency and fuel_efficiency > 0) else default_mileage
+        rate = fuel_rate if (fuel_rate is not None and fuel_rate >= 0) else default_fuel_rate
+        actual_unit = fuel_unit or resolved_unit
+
+        units_needed = distance_km / max(0.1, mileage)
+        fuel_cost = round(units_needed * rate, 2)
+        calc_text = f"{distance_km:,.1f} km · {mileage} {actual_unit} assumed · ₹{rate:.2f}/{unit_label} (ESTIMATED)"
 
         return RoadTripFuelBreakdown(
             total_distance_km=distance_km,
             vehicle_type=vehicle_type,
+            fuel_type=resolved_f_type,
+            fuel_unit=actual_unit,
             assumed_mileage_kpl=mileage,
-            assumed_fuel_rate_per_litre=fuel_rate,
+            assumed_fuel_rate_per_litre=rate,
             estimated_fuel_cost_inr=fuel_cost,
             data_state="ESTIMATED",
             calculation_text=calc_text
@@ -590,27 +657,96 @@ class RoadTripService:
 
     @staticmethod
     def _calculate_budget(
-        fuel_cost: float, total_km: float, num_days: int, travellers: int, custom_budget: Optional[float]
+        fuel_cost: float,
+        total_km: float,
+        num_days: int,
+        travellers: int,
+        custom_budget: Optional[float] = None,
+        fuel_type: str = "Petrol",
+        fuel_unit: str = "km/l",
+        fuel_efficiency: float = 16.0,
+        fuel_rate: float = 95.5,
+        stay_nights: Optional[int] = None,
+        stay_rate_per_night: Optional[float] = None,
+        stay_rooms: Optional[int] = None,
+        food_per_person_per_day: Optional[float] = None,
+        food_total_override: Optional[float] = None,
+        include_fuel: bool = True,
+        include_tolls: bool = True,
+        tolls_amount: Optional[float] = None,
+        include_parking: bool = True,
+        parking_amount: Optional[float] = None,
+        include_food: bool = True,
+        include_stay: bool = True,
+        include_activities: bool = True,
+        activities_amount: Optional[float] = None,
+        custom_expenses: Optional[List[Any]] = None,
     ) -> RoadTripBudgetEstimate:
-        # Tolls: ~₹1.45 per km on NH (ESTIMATED)
-        tolls_est = round(total_km * 1.45, 0)
-        # Stays: ~₹2,400/night per room (assume 2 travellers per room)
-        rooms_needed = max(1, math.ceil(travellers / 2))
-        stay_nights = max(1, num_days - 1)
-        stay_est = round(stay_nights * rooms_needed * 2400.0, 0)
-        # Food: ~₹750/day per person
-        food_est = round(num_days * travellers * 750.0, 0)
-        # Activities & Sightseeing
-        act_est = round(num_days * travellers * 350.0, 0)
-        # Parking & Misc
-        parking_est = round(num_days * 300.0 + 400.0, 0)
+        # Tolls
+        default_tolls = round(total_km * 1.45, 0)
+        tolls_val = tolls_amount if (tolls_amount is not None and tolls_amount >= 0) else default_tolls
+        tolls_est = tolls_val if include_tolls else 0.0
 
-        total_computed = fuel_cost + tolls_est + stay_est + food_est + act_est + parking_est
+        # Stays
+        nights = stay_nights if (stay_nights is not None and stay_nights >= 0) else max(1, num_days - 1)
+        rooms = stay_rooms if (stay_rooms is not None and stay_rooms > 0) else max(1, math.ceil(travellers / 2))
+        rate_night = stay_rate_per_night if (stay_rate_per_night is not None and stay_rate_per_night >= 0) else 2400.0
+        stay_val = round(nights * rooms * rate_night, 0)
+        stay_est = stay_val if include_stay else 0.0
+
+        # Food
+        rate_food_per_day = food_per_person_per_day if (food_per_person_per_day is not None and food_per_person_per_day >= 0) else 750.0
+        if food_total_override is not None and food_total_override >= 0:
+            food_val = food_total_override
+        else:
+            food_val = round(num_days * travellers * rate_food_per_day, 0)
+        food_est = food_val if include_food else 0.0
+
+        # Activities
+        default_activities = round(num_days * travellers * 350.0, 0)
+        act_val = activities_amount if (activities_amount is not None and activities_amount >= 0) else default_activities
+        act_est = act_val if include_activities else 0.0
+
+        # Parking
+        default_parking = round(num_days * 300.0, 0)
+        parking_val = parking_amount if (parking_amount is not None and parking_amount >= 0) else default_parking
+        parking_est = parking_val if include_parking else 0.0
+
+        # Fuel
+        actual_fuel_cost = fuel_cost if include_fuel else 0.0
+
+        # Custom expenses
+        custom_items: List[CustomExpenseItem] = []
+        custom_total = 0.0
+        if custom_expenses:
+            for ce in custom_expenses:
+                if isinstance(ce, dict):
+                    c_id = ce.get("id") or f"custom-{len(custom_items)}"
+                    c_name = ce.get("name", "Custom Expense")
+                    c_cat = ce.get("category", "Other")
+                    c_amt = float(ce.get("amount", 0.0))
+                    c_basis = ce.get("basis", "trip_total")
+                    c_notes = ce.get("notes")
+                    custom_items.append(CustomExpenseItem(
+                        id=c_id, name=c_name, category=c_cat, amount=c_amt, basis=c_basis, notes=c_notes
+                    ))
+                    if c_basis == "per_person":
+                        custom_total += c_amt * max(1, travellers)
+                    else:
+                        custom_total += c_amt
+                elif isinstance(ce, CustomExpenseItem):
+                    custom_items.append(ce)
+                    if ce.basis == "per_person":
+                        custom_total += ce.amount * max(1, travellers)
+                    else:
+                        custom_total += ce.amount
+
+        total_computed = actual_fuel_cost + tolls_est + stay_est + food_est + act_est + parking_est + custom_total
         final_total = custom_budget if (custom_budget and custom_budget > 1000) else total_computed
         per_person = round(final_total / max(1, travellers), 2)
 
         return RoadTripBudgetEstimate(
-            fuel_estimated=fuel_cost,
+            fuel_estimated=actual_fuel_cost,
             tolls_estimated=tolls_est,
             stay_estimated=stay_est,
             food_estimated=food_est,
@@ -619,5 +755,21 @@ class RoadTripService:
             total_estimated=round(final_total, 2),
             per_person_estimated=per_person,
             travellers_count=travellers,
-            is_custom_budget=bool(custom_budget and custom_budget > 1000)
+            is_custom_budget=bool(custom_budget and custom_budget > 1000),
+            fuel_type=fuel_type,
+            fuel_unit=fuel_unit,
+            fuel_efficiency=fuel_efficiency,
+            fuel_rate=fuel_rate,
+            stay_nights=nights,
+            stay_rate_per_night=rate_night,
+            stay_rooms=rooms,
+            food_per_person_per_day=rate_food_per_day,
+            food_total_override=food_total_override,
+            include_fuel=include_fuel,
+            include_tolls=include_tolls,
+            include_parking=include_parking,
+            include_food=include_food,
+            include_stay=include_stay,
+            include_activities=include_activities,
+            custom_expenses=custom_items
         )

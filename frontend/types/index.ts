@@ -387,6 +387,12 @@ export interface Trip {
   rental?: RentalOption;
   itineraries: ItineraryDay[];
   revisions?: TripRevision[];
+  vehicle_type?: string;
+  vehicle_mileage_kpl?: number;
+  fuel_price_per_litre?: number;
+  route_geometry_json?: string;
+  road_trip_stops_json?: string;
+  budget_breakdown_json?: string;
   created_at: string;
 }
 
@@ -667,9 +673,20 @@ export interface RoadTripDay {
   fuel_estimated_inr: number;
 }
 
+export interface CustomExpenseItem {
+  id: string;
+  name: string;
+  category: "Food" | "Fuel" | "Stay" | "Transport" | "Activity" | "Other" | string;
+  amount: number;
+  basis: "trip_total" | "per_person";
+  notes?: string;
+}
+
 export interface RoadTripFuelBreakdown {
   total_distance_km: number;
   vehicle_type: string;
+  fuel_type?: "Petrol" | "Diesel" | "CNG" | "Electric" | "Custom" | string;
+  fuel_unit?: string;
   assumed_mileage_kpl: number;
   assumed_fuel_rate_per_litre: number;
   estimated_fuel_cost_inr: number;
@@ -688,6 +705,22 @@ export interface RoadTripBudgetEstimate {
   per_person_estimated: number;
   travellers_count: number;
   is_custom_budget: boolean;
+  fuel_type?: string;
+  fuel_unit?: string;
+  fuel_efficiency?: number;
+  fuel_rate?: number;
+  stay_nights?: number;
+  stay_rate_per_night?: number;
+  stay_rooms?: number;
+  food_per_person_per_day?: number;
+  food_total_override?: number;
+  include_fuel?: boolean;
+  include_tolls?: boolean;
+  include_parking?: boolean;
+  include_food?: boolean;
+  include_stay?: boolean;
+  include_activities?: boolean;
+  custom_expenses?: CustomExpenseItem[];
 }
 
 export interface RoadTripPlanRequest {
@@ -702,6 +735,25 @@ export interface RoadTripPlanRequest {
   overnight_mode?: "auto" | "manual";
   manual_overnights?: string[];
   preferences?: string[];
+  fuel_type?: string;
+  fuel_unit?: string;
+  fuel_efficiency?: number;
+  fuel_rate?: number;
+  stay_nights?: number;
+  stay_rate_per_night?: number;
+  stay_rooms?: number;
+  food_per_person_per_day?: number;
+  food_total_override?: number;
+  include_fuel?: boolean;
+  include_tolls?: boolean;
+  tolls_amount?: number;
+  include_parking?: boolean;
+  parking_amount?: number;
+  include_food?: boolean;
+  include_stay?: boolean;
+  include_activities?: boolean;
+  activities_amount?: number;
+  custom_expenses?: CustomExpenseItem[];
 }
 
 export interface RoadTripPlanResponse {

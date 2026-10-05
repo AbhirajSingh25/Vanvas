@@ -12,7 +12,7 @@ import {
   Landmark, Trees, Waves, Eye, ShoppingBag, Loader2,
   RefreshCw, DollarSign, X, ExternalLink, Navigation2,
   ChevronRight, ArrowUpRight, Flame, ShieldAlert, Sparkle,
-  Layers, Filter, Info, Phone
+  Layers, Filter, Info, Phone, Sliders, RotateCcw
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -21,6 +21,12 @@ import {
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { useDensity } from "@/context/DensityContext";
 import { useAskVanvas } from "@/context/AskVanvasContext";
+import {
+  InteractiveBudgetModal,
+  BudgetModelValues,
+  computeBudget,
+  ComputedBudget,
+} from "@/components/trip/InteractiveBudgetModal";
 
 // Dynamic import of Leaflet-based RoadTripMap to ensure client-side rendering
 const RoadTripMap = dynamic(() => import("@/components/map/RoadTripMap"), {
@@ -80,6 +86,9 @@ function RoadTripCockpit() {
   const [addedStopIds, setAddedStopIds] = useState<Set<string>>(new Set());
   const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [budgetModel, setBudgetModel] = useState<BudgetModelValues | null>(null);
+  const [defaultBudgetModel, setDefaultBudgetModel] = useState<BudgetModelValues | null>(null);
 
   // Load popular corridors on mount and handle query params
   useEffect(() => {
@@ -131,7 +140,7 @@ function RoadTripCockpit() {
     });
   }, [origin, destination, plan, setTravelContext]);
 
-  // Initialize added stops when plan loads
+  // Initialize added stops and interactive budget model when plan loads
   useEffect(() => {
     if (plan?.recommended_stops) {
       // By default, first 2 stops of each day are marked as added
@@ -140,6 +149,42 @@ function RoadTripCockpit() {
         day.stops.slice(0, 2).forEach((s) => initialAdded.add(s.id));
       });
       setAddedStopIds(initialAdded);
+    }
+
+    if (plan) {
+      const fuelType = ((plan.fuel_breakdown.fuel_type as any) || "Petrol") as "Petrol" | "Diesel" | "CNG" | "Electric" | "Custom";
+      const fuelUnit = plan.fuel_breakdown.fuel_unit || (fuelType === "Electric" ? "km/kWh" : fuelType === "CNG" ? "km/kg" : "km/l");
+      const nights = plan.budget_estimate.stay_nights ?? Math.max(1, plan.days.length - 1);
+      const stayRate = plan.budget_estimate.stay_rate_per_night ?? (plan.budget_estimate.stay_estimated ? Math.round(plan.budget_estimate.stay_estimated / Math.max(1, nights)) : 2400);
+      const stayRooms = plan.budget_estimate.stay_rooms ?? Math.max(1, Math.ceil(travellersCount / 2));
+
+      const initialModel: BudgetModelValues = {
+        travellersCount: travellersCount,
+        distanceKm: plan.total_distance_km,
+        numDays: Math.max(1, plan.days.length),
+        fuelType: fuelType,
+        fuelEfficiency: plan.fuel_breakdown.assumed_mileage_kpl || (fuelType === "Diesel" ? 18 : fuelType === "CNG" ? 22 : fuelType === "Electric" ? 7 : 12),
+        fuelRate: (plan.fuel_breakdown as any).fuel_price_per_unit || plan.fuel_breakdown.assumed_fuel_rate_per_litre || (fuelType === "Diesel" ? 88 : fuelType === "CNG" ? 78 : fuelType === "Electric" ? 10 : 95.5),
+        fuelUnit: fuelUnit,
+        stayNights: nights,
+        stayRatePerNight: stayRate,
+        stayRooms: stayRooms,
+        foodPerPersonPerDay: plan.budget_estimate.food_per_person_per_day ?? 750,
+        foodTotalOverride: plan.budget_estimate.food_total_override ?? null,
+        useFoodOverride: plan.budget_estimate.food_total_override !== null && plan.budget_estimate.food_total_override !== undefined,
+        includeFuel: plan.budget_estimate.include_fuel ?? true,
+        includeTolls: plan.budget_estimate.include_tolls ?? true,
+        tollsAmount: plan.budget_estimate.tolls_estimated ?? 350,
+        includeParking: plan.budget_estimate.include_parking ?? true,
+        parkingAmount: plan.budget_estimate.parking_other_estimated ?? 300,
+        includeFood: plan.budget_estimate.include_food ?? true,
+        includeStay: plan.budget_estimate.include_stay ?? true,
+        includeActivities: plan.budget_estimate.include_activities ?? true,
+        activitiesAmount: plan.budget_estimate.activities_estimated ?? 1500,
+        customExpenses: plan.budget_estimate.custom_expenses || [],
+      };
+      setBudgetModel(initialModel);
+      setDefaultBudgetModel(initialModel);
     }
   }, [plan]);
 
@@ -241,16 +286,48 @@ function RoadTripCockpit() {
     if (!plan || saving) return;
     setSaving(true);
     try {
+      const activeTravellers = budgetModel?.travellersCount || travellersCount;
       const savedTrip = await api.saveRoadTrip({
         origin: plan.origin,
         destination: plan.destination,
-        travellers_count: travellersCount,
+        travellers_count: activeTravellers,
         vehicle_type: vehicleType,
         trip_style: tripStyle,
         start_date: plan.start_date,
-        budget_inr: plan.budget_estimate.total_estimated,
+        budget_inr: calculatedBudget.total,
         preferences: selectedPriorities,
       });
+
+      // Also persist updated budget assumptions to the trip if modified
+      if (budgetModel && savedTrip.id) {
+        try {
+          await api.updateTripBudget(savedTrip.id, {
+            budget_total: calculatedBudget.total,
+            travellers_count: activeTravellers,
+            vehicle_type: vehicleType,
+            fuel_type: budgetModel.fuelType,
+            fuel_efficiency: budgetModel.fuelEfficiency,
+            fuel_rate: budgetModel.fuelRate,
+            fuel_unit: budgetModel.fuelUnit,
+            stay_nights: budgetModel.stayNights,
+            stay_rate_per_night: budgetModel.stayRatePerNight,
+            stay_rooms: budgetModel.stayRooms,
+            food_per_person_per_day: budgetModel.foodPerPersonPerDay,
+            food_total_override: budgetModel.foodTotalOverride,
+            include_fuel: budgetModel.includeFuel,
+            include_tolls: budgetModel.includeTolls,
+            tolls_amount: budgetModel.tollsAmount,
+            include_parking: budgetModel.includeParking,
+            parking_amount: budgetModel.parkingAmount,
+            include_food: budgetModel.includeFood,
+            include_stay: budgetModel.includeStay,
+            include_activities: budgetModel.includeActivities,
+            activities_amount: budgetModel.activitiesAmount,
+            custom_expenses: budgetModel.customExpenses,
+          });
+        } catch {}
+      }
+
       setNotificationMsg(`Road trip saved! Opening ${savedTrip.title}...`);
       setTimeout(() => {
         router.push(`/trips/${savedTrip.id}`);
@@ -361,13 +438,9 @@ function RoadTripCockpit() {
     return undefined;
   }, [plan, currentDay, selectedDayTab]);
 
-  // Dynamic budget calculation based on added stops and traveller count
+  // Dynamic budget calculation derived from interactive budget model and added stops
   const calculatedBudget = useMemo(() => {
-    if (!plan) return { total: 0, perPerson: 0, fuel: 0, stay: 0, food: 0, activities: 0, tolls: 0 };
-    const fuel = plan.fuel_breakdown.estimated_fuel_cost_inr || 0;
-    const tolls = plan.budget_estimate.tolls_estimated || 0;
-    const stay = plan.budget_estimate.stay_estimated || 0;
-    const food = plan.budget_estimate.food_estimated || 0;
+    if (!plan) return { total: 0, perPerson: 0, fuel: 0, stay: 0, food: 0, activities: 0, tolls: 0, parking: 0, custom: 0 };
     
     // Add extra cost for custom added stops
     let extraActivitiesCost = 0;
@@ -378,11 +451,34 @@ function RoadTripCockpit() {
         }
       });
     }
+
+    if (budgetModel) {
+      const computed = computeBudget(budgetModel);
+      const totalActivities = computed.activitiesCost + (budgetModel.includeActivities ? extraActivitiesCost : 0);
+      const total = computed.fuelCost + computed.stayCost + computed.foodCost + computed.tollsCost + computed.parkingCost + totalActivities + computed.customExpensesCost;
+      const perPerson = Math.round(total / Math.max(1, budgetModel.travellersCount));
+      return {
+        total,
+        perPerson,
+        fuel: computed.fuelCost,
+        stay: computed.stayCost,
+        food: computed.foodCost,
+        activities: totalActivities,
+        tolls: computed.tollsCost,
+        parking: computed.parkingCost,
+        custom: computed.customExpensesCost,
+      };
+    }
+
+    const fuel = plan.fuel_breakdown.estimated_fuel_cost_inr || 0;
+    const tolls = plan.budget_estimate.tolls_estimated || 0;
+    const stay = plan.budget_estimate.stay_estimated || 0;
+    const food = plan.budget_estimate.food_estimated || 0;
     const activities = (plan.budget_estimate.activities_estimated || 0) + extraActivitiesCost;
     const total = fuel + tolls + stay + food + activities;
     const perPerson = Math.round(total / Math.max(1, travellersCount));
-    return { total, perPerson, fuel, stay, food, activities, tolls };
-  }, [plan, addedStopIds, travellersCount]);
+    return { total, perPerson, fuel, stay, food, activities, tolls, parking: 0, custom: 0 };
+  }, [plan, budgetModel, addedStopIds, travellersCount]);
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -493,7 +589,7 @@ function RoadTripCockpit() {
             {/* LEFT 7 COLS: LARGE INTERACTIVE MAP & CHECKPOINTS RAIL */}
             <div className="lg:col-span-7 space-y-4">
               {/* Primary Visual Element: Interactive Map */}
-              <div className="w-full h-[380px] sm:h-[460px] lg:h-[500px] relative rounded-3xl overflow-hidden shadow-xl border-2 border-[#E5D5BA]">
+              <div id="road-trip-map-section" className="w-full h-[380px] sm:h-[460px] lg:h-[500px] relative rounded-3xl overflow-hidden shadow-xl border-2 border-[#E5D5BA]">
                 <RoadTripMap
                   routeGeometry={plan.route_geometry}
                   activeLegGeometry={activeLegGeometry}
@@ -673,9 +769,14 @@ function RoadTripCockpit() {
                       <button
                         key={day.day_number}
                         type="button"
+                        aria-label={`Open Day ${day.day_number} ${day.origin} to ${day.destination} route`}
                         onClick={() => {
                           setSelectedDayTab(day.day_number);
                           setSelectedStop(null);
+                          const mapEl = document.getElementById("road-trip-map-section");
+                          if (mapEl) {
+                            mapEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }
                         }}
                         className={`w-full p-3 rounded-2xl text-left transition-all cursor-pointer border-2 flex items-center justify-between ${
                           isSelected
@@ -701,7 +802,9 @@ function RoadTripCockpit() {
                           </p>
                         </div>
 
-                        <ChevronRight className={`w-4 h-4 shrink-0 ${isSelected ? "text-[#B49252]" : "text-[#7B4D36]"}`} />
+                        <div className="p-1 rounded-lg hover:bg-black/10 transition-colors">
+                          <ChevronRight className={`w-4 h-4 shrink-0 ${isSelected ? "text-[#B49252]" : "text-[#7B4D36]"}`} />
+                        </div>
                       </button>
                     );
                   })}
@@ -782,17 +885,27 @@ function RoadTripCockpit() {
                     <div className="flex items-center gap-2 mt-0.5 bg-[#0F2924] px-2.5 py-1 rounded-xl border border-[#243E36]">
                       <button
                         type="button"
-                        onClick={() => setTravellersCount((prev) => Math.max(1, prev - 1))}
+                        aria-label="Decrease travellers count"
+                        onClick={() => {
+                          const next = Math.max(1, travellersCount - 1);
+                          setTravellersCount(next);
+                          setBudgetModel((prev) => (prev ? { ...prev, travellersCount: next } : prev));
+                        }}
                         className="text-xs font-bold text-[#FAF4E8] hover:text-[#B49252] cursor-pointer"
                       >
                         -
                       </button>
                       <span className="text-xs font-mono font-bold text-[#B49252]">
-                        {travellersCount}
+                        {budgetModel?.travellersCount || travellersCount}
                       </span>
                       <button
                         type="button"
-                        onClick={() => setTravellersCount((prev) => Math.min(12, prev + 1))}
+                        aria-label="Increase travellers count"
+                        onClick={() => {
+                          const next = Math.min(20, travellersCount + 1);
+                          setTravellersCount(next);
+                          setBudgetModel((prev) => (prev ? { ...prev, travellersCount: next } : prev));
+                        }}
                         className="text-xs font-bold text-[#FAF4E8] hover:text-[#B49252] cursor-pointer"
                       >
                         +
@@ -801,31 +914,41 @@ function RoadTripCockpit() {
                   </div>
                 </div>
 
+                {/* Adjust Budget Action Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsBudgetModalOpen(true)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#0F2924] hover:bg-[#153830] border border-[#243E36] text-[#B49252] hover:text-[#FAF4E8] font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Adjust Budget Assumptions</span>
+                </button>
+
                 {/* Proportional Multi-Color Budget Progress Bar */}
                 <div className="space-y-1.5">
                   <div className="w-full h-2.5 bg-[#0F2924] rounded-full overflow-hidden flex">
                     <div
-                      style={{ width: `${(calculatedBudget.fuel / calculatedBudget.total) * 100}%` }}
+                      style={{ width: `${calculatedBudget.total > 0 ? (calculatedBudget.fuel / calculatedBudget.total) * 100 : 0}%` }}
                       className="bg-amber-500 h-full"
                       title={`Fuel: ₹${calculatedBudget.fuel}`}
                     />
                     <div
-                      style={{ width: `${(calculatedBudget.stay / calculatedBudget.total) * 100}%` }}
+                      style={{ width: `${calculatedBudget.total > 0 ? (calculatedBudget.stay / calculatedBudget.total) * 100 : 0}%` }}
                       className="bg-indigo-400 h-full"
                       title={`Stays: ₹${calculatedBudget.stay}`}
                     />
                     <div
-                      style={{ width: `${(calculatedBudget.food / calculatedBudget.total) * 100}%` }}
+                      style={{ width: `${calculatedBudget.total > 0 ? (calculatedBudget.food / calculatedBudget.total) * 100 : 0}%` }}
                       className="bg-[#B65E3C] h-full"
                       title={`Food: ₹${calculatedBudget.food}`}
                     />
                     <div
-                      style={{ width: `${(calculatedBudget.activities / calculatedBudget.total) * 100}%` }}
+                      style={{ width: `${calculatedBudget.total > 0 ? (calculatedBudget.activities / calculatedBudget.total) * 100 : 0}%` }}
                       className="bg-emerald-400 h-full"
                       title={`Activities: ₹${calculatedBudget.activities}`}
                     />
                     <div
-                      style={{ width: `${(calculatedBudget.tolls / calculatedBudget.total) * 100}%` }}
+                      style={{ width: `${calculatedBudget.total > 0 ? (calculatedBudget.tolls / calculatedBudget.total) * 100 : 0}%` }}
                       className="bg-teal-400 h-full"
                       title={`Tolls: ₹${calculatedBudget.tolls}`}
                     />
@@ -861,11 +984,15 @@ function RoadTripCockpit() {
                   {showBudgetBreakdown && (
                     <div className="space-y-1.5 pt-2 border-t border-[#243E36] text-xs font-mono text-[#D8DED5] animate-in fade-in duration-200">
                       <div className="flex justify-between">
-                        <span>Fuel Estimate ({plan.fuel_breakdown.assumed_mileage_kpl} km/l)</span>
+                        <span>
+                          Fuel ({budgetModel?.fuelType || "Petrol"} • {budgetModel?.fuelEfficiency || plan.fuel_breakdown.assumed_mileage_kpl} {budgetModel?.fuelUnit || "km/l"})
+                        </span>
                         <span>₹{calculatedBudget.fuel.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Overnight Stays ({plan.days.length} Nights)</span>
+                        <span>
+                          Overnight Stays ({budgetModel?.stayNights ?? plan.days.length} Nights • {budgetModel?.stayRooms ?? 1} Room{budgetModel?.stayRooms === 1 ? "" : "s"})
+                        </span>
                         <span>₹{calculatedBudget.stay.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
@@ -873,13 +1000,25 @@ function RoadTripCockpit() {
                         <span>₹{calculatedBudget.food.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Activities &amp; Parking</span>
+                        <span>Activities</span>
                         <span>₹{calculatedBudget.activities.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Fastag Tolls</span>
                         <span>₹{calculatedBudget.tolls.toLocaleString()}</span>
                       </div>
+                      {calculatedBudget.parking > 0 && (
+                        <div className="flex justify-between">
+                          <span>Parking &amp; Entry</span>
+                          <span>₹{calculatedBudget.parking.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {calculatedBudget.custom > 0 && (
+                        <div className="flex justify-between text-amber-200">
+                          <span>Custom Expenses</span>
+                          <span>₹{calculatedBudget.custom.toLocaleString()}</span>
+                        </div>
+                      )}
                       <div className="pt-2 border-t border-[#243E36] flex justify-between font-bold text-[#FAF4E8]">
                         <span>Total Trip Cost</span>
                         <span>₹{calculatedBudget.total.toLocaleString()}</span>
@@ -890,6 +1029,30 @@ function RoadTripCockpit() {
               </div>
             </div>
           </div>
+
+          {/* Interactive Budget Sheet / Modal */}
+          {budgetModel && (
+            <InteractiveBudgetModal
+              isOpen={isBudgetModalOpen}
+              onClose={() => setIsBudgetModalOpen(false)}
+              initialValues={budgetModel}
+              defaultValues={defaultBudgetModel || undefined}
+              onResetToDefaults={() => {
+                if (defaultBudgetModel) {
+                  setBudgetModel(defaultBudgetModel);
+                  setTravellersCount(defaultBudgetModel.travellersCount);
+                  setNotificationMsg("Budget assumptions reset to default route estimates.");
+                  setTimeout(() => setNotificationMsg(null), 2500);
+                }
+              }}
+              onSave={(savedValues) => {
+                setBudgetModel(savedValues);
+                setTravellersCount(savedValues.travellersCount);
+                setNotificationMsg("✓ Trip budget updated!");
+                setTimeout(() => setNotificationMsg(null), 2500);
+              }}
+            />
+          )}
 
           {/* 3. INTERACTIVE STOP DETAIL MODAL / DRAWER (WHEN A MARKER IS CLICKED) */}
           {selectedStop && (

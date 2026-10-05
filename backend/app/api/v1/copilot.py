@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.models.models import User, Trip, TripMember, Place, Conversation, ConversationMessage
+from app.models.models import User, Trip, TripMember, Place, Conversation, ConversationMessage, Destination
 from app.api.deps import get_current_user
 from app.providers.ai.factory import AIFactory
 from app.providers.ai.tools import VANVAS_COPILOT_TOOLS
@@ -496,6 +496,154 @@ async def copilot_chat(
                     metadata=fast_meta
                 )
 
+    # E. Explore Places / Things to Do Fast Path
+    is_explore_places_query = any(k in msg_clean_lower for k in [
+        "things to do", "what to do", "places to visit", "places in", "what can i do in",
+        "top places", "attractions in", "sightseeing in", "explore ", "what to see in",
+        "best places", "must visit", "good places in", "attraction"
+    ]) or (explicit_dest is not None and any(k in msg_clean_lower for k in ["things", "do", "places", "visit", "explore", "guide"]))
+
+    if is_explore_places_query and dest_target_slug:
+        dest_rec = db.query(Destination).filter(
+            (Destination.slug == dest_target_slug) |
+            (Destination.id == dest_target_slug) |
+            (Destination.name.ilike(dest_target_slug.replace("-", " ")))
+        ).first()
+
+        # If not in DB, resolve/create destination with coordinates
+        if not dest_rec:
+            try:
+                dest_name_clean = dest_target_slug.replace("-", " ").title()
+                from app.services.road_trip_service import RoadTripService
+                d_lat, d_lng, d_name = RoadTripService.resolve_city_coords(dest_name_clean)
+                dest_rec = Destination(
+                    id=f"dest-{dest_target_slug}",
+                    name=d_name,
+                    slug=dest_target_slug,
+                    state="India",
+                    region="Exploration Corridor",
+                    tagline=f"Historic & scenic destination: {d_name}",
+                    description=f"Destination exploration in {d_name}.",
+                    latitude=d_lat,
+                    longitude=d_lng,
+                    is_featured=False
+                )
+                db.add(dest_rec)
+                db.flush()
+            except Exception:
+                pass
+
+        if dest_rec:
+            places_list = db.query(Place).filter(
+                Place.destination_id == dest_rec.id,
+                Place.is_active == True
+            ).order_by(Place.rating.desc().nullslast()).limit(6).all()
+
+            # Seed authentic places for Haridwar or new destination if empty
+            if not places_list and dest_rec.slug == "haridwar":
+                haridwar_seed = [
+                    ("Har Ki Pauri", "Historic Ghat & Aarti", "World-renowned sacred river ghat where the evening Ganga Aarti takes place at sunset.", 29.9577, 78.1737, "Heritage", 0.0, 4.9),
+                    ("Mansa Devi Temple", "Hilltop Shrine", "Siddha Peetha temple on Bilwa Parvat reachable by scenic ropeway offering panoramic valley views.", 29.9602, 78.1638, "Temple", 120.0, 4.7),
+                    ("Ganga Aarti at Har Ki Pauri", "Evening Experience", "Mesmerizing synchronized evening lamp ritual at the banks of the sacred Ganges.", 29.9578, 78.1739, "Experience", 0.0, 4.9),
+                    ("Chandi Devi Temple", "Neel Parvat Viewpoint", "Hilltop temple dedicated to Goddess Chandi perched atop Neel Parvat.", 29.9482, 78.1884, "Temple", 150.0, 4.6),
+                    ("Maya Devi Temple", "Ancient Siddha Peetha", "One of the oldest temples in Haridwar dating back to the 11th century.", 29.9450, 78.1580, "Heritage", 0.0, 4.5),
+                ]
+                for p_name, p_cat, p_desc, p_lat, p_lng, p_catt, p_cost, p_rat in haridwar_seed:
+                    new_p = Place(
+                        id=f"place-haridwar-{p_name.lower().replace(' ', '-')[:20]}",
+                        destination_id=dest_rec.id,
+                        category=p_catt,
+                        name=p_name,
+                        slug=p_name.lower().replace(" ", "-"),
+                        description=p_desc,
+                        address=f"{p_name}, Haridwar, Uttarakhand",
+                        latitude=p_lat,
+                        longitude=p_lng,
+                        price_level="₹" if p_cost < 100 else "₹₹",
+                        approx_cost=p_cost,
+                        rating=p_rat,
+                        is_active=True
+                    )
+                    db.add(new_p)
+                db.commit()
+                places_list = db.query(Place).filter(Place.destination_id == dest_rec.id, Place.is_active == True).limit(6).all()
+
+            if places_list:
+                places_data = [{
+                    "place_id": p.id,
+                    "name": p.name,
+                    "category": p.category,
+                    "approx_cost": p.approx_cost,
+                    "rating": p.rating,
+                    "latitude": p.latitude,
+                    "longitude": p.longitude,
+                    "description": p.description or f"Curated destination highlight in {dest_rec.name}",
+                } for p in places_list]
+
+                fast_resp_text = f"Top curated things to do in {dest_rec.name}:"
+                fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "explore_places"}
+                assistant_msg = ConversationMessage(
+                    conversation_id=conv.id,
+                    role="assistant",
+                    content=fast_resp_text,
+                    metadata_json=json.dumps(fast_meta),
+                )
+                db.add(assistant_msg)
+                db.commit()
+                return CopilotChatResponse(
+                    conversation_id=conv.id,
+                    message=fast_resp_text,
+                    actions=[
+                        {"action_type": "view_place", "title": "View place", "payload": {"destination": dest_rec.slug}},
+                        {"action_type": "add_place_to_itinerary", "title": "Add to trip", "payload": {"destination": dest_rec.slug}}
+                    ],
+                    places=places_data,
+                    metadata=fast_meta
+                )
+
+    # F. Road Trip Corridor Stops / "Where should we stop" / "Best Dhaba" Fast Path
+    is_road_stop_query = any(k in msg_clean_lower for k in [
+        "where should we stop", "where to stop", "what should we stop at", "best dhaba",
+        "good dhaba", "dhaba on the way", "stop on the way", "route stops"
+    ])
+    if is_road_stop_query:
+        stops_data = []
+        if trip and trip.road_trip_stops_json:
+            try:
+                raw_stops = json.loads(trip.road_trip_stops_json)
+                if isinstance(raw_stops, list):
+                    stops_data = raw_stops[:4]
+            except Exception:
+                pass
+
+        if stops_data:
+            formatted_stops = [{
+                "place_id": s.get("id") or f"stop-{idx}",
+                "name": s.get("name", "Corridor Stop"),
+                "category": s.get("category") or s.get("type") or "Waypoint",
+                "approx_cost": s.get("approx_cost", 0.0),
+                "rating": 4.8,
+                "description": s.get("why_stop") or "Verified recommended stop along highway corridor.",
+            } for idx, s in enumerate(stops_data)]
+
+            fast_resp_text = f"Top recommended stops along your {trip.title or 'road trip'} route:"
+            fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "road_trip_stops"}
+            assistant_msg = ConversationMessage(
+                conversation_id=conv.id,
+                role="assistant",
+                content=fast_resp_text,
+                metadata_json=json.dumps(fast_meta),
+            )
+            db.add(assistant_msg)
+            db.commit()
+            return CopilotChatResponse(
+                conversation_id=conv.id,
+                message=fast_resp_text,
+                actions=[{"action_type": "view_road_trip_stops", "title": "View All Route Stops", "payload": {"trip_id": trip.id}}],
+                places=formatted_stops,
+                metadata=fast_meta
+            )
+
     # 6. Initialize AI Provider & Tool Dispatcher
     ai_provider = AIFactory.get_provider()
     dispatcher = AIToolDispatcher(db=db, user=current_user)
@@ -535,7 +683,7 @@ async def copilot_chat(
         logger.error(f"Copilot reasoning exception: {e}")
         return CopilotChatResponse(
             conversation_id=conv.id,
-            message="VANVAS AI is temporarily resting. Your trips, maps, and valley guides remain fully active.",
+            message="Live place discovery is temporarily unavailable. You can still view your saved trip information and explore curated places.",
             error=str(e),
             metadata={"provider": ai_provider.name, "latency_ms": round((time.time() - start_time) * 1000, 2)}
         )

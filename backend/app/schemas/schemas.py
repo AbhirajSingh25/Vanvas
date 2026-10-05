@@ -608,6 +608,12 @@ class TripDetailResponse(BaseModel):
     rental: Optional[RentalOptionResponse] = None
     itineraries: List[ItineraryDayResponse] = []
     revisions: List[TripRevisionResponse] = []
+    vehicle_type: Optional[str] = None
+    vehicle_mileage_kpl: Optional[float] = None
+    fuel_price_per_litre: Optional[float] = None
+    route_geometry_json: Optional[str] = None
+    road_trip_stops_json: Optional[str] = None
+    budget_breakdown_json: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -1700,10 +1706,39 @@ class RoadTripPlanRequest(BaseModel):
     overnight_mode: str = "auto"  # auto, manual
     manual_overnights: Optional[List[str]] = None
     preferences: List[str] = []  # avoid_tolls, avoid_highways, scenic, food_focus, less_driving, nightlife, family_friendly, adventure
+    fuel_type: Optional[str] = "Petrol"  # Petrol, Diesel, CNG, Electric, Custom
+    fuel_unit: Optional[str] = None
+    fuel_efficiency: Optional[float] = None
+    fuel_rate: Optional[float] = None
+    stay_nights: Optional[int] = None
+    stay_rate_per_night: Optional[float] = None
+    stay_rooms: Optional[int] = None
+    food_per_person_per_day: Optional[float] = None
+    food_total_override: Optional[float] = None
+    include_fuel: Optional[bool] = True
+    include_tolls: Optional[bool] = True
+    tolls_amount: Optional[float] = None
+    include_parking: Optional[bool] = True
+    parking_amount: Optional[float] = None
+    include_food: Optional[bool] = True
+    include_stay: Optional[bool] = True
+    include_activities: Optional[bool] = True
+    activities_amount: Optional[float] = None
+    custom_expenses: Optional[List[Dict[str, Any]]] = None
+
+class CustomExpenseItem(BaseModel):
+    id: str
+    name: str
+    category: str = "Other"  # Food, Fuel, Stay, Transport, Activity, Other
+    amount: float
+    basis: str = "trip_total"  # trip_total, per_person
+    notes: Optional[str] = None
 
 class RoadTripFuelBreakdown(BaseModel):
     total_distance_km: float
     vehicle_type: str
+    fuel_type: str = "Petrol"  # Petrol, Diesel, CNG, Electric, Custom
+    fuel_unit: str = "km/l"  # km/l, km/kg, km/kWh
     assumed_mileage_kpl: float
     assumed_fuel_rate_per_litre: float
     estimated_fuel_cost_inr: float
@@ -1721,6 +1756,51 @@ class RoadTripBudgetEstimate(BaseModel):
     per_person_estimated: float
     travellers_count: int
     is_custom_budget: bool = False
+    fuel_type: str = "Petrol"
+    fuel_unit: str = "km/l"
+    fuel_efficiency: float = 16.0
+    fuel_rate: float = 95.5
+    stay_nights: int = 1
+    stay_rate_per_night: float = 2400.0
+    stay_rooms: int = 1
+    food_per_person_per_day: float = 750.0
+    food_total_override: Optional[float] = None
+    include_fuel: bool = True
+    include_tolls: bool = True
+    include_parking: bool = True
+    include_food: bool = True
+    include_stay: bool = True
+    include_activities: bool = True
+    custom_expenses: List[CustomExpenseItem] = []
+
+class TripBudgetUpdateRequest(BaseModel):
+    travellers_count: Optional[int] = None
+    vehicle_type: Optional[str] = None
+    fuel_type: Optional[str] = None
+    fuel_unit: Optional[str] = None
+    fuel_efficiency: Optional[float] = None
+    fuel_rate: Optional[float] = None
+    stay_nights: Optional[int] = None
+    stay_rate_per_night: Optional[float] = None
+    stay_rooms: Optional[int] = None
+    food_per_person_per_day: Optional[float] = None
+    food_total_override: Optional[float] = None
+    include_fuel: Optional[bool] = None
+    include_tolls: Optional[bool] = None
+    tolls_amount: Optional[float] = None
+    include_parking: Optional[bool] = None
+    parking_amount: Optional[float] = None
+    include_food: Optional[bool] = None
+    include_stay: Optional[bool] = None
+    include_activities: Optional[bool] = None
+    activities_amount: Optional[float] = None
+    custom_expenses: Optional[List[Dict[str, Any]]] = None
+    budget_total: Optional[float] = None
+    budget_breakdown: Optional[Dict[str, Any]] = None
+
+TripBudgetUpdateRequest.model_rebuild()
+RoadTripBudgetEstimate.model_rebuild()
+RoadTripPlanRequest.model_rebuild()
 
 class RoadTripPlanResponse(BaseModel):
     id: str
@@ -1747,6 +1827,8 @@ class RoadTripPlanResponse(BaseModel):
     travel_tips: List[str] = []
     created_trip_id: Optional[str] = None
     timing_breakdown: Optional[Dict[str, float]] = None
+
+RoadTripPlanResponse.model_rebuild()
 
 
 

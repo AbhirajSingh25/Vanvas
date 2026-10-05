@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { CopilotChatResponse } from "@/types";
@@ -291,10 +291,14 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setActionFeedback(null);
   }, []);
 
+  const isSendingRef = useRef(false);
+
   const sendMessage = async (queryText?: string, imageUrl?: string) => {
     const textToSend = (queryText || "").trim();
     if (!textToSend && !imageUrl) return;
-    if (loading) return;
+    if (loading || isSendingRef.current) return;
+
+    isSendingRef.current = true;
 
     // Check if user explicitly stated their current location (e.g., "I'm in Indore", "I am in Dehradun")
     const inCityMatch = textToSend.match(/\bi(?:'m| am|m) in ([a-zA-Z\s]+?)(?:\.|$|,|\!)/i) ||
@@ -336,6 +340,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           action: "add_place_to_itinerary",
           payload: { place_id: targetItem.placeId || targetItem.id, title: targetItem.name, day: targetDay },
         });
+        isSendingRef.current = false;
         return;
       }
     }
@@ -383,6 +388,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, offlineMsg]);
+      isSendingRef.current = false;
       setLoading(false);
       setStatusMessage(null);
       return;
@@ -431,11 +437,11 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       console.warn("Copilot API service unavailable:", err);
       const fallbackTitle = "TRAVEL INTELLIGENCE TEMPORARILY UNAVAILABLE";
-      const fallbackText = "TRAVEL INTELLIGENCE TEMPORARILY UNAVAILABLE\n\nYour trip data is safe.";
+      const fallbackText = "Live place discovery is temporarily unavailable. You can still view your saved trip information.\n\nYour trip data is safe.";
       const errorStructured: StructuredAssistantResponse = {
         type: "CLARIFICATION",
         title: fallbackTitle,
-        summary: "Your trip data is safe.",
+        summary: "Live place discovery is temporarily unavailable. Your trip data is safe.",
         items: [],
         actions: [
           { id: "retry-query", label: "Retry", action: "query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
@@ -455,6 +461,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       setMessages((prev) => [...prev, assistantMessage]);
     } finally {
+      isSendingRef.current = false;
       setLoading(false);
       setStatusMessage(null);
     }

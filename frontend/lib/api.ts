@@ -622,6 +622,13 @@ export const api = {
     });
   },
 
+  async updateTripBudget(tripId: string, data: any): Promise<Trip> {
+    return fetchApi(`/trips/${tripId}/budget`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
   async getRoadTripCorridors(): Promise<RoadTripCorridor[]> {
     return fetchApi("/road-trip/corridors");
   },

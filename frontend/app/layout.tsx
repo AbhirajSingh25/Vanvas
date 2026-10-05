@@ -11,7 +11,6 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
-import { ConnectivityBanner } from "@/components/pwa/ConnectivityBanner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { CapacitorInit } from "@/components/capacitor/CapacitorInit";
 import { Analytics } from "@vercel/analytics/next";
@@ -146,7 +145,6 @@ export default function RootLayout({
             <DensityProvider>
               <AskVanvasProvider>
                 <ServiceWorkerRegister />
-                <ConnectivityBanner />
                 <Header />
                 <main className="flex-1 pb-16 md:pb-0">{children}</main>
                 <Footer />

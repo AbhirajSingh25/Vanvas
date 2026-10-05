@@ -288,6 +288,7 @@ DESTINATION_KEYWORD_MAP = {
     "chandrashila": "tungnath-chandrashila",
     "chopta": "tungnath-chandrashila",
     "manali": "manali",
+    "haridwar": "haridwar",
     "rishikesh": "rishikesh",
     "kasol": "kasol",
     "dharamshala": "dharamshala",
@@ -302,16 +303,42 @@ DESTINATION_KEYWORD_MAP = {
     "varanasi": "varanasi",
     "udaipur": "udaipur",
     "mussoorie": "mussoorie",
+    "shimla": "shimla",
+    "nainital": "nainital",
+    "agra": "agra",
+    "jodhpur": "jodhpur",
+    "jaisalmer": "jaisalmer",
+    "pushkar": "pushkar",
+    "hampi": "hampi",
+    "ooty": "ooty",
+    "kodaikanal": "kodaikanal",
+    "coorg": "coorg",
+    "gokarna": "gokarna",
+    "alleppey": "alleppey",
+    "pondicherry": "pondicherry",
 }
 
 def extract_explicit_destination(text: str) -> Optional[str]:
     """Deterministically extracts explicit destination signal from text."""
     if not text or not isinstance(text, str):
         return None
-    lower = text.lower()
-    for kw, slug in DESTINATION_KEYWORD_MAP.items():
+    lower = text.lower().strip()
+    
+    # Check known keyword mappings first
+    for kw, slug in sorted(DESTINATION_KEYWORD_MAP.items(), key=lambda x: -len(x[0])):
         if re.search(rf"\b{re.escape(kw)}\b", lower):
             return slug
+
+    # Match preposition patterns (e.g., "things to do in Haridwar", "places to visit in Haridwar")
+    prep_match = re.search(r"\b(?:in|to|for|at|around|near|explore)\s+([a-zA-Z\s]{3,30}?)(?:\?|$|\.|\!|\,)", lower)
+    if prep_match and prep_match.group(1):
+        cand = prep_match.group(1).strip()
+        cand_slug = cand.replace(" ", "-")
+        if cand in DESTINATION_KEYWORD_MAP:
+            return DESTINATION_KEYWORD_MAP[cand]
+        if len(cand) >= 3 and not cand.startswith(("the ", "a ", "our ", "my ")):
+            return cand_slug
+
     return None
 
 

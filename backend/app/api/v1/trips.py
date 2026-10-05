@@ -15,7 +15,7 @@ from app.schemas.schemas import (
     TripInvitePreviewResponse, TripInviteCreateResponse, TripMemberActionResponse,
     TripMemberResponse, ActionPreviewRequest, ActionPreviewResponse,
     ActionApplyRequest, ActionApplyResponse, TripRevisionResponse,
-    CurrentStateResponse
+    CurrentStateResponse, TripBudgetUpdateRequest
 )
 from app.api.deps import get_current_user, get_current_user_optional
 from app.itinerary.generator import ItineraryEngine
@@ -1064,4 +1064,47 @@ def delete_trip_itinerary_item(
 
     db.commit()
     return {"success": True, "message": f"Successfully removed '{deleted_title}' from trip.", "item_id": item_id}
+
+@router.patch("/{trip_id}/budget", response_model=TripDetailResponse)
+def update_trip_budget(
+    trip_id: str,
+    budget_req: TripBudgetUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update interactive trip budget assumptions, fuel settings, stay, food, custom expenses,
+    and persist configuration to database.
+    Enforces authenticated user and trip membership verification.
+    """
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_member = db.query(TripMember).filter(TripMember.trip_id == trip.id, TripMember.user_id == current_user.id).first()
+    if not is_member and trip.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Unauthorized: You must be a member of this trip to update its budget.")
+
+    if budget_req.travellers_count is not None and budget_req.travellers_count >= 1:
+        trip.travellers_count = budget_req.travellers_count
+
+    if budget_req.vehicle_type is not None:
+        trip.vehicle_type = budget_req.vehicle_type
+
+    if budget_req.fuel_efficiency is not None:
+        trip.vehicle_mileage_kpl = budget_req.fuel_efficiency
+
+    if budget_req.fuel_rate is not None:
+        trip.fuel_price_per_litre = budget_req.fuel_rate
+
+    if budget_req.budget_total is not None and budget_req.budget_total >= 0:
+        trip.budget_total = budget_req.budget_total
+
+    if budget_req.budget_breakdown is not None:
+        trip.budget_breakdown_json = json.dumps(budget_req.budget_breakdown)
+
+    db.commit()
+    db.refresh(trip)
+    return trip
+
 

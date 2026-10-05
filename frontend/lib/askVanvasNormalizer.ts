@@ -229,9 +229,20 @@ export function normalizeAssistantResponse(
     };
   }
 
+  // Extract explicit destination keyword in query (e.g. "things to do in Haridwar", "places in Haridwar")
+  let explicitQueryDestination: string | null = null;
+  const inDestMatch = queryLower.match(/\b(?:in|to|for|at|around|near|explore)\s+([a-zA-Z\s]{3,30}?)(?:\?|$|\.|\!|\,)/i);
+  if (inDestMatch && inDestMatch[1]) {
+    const rawMatch = inDestMatch[1].trim();
+    if (!["the", "a", "our", "my", "this", "that", "route", "morning", "afternoon", "evening", "night", "today", "trip"].includes(rawMatch.toLowerCase())) {
+      explicitQueryDestination = rawMatch.replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+  }
+  const effectiveDestination = explicitQueryDestination || activePlace;
+
   // Determine Response Type & Intent
   let responseType: AssistantResponseType = "QUICK_TAKE";
-  let title = activePlace ? `${activePlace.toUpperCase()} · TODAY` : "ASK VANVAS · INDIA";
+  let title = effectiveDestination ? `${effectiveDestination.toUpperCase()} · TODAY` : "ASK VANVAS · INDIA";
   let summary = "";
   let provenance: StructuredAssistantResponse["provenance"] = "CURATED";
 
@@ -239,7 +250,7 @@ export function normalizeAssistantResponse(
     provenance = "LIVE";
   } else if (context?.type === "budget") {
     provenance = "USER ENTERED";
-  } else if (context?.type === "road_trip") {
+  } else if (context?.type === "road_trip" && !explicitQueryDestination) {
     provenance = "ESTIMATED";
   }
 
@@ -275,28 +286,46 @@ export function normalizeAssistantResponse(
     summary = "Live ledger balance across all trip members.";
     provenance = "USER ENTERED";
   }
-  // 7. Food / Dining Intent
+  // 7. Explore Places / Things to Do Intent
+  else if (
+    queryLower.includes("things to do") ||
+    queryLower.includes("what to do") ||
+    queryLower.includes("places to visit") ||
+    queryLower.includes("places in") ||
+    queryLower.includes("top places") ||
+    queryLower.includes("attractions") ||
+    queryLower.includes("sightseeing") ||
+    queryLower.includes("explore") ||
+    queryLower.includes("what to see") ||
+    (res?.metadata as any)?.intent === "explore_places"
+  ) {
+    responseType = "PLACE_LIST";
+    title = effectiveDestination ? `THINGS TO DO IN ${effectiveDestination.toUpperCase()}` : "THINGS TO DO";
+    summary = effectiveDestination ? `Top curated places & experiences in ${effectiveDestination}.` : "Top curated attractions to explore.";
+    provenance = "CURATED";
+  }
+  // 8. Food / Dining Intent
   else if (queryLower.includes("eat") || queryLower.includes("food") || queryLower.includes("cafe") || queryLower.includes("dhaba")) {
     responseType = "PLACE_LIST";
-    title = activePlace ? `FOOD · ${activePlace.toUpperCase()}` : "FOOD & DINING";
-    summary = activePlace ? `Top dining options and cafes in ${activePlace}.` : "Curated cafes and dining.";
+    title = effectiveDestination ? `FOOD · ${effectiveDestination.toUpperCase()}` : "FOOD & DINING";
+    summary = effectiveDestination ? `Top dining options and cafes in ${effectiveDestination}.` : "Curated cafes and dining.";
     provenance = "CURATED";
   }
-  // 8. Stays Intent
+  // 9. Stays Intent
   else if (queryLower.includes("stay") || queryLower.includes("hotel") || queryLower.includes("hostel") || queryLower.includes("resort")) {
     responseType = "STAY_LIST";
-    title = activePlace ? `STAYS · ${activePlace.toUpperCase()}` : "ACCOMMODATIONS";
-    summary = activePlace ? `Verified accommodations in ${activePlace}.` : "Curated stays & retreats.";
+    title = effectiveDestination ? `STAYS · ${effectiveDestination.toUpperCase()}` : "ACCOMMODATIONS";
+    summary = effectiveDestination ? `Verified accommodations in ${effectiveDestination}.` : "Curated stays & retreats.";
     provenance = "CURATED";
   }
-  // 9. Road Trip / Stops Intent
-  else if (queryLower.includes("stop") || queryLower.includes("route") || context?.type === "road_trip") {
+  // 10. Road Trip / Stops Intent (when asked for stops or in road trip context without explicit place query)
+  else if (queryLower.includes("stop") || queryLower.includes("route") || (context?.type === "road_trip" && !explicitQueryDestination)) {
     responseType = "ROUTE";
     title = "NEXT GOOD STOP";
     summary = "Curated scenic waypoints & dhabas along your driving route.";
     provenance = "ESTIMATED";
   }
-  // 10. Active Trip "What's next?" Intent
+  // 11. Active Trip "What's next?" Intent
   else if (queryLower.includes("what's next") || queryLower.includes("whats next") || (context?.type === "trip" && queryLower.includes("next"))) {
     responseType = "NAVIGATION";
     title = destName ? `NEXT STOP · ${destName.toUpperCase()}` : "NEXT STOP TODAY";
