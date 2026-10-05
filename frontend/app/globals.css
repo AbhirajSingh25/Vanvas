@@ -16,6 +16,9 @@
     --foreground-muted: #5A6560;
     --foreground-subtle: #7A8580;
     
+    /* Safe area and sticky header offsets */
+    --vanvas-top-offset: calc(4rem + env(safe-area-inset-top, 0px));
+
     /* Brand Accents */
     --primary: #173B32;
     --primary-hover: #20453B;
@@ -66,6 +69,7 @@
     --control-height: 2.125rem;
     --image-height: 140px;
     --grid-gap: 0.875rem;
+    --vanvas-top-offset: calc(3.5rem + env(safe-area-inset-top, 0px));
   }
 
   html.dark,

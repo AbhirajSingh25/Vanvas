@@ -7,9 +7,15 @@ import {
 } from "lucide-react";
 import { StructuredWeather, WeatherSnapshot } from "@/types";
 import { VanvasWeatherVisual } from "./VanvasWeatherVisual";
+import { useOnlineStatus } from "../pwa/useOnlineStatus";
 
-function formatFreshness(updatedAt?: string): string {
-  const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+function formatFreshness(updatedAt?: string, onlineOverride?: boolean): string {
+  const isOnline =
+    onlineOverride !== undefined
+      ? onlineOverride
+      : typeof navigator !== "undefined"
+      ? navigator.onLine
+      : true;
   if (!isOnline) {
     if (updatedAt) {
       try {
@@ -57,6 +63,8 @@ export const VanvasWeatherCard: React.FC<VanvasWeatherCardProps> = ({
   isCompact = false,
   className = "",
 }) => {
+  const { isOnline } = useOnlineStatus();
+
   // Extract primary current values from structuredWeather or fallback to first snapshot
   const daily = (structuredWeather?.daily && structuredWeather.daily.length > 0)
     ? structuredWeather.daily
@@ -74,7 +82,7 @@ export const VanvasWeatherCard: React.FC<VanvasWeatherCardProps> = ({
   const humidity = structuredWeather?.humidity ?? firstDay?.humidity ?? 55;
   const precipitation = structuredWeather?.precipitation ?? (firstDay?.is_rain ? 2.5 : 0.0);
   const advisory = structuredWeather?.advisory || firstDay?.advisory || `Live meteorological intelligence for ${destinationName}. High altitude mountain conditions can change rapidly.`;
-  const freshnessText = formatFreshness(structuredWeather?.updatedAt || firstDay?.date);
+  const freshnessText = formatFreshness(structuredWeather?.updatedAt || firstDay?.date, isOnline);
   const sourceLabel = structuredWeather?.trust_source === "WTTR" ? "Global Meteorological Radar" : "Open-Meteo Satellite Feed";
 
   // Honest unavailable fallback

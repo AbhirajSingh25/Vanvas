@@ -960,7 +960,10 @@ export default function DestinationDetailPage() {
           </section>
 
           {/* 2. DESTINATION OPERATIONAL MODES TAB BAR */}
-          <div className="sticky top-20 z-30 bg-[#FAF7F0]/95 backdrop-blur-md border-y border-[#E5D5BA] py-3 shadow-xs">
+          <div
+            style={{ top: "var(--vanvas-top-offset, 4rem)" }}
+            className="sticky z-30 bg-[#FAF7F0]/95 backdrop-blur-md border-y border-[#E5D5BA] py-3 shadow-xs"
+          >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
               {(() => {
                 const isMountainValley = (destination?.region || "").toLowerCase().includes("himalay") || (destination?.region || "").toLowerCase().includes("valley") || (destination?.altitude_meters || 0) > 1200;

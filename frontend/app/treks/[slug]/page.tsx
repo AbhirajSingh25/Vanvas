@@ -277,7 +277,10 @@ function TrekDetailContent({ params }: PageProps) {
       )}
 
       {/* 1. EXPEDITION TOP HEADER & BREADCRUMB */}
-      <div className="sticky top-20 z-30 bg-[#0E1612]/95 backdrop-blur-md border-b border-[#24352D] py-3">
+      <div
+        style={{ top: "var(--vanvas-top-offset, 4rem)" }}
+        className="sticky z-30 bg-[#0E1612]/95 backdrop-blur-md border-b border-[#24352D] py-3"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs font-mono">
             <Link href="/treks" className="text-[#8FA699] hover:text-[#E05A2B] flex items-center gap-1">

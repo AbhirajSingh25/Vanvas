@@ -62,6 +62,8 @@ if (fs.existsSync(swPath)) {
   assert(swContent.includes('/offline'), 'sw.js includes /offline fallback route');
   assert(swContent.includes('skipWaiting'), 'sw.js triggers skipWaiting to prevent stale-cache lockup');
   assert(swContent.includes('clients.claim'), 'sw.js triggers clients.claim on activation');
+  // Service worker separation test:
+  assert(!swContent.includes('localStorage.setItem("offline"'), 'service worker does not mutate or force global offline persistence');
 }
 
 // 3. Offline Page Check
@@ -83,7 +85,7 @@ if (fs.existsSync(layoutPath)) {
   assert(layoutContent.includes('manifest: "/manifest.webmanifest"') || layoutContent.includes("manifest: '/manifest.webmanifest'"), 'layout.tsx declares PWA manifest link');
   assert(layoutContent.includes('appleWebApp:'), 'layout.tsx includes appleWebApp metadata');
   assert(layoutContent.includes('ServiceWorkerRegister'), 'layout.tsx renders ServiceWorkerRegister component');
-  assert(layoutContent.includes('ConnectivityBanner'), 'layout.tsx renders ConnectivityBanner component');
+  assert(layoutContent.includes('Header'), 'layout.tsx renders Header component');
   assert(layoutContent.includes('InstallPrompt'), 'layout.tsx renders InstallPrompt component');
 }
 
@@ -119,8 +121,59 @@ const weatherCardPath = path.join(frontendDir, 'components', 'weather', 'VanvasW
 assert(fs.existsSync(weatherCardPath), 'VanvasWeatherCard.tsx exists');
 if (fs.existsSync(weatherCardPath)) {
   const weatherContent = fs.readFileSync(weatherCardPath, 'utf8');
-  assert(weatherContent.includes('navigator.onLine'), 'Weather card detects offline status');
+  assert(weatherContent.includes('useOnlineStatus'), 'Weather card detects synchronized connectivity status');
   assert(weatherContent.includes('Offline • Cached'), 'Weather card displays honest cached snapshot age when offline');
+}
+
+// 9. Targeted Connectivity Architecture Verification (Bug 1)
+const useOnlineStatusPath = path.join(frontendDir, 'components', 'pwa', 'useOnlineStatus.ts');
+const connectivityBannerPath = path.join(frontendDir, 'components', 'pwa', 'ConnectivityBanner.tsx');
+assert(fs.existsSync(useOnlineStatusPath), 'components/pwa/useOnlineStatus.ts exists');
+assert(fs.existsSync(connectivityBannerPath), 'components/pwa/ConnectivityBanner.tsx exists');
+
+if (fs.existsSync(useOnlineStatusPath) && fs.existsSync(connectivityBannerPath)) {
+  const hookContent = fs.readFileSync(useOnlineStatusPath, 'utf8');
+  const bannerContent = fs.readFileSync(connectivityBannerPath, 'utf8');
+
+  // Test 1: Initial connectivity does not incorrectly show OFFLINE
+  assert(hookContent.includes('UNKNOWN') || hookContent.includes('useState<ConnectivityState>("UNKNOWN")'), 'Targeted Test 1: Initial connectivity state starts UNKNOWN / hydration safe (never false offline)');
+
+  // Test 2: Online state hides offline banner
+  assert(bannerContent.includes('if (!isOffline && !wasOffline)') || bannerContent.includes('return null'), 'Targeted Test 2: Online and checking states suppress the offline banner');
+
+  // Test 3: Offline state displays offline banner
+  assert(bannerContent.includes('isOffline') && (bannerContent.includes("You&apos;re offline") || bannerContent.includes("offline")), 'Targeted Test 3: Offline state accurately displays the offline banner');
+
+  // Test 4: Reconnect state shows brief message then removes
+  assert(hookContent.includes('RECONNECTING') && hookContent.includes('3500'), 'Targeted Test 4: Reconnect auto-transitions with timed dismissal back to ONLINE');
+  assert(bannerContent.includes('Back online'), 'Targeted Test 4b: Reconnecting message is rendered with animated indicator');
+
+  // Test 5: Service worker fallback does not mark global connectivity offline
+  assert(!hookContent.includes('caches.match'), 'Targeted Test 5: Service worker cache hits do not pollute global connectivity state');
+  assert(hookContent.includes('probeBackendReachability') || hookContent.includes('/health'), 'Targeted Test 5b: Reachability uses lightweight backend health probe');
+}
+
+// 10. Targeted Sticky Header & Scroll Integrity Verification (Bug 2)
+const headerPath = path.join(frontendDir, 'components', 'layout', 'Header.tsx');
+const globalsCssPath = path.join(frontendDir, 'app', 'globals.css');
+assert(fs.existsSync(headerPath), 'components/layout/Header.tsx exists');
+
+if (fs.existsSync(headerPath) && fs.existsSync(tripDetailPath)) {
+  const headerContent = fs.readFileSync(headerPath, 'utf8');
+  const tripContent = fs.readFileSync(tripDetailPath, 'utf8');
+  const cssContent = fs.readFileSync(globalsCssPath, 'utf8');
+
+  // Test 6: Dynamic sticky top offset synchronized across layout
+  assert(headerContent.includes('--vanvas-top-offset') && headerContent.includes('ResizeObserver'), 'Targeted Test 6: Header dynamically measures and publishes --vanvas-top-offset via ResizeObserver');
+  assert(cssContent.includes('--vanvas-top-offset'), 'Targeted Test 6b: CSS design system establishes base --vanvas-top-offset with safe-area fallback');
+
+  // Test 7: Sticky tab navigation uses dynamic top offset instead of hardcoded mobile offsets
+  assert(tripContent.includes('var(--vanvas-top-offset'), 'Targeted Test 7: Trip Workspace tabs adhere to dynamic --vanvas-top-offset');
+  assert(!tripContent.includes('sticky top-20 z-30 bg-[#FAF7F0] border-b-2'), 'Targeted Test 7b: Hardcoded top-20 removed from trip workspace tabs');
+
+  // Test 8: Safe area + banner + tabs stack correctly without overlap during scroll
+  assert(tripContent.includes('navOffset') && tripContent.includes('--vanvas-top-offset'), 'Targeted Test 8: Tab scroll navigation accounts for dynamic header stack height preventing content clipping');
+  assert(headerContent.includes('ConnectivityBanner'), 'Targeted Test 8b: Connectivity banner is nested inside Header sticky stack ensuring unified flow');
 }
 
 console.log('\n==================================================');

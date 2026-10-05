@@ -134,7 +134,10 @@ export default function DestinationStaysPage() {
   return (
     <div className="min-h-screen bg-[#F4EDE0] text-[#173B32]">
       {/* Top Header & Breadcrumbs */}
-      <div className="bg-[#FAF7F0] border-b border-[#E5D5BA] sticky top-0 z-30 shadow-2xs backdrop-blur-md bg-opacity-95">
+      <div
+        style={{ top: "var(--vanvas-top-offset, 4rem)" }}
+        className="bg-[#FAF7F0] border-b border-[#E5D5BA] sticky z-30 shadow-2xs backdrop-blur-md bg-opacity-95"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link

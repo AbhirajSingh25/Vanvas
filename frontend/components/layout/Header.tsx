@@ -13,6 +13,7 @@ import {
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { Avatar } from "@/components/ui/Avatar";
 import { useDensity } from "@/context/DensityContext";
+import { ConnectivityBanner } from "@/components/pwa/ConnectivityBanner";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -23,6 +24,26 @@ export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Measure and synchronize dynamic top sticky header offset for child pages (e.g. sticky tabs)
+  useEffect(() => {
+    if (typeof window === "undefined" || !headerRef.current) return;
+    const updateOffset = () => {
+      if (headerRef.current) {
+        const rect = headerRef.current.getBoundingClientRect();
+        document.documentElement.style.setProperty("--vanvas-top-offset", `${rect.height}px`);
+      }
+    };
+    updateOffset();
+    const resizeObserver = new ResizeObserver(updateOffset);
+    resizeObserver.observe(headerRef.current);
+    window.addEventListener("resize", updateOffset);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateOffset);
+    };
+  }, []);
 
   // Close profile dropdown on click outside
   useEffect(() => {
@@ -62,7 +83,11 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-[#D8CBB2] bg-[#EFE5D2]/92 backdrop-blur-md transition-all pt-[env(safe-area-inset-top,0px)]">
+      <header
+        ref={headerRef}
+        className="sticky top-0 z-40 w-full border-b border-[#D8CBB2] bg-[#EFE5D2]/92 backdrop-blur-md transition-all pt-[env(safe-area-inset-top,0px)]"
+      >
+        <ConnectivityBanner />
         <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between transition-all ${
           isCompact ? "h-14 sm:h-16" : "h-16 sm:h-20"
         }`}>

@@ -64,7 +64,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     if (typeof window !== "undefined") {
       const tabsElement = document.getElementById("trip-tabs-navigation");
       if (tabsElement) {
-        const navOffset = tabsElement.getBoundingClientRect().top + window.scrollY - 80;
+        const topOffset =
+          parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--vanvas-top-offset")) || 72;
+        const navOffset = tabsElement.getBoundingClientRect().top + window.scrollY - topOffset;
         if (window.scrollY > navOffset) {
           window.scrollTo({ top: navOffset, behavior: "smooth" });
         }
@@ -693,7 +695,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       )}
 
       {/* Main Navigation Tabs */}
-      <div id="trip-tabs-navigation" className="sticky top-20 z-30 bg-[#FAF7F0] border-b-2 border-[#E5D5BA] shadow-xs">
+      <div
+        id="trip-tabs-navigation"
+        style={{ top: "var(--vanvas-top-offset, 4rem)" }}
+        className="sticky z-30 bg-[#FAF7F0] border-b-2 border-[#E5D5BA] shadow-xs"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1.5 overflow-x-auto py-2 scrollbar-none">
           {[
             { id: "overview", label: "Overview", icon: Compass },
