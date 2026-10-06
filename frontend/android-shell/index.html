@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>VANVAS</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#173B32">
+  <meta name="theme-color" content="#102C26">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #173B32;
+      background-color: #102C26;
       color: #FAF4E8;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Georgia, serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -22,63 +22,117 @@
       text-align: center;
       padding: 24px;
     }
-    .logo {
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: 4px;
+    .star {
+      color: #B49252;
+      font-size: 20px;
       margin-bottom: 12px;
+    }
+    .emblem {
+      width: 72px;
+      height: 72px;
+      margin-bottom: 16px;
+    }
+    .logo {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      margin-bottom: 6px;
       color: #FAF4E8;
     }
-    .tagline {
-      font-size: 14px;
-      color: #D4A373;
-      letter-spacing: 1.5px;
+    .signature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-style: italic;
+      color: #B49252;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(250, 244, 232, 0.2);
-      border-top-color: #FAF4E8;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+    .signature-line {
+      width: 20px;
+      height: 1px;
+      background-color: #B49252;
+      opacity: 0.6;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .route-bar {
+      position: relative;
+      width: 130px;
+      height: 2px;
+      background-color: rgba(250, 244, 232, 0.15);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .route-progress {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 45%;
+      background: linear-gradient(90deg, transparent, #B49252, #FAF4E8);
+      border-radius: 9999px;
+      animation: sweep 1.2s ease-in-out infinite;
+    }
+    @keyframes sweep {
+      0% { left: -45%; }
+      50% { left: 50%; }
+      100% { left: 100%; }
+    }
+    .status-text {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: rgba(250, 244, 232, 0.7);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .offline-message {
       display: none;
       margin-top: 24px;
-      font-size: 14px;
-      color: rgba(250, 244, 232, 0.8);
+      font-size: 13px;
+      color: rgba(250, 244, 232, 0.85);
       max-width: 280px;
       line-height: 1.5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .retry-btn {
       display: none;
       margin-top: 20px;
-      background-color: #D4A373;
-      color: #173B32;
+      background-color: #B49252;
+      color: #102C26;
       border: none;
       padding: 10px 24px;
       border-radius: 9999px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
   </style>
 </head>
 <body>
+  <div class="star">✦</div>
+  <svg class="emblem" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="27,3 49,15 49,39 27,51 5,39 5,15" fill="#FAF4E8" stroke="#B49252" stroke-width="2" stroke-linejoin="round"/>
+    <line x1="14" y1="15" x2="40" y2="15" stroke="#B65E3C" stroke-width="2.6" stroke-linecap="round" />
+    <path d="M17 17L27 37L37 17" stroke="#173B32" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M27 22V43" stroke="#B49252" stroke-width="2" stroke-dasharray="2 3" stroke-linecap="round"/>
+    <circle cx="27" cy="10" r="2.4" fill="#B65E3C" />
+  </svg>
   <div class="logo">VANVAS</div>
-  <div class="tagline">The Spirit of Indian Travel</div>
-  <div class="spinner" id="spinner"></div>
+  <div class="signature">
+    <div class="signature-line"></div>
+    <div>by The Sorted Club</div>
+    <div class="signature-line"></div>
+  </div>
+  <div class="route-bar">
+    <div class="route-progress"></div>
+  </div>
+  <div class="status-text">Preparing your expedition...</div>
   <div class="offline-message" id="offline-msg">Connecting to VANVAS... If you are offline, cached trips will be accessible once loaded.</div>
   <button class="retry-btn" id="retry-btn" onclick="window.location.reload()">Retry</button>
 
   <script>
-    // In Capacitor, the remote server url (https://vanvasai.vercel.app) is automatically loaded by the WebView.
-    // If the remote server fails to load or device is offline without cache, this fallback shell displays.
     window.addEventListener('online', () => {
       window.location.href = 'https://vanvasai.vercel.app';
     });
