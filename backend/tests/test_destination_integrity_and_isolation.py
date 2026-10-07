@@ -192,3 +192,76 @@ def test_dynamic_destinations_isolation(city, expected_state, auth_headers):
     after_slugs = {d["slug"] for d in curated_after}
     assert after_slugs == before_slugs
     assert data["slug"] not in after_slugs
+
+
+# 7. Test Place Scoping, Idempotency & Multi-Destination Non-Collision
+def test_dynamic_places_identity_idempotency_and_no_collision(auth_headers, db_session):
+    from app.models.models import Place
+
+    # A. Gokarna First Creation
+    start_str = date.today().isoformat()
+    end_str = (date.today() + timedelta(days=2)).isoformat()
+    gokarna_payload = {
+        "destination_id": "dyn-gokarna",
+        "start_date": start_str,
+        "end_date": end_str,
+        "origin_city": "Bangalore",
+        "transport_mode": "bus",
+        "budget": 10000,
+        "travellers_count": 1,
+        "companion_type": "Solo",
+        "travel_style": "Balanced",
+        "wake_up_preference": "Normal",
+        "activity_intensity": "Balanced",
+        "interests": ["Nature", "Cafés"]
+    }
+    resp_g1 = client.post("/api/v1/trips", json=gokarna_payload, headers=auth_headers)
+    assert resp_g1.status_code == 200
+    t1_data = resp_g1.json()
+    dest_id = t1_data["destination_id"]
+    db_session.expire_all()
+    dest_obj = db_session.query(Destination).filter(Destination.id == dest_id).first()
+    assert dest_obj is not None
+
+    g1_places = db_session.query(Place).filter(Place.destination_id == dest_id).all()
+    assert len(g1_places) > 0
+    g1_place_ids = [p.id for p in g1_places]
+    for pid in g1_place_ids:
+        assert pid.startswith(f"{dest_id}:")
+
+    # B. Gokarna Second Creation (Idempotent: no duplicate place rows created)
+    resp_g2 = client.post("/api/v1/trips", json=gokarna_payload, headers=auth_headers)
+    assert resp_g2.status_code == 200
+    db_session.expire_all()
+    g2_places = db_session.query(Place).filter(Place.destination_id == dest_id).all()
+    assert len(g2_places) == len(g1_places)
+    assert {p.id for p in g2_places} == set(g1_place_ids)
+
+    # C. Kolkata Creation (No collision with Gokarna places)
+    kolkata_payload = {
+        "destination_id": "dyn-kolkata",
+        "start_date": start_str,
+        "end_date": end_str,
+        "origin_city": "Delhi",
+        "transport_mode": "flight",
+        "budget": 18000,
+        "travellers_count": 1,
+        "companion_type": "Solo",
+        "travel_style": "Balanced",
+        "wake_up_preference": "Normal",
+        "activity_intensity": "Balanced",
+        "interests": ["Culture", "Food"]
+    }
+    resp_k1 = client.post("/api/v1/trips", json=kolkata_payload, headers=auth_headers)
+    assert resp_k1.status_code == 200
+    k_dest_id = resp_k1.json()["destination_id"]
+    db_session.expire_all()
+    k1_places = db_session.query(Place).filter(Place.destination_id == k_dest_id).all()
+    assert len(k1_places) > 0
+    k1_place_ids = [p.id for p in k1_places]
+    for pid in k1_place_ids:
+        assert pid.startswith(f"{k_dest_id}:")
+
+    # Assert completely disjoint ID sets
+    assert set(g1_place_ids).isdisjoint(set(k1_place_ids))
+

@@ -545,8 +545,10 @@ async def get_destination_detail(
         places_provider = ProviderFactory.get_places_provider()
         live_places_raw = await places_provider.get_nearby_places(dyn_dest["latitude"], dyn_dest["longitude"], radius_km=15.0)
         for lp in live_places_raw:
+            raw_id = str(lp.get("id") or lp.get("source_id") or f"live-{lp.get('name')}").strip()
+            scoped_id = f"{dyn_dest['id']}:{raw_id}" if not raw_id.startswith(f"{dyn_dest['id']}:") else raw_id
             live_places.append({
-                "id": lp.get("id", f"live-{lp.get('source_id', lp.get('name'))}"),
+                "id": scoped_id[:100],
                 "destination_id": dyn_dest["id"],
                 "category": lp.get("category", "Attractions"),
                 "name": lp.get("name"),
@@ -756,8 +758,10 @@ async def get_destination_places(
                     source=lp.get("source", "openstreetmap"),
                     source_id=lp.get("source_id", ""),
                 )
+                raw_id = str(lp.get("id") or lp.get("source_id") or f"live-{lp.get('name')}").strip()
+                scoped_id = f"{dyn_dest['id']}:{raw_id}" if not raw_id.startswith(f"{dyn_dest['id']}:") else raw_id
                 dyn_results.append(PlaceResponse(
-                    id=lp.get("id", f"live-{lp.get('source_id', lp.get('name'))}"),
+                    id=scoped_id[:100],
                     destination_id=dyn_dest["id"],
                     category=lp.get("category", "Attractions"),
                     name=lp.get("name", "Local Landmark"),

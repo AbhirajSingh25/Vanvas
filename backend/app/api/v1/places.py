@@ -337,12 +337,13 @@ def toggle_save_place(
         dest_id = fallback_dest.id if fallback_dest else "live"
         dest_lat = fallback_dest.latitude if fallback_dest else 0.0
         dest_lng = fallback_dest.longitude if fallback_dest else 0.0
-        clean_name = place_id.replace("osm-", "").replace("gp-", "").replace("live-", "").replace("-", " ").title()
+        clean_target = place_id.split(":", 1)[1] if ":" in place_id else place_id
+        clean_name = clean_target.replace("osm-", "").replace("gp-", "").replace("live-", "").replace("-", " ").title()
         place = Place(
             id=place_id,
             destination_id=dest_id,
             name=clean_name,
-            slug=place_id.lower(),
+            slug=place_id.lower()[:255],
             category="Attractions",
             description="Saved live point of interest.",
             latitude=dest_lat,
@@ -380,15 +381,16 @@ def get_place_detail(
     place = db.query(Place).filter(Place.id == place_id).first()
     if not place:
         # Handle live place IDs transparently
-        if place_id.startswith("osm-") or place_id.startswith("gp-") or place_id.startswith("live-"):
-            clean_name = place_id.replace("osm-", "").replace("gp-", "").replace("live-", "").replace("-", " ").title()
-            source = "google_places" if place_id.startswith("gp-") else "openstreetmap"
+        if place_id.startswith("osm-") or place_id.startswith("gp-") or place_id.startswith("live-") or ":" in place_id:
+            clean_target = place_id.split(":", 1)[1] if ":" in place_id else place_id
+            clean_name = clean_target.replace("osm-", "").replace("gp-", "").replace("live-", "").replace("-", " ").title()
+            source = "google_places" if "gp-" in place_id else "openstreetmap"
             return PlaceResponse(
                 id=place_id,
-                destination_id="live",
+                destination_id=place_id.split(":", 1)[0] if ":" in place_id else "live",
                 category="Attractions",
                 name=clean_name,
-                slug=place_id.lower(),
+                slug=place_id.lower()[:255],
                 description=f"Verified {source} live discovery landmark.",
                 address="Live Verified Location",
                 latitude=0.0,

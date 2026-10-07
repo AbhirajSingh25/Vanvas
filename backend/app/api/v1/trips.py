@@ -123,39 +123,59 @@ async def create_trip(
                 db.add(destination)
                 db.flush()
 
-            # Fetch live places for dynamic destination
+        # If dynamic destination has no persisted places yet, fetch & persist live places idempotently
+        existing_places_count = db.query(Place).filter(Place.destination_id == destination.id).count()
+        if existing_places_count == 0 and (destination.id.startswith("dyn-") or getattr(destination, "is_dynamic", False)):
             try:
                 places_provider = ProviderFactory.get_places_provider()
                 live_places_raw = await places_provider.get_nearby_places(destination.latitude, destination.longitude, radius_km=15.0)
-                for lp in live_places_raw:
-                    p_name = lp.get("name")
-                    if not p_name:
-                        continue
-                    p_exist = db.query(Place).filter(Place.destination_id == destination.id, Place.name == p_name).first()
-                    if not p_exist:
-                        new_p = Place(
-                            id=lp.get("id", f"place-{generate_uuid()[:8]}"),
-                            destination_id=destination.id,
-                            category=lp.get("category", "Attractions"),
-                            name=p_name,
-                            slug=p_name.lower().replace(" ", "-"),
-                            description=lp.get("address") or f"Point of interest in {destination.name}",
-                            address=lp.get("address"),
-                            latitude=lp.get("latitude") or destination.latitude,
-                            longitude=lp.get("longitude") or destination.longitude,
-                            price_level=lp.get("price_level", "₹₹"),
-                            approx_cost=lp.get("approx_cost", 0.0),
-                            rating=lp.get("rating"),
-                            review_count=lp.get("review_count"),
-                            opening_time=lp.get("opening_time") or "09:00",
-                            closing_time=lp.get("closing_time") or "20:00",
-                            booking_url=lp.get("website"),
-                            is_active=True
-                        )
-                        db.add(new_p)
-                db.flush()
-            except Exception:
-                pass
+                with db.begin_nested():
+                    for lp in live_places_raw:
+                        p_name = lp.get("name")
+                        if not p_name:
+                            continue
+
+                        raw_id = str(lp.get("id") or lp.get("source_id") or f"live-{abs(hash(p_name)) % 10000000}").strip()
+                        # Ensure deterministic, destination-scoped place id (e.g. "dyn-gokarna:osm-node-1700348")
+                        if raw_id.startswith(f"{destination.id}:"):
+                            scoped_id = raw_id
+                        elif raw_id.startswith(f"{destination.slug}:"):
+                            scoped_id = f"{destination.id}:{raw_id.split(':', 1)[1]}"
+                        else:
+                            scoped_id = f"{destination.id}:{raw_id}"
+                        scoped_id = scoped_id[:100]
+
+                        # Idempotent lookup: reuse existing place if already stored for this destination
+                        p_exist = db.query(Place).filter(
+                            (Place.id == scoped_id) |
+                            ((Place.destination_id == destination.id) & (Place.name == p_name))
+                        ).first()
+
+                        if not p_exist:
+                            new_p = Place(
+                                id=scoped_id,
+                                destination_id=destination.id,
+                                category=lp.get("category", "Attractions"),
+                                name=p_name,
+                                slug=p_name.lower().replace(" ", "-")[:255],
+                                description=lp.get("address") or f"Point of interest in {destination.name}",
+                                address=lp.get("address"),
+                                latitude=lp.get("latitude") or destination.latitude,
+                                longitude=lp.get("longitude") or destination.longitude,
+                                price_level=lp.get("price_level", "₹₹"),
+                                approx_cost=lp.get("approx_cost", 0.0),
+                                rating=lp.get("rating"),
+                                review_count=lp.get("review_count"),
+                                opening_time=lp.get("opening_time") or "09:00",
+                                closing_time=lp.get("closing_time") or "20:00",
+                                booking_url=lp.get("website"),
+                                is_active=True
+                            )
+                            db.add(new_p)
+                    db.flush()
+            except Exception as e:
+                import logging
+                logging.getLogger("vanvas.trips").warning(f"Could not persist live places for {destination.id}: {e}")
 
         num_days = max(1, (trip_in.end_date - trip_in.start_date).days + 1)
 
