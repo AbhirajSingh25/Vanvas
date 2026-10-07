@@ -23,7 +23,7 @@ export function CapacitorInit() {
           style: isDark ? Style.Dark : Style.Light,
         });
         await StatusBar.setBackgroundColor({
-          color: "#173B32",
+          color: "#102C26",
         });
         await StatusBar.setOverlaysWebView({
           overlay: false,
