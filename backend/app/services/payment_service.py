@@ -244,7 +244,7 @@ class PaymentService:
             razorpay_secret = getattr(settings, "RAZORPAY_KEY_SECRET", None) or getattr(settings, "RAZORPAY_WEBHOOK_SECRET", None)
             if not razorpay_secret:
                 # In strict production, fail if unconfigured
-                if settings.is_production:
+                if settings.is_production or getattr(settings, "PROVIDER_ENV", "sandbox").lower() == "production":
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail="Razorpay gateway secret not configured on server.",
@@ -408,6 +408,7 @@ class PaymentService:
         """
         Reconciles booking state with authoritative external payment gateway and booking provider.
         Determines: CAPTURED, AUTHORIZED, FAILED, PENDING, UNKNOWN and updates database accordingly.
+        Zero shortcuts: Always queries external gateway layer for transaction truth.
         """
         booking = BookingService.get_booking_by_id(db=db, booking_id=booking_id, user=user)
 
@@ -427,18 +428,54 @@ class PaymentService:
                     payment_id=tx.gateway_payment_id,
                 )
                 gateway_status = res.get("status", "UNKNOWN")
+            elif gateway_name == "razorpay":
+                razorpay_key = getattr(settings, "RAZORPAY_KEY_ID", "")
+                razorpay_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "") or getattr(settings, "RAZORPAY_WEBHOOK_SECRET", "")
+                if settings.is_production or getattr(settings, "PROVIDER_ENV", "sandbox").lower() == "production":
+                    if not razorpay_key or not razorpay_secret:
+                        raise HTTPException(
+                            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Razorpay credentials not configured for production reconciliation.",
+                        )
+                    try:
+                        import urllib.request
+                        import base64
+                        auth_str = f"{razorpay_key}:{razorpay_secret}"
+                        b64_auth = base64.b64encode(auth_str.encode()).decode()
+                        req_url = f"https://api.razorpay.com/v1/orders/{tx.gateway_order_id}"
+                        r_req = urllib.request.Request(req_url, headers={"Authorization": f"Basic {b64_auth}"})
+                        with urllib.request.urlopen(r_req, timeout=5) as resp:
+                            if resp.status == 200:
+                                r_data = json.loads(resp.read().decode())
+                                r_status = r_data.get("status", "").lower()
+                                if r_status == "paid":
+                                    gateway_status = "CAPTURED"
+                                elif r_status in ("created", "attempted"):
+                                    gateway_status = "PENDING"
+                                else:
+                                    gateway_status = "FAILED"
+                    except Exception as e:
+                        logger.warning(f"Razorpay live query failed for order {tx.gateway_order_id}: {e}")
+                        gateway_status = "UNKNOWN"
+                else:
+                    # In sandbox/test environment: query SandboxPaymentGateway
+                    res = SandboxPaymentGateway.query_status(
+                        order_id=tx.gateway_order_id,
+                        payment_id=tx.gateway_payment_id,
+                    )
+                    gateway_status = res.get("status", "UNKNOWN")
             else:
-                gateway_status = "CAPTURED" if tx.status == "SUCCESS" else tx.status
+                gateway_status = "UNKNOWN"
 
-        # 2. Evaluate gateway status
-        if gateway_status == "CAPTURED" or (tx and tx.status == "SUCCESS"):
+        # 2. Evaluate gateway status (NO local shortcuts)
+        if gateway_status == "CAPTURED":
             if tx and tx.status != "SUCCESS":
                 tx.status = "SUCCESS"
                 tx.updated_at = datetime.now(timezone.utc)
             booking.payment_status = "PAYMENT_SUCCESS"
 
             # Transition to CONFIRMING if not yet advanced
-            if booking.status in ("PAYMENT_REQUIRED", "PAYMENT_PROCESSING"):
+            if booking.status in ("PAYMENT_REQUIRED", "PAYMENT_PROCESSING", "AVAILABLE", "SELECTED", "CHECKOUT_READY", "DRAFT"):
                 BookingService.transition_booking_status(
                     db=db,
                     booking_id=booking.id,
@@ -467,7 +504,7 @@ class PaymentService:
                             reason="Reconciliation confirmed authoritative provider reservation.",
                             metadata={"provider_confirmation_reference": prov_ref}
                         )
-                elif provider_status in ("NOT_FOUND", "UNKNOWN", "FAILED"):
+                elif provider_status in ("NOT_FOUND", "FAILED"):
                     if booking.status not in ("CONFIRMATION_FAILED", "CANCELLED", "REFUNDED"):
                         BookingService.transition_booking_status(
                             db=db,
@@ -476,6 +513,8 @@ class PaymentService:
                             user=user,
                             reason="Reconciliation detected missing or failed provider reservation.",
                         )
+                elif provider_status == "UNKNOWN":
+                    logger.info(f"Reconciliation: Payment CAPTURED + Provider UNKNOWN for booking {booking.id}. Remaining in {booking.status}.")
             else:
                 # No provider reference yet — attempt idempotent recovery if still in flight
                 if booking.status in ("CONFIRMING", "PAYMENT_PROCESSING", "PAYMENT_REQUIRED"):

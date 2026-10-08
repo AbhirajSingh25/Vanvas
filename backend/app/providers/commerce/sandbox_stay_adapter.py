@@ -247,7 +247,7 @@ class SandboxStayAdapter(BookingProvider):
     def retrieve_booking(self, provider_booking_id: str) -> Dict[str, Any]:
         """
         Authoritative retrieval of reservation.
-        Strictly fails closed: Unknown IDs return NOT_FOUND, NEVER optimistic CONFIRMED.
+        Strictly fails closed: Unknown IDs return NOT_FOUND or UNKNOWN, NEVER optimistic CONFIRMED.
         """
         if not provider_booking_id:
             return {
@@ -259,6 +259,23 @@ class SandboxStayAdapter(BookingProvider):
 
         if provider_booking_id in _SANDBOX_RESERVATIONS:
             return _SANDBOX_RESERVATIONS[provider_booking_id]
+
+        p_lower = provider_booking_id.lower()
+        if "unknown" in p_lower:
+            return {
+                "provider": self.provider_name,
+                "provider_booking_id": provider_booking_id,
+                "status": "UNKNOWN",
+                "message": f"Reservation {provider_booking_id} status is UNKNOWN in sandbox provider.",
+            }
+
+        if "fail" in p_lower or "reject" in p_lower:
+            return {
+                "provider": self.provider_name,
+                "provider_booking_id": provider_booking_id,
+                "status": "FAILED",
+                "message": f"Reservation {provider_booking_id} failed in sandbox provider.",
+            }
 
         logger.warning(f"Sandbox reservation not found for reference: {provider_booking_id}")
         return {
