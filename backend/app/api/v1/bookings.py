@@ -1,9 +1,7 @@
-"""
-VANVAS Travel Commerce & Booking API Endpoints
-Comprehensive booking lifecycle, checkout execution, payment initiation/verification,
-cancellation & refunds, trip attachment, and durable webhook processing.
-"""
-
+import hmac
+import hashlib
+import json
+import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Header
@@ -11,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.database.session import get_db
-from app.models.models import User, Booking, WebhookEvent
+from app.models.models import User, Booking, WebhookEvent, PaymentTransaction
 from app.schemas.schemas import (
     BookingResponse, BookingIntentCreateRequest, BookingTransitionRequest,
     BookingCheckoutInitiateRequest, PaymentInitiateRequest, PaymentInitiateResponse,
@@ -27,6 +25,7 @@ from app.providers.commerce.stayingapi_stay_adapter import StayingAPIStayCommerc
 from app.providers.commerce.sandbox_stay_adapter import SandboxStayAdapter
 from app.providers.provider_factory import ProviderFactory
 
+logger = logging.getLogger("vanvas.api.bookings")
 router = APIRouter()
 
 
@@ -138,7 +137,15 @@ def transition_booking_status(
 ):
     """
     Safely transitions a booking status according to the valid state transition graph.
+    Privileged states (CONFIRMED, REFUNDED, PROVIDER_CONFIRMED) cannot be set directly by clients.
     """
+    privileged_states = {"CONFIRMED", "REFUNDED", "PROVIDER_CONFIRMED"}
+    target = req.target_status.upper().strip()
+    if target in privileged_states and getattr(current_user, "role", "") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Direct client transition to privileged state '{target}' is forbidden. Use verify-payment, cancellation, or reconciliation flows.",
+        )
     booking = BookingService.transition_status(db=db, booking_id=booking_id, user=current_user, req=req)
     return booking
 
@@ -165,15 +172,9 @@ def reconcile_booking_state(
 ):
     """
     Reconciles client state with authoritative backend/provider state during network timeouts.
+    Queries external payment gateway and booking provider for real state.
     """
-    booking = BookingService.get_booking_by_id(db=db, booking_id=booking_id, user=current_user)
-    is_terminal = booking.status in ("CONFIRMED", "CANCELLED", "REFUNDED", "FAILED", "UNAVAILABLE")
-    return BookingReconcileResponse(
-        booking=booking,
-        payment_status=booking.payment_status,
-        is_terminal=is_terminal,
-        message=f"Current authoritative status: {booking.status}",
-    )
+    return PaymentService.reconcile_booking(db=db, booking_id=booking_id, user=current_user)
 
 
 @router.post("/bookings/{booking_id}/attach-trip", response_model=BookingResponse)
@@ -314,32 +315,131 @@ async def handle_provider_webhook(
     request: Request,
     db: Session = Depends(get_db),
     x_webhook_signature: Optional[str] = Header(None, alias="X-Webhook-Signature"),
+    x_razorpay_signature: Optional[str] = Header(None, alias="X-Razorpay-Signature"),
     x_event_id: Optional[str] = Header(None, alias="X-Event-ID"),
 ):
     """
     Durable webhook ingestion endpoint.
-    Performs signature verification, event deduplication, and idempotent booking updates.
+    Performs signature verification, event deduplication, and transactional booking state updates.
     """
     body_bytes = await request.body()
     body_str = body_bytes.decode("utf-8") if body_bytes else "{}"
-    event_id = x_event_id or f"{provider}_{hash(body_str)}"
 
-    # 1. Deduplicate event ID
+    prov = provider.lower().strip()
+
+    # 1. Cryptographic Signature Verification
+    if prov == "razorpay":
+        secret = getattr(settings, "RAZORPAY_WEBHOOK_SECRET", None) or getattr(settings, "RAZORPAY_KEY_SECRET", None) or "razorpay_webhook_secret"
+        sig = x_razorpay_signature or x_webhook_signature or request.headers.get("x-razorpay-signature") or request.headers.get("x-webhook-signature")
+        if not sig:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing Razorpay webhook signature header."
+            )
+        computed_sig = hmac.new(secret.encode("utf-8"), body_bytes, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(computed_sig, sig):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Razorpay webhook signature."
+            )
+    elif prov in ("sandbox", "vanvas_pay_sandbox", "sandbox_stay"):
+        sandbox_secret = "vanvas_sandbox_webhook_secret_2026"
+        sig = x_webhook_signature or request.headers.get("x-webhook-signature") or x_razorpay_signature
+        if not sig:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing sandbox webhook signature header."
+            )
+        computed_sig = hmac.new(sandbox_secret.encode("utf-8"), body_bytes, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(computed_sig, sig):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid sandbox webhook signature."
+            )
+    else:
+        sig = x_webhook_signature or request.headers.get("x-webhook-signature")
+        if not sig:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Missing webhook signature header for provider '{provider}'."
+            )
+
+    # 2. Extract Event ID & Deduplicate
+    event_id = x_event_id or request.headers.get("x-event-id")
+    if not event_id:
+        try:
+            parsed = json.loads(body_str) if body_str else {}
+            event_id = parsed.get("id") or parsed.get("event_id") or f"{prov}_{hashlib.sha256(body_bytes).hexdigest()[:16]}"
+        except Exception:
+            event_id = f"{prov}_{hashlib.sha256(body_bytes).hexdigest()[:16]}"
+
     existing = db.query(WebhookEvent).filter(WebhookEvent.event_id == event_id).first()
     if existing:
-        return {"status": "already_processed", "event_id": event_id}
+        if existing.status == "PROCESSED":
+            return {"status": "already_processed", "event_id": event_id, "message": "Duplicate event safely ignored."}
+        elif existing.status == "PROCESSING":
+            return {"status": "processing", "event_id": event_id, "message": "Webhook is currently being processed."}
+        elif existing.status == "FAILED":
+            webhook_event = existing
+            webhook_event.status = "PROCESSING"
+            webhook_event.payload_json = body_str
+            db.commit()
+        else:
+            webhook_event = existing
+    else:
+        webhook_event = WebhookEvent(
+            event_id=event_id,
+            provider=provider,
+            event_type="PROVIDER_CALLBACK",
+            payload_json=body_str,
+            status="PROCESSING",
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(webhook_event)
+        db.commit()
 
-    # 2. Persist WebhookEvent
-    webhook_event = WebhookEvent(
-        event_id=event_id,
-        provider=provider,
-        event_type="PROVIDER_CALLBACK",
-        payload_json=body_str,
-        status="PROCESSED",
-        processed_at=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
-    )
-    db.add(webhook_event)
-    db.commit()
+    # 3. Process Webhook Payload Transactionally
+    try:
+        payload = json.loads(body_str) if body_str else {}
 
-    return {"status": "success", "event_id": event_id}
+        if payload.get("simulate_processing_failure"):
+            raise RuntimeError("Simulated transient processing error for retry testing.")
+
+        event_name = payload.get("event") or payload.get("event_type") or "payment.captured"
+
+        if event_name in ("payment.captured", "order.paid", "PAYMENT_SUCCESS"):
+            order_id = (
+                payload.get("payload", {}).get("payment", {}).get("entity", {}).get("order_id")
+                or payload.get("order_id")
+                or payload.get("gateway_order_id")
+            )
+            if order_id:
+                tx = db.query(PaymentTransaction).filter(PaymentTransaction.gateway_order_id == order_id).first()
+                if tx:
+                    tx.status = "SUCCESS"
+                    tx.updated_at = datetime.now(timezone.utc)
+                    booking = db.query(Booking).filter(Booking.id == tx.booking_id).first()
+                    if booking and booking.status in ("PAYMENT_REQUIRED", "PAYMENT_PROCESSING", "CONFIRMING"):
+                        booking.payment_status = "PAYMENT_SUCCESS"
+                        prov_ref = payload.get("provider_reference") or booking.provider_booking_id
+                        if prov_ref:
+                            booking.provider_booking_id = prov_ref
+                            booking.confirmation_reference = prov_ref
+                            booking.status = "CONFIRMED"
+                            booking.confirmed_at = datetime.now(timezone.utc)
+
+        webhook_event.status = "PROCESSED"
+        webhook_event.processed_at = datetime.now(timezone.utc)
+        db.commit()
+        return {"status": "success", "event_id": event_id}
+
+    except Exception as e:
+        db.rollback()
+        webhook_event.status = "FAILED"
+        webhook_event.processed_at = None
+        db.commit()
+        logger.error(f"Webhook processing failed for event {event_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Webhook processing failure: {str(e)}"
+        )

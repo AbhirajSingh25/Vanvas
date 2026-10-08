@@ -177,13 +177,13 @@ export function CheckoutModal({
       setCurrentStep("confirming");
       setStepMessage("Processing transaction and securing reservation...");
 
-      // Simulate realistic verification latency for smooth UX
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const paymentId = paymentOrder.checkout_payload?.sandbox_simulated_payment_id || `pay_${paymentOrder.order_id}`;
+      const signature = paymentOrder.checkout_payload?.sandbox_simulated_signature;
 
       const verifyRes = await api.verifyPayment(booking.id, {
         gateway_order_id: paymentOrder.order_id,
-        gateway_payment_id: `pay_id_${Date.now()}`,
-        gateway_signature: "sandbox_verified_signature",
+        gateway_payment_id: paymentId,
+        gateway_signature: signature,
         payment_transaction_id: paymentOrder.payment_transaction_id,
       });
 

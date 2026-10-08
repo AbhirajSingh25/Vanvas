@@ -108,7 +108,7 @@ ALLOWED_TRANSITIONS: Dict[str, set] = {
         "USER_RECORDED", "PROVIDER_CONFIRMED", "CONFIRMED", "CANCELLED", "FAILED"
     },
     "PAYMENT_PROCESSING": {
-        "CONFIRMING", "CONFIRMED", "PAYMENT_FAILED", "FAILED", "CANCELLED"
+        "CONFIRMING", "PAYMENT_FAILED", "FAILED", "CANCELLED"
     },
     "CONFIRMING": {
         "CONFIRMED", "CONFIRMATION_FAILED", "FAILED", "CANCELLED"
@@ -127,7 +127,7 @@ ALLOWED_TRANSITIONS: Dict[str, set] = {
     },
     "UNAVAILABLE": set(),
     "PAYMENT_FAILED": {"PAYMENT_REQUIRED", "PAYMENT_PROCESSING", "CANCELLED"},
-    "CONFIRMATION_FAILED": {"REFUND_PENDING", "REFUNDED", "CANCELLED"},
+    "CONFIRMATION_FAILED": {"REFUND_PENDING", "REFUNDED", "CANCELLED", "CONFIRMING"},
     "FAILED": set(),
     "CANCELLED": {"REFUND_PENDING", "REFUNDED"},
     "REFUNDED": set(),
@@ -471,6 +471,8 @@ class BookingService:
             )
             if custom_ref:
                 booking.confirmation_reference = custom_ref
+            if not booking.confirmation_reference or booking.confirmation_reference == booking.public_booking_reference:
+                raise ValueError("A non-empty authoritative provider confirmation reference is strictly required to transition to CONFIRMED.")
             if not booking.confirmed_at:
                 booking.confirmed_at = datetime.now(timezone.utc)
             booking.payment_status = "PAYMENT_SUCCESS"
@@ -613,7 +615,7 @@ class BookingService:
         user: User,
         reason: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """User or provider cancellation handler."""
+        """User or provider cancellation handler with authoritative payment provider refund."""
         booking = cls.get_booking_by_id(db=db, booking_id=booking_id, user=user)
 
         if booking.status in ("CANCELLED", "REFUNDED", "FAILED"):
@@ -640,7 +642,7 @@ class BookingService:
             except Exception as e:
                 logger.warning(f"Provider cancellation warning for {booking.provider_booking_id}: {e}")
 
-        # Transition status
+        # Transition status to CANCELLED
         cls.transition_booking_status(
             db=db,
             booking_id=booking.id,
@@ -649,14 +651,41 @@ class BookingService:
             reason=reason or "User requested cancellation",
         )
 
+        refund_confirmed = False
         if refund_amt > 0 and booking.payment_status in ("PAYMENT_SUCCESS", "REFUND_PENDING"):
-            cls.transition_booking_status(
-                db=db,
-                booking_id=booking.id,
-                target_status="REFUNDED",
-                user=user,
-                reason="Automatic refund completed for refundable booking",
-            )
+            tx = db.query(PaymentTransaction).filter(
+                PaymentTransaction.booking_id == booking.id
+            ).order_by(PaymentTransaction.created_at.desc()).first()
+
+            if tx:
+                gateway_name = (tx.payment_gateway or "vanvas_pay_sandbox").lower().strip()
+                if gateway_name in ("vanvas_pay_sandbox", "sandbox", "test"):
+                    from app.providers.commerce.sandbox_payment_adapter import SandboxPaymentGateway
+                    payment_id = tx.gateway_payment_id or f"pay_{tx.gateway_order_id}"
+                    rf_res = SandboxPaymentGateway.refund(payment_id, amount=refund_amt, reason=reason)
+                    if rf_res.get("refund_status") == "COMPLETED" or rf_res.get("status") == "REFUNDED":
+                        refund_confirmed = True
+                        tx.status = "REFUNDED"
+                    elif rf_res.get("refund_status") == "PENDING" or rf_res.get("status") == "REFUND_PENDING":
+                        tx.status = "REFUND_PENDING"
+                        booking.payment_status = "REFUND_PENDING"
+                    else:
+                        tx.status = "REFUND_FAILED"
+                        booking.payment_status = "REFUND_FAILED"
+                else:
+                    booking.payment_status = "REFUND_PENDING"
+                    tx.status = "REFUND_PENDING"
+            else:
+                refund_confirmed = True
+
+            if refund_confirmed:
+                cls.transition_booking_status(
+                    db=db,
+                    booking_id=booking.id,
+                    target_status="REFUNDED",
+                    user=user,
+                    reason="Automatic refund completed and verified by payment provider",
+                )
 
         return {
             "success": True,
@@ -664,7 +693,7 @@ class BookingService:
             "status": booking.status,
             "payment_status": booking.payment_status,
             "cancellation_amount": booking.cancellation_amount or 0.0,
-            "refund_amount": refund_amt,
+            "refund_amount": refund_amt if refund_confirmed else 0.0,
             "message": "Booking cancellation and refund processed successfully.",
         }
 

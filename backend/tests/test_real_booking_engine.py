@@ -164,10 +164,13 @@ class TestEndToEndBookingCheckoutFlow:
         assert pay_data["currency"] == "INR"
 
         # 2. Verify Payment (Server derives amount & signature, confirms booking)
+        from app.providers.commerce.sandbox_payment_adapter import SandboxPaymentGateway
+        payment_id = f"pay_sandbox_{pay_data['order_id']}"
+        sig = SandboxPaymentGateway.generate_signature(pay_data["order_id"], payment_id)
         verify_payload = {
             "gateway_order_id": pay_data["order_id"],
-            "gateway_payment_id": f"pay_sandbox_{pay_data['order_id']}",
-            "gateway_signature": "sandbox_verified_signature",
+            "gateway_payment_id": payment_id,
+            "gateway_signature": sig,
             "payment_transaction_id": pay_data["payment_transaction_id"],
         }
         ver_res = client.post(
@@ -223,12 +226,15 @@ class TestEndToEndBookingCheckoutFlow:
         # Pay & confirm
         pay_res = client.post(f"/api/v1/bookings/{booking_id}/pay", json={"payment_gateway": "vanvas_pay_sandbox"}, headers=headers)
         pay_data = pay_res.json()
+        from app.providers.commerce.sandbox_payment_adapter import SandboxPaymentGateway
+        payment_id = f"pay_{pay_data['order_id']}"
+        sig = SandboxPaymentGateway.generate_signature(pay_data["order_id"], payment_id)
         client.post(
             f"/api/v1/bookings/{booking_id}/verify-payment",
             json={
                 "gateway_order_id": pay_data["order_id"],
-                "gateway_payment_id": f"pay_{pay_data['order_id']}",
-                "gateway_signature": "sandbox_verified_signature",
+                "gateway_payment_id": payment_id,
+                "gateway_signature": sig,
                 "payment_transaction_id": pay_data["payment_transaction_id"],
             },
             headers=headers,

@@ -3,6 +3,7 @@ VANVAS Sandbox Stay Commerce Adapter
 Provides a fully deterministic, realistic sandbox booking provider for Stays, Hotels, Hostels, and Cottages.
 Supports end-to-end execution: search, availability, pricing breakdown, reservation creation, retrieval, cancellation, and refund simulation.
 Only activated when PROVIDER_ENV=sandbox or in explicit development/test configuration.
+Fails closed: never returns optimistic fallback confirmations for unknown bookings.
 """
 
 import uuid
@@ -22,10 +23,16 @@ _SANDBOX_RESERVATIONS: Dict[str, Dict[str, Any]] = {}
 class SandboxStayAdapter(BookingProvider):
     """
     Realistic Sandbox Provider for Travel Commerce Transactions.
+    Fails closed: Unknown provider reference returns NOT_FOUND, never CONFIRMED.
     """
 
     def __init__(self, is_sandbox_mode: bool = True):
         self._is_sandbox = is_sandbox_mode
+
+    @classmethod
+    def reset_state(cls):
+        """Clears in-memory reservations for testing."""
+        _SANDBOX_RESERVATIONS.clear()
 
     @property
     def provider_name(self) -> str:
@@ -138,7 +145,6 @@ class SandboxStayAdapter(BookingProvider):
         Authoritative pricing revalidation.
         Derives nights, base rate, GST (12%), and Vanvas platform service fee (2%).
         """
-        # Base unit price estimation
         base_unit = 3500.0
         if "hostel" in offer_id.lower() or "dorm" in offer_id.lower():
             base_unit = 950.0
@@ -147,7 +153,6 @@ class SandboxStayAdapter(BookingProvider):
         elif "luxury" in offer_id.lower() or "resort" in offer_id.lower():
             base_unit = 6800.0
 
-        # Calculate nights
         nights = 1
         if start_date and end_date:
             try:
@@ -196,10 +201,24 @@ class SandboxStayAdapter(BookingProvider):
     ) -> Dict[str, Any]:
         """
         Creates reservation with upstream provider.
+        Fails deterministically if offer_id, traveller_name or payload flags provider failure.
         """
         # Check idempotency in sandbox store
         if idempotency_key and idempotency_key in _SANDBOX_RESERVATIONS:
             return _SANDBOX_RESERVATIONS[idempotency_key]
+
+        # Model deterministic BOOKING_FAILURE scenario
+        t_name = str(payload.get("traveller_name", "")).lower()
+        if (
+            "fail" in offer_id.lower()
+            or "prov_fail" in offer_id.lower()
+            or "provider_fail" in offer_id.lower()
+            or "fail_booking" in offer_id.lower()
+            or "fail" in t_name
+            or "prov_fail" in t_name
+        ):
+            logger.error(f"Sandbox provider reservation intentionally failed for offer_id={offer_id}")
+            raise RuntimeError("Provider inventory allocation failed: Allotment locked by upstream supplier.")
 
         provider_ref = f"SBOX-STAY-{uuid.uuid4().hex[:8].upper()}"
         res_data = {
@@ -226,16 +245,38 @@ class SandboxStayAdapter(BookingProvider):
         return res_data
 
     def retrieve_booking(self, provider_booking_id: str) -> Dict[str, Any]:
+        """
+        Authoritative retrieval of reservation.
+        Strictly fails closed: Unknown IDs return NOT_FOUND, NEVER optimistic CONFIRMED.
+        """
+        if not provider_booking_id:
+            return {
+                "provider": self.provider_name,
+                "provider_booking_id": None,
+                "status": "NOT_FOUND",
+                "message": "Empty provider reference",
+            }
+
         if provider_booking_id in _SANDBOX_RESERVATIONS:
             return _SANDBOX_RESERVATIONS[provider_booking_id]
+
+        logger.warning(f"Sandbox reservation not found for reference: {provider_booking_id}")
         return {
             "provider": self.provider_name,
             "provider_booking_id": provider_booking_id,
-            "status": "CONFIRMED",
-            "currency": "INR",
+            "status": "NOT_FOUND",
+            "message": f"Reservation {provider_booking_id} does not exist in sandbox provider.",
         }
 
     def cancel_booking(self, provider_booking_id: str, reason: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Cancels reservation with provider.
+        Models deterministic CANCELLATION_FAILURE if reference contains 'cant_cancel' or 'cancel_fail'.
+        """
+        if "cant_cancel" in provider_booking_id.lower() or "cancel_fail" in provider_booking_id.lower():
+            logger.error(f"Sandbox provider cancellation rejected for {provider_booking_id}")
+            raise RuntimeError("Provider cancellation rejected: Non-refundable rate lock.")
+
         res = _SANDBOX_RESERVATIONS.get(provider_booking_id, {})
         res["status"] = "CANCELLED"
         res["cancelled_at"] = datetime.now(timezone.utc).isoformat()
@@ -252,11 +293,25 @@ class SandboxStayAdapter(BookingProvider):
         }
 
     def refund_status(self, provider_booking_id: str) -> Dict[str, Any]:
+        """
+        Queries refund status for reservation.
+        Supports REFUND_PENDING vs REFUND_COMPLETE scenarios.
+        """
         res = _SANDBOX_RESERVATIONS.get(provider_booking_id, {})
+        if "refund_pending" in provider_booking_id.lower():
+            return {
+                "provider": self.provider_name,
+                "provider_booking_id": provider_booking_id,
+                "refund_status": "PENDING",
+                "status": "REFUND_PENDING",
+                "refund_amount": res.get("total_amount", 0.0),
+            }
+
         return {
             "provider": self.provider_name,
             "provider_booking_id": provider_booking_id,
             "refund_status": "COMPLETED",
+            "status": "REFUNDED",
             "refund_amount": res.get("total_amount", 0.0),
             "processed_at": datetime.now(timezone.utc).isoformat(),
         }

@@ -1317,7 +1317,7 @@ class PaymentVerifyRequest(BaseModel):
     payment_transaction_id: Optional[str] = None
     gateway_order_id: str
     gateway_payment_id: str
-    gateway_signature: Optional[str] = "sandbox_verified_signature"
+    gateway_signature: Optional[str] = None
 
 
 class PaymentVerifyResponse(BaseModel):
