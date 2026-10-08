@@ -115,13 +115,16 @@ pwa_icons = [
     (ICONS_DIR, 'icon-maskable-192.png', 192, 0.62, 'square'),
     (PUBLIC_DIR, 'apple-icon.png', 180, 0.74, 'square'),
     (PUBLIC_DIR, 'apple-touch-icon.png', 180, 0.74, 'square'),
+    (PUBLIC_DIR, 'apple-touch-icon-v2.png', 180, 0.74, 'square'),
     (ICONS_DIR, 'apple-touch-icon.png', 180, 0.74, 'square'),
+    (ICONS_DIR, 'apple-touch-icon-v2.png', 180, 0.74, 'square'),
     # Shell mirrors
     (ANDROID_SHELL_ICONS_DIR, 'icon-512.png', 512, 0.74, 'square'),
     (ANDROID_SHELL_ICONS_DIR, 'icon-192.png', 192, 0.74, 'square'),
     (ANDROID_SHELL_ICONS_DIR, 'icon-maskable-512.png', 512, 0.62, 'square'),
     (ANDROID_SHELL_ICONS_DIR, 'icon-maskable-192.png', 192, 0.62, 'square'),
     (ANDROID_SHELL_ICONS_DIR, 'apple-touch-icon.png', 180, 0.74, 'square'),
+    (ANDROID_SHELL_ICONS_DIR, 'apple-touch-icon-v2.png', 180, 0.74, 'square'),
 ]
 
 for out_dir, filename, size, scale, bg_mode in pwa_icons:
