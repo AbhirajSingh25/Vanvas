@@ -282,8 +282,15 @@ async def copilot_chat(
         if trip and trip.itineraries:
             # 1. Determine active itinerary day
             req_ctx = req.context or {}
-            active_day_num = req_ctx.get("activeDayNumber") or req_ctx.get("selected_day") or req_ctx.get("day_number")
-            if not active_day_num and trip.start_date:
+            raw_active_day = req_ctx.get("activeDayNumber") or req_ctx.get("selected_day") or req_ctx.get("day_number")
+            is_explicit_day = raw_active_day is not None
+            active_day_num = None
+            if is_explicit_day:
+                try:
+                    active_day_num = int(raw_active_day)
+                except Exception:
+                    active_day_num = 1
+            elif trip.start_date:
                 try:
                     today_d = datetime.now(timezone.utc).date()
                     trip_start_d = trip.start_date.date() if isinstance(trip.start_date, datetime) else trip.start_date
@@ -304,7 +311,7 @@ async def copilot_chat(
             # Find active day itinerary
             active_it = next((it for it in trip.itineraries if it.day_number == active_day_num), trip.itineraries[0])
 
-            # 3. Sort today's items chronologically, ignoring completed/skipped/cancelled
+            # 3. Sort active day's items chronologically, ignoring completed/skipped/cancelled
             today_items = sorted(
                 [item for item in active_it.items if (item.status or "").lower() not in ["completed", "skipped", "cancelled"]],
                 key=lambda x: x.start_time or "00:00"
@@ -312,20 +319,25 @@ async def copilot_chat(
 
             # 4. Find the next upcoming item
             next_it = None
-            for item in today_items:
-                try:
-                    parts = (item.end_time or item.start_time or "23:59").split(":")
-                    item_end_mins = int(parts[0]) * 60 + int(parts[1])
-                    if item_end_mins >= curr_time_mins:
+            if is_explicit_day:
+                # Explicit activeDayNumber: respect selected day, return earliest relevant non-completed/non-skipped item in that day
+                if today_items:
+                    next_it = today_items[0]
+            else:
+                for item in today_items:
+                    try:
+                        parts = (item.end_time or item.start_time or "23:59").split(":")
+                        item_end_mins = int(parts[0]) * 60 + int(parts[1])
+                        if item_end_mins >= curr_time_mins:
+                            next_it = item
+                            break
+                    except Exception:
                         next_it = item
                         break
-                except Exception:
-                    next_it = item
-                    break
 
-            if not next_it and today_items:
-                # If all upcoming today are uncompleted, take the first uncompleted
-                next_it = today_items[0]
+                if not next_it and today_items:
+                    # If all items today are earlier than current clock, return first uncompleted item
+                    next_it = today_items[0]
 
             if next_it:
                 fast_resp_text = f"Next on Day {active_it.day_number} at {next_it.start_time}: {next_it.title}. {next_it.notes or 'Enjoy your visit!'}"

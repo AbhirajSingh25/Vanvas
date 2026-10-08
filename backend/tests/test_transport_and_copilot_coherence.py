@@ -889,3 +889,100 @@ def test_transport_to_itinerary_validation_all_modalities():
             f"({exp_start_mins} mins) which is less than 30 mins after arrival {t_details['arrival_time']} ({arr_mins} mins)"
         )
 
+
+def test_whats_next_all_scenarios_and_isolation(db):
+    """Verify What's Next:
+    - No activeDayNumber defaults to current day or day 1
+    - Skipped/cancelled items are ignored
+    - When all items across all days are done, returns appropriate 'Today is done'
+    - Multi-day isolation ensures no cross-day pollution
+    """
+    test_email = "wn_full_user@vanvas.local"
+    user = db.query(User).filter(User.email == test_email).first()
+    if not user:
+        user = User(
+            id="user-wn-full",
+            email=test_email,
+            hashed_password=get_password_hash("password123"),
+            full_name="WN Full User",
+            email_verified_at=datetime.now(timezone.utc)
+        )
+        db.add(user)
+        db.commit()
+
+    dest = db.query(Destination).filter(Destination.id == "dest-manali-coh").first()
+    if not dest:
+        dest = Destination(id="dest-manali-coh", name="Manali", slug="manali-full", state="Himachal Pradesh", latitude=32.2396, longitude=77.1887)
+        db.add(dest)
+        db.commit()
+
+    trip = Trip(
+        id="trip-wn-full-test",
+        user_id=user.id,
+        destination_id=dest.id,
+        title="Full What's Next Verification Trip",
+        start_date=date(2026, 10, 8),
+        end_date=date(2026, 10, 10),
+        num_days=2,
+        budget_total=18000.0,
+        travellers_count=2
+    )
+    db.add(trip)
+    db.commit()
+
+    itin1 = Itinerary(id="itin-wnf-1", trip_id=trip.id, day_number=1, date=date(2026, 10, 8), theme="Day 1")
+    itin2 = Itinerary(id="itin-wnf-2", trip_id=trip.id, day_number=2, date=date(2026, 10, 9), theme="Day 2")
+    db.add_all([itin1, itin2])
+    db.commit()
+
+    # Day 1: it1 skipped, it2 upcoming, it3 cancelled
+    it1 = ItineraryItem(id="wnf-1-1", itinerary_id=itin1.id, title="Skipped Monastery", start_time="07:00", end_time="08:30", status="skipped")
+    it2 = ItineraryItem(id="wnf-1-2", itinerary_id=itin1.id, title="Active River Walk", start_time="11:00", end_time="12:30", status="upcoming")
+    it3 = ItineraryItem(id="wnf-1-3", itinerary_id=itin1.id, title="Cancelled Rafting", start_time="15:00", end_time="17:00", status="cancelled")
+
+    # Day 2: it4 upcoming
+    it4 = ItineraryItem(id="wnf-2-1", itinerary_id=itin2.id, title="High Pass Trek", start_time="08:00", end_time="12:00", status="upcoming")
+    db.add_all([it1, it2, it3, it4])
+    db.commit()
+
+    token = create_access_token(subject=user.id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Without explicit activeDayNumber, resolves active day and returns Active River Walk (skipping Skipped Monastery)
+    res_auto = client.post(
+        "/api/v1/copilot/chat",
+        headers=headers,
+        json={"message": "whats next", "trip_id": trip.id}
+    )
+    assert res_auto.status_code == 200
+    msg_auto = res_auto.json()["message"]
+    assert "Active River Walk" in msg_auto
+    assert "Skipped Monastery" not in msg_auto
+    assert "Cancelled Rafting" not in msg_auto
+
+    # 2. Focus Day 2 explicitly: returns High Pass Trek, never leaks Day 1 items
+    res_d2 = client.post(
+        "/api/v1/copilot/chat",
+        headers=headers,
+        json={"message": "what is next", "trip_id": trip.id, "context": {"activeDayNumber": 2}}
+    )
+    assert res_d2.status_code == 200
+    msg_d2 = res_d2.json()["message"]
+    assert "High Pass Trek" in msg_d2
+    assert "Active River Walk" not in msg_d2
+
+    # 3. Mark Day 2 item completed -> Day 2 What's next returns "Today is done!"
+    it4_rec = db.query(ItineraryItem).filter(ItineraryItem.id == "wnf-2-1").first()
+    it4_rec.status = "completed"
+    db.commit()
+
+    res_d2_done = client.post(
+        "/api/v1/copilot/chat",
+        headers=headers,
+        json={"message": "what is next on our itinerary right now?", "trip_id": trip.id, "context": {"activeDayNumber": 2}}
+    )
+    assert res_d2_done.status_code == 200
+    msg_d2_done = res_d2_done.json()["message"]
+    assert "Today is done" in msg_d2_done
+
+
