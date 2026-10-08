@@ -210,21 +210,40 @@ class SandboxStayAdapter(BookingProvider):
         # Model deterministic BOOKING_FAILURE scenario
         t_name = str(payload.get("traveller_name", "")).lower()
         if (
-            "fail" in offer_id.lower()
-            or "prov_fail" in offer_id.lower()
+            ("fail" in offer_id.lower() and "retrieve_fail" not in offer_id.lower() and "retrieve_failed" not in offer_id.lower() and "prov_failed" not in offer_id.lower())
+            or ("prov_fail" in offer_id.lower() and "retrieve_fail" not in offer_id.lower() and "retrieve_failed" not in offer_id.lower())
             or "provider_fail" in offer_id.lower()
             or "fail_booking" in offer_id.lower()
-            or "fail" in t_name
+            or ("fail" in t_name and "retrieve_fail" not in t_name and "retrieve_failed" not in t_name)
             or "prov_fail" in t_name
         ):
             logger.error(f"Sandbox provider reservation intentionally failed for offer_id={offer_id}")
             raise RuntimeError("Provider inventory allocation failed: Allotment locked by upstream supplier.")
 
+        status = "CONFIRMED"
+        if (
+            payload.get("retrieve_status") == "UNKNOWN"
+            or "retrieve_unknown" in offer_id.lower()
+            or "prov_unknown" in offer_id.lower()
+            or "unknown_retrieve" in offer_id.lower()
+            or "retrieve_unknown" in t_name
+        ):
+            status = "UNKNOWN"
+        elif (
+            payload.get("retrieve_status") == "FAILED"
+            or "retrieve_failed" in offer_id.lower()
+            or "retrieve_fail" in offer_id.lower()
+            or "prov_failed" in offer_id.lower()
+            or "retrieve_failed" in t_name
+            or "retrieve_fail" in t_name
+        ):
+            status = "FAILED"
+
         provider_ref = f"SBOX-STAY-{uuid.uuid4().hex[:8].upper()}"
         res_data = {
             "provider": self.provider_name,
             "provider_booking_id": provider_ref,
-            "status": "CONFIRMED",
+            "status": status,
             "offer_id": offer_id,
             "user_id": user_id,
             "traveller_name": payload.get("traveller_name", "Adventurer"),
@@ -233,7 +252,7 @@ class SandboxStayAdapter(BookingProvider):
             "check_out": payload.get("check_out"),
             "total_amount": payload.get("total_amount"),
             "currency": payload.get("currency", "INR"),
-            "confirmed_at": datetime.now(timezone.utc).isoformat(),
+            "confirmed_at": datetime.now(timezone.utc).isoformat() if status == "CONFIRMED" else None,
             "confirmation_code": provider_ref,
         }
 
@@ -241,7 +260,7 @@ class SandboxStayAdapter(BookingProvider):
             _SANDBOX_RESERVATIONS[idempotency_key] = res_data
         _SANDBOX_RESERVATIONS[provider_ref] = res_data
 
-        logger.info(f"Sandbox reservation created: {provider_ref} for {offer_id}")
+        logger.info(f"Sandbox reservation created: {provider_ref} for {offer_id} (status={status})")
         return res_data
 
     def retrieve_booking(self, provider_booking_id: str) -> Dict[str, Any]:

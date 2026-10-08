@@ -310,6 +310,30 @@ def check_offer_availability(
     )
 
 
+SUPPORTED_WEBHOOK_PROVIDERS = {
+    "razorpay",
+    "sandbox",
+    "vanvas_pay_sandbox",
+    "sandbox_stay",
+}
+
+SUPPORTED_SUCCESS_WEBHOOK_EVENTS = {
+    "payment.captured",
+    "order.paid",
+    "PAYMENT_SUCCESS",
+    "payment_captured",
+    "order_paid",
+}
+
+SUPPORTED_FAILURE_WEBHOOK_EVENTS = {
+    "payment.failed",
+    "order.failed",
+    "PAYMENT_FAILED",
+    "payment_failed",
+    "order_failed",
+}
+
+
 @router.post("/bookings/webhooks/{provider}")
 async def handle_provider_webhook(
     provider: str,
@@ -321,14 +345,24 @@ async def handle_provider_webhook(
 ):
     """
     Durable webhook ingestion endpoint.
-    Performs signature verification, event deduplication, and transactional booking state updates.
+    Performs provider boundary verification, cryptographic signature check,
+    amount/currency binding, event deduplication, and transactional state updates.
     """
+    prov = (provider or "").lower().strip()
+
+    # 1. Strict Provider Boundary Check
+    # Unsupported providers are rejected immediately without DB mutation.
+    if prov not in SUPPORTED_WEBHOOK_PROVIDERS:
+        logger.warning(f"Webhook request received for unsupported provider: '{provider}'")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Webhook provider is not configured.",
+        )
+
     body_bytes = await request.body()
     body_str = body_bytes.decode("utf-8") if body_bytes else "{}"
 
-    prov = provider.lower().strip()
-
-    # 1. Cryptographic Signature Verification
+    # 2. Cryptographic Signature Verification
     if prov == "razorpay":
         secret = getattr(settings, "RAZORPAY_WEBHOOK_SECRET", None) or getattr(settings, "RAZORPAY_KEY_SECRET", None)
         if not secret:
@@ -364,15 +398,8 @@ async def handle_provider_webhook(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid sandbox webhook signature."
             )
-    else:
-        sig = x_webhook_signature or request.headers.get("x-webhook-signature")
-        if not sig:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Missing webhook signature header for provider '{provider}'."
-            )
 
-    # 2. Extract Event ID & Deduplicate
+    # 3. Extract Event ID & Deduplicate
     event_id = x_event_id or request.headers.get("x-event-id")
     if not event_id:
         try:
@@ -397,7 +424,7 @@ async def handle_provider_webhook(
     else:
         webhook_event = WebhookEvent(
             event_id=event_id,
-            provider=provider,
+            provider=prov,
             event_type="PROVIDER_CALLBACK",
             payload_json=body_str,
             status="PROCESSING",
@@ -406,16 +433,34 @@ async def handle_provider_webhook(
         db.add(webhook_event)
         db.commit()
 
-    # 3. Process Webhook Payload Transactionally
+    # 4. Process Webhook Payload Transactionally
     try:
         payload = json.loads(body_str) if body_str else {}
 
         if payload.get("simulate_processing_failure"):
             raise RuntimeError("Simulated transient processing error for retry testing.")
 
-        event_name = payload.get("event") or payload.get("event_type") or "payment.captured"
+        event_name = (
+            payload.get("event")
+            or payload.get("event_type")
+            or payload.get("type")
+        )
 
-        if event_name in ("payment.captured", "order.paid", "PAYMENT_SUCCESS"):
+        # 4a. Unknown Event Type Validation — DO NOT default unknown events to payment.captured
+        if not event_name or (
+            event_name not in SUPPORTED_SUCCESS_WEBHOOK_EVENTS
+            and event_name not in SUPPORTED_FAILURE_WEBHOOK_EVENTS
+        ):
+            logger.info(f"Webhook event '{event_name}' received for provider '{prov}' is not an actionable payment lifecycle event. Acknowledging without mutation.")
+            webhook_event.status = "PROCESSED"
+            webhook_event.event_type = event_name or "UNKNOWN"
+            webhook_event.processed_at = datetime.now(timezone.utc)
+            db.commit()
+            return {"status": "ignored", "event_id": event_id, "message": f"Event '{event_name}' safely acknowledged without booking mutation."}
+
+        webhook_event.event_type = event_name
+
+        if event_name in SUPPORTED_SUCCESS_WEBHOOK_EVENTS:
             order_id = (
                 payload.get("payload", {}).get("payment", {}).get("entity", {}).get("order_id")
                 or payload.get("order_id")
@@ -426,88 +471,154 @@ async def handle_provider_webhook(
                 or payload.get("payment_id")
                 or payload.get("gateway_payment_id")
             )
+            amount_val = (
+                payload.get("payload", {}).get("payment", {}).get("entity", {}).get("amount")
+                if "amount" in payload.get("payload", {}).get("payment", {}).get("entity", {})
+                else payload.get("amount")
+            )
+            currency_val = (
+                payload.get("payload", {}).get("payment", {}).get("entity", {}).get("currency")
+                or payload.get("currency")
+            )
+
+            tx = None
             if order_id:
                 tx = db.query(PaymentTransaction).filter(PaymentTransaction.gateway_order_id == order_id).first()
-                if not tx and payment_id:
-                    tx = db.query(PaymentTransaction).filter(PaymentTransaction.gateway_payment_id == payment_id).first()
+            if not tx and payment_id:
+                tx = db.query(PaymentTransaction).filter(PaymentTransaction.gateway_payment_id == payment_id).first()
 
-                if tx:
-                    gateway_name = (tx.payment_gateway or prov).lower().strip()
-                    if gateway_name in ("vanvas_pay_sandbox", "sandbox", "test"):
-                        # Record capture in sandbox gateway if needed
+            if tx:
+                # Validate order ID match
+                if order_id and tx.gateway_order_id and order_id != tx.gateway_order_id:
+                    logger.error(f"Webhook order ID mismatch: payload={order_id}, tx={tx.gateway_order_id}")
+                    webhook_event.status = "FAILED"
+                    db.commit()
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Webhook order mismatch with transaction.",
+                    )
+
+                # Validate payment ID association if transaction already has one recorded
+                if tx.gateway_payment_id and payment_id and tx.gateway_payment_id != payment_id:
+                    logger.error(f"Webhook payment ID mismatch: payload={payment_id}, tx={tx.gateway_payment_id}")
+                    webhook_event.status = "FAILED"
+                    db.commit()
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Webhook payment ID mismatch with transaction.",
+                    )
+
+                # Validate amount match
+                if amount_val is not None:
+                    try:
+                        amt_float = float(amount_val)
+                        if prov == "razorpay" and amt_float > (tx.amount * 50):
+                            amt_float = amt_float / 100.0
+                        if round(amt_float, 2) != round(float(tx.amount), 2):
+                            logger.error(f"Webhook amount mismatch: payload={amt_float}, tx={tx.amount}")
+                            webhook_event.status = "FAILED"
+                            db.commit()
+                            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Webhook amount mismatch: payload amount {amt_float} does not match transaction amount {tx.amount}."
+                            )
+                    except ValueError:
+                        webhook_event.status = "FAILED"
+                        db.commit()
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Invalid amount format in webhook payload."
+                        )
+
+                # Validate currency match
+                if currency_val is not None and str(currency_val).strip():
+                    if str(currency_val).upper().strip() != (tx.currency or "INR").upper().strip():
+                        logger.error(f"Webhook currency mismatch: payload={currency_val}, tx={tx.currency}")
+                        webhook_event.status = "FAILED"
+                        db.commit()
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Webhook currency mismatch: payload currency {currency_val} does not match transaction currency {tx.currency}."
+                        )
+
+                gateway_name = (tx.payment_gateway or prov).lower().strip()
+                if gateway_name in ("vanvas_pay_sandbox", "sandbox", "test"):
+                    # Record capture in sandbox gateway if needed
+                    gw_res = SandboxPaymentGateway.query_status(order_id=tx.gateway_order_id, payment_id=tx.gateway_payment_id or payment_id)
+                    if gw_res.get("status") != "CAPTURED" and "fail" not in str(order_id).lower() and "fail" not in str(payment_id).lower():
+                        SandboxPaymentGateway.capture(tx.gateway_order_id, payment_id or f"pay_{tx.gateway_order_id}", amount=tx.amount)
                         gw_res = SandboxPaymentGateway.query_status(order_id=tx.gateway_order_id, payment_id=tx.gateway_payment_id or payment_id)
-                        if gw_res.get("status") != "CAPTURED" and "fail" not in str(order_id).lower() and "fail" not in str(payment_id).lower():
-                            SandboxPaymentGateway.capture(tx.gateway_order_id, payment_id or f"pay_{tx.gateway_order_id}", amount=tx.amount)
-                            gw_res = SandboxPaymentGateway.query_status(order_id=tx.gateway_order_id, payment_id=tx.gateway_payment_id or payment_id)
-                        gateway_status = gw_res.get("status", "UNKNOWN")
-                    else:
-                        gateway_status = "CAPTURED"
+                    gateway_status = gw_res.get("status", "UNKNOWN")
+                else:
+                    gateway_status = "CAPTURED"
 
-                    if gateway_status == "CAPTURED":
-                        tx.status = "SUCCESS"
-                        if payment_id and not tx.gateway_payment_id:
-                            tx.gateway_payment_id = payment_id
-                        tx.updated_at = datetime.now(timezone.utc)
+                if gateway_status == "CAPTURED":
+                    tx.status = "SUCCESS"
+                    if payment_id and not tx.gateway_payment_id:
+                        tx.gateway_payment_id = payment_id
+                    tx.updated_at = datetime.now(timezone.utc)
 
-                        booking = db.query(Booking).filter(Booking.id == tx.booking_id).first()
-                        if booking:
-                            booking.payment_status = "PAYMENT_SUCCESS"
-                            user = db.query(User).filter(User.id == booking.user_id).first()
+                    booking = db.query(Booking).filter(Booking.id == tx.booking_id).first()
+                    if booking:
+                        booking.payment_status = "PAYMENT_SUCCESS"
+                        user = db.query(User).filter(User.id == booking.user_id).first()
 
-                            # Advance booking to CONFIRMING via server-controlled BookingService
-                            if booking.status in ("PAYMENT_REQUIRED", "PAYMENT_PROCESSING", "AVAILABLE", "SELECTED", "CHECKOUT_READY", "DRAFT"):
-                                if user:
+                        # Advance booking to CONFIRMING via server-controlled BookingService
+                        if booking.status in ("PAYMENT_REQUIRED", "PAYMENT_PROCESSING", "AVAILABLE", "SELECTED", "CHECKOUT_READY", "DRAFT"):
+                            if user:
+                                BookingService.transition_booking_status(
+                                    db=db,
+                                    booking_id=booking.id,
+                                    target_status="CONFIRMING",
+                                    user=user,
+                                    reason="Verified webhook confirmed payment. Verifying provider reservation.",
+                                )
+
+                        # Validate provider reference independently
+                        prov_ref = (
+                            payload.get("provider_reference")
+                            or payload.get("confirmation_reference")
+                            or payload.get("booking_reference")
+                            or booking.provider_booking_id
+                        )
+
+                        if prov_ref:
+                            provider_adapter = ProviderFactory.get_booking_provider(booking.provider)
+                            prov_res = provider_adapter.retrieve_booking(prov_ref)
+                            prov_status = prov_res.get("status", "UNKNOWN") if isinstance(prov_res, dict) else "UNKNOWN"
+
+                            if prov_status == "CONFIRMED":
+                                booking.provider_booking_id = prov_ref
+                                booking.confirmation_reference = prov_ref
+                                if booking.status not in ("CONFIRMED", "CANCELLED", "REFUNDED") and user:
                                     BookingService.transition_booking_status(
                                         db=db,
                                         booking_id=booking.id,
-                                        target_status="CONFIRMING",
+                                        target_status="CONFIRMED",
                                         user=user,
-                                        reason="Verified webhook confirmed payment. Verifying provider reservation.",
+                                        reason="Verified webhook and verified provider reservation.",
+                                        metadata={"provider_confirmation_reference": prov_ref, "webhook_event_id": event_id}
                                     )
-
-                            # Validate provider reference independently
-                            prov_ref = (
-                                payload.get("provider_reference")
-                                or payload.get("confirmation_reference")
-                                or payload.get("booking_reference")
-                                or booking.provider_booking_id
-                            )
-
-                            if prov_ref:
-                                provider_adapter = ProviderFactory.get_booking_provider(booking.provider)
-                                prov_res = provider_adapter.retrieve_booking(prov_ref)
-                                prov_status = prov_res.get("status", "UNKNOWN") if isinstance(prov_res, dict) else "UNKNOWN"
-
-                                if prov_status == "CONFIRMED":
-                                    booking.provider_booking_id = prov_ref
-                                    booking.confirmation_reference = prov_ref
-                                    if booking.status not in ("CONFIRMED", "CANCELLED", "REFUNDED") and user:
-                                        BookingService.transition_booking_status(
-                                            db=db,
-                                            booking_id=booking.id,
-                                            target_status="CONFIRMED",
-                                            user=user,
-                                            reason="Verified webhook and verified provider reservation.",
-                                            metadata={"provider_confirmation_reference": prov_ref, "webhook_event_id": event_id}
-                                        )
-                                elif prov_status in ("FAILED", "NOT_FOUND"):
-                                    if booking.status not in ("CONFIRMATION_FAILED", "CANCELLED", "REFUNDED") and user:
-                                        BookingService.transition_booking_status(
-                                            db=db,
-                                            booking_id=booking.id,
-                                            target_status="CONFIRMATION_FAILED",
-                                            user=user,
-                                            reason=f"Verified webhook received, but provider returned reservation status: {prov_status}",
-                                            metadata={"provider_reference": prov_ref}
-                                        )
-                                else:
-                                    # UNKNOWN: Keep in CONFIRMING, do not confirm
-                                    logger.info(f"Webhook payment captured, but provider reference {prov_ref} returned status UNKNOWN. Remaining in {booking.status}.")
+                            elif prov_status in ("FAILED", "NOT_FOUND"):
+                                if booking.status not in ("CONFIRMATION_FAILED", "CANCELLED", "REFUNDED") and user:
+                                    BookingService.transition_booking_status(
+                                        db=db,
+                                        booking_id=booking.id,
+                                        target_status="CONFIRMATION_FAILED",
+                                        user=user,
+                                        reason=f"Verified webhook received, but provider returned reservation status: {prov_status}",
+                                        metadata={"provider_reference": prov_ref}
+                                    )
                             else:
-                                # No provider reference: Keep in CONFIRMING
-                                logger.info(f"Webhook payment captured, but no provider reference. Remaining in {booking.status}.")
+                                # UNKNOWN: Keep in CONFIRMING, do not confirm
+                                logger.info(f"Webhook payment captured, but provider reference {prov_ref} returned status UNKNOWN. Remaining in {booking.status}.")
+                        else:
+                            # No provider reference: Keep in CONFIRMING
+                            logger.info(f"Webhook payment captured, but no provider reference. Remaining in {booking.status}.")
+            else:
+                logger.warning(f"Webhook payment transaction not found in local DB: order_id={order_id}, payment_id={payment_id}. Safe acknowledgement.")
 
-        elif event_name in ("payment.failed", "order.failed", "PAYMENT_FAILED"):
+        elif event_name in SUPPORTED_FAILURE_WEBHOOK_EVENTS:
             order_id = (
                 payload.get("payload", {}).get("payment", {}).get("entity", {}).get("order_id")
                 or payload.get("order_id")
@@ -518,29 +629,35 @@ async def handle_provider_webhook(
                 or payload.get("payment_id")
                 or payload.get("gateway_payment_id")
             )
+            tx = None
             if order_id:
                 tx = db.query(PaymentTransaction).filter(PaymentTransaction.gateway_order_id == order_id).first()
-                if tx:
-                    tx.status = "FAILED"
-                    tx.updated_at = datetime.now(timezone.utc)
-                    booking = db.query(Booking).filter(Booking.id == tx.booking_id).first()
-                    if booking and booking.status not in ("PAYMENT_FAILED", "CANCELLED", "REFUNDED"):
-                        booking.payment_status = "PAYMENT_FAILED"
-                        user = db.query(User).filter(User.id == booking.user_id).first()
-                        if user:
-                            BookingService.transition_booking_status(
-                                db=db,
-                                booking_id=booking.id,
-                                target_status="PAYMENT_FAILED",
-                                user=user,
-                                reason="Webhook reported payment failure.",
-                            )
+            if not tx and payment_id:
+                tx = db.query(PaymentTransaction).filter(PaymentTransaction.gateway_payment_id == payment_id).first()
+
+            if tx:
+                tx.status = "FAILED"
+                tx.updated_at = datetime.now(timezone.utc)
+                booking = db.query(Booking).filter(Booking.id == tx.booking_id).first()
+                if booking and booking.status not in ("PAYMENT_FAILED", "CANCELLED", "REFUNDED"):
+                    booking.payment_status = "PAYMENT_FAILED"
+                    user = db.query(User).filter(User.id == booking.user_id).first()
+                    if user:
+                        BookingService.transition_booking_status(
+                            db=db,
+                            booking_id=booking.id,
+                            target_status="PAYMENT_FAILED",
+                            user=user,
+                            reason="Webhook reported payment failure.",
+                        )
 
         webhook_event.status = "PROCESSED"
         webhook_event.processed_at = datetime.now(timezone.utc)
         db.commit()
         return {"status": "success", "event_id": event_id}
 
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         webhook_event.status = "FAILED"

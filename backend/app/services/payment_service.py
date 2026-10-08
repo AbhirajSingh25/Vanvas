@@ -346,8 +346,17 @@ class PaymentService:
             provider_error = str(e)
             logger.error(f"Upstream provider reservation failed for booking {booking.id}: {e}")
 
-        # 5. Rule 3 & 4: Provider Failure MUST block CONFIRMED status
+        # 5. Rule 3 & 4: Authoritative Provider Verification — Provider reference is an identifier, not proof.
+        provider_status = "UNKNOWN"
         if provider_ref and not provider_error:
+            try:
+                prov_retrieve_res = provider_adapter.retrieve_booking(provider_ref)
+                provider_status = prov_retrieve_res.get("status", "UNKNOWN") if isinstance(prov_retrieve_res, dict) else "UNKNOWN"
+            except Exception as e:
+                logger.warning(f"Provider retrieve_booking failed for reference {provider_ref}: {e}")
+                provider_status = "UNKNOWN"
+
+        if provider_ref and not provider_error and provider_status == "CONFIRMED":
             booking.provider_booking_id = provider_ref
             booking.confirmation_reference = provider_ref
 
@@ -373,19 +382,32 @@ class PaymentService:
                 message="Payment verified and booking confirmed successfully.",
                 public_booking_reference=booking.public_booking_reference,
             )
+        elif provider_ref and not provider_error and provider_status == "UNKNOWN":
+            # Persist provider reference if known, remain in CONFIRMING state
+            booking.provider_booking_id = provider_ref
+            db.commit()
+            db.refresh(booking)
+            logger.info(f"Provider reservation {provider_ref} returned status UNKNOWN for booking {booking.id}. Remaining in CONFIRMING.")
+            return PaymentVerifyResponse(
+                success=False,
+                booking=booking,
+                message="Payment verified, but upstream provider reservation status is UNKNOWN. Booking remains in CONFIRMING.",
+                public_booking_reference=booking.public_booking_reference,
+            )
         else:
             # Rule 3: PAYMENT_SUCCESS -> CONFIRMATION_FAILED
-            logger.error(f"Provider failed. Marking booking {booking.id} as CONFIRMATION_FAILED: {provider_error}")
+            err_msg = provider_error or f"Provider returned reservation status: {provider_status}"
+            logger.error(f"Provider failed. Marking booking {booking.id} as CONFIRMATION_FAILED: {err_msg}")
             BookingService.transition_booking_status(
                 db=db,
                 booking_id=booking.id,
                 target_status="CONFIRMATION_FAILED",
                 user=user,
-                reason=f"Payment verified but upstream provider reservation failed: {provider_error}",
+                reason=f"Payment verified but upstream provider reservation failed: {err_msg}",
                 metadata={
                     "gateway_order_id": gateway_order_id,
                     "gateway_payment_id": gateway_payment_id,
-                    "provider_error": provider_error,
+                    "provider_error": err_msg,
                 }
             )
             db.commit()
@@ -394,7 +416,7 @@ class PaymentService:
             return PaymentVerifyResponse(
                 success=False,
                 booking=booking,
-                message=f"Payment verified, but provider reservation failed ({provider_error}). Booking marked CONFIRMATION_FAILED.",
+                message=f"Payment verified, but provider reservation failed ({err_msg}). Booking marked CONFIRMATION_FAILED.",
                 public_booking_reference=booking.public_booking_reference,
             )
 
@@ -518,6 +540,9 @@ class PaymentService:
             else:
                 # No provider reference yet — attempt idempotent recovery if still in flight
                 if booking.status in ("CONFIRMING", "PAYMENT_PROCESSING", "PAYMENT_REQUIRED"):
+                    idem_key = booking.idempotency_key or (tx.idempotency_key if tx else None) or f"idem_booking_{booking.id}"
+                    if not booking.idempotency_key:
+                        booking.idempotency_key = idem_key
                     try:
                         prov_res = provider_adapter.create_booking(
                             user_id=user.id,
@@ -528,21 +553,38 @@ class PaymentService:
                                 "total_amount": booking.total_amount,
                                 "currency": booking.currency,
                             },
-                            idempotency_key=booking.idempotency_key or (tx.idempotency_key if tx else None),
+                            idempotency_key=idem_key,
                         )
                         recovered_ref = prov_res.get("provider_booking_id") or prov_res.get("confirmation_code")
                         if recovered_ref:
-                            booking.provider_booking_id = recovered_ref
-                            booking.confirmation_reference = recovered_ref
-                            provider_status = "CONFIRMED"
-                            BookingService.transition_booking_status(
-                                db=db,
-                                booking_id=booking.id,
-                                target_status="CONFIRMED",
-                                user=user,
-                                reason="Reconciliation recovered provider reservation.",
-                                metadata={"provider_confirmation_reference": recovered_ref}
-                            )
+                            # CRITICAL: A provider reference is an identifier, not proof.
+                            # Must verify authoritative provider status via retrieve_booking()
+                            prov_retrieve_res = provider_adapter.retrieve_booking(recovered_ref)
+                            provider_status = prov_retrieve_res.get("status", "UNKNOWN") if isinstance(prov_retrieve_res, dict) else "UNKNOWN"
+
+                            if provider_status == "CONFIRMED":
+                                booking.provider_booking_id = recovered_ref
+                                booking.confirmation_reference = recovered_ref
+                                BookingService.transition_booking_status(
+                                    db=db,
+                                    booking_id=booking.id,
+                                    target_status="CONFIRMED",
+                                    user=user,
+                                    reason="Reconciliation recovered and verified provider reservation.",
+                                    metadata={"provider_confirmation_reference": recovered_ref}
+                                )
+                            elif provider_status in ("NOT_FOUND", "FAILED"):
+                                booking.provider_booking_id = recovered_ref
+                                BookingService.transition_booking_status(
+                                    db=db,
+                                    booking_id=booking.id,
+                                    target_status="CONFIRMATION_FAILED",
+                                    user=user,
+                                    reason=f"Reconciliation recovered provider reference {recovered_ref}, but provider returned reservation status: {provider_status}.",
+                                )
+                            else:  # UNKNOWN
+                                booking.provider_booking_id = recovered_ref
+                                logger.info(f"Reconciliation recovered reference {recovered_ref}, but provider status is UNKNOWN. Remaining in {booking.status}.")
                         else:
                             provider_status = "FAILED"
                             BookingService.transition_booking_status(
