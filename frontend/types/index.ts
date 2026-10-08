@@ -1578,3 +1578,102 @@ export interface BookingReconcileResponse {
   message: string;
 }
 
+// ----------------- Travel Intelligence & Live Operations (Phase 4) -----------------
+
+export interface TravelSignal {
+  id: string;
+  trip_id: string;
+  signal_type: string;
+  source: string;
+  source_reference?: string;
+  observed_at: string;
+  valid_until?: string;
+  freshness: "LIVE" | "CURATED" | "ESTIMATED" | "UNKNOWN" | "STALE";
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  confidence: number;
+  raw_state?: Record<string, any>;
+  normalized_state?: Record<string, any>;
+  fingerprint: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ReplanProposal {
+  id: string;
+  trip_id: string;
+  insight_id?: string;
+  action_id?: string;
+  trigger: string;
+  affected_items: Array<{
+    item_id?: string;
+    title: string;
+    category?: string;
+    start_time: string;
+    end_time: string;
+    status?: string;
+    place_id?: string;
+  }>;
+  original_schedule: Array<{
+    item_id?: string;
+    title: string;
+    category?: string;
+    start_time: string;
+    end_time: string;
+    status?: string;
+    place_id?: string;
+  }>;
+  proposed_schedule: Array<{
+    item_id?: string;
+    title: string;
+    category?: string;
+    start_time: string;
+    end_time: string;
+    status?: string;
+    place_id?: string;
+    notes?: string;
+  }>;
+  reason: string;
+  estimated_travel_impact?: Record<string, any>;
+  budget_impact?: Record<string, any>;
+  booking_impact?: Record<string, any>;
+  confidence: number;
+  status: "PROPOSED" | "ACCEPTED" | "REJECTED" | "APPLIED" | "EXPIRED" | "DISMISSED";
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface TravelInsight {
+  id: string;
+  trip_id: string;
+  signal_id?: string;
+  category: "WEATHER" | "TRANSPORT" | "ROAD_TRAFFIC" | "BOOKING" | "CHECK_IN" | "OPENING_HOURS" | "ITINERARY_TIMING" | "BUDGET" | "LOCATION" | "GROUP_ACTIVITY";
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  title: string;
+  explanation: string;
+  impact?: Record<string, any>;
+  recommendation: string;
+  confidence: number;
+  status: "DETECTED" | "ANALYZING" | "ACTIONABLE" | "PROPOSED" | "ACCEPTED" | "APPLIED" | "DISMISSED" | "EXPIRED" | "RESOLVED" | "FAILED";
+  fingerprint: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+  expires_at?: string;
+  resolved_at?: string;
+  proposals: ReplanProposal[];
+  actions?: any[];
+}
+
+export interface TripIntelligenceSummary {
+  trip_id: string;
+  destination_name: string;
+  is_live_evaluation: boolean;
+  last_evaluated_at: string;
+  freshness: "LIVE" | "CURATED" | "ESTIMATED" | "UNKNOWN" | "STALE";
+  live_status_headline: string;
+  active_insights: TravelInsight[];
+  resolved_insights: TravelInsight[];
+  pending_proposals: ReplanProposal[];
+  recent_signals: TravelSignal[];
+  recent_revisions: TripRevision[];
+  cadence_mode: "underway" | "imminent" | "near_term" | "planned" | "active";
+}

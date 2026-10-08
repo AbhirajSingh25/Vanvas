@@ -43,6 +43,13 @@ from app.models.models import (
     UserNotification,
     SoloDirectMessage,
     ResearchJob,
+    DeviceRegistration,
+    NotificationItem,
+    TripRevision,
+    TravelSignal,
+    TravelInsight,
+    TravelAction,
+    ReplanProposal,
 )
 
 __all__ = [
@@ -90,5 +97,12 @@ __all__ = [
     "UserNotification",
     "SoloDirectMessage",
     "ResearchJob",
+    "DeviceRegistration",
+    "NotificationItem",
+    "TripRevision",
+    "TravelSignal",
+    "TravelInsight",
+    "TravelAction",
+    "ReplanProposal",
 ]
 

@@ -22,7 +22,8 @@ ALLOWLISTED_ACTIONS = {
     "add_place_to_itinerary",
     "remove_place_from_itinerary",
     "adjust_trip_pace_or_budget",
-    "change_trip_dates"
+    "change_trip_dates",
+    "apply_replan_proposal",
 }
 
 
@@ -73,6 +74,8 @@ class CopilotActionService:
                 return cls._execute_adjust_trip_pace_or_budget(db=db, user=user, payload=payload)
             elif clean_action == "change_trip_dates":
                 return cls._execute_change_trip_dates(db=db, user=user, payload=payload)
+            elif clean_action == "apply_replan_proposal":
+                return cls._execute_apply_replan_proposal(db=db, user=user, payload=payload)
             else:
                 return {
                     "success": False,
@@ -88,6 +91,77 @@ class CopilotActionService:
                 "error_code": "ACTION_EXECUTION_ERROR",
                 "message": "An unexpected error occurred while executing the travel action.",
             }
+
+    @classmethod
+    def _execute_apply_replan_proposal(
+        cls,
+        db: Session,
+        user: User,
+        payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Applies a proposed replan deterministically with authorization validation."""
+        from app.models.models import ReplanProposal
+        from app.services.intelligence.replan_engine import ReplanEngine
+
+        proposal_id = payload.get("proposal_id")
+        trip_id = payload.get("trip_id")
+
+        if not proposal_id and not trip_id:
+            return {
+                "success": False,
+                "action": "apply_replan_proposal",
+                "error_code": "MISSING_PROPOSAL_ID",
+                "message": "Proposal ID or Trip ID required to apply replan."
+            }
+
+        proposal = None
+        if proposal_id:
+            proposal = db.query(ReplanProposal).filter(ReplanProposal.id == proposal_id).first()
+        elif trip_id:
+            proposal = db.query(ReplanProposal).filter(
+                ReplanProposal.trip_id == trip_id,
+                ReplanProposal.status == "PROPOSED"
+            ).order_by(ReplanProposal.created_at.desc()).first()
+
+        if not proposal:
+            return {
+                "success": False,
+                "action": "apply_replan_proposal",
+                "error_code": "PROPOSAL_NOT_FOUND",
+                "message": "No active replan proposal found to apply."
+            }
+
+        trip = proposal.trip
+        is_creator = (trip.user_id == user.id)
+        is_member = bool(db.query(TripMember).filter(
+            TripMember.trip_id == trip.id, TripMember.user_id == user.id
+        ).first())
+
+        if not is_creator and not is_member and getattr(user, "role", "") != "admin":
+            return {
+                "success": False,
+                "action": "apply_replan_proposal",
+                "error_code": "UNAUTHORIZED",
+                "message": "You are not authorized to revise this trip."
+            }
+
+        res = ReplanEngine.apply_proposal(
+            db=db,
+            trip=trip,
+            proposal=proposal,
+            actor=user.id,
+            user=user
+        )
+
+        return {
+            "success": True,
+            "action": "apply_replan_proposal",
+            "trip_id": trip.id,
+            "proposal_id": proposal.id,
+            "revision_number": res.get("revision_number"),
+            "message": res.get("message", "Plan revised successfully.")
+        }
+
 
     @classmethod
     def _execute_save_place(

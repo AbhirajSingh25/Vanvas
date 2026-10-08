@@ -97,8 +97,27 @@ def build_verified_context(
                         "items": items_summary[:6],  # compact
                     })
 
-                # Budget summary
-                expenses_count = db.query(Expense).filter(Expense.trip_id == trip.id).count()
+                # Intelligence summary (Phase 4)
+                active_insights_list = []
+                for ins in getattr(trip, "travel_insights", []):
+                    if ins.status in ["ACTIONABLE", "PROPOSED", "DETECTED"]:
+                        active_insights_list.append({
+                            "id": ins.id,
+                            "category": ins.category,
+                            "severity": ins.severity,
+                            "title": ins.title,
+                            "explanation": ins.explanation,
+                            "recommendation": ins.recommendation,
+                            "proposals": [
+                                {
+                                    "id": p.id,
+                                    "trigger": p.trigger,
+                                    "reason": p.reason,
+                                    "status": p.status,
+                                    "proposed_schedule": json.loads(p.proposed_schedule_json or "[]")
+                                } for p in getattr(ins, "proposals", []) if p.status == "PROPOSED"
+                            ]
+                        })
 
                 trip_facts = {
                     "trip_id": trip.id,
@@ -117,6 +136,7 @@ def build_verified_context(
                     "status": trip.status,
                     "itinerary_days": itinerary_days,
                     "expenses_count": expenses_count,
+                    "active_insights": active_insights_list,
                 }
                 if not target_dest_slug and trip.destination:
                     target_dest_slug = trip.destination.slug

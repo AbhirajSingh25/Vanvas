@@ -1942,5 +1942,138 @@ class RoadTripPlanResponse(BaseModel):
 RoadTripPlanResponse.model_rebuild()
 
 
+# ----------------- Travel Intelligence & Live Operations (Phase 4) -----------------
+
+class TravelSignalResponse(BaseModel):
+    id: str
+    trip_id: str
+    signal_type: str
+    source: str
+    source_reference: Optional[str] = None
+    observed_at: datetime
+    valid_until: Optional[datetime] = None
+    freshness: str = "LIVE"
+    severity: str = "LOW"
+    confidence: float = 1.0
+    raw_state: Optional[Dict[str, Any]] = None
+    normalized_state: Optional[Dict[str, Any]] = None
+    fingerprint: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
 
 
+class ReplanProposalResponse(BaseModel):
+    id: str
+    trip_id: str
+    insight_id: Optional[str] = None
+    action_id: Optional[str] = None
+    trigger: str
+    affected_items: List[Dict[str, Any]] = []
+    original_schedule: List[Dict[str, Any]] = []
+    proposed_schedule: List[Dict[str, Any]] = []
+    reason: str
+    estimated_travel_impact: Optional[Dict[str, Any]] = None
+    budget_impact: Optional[Dict[str, Any]] = None
+    booking_impact: Optional[Dict[str, Any]] = None
+    confidence: float = 1.0
+    status: str = "PROPOSED"
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TravelActionResponse(BaseModel):
+    id: str
+    trip_id: str
+    insight_id: Optional[str] = None
+    action_type: str
+    safety_level: int = 2
+    proposed_state: Optional[Dict[str, Any]] = None
+    current_state: Optional[Dict[str, Any]] = None
+    user_decision: str = "PENDING"
+    applied_at: Optional[datetime] = None
+    reverted_at: Optional[datetime] = None
+    actor: str = "user"
+    audit_metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TravelInsightResponse(BaseModel):
+    id: str
+    trip_id: str
+    signal_id: Optional[str] = None
+    category: str
+    severity: str
+    title: str
+    explanation: str
+    impact: Optional[Dict[str, Any]] = None
+    recommendation: str
+    confidence: float = 1.0
+    status: str = "ACTIONABLE"
+    fingerprint: str
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime
+    expires_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+    proposals: List[ReplanProposalResponse] = []
+    actions: List[TravelActionResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class TripIntelligenceSummaryResponse(BaseModel):
+    trip_id: str
+    destination_name: str
+    is_live_evaluation: bool = True
+    last_evaluated_at: datetime
+    freshness: str = "LIVE"
+    live_status_headline: str = "Live Trip Operations Normal"
+    active_insights: List[TravelInsightResponse] = []
+    resolved_insights: List[TravelInsightResponse] = []
+    pending_proposals: List[ReplanProposalResponse] = []
+    recent_signals: List[TravelSignalResponse] = []
+    recent_revisions: List[TripRevisionResponse] = []
+    cadence_mode: str = "active"
+
+
+class SignalIngestRequest(BaseModel):
+    signal_type: str
+    source: str
+    source_reference: Optional[str] = None
+    observed_at: Optional[datetime] = None
+    valid_until: Optional[datetime] = None
+    freshness: Optional[str] = "LIVE"
+    severity: Optional[str] = "LOW"
+    confidence: Optional[float] = 1.0
+    payload: Dict[str, Any] = {}
+
+
+class EvaluateIntelligenceRequest(BaseModel):
+    force_refresh: bool = False
+    current_lat: Optional[float] = None
+    current_lng: Optional[float] = None
+    current_time: Optional[str] = None
+
+
+class ProposalDecisionRequest(BaseModel):
+    decision: str  # APPROVE, REJECT, DISMISS
+    reason: Optional[str] = None
+    parameters: Optional[Dict[str, Any]] = None
+
+
+class ProposalDecisionResponse(BaseModel):
+    success: bool
+    message: str
+    proposal_id: str
+    new_status: str
+    applied_revision_number: Optional[int] = None
+    trip: Optional[TripDetailResponse] = None

@@ -366,6 +366,10 @@ class Trip(Base):
     conversations = relationship("Conversation", back_populates="trip")
     bookings = relationship("Booking", back_populates="trip", cascade="all, delete-orphan")
     revisions = relationship("TripRevision", back_populates="trip", cascade="all, delete-orphan", order_by="TripRevision.revision_number.desc()")
+    travel_signals = relationship("TravelSignal", back_populates="trip", cascade="all, delete-orphan", order_by="TravelSignal.observed_at.desc()")
+    travel_insights = relationship("TravelInsight", back_populates="trip", cascade="all, delete-orphan", order_by="TravelInsight.created_at.desc()")
+    travel_actions = relationship("TravelAction", back_populates="trip", cascade="all, delete-orphan", order_by="TravelAction.created_at.desc()")
+    replan_proposals = relationship("ReplanProposal", back_populates="trip", cascade="all, delete-orphan", order_by="ReplanProposal.created_at.desc()")
 
 class TripRevision(Base):
     __tablename__ = "trip_revisions"
@@ -1036,4 +1040,102 @@ class NotificationItem(Base):
     user = relationship("User", back_populates="notification_records")
 
 
+# ----------------- Travel Intelligence & Live Trip Operations (Phase 4) -----------------
 
+class TravelSignal(Base):
+    __tablename__ = "travel_signals"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
+    signal_type = Column(String(50), nullable=False, index=True)  # WEATHER, TRANSPORT, ROAD_TRAFFIC, BOOKING, CHECK_IN, OPENING_HOURS, ITINERARY_TIMING, BUDGET, LOCATION, GROUP_ACTIVITY
+    source = Column(String(100), nullable=False)  # Open-Meteo, OSRM, Vanvas Booking DB, Transport Provider, OpenStreetMap, Expense Tracker, etc.
+    source_reference = Column(String(255), nullable=True)
+    observed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    valid_until = Column(DateTime, nullable=True)
+    freshness = Column(String(50), default="LIVE", nullable=False)  # LIVE, CURATED, ESTIMATED, UNKNOWN, STALE
+    severity = Column(String(20), default="LOW", nullable=False)  # LOW, MEDIUM, HIGH, CRITICAL
+    confidence = Column(Float, default=1.0, nullable=False)  # 0.0 to 1.0
+    raw_state_json = Column(Text, nullable=True)
+    normalized_state_json = Column(Text, nullable=True)
+    fingerprint = Column(String(128), index=True, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    trip = relationship("Trip", back_populates="travel_signals")
+    insights = relationship("TravelInsight", back_populates="signal", cascade="all, delete-orphan")
+
+
+class TravelInsight(Base):
+    __tablename__ = "travel_insights"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
+    signal_id = Column(String(36), ForeignKey("travel_signals.id"), nullable=True, index=True)
+    category = Column(String(50), nullable=False, index=True)  # WEATHER, TRANSPORT, ROAD_TRAFFIC, BOOKING, CHECK_IN, OPENING_HOURS, ITINERARY_TIMING, BUDGET, LOCATION, GROUP_ACTIVITY
+    severity = Column(String(20), default="MEDIUM", nullable=False)  # LOW, MEDIUM, HIGH, CRITICAL
+    title = Column(String(255), nullable=False)
+    explanation = Column(Text, nullable=False)
+    impact_json = Column(Text, nullable=True)  # structured impact breakdown
+    recommendation = Column(Text, nullable=False)
+    confidence = Column(Float, default=1.0, nullable=False)
+    status = Column(String(50), default="ACTIONABLE", index=True, nullable=False)  # DETECTED, ANALYZING, ACTIONABLE, PROPOSED, ACCEPTED, APPLIED, DISMISSED, EXPIRED, RESOLVED, FAILED
+    fingerprint = Column(String(128), index=True, nullable=False)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    expires_at = Column(DateTime, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    trip = relationship("Trip", back_populates="travel_insights")
+    signal = relationship("TravelSignal", back_populates="insights")
+    actions = relationship("TravelAction", back_populates="insight", cascade="all, delete-orphan")
+    proposals = relationship("ReplanProposal", back_populates="insight", cascade="all, delete-orphan")
+
+
+class TravelAction(Base):
+    __tablename__ = "travel_actions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
+    insight_id = Column(String(36), ForeignKey("travel_insights.id"), nullable=True, index=True)
+    action_type = Column(String(50), nullable=False, index=True)  # REPLAN_DAY, MOVE_ACTIVITY, SWAP_ACTIVITY, NOTIFY_HOTEL, BUDGET_ADJUST, SHORT_PLAN, DISMISS
+    safety_level = Column(Integer, default=2, nullable=False)  # 0: Info, 1: Recommend, 2: Apply reversible itinerary change after approval, 3: Requires explicit confirmation for side-effects, 4: Never automated
+    proposed_state_json = Column(Text, nullable=True)
+    current_state_json = Column(Text, nullable=True)
+    user_decision = Column(String(50), default="PENDING", index=True, nullable=False)  # PENDING, APPROVED, REJECTED, DISMISSED, EXPIRED
+    applied_at = Column(DateTime, nullable=True)
+    reverted_at = Column(DateTime, nullable=True)
+    actor = Column(String(100), default="user", nullable=False)  # user_id or "system"
+    audit_metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    # Relationships
+    trip = relationship("Trip", back_populates="travel_actions")
+    insight = relationship("TravelInsight", back_populates="actions")
+
+
+class ReplanProposal(Base):
+    __tablename__ = "replan_proposals"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
+    insight_id = Column(String(36), ForeignKey("travel_insights.id"), nullable=True, index=True)
+    action_id = Column(String(36), ForeignKey("travel_actions.id"), nullable=True, index=True)
+    trigger = Column(String(100), nullable=False)  # WEATHER_CHANGE, TRANSPORT_DELAY, ROAD_ETA_CHANGE, CHECKIN_CONFLICT, OPENING_HOURS_MISMATCH, BUDGET_PRESSURE, GROUP_VOTE_MISSING, USER_REQUEST
+    affected_items_json = Column(Text, nullable=True)
+    original_schedule_json = Column(Text, nullable=True)
+    proposed_schedule_json = Column(Text, nullable=True)
+    reason = Column(Text, nullable=False)
+    estimated_travel_impact_json = Column(Text, nullable=True)
+    budget_impact_json = Column(Text, nullable=True)
+    booking_impact_json = Column(Text, nullable=True)
+    confidence = Column(Float, default=1.0, nullable=False)
+    status = Column(String(50), default="PROPOSED", index=True, nullable=False)  # PROPOSED, ACCEPTED, REJECTED, APPLIED, EXPIRED
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    trip = relationship("Trip", back_populates="replan_proposals")
+    insight = relationship("TravelInsight", back_populates="proposals")
+    action = relationship("TravelAction")

@@ -278,6 +278,14 @@ def ensure_database_schema(eng=engine):
                 "CREATE INDEX IF NOT EXISTS ix_user_notifications_user_read ON user_notifications(user_id, is_read)",
                 "CREATE INDEX IF NOT EXISTS ix_trip_revisions_trip_id ON trip_revisions(trip_id)",
                 "CREATE INDEX IF NOT EXISTS ix_trip_revisions_user_id ON trip_revisions(user_id)",
+                "CREATE INDEX IF NOT EXISTS ix_travel_signals_trip_id ON travel_signals(trip_id)",
+                "CREATE INDEX IF NOT EXISTS ix_travel_signals_fingerprint ON travel_signals(fingerprint)",
+                "CREATE INDEX IF NOT EXISTS ix_travel_insights_trip_id ON travel_insights(trip_id)",
+                "CREATE INDEX IF NOT EXISTS ix_travel_insights_fingerprint ON travel_insights(fingerprint)",
+                "CREATE INDEX IF NOT EXISTS ix_travel_insights_status ON travel_insights(status)",
+                "CREATE INDEX IF NOT EXISTS ix_travel_actions_trip_id ON travel_actions(trip_id)",
+                "CREATE INDEX IF NOT EXISTS ix_replan_proposals_trip_id ON replan_proposals(trip_id)",
+                "CREATE INDEX IF NOT EXISTS ix_replan_proposals_status ON replan_proposals(status)",
             ]:
                 try:
                     conn.execute(text(idx_stmt))

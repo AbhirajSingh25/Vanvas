@@ -13,7 +13,8 @@ import {
   RoadTripPlanRequest, RoadTripPlanResponse, RoadTripCorridor,
   WeatherSnapshot, StructuredWeather,
   ActionPreviewRequest, ActionPreviewResponse, ActionApplyRequest,
-  ActionApplyResponse, TripRevision, CurrentStateResponse
+  ActionApplyResponse, TripRevision, CurrentStateResponse,
+  TravelSignal, TravelInsight, ReplanProposal, TripIntelligenceSummary
 } from "@/types";
 import { storageAdapter } from "./storage";
 
@@ -1411,6 +1412,46 @@ export const api = {
 
   async getAppHealth(): Promise<any> {
     return fetchApi("/app/health");
+  },
+
+  // ----------------- Travel Intelligence (Phase 4) -----------------
+  async getTripIntelligence(tripId: string): Promise<TripIntelligenceSummary> {
+    return fetchApi(`/trips/${tripId}/intelligence`);
+  },
+
+  async evaluateTripIntelligence(tripId: string, payload: { force_refresh?: boolean; current_lat?: number; current_lng?: number; current_time?: string } = {}): Promise<TripIntelligenceSummary> {
+    return fetchApi(`/trips/${tripId}/intelligence/evaluate`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getInsightDetail(tripId: string, insightId: string): Promise<TravelInsight> {
+    return fetchApi(`/trips/${tripId}/intelligence/insights/${insightId}`);
+  },
+
+  async dismissInsight(tripId: string, insightId: string): Promise<{ success: boolean; message: string; insight_id: string }> {
+    return fetchApi(`/trips/${tripId}/intelligence/insights/${insightId}/dismiss`, {
+      method: "POST",
+    });
+  },
+
+  async getProposalDetail(tripId: string, proposalId: string): Promise<ReplanProposal> {
+    return fetchApi(`/trips/${tripId}/intelligence/proposals/${proposalId}`);
+  },
+
+  async decideProposal(tripId: string, proposalId: string, decision: "APPROVE" | "REJECT" | "DISMISS", reason?: string): Promise<{
+    success: boolean;
+    message: string;
+    proposal_id: string;
+    new_status: string;
+    applied_revision_number?: number;
+    trip?: Trip;
+  }> {
+    return fetchApi(`/trips/${tripId}/intelligence/proposals/${proposalId}/decide`, {
+      method: "POST",
+      body: JSON.stringify({ decision, reason }),
+    });
   }
 };
 

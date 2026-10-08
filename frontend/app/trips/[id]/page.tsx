@@ -42,6 +42,7 @@ import { CompactItineraryItem, CompactStayCard, CompactRentalCard } from "@/comp
 import { VanvasSplitView } from "@/components/trip/VanvasSplitView";
 import { TripBookingsTab } from "@/components/trip/TripBookingsTab";
 import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
+import { TripIntelligenceCenter } from "@/components/trip/TripIntelligenceCenter";
 import { Booking } from "@/types";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -752,6 +753,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
           <div className="space-y-6 animate-fadeIn">
+            {/* Live Trip Operations Intelligence Cockpit (Phase 4) */}
+            <TripIntelligenceCenter
+              tripId={trip.id}
+              onTripUpdated={(updatedTrip) => {
+                if (updatedTrip) setTrip(updatedTrip);
+              }}
+            />
+
             {/* Travel Mode Cockpit (5 Core Questions: Where am I? What's next? How do I get there? Cost? Weather?) */}
             <TravelModeCockpit
               trip={trip}
