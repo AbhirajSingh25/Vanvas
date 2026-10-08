@@ -97,6 +97,8 @@ def build_verified_context(
                         "items": items_summary[:6],  # compact
                     })
 
+                expenses_count = db.query(Expense).filter(Expense.trip_id == trip.id).count()
+
                 # Intelligence summary (Phase 4)
                 active_insights_list = []
                 for ins in getattr(trip, "travel_insights", []):
