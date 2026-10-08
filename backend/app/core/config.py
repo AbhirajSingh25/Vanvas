@@ -177,6 +177,15 @@ class Settings(BaseSettings):
     S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "")
     MAX_AVATAR_SIZE_BYTES: int = int(os.getenv("MAX_AVATAR_SIZE_BYTES", str(5 * 1024 * 1024)))
 
+    # Travel Commerce & Payment Environment Governance
+    PROVIDER_ENV: str = os.getenv("PROVIDER_ENV", "sandbox")  # "sandbox" or "production"
+    PAYMENT_PROVIDER: str = os.getenv("PAYMENT_PROVIDER", "vanvas_pay_sandbox")  # "vanvas_pay_sandbox", "razorpay", "stripe"
+    RAZORPAY_KEY_ID: str = os.getenv("RAZORPAY_KEY_ID", "")
+    RAZORPAY_KEY_SECRET: str = os.getenv("RAZORPAY_KEY_SECRET", "")
+    STRIPE_API_KEY: str = os.getenv("STRIPE_API_KEY", "")
+    STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+    BOOKING_WEBHOOK_SECRET: str = os.getenv("BOOKING_WEBHOOK_SECRET", "vanvas_webhook_signature_secret_key")
+
     # Recommendation weights
     WEIGHT_INTEREST: float = 0.25
     WEIGHT_BUDGET: float = 0.15

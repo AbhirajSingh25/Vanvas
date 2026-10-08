@@ -29,7 +29,21 @@ export type AnalyticsEventName =
   | "notification_opened"
   | "install_prompt_shown"
   | "pwa_installed"
-  | "support_ticket_created";
+  | "support_ticket_created"
+  | "booking_search_started"
+  | "booking_availability_checked"
+  | "booking_price_revalidated"
+  | "booking_checkout_opened"
+  | "booking_payment_started"
+  | "booking_payment_succeeded"
+  | "booking_payment_failed"
+  | "booking_created"
+  | "booking_confirmed"
+  | "booking_cancelled"
+  | "booking_refund_started"
+  | "booking_refund_completed"
+  | "provider_handoff_started"
+  | "provider_handoff_returned";
 
 const SENSITIVE_PROPERTY_KEYS = [
   "password",

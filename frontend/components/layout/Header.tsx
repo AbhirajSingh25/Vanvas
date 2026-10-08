@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/context/AuthContext";
 import {
   Compass, Calendar, MapPin, Sparkles, Menu, X, SlidersHorizontal,
-  User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield,
+  User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield, ShieldCheck,
   Mountain, Clock, Navigation
 } from "lucide-react";
 import { useAskVanvas } from "@/context/AskVanvasContext";
@@ -193,6 +193,15 @@ export const Header: React.FC = () => {
                       </Link>
 
                       <Link
+                        href="/bookings"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>My Bookings &amp; Vouchers</span>
+                      </Link>
+
+                      <Link
                         href="/settings"
                         onClick={() => setProfileDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
@@ -276,19 +285,27 @@ export const Header: React.FC = () => {
                     <div className="text-[10px] text-[#20211D]/65 truncate">{user.email}</div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#D8CBB2]/50 text-xs">
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#D8CBB2]/50 text-xs">
                   <Link
                     href="/profile"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-[#D8CBB2] font-semibold text-[#173B32]"
+                    className="flex items-center justify-center gap-1 py-2 rounded-xl bg-white border border-[#D8CBB2] font-semibold text-[#173B32]"
                   >
                     <UserIcon className="w-3.5 h-3.5 text-[#B49252]" />
                     <span>Profile</span>
                   </Link>
                   <Link
+                    href="/bookings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1 py-2 rounded-xl bg-white border border-[#D8CBB2] font-semibold text-[#173B32]"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#B49252]" />
+                    <span>Bookings</span>
+                  </Link>
+                  <Link
                     href="/settings"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-[#D8CBB2] font-semibold text-[#173B32]"
+                    className="flex items-center justify-center gap-1 py-2 rounded-xl bg-white border border-[#D8CBB2] font-semibold text-[#173B32]"
                   >
                     <Settings className="w-3.5 h-3.5 text-[#B49252]" />
                     <span>Settings</span>

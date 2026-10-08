@@ -498,6 +498,7 @@ export interface TripSummary {
   companion_type: string;
   travel_style: string;
   origin_city?: string;
+  destination?: { name: string; slug: string } | null;
   trip_mode?: string;
   transport_mode?: string;
   status: string;
@@ -1060,32 +1061,55 @@ export type BookingCapability =
   | "UNAVAILABLE";
 
 export type BookingStatus =
+  | "DRAFT"
+  | "CHECKING_AVAILABILITY"
+  | "AVAILABLE"
+  | "PAYMENT_REQUIRED"
+  | "PAYMENT_PROCESSING"
+  | "CONFIRMING"
+  | "CONFIRMED"
+  | "PROVIDER_HANDOFF"
+  | "UNAVAILABLE"
+  | "PAYMENT_FAILED"
+  | "CONFIRMATION_FAILED"
+  | "CANCELLED"
+  | "REFUND_PENDING"
+  | "REFUNDED"
   | "DISCOVERED"
   | "SELECTED"
   | "CHECKOUT_READY"
   | "PENDING"
-  | "CONFIRMED"
   | "FAILED"
-  | "CANCELLED"
-  | "REFUND_PENDING"
-  | "REFUNDED";
+  | string;
 
 export interface Offer {
+  id?: string;
   provider: string;
-  provider_offer_id: string;
-  product_type: "stay" | "transport" | "rental" | "activity" | "place" | string;
+  provider_offer_id?: string | null;
+  product_type?: "stay" | "transport" | "rental" | "activity" | "place" | string;
+  offer_type?: string;
   title: string;
-  destination: string;
+  destination?: string;
+  room_type?: string;
   price?: number | null;
+  base_amount?: number | null;
+  taxes?: number | null;
+  fees?: number | null;
+  total_amount?: number | null;
   currency?: string | null;
-  availability_state: "AVAILABLE" | "LIMITED" | "UNAVAILABLE" | "UNKNOWN" | string;
+  availability_state?: "AVAILABLE" | "LIMITED" | "UNAVAILABLE" | "UNKNOWN" | string;
   valid_until?: string | null;
   cancellation_policy?: string | null;
+  refundable?: boolean;
   deep_link?: string | null;
-  booking_capability: BookingCapability;
-  trust_source: string;
+  booking_capability?: BookingCapability;
+  trust_source?: string;
   source_id?: string | null;
-  is_live: boolean;
+  is_live?: boolean;
+  unit_price?: number;
+  price_formatted?: string;
+  check_in?: string;
+  check_out?: string;
   metadata?: Record<string, any>;
 }
 
@@ -1095,13 +1119,14 @@ export interface BookingItem {
   provider_offer_id?: string | null;
   product_type: string;
   title: string;
-  destination: string;
+  destination?: string | null;
   start_at?: string | null;
   end_at?: string | null;
   quantity: number;
   unit_price?: number | null;
   total_price?: number | null;
   metadata?: Record<string, any>;
+  metadata_json?: string | null;
 }
 
 export interface BookingEvent {
@@ -1111,24 +1136,55 @@ export interface BookingEvent {
   previous_status?: string | null;
   new_status: string;
   metadata?: Record<string, any>;
+  metadata_json?: string | null;
   created_at: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  booking_id: string;
+  user_id: string;
+  payment_gateway: string;
+  gateway_order_id?: string | null;
+  gateway_payment_id?: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  idempotency_key?: string | null;
+  created_at: string;
+  updated_at?: string | null;
 }
 
 export interface Booking {
   id: string;
+  public_booking_reference?: string | null;
   user_id: string;
   trip_id?: string | null;
   provider: string;
   provider_booking_id?: string | null;
   booking_type: string;
   status: BookingStatus;
+  payment_status: string;
   currency: string;
   total_amount?: number | null;
+  base_amount?: number | null;
+  taxes?: number | null;
+  fees?: number | null;
+  cancellation_amount?: number | null;
+  refundable: boolean;
   confirmation_reference?: string | null;
+  checkout_url?: string | null;
+  booking_snapshot?: any;
+  idempotency_key?: string | null;
+  metadata?: Record<string, any>;
+  metadata_json?: string | null;
   created_at: string;
   updated_at?: string | null;
-  items: BookingItem[];
+  confirmed_at?: string | null;
+  cancelled_at?: string | null;
+  items?: BookingItem[];
   events?: BookingEvent[];
+  payments?: PaymentTransaction[];
 }
 
 export interface BookingIntentInput {
@@ -1465,4 +1521,60 @@ export interface DestinationResearchResult {
   }>;
 }
 
+export interface BookingCheckoutPayload {
+  trip_id?: string | null;
+  provider?: string;
+  provider_offer_id?: string | null;
+  booking_type?: string;
+  title: string;
+  destination: string;
+  check_in?: string;
+  check_out?: string;
+  guests: number;
+  rooms?: number;
+  traveller_name: string;
+  traveller_email: string;
+  traveller_phone?: string;
+  special_requests?: string;
+  unit_price: number;
+  idempotency_key?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface PaymentInitiateResponse {
+  booking_id: string;
+  payment_transaction_id: string;
+  payment_gateway: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  key_id?: string | null;
+  status: string;
+  expires_at?: string | null;
+  checkout_payload: Record<string, any>;
+}
+
+export interface PaymentVerifyResponse {
+  success: boolean;
+  booking: Booking;
+  message: string;
+  public_booking_reference: string;
+}
+
+export interface BookingCancellationResponse {
+  success: boolean;
+  booking_id: string;
+  status: string;
+  payment_status: string;
+  cancellation_amount: number;
+  refund_amount: number;
+  message: string;
+}
+
+export interface BookingReconcileResponse {
+  booking: Booking;
+  payment_status: string;
+  is_terminal: boolean;
+  message: string;
+}
 

@@ -40,6 +40,9 @@ import { TravelModeCockpit } from "@/components/trip/TravelModeCockpit";
 import { OfflineTripPackDrawer } from "@/components/trip/OfflineTripPackDrawer";
 import { CompactItineraryItem, CompactStayCard, CompactRentalCard } from "@/components/compact";
 import { VanvasSplitView } from "@/components/trip/VanvasSplitView";
+import { TripBookingsTab } from "@/components/trip/TripBookingsTab";
+import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
+import { Booking } from "@/types";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tripId } = use(params);
@@ -50,12 +53,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [budgetData, setBudgetData] = useState<BudgetSummary | null>(null);
   const [groupData, setGroupData] = useState<GroupSummary | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [tripBookings, setTripBookings] = useState<Booking[]>([]);
+  const [selectedBookingForModal, setSelectedBookingForModal] = useState<Booking | null>(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [arrivalData, setArrivalData] = useState<ArrivalOptimizerResponse | null>(null);
   const [offlinePackOpen, setOfflinePackOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-  // Active Tab: 'overview' | 'itinerary' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist'
+  // Active Tab: 'overview' | 'itinerary' | 'bookings' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist'
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
 
@@ -203,6 +209,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       api.getChecklist(tripId).then((c) => {
         setChecklist(c);
         try { localStorage.setItem(`vanvas_offline_checklist_${tripId}`, JSON.stringify(c)); } catch {}
+      }).catch(() => {});
+      api.getTripBookings(tripId).then((b) => {
+        setTripBookings(b || []);
+        try { localStorage.setItem(`vanvas_offline_bookings_${tripId}`, JSON.stringify(b || [])); } catch {}
       }).catch(() => {});
       api.optimizeArrival(t.destination_id, "Delhi", t.start_date).then(setArrivalData).catch(() => {});
       if (t.destination?.slug || t.destination_id) {
@@ -704,6 +714,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           {[
             { id: "overview", label: "Overview", icon: Compass },
             { id: "itinerary", label: "Itinerary", icon: Clock },
+            { id: "bookings", label: "Bookings", icon: ShieldCheck, count: tripBookings.length },
             { id: "stays_rentals", label: "Stay & Rentals", icon: BedDouble },
             { id: "food", label: "Food Along Route", icon: Coffee },
             { id: "budget", label: "Budget & Split", icon: Wallet },
@@ -725,6 +736,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
+                {typeof tab.count === "number" && tab.count > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-[#B49252] text-[#173B32]">
+                    {tab.count}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -1166,6 +1182,21 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             </div>
             )}
           </div>
+        )}
+
+        {/* BOOKINGS TAB */}
+        {activeTab === "bookings" && trip && (
+          <TripBookingsTab
+            trip={trip}
+            bookings={tripBookings}
+            onRefresh={() => {
+              api.getTripBookings(tripId).then(setTripBookings).catch(() => {});
+            }}
+            onOpenVoucher={(booking) => {
+              setSelectedBookingForModal(booking);
+              setBookingModalOpen(true);
+            }}
+          />
         )}
 
         {/* STAYS & RENTALS & TRANSIT TAB */}
@@ -1700,6 +1731,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           </button>
         </div>
       )}
+
+      {/* Persistent Booking Confirmation / Voucher Modal */}
+      <BookingConfirmationModal
+        isOpen={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+        booking={selectedBookingForModal}
+        onBookingCancelled={(cancelled) => {
+          setSelectedBookingForModal(cancelled);
+          setTripBookings((prev) =>
+            prev.map((b) => (b.id === cancelled.id ? cancelled : b))
+          );
+        }}
+      />
     </div>
   );
 }

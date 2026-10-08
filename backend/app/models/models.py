@@ -638,25 +638,37 @@ class Booking(Base):
     __tablename__ = "bookings"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
+    public_booking_reference = Column(String(64), unique=True, index=True, nullable=True)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     trip_id = Column(String(36), ForeignKey("trips.id"), nullable=True, index=True)
-    provider = Column(String(100), nullable=False)  # e.g., "vanvas_curated", "openstreetmap", "partner_direct"
+    provider = Column(String(100), nullable=False)  # e.g., "vanvas_curated", "openstreetmap", "partner_direct", "amadeus", "stayingapi", "sandbox_stay"
     provider_booking_id = Column(String(255), nullable=True)
-    booking_type = Column(String(50), nullable=False)  # stay, transport, rental, place, experience
-    status = Column(String(50), default="DISCOVERED", index=True)
+    booking_type = Column(String(50), nullable=False)  # stay, hotel, hostel, homestay, rental, bus, train, flight, cab, activity, experience
+    status = Column(String(50), default="DRAFT", index=True)
+    payment_status = Column(String(50), default="PAYMENT_REQUIRED", index=True)
     currency = Column(String(10), default="INR")
     total_amount = Column(Float, nullable=True)
+    base_amount = Column(Float, nullable=True)
+    taxes = Column(Float, default=0.0, nullable=True)
+    fees = Column(Float, default=0.0, nullable=True)
+    cancellation_amount = Column(Float, default=0.0, nullable=True)
+    refundable = Column(Boolean, default=True, nullable=False)
     confirmation_reference = Column(String(100), nullable=True)
     checkout_url = Column(String(1000), nullable=True)
+    booking_snapshot = Column(Text, nullable=True)
+    idempotency_key = Column(String(128), unique=True, nullable=True, index=True)
     metadata_json = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    confirmed_at = Column(DateTime, nullable=True)
+    cancelled_at = Column(DateTime, nullable=True)
 
     # Relationships
     user = relationship("User", back_populates="bookings")
     trip = relationship("Trip", back_populates="bookings")
     items = relationship("BookingItem", back_populates="booking", cascade="all, delete-orphan")
     events = relationship("BookingEvent", back_populates="booking", cascade="all, delete-orphan", order_by="BookingEvent.created_at")
+    payments = relationship("PaymentTransaction", back_populates="booking", cascade="all, delete-orphan")
 
 
 class BookingItem(Base):
@@ -692,6 +704,42 @@ class BookingEvent(Base):
 
     # Relationships
     booking = relationship("Booking", back_populates="events")
+
+
+class PaymentTransaction(Base):
+    __tablename__ = "payment_transactions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    booking_id = Column(String(36), ForeignKey("bookings.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    payment_gateway = Column(String(50), default="vanvas_pay_sandbox", nullable=False)
+    gateway_order_id = Column(String(255), nullable=True, index=True)
+    gateway_payment_id = Column(String(255), nullable=True, index=True)
+    gateway_signature = Column(String(500), nullable=True)
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), default="INR", nullable=False)
+    status = Column(String(50), default="INITIATED", index=True, nullable=False)  # INITIATED, PENDING, SUCCESS, FAILED, CANCELLED, REFUND_PENDING, REFUNDED
+    idempotency_key = Column(String(128), unique=True, nullable=True, index=True)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    booking = relationship("Booking", back_populates="payments")
+    user = relationship("User")
+
+
+class WebhookEvent(Base):
+    __tablename__ = "webhook_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    event_id = Column(String(255), unique=True, index=True, nullable=False)
+    provider = Column(String(50), nullable=False, index=True)
+    event_type = Column(String(100), nullable=False)
+    payload_json = Column(Text, nullable=False)
+    status = Column(String(50), default="PROCESSED", index=True)  # PROCESSED, IGNORED, FAILED
+    processed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 # ----------------- Solo Traveler Circles Models -----------------

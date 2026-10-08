@@ -11,7 +11,8 @@ import {
   ArrowRight,
   MapPin,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  ShieldCheck
 } from "lucide-react";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 
@@ -166,6 +167,33 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-[#7B4D36] group-hover:text-[#8C6D37] group-hover:translate-x-1 transition-all shrink-0" />
+          </button>
+
+          {/* Action 4: My Bookings & Vouchers */}
+          <button
+            type="button"
+            onClick={() => handleLaunch("/bookings")}
+            className="w-full p-4 rounded-2xl bg-white hover:bg-[#EFE5D2] border-2 border-[#E5D5BA] hover:border-[#173B32] text-left interactive-card flex items-center justify-between group cursor-pointer shadow-xs"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <ShieldCheck className="w-5 h-5 text-[#B49252]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif font-bold text-base text-[#173B32]">
+                    My Bookings
+                  </h3>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E5D5BA] text-[#173B32] font-semibold">
+                    Vouchers
+                  </span>
+                </div>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  View confirmed reservations, tickets &amp; cancellations.
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#7B4D36] group-hover:text-[#173B32] group-hover:translate-x-1 transition-all shrink-0" />
           </button>
 
           {/* Secondary Action: Ask VANVAS */}

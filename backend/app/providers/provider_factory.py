@@ -75,6 +75,26 @@ class ProviderFactory:
         return CuratedCreativeArtProvider()
 
     @staticmethod
+    def get_booking_provider(provider_name: str = "sandbox_stay"):
+        from app.providers.commerce.sandbox_stay_adapter import SandboxStayAdapter
+        from app.providers.commerce.amadeus_stay_adapter import AmadeusStayCommerceAdapter
+        from app.providers.commerce.stayingapi_stay_adapter import StayingAPIStayCommerceAdapter
+        from app.providers.commerce.discovery_adapter import DiscoveryCommerceAdapter
+
+        name = (provider_name or "sandbox_stay").lower().strip()
+
+        # In production mode: If sandbox provider requested without PROVIDER_ENV=sandbox, fail or return discovery
+        if name in ("sandbox_stay", "sandbox", "test"):
+            is_sandbox_allowed = getattr(settings, "PROVIDER_ENV", "sandbox").lower() == "sandbox" or not settings.is_production
+            return SandboxStayAdapter(is_sandbox_mode=is_sandbox_allowed)
+        elif name in ("amadeus", "amadeus_stays"):
+            return AmadeusStayCommerceAdapter()
+        elif name in ("stayingapi", "stayingapi_stays"):
+            return StayingAPIStayCommerceAdapter()
+        else:
+            return SandboxStayAdapter()
+
+    @staticmethod
     def get_provider_health():
         from app.services.provider_health_tracker import health_tracker
         return health_tracker.get_provider_health_summary()

@@ -220,6 +220,28 @@ def ensure_database_schema(eng=engine):
                         conn.commit()
                         logger.info(f"Migrated schema: added {col_name} to user_preferences table.")
 
+            # Check and migrate `bookings` table
+            if "bookings" in existing_tables:
+                booking_cols = {col["name"] for col in inspector.get_columns("bookings")}
+                booking_additions = {
+                    "public_booking_reference": "VARCHAR(64) NULL",
+                    "payment_status": "VARCHAR(50) DEFAULT 'PAYMENT_REQUIRED'",
+                    "base_amount": "FLOAT NULL",
+                    "taxes": "FLOAT DEFAULT 0.0",
+                    "fees": "FLOAT DEFAULT 0.0",
+                    "cancellation_amount": "FLOAT DEFAULT 0.0",
+                    "refundable": "BOOLEAN DEFAULT TRUE",
+                    "booking_snapshot": "TEXT NULL",
+                    "idempotency_key": "VARCHAR(128) NULL",
+                    "confirmed_at": "TIMESTAMP NULL",
+                    "cancelled_at": "TIMESTAMP NULL",
+                }
+                for col_name, col_def in booking_additions.items():
+                    if col_name not in booking_cols:
+                        conn.execute(text(f"ALTER TABLE bookings ADD COLUMN {col_name} {col_def}"))
+                        conn.commit()
+                        logger.info(f"Migrated schema: added {col_name} to bookings table.")
+
             # Ensure essential indexes on email verification tables
             if "email_verification_tokens" in existing_tables:
                 try:
@@ -235,8 +257,18 @@ def ensure_database_schema(eng=engine):
                 except Exception:
                     pass
 
-            # Ensure essential indexes on solo traveler circles tables
+            # Ensure essential indexes on bookings & payments
             for idx_stmt in [
+                "CREATE INDEX IF NOT EXISTS ix_bookings_user_id ON bookings(user_id)",
+                "CREATE INDEX IF NOT EXISTS ix_bookings_trip_id ON bookings(trip_id)",
+                "CREATE INDEX IF NOT EXISTS ix_bookings_status ON bookings(status)",
+                "CREATE INDEX IF NOT EXISTS ix_bookings_payment_status ON bookings(payment_status)",
+                "CREATE INDEX IF NOT EXISTS ix_bookings_public_ref ON bookings(public_booking_reference)",
+                "CREATE INDEX IF NOT EXISTS ix_bookings_idempotency_key ON bookings(idempotency_key)",
+                "CREATE INDEX IF NOT EXISTS ix_payment_transactions_booking_id ON payment_transactions(booking_id)",
+                "CREATE INDEX IF NOT EXISTS ix_payment_transactions_user_id ON payment_transactions(user_id)",
+                "CREATE INDEX IF NOT EXISTS ix_payment_transactions_idempotency ON payment_transactions(idempotency_key)",
+                "CREATE INDEX IF NOT EXISTS ix_webhook_events_event_id ON webhook_events(event_id)",
                 "CREATE INDEX IF NOT EXISTS ix_solo_intents_dest_dates ON solo_trip_intents(destination_id, start_date, end_date)",
                 "CREATE INDEX IF NOT EXISTS ix_solo_intents_status ON solo_trip_intents(status)",
                 "CREATE INDEX IF NOT EXISTS ix_travel_circles_status_dates ON travel_circles(status, start_date, end_date)",

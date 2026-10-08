@@ -16,6 +16,9 @@ import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResol
 import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 import { useDensity } from "@/context/DensityContext";
 import { CompactStayCard } from "@/components/compact";
+import { CheckoutModal } from "@/components/booking/CheckoutModal";
+import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
+import { Booking, Offer } from "@/types";
 
 const ACCOMMODATION_STYLES = [
   "All",
@@ -50,12 +53,46 @@ export default function DestinationStaysPage() {
   const [selectedProfile, setSelectedProfile] = useState("All");
   const [sortBy, setSortBy] = useState<"default" | "price_asc" | "price_desc" | "rating">("default");
 
-  // Property Modal
+  // Property Modal & Booking Checkout
   const [selectedStayForModal, setSelectedStayForModal] = useState<Hotel | null>(null);
   const [stayModalOpen, setStayModalOpen] = useState(false);
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [inquirySuccess, setInquirySuccess] = useState(false);
   const [inquiryMessage, setInquiryMessage] = useState("");
+
+  // Real Transaction Checkout States
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [selectedOfferForCheckout, setSelectedOfferForCheckout] = useState<Offer | null>(null);
+  const [activeConfirmedBooking, setActiveConfirmedBooking] = useState<Booking | null>(null);
+  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
+
+  const handleStartBooking = (hotel: Hotel) => {
+    const base = hotel.price_per_night && hotel.price_per_night > 0 ? hotel.price_per_night : 2500;
+    const taxes = Math.round(base * 0.12);
+    const offer: Offer = {
+      id: `offer_stay_${hotel.id}`,
+      provider: hotel.source && hotel.source !== "vanvas_curated" ? hotel.source : "vanvas_sandbox_stay_adapter",
+      offer_type: "stay",
+      title: hotel.name,
+      room_type: hotel.accommodation_type || "Deluxe Mountain View Sanctuary",
+      currency: "INR",
+      base_amount: base,
+      taxes: taxes,
+      fees: 0,
+      total_amount: base + taxes,
+      refundable: true,
+      cancellation_policy: "Free cancellation up to 48 hours prior to check-in. Instant refund to source.",
+      valid_until: new Date(Date.now() + 86400000).toISOString(),
+      metadata: {
+        destination: destination?.name || slug,
+        address: hotel.address,
+        rating: hotel.rating,
+        hotel_id: hotel.id,
+      },
+    };
+    setSelectedOfferForCheckout(offer);
+    setCheckoutModalOpen(true);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -444,15 +481,11 @@ export default function DestinationStaysPage() {
                         </button>
 
                         <button
-                          onClick={() => {
-                            setSelectedStayForModal(h);
-                            setInquiryModalOpen(true);
-                            setInquirySuccess(false);
-                          }}
-                          className="py-2.5 px-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          onClick={() => handleStartBooking(h)}
+                          className="py-2.5 px-3 rounded-xl bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                         >
                           <BedDouble className="w-3.5 h-3.5 text-[#EFE5D2]" />
-                          <span>Check Rates</span>
+                          <span>Book Stay</span>
                         </button>
                       </div>
 
@@ -617,13 +650,14 @@ export default function DestinationStaysPage() {
 
                   <button
                     onClick={() => {
-                      setInquiryModalOpen(true);
-                      setInquirySuccess(false);
+                      const currentStay = selectedStayForModal;
+                      setStayModalOpen(false);
+                      handleStartBooking(currentStay);
                     }}
                     className="flex-1 py-2.5 px-4 rounded-xl bg-[#B65E3C] text-white text-xs font-bold hover:bg-[#A35130] transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                   >
                     <BedDouble className="w-3.5 h-3.5" />
-                    <span>Inquire Directly</span>
+                    <span>Book Sanctuary</span>
                   </button>
                 </div>
               </div>
@@ -707,6 +741,27 @@ export default function DestinationStaysPage() {
           </div>
         </div>
       )}
+
+      {/* Real Transaction Checkout Modal */}
+      <CheckoutModal
+        isOpen={checkoutModalOpen}
+        onClose={() => setCheckoutModalOpen(false)}
+        offer={selectedOfferForCheckout}
+        onBookingSuccess={(booking) => {
+          setActiveConfirmedBooking(booking);
+          setConfirmationModalOpen(true);
+        }}
+      />
+
+      {/* Persistent Booking Confirmation & Voucher Modal */}
+      <BookingConfirmationModal
+        isOpen={confirmationModalOpen}
+        onClose={() => setConfirmationModalOpen(false)}
+        booking={activeConfirmedBooking}
+        onBookingCancelled={(cancelled) => {
+          setActiveConfirmedBooking(cancelled);
+        }}
+      />
     </div>
   );
 }

@@ -5,7 +5,9 @@ import {
   AdminStats, User, UserPreferences, UserStats, PasswordChangePayload, UserDataExport,
   TripInvitePreview, TripMemberItem,
   Review, ReviewAggregate, ReviewCreateInput, ReviewReportInput,
-  Booking, Offer, BookingIntentInput,
+  Booking, Offer,
+  BookingCheckoutPayload, PaymentInitiateResponse, PaymentVerifyResponse,
+  BookingCancellationResponse, BookingReconcileResponse,
   RegistrationResult, VerifyEmailResult, ResendVerificationResult,
   TripLedgerBalancesResponse, SettlementPayment, ReceiptOcrResponse,
   RoadTripPlanRequest, RoadTripPlanResponse, RoadTripCorridor,
@@ -803,6 +805,126 @@ export const api = {
     });
   },
 
+  // Travel Commerce, Booking & Payment Execution
+  async getBookings(statusFilter?: string): Promise<Booking[]> {
+    const params = new URLSearchParams();
+    if (statusFilter && statusFilter !== "All") params.append("status", statusFilter);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return fetchApi(`/bookings${query}`);
+  },
+
+  async getBooking(bookingId: string): Promise<Booking> {
+    return fetchApi(`/bookings/${bookingId}`);
+  },
+
+  async createBookingIntent(payload: any): Promise<Booking> {
+    return fetchApi("/bookings/intent", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async initiateCheckout(payload: BookingCheckoutPayload): Promise<Booking> {
+    return fetchApi("/bookings/checkout", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async initiatePayment(
+    bookingId: string,
+    paymentGateway: string = "vanvas_pay_sandbox",
+    idempotencyKey?: string
+  ): Promise<PaymentInitiateResponse> {
+    return fetchApi(`/bookings/${bookingId}/pay`, {
+      method: "POST",
+      body: JSON.stringify({
+        payment_gateway: paymentGateway,
+        idempotency_key: idempotencyKey,
+      }),
+    });
+  },
+
+  async verifyPayment(
+    bookingId: string,
+    payload: {
+      gateway_order_id: string;
+      gateway_payment_id: string;
+      gateway_signature?: string;
+      payment_transaction_id?: string;
+    }
+  ): Promise<PaymentVerifyResponse> {
+    return fetchApi(`/bookings/${bookingId}/verify-payment`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async cancelBooking(bookingId: string, reason?: string): Promise<BookingCancellationResponse> {
+    return fetchApi(`/bookings/${bookingId}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  async reconcileBooking(bookingId: string): Promise<BookingReconcileResponse> {
+    return fetchApi(`/bookings/${bookingId}/reconcile`, {
+      method: "POST",
+    });
+  },
+
+  async attachBookingToTrip(bookingId: string, tripId: string): Promise<Booking> {
+    return fetchApi(`/bookings/${bookingId}/attach-trip?trip_id=${encodeURIComponent(tripId)}`, {
+      method: "POST",
+    });
+  },
+
+  async getTripBookings(tripId: string): Promise<Booking[]> {
+    return fetchApi(`/trips/${tripId}/bookings`);
+  },
+
+  async transitionBooking(
+    bookingId: string,
+    targetStatus: string,
+    reason?: string,
+    metadata?: Record<string, any>
+  ): Promise<Booking> {
+    return fetchApi(`/bookings/${encodeURIComponent(bookingId)}/transition`, {
+      method: "POST",
+      body: JSON.stringify({
+        target_status: targetStatus,
+        reason,
+        metadata,
+      }),
+    });
+  },
+
+  async getOffers(
+    destination: string,
+    productType?: string,
+    query?: string,
+    maxPrice?: number
+  ): Promise<Offer[]> {
+    const params = new URLSearchParams({ destination });
+    if (productType) params.append("product_type", productType);
+    if (query) params.append("query", query);
+    if (maxPrice) params.append("max_price", String(maxPrice));
+    return fetchApi(`/offers?${params.toString()}`);
+  },
+
+  async checkOfferAvailability(
+    offerId: string,
+    startDate?: string,
+    endDate?: string,
+    guests: number = 1
+  ): Promise<any> {
+    const params = new URLSearchParams({ guests: String(guests) });
+    if (startDate) params.append("start_date", startDate);
+    if (endDate) params.append("end_date", endDate);
+    return fetchApi(`/offers/${offerId}/availability?${params.toString()}`);
+  },
+
+
   // AI Copilot
   async uploadCopilotImage(file: File): Promise<{ image_url: string; message: string }> {
     const formData = new FormData();
@@ -979,55 +1101,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     });
-  },
-
-  // ---------------------------------------------------------------------------
-  // TRAVEL COMMERCE FOUNDATION
-  // ---------------------------------------------------------------------------
-
-  async getBookings(tripId?: string): Promise<Booking[]> {
-    const query = tripId ? `?trip_id=${encodeURIComponent(tripId)}` : "";
-    return fetchApi(`/bookings${query}`);
-  },
-
-  async getBooking(bookingId: string): Promise<Booking> {
-    return fetchApi(`/bookings/${encodeURIComponent(bookingId)}`);
-  },
-
-  async createBookingIntent(data: BookingIntentInput): Promise<Booking> {
-    return fetchApi("/bookings/intent", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-
-  async transitionBooking(
-    bookingId: string,
-    targetStatus: string,
-    reason?: string,
-    metadata?: Record<string, any>
-  ): Promise<Booking> {
-    return fetchApi(`/bookings/${encodeURIComponent(bookingId)}/transition`, {
-      method: "POST",
-      body: JSON.stringify({
-        target_status: targetStatus,
-        reason,
-        metadata,
-      }),
-    });
-  },
-
-  async getOffers(destination: string, productType?: string): Promise<Offer[]> {
-    const params = new URLSearchParams({ destination });
-    if (productType) params.set("product_type", productType);
-    const res = await fetchApi<any>(`/offers?${params.toString()}`);
-    if (Array.isArray(res)) return res;
-    if (res && Array.isArray(res.offers)) return res.offers;
-    return [];
-  },
-
-  async checkOfferAvailability(offerId: string): Promise<{ offer_id: string; provider?: string; availability_state: string; is_available?: boolean; valid_until?: string | null; message: string; price?: number | null; currency?: string; cancellation_policy?: string | null }> {
-    return fetchApi(`/offers/${encodeURIComponent(offerId)}/availability`);
   },
 
   // ---------------------------------------------------------------------------

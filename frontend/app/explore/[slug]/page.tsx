@@ -35,6 +35,9 @@ import {
 import { useDensity } from "@/context/DensityContext";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { CompactPlaceCard, CompactStayCard, CompactRentalCard, CompactTrekStrip } from "@/components/compact";
+import { CheckoutModal } from "@/components/booking/CheckoutModal";
+import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
+import { Booking } from "@/types";
 
 const DISCOVERY_MESSAGES = [
   "VANVAS is gathering live travel information...",
@@ -207,6 +210,40 @@ export default function DestinationDetailPage() {
   const [selectedStayForModal, setSelectedStayForModal] = useState<Hotel | null>(null);
   const [stayModalOpen, setStayModalOpen] = useState(false);
   
+  // Real Transaction & Checkout Modals
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [selectedOfferForCheckout, setSelectedOfferForCheckout] = useState<Offer | null>(null);
+  const [activeConfirmedBooking, setActiveConfirmedBooking] = useState<Booking | null>(null);
+  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
+
+  const handleStartBooking = (hotel: Hotel) => {
+    const base = hotel.price_per_night && hotel.price_per_night > 0 ? hotel.price_per_night : 2500;
+    const taxes = Math.round(base * 0.12);
+    const offer: Offer = {
+      id: `offer_stay_${hotel.id}`,
+      provider: hotel.source && hotel.source !== "vanvas_curated" ? hotel.source : "vanvas_sandbox_stay_adapter",
+      offer_type: "stay",
+      title: hotel.name,
+      room_type: hotel.accommodation_type || "Deluxe Mountain View Sanctuary",
+      currency: "INR",
+      base_amount: base,
+      taxes: taxes,
+      fees: 0,
+      total_amount: base + taxes,
+      refundable: true,
+      cancellation_policy: "Free cancellation up to 48 hours prior to check-in. Instant refund to source.",
+      valid_until: new Date(Date.now() + 86400000).toISOString(),
+      metadata: {
+        destination: destination?.name || slug,
+        address: hotel.address,
+        rating: hotel.rating,
+        hotel_id: hotel.id,
+      },
+    };
+    setSelectedOfferForCheckout(offer);
+    setCheckoutModalOpen(true);
+  };
+
   const [rentals, setRentals] = useState<RentalOption[]>([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
   const [selectedRentalForModal, setSelectedRentalForModal] = useState<RentalOption | null>(null);
@@ -1538,28 +1575,14 @@ export default function DestinationDetailPage() {
                               <span className="px-3 py-1.5 bg-neutral-200 text-neutral-600 rounded-xl font-bold text-[11px] uppercase tracking-wider">
                                 Unavailable
                               </span>
-                            ) : (h.booking_url || h.provider_url) ? (
-                              <a
-                                href={h.booking_url || h.provider_url || "#"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
-                              >
-                                <span>{h.availability_state === "AVAILABLE" ? "Book Direct" : "Check Availability"}</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            ) : h.phone ? (
-                              <a
-                                href={`tel:${h.phone}`}
-                                className="px-3 py-1.5 bg-[#173B32] text-[#EFE5D2] rounded-xl font-bold text-xs hover:bg-[#B65E3C] transition-colors flex items-center gap-1 shrink-0"
-                              >
-                                <span>Contact Provider</span>
-                                <Phone className="w-3.5 h-3.5" />
-                              </a>
                             ) : (
-                              <span className="px-2.5 py-1 text-[11px] font-mono text-[#7B4D36] bg-[#EFE5D2] rounded-lg border border-[#E5D5BA]">
-                                Upon Inquiry
-                              </span>
+                              <button
+                                onClick={() => handleStartBooking(h)}
+                                className="px-3 py-1.5 bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+                              >
+                                <span>Book Stay</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </button>
                             )}
                           </div>
                         </div>
@@ -2271,30 +2294,17 @@ export default function DestinationDetailPage() {
                 <span className="px-5 py-2.5 bg-neutral-200 text-neutral-600 rounded-xl font-bold text-xs uppercase tracking-wider">
                   Currently Unavailable
                 </span>
-              ) : (selectedStayForModal.booking_url || selectedStayForModal.provider_url) ? (
-                <a
-                  href={selectedStayForModal.booking_url || selectedStayForModal.provider_url || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-5 py-2.5 bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>{selectedStayForModal.availability_state === "AVAILABLE" ? "Book Direct" : "Check Live Availability"}</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              ) : selectedStayForModal.phone ? (
-                <a
-                  href={`tel:${selectedStayForModal.phone}`}
-                  className="px-5 py-2.5 bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>Contact Provider</span>
-                  <Phone className="w-3.5 h-3.5" />
-                </a>
               ) : (
                 <button
-                  onClick={() => setStayModalOpen(false)}
-                  className="px-5 py-2.5 bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                  onClick={() => {
+                    const currentStay = selectedStayForModal;
+                    setStayModalOpen(false);
+                    handleStartBooking(currentStay);
+                  }}
+                  className="px-5 py-2.5 bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
-                  Close
+                  <span>Book This Sanctuary</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
@@ -2465,19 +2475,33 @@ export default function DestinationDetailPage() {
                     <Phone className="w-3.5 h-3.5" />
                     <span>Call Provider</span>
                   </a>
-                ) : (
-                  <button
-                    onClick={() => setRentalModalOpen(false)}
-                    className="px-4 py-2.5 bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Real Transaction Checkout Modal */}
+      <CheckoutModal
+        isOpen={checkoutModalOpen}
+        onClose={() => setCheckoutModalOpen(false)}
+        offer={selectedOfferForCheckout}
+        onBookingSuccess={(booking) => {
+          setActiveConfirmedBooking(booking);
+          setConfirmationModalOpen(true);
+        }}
+      />
+
+      {/* Persistent Booking Confirmation & Voucher Modal */}
+      <BookingConfirmationModal
+        isOpen={confirmationModalOpen}
+        onClose={() => setConfirmationModalOpen(false)}
+        booking={activeConfirmedBooking}
+        onBookingCancelled={(cancelled) => {
+          setActiveConfirmedBooking(cancelled);
+        }}
+      />
     </div>
   );
 }

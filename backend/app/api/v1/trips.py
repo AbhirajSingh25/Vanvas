@@ -15,7 +15,7 @@ from app.schemas.schemas import (
     TripInvitePreviewResponse, TripInviteCreateResponse, TripMemberActionResponse,
     TripMemberResponse, ActionPreviewRequest, ActionPreviewResponse,
     ActionApplyRequest, ActionApplyResponse, TripRevisionResponse,
-    CurrentStateResponse, TripBudgetUpdateRequest
+    CurrentStateResponse, TripBudgetUpdateRequest, BookingResponse
 )
 from app.api.deps import get_current_user, get_current_user_optional
 from app.itinerary.generator import ItineraryEngine
@@ -1126,5 +1126,20 @@ def update_trip_budget(
     db.commit()
     db.refresh(trip)
     return trip
+
+
+@router.get("/{trip_id}/bookings", response_model=List[BookingResponse])
+def get_trip_bookings(
+    trip_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieves all bookings attached to a trip.
+    Accessible only to authorized trip members and creator.
+    """
+    from app.services.booking_service import BookingService
+    bookings = BookingService.get_trip_bookings(db=db, trip_id=trip_id, user=current_user)
+    return bookings
 
 

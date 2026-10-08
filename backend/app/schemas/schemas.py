@@ -1163,6 +1163,24 @@ class Offer(BaseModel):
     is_live: bool = False
 
 
+class PaymentTransactionResponse(BaseModel):
+    id: str
+    booking_id: str
+    user_id: str
+    payment_gateway: str
+    gateway_order_id: Optional[str] = None
+    gateway_payment_id: Optional[str] = None
+    amount: float
+    currency: str = "INR"
+    status: str
+    idempotency_key: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 class BookingItemResponse(BaseModel):
     id: str
     booking_id: str
@@ -1175,6 +1193,7 @@ class BookingItemResponse(BaseModel):
     quantity: int = 1
     unit_price: Optional[float] = None
     total_price: Optional[float] = None
+    metadata_json: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -1186,6 +1205,7 @@ class BookingEventResponse(BaseModel):
     event_type: str
     previous_status: Optional[str] = None
     new_status: str
+    metadata_json: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -1194,20 +1214,33 @@ class BookingEventResponse(BaseModel):
 
 class BookingResponse(BaseModel):
     id: str
+    public_booking_reference: Optional[str] = None
     user_id: str
     trip_id: Optional[str] = None
     provider: str
     provider_booking_id: Optional[str] = None
     booking_type: str
     status: str
+    payment_status: str = "PAYMENT_REQUIRED"
     currency: str = "INR"
     total_amount: Optional[float] = None
+    base_amount: Optional[float] = None
+    taxes: Optional[float] = 0.0
+    fees: Optional[float] = 0.0
+    cancellation_amount: Optional[float] = 0.0
+    refundable: bool = True
     confirmation_reference: Optional[str] = None
     checkout_url: Optional[str] = None
+    booking_snapshot: Optional[str] = None
+    idempotency_key: Optional[str] = None
+    metadata_json: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    confirmed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
     items: List[BookingItemResponse] = []
     events: List[BookingEventResponse] = []
+    payments: List[PaymentTransactionResponse] = []
 
     class Config:
         from_attributes = True
@@ -1222,6 +1255,10 @@ class BookingIntentCreateRequest(BaseModel):
     destination: Optional[str] = None
     unit_price: Optional[float] = None
     total_amount: Optional[float] = None
+    base_amount: Optional[float] = None
+    taxes: Optional[float] = None
+    fees: Optional[float] = None
+    refundable: Optional[bool] = True
     currency: str = "INR"
     quantity: int = 1
     checkout_url: Optional[str] = None
@@ -1229,12 +1266,86 @@ class BookingIntentCreateRequest(BaseModel):
     end_at: Optional[datetime] = None
     items: Optional[List[Dict[str, Any]]] = None
     metadata: Optional[Dict[str, Any]] = None
+    idempotency_key: Optional[str] = None
 
 
 class BookingTransitionRequest(BaseModel):
     target_status: str
     reason: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+
+
+class BookingCheckoutInitiateRequest(BaseModel):
+    trip_id: Optional[str] = None
+    provider: str = "sandbox_stay"
+    provider_offer_id: Optional[str] = None
+    booking_type: str = "stay"  # stay, transport, rental, activity
+    title: str
+    destination: str
+    check_in: Optional[str] = None
+    check_out: Optional[str] = None
+    guests: int = 1
+    rooms: int = 1
+    traveller_name: str
+    traveller_email: str
+    traveller_phone: Optional[str] = None
+    special_requests: Optional[str] = None
+    unit_price: float
+    idempotency_key: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class PaymentInitiateRequest(BaseModel):
+    payment_gateway: str = "vanvas_pay_sandbox"  # vanvas_pay_sandbox, razorpay, stripe, provider_direct
+    idempotency_key: Optional[str] = None
+
+
+class PaymentInitiateResponse(BaseModel):
+    booking_id: str
+    payment_transaction_id: str
+    payment_gateway: str
+    order_id: str
+    amount: float
+    currency: str
+    key_id: Optional[str] = None
+    status: str
+    expires_at: Optional[str] = None
+    checkout_payload: Dict[str, Any] = {}
+
+
+class PaymentVerifyRequest(BaseModel):
+    payment_transaction_id: Optional[str] = None
+    gateway_order_id: str
+    gateway_payment_id: str
+    gateway_signature: Optional[str] = "sandbox_verified_signature"
+
+
+class PaymentVerifyResponse(BaseModel):
+    success: bool
+    booking: BookingResponse
+    message: str
+    public_booking_reference: str
+
+
+class BookingCancellationRequest(BaseModel):
+    reason: Optional[str] = "Traveller requested cancellation"
+
+
+class BookingCancellationResponse(BaseModel):
+    success: bool
+    booking_id: str
+    status: str
+    payment_status: str
+    cancellation_amount: float
+    refund_amount: float
+    message: str
+
+
+class BookingReconcileResponse(BaseModel):
+    booking: BookingResponse
+    payment_status: str
+    is_terminal: bool
+    message: str
 
 
 # ----------------- Solo Traveler Circles Schemas -----------------
