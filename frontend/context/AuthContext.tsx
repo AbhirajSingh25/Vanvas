@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { User, UserPreferences, PasswordChangePayload, UserDataExport, RegistrationResult } from "@/types";
 import { api } from "@/lib/api";
+import { storageAdapter } from "@/lib/storage";
+import { trackEvent } from "@/lib/analytics";
+import { deactivatePushToken } from "@/lib/pushNotifications";
 
 interface ProfileUpdatePayload {
   full_name?: string;
@@ -62,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
-    const savedToken = typeof window !== "undefined" ? localStorage.getItem("vanvas_token") : null;
+    const savedToken = storageAdapter.getItem("vanvas_token");
     if (!savedToken) {
       setUser(null);
       setToken(null);
@@ -72,9 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const u = await api.getMe();
       setUser(u);
       setToken(savedToken);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("vanvas_user_profile", JSON.stringify(u));
-      }
+      storageAdapter.setItem("vanvas_user_profile", JSON.stringify(u));
       return u;
     } catch (err: any) {
       // If offline or network connection error, retain existing session and profile
@@ -83,8 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         err?.message?.includes("Failed to fetch") ||
         err?.message?.includes("Unable to connect");
 
-      if (isNetworkError && typeof window !== "undefined") {
-        const cachedProfile = localStorage.getItem("vanvas_user_profile");
+      if (isNetworkError) {
+        const cachedProfile = storageAdapter.getItem("vanvas_user_profile");
         if (cachedProfile) {
           try {
             const parsed = JSON.parse(cachedProfile);
@@ -97,10 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Explicit authentication failure (e.g. 401 / expired token)
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("vanvas_token");
-        localStorage.removeItem("vanvas_user_profile");
-      }
+      storageAdapter.removeItem("vanvas_token");
+      storageAdapter.removeItem("vanvas_user_profile");
       setUser(null);
       setToken(null);
       return null;
@@ -108,8 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("vanvas_token");
-    const cachedProfile = localStorage.getItem("vanvas_user_profile");
+    const savedToken = storageAdapter.getItem("vanvas_token");
+    const cachedProfile = storageAdapter.getItem("vanvas_user_profile");
 
     if (savedToken) {
       setToken(savedToken);
@@ -122,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       api.getMe()
         .then((u) => {
           setUser(u);
-          localStorage.setItem("vanvas_user_profile", JSON.stringify(u));
+          storageAdapter.setItem("vanvas_user_profile", JSON.stringify(u));
         })
         .catch((err: any) => {
           const isNetworkError =
@@ -131,8 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             err?.message?.includes("Unable to connect");
 
           if (!isNetworkError) {
-            localStorage.removeItem("vanvas_token");
-            localStorage.removeItem("vanvas_user_profile");
+            storageAdapter.removeItem("vanvas_token");
+            storageAdapter.removeItem("vanvas_user_profile");
             setToken(null);
             setUser(null);
           }
@@ -149,10 +148,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const res = await api.login(email.trim().toLowerCase(), pass);
-      localStorage.setItem("vanvas_token", res.access_token);
-      localStorage.setItem("vanvas_user_profile", JSON.stringify(res.user));
+      storageAdapter.setItem("vanvas_token", res.access_token);
+      storageAdapter.setItem("vanvas_user_profile", JSON.stringify(res.user));
       setToken(res.access_token);
       setUser(res.user);
+
+      trackEvent("login_success");
+
+      // Check if a device push token was registered previously
+      const pushToken = storageAdapter.getItem("vanvas_push_token");
+      if (pushToken) {
+        api.registerDeviceToken({
+          push_token: pushToken,
+          platform: "android",
+          app_version: "0.1.0",
+          permission_state: "granted",
+        }).catch(() => {});
+      }
+
       return res.user;
     } catch (err: any) {
       throw err;
@@ -174,10 +187,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("vanvas_token");
-      localStorage.removeItem("vanvas_user_profile");
-    }
+    deactivatePushToken().catch(() => {});
+    storageAdapter.removeItem("vanvas_token");
+    storageAdapter.removeItem("vanvas_user_profile");
+
     // Attempt graceful backend session cleanup
     api.logoutSession().catch(() => {});
     setToken(null);

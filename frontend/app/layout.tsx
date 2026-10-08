@@ -14,6 +14,9 @@ import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { CapacitorInit } from "@/components/capacitor/CapacitorInit";
 import { StartupExperience } from "@/components/startup/StartupExperience";
+import { AppLifecycleHandler } from "@/components/capacitor/AppLifecycleHandler";
+import { UpdateNotificationBanner } from "@/components/version/UpdateNotificationBanner";
+import { ErrorBoundary } from "@/components/monitoring/ErrorBoundary";
 import { Analytics } from "@vercel/analytics/next";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -145,25 +148,29 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-[#B65E3C] selection:text-[#FAF7F0]"
       >
-        <AuthProvider>
-          <ThemeProvider>
-            <DensityProvider>
-              <AskVanvasProvider>
-                <ServiceWorkerRegister />
-                <Header />
-                <main className="flex-1 pb-16 md:pb-0">{children}</main>
-                <Footer />
-                <MobileNav />
-                <FloatingCopilotTrigger />
-                <AskVanvasModal />
-                <InstallPrompt />
-                <StartupExperience />
-                <CapacitorInit />
-                <Analytics />
-              </AskVanvasProvider>
-            </DensityProvider>
-          </ThemeProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ThemeProvider>
+              <DensityProvider>
+                <AskVanvasProvider>
+                  <UpdateNotificationBanner />
+                  <ServiceWorkerRegister />
+                  <Header />
+                  <main className="flex-1 pb-16 md:pb-0">{children}</main>
+                  <Footer />
+                  <MobileNav />
+                  <FloatingCopilotTrigger />
+                  <AskVanvasModal />
+                  <InstallPrompt />
+                  <StartupExperience />
+                  <CapacitorInit />
+                  <AppLifecycleHandler />
+                  <Analytics />
+                </AskVanvasProvider>
+              </DensityProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

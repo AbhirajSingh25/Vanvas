@@ -45,6 +45,8 @@ class User(Base):
     circle_memberships = relationship("CircleMember", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("UserNotification", back_populates="user", cascade="all, delete-orphan")
     trip_revisions = relationship("TripRevision", back_populates="user", cascade="all, delete-orphan")
+    device_registrations = relationship("DeviceRegistration", back_populates="user", cascade="all, delete-orphan")
+    notification_records = relationship("NotificationItem", back_populates="user", cascade="all, delete-orphan")
 
     @property
     def is_verified(self) -> bool:
@@ -103,11 +105,16 @@ class UserPreference(Base):
     
     # Notification Preferences
     notify_trip_reminders = Column(Boolean, default=True)
+    notify_transport_updates = Column(Boolean, default=True)
     notify_trip_changes = Column(Boolean, default=True)
+    notify_weather_alerts = Column(Boolean, default=True)
+    notify_group_activity = Column(Boolean, default=True)
+    notify_expense_activity = Column(Boolean, default=True)
     notify_booking_updates = Column(Boolean, default=True)
     notify_suggestions = Column(Boolean, default=True)
     notify_copilot_updates = Column(Boolean, default=False)
     notify_announcements = Column(Boolean, default=False)
+    notification_level = Column(String(50), default="all")  # all, important_only, none
     
     # AI & Copilot Preferences
     ai_copilot_enabled = Column(Boolean, default=True)
@@ -945,5 +952,40 @@ class ResearchJob(Base):
     result_summary = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+class DeviceRegistration(Base):
+    __tablename__ = "device_registrations"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
+    device_identifier = Column(String(255), nullable=True, index=True)
+    platform = Column(String(50), nullable=False, default="android")  # android, ios, web
+    push_token = Column(String(512), unique=True, nullable=False, index=True)
+    app_version = Column(String(50), nullable=False, default="0.1.0")
+    permission_state = Column(String(50), nullable=False, default="granted")  # granted, denied, prompt
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    last_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="device_registrations")
+
+
+class NotificationItem(Base):
+    __tablename__ = "notification_items"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    type = Column(String(100), nullable=False)  # trip_reminder, transport_update, itinerary_change, weather_alert, group_activity, expense_activity, booking_update, recommendation
+    title = Column(String(255), nullable=False)
+    body = Column(Text, nullable=False)
+    deep_link = Column(String(500), nullable=True)  # /trips/{tripId} or /explore/{slug}
+    trip_id = Column(String(36), nullable=True, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    is_read = Column(Boolean, default=False, index=True, nullable=False)
+    delivery_status = Column(String(50), default="sent", nullable=False)  # sent, delivered, failed, suppressed, pending
+
+    user = relationship("User", back_populates="notification_records")
+
 
 

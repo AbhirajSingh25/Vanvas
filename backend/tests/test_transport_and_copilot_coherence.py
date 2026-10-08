@@ -916,6 +916,15 @@ def test_whats_next_all_scenarios_and_isolation(db):
         db.add(dest)
         db.commit()
 
+    trip = db.query(Trip).filter(Trip.id == "trip-wn-full-test").first()
+    if trip:
+        for it in trip.itineraries:
+            for item in it.items:
+                db.delete(item)
+            db.delete(it)
+        db.delete(trip)
+        db.commit()
+
     trip = Trip(
         id="trip-wn-full-test",
         user_id=user.id,

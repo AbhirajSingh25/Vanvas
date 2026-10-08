@@ -204,6 +204,22 @@ def ensure_database_schema(eng=engine):
                     conn.commit()
                     logger.info("Migrated schema: added owner_user_id to mobility_providers table.")
 
+            # Check and migrate `user_preferences` table
+            if "user_preferences" in existing_tables:
+                pref_cols = {col["name"] for col in inspector.get_columns("user_preferences")}
+                pref_additions = {
+                    "notify_transport_updates": "BOOLEAN DEFAULT TRUE",
+                    "notify_weather_alerts": "BOOLEAN DEFAULT TRUE",
+                    "notify_group_activity": "BOOLEAN DEFAULT TRUE",
+                    "notify_expense_activity": "BOOLEAN DEFAULT TRUE",
+                    "notification_level": "VARCHAR(50) DEFAULT 'all'",
+                }
+                for col_name, col_def in pref_additions.items():
+                    if col_name not in pref_cols:
+                        conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col_name} {col_def}"))
+                        conn.commit()
+                        logger.info(f"Migrated schema: added {col_name} to user_preferences table.")
+
             # Ensure essential indexes on email verification tables
             if "email_verification_tokens" in existing_tables:
                 try:

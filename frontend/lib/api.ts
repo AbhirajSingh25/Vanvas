@@ -13,6 +13,7 @@ import {
   ActionPreviewRequest, ActionPreviewResponse, ActionApplyRequest,
   ActionApplyResponse, TripRevision, CurrentStateResponse
 } from "@/types";
+import { storageAdapter } from "./storage";
 
 function getApiBaseUrl(): string {
   // Browser runtime environment detection
@@ -109,7 +110,7 @@ export function clearApiCache(): void {
 
 // Helper for authenticated requests with timeout
 async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("vanvas_token") : null;
+  const token = typeof window !== "undefined" ? storageAdapter.getItem("vanvas_token") : null;
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
@@ -1281,6 +1282,62 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ receiver_user_id: receiverUserId, content }),
     });
+  },
+
+  // ----------------- Production App Infrastructure & Notifications -----------------
+  async registerDeviceToken(payload: {
+    push_token: string;
+    platform?: string;
+    device_identifier?: string;
+    app_version?: string;
+    permission_state?: string;
+  }): Promise<any> {
+    return fetchApi("/notifications/devices", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async deactivateDeviceToken(push_token: string): Promise<any> {
+    return fetchApi("/notifications/devices/deactivate", {
+      method: "POST",
+      body: JSON.stringify({ push_token }),
+    });
+  },
+
+  async getNotificationPreferences(): Promise<any> {
+    return fetchApi("/notifications/preferences");
+  },
+
+  async updateNotificationPreferences(payload: {
+    level?: string;
+    notify_trip_reminders?: boolean;
+    notify_transport_updates?: boolean;
+    notify_trip_changes?: boolean;
+    notify_weather_alerts?: boolean;
+    notify_group_activity?: boolean;
+    notify_expense_activity?: boolean;
+    notify_booking_updates?: boolean;
+    notify_suggestions?: boolean;
+    notify_copilot_updates?: boolean;
+    notify_announcements?: boolean;
+  }): Promise<any> {
+    return fetchApi("/notifications/preferences", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getNotificationsInbox(): Promise<any> {
+    return fetchApi("/notifications/inbox");
+  },
+
+  async getAppVersion(): Promise<any> {
+    return fetchApi("/app/version");
+  },
+
+  async getAppHealth(): Promise<any> {
+    return fetchApi("/app/health");
   }
 };
 

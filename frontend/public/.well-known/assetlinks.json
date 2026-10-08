@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ai.vanvas.app",
+      "sha256_cert_fingerprints": [
+        "BF:51:58:0F:F1:5A:37:22:BE:9E:50:A3:BC:FC:90:7D:BF:E9:05:B1:AC:4F:5C:BF:8F:5D:CC:5A:A4:51:B4:A5"
+      ]
+    }
+  }
+]

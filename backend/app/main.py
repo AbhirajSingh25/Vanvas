@@ -8,7 +8,8 @@ from app.database.session import engine, Base, get_db, ensure_database_schema
 from app.seed.seed_data import seed_database
 from app.api.v1 import (
     auth, destinations, trips, budget, group, places,
-    transport_hotels_rentals, copilot, checklist, admin, search, artwork, reviews, bookings, mobility, circles, road_trip
+    transport_hotels_rentals, copilot, checklist, admin, search, artwork, reviews, bookings, mobility, circles, road_trip,
+    notifications, app_info
 )
 
 import logging
@@ -76,6 +77,8 @@ app.include_router(reviews.router, prefix=f"{settings.API_V1_STR}", tags=["Commu
 app.include_router(bookings.router, prefix=f"{settings.API_V1_STR}", tags=["Travel Commerce & Bookings"])
 app.include_router(circles.router, prefix=f"{settings.API_V1_STR}", tags=["Solo Traveler Circles & Notifications"])
 app.include_router(road_trip.router, prefix=f"{settings.API_V1_STR}/road-trip", tags=["Road Trip Mode"])
+app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}", tags=["Push Notifications & Device Registration"])
+app.include_router(app_info.router, prefix=f"{settings.API_V1_STR}", tags=["App Version & Updates"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Admin & System Health"])
 
 
