@@ -434,3 +434,128 @@ def test_context_serialization_contains_no_secrets(db, user_a, trip_mussoorie):
     assert "Bearer" not in dumped
     assert "Authorization" not in dumped
     assert "GEMINI_API_KEY" not in dumped
+
+
+# =========================================================================
+# 9. Targeted Expenses Count Verification & Isolation
+# =========================================================================
+
+def test_expenses_count_empty_trip(db, user_a, destination_mussoorie):
+    """A trip with zero expenses returns expenses_count == 0."""
+    empty_trip = Trip(
+        user_id=user_a.id,
+        destination_id=destination_mussoorie.id,
+        title="Zero Expense Trip",
+        start_date=date.today(),
+        end_date=date.today() + timedelta(days=2),
+        num_days=2,
+        budget_total=10000.0,
+    )
+    db.add(empty_trip)
+    db.commit()
+
+    ctx = CopilotContextEngine.build_full_context(
+        db=db,
+        user=user_a,
+        trip_id=empty_trip.id,
+    )
+    trip_data = ctx["verified_facts"]["trip"]
+    assert trip_data is not None
+    assert trip_data["expenses_count"] == 0
+
+
+def test_expenses_count_dynamic_addition_and_deletion(db, user_a, destination_mussoorie):
+    """Expenses count dynamically tracks additions and deletions accurately."""
+    trip = Trip(
+        user_id=user_a.id,
+        destination_id=destination_mussoorie.id,
+        title="Dynamic Expense Trip",
+        start_date=date.today(),
+        end_date=date.today() + timedelta(days=3),
+        num_days=3,
+        budget_total=15000.0,
+    )
+    db.add(trip)
+    db.commit()
+
+    # Initial count: 0
+    ctx0 = build_verified_context(db=db, user=user_a, trip_id=trip.id)
+    assert ctx0["trip"]["expenses_count"] == 0
+
+    # Add 2 expenses
+    e1 = Expense(trip_id=trip.id, user_id=user_a.id, title="Coffee", category="Food", amount=350.0)
+    e2 = Expense(trip_id=trip.id, user_id=user_a.id, title="Taxi", category="Transport", amount=1200.0)
+    db.add_all([e1, e2])
+    db.commit()
+
+    ctx2 = build_verified_context(db=db, user=user_a, trip_id=trip.id)
+    assert ctx2["trip"]["expenses_count"] == 2
+
+    # Add 1 more expense
+    e3 = Expense(trip_id=trip.id, user_id=user_a.id, title="Dinner", category="Food", amount=1800.0)
+    db.add(e3)
+    db.commit()
+
+    ctx3 = build_verified_context(db=db, user=user_a, trip_id=trip.id)
+    assert ctx3["trip"]["expenses_count"] == 3
+
+    # Delete 1 expense
+    db.delete(e1)
+    db.commit()
+
+    ctx_after_del = build_verified_context(db=db, user=user_a, trip_id=trip.id)
+    assert ctx_after_del["trip"]["expenses_count"] == 2
+
+
+def test_expenses_count_strict_trip_and_user_isolation(db, user_a, user_b, destination_mussoorie):
+    """Expenses belonging to other trips or users are never counted."""
+    trip_a1 = Trip(id="trip-iso-a1", user_id=user_a.id, destination_id=destination_mussoorie.id, title="Trip A1", start_date=date.today(), end_date=date.today() + timedelta(days=2), num_days=2)
+    trip_a2 = Trip(id="trip-iso-a2", user_id=user_a.id, destination_id=destination_mussoorie.id, title="Trip A2", start_date=date.today(), end_date=date.today() + timedelta(days=2), num_days=2)
+    trip_b1 = Trip(id="trip-iso-b1", user_id=user_b.id, destination_id=destination_mussoorie.id, title="Trip B1", start_date=date.today(), end_date=date.today() + timedelta(days=2), num_days=2)
+    db.add_all([trip_a1, trip_a2, trip_b1])
+    db.commit()
+
+    # Add expenses to each
+    db.add_all([
+        Expense(trip_id=trip_a1.id, user_id=user_a.id, title="A1-1", category="Food", amount=100.0),
+        Expense(trip_id=trip_a1.id, user_id=user_a.id, title="A1-2", category="Food", amount=200.0),
+        Expense(trip_id=trip_a2.id, user_id=user_a.id, title="A2-1", category="Stay", amount=5000.0),
+        Expense(trip_id=trip_b1.id, user_id=user_b.id, title="B1-1", category="Flight", amount=8000.0),
+        Expense(trip_id=trip_b1.id, user_id=user_b.id, title="B1-2", category="Food", amount=600.0),
+        Expense(trip_id=trip_b1.id, user_id=user_b.id, title="B1-3", category="Activity", amount=1200.0),
+    ])
+    db.commit()
+
+    ctx_a1 = build_verified_context(db=db, user=user_a, trip_id=trip_a1.id)
+    ctx_a2 = build_verified_context(db=db, user=user_a, trip_id=trip_a2.id)
+    ctx_b1 = build_verified_context(db=db, user=user_b, trip_id=trip_b1.id)
+
+    assert ctx_a1["trip"]["expenses_count"] == 2
+    assert ctx_a2["trip"]["expenses_count"] == 1
+    assert ctx_b1["trip"]["expenses_count"] == 3
+
+
+def test_expenses_count_completed_trip(db, user_a, destination_mussoorie):
+    """Completed trips retain accurate expense count."""
+    comp_trip = Trip(
+        user_id=user_a.id,
+        destination_id=destination_mussoorie.id,
+        title="Completed Expedition",
+        status="completed",
+        start_date=date(2025, 5, 1),
+        end_date=date(2025, 5, 5),
+        num_days=4,
+        budget_total=25000.0,
+    )
+    db.add(comp_trip)
+    db.commit()
+
+    db.add_all([
+        Expense(trip_id=comp_trip.id, user_id=user_a.id, title="Hotel", category="Stay", amount=12000.0),
+        Expense(trip_id=comp_trip.id, user_id=user_a.id, title="Rafting", category="Activity", amount=4000.0),
+    ])
+    db.commit()
+
+    ctx = build_verified_context(db=db, user=user_a, trip_id=comp_trip.id)
+    assert ctx["trip"]["status"] == "completed"
+    assert ctx["trip"]["expenses_count"] == 2

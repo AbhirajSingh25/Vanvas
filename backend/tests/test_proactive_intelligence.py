@@ -727,3 +727,129 @@ def test_deep_link_opens_relevant_trip_context(db, intelligence_env):
     notif = db.query(NotificationItem).filter(NotificationItem.trip_id == trip.id).first()
     assert notif is not None
     assert notif.deep_link == f"/trips/{trip.id}/intelligence?insight_id={insight.id}"
+
+
+# 24. Repeated Proposal Submission Idempotent
+def test_repeated_proposal_submission_idempotent(db, intelligence_env):
+    trip = intelligence_env["trip"]
+    user = intelligence_env["user"]
+
+    sig = SignalIngestionService.ingest_signal(
+        db=db,
+        trip_id=trip.id,
+        signal_type="WEATHER",
+        source="Open-Meteo",
+        severity="HIGH",
+        raw_state={"condition": "Heavy Rain", "is_rain": True, "precipitation_probability": 85},
+        normalized_state={"is_rain": True, "is_severe": True, "condition": "Heavy Rain", "precipitation_probability": 85}
+    )
+    insight = ImpactEngine.evaluate_weather_impact(db, trip, sig)
+    db.add(insight)
+    db.commit()
+
+    proposal = ReplanEngine.generate_weather_proposal(db, trip, insight)
+    res1 = ReplanEngine.apply_proposal(db, trip, proposal, user=user)
+    assert res1["success"] is True
+    assert res1["status"] == "APPLIED"
+
+    rev_count1 = db.query(TripRevision).filter(TripRevision.trip_id == trip.id).count()
+
+    # Second submission of same proposal
+    res2 = ReplanEngine.apply_proposal(db, trip, proposal, user=user)
+    assert res2["success"] is True
+    assert res2["status"] == "APPLIED"
+
+    rev_count2 = db.query(TripRevision).filter(TripRevision.trip_id == trip.id).count()
+    # No duplicate revision created!
+    assert rev_count1 == rev_count2
+
+
+# 25. Rejected Proposal Cannot Be Applied
+def test_rejected_proposal_cannot_be_applied(db, intelligence_env):
+    trip = intelligence_env["trip"]
+    user = intelligence_env["user"]
+
+    sig = SignalIngestionService.ingest_signal(
+        db=db,
+        trip_id=trip.id,
+        signal_type="WEATHER",
+        source="Open-Meteo",
+        severity="HIGH",
+        raw_state={"condition": "Heavy Rain", "is_rain": True, "precipitation_probability": 85},
+        normalized_state={"is_rain": True, "is_severe": True, "condition": "Heavy Rain", "precipitation_probability": 85}
+    )
+    insight = ImpactEngine.evaluate_weather_impact(db, trip, sig)
+    db.add(insight)
+    db.commit()
+
+    proposal = ReplanEngine.generate_weather_proposal(db, trip, insight)
+    proposal.status = "REJECTED"
+    db.commit()
+
+    res = ReplanEngine.apply_proposal(db, trip, proposal, user=user)
+    assert res["success"] is False
+    assert res["status"] == "REJECTED"
+
+
+# 26. End-to-End Weather to Replan User Journey (Scenario A)
+def test_weather_replan_end_to_end_user_journey(db, intelligence_env):
+    """
+    Scenario A:
+    1. 9:00 AM outdoor hike in itinerary.
+    2. Weather provider reports heavy rain.
+    3. System ingests signal, evaluates impact, and produces feasible proposal (move to 16:00).
+    4. User accepts proposal.
+    5. Database updates itinerary, creates audit revision, updates insight, and creates in-app notification.
+    6. Refreshed trip shows new schedule at 16:00.
+    """
+    trip = intelligence_env["trip"]
+    user = intelligence_env["user"]
+    hike_item = intelligence_env["hike_item"]
+
+    # Initial state
+    assert hike_item.start_time == "09:00"
+
+    # Step 1: Signal Ingestion
+    sig = SignalIngestionService.ingest_signal(
+        db=db,
+        trip_id=trip.id,
+        signal_type="WEATHER",
+        source="Open-Meteo",
+        severity="HIGH",
+        confidence=0.95,
+        freshness="LIVE",
+        raw_state={"condition": "Heavy Rain", "is_rain": True, "precipitation_probability": 90},
+        normalized_state={"is_rain": True, "is_severe": True, "condition": "Heavy Rain", "precipitation_probability": 90}
+    )
+
+    # Step 2: Impact Evaluation
+    insight = ImpactEngine.evaluate_weather_impact(db, trip, sig)
+    assert insight is not None
+    db.add(insight)
+    db.commit()
+
+    # Step 3: Feasible Proposal Generation
+    proposal = ReplanEngine.generate_weather_proposal(db, trip, insight)
+    assert proposal is not None
+    assert proposal.status == "PROPOSED"
+
+    # Step 4: Notification dispatch
+    IntelligenceOrchestrator._notify_insight(db, trip, insight, proposal)
+    notif = db.query(NotificationItem).filter(NotificationItem.trip_id == trip.id).first()
+    assert notif is not None
+
+    # Step 5: User Acceptance
+    res = ReplanEngine.apply_proposal(db, trip, proposal, user=user)
+    assert res["success"] is True
+    assert res["status"] == "APPLIED"
+
+    # Step 6: Verify Database Commit & Refreshed Trip
+    db.refresh(hike_item)
+    assert hike_item.start_time == "16:00"
+
+    db.refresh(insight)
+    assert insight.status == "APPLIED"
+
+    rev = db.query(TripRevision).filter(TripRevision.trip_id == trip.id).order_by(TripRevision.revision_number.desc()).first()
+    assert rev is not None
+    assert rev.action_type == "WEATHER_CHANGE"

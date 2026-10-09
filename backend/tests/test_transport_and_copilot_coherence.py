@@ -930,8 +930,8 @@ def test_whats_next_all_scenarios_and_isolation(db):
         user_id=user.id,
         destination_id=dest.id,
         title="Full What's Next Verification Trip",
-        start_date=date(2026, 10, 8),
-        end_date=date(2026, 10, 10),
+        start_date=date.today(),
+        end_date=date.today() + timedelta(days=2),
         num_days=2,
         budget_total=18000.0,
         travellers_count=2
@@ -939,8 +939,8 @@ def test_whats_next_all_scenarios_and_isolation(db):
     db.add(trip)
     db.commit()
 
-    itin1 = Itinerary(id="itin-wnf-1", trip_id=trip.id, day_number=1, date=date(2026, 10, 8), theme="Day 1")
-    itin2 = Itinerary(id="itin-wnf-2", trip_id=trip.id, day_number=2, date=date(2026, 10, 9), theme="Day 2")
+    itin1 = Itinerary(id="itin-wnf-1", trip_id=trip.id, day_number=1, date=date.today(), theme="Day 1")
+    itin2 = Itinerary(id="itin-wnf-2", trip_id=trip.id, day_number=2, date=date.today() + timedelta(days=1), theme="Day 2")
     db.add_all([itin1, itin2])
     db.commit()
 

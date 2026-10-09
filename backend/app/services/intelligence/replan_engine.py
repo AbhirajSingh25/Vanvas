@@ -421,6 +421,22 @@ class ReplanEngine:
         """
         now = datetime.now(timezone.utc)
 
+        # 0. Idempotency and status check
+        if proposal.status == "APPLIED":
+            return {
+                "success": True,
+                "message": "Proposal already applied",
+                "status": "APPLIED",
+                "proposal_id": proposal.id
+            }
+        if proposal.status == "REJECTED":
+            return {
+                "success": False,
+                "message": "Cannot apply a rejected proposal",
+                "status": "REJECTED",
+                "proposal_id": proposal.id
+            }
+
         # 1. Parse proposed items
         proposed_items = []
         if proposal.proposed_schedule_json:

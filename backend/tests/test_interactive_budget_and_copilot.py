@@ -432,4 +432,7 @@ def test_24_25_26_delhi_haridwar_road_trip_day_affordances():
     assert "Haridwar" in day1.destination
     assert day1.driving_distance_km > 180
     assert len(day1.stops) > 0
-    assert len(plan.route_geometry) > 0
+    if plan.route_source == "OSRM_OPENSTREETMAP":
+        assert len(plan.route_geometry) > 0
+    else:
+        assert plan.route_source == "ROUTING_PROVIDER_UNAVAILABLE"
