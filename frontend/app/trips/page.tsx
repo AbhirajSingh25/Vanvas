@@ -11,6 +11,8 @@ import { TravelStamp } from "@/components/ui/TravelStamp";
 import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 import { useDensity } from "@/context/DensityContext";
 import { CompactTripCard, CompactPlaceCard } from "@/components/compact";
+import { TripCardSkeleton, CardSkeleton } from "@/components/ui/ParchmentSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function TripsDashboardPage() {
   const { isCompact } = useDensity();
@@ -146,12 +148,31 @@ export default function TripsDashboardPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-[#173B32] gap-2">
-            <div className="w-8 h-8 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-serif italic text-[#7B4D36]">Loading travel journal entries...</span>
-          </div>
+          activeTab === "trips" ? (
+            <div className={`grid ${isCompact ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}`}>
+              {[1, 2, 3].map((i) => (
+                <TripCardSkeleton key={i} isCompact={isCompact} />
+              ))}
+            </div>
+          ) : (
+            <div className={`grid ${isCompact ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"}`}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <CardSkeleton key={i} variant={isCompact ? "compact" : "standard"} />
+              ))}
+            </div>
+          )
         ) : activeTab === "trips" ? (
-          isCompact ? (
+          trips.length === 0 ? (
+            <EmptyState
+              icon={Calendar}
+              stampText="सफ़रनामा • EXPEDITIONS"
+              hindiTitle="कोई यात्रा डायरी दर्ज नहीं है"
+              title="No Expeditions Planned Yet"
+              description="Start your first spontaneous or planned Himalayan expedition. Select an origin, duration, and companions to generate an adaptive itinerary."
+              actionLabel="Plan My Trip"
+              actionHref="/plan"
+            />
+          ) : isCompact ? (
             /* COMPACT TRIPS GRID */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {trips.map((t) => (
@@ -165,7 +186,7 @@ export default function TripsDashboardPage() {
                 <Link
                   key={t.id}
                   href={`/trips/${t.id}`}
-                  className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                  className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press flex flex-col justify-between"
                 >
                   <div className="relative h-48 w-full bg-[#173B32] overflow-hidden">
                     {t.hero_image && (
@@ -202,6 +223,16 @@ export default function TripsDashboardPage() {
               ))}
             </div>
           )
+        ) : savedPlaces.length === 0 ? (
+          <EmptyState
+            icon={Bookmark}
+            stampText="पसंदीदा • SAVED GEMS"
+            hindiTitle="कोई पसंदीदा स्थान सहेजा नहीं गया है"
+            title="No Saved Gems Yet"
+            description="Bookmark riverside cafés, dhabas, trails, and quiet mountain viewpoints while exploring destinations to access them quickly here."
+            actionLabel="Explore Sanctuaries"
+            actionHref="/explore"
+          />
         ) : isCompact ? (
           /* COMPACT SAVED PLACES */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">

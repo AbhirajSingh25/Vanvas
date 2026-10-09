@@ -8,7 +8,7 @@ import {
   ExternalLink, Share2, MessageSquare, Coffee, BedDouble, Bike,
   CheckSquare, ArrowRight, ShieldCheck, Sun, Info, Heart, Printer,
   Bus, Train, Plane, Car, CarTaxiFront, History, FastForward,
-  AlertTriangle, RefreshCw, X
+  AlertTriangle, RefreshCw, X, AlertCircle
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -43,6 +43,8 @@ import { VanvasSplitView } from "@/components/trip/VanvasSplitView";
 import { TripBookingsTab } from "@/components/trip/TripBookingsTab";
 import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
 import { TripIntelligenceCenter } from "@/components/trip/TripIntelligenceCenter";
+import { TripWorkspaceSkeleton, ItineraryItemSkeleton } from "@/components/ui/ParchmentSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Booking } from "@/types";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -365,11 +367,23 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  if (loading || !trip) {
+  if (!trip) {
+    if (loading) {
+      return <TripWorkspaceSkeleton />;
+    }
     return (
-      <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-3">
-        <div className="w-10 h-10 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-serif italic text-[#7B4D36]">Opening expedition operating hub...</span>
+      <div className="min-h-screen bg-[#EFE5D2] flex items-center justify-center p-4">
+        <EmptyState
+          icon={AlertCircle}
+          stampText="सफ़र • EXPEDITION HUB"
+          hindiTitle="यात्रा नहीं मिली"
+          title="Expedition Hub Not Found"
+          description="We could not find or load the requested expedition workspace. Check your connection or return to your journeys."
+          actionLabel="My Expeditions"
+          actionHref="/trips"
+          secondaryActionLabel="Plan New Trip"
+          onSecondaryActionClick={() => window.location.href = "/plan"}
+        />
       </div>
     );
   }

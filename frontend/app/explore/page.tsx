@@ -13,6 +13,8 @@ import { JournalNote } from "@/components/ui/JournalNote";
 import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 import { useDensity } from "@/context/DensityContext";
 import { CompactDestinationCard } from "@/components/compact";
+import { CardSkeleton } from "@/components/ui/ParchmentSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function ExploreIndexPage() {
   const { isCompact } = useDensity();
@@ -363,40 +365,34 @@ export default function ExploreIndexPage() {
 
           {/* Destination Showcase Grid */}
           {loading && destinations.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center text-[#173B32] gap-2">
-              <div className="w-8 h-8 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs font-serif italic text-[#7B4D36]">Unrolling illustrated expedition maps...</span>
+            <div className={`grid ${isCompact ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"}`}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <CardSkeleton key={i} variant={isCompact ? "compact" : "standard"} />
+              ))}
             </div>
           ) : loadError && destinations.length === 0 ? (
-            <div className="py-12 text-center space-y-3 max-w-md mx-auto bg-[#FAF7F0] p-6 rounded-3xl border-2 border-[#E5D5BA] animate-vanvas-scale">
-              <AlertCircle className="w-8 h-8 text-[#B65E3C] mx-auto" />
-              <h3 className="text-lg font-serif font-black text-[#173B32]">
-                VANVAS couldn&rsquo;t load destinations right now.
-              </h3>
-              <button
-                onClick={loadDestinations}
-                className="px-5 py-2 rounded-xl bg-[#173B32] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#204E43] interactive-btn flex items-center gap-2 mx-auto cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Retry</span>
-              </button>
-            </div>
+            <EmptyState
+              icon={AlertCircle}
+              stampText="सर्वर स्थिति • CONNECTION"
+              hindiTitle="अभयारण्य लोड नहीं हो सके"
+              title="Unable to Load Sanctuaries"
+              description="Could not connect to the destination registry. Tap retry to reconnect."
+              actionLabel="Retry"
+              onActionClick={loadDestinations}
+            />
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center space-y-3 max-w-md mx-auto bg-[#FAF7F0] p-6 rounded-3xl border-2 border-[#E5D5BA] animate-vanvas-scale">
-              <Compass className="w-8 h-8 text-[#7B4D36] mx-auto opacity-60" />
-              <h3 className="text-base font-serif font-black text-[#173B32]">
-                No sanctuaries match your criteria
-              </h3>
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setSelectedCategory("All");
-                }}
-                className="px-4 py-2 rounded-xl bg-[#B65E3C] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider hover:bg-[#9E4D2E] interactive-btn cursor-pointer"
-              >
-                Reset Filters
-              </button>
-            </div>
+            <EmptyState
+              icon={Compass}
+              stampText="खोज • NO RESULTS"
+              hindiTitle="कोई अभयारण्य नहीं मिला"
+              title="No Sanctuaries Match Your Criteria"
+              description={search ? `No sanctuaries match "${search}". Try searching for another state, region or keyword.` : "No destinations found for this filter combination."}
+              actionLabel="Reset Filters"
+              onActionClick={() => {
+                setSearch("");
+                setSelectedCategory("All");
+              }}
+            />
           ) : isCompact ? (
             /* COMPACT MODE: 2-COLUMN (MOBILE) / 4-COLUMN (DESKTOP) FIELD GUIDE CATALOGUE */
             <div id="all-destinations" className="space-y-6">

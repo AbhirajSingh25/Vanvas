@@ -11,6 +11,8 @@ import { api } from "@/lib/api";
 import { Booking } from "@/types";
 import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
+import { BookingCardSkeleton } from "@/components/ui/ParchmentSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type BookingFilterTab = "all" | "upcoming" | "completed" | "cancelled" | "refunded";
 
@@ -270,53 +272,41 @@ export default function BookingsHistoryPage() {
           </div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="p-12 text-center rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-3">
-            <RefreshCw className="w-8 h-8 text-[#173B32] animate-spin mx-auto" />
-            <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#7B4D36]">
-              Loading verified transaction ledger...
-            </p>
+        {/* Loading State (Initial Fetch Skeleton Grid) */}
+        {loading && bookings.length === 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[1, 2, 3, 4].map((i) => (
+              <BookingCardSkeleton key={i} />
+            ))}
           </div>
         )}
 
         {/* Error State */}
-        {error && !loading && (
-          <div className="p-6 rounded-3xl bg-rose-50 border-2 border-rose-200 text-center space-y-3">
-            <AlertCircle className="w-8 h-8 text-rose-600 mx-auto" />
-            <h3 className="font-serif font-bold text-base text-rose-900">Unable to retrieve bookings</h3>
-            <p className="text-xs text-rose-700 max-w-md mx-auto">{error}</p>
-            <button
-              onClick={fetchBookings}
-              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer"
-            >
-              Try Again
-            </button>
-          </div>
+        {error && bookings.length === 0 && (
+          <EmptyState
+            icon={AlertCircle}
+            stampText="त्रुटि • RETRY REQUIRED"
+            hindiTitle="आरक्षण लोड नहीं हो सके"
+            title="Unable to Retrieve Bookings"
+            description={error}
+            actionLabel="Try Again"
+            onActionClick={fetchBookings}
+            secondaryActionLabel="Explore Stays"
+            onSecondaryActionClick={() => window.location.href = "/explore"}
+          />
         )}
 
         {/* Empty State */}
         {!loading && !error && filteredBookings.length === 0 && (
-          <div className="p-12 text-center rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
-            <ShieldCheck className="w-12 h-12 text-[#B49252] mx-auto opacity-70" />
-            <div className="space-y-1">
-              <h3 className="font-serif font-bold text-lg text-[#173B32]">
-                {searchQuery ? "No bookings match your search query" : "No bookings found in this view"}
-              </h3>
-              <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
-                Ready to secure your Himalayan retreat or mountain transit? Explore verified stays and book directly with instant confirmation.
-              </p>
-            </div>
-            <div className="pt-2">
-              <Link
-                href="/explore"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-md"
-              >
-                <span>Explore Destinations</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
+          <EmptyState
+            icon={ShieldCheck}
+            stampText="आरक्षण • EXPLORER LEDGER"
+            hindiTitle="कोई आरक्षण दर्ज नहीं है"
+            title={searchQuery ? "No bookings match your search" : "No Bookings Found in this Ledger View"}
+            description="Ready to secure your Himalayan sanctuary, boutique homestay, or mountain transit? Explore verified sanctuaries and reserve with guaranteed check-in vouchers."
+            actionLabel="Explore Sanctuaries"
+            actionHref="/explore"
+          />
         )}
 
         {/* Booking Cards Grid */}
