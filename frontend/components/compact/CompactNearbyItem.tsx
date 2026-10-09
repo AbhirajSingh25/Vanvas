@@ -32,7 +32,7 @@ export const CompactNearbyItem: React.FC<CompactNearbyItemProps> = ({ place, onS
           if (onSelect) onSelect(place);
         }
       }}
-      className="group bg-[#FAF7F0] rounded-xl border border-[#E5D5BA] hover:border-[#173B32] p-3 shadow-2xs hover:shadow-xs transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer focus:outline-none"
+      className="group bg-[#FAF7F0] rounded-xl border border-[#E5D5BA] hover:border-[#173B32] p-3 shadow-2xs hover:shadow-xs interactive-card touch-press flex items-center justify-between gap-3 text-left cursor-pointer focus:outline-none"
     >
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
         <span className="text-lg shrink-0">{getCategoryEmoji(place.category)}</span>

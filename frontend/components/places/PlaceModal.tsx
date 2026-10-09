@@ -165,13 +165,21 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-fadeIn"
+      role="dialog"
+      aria-modal="true"
+      aria-label={place.name}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-vanvas-fade"
       onClick={onClose}
     >
       <div 
-        className="bg-[#EFE5D2] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-scaleUp flex flex-col max-h-[90vh] sm:max-h-[88vh] relative"
+        className="bg-[#EFE5D2] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-vanvas-sheet sm:animate-vanvas-scale flex flex-col max-h-[90vh] sm:max-h-[88vh] relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Drag Indicator */}
+        <div className="sm:hidden absolute top-2 inset-x-0 z-20 flex justify-center pointer-events-none">
+          <div className="w-10 h-1 rounded-full bg-white/70 shadow-sm" />
+        </div>
+
         {/* Header Artwork */}
         <div className="relative h-60 sm:h-64 w-full bg-[#173B32] overflow-hidden shrink-0">
           <VanvasImage

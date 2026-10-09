@@ -30,7 +30,7 @@ export const CompactDestinationCard: React.FC<CompactDestinationCardProps> = ({
   return (
     <Link
       href={`/explore/${destination.slug}`}
-      className="group bg-[#FAF7F0] rounded-2xl border-2 border-[#E5D5BA] hover:border-[#173B32] overflow-hidden shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between h-[180px] sm:h-[195px] relative"
+      className="group bg-[#FAF7F0] rounded-2xl border-2 border-[#E5D5BA] hover:border-[#173B32] overflow-hidden shadow-2xs hover:shadow-lg interactive-card touch-press flex flex-col justify-between h-[180px] sm:h-[195px] relative"
     >
       {/* Compact Image Strip (not dominating the card) */}
       <div className="relative h-20 sm:h-22 w-full overflow-hidden bg-[#173B32]">

@@ -59,7 +59,7 @@ export const CompactPlaceCard: React.FC<CompactPlaceCardProps> = ({
           if (onSelect) onSelect(place);
         }
       }}
-      className="group bg-[#FAF7F0] rounded-2xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-3 shadow-2xs hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 text-left focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 min-h-[88px]"
+      className="group bg-[#FAF7F0] rounded-2xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-3 shadow-2xs hover:shadow-md interactive-card touch-press cursor-pointer flex items-center justify-between gap-3 text-left focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 min-h-[88px]"
     >
       {/* Small Left Thumbnail */}
       <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-[#E5D5BA] shrink-0 border border-[#E5D5BA]">
