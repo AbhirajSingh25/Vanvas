@@ -9,7 +9,7 @@ from app.seed.seed_data import seed_database
 from app.api.v1 import (
     auth, destinations, trips, budget, group, places,
     transport_hotels_rentals, copilot, checklist, admin, search, artwork, reviews, bookings, mobility, circles, road_trip,
-    notifications, app_info, intelligence
+    notifications, app_info, intelligence, memory
 )
 
 import logging
@@ -79,6 +79,7 @@ app.include_router(circles.router, prefix=f"{settings.API_V1_STR}", tags=["Solo 
 app.include_router(road_trip.router, prefix=f"{settings.API_V1_STR}/road-trip", tags=["Road Trip Mode"])
 app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}", tags=["Push Notifications & Device Registration"])
 app.include_router(intelligence.router, prefix=f"{settings.API_V1_STR}", tags=["Travel Intelligence & Live Operations"])
+app.include_router(memory.router, prefix=f"{settings.API_V1_STR}/memory", tags=["Traveller Memory & Personalization"])
 app.include_router(app_info.router, prefix=f"{settings.API_V1_STR}", tags=["App Version & Updates"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Admin & System Health"])
 

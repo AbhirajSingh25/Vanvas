@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.models import (
     User, UserPreference, EmailVerificationToken, EmailVerificationOTP, Trip, SavedPlace, Review, Booking,
-    Itinerary, Expense, ChecklistItem
+    Itinerary, Expense, ChecklistItem, TravellerMemory, MemoryObservation
 )
 from app.schemas.schemas import (
     UserCreate, UserLogin, UserResponse, TokenResponse,
@@ -37,7 +37,7 @@ PREFERENCE_FIELDS = [
     "notify_trip_changes", "notify_booking_updates", "notify_suggestions",
     "notify_copilot_updates", "notify_announcements", "ai_copilot_enabled",
     "ai_personalized_recommendations", "ai_use_travel_preferences",
-    "ai_use_trip_context"
+    "ai_use_trip_context", "memory_learning_enabled", "memory_learning_paused"
 ]
 
 @router.post("/register", response_model=RegistrationSuccessResponse)
@@ -817,6 +817,41 @@ def export_user_data(
             "created_at": b.created_at.isoformat() if b.created_at else None
         })
 
+    # Traveller Memories (Phase 5)
+    memories = db.query(TravellerMemory).filter(
+        TravellerMemory.user_id == current_user.id,
+        TravellerMemory.status == "ACTIVE"
+    ).all()
+    memories_data = []
+    for m in memories:
+        memories_data.append({
+            "id": m.id,
+            "category": m.category,
+            "preference_key": m.preference_key,
+            "preference_value": m.preference_value,
+            "memory_type": m.memory_type,
+            "confidence": m.confidence,
+            "evidence_count": m.evidence_count,
+            "confirmation_status": m.confirmation_status,
+            "provenance_summary": m.provenance_summary,
+            "created_at": m.created_at.isoformat() if m.created_at else None
+        })
+
+    # Memory Observations (Phase 5)
+    observations = db.query(MemoryObservation).filter(
+        MemoryObservation.user_id == current_user.id
+    ).order_by(MemoryObservation.created_at.desc()).limit(100).all()
+    observations_data = []
+    for o in observations:
+        observations_data.append({
+            "id": o.id,
+            "event_type": o.event_type,
+            "category": o.category,
+            "observed_key": o.observed_key,
+            "observed_value": o.observed_value,
+            "created_at": o.created_at.isoformat() if o.created_at else None
+        })
+
     return UserDataExportResponse(
         user=user_info,
         preferences=pref_data,
@@ -824,6 +859,8 @@ def export_user_data(
         saved_places=saved_data,
         reviews=reviews_data,
         bookings=bookings_data,
+        traveller_memories=memories_data,
+        memory_observations=observations_data,
         exported_at=datetime.now(timezone.utc)
     )
 

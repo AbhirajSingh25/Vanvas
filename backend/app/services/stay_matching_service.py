@@ -319,6 +319,7 @@ class StayMatchingService:
         check_out: Optional[str] = None,
         adults: int = 1,
         children: int = 0,
+        memory_preferences: Optional[Dict[str, Any]] = None,
     ) -> List[HotelResponse]:
         """
         Coordinates discovery from StayingAPI, OpenStreetMap, and Curated Stays.
@@ -815,6 +816,20 @@ class StayMatchingService:
             if style and style != "All":
                 if style.lower() in str(stay.get("accommodation_type", "")).lower():
                     score += 25.0
+
+            # 4b. Traveller Memory Preference alignment (Phase 5)
+            if memory_preferences:
+                stay_pref = memory_preferences.get("stay_category") or memory_preferences.get("accommodation_preference")
+                if stay_pref:
+                    clean_pref = str(stay_pref).lower().strip()
+                    acc_lower = str(stay.get("accommodation_type", "")).lower()
+                    hotel_style_lower = str(stay.get("hotel_style", "")).lower()
+                    if clean_pref in acc_lower or clean_pref in hotel_style_lower or acc_lower in clean_pref:
+                        score += 35.0
+
+                budget_pref = memory_preferences.get("budget_tier") or memory_preferences.get("travel_style")
+                if budget_pref and "budget" in str(budget_pref).lower() and "Budget" in stay.get("traveller_tags", []):
+                    score += 15.0
 
             # 5. Distance Penalty (closer to center scores higher)
             dist = stay.get("distance_km")

@@ -58,6 +58,8 @@ export interface UserPreferences {
   ai_personalized_recommendations?: boolean;
   ai_use_travel_preferences?: boolean;
   ai_use_trip_context?: boolean;
+  memory_learning_enabled?: boolean;
+  memory_learning_paused?: boolean;
 }
 
 export interface UserStats {
@@ -90,6 +92,8 @@ export interface UserDataExport {
   saved_places: any[];
   reviews: any[];
   bookings: any[];
+  traveller_memories?: any[];
+  memory_observations?: any[];
   exported_at: string;
 }
 
@@ -1676,4 +1680,66 @@ export interface TripIntelligenceSummary {
   recent_signals: TravelSignal[];
   recent_revisions: TripRevision[];
   cadence_mode: "underway" | "imminent" | "near_term" | "planned" | "active";
+}
+
+// ----------------- Traveller Memory & Personalization (Phase 5) -----------------
+
+export interface TravellerMemory {
+  id: string;
+  user_id: string;
+  trip_id?: string | null;
+  category: "planning_style" | "timing" | "activities" | "accommodation" | "transport" | "budget_pace" | "practical" | string;
+  preference_key: string;
+  preference_value: string;
+  memory_type: "EXPLICIT" | "OBSERVED" | "INFERRED" | "TRIP_SPECIFIC";
+  source_event: string;
+  source_reference?: string | null;
+  confidence: number;
+  evidence_count: number;
+  first_observed_at: string;
+  last_observed_at: string;
+  last_confirmed_at?: string | null;
+  expires_at?: string | null;
+  confirmation_status: "UNCONFIRMED" | "CONFIRMED" | "REJECTED" | "CORRECTED";
+  status: "ACTIVE" | "PAUSED" | "SUPERSEDED" | "DELETED";
+  provenance_summary?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemoryObservation {
+  id: string;
+  user_id: string;
+  trip_id?: string | null;
+  event_type: string;
+  category: string;
+  observed_key: string;
+  observed_value: string;
+  idempotency_key: string;
+  source_id?: string | null;
+  created_at: string;
+}
+
+export interface TravellerMemorySettings {
+  memory_learning_enabled: boolean;
+  memory_learning_paused: boolean;
+  message?: string;
+}
+
+export interface MemoryPersonalizationContext {
+  is_learning_enabled: boolean;
+  is_learning_paused: boolean;
+  active_memories_count: number;
+  preferences_summary: string[];
+  active_preferences_map: Record<string, string>;
+  explanations: string[];
+}
+
+export interface TravellerMemoryExport {
+  user_id: string;
+  exported_at: string;
+  learning_enabled: boolean;
+  learning_paused: boolean;
+  memories: TravellerMemory[];
+  observations: MemoryObservation[];
 }

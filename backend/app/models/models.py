@@ -47,6 +47,8 @@ class User(Base):
     trip_revisions = relationship("TripRevision", back_populates="user", cascade="all, delete-orphan")
     device_registrations = relationship("DeviceRegistration", back_populates="user", cascade="all, delete-orphan")
     notification_records = relationship("NotificationItem", back_populates="user", cascade="all, delete-orphan")
+    travel_memories = relationship("TravellerMemory", back_populates="user", cascade="all, delete-orphan")
+    memory_observations = relationship("MemoryObservation", back_populates="user", cascade="all, delete-orphan")
 
     @property
     def is_verified(self) -> bool:
@@ -121,6 +123,10 @@ class UserPreference(Base):
     ai_personalized_recommendations = Column(Boolean, default=True)
     ai_use_travel_preferences = Column(Boolean, default=True)
     ai_use_trip_context = Column(Boolean, default=True)
+
+    # Traveller Memory & Learning (Phase 5)
+    memory_learning_enabled = Column(Boolean, default=True)
+    memory_learning_paused = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -1139,3 +1145,54 @@ class ReplanProposal(Base):
     trip = relationship("Trip", back_populates="replan_proposals")
     insight = relationship("TravelInsight", back_populates="proposals")
     action = relationship("TravelAction")
+
+
+# ----------------- Traveller Memory & Personalization Engine (Phase 5) -----------------
+
+class TravellerMemory(Base):
+    __tablename__ = "traveller_memories"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id", ondelete="SET NULL"), nullable=True, index=True)
+    category = Column(String(50), nullable=False, index=True)  # planning_style, timing, activities, accommodation, transport, budget_pace, practical
+    preference_key = Column(String(100), nullable=False, index=True)  # pace, daily_density, wake_up_preference, stay_category, etc.
+    preference_value = Column(String(255), nullable=False)  # normalized value e.g. "relaxed", "homestays", "avoid_early_starts"
+    memory_type = Column(String(50), nullable=False, default="INFERRED", index=True)  # EXPLICIT, OBSERVED, INFERRED, TRIP_SPECIFIC
+    source_event = Column(String(100), nullable=False)  # USER_SETTINGS, USER_EXPLICIT_CHAT, ACTIVITY_SELECTION, HOTEL_SELECTION, TRANSPORT_SELECTION, REPLAN_PROPOSAL_ACCEPTED, etc.
+    source_reference = Column(String(255), nullable=True)  # trip_id, proposal_id, activity_id, etc.
+    confidence = Column(Float, nullable=False, default=1.0)  # 0.0 to 1.0
+    evidence_count = Column(Integer, nullable=False, default=1)
+    first_observed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    last_observed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    last_confirmed_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+    confirmation_status = Column(String(50), nullable=False, default="UNCONFIRMED", index=True)  # UNCONFIRMED, CONFIRMED, REJECTED, CORRECTED
+    status = Column(String(50), nullable=False, default="ACTIVE", index=True)  # ACTIVE, PAUSED, SUPERSEDED, DELETED
+    provenance_summary = Column(Text, nullable=True)  # Non-sensitive human-readable explanation of why this memory exists
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="travel_memories")
+    trip = relationship("Trip")
+
+
+class MemoryObservation(Base):
+    __tablename__ = "memory_observations"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id", ondelete="SET NULL"), nullable=True, index=True)
+    event_type = Column(String(100), nullable=False, index=True)  # ACTIVITY_SELECTED, ACTIVITY_COMPLETED, HOTEL_SELECTED, TRANSPORT_SELECTED, REPLAN_ACCEPTED, REPLAN_REJECTED, SOLO_VOTE_CAST, EXPLICIT_SETTING
+    category = Column(String(50), nullable=False, index=True)
+    observed_key = Column(String(100), nullable=False, index=True)
+    observed_value = Column(String(255), nullable=False)
+    idempotency_key = Column(String(128), unique=True, index=True, nullable=False)
+    source_id = Column(String(255), nullable=True)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    # Relationships
+    user = relationship("User", back_populates="memory_observations")
+    trip = relationship("Trip")

@@ -85,10 +85,27 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          {/* Section 4 */}
+          {/* Section 4: Traveller Memory & Transparent Learning */}
           <section className="space-y-3">
             <h2 className="font-serif text-xl font-bold text-[#173B32] flex items-center gap-2.5">
               <span className="w-6 h-6 rounded-full bg-[#173B32] text-[#EFE5D2] text-xs flex items-center justify-center font-mono">4</span>
+              <span>Traveller Memory & Transparent Personalization</span>
+            </h2>
+            <p>
+              VANVAS learns how you like to travel (e.g. pace, wake-up times, accommodation styles, dietary preferences) to improve future trip recommendations—not to construct an invasive psychological or behavioral profile.
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#20211D]/80">
+              <li><strong>Zero Sensitive Profiling:</strong> We strictly prohibit and filter out sensitive personal attributes including religion, political opinions, race, caste, sexual orientation, and medical health status.</li>
+              <li><strong>Auditable Provenance:</strong> Inferred preferences always display their source evidence and confidence count so you know exactly why VANVAS suggests something.</li>
+              <li><strong>Total Granular Control:</strong> You can pause learning, disable memory completely, edit any preference, confirm/reject suggestions, or delete individual memories with immediate backend effect.</li>
+              <li><strong>Group Isolation:</strong> A group companion&apos;s choice or a circle vote is never attributed to your individual memory.</li>
+            </ul>
+          </section>
+
+          {/* Section 5 */}
+          <section className="space-y-3">
+            <h2 className="font-serif text-xl font-bold text-[#173B32] flex items-center gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-[#173B32] text-[#EFE5D2] text-xs flex items-center justify-center font-mono">5</span>
               <span>Your Data Rights: Export & Permanent Deletion</span>
             </h2>
             <p>
@@ -101,7 +118,7 @@ export default function PrivacyPolicyPage() {
                   <span>One-Click JSON Data Export</span>
                 </div>
                 <div className="text-[11px] text-[#20211D]/70">
-                  Export all profile data, trip journals, bookmarks, and split expenses directly to your device.
+                  Export all profile data, trip journals, bookmarks, split expenses, and traveller memories directly to your device.
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-white border border-[#D8CBB2] space-y-1">
@@ -110,16 +127,16 @@ export default function PrivacyPolicyPage() {
                   <span>Permanent Account Deletion</span>
                 </div>
                 <div className="text-[11px] text-[#20211D]/70">
-                  Instantly purges all account records, active tokens, and trip histories from our servers.
+                  Instantly purges all account records, active tokens, memories, and trip histories from our servers.
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Section 5 */}
+          {/* Section 6 */}
           <section className="space-y-3">
             <h2 className="font-serif text-xl font-bold text-[#173B32] flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-full bg-[#173B32] text-[#EFE5D2] text-xs flex items-center justify-center font-mono">5</span>
+              <span className="w-6 h-6 rounded-full bg-[#173B32] text-[#EFE5D2] text-xs flex items-center justify-center font-mono">6</span>
               <span>Contact & Data Protection Officer</span>
             </h2>
             <p className="text-xs text-[#20211D]/80">

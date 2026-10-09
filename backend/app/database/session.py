@@ -213,6 +213,8 @@ def ensure_database_schema(eng=engine):
                     "notify_group_activity": "BOOLEAN DEFAULT TRUE",
                     "notify_expense_activity": "BOOLEAN DEFAULT TRUE",
                     "notification_level": "VARCHAR(50) DEFAULT 'all'",
+                    "memory_learning_enabled": "BOOLEAN DEFAULT TRUE",
+                    "memory_learning_paused": "BOOLEAN DEFAULT FALSE",
                 }
                 for col_name, col_def in pref_additions.items():
                     if col_name not in pref_cols:
@@ -286,6 +288,11 @@ def ensure_database_schema(eng=engine):
                 "CREATE INDEX IF NOT EXISTS ix_travel_actions_trip_id ON travel_actions(trip_id)",
                 "CREATE INDEX IF NOT EXISTS ix_replan_proposals_trip_id ON replan_proposals(trip_id)",
                 "CREATE INDEX IF NOT EXISTS ix_replan_proposals_status ON replan_proposals(status)",
+                "CREATE INDEX IF NOT EXISTS ix_traveller_memories_user_id ON traveller_memories(user_id)",
+                "CREATE INDEX IF NOT EXISTS ix_traveller_memories_user_category ON traveller_memories(user_id, category)",
+                "CREATE INDEX IF NOT EXISTS ix_traveller_memories_status ON traveller_memories(status)",
+                "CREATE INDEX IF NOT EXISTS ix_memory_obs_user_id ON memory_observations(user_id)",
+                "CREATE INDEX IF NOT EXISTS ix_memory_obs_idempotency ON memory_observations(idempotency_key)",
             ]:
                 try:
                     conn.execute(text(idx_stmt))

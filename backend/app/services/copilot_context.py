@@ -22,8 +22,9 @@ from typing import Dict, Any, Optional, List, Union
 from sqlalchemy.orm import Session
 from app.models.models import (
     User, Trip, TripMember, Destination, UserPreference,
-    Conversation, ConversationMessage, Expense, SavedPlace, Vote
+    Conversation, ConversationMessage, Expense, SavedPlace, Vote, TravellerMemory
 )
+from app.services.traveller_memory_service import TravellerMemoryService
 
 logger = logging.getLogger("vanvas.services.copilot_context")
 
@@ -45,8 +46,20 @@ def build_verified_context(
     Builds clean, structured verified facts from database records.
     Strictly validates trip access and avoids secret leakage.
     """
-    # 1. User Preferences
+    # 1. User Preferences & Traveller Memories (Phase 5)
     prefs: Optional[UserPreference] = user.preferences
+    active_mems = TravellerMemoryService.get_active_memories(db, user.id, trip_id)
+    mem_list = []
+    for m in active_mems:
+        mem_list.append({
+            "category": m.category,
+            "key": m.preference_key,
+            "value": m.preference_value,
+            "type": m.memory_type,
+            "confidence": m.confidence,
+            "provenance": m.provenance_summary
+        })
+
     user_facts = {
         "user_id": user.id,
         "full_name": user.full_name,
@@ -58,6 +71,7 @@ def build_verified_context(
         "accommodation_preference": prefs.accommodation_preference if prefs else "Riverside & Forest Stays",
         "transport_preference": prefs.transport_preference if prefs else "Volvo Bus",
         "companion_style": prefs.companion_style if prefs else "Solo",
+        "traveller_memories": mem_list,
     }
 
     # 2. Trip Facts (with authorization verification)
@@ -203,6 +217,7 @@ def build_verified_context(
 
     return {
         "user_preferences": user_facts,
+        "traveller_memories": mem_list,
         "trip": trip_facts,
         "destination": dest_facts,
         "saved_places": saved_places_summary,

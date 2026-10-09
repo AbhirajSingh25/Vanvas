@@ -41,6 +41,8 @@ class UserPreferenceSchema(BaseModel):
     ai_personalized_recommendations: Optional[bool] = True
     ai_use_travel_preferences: Optional[bool] = True
     ai_use_trip_context: Optional[bool] = True
+    memory_learning_enabled: Optional[bool] = True
+    memory_learning_paused: Optional[bool] = False
 
     class Config:
         from_attributes = True
@@ -72,6 +74,8 @@ class UserProfileUpdateRequest(BaseModel):
     ai_personalized_recommendations: Optional[bool] = None
     ai_use_travel_preferences: Optional[bool] = None
     ai_use_trip_context: Optional[bool] = None
+    memory_learning_enabled: Optional[bool] = None
+    memory_learning_paused: Optional[bool] = None
 
 class AvatarUploadResponse(BaseModel):
     avatar_url: Optional[str] = None
@@ -107,6 +111,8 @@ class UserDataExportResponse(BaseModel):
     saved_places: List[Dict[str, Any]] = []
     reviews: List[Dict[str, Any]] = []
     bookings: List[Dict[str, Any]] = []
+    traveller_memories: List[Dict[str, Any]] = []
+    memory_observations: List[Dict[str, Any]] = []
     exported_at: datetime
 
 class UserResponse(UserBase):
@@ -2077,3 +2083,95 @@ class ProposalDecisionResponse(BaseModel):
     new_status: str
     applied_revision_number: Optional[int] = None
     trip: Optional[TripDetailResponse] = None
+
+
+# ----------------- Traveller Memory & Personalization Schemas (Phase 5) -----------------
+
+class TravellerMemoryResponse(BaseModel):
+    id: str
+    user_id: str
+    trip_id: Optional[str] = None
+    category: str
+    preference_key: str
+    preference_value: str
+    memory_type: str  # EXPLICIT, OBSERVED, INFERRED, TRIP_SPECIFIC
+    source_event: str
+    source_reference: Optional[str] = None
+    confidence: float
+    evidence_count: int
+    first_observed_at: datetime
+    last_observed_at: datetime
+    last_confirmed_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    confirmation_status: str  # UNCONFIRMED, CONFIRMED, REJECTED, CORRECTED
+    status: str  # ACTIVE, PAUSED, SUPERSEDED, DELETED
+    provenance_summary: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TravellerMemoryCreateRequest(BaseModel):
+    category: str = Field(..., description="planning_style, timing, activities, accommodation, transport, budget_pace, practical")
+    preference_key: str = Field(..., min_length=1, max_length=100)
+    preference_value: str = Field(..., min_length=1, max_length=255)
+    trip_id: Optional[str] = None
+    is_trip_specific: bool = False
+    source_event: Optional[str] = "USER_EXPLICIT_SETTING"
+    source_reference: Optional[str] = None
+
+
+class TravellerMemoryUpdateRequest(BaseModel):
+    preference_value: str = Field(..., min_length=1, max_length=255)
+
+
+class TravellerMemorySettingsRequest(BaseModel):
+    memory_learning_enabled: Optional[bool] = None
+    memory_learning_paused: Optional[bool] = None
+
+
+class MemoryObservationRequest(BaseModel):
+    event_type: str = Field(..., description="ACTIVITY_SELECTED, HOTEL_SELECTED, TRANSPORT_SELECTED, REPLAN_ACCEPTED, REPLAN_REJECTED, SOLO_VOTE_CAST")
+    category: str
+    observed_key: str
+    observed_value: str
+    trip_id: Optional[str] = None
+    source_id: Optional[str] = None
+    idempotency_key: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class MemoryObservationResponse(BaseModel):
+    id: str
+    user_id: str
+    trip_id: Optional[str] = None
+    event_type: str
+    category: str
+    observed_key: str
+    observed_value: str
+    idempotency_key: str
+    source_id: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TravellerMemoryExportResponse(BaseModel):
+    user_id: str
+    exported_at: datetime
+    learning_enabled: bool
+    learning_paused: bool
+    memories: List[TravellerMemoryResponse] = []
+    observations: List[MemoryObservationResponse] = []
+
+
+class MemoryPersonalizationContextResponse(BaseModel):
+    is_learning_enabled: bool
+    is_learning_paused: bool
+    active_memories_count: int
+    preferences_summary: List[str] = []
+    active_preferences_map: Dict[str, str] = {}
+    explanations: List[str] = []

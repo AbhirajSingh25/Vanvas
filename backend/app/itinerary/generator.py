@@ -26,19 +26,41 @@ class ItineraryEngine:
         planning_mode: str = "multi_day",
         transport_mode: Optional[str] = None,
         transport_details: Optional[Dict[str, Any]] = None,
+        memory_preferences: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         num_days = max(1, (end_date - start_date).days + 1)
         dest_slug = (destination.slug or "").lower().strip()
         is_trek_destination = planning_mode == "trek" or dest_slug == "tungnath-chandrashila" or "trek" in dest_slug
 
+        # Determine effective intensity and wake-up from memory or explicit input
+        effective_intensity = activity_intensity
+        if memory_preferences:
+            mem_intensity = memory_preferences.get("pace") or memory_preferences.get("activity_intensity")
+            if mem_intensity:
+                if "relax" in str(mem_intensity).lower() or "slow" in str(mem_intensity).lower() or "3" in str(mem_intensity):
+                    effective_intensity = "Relaxed"
+                elif "pack" in str(mem_intensity).lower() or "5" in str(mem_intensity):
+                    effective_intensity = "Packed"
+                else:
+                    effective_intensity = "Balanced"
+
+        effective_wake_up = wake_up_preference
+        if memory_preferences:
+            mem_wake = memory_preferences.get("start_time") or memory_preferences.get("wake_up_preference")
+            if mem_wake:
+                if "avoid_early" in str(mem_wake).lower() or "late" in str(mem_wake).lower():
+                    effective_wake_up = "Late"
+                elif "early" in str(mem_wake).lower():
+                    effective_wake_up = "Early"
+
         # Determine items per day based on intensity, mode, and duration
         if is_trek_destination:
-            items_per_day = 3 if activity_intensity == "Relaxed" else 4
+            items_per_day = 3 if effective_intensity == "Relaxed" else 4
         elif planning_mode == "one_day" or num_days == 1:
-            items_per_day = 3 if activity_intensity == "Relaxed" else 4
-        elif planning_mode in ["relaxed", "slow_travel"] or activity_intensity == "Relaxed":
+            items_per_day = 3 if effective_intensity == "Relaxed" else 4
+        elif planning_mode in ["relaxed", "slow_travel"] or effective_intensity == "Relaxed":
             items_per_day = 3
-        elif activity_intensity == "Packed" or planning_mode == "adventure":
+        elif effective_intensity == "Packed" or planning_mode == "adventure":
             items_per_day = 5
         else:
             items_per_day = 4
@@ -46,14 +68,14 @@ class ItineraryEngine:
         # Determine wake-up and start times
         base_start_hour = 8
         base_start_min = 30
-        if wake_up_preference == "Early":
+        if effective_wake_up == "Early":
             base_start_hour = 7
             base_start_min = 30
-        elif wake_up_preference == "Late":
+        elif effective_wake_up == "Late":
             base_start_hour = 10
             base_start_min = 0
 
-        # Score all places
+        # Score all places with memory-aware personalization
         scored_places = []
         for p in all_places:
             score = self.scorer.score_place(
@@ -61,7 +83,8 @@ class ItineraryEngine:
                 user_interests=interests,
                 user_budget_tier=travel_style,
                 current_lat=destination.latitude,
-                current_lng=destination.longitude
+                current_lng=destination.longitude,
+                memory_preferences=memory_preferences
             )
             scored_places.append((score, p))
 
@@ -595,7 +618,11 @@ class ItineraryEngine:
                         "travel_time_from_prev_mins": travel_mins,
                         "distance_from_prev_km": dist_km,
                         "notes": (p.description[:140] + "...") if p.description and len(p.description) > 140 else (p.description or p.why_vanvas_recommends or "Exploration point."),
-                        "reason_for_recommendation": p.why_vanvas_recommends or "Geographically optimized match for your trip style.",
+                        "reason_for_recommendation": (
+                            self.scorer.explain_recommendation(p, interests, travel_style, memory_preferences)
+                            if memory_preferences
+                            else (p.why_vanvas_recommends or "Geographically optimized match for your trip style.")
+                        ),
                         "map_lat": p.latitude,
                         "map_lng": p.longitude,
                         "booking_url": p.booking_url,

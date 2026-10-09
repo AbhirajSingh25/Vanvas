@@ -216,7 +216,48 @@ async def create_trip(
         # Add owner member
         db.add(TripMember(trip_id=trip.id, user_id=current_user.id, role="owner"))
 
-        # Generate Itinerary
+        # Load Active Traveller Memory Preferences (Phase 5)
+        from app.services.traveller_memory_service import TravellerMemoryService
+        memory_ctx = TravellerMemoryService.build_personalization_context(
+            db=db,
+            user_id=current_user.id,
+            destination_slug=destination.slug
+        )
+        mem_prefs = memory_ctx.get("active_preferences_map", {})
+
+        # Record observations for selected hotel / transport (Phase 5)
+        if hotel:
+            try:
+                TravellerMemoryService.record_observation(
+                    db=db,
+                    user_id=current_user.id,
+                    event_type="HOTEL_SELECTED",
+                    category="accommodation",
+                    observed_key="stay_category",
+                    observed_value=hotel.hotel_style or "Hotel",
+                    trip_id=trip.id,
+                    source_id=hotel.id,
+                    metadata={"hotel_name": hotel.name}
+                )
+            except Exception:
+                pass
+
+        if chosen_transport_mode:
+            try:
+                TravellerMemoryService.record_observation(
+                    db=db,
+                    user_id=current_user.id,
+                    event_type="TRANSPORT_SELECTED",
+                    category="transport",
+                    observed_key="transport_mode",
+                    observed_value=chosen_transport_mode,
+                    trip_id=trip.id,
+                    metadata={"transport_mode": chosen_transport_mode}
+                )
+            except Exception:
+                pass
+
+        # Generate Itinerary with Personalization Layer
         all_places = db.query(Place).filter(Place.destination_id == destination.id, Place.is_active == True).all()
 
         generated_days = itinerary_engine.generate_trip_itinerary(
@@ -234,7 +275,8 @@ async def create_trip(
             rental=rental,
             planning_mode=getattr(trip_in, "planning_mode", "multi_day") or "multi_day",
             transport_mode=chosen_transport_mode,
-            transport_details=trip_in.transport_details
+            transport_details=trip_in.transport_details,
+            memory_preferences=mem_prefs
         )
 
         for day_dict in generated_days:

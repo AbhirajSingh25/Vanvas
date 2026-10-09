@@ -11,9 +11,11 @@ import {
   User, Compass, Globe, DollarSign, Bell, MapPin, Sparkles,
   Sun, Moon, Shield, Lock, Download, Trash2, CheckCircle2,
   AlertCircle, RefreshCw, ChevronRight, LogOut, Heart, Utensils,
-  Car, Users, Clock, Info, Check, Eye, EyeOff, Camera, ArrowRight
+  Car, Users, Clock, Info, Check, Eye, EyeOff, Camera, ArrowRight,
+  Brain
 } from "lucide-react";
 import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
+import { TravellerMemoryTab } from "@/components/memory/TravellerMemoryTab";
 
 import { useTheme } from "@/context/ThemeContext";
 import { useDensity } from "@/context/DensityContext";
@@ -28,7 +30,7 @@ function SettingsContent() {
   const { density, setDensity } = useDensity();
 
   const [activeSection, setActiveSection] = useState<
-    "account" | "travel" | "solo" | "food" | "language" | "currency" | "notifications" | "location" | "copilot" | "appearance" | "privacy" | "security" | "about"
+    "account" | "travel" | "memory" | "solo" | "food" | "language" | "currency" | "notifications" | "location" | "copilot" | "appearance" | "privacy" | "security" | "about"
   >("travel");
 
   // State for all settings
@@ -225,6 +227,7 @@ function SettingsContent() {
 
   const sections = [
     { id: "travel", label: "Travel DNA", icon: Compass },
+    { id: "memory", label: "Traveller Memory", icon: Brain },
     { id: "solo", label: "Solo & Circles", icon: Users },
     { id: "food", label: "Food & Dietary", icon: Utensils },
     { id: "language", label: "Language & Region", icon: Globe },
@@ -440,6 +443,13 @@ function SettingsContent() {
                       })}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Section: Traveller Memory & Personalization */}
+              {activeSection === "memory" && (
+                <div className="space-y-6 animate-fadeIn">
+                  <TravellerMemoryTab />
                 </div>
               )}
 

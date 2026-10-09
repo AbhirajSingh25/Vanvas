@@ -115,8 +115,30 @@ def submit_vote(
             vote_type=vote_in.vote_type
         )
         db.add(new_vote)
-
     db.commit()
+
+    # Isolated individual traveller observation (Phase 5: Never attributes across other members)
+    if vote_in.vote_type == "LOVE":
+        pl = db.query(Place).filter(Place.id == vote_in.place_id).first()
+        if pl:
+            try:
+                from app.services.traveller_memory_service import TravellerMemoryService
+                cat = "activities"
+                key = "nature_trails" if "nature" in (pl.category or "").lower() or "trail" in (pl.category or "").lower() else "activity_type"
+                TravellerMemoryService.record_observation(
+                    db=db,
+                    user_id=current_user.id,
+                    event_type="GROUP_VOTE_CAST",
+                    category=cat,
+                    observed_key=key,
+                    observed_value=pl.category or "Activity",
+                    trip_id=trip_id,
+                    source_id=vote_in.place_id,
+                    metadata={"place_name": pl.name, "vote": "LOVE"}
+                )
+            except Exception:
+                pass
+
     return {"success": True, "message": "Vote registered privately and factored into group compatibility ranking."}
 
 @router.post("/join/{invite_code}")

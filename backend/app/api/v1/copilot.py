@@ -24,6 +24,7 @@ from app.services.copilot_context import (
     extract_session_decisions,
     extract_explicit_destination,
 )
+from app.services.traveller_memory_service import TravellerMemoryService
 from app.services.storage_service import StorageService
 from app.core.rate_limiter import rate_limit
 
@@ -276,6 +277,156 @@ async def copilot_chat(
     # 5.5. FAST PATH ROUTING: Deterministic Intent Handling (< 1s Latency)
     msg_clean_lower = clean_msg.lower().strip()
     dest_target_slug = explicit_dest or req.destination_slug or (trip.destination.slug if trip and trip.destination else None) or conv.destination_slug
+
+    # M0. Memory Forget/Delete Fast Path (Phase 5)
+    if any(msg_clean_lower.startswith(k) for k in [
+        "forget my preference for", "forget preference for", "remove my preference for",
+        "delete my preference for", "forget that i prefer", "remove preference for",
+        "forget my preference", "forget preference"
+    ]):
+        target_term = msg_clean_lower
+        for prefix in ["forget my preference for", "forget preference for", "remove my preference for", "delete my preference for", "forget that i prefer", "remove preference for", "forget my preference", "forget preference"]:
+            if msg_clean_lower.startswith(prefix):
+                target_term = msg_clean_lower[len(prefix):].strip()
+                break
+
+        deleted_items = TravellerMemoryService.delete_matching_preference(db, current_user.id, target_term)
+        if deleted_items:
+            fast_resp_text = f"I've forgotten your preference for {target_term}. It will no longer be used in future recommendations."
+        else:
+            fast_resp_text = f"I didn't find an active saved preference matching '{target_term}', but I've updated your profile to ensure it won't be assumed in future trips."
+
+        fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "memory_forget"}
+        assistant_msg = ConversationMessage(
+            conversation_id=conv.id,
+            role="assistant",
+            content=fast_resp_text,
+            metadata_json=json.dumps(fast_meta),
+        )
+        db.add(assistant_msg)
+        db.commit()
+        return CopilotChatResponse(
+            conversation_id=conv.id,
+            message=fast_resp_text,
+            actions=[{"action_type": "view_settings", "title": "Manage Preferences", "payload": {}}],
+            places=[],
+            metadata=fast_meta
+        )
+
+    # M1. Memory Query Fast Path (Phase 5)
+    if any(k in msg_clean_lower for k in [
+        "what kind of trips do i usually prefer", "what kind of trips do i prefer",
+        "what do you remember about my", "what do you know about my travel",
+        "what are my travel preferences", "what do you remember", "my travel preferences"
+    ]):
+        active_mems = TravellerMemoryService.get_active_memories(db, current_user.id, req.trip_id or conv.trip_id)
+        if active_mems:
+            lines = ["Here are your saved and learned travel preferences:"]
+            for m in active_mems:
+                val_disp = m.preference_value.replace("_", " ").title()
+                key_disp = m.preference_key.replace("_", " ").title()
+                badge = "Explicit" if m.memory_type == "EXPLICIT" else f"Learned ({int(m.confidence * 100)}% confidence)"
+                lines.append(f"• **{key_disp}**: {val_disp} ({badge})")
+            fast_resp_text = "\n".join(lines)
+        else:
+            fast_resp_text = "You haven't configured any custom travel preferences yet. Recommendations will use balanced Himalayan travel defaults until you set preferences in Settings or explore more trips."
+
+        fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "memory_query"}
+        assistant_msg = ConversationMessage(
+            conversation_id=conv.id,
+            role="assistant",
+            content=fast_resp_text,
+            metadata_json=json.dumps(fast_meta),
+        )
+        db.add(assistant_msg)
+        db.commit()
+        return CopilotChatResponse(
+            conversation_id=conv.id,
+            message=fast_resp_text,
+            actions=[{"action_type": "view_settings", "title": "Explorer's Desk Settings", "payload": {}}],
+            places=[],
+            metadata=fast_meta
+        )
+
+    # M2. Memory Correction / Preference Update Fast Path (Phase 5)
+    if "i don't like early starts" in msg_clean_lower or "i prefer late starts" in msg_clean_lower or "avoid early starts" in msg_clean_lower:
+        TravellerMemoryService.create_or_update_explicit_preference(
+            db=db,
+            user_id=current_user.id,
+            category="timing",
+            preference_key="wake_up_preference",
+            preference_value="Late",
+            source_event="USER_EXPLICIT_CHAT"
+        )
+        fast_resp_text = "Got it! I've updated your preference to avoid early starts and start morning activities later."
+        fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "memory_update"}
+        assistant_msg = ConversationMessage(
+            conversation_id=conv.id,
+            role="assistant",
+            content=fast_resp_text,
+            metadata_json=json.dumps(fast_meta),
+        )
+        db.add(assistant_msg)
+        db.commit()
+        return CopilotChatResponse(
+            conversation_id=conv.id,
+            message=fast_resp_text,
+            actions=[],
+            places=[],
+            metadata=fast_meta
+        )
+
+    if "i prefer homestays" in msg_clean_lower or "i like homestays" in msg_clean_lower:
+        TravellerMemoryService.create_or_update_explicit_preference(
+            db=db,
+            user_id=current_user.id,
+            category="accommodation",
+            preference_key="stay_category",
+            preference_value="Homestay",
+            source_event="USER_EXPLICIT_CHAT"
+        )
+        fast_resp_text = "Got it! I've saved homestays as your preferred stay type. They will be ranked higher for future trips."
+        fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "memory_update"}
+        assistant_msg = ConversationMessage(
+            conversation_id=conv.id,
+            role="assistant",
+            content=fast_resp_text,
+            metadata_json=json.dumps(fast_meta),
+        )
+        db.add(assistant_msg)
+        db.commit()
+        return CopilotChatResponse(
+            conversation_id=conv.id,
+            message=fast_resp_text,
+            actions=[],
+            places=[],
+            metadata=fast_meta
+        )
+
+    # M3. Recommendation explanation query: "Why are these stays recommended?" (Phase 5)
+    if any(k in msg_clean_lower for k in ["why are these stays recommended", "why is this stay recommended"]):
+        active_mems = TravellerMemoryService.get_active_memories(db, current_user.id, req.trip_id or conv.trip_id)
+        stay_mem = next((m for m in active_mems if m.category == "accommodation"), None)
+        if stay_mem:
+            fast_resp_text = f"Stays are ranked higher to match your {stay_mem.memory_type.lower()} preference for {stay_mem.preference_value.title()}s ({stay_mem.provenance_summary or 'from your saved settings'})."
+        else:
+            fast_resp_text = "These stays are recommended based on verified location proximity, verified pricing, high traveller ratings, and verified live availability."
+        fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "recommendation_explanation"}
+        assistant_msg = ConversationMessage(
+            conversation_id=conv.id,
+            role="assistant",
+            content=fast_resp_text,
+            metadata_json=json.dumps(fast_meta),
+        )
+        db.add(assistant_msg)
+        db.commit()
+        return CopilotChatResponse(
+            conversation_id=conv.id,
+            message=fast_resp_text,
+            actions=[],
+            places=[],
+            metadata=fast_meta
+        )
 
     # A. "What's Next" Fast Path
     if msg_clean_lower in ["what's next", "whats next", "what is next", "next stop", "what is next on our itinerary right now?"]:

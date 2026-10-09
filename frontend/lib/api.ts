@@ -14,7 +14,9 @@ import {
   WeatherSnapshot, StructuredWeather,
   ActionPreviewRequest, ActionPreviewResponse, ActionApplyRequest,
   ActionApplyResponse, TripRevision, CurrentStateResponse,
-  TravelSignal, TravelInsight, ReplanProposal, TripIntelligenceSummary
+  TravelSignal, TravelInsight, ReplanProposal, TripIntelligenceSummary,
+  TravellerMemory, MemoryObservation, TravellerMemorySettings,
+  MemoryPersonalizationContext, TravellerMemoryExport
 } from "@/types";
 import { storageAdapter } from "./storage";
 
@@ -1452,6 +1454,88 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ decision, reason }),
     });
-  }
-};
+  },
 
+  // ----------------- Traveller Memory & Personalization (Phase 5) -----------------
+
+  async getTravellerMemories(category?: string, tripId?: string): Promise<TravellerMemory[]> {
+    const params = new URLSearchParams();
+    if (category) params.append("category", category);
+    if (tripId) params.append("trip_id", tripId);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return fetchApi(`/memory${qs}`);
+  },
+
+  async createExplicitMemory(data: {
+    category: string;
+    preference_key: string;
+    preference_value: string;
+    trip_id?: string;
+    is_trip_specific?: boolean;
+    source_event?: string;
+  }): Promise<TravellerMemory> {
+    return fetchApi("/memory/explicit", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async confirmMemory(memoryId: string): Promise<TravellerMemory> {
+    return fetchApi(`/memory/${memoryId}/confirm`, {
+      method: "POST",
+    });
+  },
+
+  async rejectMemory(memoryId: string): Promise<TravellerMemory> {
+    return fetchApi(`/memory/${memoryId}/reject`, {
+      method: "POST",
+    });
+  },
+
+  async editMemory(memoryId: string, preferenceValue: string): Promise<TravellerMemory> {
+    return fetchApi(`/memory/${memoryId}`, {
+      method: "PUT",
+      body: JSON.stringify({ preference_value: preferenceValue }),
+    });
+  },
+
+  async deleteMemory(memoryId: string): Promise<{ message: string; memory_id: string }> {
+    return fetchApi(`/memory/${memoryId}`, {
+      method: "DELETE",
+    });
+  },
+
+  async clearAllMemories(): Promise<{ message: string }> {
+    return fetchApi("/memory/clear", {
+      method: "POST",
+    });
+  },
+
+  async resetInferredMemories(): Promise<{ message: string }> {
+    return fetchApi("/memory/reset-inferred", {
+      method: "POST",
+    });
+  },
+
+  async updateMemorySettings(settings: {
+    memory_learning_enabled?: boolean;
+    memory_learning_paused?: boolean;
+  }): Promise<TravellerMemorySettings> {
+    return fetchApi("/memory/settings", {
+      method: "PUT",
+      body: JSON.stringify(settings),
+    });
+  },
+
+  async getPersonalizationContext(tripId?: string, destinationSlug?: string): Promise<MemoryPersonalizationContext> {
+    const params = new URLSearchParams();
+    if (tripId) params.append("trip_id", tripId);
+    if (destinationSlug) params.append("destination_slug", destinationSlug);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return fetchApi(`/memory/context${qs}`);
+  },
+
+  async exportTravellerMemories(): Promise<TravellerMemoryExport> {
+    return fetchApi("/memory/export");
+  },
+};

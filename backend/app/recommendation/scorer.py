@@ -1,6 +1,15 @@
+"""
+VANVAS Recommendation Scoring & Personalization Ranking Engine
+Computes multi-criteria match scores and evidence-backed explanations for places,
+stays, and itinerary candidates.
+
+Pipeline:
+CANDIDATE OPTIONS -> HARD CONSTRAINT VALIDATION -> MEMORY-AWARE RANKING -> EXPLANATION -> USER SELECTION
+"""
 import math
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from app.core.config import settings
+
 
 class RecommendationScorer:
     def __init__(
@@ -31,6 +40,7 @@ class RecommendationScorer:
         target_time_slot: Optional[str] = None, # "morning", "afternoon", "evening", "night"
         group_votes: Optional[List[str]] = None, # list of "LOVE", "LIKE", "NO"
         user_preference_tags: Optional[List[str]] = None,
+        memory_preferences: Optional[Dict[str, Any]] = None,
     ) -> float:
         # 1. Interest match (0.0 to 1.0)
         interest_score = 0.5
@@ -121,11 +131,25 @@ class RecommendationScorer:
                 raw_vote_val = (love_count * 1.0 + like_count * 0.6 - no_count * 0.8) / total
                 group_vote_score = max(0.0, min(1.0, 0.5 + 0.5 * raw_vote_val))
 
-        # 7. Personalization score (0.0 to 1.0)
+        # 7. Personalization score (0.0 to 1.0) from tags & TravellerMemory
         personalization_score = 0.7
-        if user_preference_tags:
-            matches = sum(1 for tag in user_preference_tags if any(tag.lower() in t for t in place_tags))
-            personalization_score = min(1.0, 0.5 + 0.5 * (matches / max(1, len(user_preference_tags))))
+        tags_to_check = list(user_preference_tags or [])
+
+        # Integrate TravellerMemory signals
+        if memory_preferences:
+            nature_pref = memory_preferences.get("nature_trails") or memory_preferences.get("activity_type")
+            if nature_pref:
+                tags_to_check.append(str(nature_pref))
+            env_pref = memory_preferences.get("environment")
+            if env_pref:
+                tags_to_check.append(str(env_pref))
+            stay_pref = memory_preferences.get("stay_category") or memory_preferences.get("accommodation_preference")
+            if stay_pref:
+                tags_to_check.append(str(stay_pref))
+
+        if tags_to_check:
+            matches = sum(1 for tag in tags_to_check if any(tag.lower() in t for t in place_tags) or tag.lower() in place_category.lower())
+            personalization_score = min(1.0, 0.5 + 0.5 * (matches / max(1, len(tags_to_check))))
 
         # Composite weighted formula
         final_score = (
@@ -139,3 +163,44 @@ class RecommendationScorer:
         )
 
         return round(final_score, 4)
+
+    def explain_recommendation(
+        self,
+        place: Any,
+        user_interests: List[str],
+        user_budget_tier: str,
+        memory_preferences: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """
+        Generates an honest, evidence-backed explanation for why a place or stay was recommended.
+        """
+        place_name = getattr(place, "name", "This place")
+        place_cat = getattr(place, "category", "") or ""
+        place_tags = (getattr(place, "tags", "") or "").lower()
+
+        if memory_preferences:
+            # Check stay memory
+            stay_pref = memory_preferences.get("stay_category") or memory_preferences.get("accommodation_preference")
+            if stay_pref and stay_pref.lower() in place_cat.lower():
+                return f"Ranked higher because you selected {stay_pref} as your preferred stay type."
+
+            # Check activity memory
+            nature_pref = memory_preferences.get("nature_trails") or memory_preferences.get("activity_type")
+            if nature_pref and (nature_pref.lower() in place_cat.lower() or nature_pref.lower() in place_tags):
+                return f"Suggested because of your confirmed preference for {nature_pref.lower()} experiences."
+
+            # Check pacing / crowd
+            crowd_pref = memory_preferences.get("crowd_preference")
+            if crowd_pref == "quieter_places" and ("nature" in place_cat.lower() or "viewpoint" in place_tags):
+                return "Suggested because you prefer quieter nature spots away from heavy crowds."
+
+        # Interest matches
+        matched = [i for i in user_interests if i.lower() in place_cat.lower() or i.lower() in place_tags]
+        if matched:
+            return f"Curated for your interest in {', '.join(matched)}."
+
+        raw_rating = getattr(place, "rating", None)
+        if raw_rating and raw_rating >= 4.5:
+            return f"Highly rated destination experience ({raw_rating}★)."
+
+        return "Curated Himalayan destination experience."

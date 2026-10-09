@@ -50,6 +50,8 @@ from app.models.models import (
     TravelInsight,
     TravelAction,
     ReplanProposal,
+    TravellerMemory,
+    MemoryObservation,
 )
 
 __all__ = [
@@ -104,5 +106,7 @@ __all__ = [
     "TravelInsight",
     "TravelAction",
     "ReplanProposal",
+    "TravellerMemory",
+    "MemoryObservation",
 ]
 
