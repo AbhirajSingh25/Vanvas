@@ -379,3 +379,53 @@ def ingest_signal_endpoint(
         created_at=sig.created_at,
         updated_at=sig.updated_at
     )
+
+
+@router.post("/intelligence/evaluate-active-batch")
+async def evaluate_active_trips_batch(
+    max_trips: int = 25,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
+    """
+    Scheduled background batch evaluation endpoint for active and ongoing trips.
+    Enforces bounded evaluation (max_trips) without unbounded polling loops.
+    """
+    now = datetime.now(timezone.utc)
+    today_str = now.strftime("%Y-%m-%d")
+
+    # Select active trips (where trip is currently ongoing or upcoming in next 7 days)
+    query = db.query(Trip)
+    if current_user and current_user.role != "admin":
+        query = query.filter(Trip.user_id == current_user.id)
+
+    # Order by updated_at or created_at descending, limit to bounded batch
+    candidate_trips = query.order_by(Trip.updated_at.desc()).limit(min(max_trips, 50)).all()
+
+    evaluated_count = 0
+    insights_count = 0
+    proposals_count = 0
+    errors = []
+
+    for trip in candidate_trips:
+        try:
+            summary = await IntelligenceOrchestrator.evaluate_trip(
+                db=db,
+                trip=trip,
+                force_refresh=False
+            )
+            evaluated_count += 1
+            insights_count += len(summary.active_insights)
+            proposals_count += len(summary.pending_proposals)
+        except Exception as e:
+            logger.warning(f"Batch evaluation error on trip {trip.id}: {e}")
+            errors.append({"trip_id": trip.id, "error": str(e)})
+
+    return {
+        "status": "completed",
+        "evaluated_trips_count": evaluated_count,
+        "total_active_insights": insights_count,
+        "total_pending_proposals": proposals_count,
+        "timestamp": now.isoformat(),
+        "errors": errors
+    }

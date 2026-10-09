@@ -187,6 +187,11 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
     BOOKING_WEBHOOK_SECRET: str = os.getenv("BOOKING_WEBHOOK_SECRET", "vanvas_webhook_signature_secret_key")
 
+    # Observability & Push Notification Governance
+    SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
+    FCM_SERVER_KEY: str = os.getenv("FCM_SERVER_KEY", "")
+    FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID", "vanvas-app")
+
     # Recommendation weights
     WEIGHT_INTEREST: float = 0.25
     WEIGHT_BUDGET: float = 0.15
