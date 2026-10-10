@@ -1,7 +1,7 @@
 // VANVAS Production Service Worker
-// Version: vanvas-pwa-v1.0.0
+// Version: vanvas-pwa-v2.0.0
 
-const CACHE_VERSION = 'vanvas-v1';
+const CACHE_VERSION = 'vanvas-v2';
 const CACHE_STATIC = `vanvas-static-${CACHE_VERSION}`;
 const CACHE_SHELL = `vanvas-shell-${CACHE_VERSION}`;
 

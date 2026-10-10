@@ -7,10 +7,13 @@ import { Logo } from "@/components/brand/Logo";
 import { Emblem } from "@/components/brand/Emblem";
 import { Heart, Compass, Mountain, ShieldCheck, MapPin, Sparkles } from "lucide-react";
 
+import { useStandalone } from "@/lib/useStandalone";
+
 export const Footer: React.FC = () => {
   const pathname = usePathname();
+  const { isStandalone } = useStandalone();
 
-  // App workspace and transaction routes where footer must be suppressed to prevent UI clutter and scroll traps
+  // Suppress footer in standalone PWA or in app workspace and transaction routes
   const isWorkspaceRoute =
     pathname.startsWith("/trips") ||
     pathname.startsWith("/plan") ||
@@ -28,12 +31,12 @@ export const Footer: React.FC = () => {
     (pathname.startsWith("/explore/") && pathname !== "/explore") ||
     (pathname.startsWith("/treks/") && pathname !== "/treks");
 
-  if (isWorkspaceRoute) {
+  if (isStandalone || isWorkspaceRoute) {
     return null;
   }
 
   return (
-    <footer className="border-t border-[#31483D] bg-[#0F2924] text-[#EFE5D2] pt-16 pb-24 md:pb-20 px-4 sm:px-6 lg:px-8 mt-24 relative overflow-hidden">
+    <footer className="hidden xl:block border-t border-[#31483D] bg-[#0F2924] text-[#EFE5D2] pt-16 pb-24 md:pb-20 px-4 sm:px-6 lg:px-8 mt-24 relative overflow-hidden">
       {/* Background Subtle Contour Texture */}
       <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#EFE5D2_1px,transparent_1px)] [background-size:24px_24px]" />
 

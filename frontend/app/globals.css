@@ -1237,9 +1237,10 @@ html[data-density="compact"] .compact-clamp-2,
   padding-right: env(safe-area-inset-right, 0px);
 }
 
-/* Standalone PWA adjustments for mobile feel */
+/* Standalone PWA adjustments for premium mobile app feel */
 @media all and (display-mode: standalone) {
-  body {
+  html, body {
+    overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     user-select: none;
@@ -1249,5 +1250,18 @@ html[data-density="compact"] .compact-clamp-2,
   textarea,
   [contenteditable="true"] {
     user-select: text;
+  }
+}
+
+/* Prevent auto-zoom on iOS when focusing inputs */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  textarea {
+    font-size: 16px;
   }
 }

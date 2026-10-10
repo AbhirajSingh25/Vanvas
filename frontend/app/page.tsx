@@ -21,6 +21,7 @@ import { CANONICAL_DESTINATIONS, CANONICAL_HINDI_NAMES, getCanonicalHindiName } 
 import { CANONICAL_EXPEDITION_MODES } from "@/lib/expeditionModes";
 import { useAuth } from "@/context/AuthContext";
 import { useDensity } from "@/context/DensityContext";
+import { MobileTravelCommandCenter } from "@/components/home/MobileTravelCommandCenter";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -57,13 +58,18 @@ export default function HomePage() {
   const remainingDestinations = destinations.filter((d) => d.slug !== featuredManali?.slug);
 
   return (
-    <div className="relative overflow-hidden bg-[#EFE5D2] text-[#20211D]">
-      {/* ======================================================== */}
-      {/* SECTION 1: LAYERED HERO WITH HIMALAYAN ARTWORK           */}
-      {/* ======================================================== */}
-      <section className={`relative bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 overflow-hidden border-b-2 border-[#E5D5BA] ${
-        isCompact ? "py-10 sm:py-14" : "min-h-[88vh] flex items-center justify-center py-16 sm:py-24"
-      }`}>
+    <>
+      {/* Mobile App View & Installed iPhone PWA: Travel Command Center */}
+      <MobileTravelCommandCenter destinations={destinations} activeTrip={activeTrip} />
+
+      {/* Desktop Website Experience: Preserved High-Density Editorial */}
+      <div className="hidden xl:block relative overflow-hidden bg-[#EFE5D2] text-[#20211D]">
+        {/* ======================================================== */}
+        {/* SECTION 1: LAYERED HERO WITH HIMALAYAN ARTWORK           */}
+        {/* ======================================================== */}
+        <section className={`relative bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 overflow-hidden border-b-2 border-[#E5D5BA] ${
+          isCompact ? "py-10 sm:py-14" : "min-h-[88vh] flex items-center justify-center py-16 sm:py-24"
+        }`}>
         {/* Layer 1: Illustrated Mountain Artwork Canvas */}
         <div className="absolute inset-0 opacity-55 scale-105 transform pointer-events-none">
           <DestinationArtwork slug="manali" aspectRatio="hero" className="w-full h-full object-cover" />
@@ -641,6 +647,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

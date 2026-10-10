@@ -256,9 +256,9 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
       <div className="absolute inset-0" onClick={handleClose} />
 
       {/* Main Assistant Drawer / Bottom Sheet Container */}
-      <div className="relative z-10 w-full sm:max-w-xl md:max-w-2xl h-[92vh] sm:h-full bg-[#FAF7F0] dark:bg-[#172019] text-[#20211D] dark:text-[#EFE5D2] rounded-t-3xl sm:rounded-none border-t sm:border-t-0 sm:border-l border-[#E5D5BA] dark:border-[#384A3E] shadow-2xl flex flex-col overflow-hidden animate-vanvas-sheet sm:animate-vanvas-slide-left">
+      <div className="relative z-10 w-full sm:max-w-xl md:max-w-2xl h-[92dvh] sm:h-full max-h-[92dvh] sm:max-h-full bg-[#FAF7F0] dark:bg-[#172019] text-[#20211D] dark:text-[#EFE5D2] rounded-t-3xl sm:rounded-none border-t sm:border-t-0 sm:border-l border-[#E5D5BA] dark:border-[#384A3E] shadow-2xl flex flex-col overflow-hidden animate-vanvas-sheet sm:animate-vanvas-slide-left">
         {/* Mobile Swipe Handle */}
-        <div className="sm:hidden flex items-center justify-center pt-2.5 pb-1">
+        <div className="sm:hidden flex items-center justify-center pt-2.5 pb-1 touch-manipulation">
           <div className="w-10 h-1.5 rounded-full bg-[#D8CBB2] dark:bg-[#384A3E]" />
         </div>
 
@@ -383,15 +383,15 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         </div>
 
         {/* 3. INPUT AREA & SUGGESTED PROMPT CHIPS */}
-        <div className="p-3 sm:p-4 border-t border-[#E5D5BA] dark:border-[#384A3E] bg-[#FAF7F0] dark:bg-[#172019] shrink-0 space-y-2">
+        <div className="p-3 sm:p-4 border-t border-[#E5D5BA] dark:border-[#384A3E] bg-[#FAF7F0] dark:bg-[#172019] shrink-0 space-y-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
           {/* Suggested Prompts Chips Row */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 touch-manipulation">
             {promptChips.map((chip, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSubmit(undefined, chip.query)}
-                className="shrink-0 px-2.5 py-1 rounded-lg bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#173B32] hover:text-[#FAF7F0] dark:hover:bg-[#B49252] dark:hover:text-[#172019] text-[#173B32] dark:text-[#FAF7F0] text-[11px] font-mono font-bold border border-[#E5D5BA] dark:border-[#384A3E] transition-all cursor-pointer active:scale-95"
+                className="shrink-0 px-2.5 py-1 rounded-lg bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#173B32] hover:text-[#FAF7F0] dark:hover:bg-[#B49252] dark:hover:text-[#172019] text-[#173B32] dark:text-[#FAF7F0] text-[11px] font-mono font-bold border border-[#E5D5BA] dark:border-[#384A3E] transition-all cursor-pointer active:scale-95 touch-manipulation select-none"
               >
                 {chip.label}
               </button>
@@ -440,7 +440,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               onClick={() => fileInputRef.current?.click()}
               disabled={context.loading || isUploadingImage}
               title="Attach photo for travel reasoning"
-              className="p-2.5 rounded-xl bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#E5D5BA] dark:hover:bg-[#384A3E] text-[#173B32] dark:text-[#FAF7F0] transition-colors cursor-pointer shrink-0"
+              className="p-2.5 rounded-xl bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#E5D5BA] dark:hover:bg-[#384A3E] text-[#173B32] dark:text-[#FAF7F0] transition-colors cursor-pointer shrink-0 active:scale-95 touch-manipulation"
             >
               <ImageIcon className="w-4 h-4" />
             </button>
@@ -451,6 +451,8 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about this trip, place or route..."
               disabled={context.loading}
+              autoComplete="off"
+              autoCorrect="off"
               className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#FAF7F0] dark:bg-[#1E2620] border border-[#E5D5BA] dark:border-[#384A3E] focus:outline-none focus:ring-2 focus:ring-[#B49252] text-xs sm:text-sm font-sans placeholder:text-[#7B4D36]/60 dark:placeholder:text-[#D8CBB2]/50 text-[#173B32] dark:text-[#FAF7F0]"
             />
 
@@ -458,7 +460,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               type="submit"
               disabled={(!input.trim() && !attachedImage) || context.loading}
               aria-label="Send message"
-              className="p-2.5 rounded-xl bg-[#173B32] dark:bg-[#B49252] hover:bg-[#20453B] dark:hover:bg-[#C5A260] text-[#FAF7F0] dark:text-[#172019] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 shadow-xs"
+              className="p-2.5 rounded-xl bg-[#173B32] dark:bg-[#B49252] hover:bg-[#20453B] dark:hover:bg-[#C5A260] text-[#FAF7F0] dark:text-[#172019] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 shadow-xs active:scale-95 touch-manipulation"
             >
               <Send className="w-4 h-4" />
             </button>

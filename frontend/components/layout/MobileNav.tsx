@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Calendar, MapPin, Sparkles } from "lucide-react";
+import { Home, Compass, Calendar, User, Sparkles } from "lucide-react";
 import { useDensity } from "@/context/DensityContext";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { ChaloLauncherModal } from "@/components/layout/ChaloLauncherModal";
@@ -15,21 +15,21 @@ export const MobileNav: React.FC = () => {
   const [chaloLauncherOpen, setChaloLauncherOpen] = useState(false);
 
   const isHomeActive = pathname === "/";
-  const isExploreActive = pathname.startsWith("/explore") || pathname.startsWith("/treks");
+  const isExploreActive = pathname.startsWith("/explore") || pathname.startsWith("/treks") || pathname.startsWith("/nearby");
   const isTripsActive =
     pathname.startsWith("/trips") ||
     pathname.startsWith("/bookings") ||
     pathname.startsWith("/plan") ||
     pathname.startsWith("/road-trip") ||
     pathname.startsWith("/one-day");
-  const isNearbyActive = pathname.startsWith("/nearby");
+  const isProfileActive = pathname.startsWith("/profile") || pathname.startsWith("/settings") || pathname.startsWith("/login") || pathname.startsWith("/register");
 
   const navItems = [
     { label: "Home", hindi: "होम", href: "/", icon: Home, isActive: isHomeActive },
     { label: "Explore", hindi: "खोजो", href: "/explore", icon: Compass, isActive: isExploreActive },
     { label: "Chalo", hindi: "चलो", href: "#chalo", icon: Sparkles, isPrimary: true, isActive: chaloLauncherOpen },
     { label: "Trips", hindi: "यात्रा", href: "/trips", icon: Calendar, isActive: isTripsActive },
-    { label: "Nearby", hindi: "आस-पास", href: "/nearby", icon: MapPin, isActive: isNearbyActive },
+    { label: "Journal", hindi: "डायरी", href: "/profile", icon: User, isActive: isProfileActive },
   ];
 
   return (

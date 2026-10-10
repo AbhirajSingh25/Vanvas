@@ -11,11 +11,13 @@ import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 import { useDensity } from "@/context/DensityContext";
+import { useAuth } from "@/context/AuthContext";
 import { CompactTripCard, CompactPlaceCard } from "@/components/compact";
 import { TripCardSkeleton, CardSkeleton } from "@/components/ui/ParchmentSkeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 function TripsDashboardInner() {
+  const { user, isLoading: authLoading } = useAuth();
   const { isCompact } = useDensity();
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get("tab");
@@ -60,6 +62,32 @@ function TripsDashboardInner() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      // Check for offline cached trips
+      if (typeof window !== "undefined") {
+        try {
+          const cachedTrips = localStorage.getItem("vanvas_cached_trips");
+          if (cachedTrips) {
+            const parsed = JSON.parse(cachedTrips);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setTrips(parsed);
+            }
+          }
+          const cachedSaved = localStorage.getItem("vanvas_cached_saved_places");
+          if (cachedSaved) {
+            const parsedSaved = JSON.parse(cachedSaved);
+            if (Array.isArray(parsedSaved)) {
+              setSavedPlaces(parsedSaved);
+            }
+          }
+        } catch {}
+      }
+      setLoading(false);
+      return;
+    }
+
     Promise.all([api.getTrips(), api.getSavedPlaces()])
       .then(([tList, sList]) => {
         setTrips(tList);
@@ -73,9 +101,19 @@ function TripsDashboardInner() {
         }
       })
       .catch((err) => {
-        console.warn("Failed to load online trips, loading offline fallback:", err);
-        if (typeof window !== "undefined") {
+        console.warn("Failed to load online trips, checking offline fallback:", err);
+        const isNetworkProblem =
+          (typeof navigator !== "undefined" && !navigator.onLine) ||
+          err?.isNetworkError ||
+          err?.isTimeout ||
+          err?.status === 0 ||
+          err?.status === 504;
+
+        if (isNetworkProblem) {
           setIsOffline(true);
+        }
+
+        if (typeof window !== "undefined") {
           try {
             let loadedFromCache = false;
             const cachedTrips = localStorage.getItem("vanvas_cached_trips");
@@ -138,7 +176,7 @@ function TripsDashboardInner() {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [user, authLoading]);
 
   return (
     <div className={`min-h-screen bg-[#EFE5D2] ${isCompact ? "py-6 sm:py-8" : "py-12"} px-4 sm:px-6 lg:px-8`}>
@@ -212,15 +250,27 @@ function TripsDashboardInner() {
           )
         ) : activeTab === "trips" ? (
           trips.length === 0 ? (
-            <EmptyState
-              icon={Calendar}
-              stampText="सफ़रनामा • EXPEDITIONS"
-              hindiTitle="कोई यात्रा डायरी दर्ज नहीं है"
-              title="No Expeditions Planned Yet"
-              description="Start your first spontaneous or planned Himalayan expedition. Select an origin, duration, and companions to generate an adaptive itinerary."
-              actionLabel="Plan My Trip"
-              actionHref="/plan"
-            />
+            !user ? (
+              <EmptyState
+                icon={Calendar}
+                stampText="सफ़रनामा • SIGN IN"
+                hindiTitle="अपनी यात्रा देखने के लिए लॉगिन करें"
+                title="Sign In to View Your Expeditions"
+                description="Sign in with your traveler account to view active trip cockpits, saved sanctuaries, and synchronized offline itineraries."
+                actionLabel="Sign In"
+                actionHref="/login?redirect=/trips"
+              />
+            ) : (
+              <EmptyState
+                icon={Calendar}
+                stampText="सफ़रनामा • EXPEDITIONS"
+                hindiTitle="कोई यात्रा डायरी दर्ज नहीं है"
+                title="No Expeditions Planned Yet"
+                description="Start your first spontaneous or planned Himalayan expedition. Select an origin, duration, and companions to generate an adaptive itinerary."
+                actionLabel="Plan My Trip"
+                actionHref="/plan"
+              />
+            )
           ) : isCompact ? (
             /* COMPACT TRIPS GRID */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

@@ -78,31 +78,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       storageAdapter.setItem("vanvas_user_profile", JSON.stringify(u));
       return u;
     } catch (err: any) {
-      // If offline or network connection error, retain existing session and profile
-      const isNetworkError =
-        (typeof navigator !== "undefined" && !navigator.onLine) ||
-        err?.message?.includes("Failed to fetch") ||
-        err?.message?.includes("Unable to connect");
+      const isAuthRejection =
+        !err?.isNetworkError &&
+        !err?.isTimeout &&
+        (err?.status === 401 ||
+          err?.message?.includes("401") ||
+          err?.message?.includes("Invalid authentication token") ||
+          err?.message?.includes("User not found"));
 
-      if (isNetworkError) {
-        const cachedProfile = storageAdapter.getItem("vanvas_user_profile");
-        if (cachedProfile) {
-          try {
-            const parsed = JSON.parse(cachedProfile);
-            setUser(parsed);
-            setToken(savedToken);
-            return parsed;
-          } catch {}
-        }
-        return user;
+      if (isAuthRejection) {
+        // Explicit authentication failure (e.g. 401 / expired token / deleted user)
+        storageAdapter.removeItem("vanvas_token");
+        storageAdapter.removeItem("vanvas_user_profile");
+        setUser(null);
+        setToken(null);
+        return null;
       }
 
-      // Explicit authentication failure (e.g. 401 / expired token)
-      storageAdapter.removeItem("vanvas_token");
-      storageAdapter.removeItem("vanvas_user_profile");
-      setUser(null);
-      setToken(null);
-      return null;
+      // If network error, cold start timeout, or transient 5xx, retain session and cached profile
+      const cachedProfile = storageAdapter.getItem("vanvas_user_profile");
+      if (cachedProfile) {
+        try {
+          const parsed = JSON.parse(cachedProfile);
+          setUser(parsed);
+          setToken(savedToken);
+          return parsed;
+        } catch {}
+      }
+      return user;
     }
   }, [user]);
 
@@ -124,17 +127,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           storageAdapter.setItem("vanvas_user_profile", JSON.stringify(u));
         })
         .catch((err: any) => {
-          const isNetworkError =
-            (typeof navigator !== "undefined" && !navigator.onLine) ||
-            err?.message?.includes("Failed to fetch") ||
-            err?.message?.includes("Unable to connect");
+          const isAuthRejection =
+            !err?.isNetworkError &&
+            !err?.isTimeout &&
+            (err?.status === 401 ||
+              err?.message?.includes("401") ||
+              err?.message?.includes("Invalid authentication token") ||
+              err?.message?.includes("User not found"));
 
-          if (!isNetworkError) {
+          if (isAuthRejection) {
             storageAdapter.removeItem("vanvas_token");
             storageAdapter.removeItem("vanvas_user_profile");
             setToken(null);
             setUser(null);
           }
+          // On network errors or cold start timeouts, keep savedToken and cached user
         })
         .finally(() => setIsLoading(false));
     } else {
