@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Sparkles, Navigation, Clock, CloudRain, Wallet, Users, Compass,
   MapPin, CheckCircle2, Circle, Lock, Unlock, Plus, Trash2,
   ExternalLink, Share2, MessageSquare, Coffee, BedDouble, Bike,
   CheckSquare, ArrowRight, ShieldCheck, Sun, Info, Heart, Printer,
   Bus, Train, Plane, Car, CarTaxiFront, History, FastForward,
-  AlertTriangle, RefreshCw, X
+  AlertTriangle, RefreshCw, X, AlertCircle
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -43,10 +44,13 @@ import { VanvasSplitView } from "@/components/trip/VanvasSplitView";
 import { TripBookingsTab } from "@/components/trip/TripBookingsTab";
 import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
 import { TripIntelligenceCenter } from "@/components/trip/TripIntelligenceCenter";
+import { TripWorkspaceSkeleton, ItineraryItemSkeleton } from "@/components/ui/ParchmentSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Booking } from "@/types";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tripId } = use(params);
+  const searchParams = useSearchParams();
   const { isCompact } = useDensity();
 
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -62,13 +66,26 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-  // Active Tab: 'overview' | 'itinerary' | 'bookings' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist'
-  const [activeTab, setActiveTab] = useState<string>("overview");
+  // Active Tab: 'overview' | 'itinerary' | 'bookings' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist' | 'circles'
+  const VALID_TABS = ["overview", "itinerary", "bookings", "stays_rentals", "food", "budget", "group", "checklist", "circles"] as const;
+  const resolveValidTab = (rawTab: string | null | undefined): string => {
+    if (!rawTab) return "overview";
+    const clean = rawTab.trim().toLowerCase();
+    return VALID_TABS.includes(clean as any) ? clean : "overview";
+  };
+
+  const urlTab = searchParams?.get("tab");
+  const [activeTab, setActiveTab] = useState<string>(() => resolveValidTab(urlTab));
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
+    const valid = resolveValidTab(tabId);
+    setActiveTab(valid);
     if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", valid);
+      window.history.replaceState({}, "", url.toString());
+
       const tabsElement = document.getElementById("trip-tabs-navigation");
       if (tabsElement) {
         const topOffset =
@@ -80,6 +97,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       }
     }
   };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams?.get("tab");
+    const valid = resolveValidTab(tabFromUrl);
+    if (valid !== activeTab) {
+      setActiveTab(valid);
+    }
+  }, [searchParams, activeTab]);
 
   // Ask VANVAS Unified Copilot
   const { openAskVanvas, setTravelContext, registerTripRefreshCallback } = useAskVanvas();
@@ -365,11 +390,23 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  if (loading || !trip) {
+  if (!trip) {
+    if (loading) {
+      return <TripWorkspaceSkeleton />;
+    }
     return (
-      <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-3">
-        <div className="w-10 h-10 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-serif italic text-[#7B4D36]">Opening expedition operating hub...</span>
+      <div className="min-h-screen bg-[#EFE5D2] flex items-center justify-center p-4">
+        <EmptyState
+          icon={AlertCircle}
+          stampText="सफ़र • EXPEDITION HUB"
+          hindiTitle="यात्रा नहीं मिली"
+          title="Expedition Hub Not Found"
+          description="We could not find or load the requested expedition workspace. Check your connection or return to your journeys."
+          actionLabel="My Expeditions"
+          actionHref="/trips"
+          secondaryActionLabel="Plan New Trip"
+          onSecondaryActionClick={() => window.location.href = "/plan"}
+        />
       </div>
     );
   }

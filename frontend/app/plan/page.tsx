@@ -40,11 +40,14 @@ function PlanWizard() {
   const rawInitial = searchParams?.get("dest") || searchParams?.get("destination") || "manali";
   const initialDest = rawInitial.replace(/^(dyn|dest)-/, "").trim() || "manali";
   const hasExplicitDest = Boolean(searchParams?.get("dest") || searchParams?.get("destination"));
+  const urlPlace = searchParams?.get("place") || searchParams?.get("place_name") || "";
   const urlOrigin = searchParams?.get("origin") || "";
   const urlBudget = searchParams?.get("budget") || "";
   const urlDays = searchParams?.get("days") || "";
   const urlCompanion = searchParams?.get("companion") || "";
   const urlTransport = searchParams?.get("transport") || "";
+
+  const [anchorPlace, setAnchorPlace] = useState<string>(urlPlace);
 
   const { user, login, register } = useAuth();
   const { isCompact } = useDensity();
@@ -57,8 +60,41 @@ function PlanWizard() {
   // Step 5: WHAT IS YOUR BUDGET?
   // Step 6: HOW ARE YOU GETTING THERE?
   // Step 7: REVIEW & GENERATE
-  const [currentStep, setCurrentStep] = useState<number>(() => (urlOrigin ? (hasExplicitDest ? 3 : 2) : 1));
+  const initialStep = urlOrigin ? (hasExplicitDest ? 3 : 2) : 1;
+  const [currentStep, setCurrentStep] = useState<number>(() => initialStep);
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
+
+  // Keep browser back button in sync with wizard step state
+  useEffect(() => {
+    // Initialize current history entry if vanvasStep is missing, preserving router state
+    if (typeof window !== "undefined") {
+      const existingStep = window.history.state?.vanvasStep;
+      if (typeof existingStep !== "number") {
+        window.history.replaceState({ ...(window.history.state || {}), vanvasStep: initialStep }, "", window.location.href);
+      }
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state && typeof e.state.vanvasStep === "number") {
+        setStepDirection(e.state.vanvasStep < currentStep ? "prev" : "next");
+        setCurrentStep(e.state.vanvasStep);
+      } else {
+        // Popped back to initial entry before wizard progression
+        setStepDirection("prev");
+        setCurrentStep(initialStep);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [initialStep, currentStep]);
+
+  const goToStep = (stepNumber: number, direction: "next" | "prev" = "next") => {
+    setStepDirection(direction);
+    setCurrentStep(stepNumber);
+    if (typeof window !== "undefined") {
+      window.history.pushState({ ...(window.history.state || {}), vanvasStep: stepNumber }, "", window.location.href);
+    }
+  };
 
   // Step 1: Origin State
   const [originCity, setOriginCity] = useState<string>(urlOrigin || "");
@@ -225,9 +261,9 @@ function PlanWizard() {
     try {
       const res = await getCurrentGPSPosition();
       if (res.status === "GRANTED" && res.coords) {
-        setOriginCity("Delhi (GPS Detected)");
-        setStepDirection("next");
-        setTimeout(() => setCurrentStep(2), 200);
+        setOriginCity(`Detected Location (${res.coords.latitude.toFixed(2)}°N, ${res.coords.longitude.toFixed(2)}°E)`);
+        const nextStep = hasExplicitDest ? 3 : 2;
+        setTimeout(() => goToStep(nextStep, "next"), 200);
       } else {
         setGpsError(res.errorMessage || "Location permission was not granted. Please pick or type your starting city.");
       }
@@ -242,8 +278,8 @@ function PlanWizard() {
     setOriginCity(city.trim());
     setOriginSearch("");
     setGpsError(null);
-    setStepDirection("next");
-    setTimeout(() => setCurrentStep(2), 150);
+    const nextStep = hasExplicitDest ? 3 : 2;
+    setTimeout(() => goToStep(nextStep, "next"), 150);
   };
 
   // Step 2: Handle Destination selection
@@ -263,8 +299,7 @@ function PlanWizard() {
         setSelectedDestId(res.id || res.slug);
         setSelectedDestObject(res);
         if (autoAdvance) {
-          setStepDirection("next");
-          setTimeout(() => setCurrentStep(3), 150);
+          setTimeout(() => goToStep(3, "next"), 150);
         }
       } else {
         setResolveError(`Could not resolve '${q}'. Try another location.`);
@@ -295,8 +330,7 @@ function PlanWizard() {
 
     setStartDate(start.toISOString().split("T")[0]);
     setEndDate(end.toISOString().split("T")[0]);
-    setStepDirection("next");
-    setTimeout(() => setCurrentStep(4), 150);
+    setTimeout(() => goToStep(4, "next"), 150);
   };
 
   const handleDaysSelect = (days: number) => {
@@ -305,23 +339,20 @@ function PlanWizard() {
     const end = new Date(start);
     end.setDate(start.getDate() + (days - 1));
     setEndDate(end.toISOString().split("T")[0]);
-    setStepDirection("next");
-    setTimeout(() => setCurrentStep(4), 150);
+    setTimeout(() => goToStep(4, "next"), 150);
   };
 
   // Step 4: Handle Companion selection
   const handleCompanionSelect = (type: string, count: number) => {
     setCompanionType(type);
     setTravellersCount(count);
-    setStepDirection("next");
-    setTimeout(() => setCurrentStep(5), 150);
+    setTimeout(() => goToStep(5, "next"), 150);
   };
 
   // Step 5: Handle Budget / Style selection
   const handleStyleSelect = (style: string) => {
     setTravelStyle(style);
-    setStepDirection("next");
-    setTimeout(() => setCurrentStep(6), 150);
+    setTimeout(() => goToStep(6, "next"), 150);
   };
 
   // Step 6: Handle Transport Mode selection (Explicit user choice, no auto-advance)
@@ -363,14 +394,16 @@ function PlanWizard() {
 
   // Step 7: Handle Trip Creation Execution
   const handleBuildTrip = async () => {
+    if (isGenerating) return;
+
     if (!originCity || !originCity.trim()) {
       setGenerationError("Starting city is required. Please choose where you are starting.");
-      setCurrentStep(1);
+      goToStep(1, "prev");
       return;
     }
     if (!selectedTransportMode) {
       setGenerationError("Transport mode is required. Please choose how you want to travel.");
-      setCurrentStep(6);
+      goToStep(6, "prev");
       return;
     }
 
@@ -401,6 +434,11 @@ function PlanWizard() {
           ? `dest-${cleanTarget}`
           : `dyn-${cleanTarget}`);
 
+      const tripInterests =
+        anchorPlace && !selectedVibes.some((v) => v.toLowerCase().includes(anchorPlace.toLowerCase()))
+          ? [...selectedVibes, `Anchor: ${anchorPlace}`]
+          : selectedVibes;
+
       const trip = await api.createTrip({
         destination_id: targetId,
         start_date: startDate,
@@ -411,7 +449,7 @@ function PlanWizard() {
         travel_style: travelStyle,
         wake_up_preference: "Normal",
         activity_intensity: "Balanced",
-        interests: selectedVibes,
+        interests: tripInterests,
         origin_city: originCity.trim(),
         transport_mode: selectedTransportMode.toLowerCase().replace(" ", "_"),
         transport_details: selectedTransportOption ? {
@@ -434,6 +472,42 @@ function PlanWizard() {
       });
 
       clearInterval(timer);
+
+      // Pre-cache trip into local storage for immediate visibility in /trips & offline
+      if (typeof window !== "undefined" && trip?.id) {
+        try {
+          localStorage.setItem(`vanvas_trip_${trip.id}`, JSON.stringify(trip));
+          localStorage.setItem(`vanvas_offline_trip_${trip.id}`, JSON.stringify(trip));
+          let existingList: any[] = [];
+          try {
+            const existingRaw = localStorage.getItem("vanvas_cached_trips");
+            if (existingRaw) {
+              const parsed = JSON.parse(existingRaw);
+              if (Array.isArray(parsed)) existingList = parsed;
+            }
+          } catch {
+            existingList = [];
+          }
+          const newSummary = {
+            id: trip.id,
+            title: trip.title || `Expedition to ${selectedDestObject?.name || cleanTarget}`,
+            destination_name: selectedDestObject?.name || cleanTarget,
+            destination_slug: cleanTarget,
+            start_date: trip.start_date,
+            end_date: trip.end_date,
+            num_days: trip.num_days || daysCount,
+            companion_type: trip.companion_type || companionType,
+            travel_style: trip.travel_style || travelStyle,
+            budget_total: trip.budget_total || budgetEstimate,
+            budget_spent: 0,
+            status: "active",
+            hero_image: selectedDestObject?.image_url,
+          };
+          const filtered = existingList.filter((item: any) => item && item.id !== trip.id);
+          localStorage.setItem("vanvas_cached_trips", JSON.stringify([newSummary, ...filtered]));
+        } catch {}
+      }
+
       try {
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } catch {}
@@ -585,8 +659,11 @@ function PlanWizard() {
                 <button
                   type="button"
                   onClick={() => {
-                    setStepDirection("prev");
-                    setCurrentStep((prev) => Math.max(1, prev - 1));
+                    if (typeof window !== "undefined" && window.history.state?.vanvasStep > 1) {
+                      window.history.back();
+                    } else {
+                      goToStep(Math.max(1, currentStep - 1), "prev");
+                    }
                   }}
                   className="p-1.5 rounded-xl hover:bg-[#EFE5D2] interactive-btn text-[#173B32] cursor-pointer flex items-center gap-1 text-xs font-bold"
                   aria-label="Previous question"
@@ -1228,10 +1305,7 @@ function PlanWizard() {
               {/* Explicit Continue Button */}
               <button
                 type="button"
-                onClick={() => {
-                  setStepDirection("next");
-                  setCurrentStep(7);
-                }}
+                onClick={() => goToStep(7, "next")}
                 className="w-full py-3.5 rounded-2xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md interactive-btn transition-all mt-4"
               >
                 <span>Continue to Review</span>
@@ -1300,6 +1374,18 @@ function PlanWizard() {
                   )}
                 </div>
 
+                {anchorPlace && (
+                  <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#B49252]/60 flex items-center justify-between text-xs font-mono">
+                    <span className="text-[#173B32] font-bold flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                      <span>Expedition Anchor: {anchorPlace}</span>
+                    </span>
+                    <span className="text-[10px] text-[#0F2924] bg-[#B49252]/20 border border-[#B49252]/40 px-2 py-0.5 rounded font-bold uppercase">
+                      Target Landmark
+                    </span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-3 gap-2 text-xs font-mono">
                   <div className="bg-white p-2 rounded-xl border border-[#E5D5BA]">
                     <span className="text-[#7B4D36] block text-[10px]">DURATION</span>
@@ -1319,10 +1405,7 @@ function PlanWizard() {
                   <span><strong>Dates:</strong> {startDate} → {endDate}</span>
                   <button
                     type="button"
-                    onClick={() => {
-                      setStepDirection("prev");
-                      setCurrentStep(6);
-                    }}
+                    onClick={() => goToStep(6, "prev")}
                     className="text-[#B65E3C] font-bold text-xs underline cursor-pointer hover:text-[#173B32]"
                   >
                     ← Change Transport
@@ -1430,10 +1513,7 @@ function PlanWizard() {
 
               <button
                 type="button"
-                onClick={() => {
-                  setStepDirection("prev");
-                  setCurrentStep(1);
-                }}
+                onClick={() => goToStep(1, "prev")}
                 className="w-full text-center text-xs font-mono text-[#7B4D36] hover:text-[#173B32] underline cursor-pointer"
               >
                 Edit all preferences

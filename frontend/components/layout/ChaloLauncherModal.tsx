@@ -15,6 +15,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { TravelStamp } from "@/components/ui/TravelStamp";
+import { acquireScrollLock, releaseScrollLock } from "@/lib/scrollLock";
 
 interface ChaloLauncherModalProps {
   isOpen: boolean;
@@ -30,15 +31,19 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
   const router = useRouter();
 
   useEffect(() => {
+    if (!isOpen) return;
+    acquireScrollLock();
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      releaseScrollLock();
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -57,6 +62,9 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Chalo Action Center"
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-vanvas-fade"
       onClick={onClose}
     >
@@ -64,6 +72,11 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
         className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-vanvas-sheet sm:animate-vanvas-scale flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Drag Indicator */}
+        <div className="sm:hidden flex items-center justify-center pt-2 pb-0 bg-[#173B32]">
+          <div className="w-10 h-1 rounded-full bg-[#E5D5BA]/50" />
+        </div>
+
         {/* Header */}
         <div className="p-5 sm:p-6 bg-[#173B32] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36]">
           <div className="space-y-1">

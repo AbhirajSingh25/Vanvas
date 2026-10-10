@@ -435,31 +435,89 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         triggerTripRefresh();
       }
     } catch (err: any) {
-      console.warn("Copilot API service unavailable:", err);
-      const fallbackTitle = "TRAVEL INTELLIGENCE TEMPORARILY UNAVAILABLE";
-      const fallbackText = "Live place discovery is temporarily unavailable. You can still view your saved trip information.\n\nYour trip data is safe.";
-      const errorStructured: StructuredAssistantResponse = {
-        type: "CLARIFICATION",
-        title: fallbackTitle,
-        summary: "Live place discovery is temporarily unavailable. Your trip data is safe.",
-        items: [],
-        actions: [
-          { id: "retry-query", label: "Retry", action: "query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
-        ],
-        provenance: "UNAVAILABLE",
-        rawText: fallbackText,
-      };
-      setLastResponse(errorStructured);
+      console.warn("Copilot API response handling error:", err);
+      const isAuthError =
+        err?.status === 401 ||
+        err?.message?.toLowerCase().includes("authentication required") ||
+        err?.message?.toLowerCase().includes("not authenticated");
 
-      const assistantMessage: MessageItem = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        text: fallbackText,
-        structured: errorStructured,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      if (isAuthError) {
+        const authTitle = "SIGN IN TO ASK VANVAS";
+        const authText = "Sign in to chat with Ask VANVAS, receive personalized mountain recommendations, and access live travel intelligence.";
+        const authStructured: StructuredAssistantResponse = {
+          type: "CLARIFICATION",
+          title: authTitle,
+          summary: authText,
+          items: [],
+          actions: [
+            { id: "auth-signin", label: "Sign In", action: "navigate", payload: "/login", icon: "compass", variant: "primary" },
+            { id: "auth-register", label: "Create Account", action: "navigate", payload: "/register", icon: "compass", variant: "secondary" },
+          ],
+          provenance: "CURATED",
+          rawText: authText,
+        };
+        setLastResponse(authStructured);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            text: authText,
+            structured: authStructured,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      } else if (err?.isTimeout || err?.status === 504) {
+        const timeoutTitle = "MOUNTAIN ENGINE WAKING UP";
+        const timeoutText = "Our mountain reasoning engine is warming up from a brief pause. Please tap Retry below in just a moment.";
+        const timeoutStructured: StructuredAssistantResponse = {
+          type: "CLARIFICATION",
+          title: timeoutTitle,
+          summary: timeoutText,
+          items: [],
+          actions: [
+            { id: "retry-query", label: "Retry Now", action: "query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
+          ],
+          provenance: "UNAVAILABLE",
+          rawText: timeoutText,
+        };
+        setLastResponse(timeoutStructured);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            text: timeoutText,
+            structured: timeoutStructured,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      } else {
+        const fallbackTitle = "TRAVEL INTELLIGENCE TEMPORARILY UNAVAILABLE";
+        const fallbackText = err?.message || "Live place discovery is temporarily unavailable. You can still view your saved trip information.\n\nYour trip data is safe.";
+        const errorStructured: StructuredAssistantResponse = {
+          type: "CLARIFICATION",
+          title: fallbackTitle,
+          summary: "Live place discovery is temporarily unavailable. Your trip data is safe.",
+          items: [],
+          actions: [
+            { id: "retry-query", label: "Retry", action: "query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
+          ],
+          provenance: "UNAVAILABLE",
+          rawText: fallbackText,
+        };
+        setLastResponse(errorStructured);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            text: fallbackText,
+            structured: errorStructured,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      }
     } finally {
       isSendingRef.current = false;
       setLoading(false);
@@ -526,6 +584,13 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     // 2. Navigation Actions
+    if (act === "navigate" && (typeof payload === "string" || payload.path || payload.href)) {
+      const dest = typeof payload === "string" ? payload : (payload.path || payload.href);
+      router.push(dest);
+      closeAskVanvas();
+      return;
+    }
+
     if (act === "navigate_destination" && payload.slug) {
       router.push(`/explore/${payload.slug}`);
       closeAskVanvas();
@@ -538,9 +603,10 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    if (act === "open_place" && (payload.slug || payload.id)) {
-      const destSlug = currentContext.destinationSlug || "manali";
-      router.push(`/explore/${destSlug}?place=${payload.slug || payload.id}`);
+    if (act === "open_place" && (payload.slug || payload.id || payload.name)) {
+      const destSlug = payload.destination || currentContext.destinationSlug || "manali";
+      const placeIdentifier = payload.slug || payload.id || payload.name;
+      router.push(`/explore/${destSlug}?place=${encodeURIComponent(placeIdentifier)}`);
       closeAskVanvas();
       return;
     }
@@ -661,7 +727,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setStatusMessage(null);
         }
       } else {
-        router.push(`/explore/${destSlug}`);
+        router.push(`/plan?dest=${encodeURIComponent(destSlug)}`);
         closeAskVanvas();
       }
       return;

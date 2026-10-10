@@ -2,8 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    const rawApi = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
-    const backendBase = rawApi.replace(/\/api\/v1\/?$/, "");
+    const defaultBackend = "https://vanvas-api.onrender.com/api/v1";
+    const rawApi = (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "")
+      ? process.env.NEXT_PUBLIC_API_URL.trim()
+      : defaultBackend;
+    const backendBase = rawApi.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
     return [
       {
         source: "/api/v1/:path*",

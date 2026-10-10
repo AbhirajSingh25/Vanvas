@@ -20,6 +20,8 @@ import { Layers, LayoutGrid } from "lucide-react";
 import { useDensity } from "@/context/DensityContext";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { CompactNearbyItem } from "@/components/compact";
+import { CardSkeleton } from "@/components/ui/ParchmentSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type LocationStatus = "idle" | "locating" | "located" | "denied" | "error" | "unsupported";
 
@@ -579,68 +581,36 @@ function NearbyInner() {
             currentLat={searchCenter.lat}
             currentLng={searchCenter.lng}
           />
-        ) : loading ? (
-          <div className="py-24 flex flex-col items-center justify-center text-[#173B32] gap-3">
-            <div className="w-10 h-10 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-serif italic text-[#7B4D36]">
-              Querying OpenStreetMap and live local places around {searchCenter.name}...
-            </span>
+        ) : loading && places.length === 0 ? (
+          <div className={`grid ${isCompact ? "grid-cols-1 sm:grid-cols-2 gap-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"}`}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <CardSkeleton key={i} variant={isCompact ? "compact" : "standard"} />
+            ))}
           </div>
-        ) : apiError ? (
-          <div className="py-16 px-6 text-center rounded-3xl bg-[#FAF7F0] border-2 border-red-200 space-y-4 max-w-xl mx-auto">
-            <AlertCircle className="w-12 h-12 text-amber-700 mx-auto opacity-80" />
-            <div className="space-y-1">
-              <h3 className="text-lg font-serif font-black text-[#173B32]">
-                Live place data is temporarily unavailable
-              </h3>
-              <p className="text-xs text-[#7B4D36] font-light leading-relaxed">
-                We encountered an issue querying live OpenStreetMap servers. Please retry or adjust your search radius.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-              <button
-                onClick={loadNearby}
-                className="px-4 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#20453B] transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Retry Search</span>
-              </button>
-              <button
-                onClick={() => setRadiusKm(10)}
-                className="px-4 py-2 rounded-xl bg-[#FAF7F0] text-[#173B32] border border-[#E5D5BA] text-xs font-bold hover:bg-[#E5D5BA] transition-all cursor-pointer"
-              >
-                Try 10 km Radius
-              </button>
-            </div>
-          </div>
+        ) : apiError && places.length === 0 ? (
+          <EmptyState
+            icon={AlertCircle}
+            stampText="सर्वर स्थिति • OSM RADAR"
+            hindiTitle="स्थान डेटा लोड नहीं हो सका"
+            title="Live Place Data Temporarily Unavailable"
+            description="We encountered an issue querying live OpenStreetMap servers for this radius. Please retry or widen your exploration perimeter."
+            actionLabel="Retry Search"
+            onActionClick={loadNearby}
+            secondaryActionLabel="Try 10 km Radius"
+            onSecondaryActionClick={() => setRadiusKm(10)}
+          />
         ) : places.length === 0 ? (
-          <div className="py-16 px-6 text-center rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4 max-w-xl mx-auto">
-            <Compass className="w-12 h-12 text-[#B65E3C] mx-auto opacity-70" />
-            <div className="space-y-1">
-              <h3 className="text-lg font-serif font-black text-[#173B32]">
-                No verified places found within {radiusKm} km
-              </h3>
-              <p className="text-xs text-[#7B4D36] font-light leading-relaxed">
-                We did not find verified {category !== "all" ? category : "live"} places in this immediate perimeter.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-              <button
-                onClick={() => setRadiusKm(25)}
-                className="px-4 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#20453B] transition-all cursor-pointer"
-              >
-                Expand Radius to 25 km
-              </button>
-              {category !== "all" && (
-                <button
-                  onClick={() => setCategory("all")}
-                  className="px-4 py-2 rounded-xl bg-[#FAF7F0] text-[#173B32] border border-[#E5D5BA] text-xs font-bold hover:bg-[#E5D5BA] transition-all cursor-pointer"
-                >
-                  Show All Categories
-                </button>
-              )}
-            </div>
-          </div>
+          <EmptyState
+            icon={Compass}
+            stampText="आस-पास • NO SPOTS FOUND"
+            hindiTitle={`कोई सत्यापित स्थान नहीं मिला (${radiusKm} किमी)`}
+            title={`No Verified Places Found within ${radiusKm} km`}
+            description={`We did not find verified ${category !== "all" ? category : "live"} landmarks or cafes in this immediate perimeter. Try expanding the radar radius or checking another category.`}
+            actionLabel="Expand Radius to 25 km"
+            onActionClick={() => setRadiusKm(25)}
+            secondaryActionLabel={category !== "all" ? "Show All Categories" : undefined}
+            onSecondaryActionClick={category !== "all" ? () => setCategory("all") : undefined}
+          />
         ) : (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#7B4D36]">
@@ -747,6 +717,11 @@ function NearbyInner() {
                       setSelectedPlace(p);
                       setModalOpen(true);
                     }}
+                    onBookmarkChange={(pId, isSaved) => {
+                      setPlaces((prev) =>
+                        prev.map((p) => (p.id === pId ? { ...p, is_saved: isSaved } : p))
+                      );
+                    }}
                   />
                 ))}
               </div>
@@ -774,8 +749,14 @@ function NearbyInner() {
       <PlaceModal
         place={selectedPlace}
         destinationName={searchCenter.name}
+        destinationSlug={searchCenter.name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/^-+|-+$/g, "")}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        onBookmarkChange={(pId, isSaved) => {
+          setPlaces((prev) =>
+            prev.map((p) => (p.id === pId ? { ...p, is_saved: isSaved } : p))
+          );
+        }}
       />
     </div>
   );

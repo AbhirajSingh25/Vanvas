@@ -1,12 +1,42 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { Emblem } from "@/components/brand/Emblem";
 import { Heart, Compass, Mountain, ShieldCheck, MapPin, Sparkles } from "lucide-react";
 
+import { useStandalone } from "@/lib/useStandalone";
+
 export const Footer: React.FC = () => {
+  const pathname = usePathname();
+  const { isStandalone } = useStandalone();
+
+  // Suppress footer in standalone PWA or in app workspace and transaction routes
+  const isWorkspaceRoute =
+    pathname.startsWith("/trips") ||
+    pathname.startsWith("/plan") ||
+    pathname.startsWith("/nearby") ||
+    pathname.startsWith("/bookings") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/solo") ||
+    pathname.startsWith("/road-trip") ||
+    pathname.startsWith("/one-day") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/join") ||
+    (pathname.startsWith("/explore/") && pathname !== "/explore") ||
+    (pathname.startsWith("/treks/") && pathname !== "/treks");
+
+  if (isStandalone || isWorkspaceRoute) {
+    return null;
+  }
+
   return (
-    <footer className="border-t border-[#31483D] bg-[#0F2924] text-[#EFE5D2] pt-16 pb-20 px-4 sm:px-6 lg:px-8 mt-24 relative overflow-hidden">
+    <footer className="hidden xl:block border-t border-[#31483D] bg-[#0F2924] text-[#EFE5D2] pt-16 pb-24 md:pb-20 px-4 sm:px-6 lg:px-8 mt-24 relative overflow-hidden">
       {/* Background Subtle Contour Texture */}
       <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#EFE5D2_1px,transparent_1px)] [background-size:24px_24px]" />
 

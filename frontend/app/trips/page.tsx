@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Calendar, Bookmark, Plus, MapPin, ArrowRight, Sparkles, Compass } from "lucide-react";
 import { api } from "@/lib/api";
 import { TripSummary, Place } from "@/types";
@@ -10,11 +11,17 @@ import { PlaceModal } from "@/components/places/PlaceModal";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 import { useDensity } from "@/context/DensityContext";
+import { useAuth } from "@/context/AuthContext";
 import { CompactTripCard, CompactPlaceCard } from "@/components/compact";
+import { TripCardSkeleton, CardSkeleton } from "@/components/ui/ParchmentSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 
-export default function TripsDashboardPage() {
+function TripsDashboardInner() {
+  const { user, isLoading: authLoading } = useAuth();
   const { isCompact } = useDensity();
-  const [activeTab, setActiveTab] = useState<"trips" | "saved">("trips");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get("tab");
+  const [activeTab, setActiveTab] = useState<"trips" | "saved">(() => (tabParam === "saved" ? "saved" : "trips"));
   const [trips, setTrips] = useState<TripSummary[]>([]);
   const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -22,7 +29,65 @@ export default function TripsDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
 
+  const handleTabChange = (tabId: "trips" | "saved") => {
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
+  const handleBookmarkToggle = (pId: string, isSaved: boolean) => {
+    if (!isSaved) {
+      setSavedPlaces((prev) => {
+        const next = prev.filter((p) => p.id !== pId);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("vanvas_cached_saved_places", JSON.stringify(next));
+          } catch {}
+        }
+        return next;
+      });
+    }
+  };
+
   useEffect(() => {
+    const currentTabParam = searchParams?.get("tab");
+    if (currentTabParam === "saved" && activeTab !== "saved") {
+      setActiveTab("saved");
+    } else if (currentTabParam === "trips" && activeTab !== "trips") {
+      setActiveTab("trips");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      // Check for offline cached trips
+      if (typeof window !== "undefined") {
+        try {
+          const cachedTrips = localStorage.getItem("vanvas_cached_trips");
+          if (cachedTrips) {
+            const parsed = JSON.parse(cachedTrips);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setTrips(parsed);
+            }
+          }
+          const cachedSaved = localStorage.getItem("vanvas_cached_saved_places");
+          if (cachedSaved) {
+            const parsedSaved = JSON.parse(cachedSaved);
+            if (Array.isArray(parsedSaved)) {
+              setSavedPlaces(parsedSaved);
+            }
+          }
+        } catch {}
+      }
+      setLoading(false);
+      return;
+    }
+
     Promise.all([api.getTrips(), api.getSavedPlaces()])
       .then(([tList, sList]) => {
         setTrips(tList);
@@ -36,14 +101,33 @@ export default function TripsDashboardPage() {
         }
       })
       .catch((err) => {
-        console.warn("Failed to load online trips, loading offline fallback:", err);
-        if (typeof window !== "undefined") {
+        console.warn("Failed to load online trips, checking offline fallback:", err);
+        const isNetworkProblem =
+          (typeof navigator !== "undefined" && !navigator.onLine) ||
+          err?.isNetworkError ||
+          err?.isTimeout ||
+          err?.status === 0 ||
+          err?.status === 504;
+
+        if (isNetworkProblem) {
           setIsOffline(true);
+        }
+
+        if (typeof window !== "undefined") {
           try {
+            let loadedFromCache = false;
             const cachedTrips = localStorage.getItem("vanvas_cached_trips");
             if (cachedTrips) {
-              setTrips(JSON.parse(cachedTrips));
-            } else {
+              try {
+                const parsed = JSON.parse(cachedTrips);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setTrips(parsed);
+                  loadedFromCache = true;
+                }
+              } catch {}
+            }
+
+            if (!loadedFromCache) {
               // Reconstruct from any offline trip packs in storage
               const reconstructed: TripSummary[] = [];
               for (let i = 0; i < localStorage.length; i++) {
@@ -81,13 +165,18 @@ export default function TripsDashboardPage() {
 
             const cachedSaved = localStorage.getItem("vanvas_cached_saved_places");
             if (cachedSaved) {
-              setSavedPlaces(JSON.parse(cachedSaved));
+              try {
+                const parsedSaved = JSON.parse(cachedSaved);
+                if (Array.isArray(parsedSaved)) {
+                  setSavedPlaces(parsedSaved);
+                }
+              } catch {}
             }
           } catch {}
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [user, authLoading]);
 
   return (
     <div className={`min-h-screen bg-[#EFE5D2] ${isCompact ? "py-6 sm:py-8" : "py-12"} px-4 sm:px-6 lg:px-8`}>
@@ -120,7 +209,7 @@ export default function TripsDashboardPage() {
         {/* Tab Switcher */}
         <div className="flex items-center gap-2 border-b border-[#E5D5BA] pb-2">
           <button
-            onClick={() => setActiveTab("trips")}
+            onClick={() => handleTabChange("trips")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === "trips"
                 ? "bg-[#173B32] text-[#EFE5D2] shadow-xs border border-[#173B32]"
@@ -132,7 +221,7 @@ export default function TripsDashboardPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("saved")}
+            onClick={() => handleTabChange("saved")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === "saved"
                 ? "bg-[#173B32] text-[#EFE5D2] shadow-xs border border-[#173B32]"
@@ -146,12 +235,43 @@ export default function TripsDashboardPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-[#173B32] gap-2">
-            <div className="w-8 h-8 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-serif italic text-[#7B4D36]">Loading travel journal entries...</span>
-          </div>
+          activeTab === "trips" ? (
+            <div className={`grid ${isCompact ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}`}>
+              {[1, 2, 3].map((i) => (
+                <TripCardSkeleton key={i} isCompact={isCompact} />
+              ))}
+            </div>
+          ) : (
+            <div className={`grid ${isCompact ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"}`}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <CardSkeleton key={i} variant={isCompact ? "compact" : "standard"} />
+              ))}
+            </div>
+          )
         ) : activeTab === "trips" ? (
-          isCompact ? (
+          trips.length === 0 ? (
+            !user ? (
+              <EmptyState
+                icon={Calendar}
+                stampText="सफ़रनामा • SIGN IN"
+                hindiTitle="अपनी यात्रा देखने के लिए लॉगिन करें"
+                title="Sign In to View Your Expeditions"
+                description="Sign in with your traveler account to view active trip cockpits, saved sanctuaries, and synchronized offline itineraries."
+                actionLabel="Sign In"
+                actionHref="/login?redirect=/trips"
+              />
+            ) : (
+              <EmptyState
+                icon={Calendar}
+                stampText="सफ़रनामा • EXPEDITIONS"
+                hindiTitle="कोई यात्रा डायरी दर्ज नहीं है"
+                title="No Expeditions Planned Yet"
+                description="Start your first spontaneous or planned Himalayan expedition. Select an origin, duration, and companions to generate an adaptive itinerary."
+                actionLabel="Plan My Trip"
+                actionHref="/plan"
+              />
+            )
+          ) : isCompact ? (
             /* COMPACT TRIPS GRID */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {trips.map((t) => (
@@ -165,7 +285,7 @@ export default function TripsDashboardPage() {
                 <Link
                   key={t.id}
                   href={`/trips/${t.id}`}
-                  className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                  className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press flex flex-col justify-between"
                 >
                   <div className="relative h-48 w-full bg-[#173B32] overflow-hidden">
                     {t.hero_image && (
@@ -202,6 +322,16 @@ export default function TripsDashboardPage() {
               ))}
             </div>
           )
+        ) : savedPlaces.length === 0 ? (
+          <EmptyState
+            icon={Bookmark}
+            stampText="पसंदीदा • SAVED GEMS"
+            hindiTitle="कोई पसंदीदा स्थान सहेजा नहीं गया है"
+            title="No Saved Gems Yet"
+            description="Bookmark riverside cafés, dhabas, trails, and quiet mountain viewpoints while exploring destinations to access them quickly here."
+            actionLabel="Explore Sanctuaries"
+            actionHref="/explore"
+          />
         ) : isCompact ? (
           /* COMPACT SAVED PLACES */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
@@ -213,9 +343,7 @@ export default function TripsDashboardPage() {
                   setSelectedPlace(p);
                   setModalOpen(true);
                 }}
-                onBookmarkChange={(pId, isSaved) => {
-                  if (!isSaved) setSavedPlaces((prev) => prev.filter((p) => p.id !== pId));
-                }}
+                onBookmarkChange={handleBookmarkToggle}
               />
             ))}
           </div>
@@ -230,9 +358,7 @@ export default function TripsDashboardPage() {
                   setSelectedPlace(p);
                   setModalOpen(true);
                 }}
-                onBookmarkChange={(pId, isSaved) => {
-                  if (!isSaved) setSavedPlaces((prev) => prev.filter((p) => p.id !== pId));
-                }}
+                onBookmarkChange={handleBookmarkToggle}
               />
             ))}
           </div>
@@ -241,9 +367,25 @@ export default function TripsDashboardPage() {
 
       <PlaceModal
         place={selectedPlace}
+        destinationName={selectedPlace?.name ? "Travel Sanctuary" : ""}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        onBookmarkChange={handleBookmarkToggle}
       />
     </div>
+  );
+}
+
+export default function TripsDashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#EFE5D2] py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex items-center justify-center">
+          <div className="w-10 h-10 border-3 border-[#173B32] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <TripsDashboardInner />
+    </Suspense>
   );
 }

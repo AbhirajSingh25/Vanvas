@@ -37,6 +37,8 @@ import { useAskVanvas } from "@/context/AskVanvasContext";
 import { CompactPlaceCard, CompactStayCard, CompactRentalCard, CompactTrekStrip } from "@/components/compact";
 import { CheckoutModal } from "@/components/booking/CheckoutModal";
 import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
+import { DestinationDetailSkeleton, CardSkeleton } from "@/components/ui/ParchmentSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Booking } from "@/types";
 
 const DISCOVERY_MESSAGES = [
@@ -156,12 +158,14 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
   },
 };
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 
 type OperationalMode = "overview" | "places" | "stays" | "mobility" | "solo";
 
 export default function DestinationDetailPage() {
   const routeParams = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const slug = (Array.isArray(routeParams?.slug) ? routeParams.slug[0] : (routeParams?.slug as string)) || "";
   const { isCompact } = useDensity();
   const { openAskVanvas, setTravelContext } = useAskVanvas();
@@ -275,6 +279,46 @@ export default function DestinationDetailPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const handleModeChange = (mode: OperationalMode) => {
+    setActiveMode(mode);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", mode);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
+  // Sync tab/mode from searchParams on mount or URL change
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab");
+    if (tabParam) {
+      if (tabParam === "stays" || tabParam === "hotels") setActiveMode("stays");
+      else if (tabParam === "mobility" || tabParam === "rentals") setActiveMode("mobility");
+      else if (tabParam === "places") setActiveMode("places");
+      else if (tabParam === "solo") setActiveMode("solo");
+      else if (tabParam === "overview") setActiveMode("overview");
+    }
+  }, [searchParams]);
+
+  // Auto-open place modal if searchParams contains place query
+  useEffect(() => {
+    const placeParam = searchParams?.get("place");
+    if (placeParam && places.length > 0 && !selectedPlace) {
+      const target = placeParam.toLowerCase().trim();
+      const match = places.find(
+        (p) =>
+          p.id.toLowerCase() === target ||
+          (p.slug && p.slug.toLowerCase() === target) ||
+          p.name.toLowerCase() === target ||
+          p.name.toLowerCase().replace(/[^a-z0-9]/g, "-") === target.replace(/[^a-z0-9]/g, "-")
+      );
+      if (match) {
+        setSelectedPlace(match);
+        setModalOpen(true);
+      }
+    }
+  }, [searchParams, places, selectedPlace]);
 
   useEffect(() => {
     if (!destLoading) return;
@@ -677,59 +721,28 @@ export default function DestinationDetailPage() {
     DESTINATION_DAY_TRIPS[slug.toLowerCase()];
 
   if (!mounted || destLoading) {
-    return (
-      <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-4 px-4 text-center">
-        <div className="w-12 h-12 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
-        <div className="space-y-1.5 max-w-md">
-          <p className="font-serif text-lg font-bold text-[#173B32]">
-            {mounted ? DISCOVERY_MESSAGES[loadingMsgIdx] : "VANVAS is gathering live travel information..."}
-          </p>
-          <p className="text-xs font-mono text-[#7B4D36] opacity-80">
-            VANVAS Himalayan Intelligence Operating Layer
-          </p>
-        </div>
-      </div>
-    );
+    return <DestinationDetailSkeleton />;
   }
 
   if (loadError || !destination) {
-    const is404 = loadError && (
-      loadError.includes("404") ||
-      loadError.toLowerCase().includes("not found")
-    );
-    const isNetworkError = !is404;
-
+    const is404 = (loadError && (loadError.includes("404") || loadError.toLowerCase().includes("not found"))) || !destination;
     return (
-      <div className="min-h-screen bg-[#EFE5D2] flex flex-col items-center justify-center text-[#173B32] gap-4 px-4 text-center">
-        <AlertCircle className="w-12 h-12 text-[#B65E3C]" />
-        <div className="space-y-1">
-          <span className="text-xs font-mono uppercase tracking-wider text-[#B65E3C] font-semibold">
-            {isNetworkError ? "कनेक्शन स्थिति • Server Connection" : "अभयारण्य नहीं मिला • Destination Index"}
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-            {isNetworkError ? "Himalayan Operating Layer Connecting..." : "Destination Not Found"}
-          </h2>
-        </div>
-        <p className="text-xs text-[#7B4D36] max-w-md leading-relaxed">
-          {isNetworkError
-            ? "VANVAS backend was temporarily warming up. Tap retry below to establish the connection."
-            : (loadError || "Could not resolve live information for this location. Please try exploring another sanctuary.")}
-        </p>
-        <div className="flex gap-3 pt-2">
-          <button
-            onClick={fetchDestination}
-            className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Retry Connection</span>
-          </button>
-          <Link
-            href="/explore"
-            className="px-5 py-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] hover:bg-[#E5D5BA] text-[#173B32] text-xs font-bold transition-all"
-          >
-            Back to Explore
-          </Link>
-        </div>
+      <div className="min-h-screen bg-[#EFE5D2] flex items-center justify-center p-4">
+        <EmptyState
+          icon={AlertCircle}
+          stampText={is404 ? "अभयारण्य • 404 INDEX" : "कनेक्शन • TIMEOUT"}
+          hindiTitle={is404 ? "अभयारण्य नहीं मिला" : "कनेक्शन स्थिति"}
+          title={is404 ? "Destination Not Found" : "Himalayan Operating Layer Reconnecting..."}
+          description={
+            is404
+              ? "Could not resolve live information for this location. Please try exploring another sanctuary from our curated registry."
+              : "VANVAS backend was temporarily warming up or network was interrupted. Tap retry below to establish the connection."
+          }
+          actionLabel="Retry Connection"
+          onActionClick={fetchDestination}
+          secondaryActionLabel="Back to Explore"
+          onSecondaryActionClick={() => window.location.href = "/explore"}
+        />
       </div>
     );
   }
@@ -1020,7 +1033,7 @@ export default function DestinationDetailPage() {
                     key={mode.id}
                     type="button"
                     onClick={() => {
-                      setActiveMode(mode.id as OperationalMode);
+                      handleModeChange(mode.id as OperationalMode);
                       window.scrollTo({ top: 400, behavior: "smooth" });
                     }}
                     className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
@@ -2143,9 +2156,24 @@ export default function DestinationDetailPage() {
       {/* Place Detail Modal */}
       <PlaceModal
         place={selectedPlace}
-        destinationName={destination.name}
+        destinationName={destination?.name || slug}
+        destinationSlug={destination?.slug || slug}
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has("place")) {
+              url.searchParams.delete("place");
+              window.history.replaceState({}, "", url.toString());
+            }
+          }
+        }}
+        onBookmarkChange={(placeId, isSaved) => {
+          setPlaces((prev) =>
+            prev.map((p) => (p.id === placeId ? { ...p, is_saved: isSaved } : p))
+          );
+        }}
       />
 
       {/* Stay Detail Modal */}
