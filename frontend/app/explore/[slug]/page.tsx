@@ -720,30 +720,31 @@ export default function DestinationDetailPage() {
     DESTINATION_DAY_TRIPS[slug] ||
     DESTINATION_DAY_TRIPS[slug.toLowerCase()];
 
-  if (!mounted || destLoading || !destination) {
-    if (loadError) {
-      const is404 = loadError.includes("404") || loadError.toLowerCase().includes("not found");
-      return (
-        <div className="min-h-screen bg-[#EFE5D2] flex items-center justify-center p-4">
-          <EmptyState
-            icon={AlertCircle}
-            stampText={is404 ? "अभयारण्य • 404 INDEX" : "कनेक्शन • TIMEOUT"}
-            hindiTitle={is404 ? "अभयारण्य नहीं मिला" : "कनेक्शन स्थिति"}
-            title={is404 ? "Destination Not Found" : "Himalayan Operating Layer Reconnecting..."}
-            description={
-              is404
-                ? "Could not resolve live information for this location. Please try exploring another sanctuary from our curated registry."
-                : "VANVAS backend was temporarily warming up or network was interrupted. Tap retry below to establish the connection."
-            }
-            actionLabel="Retry Connection"
-            onActionClick={fetchDestination}
-            secondaryActionLabel="Back to Explore"
-            onSecondaryActionClick={() => window.location.href = "/explore"}
-          />
-        </div>
-      );
-    }
+  if (!mounted || destLoading) {
     return <DestinationDetailSkeleton />;
+  }
+
+  if (loadError || !destination) {
+    const is404 = (loadError && (loadError.includes("404") || loadError.toLowerCase().includes("not found"))) || !destination;
+    return (
+      <div className="min-h-screen bg-[#EFE5D2] flex items-center justify-center p-4">
+        <EmptyState
+          icon={AlertCircle}
+          stampText={is404 ? "अभयारण्य • 404 INDEX" : "कनेक्शन • TIMEOUT"}
+          hindiTitle={is404 ? "अभयारण्य नहीं मिला" : "कनेक्शन स्थिति"}
+          title={is404 ? "Destination Not Found" : "Himalayan Operating Layer Reconnecting..."}
+          description={
+            is404
+              ? "Could not resolve live information for this location. Please try exploring another sanctuary from our curated registry."
+              : "VANVAS backend was temporarily warming up or network was interrupted. Tap retry below to establish the connection."
+          }
+          actionLabel="Retry Connection"
+          onActionClick={fetchDestination}
+          secondaryActionLabel="Back to Explore"
+          onSecondaryActionClick={() => window.location.href = "/explore"}
+        />
+      </div>
+    );
   }
 
   const profile = resolveDestinationVisualProfile(destination.slug || destination.name, destination.state, destination.altitude_meters);
