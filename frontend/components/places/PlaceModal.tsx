@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { 
   Star, Clock, MapPin, Sparkles, ExternalLink, Bookmark, X, PlusCircle, 
-  Phone, MessageSquare, Flag, Send, AlertTriangle, ShieldCheck 
+  Phone, MessageSquare, Flag, Send, AlertTriangle, ShieldCheck, Navigation,
+  Compass, Globe
 } from "lucide-react";
 import { Place, Review, ReviewAggregate } from "@/types";
 import { TravelStamp } from "@/components/ui/TravelStamp";
@@ -14,22 +16,28 @@ import { api } from "@/lib/api";
 interface PlaceModalProps {
   place: Place | null;
   destinationName?: string;
+  destinationSlug?: string;
   isOpen: boolean;
   onClose: () => void;
   onAddToTrip?: (place: Place) => void;
+  onBookmarkChange?: (placeId: string, isSaved: boolean) => void;
 }
 
 export const PlaceModal: React.FC<PlaceModalProps> = ({ 
   place, 
   destinationName = "", 
+  destinationSlug,
   isOpen, 
   onClose, 
-  onAddToTrip 
+  onAddToTrip,
+  onBookmarkChange
 }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [aggregate, setAggregate] = useState<ReviewAggregate | null>(null);
   const [loadingReviews, setLoadingReviews] = useState<boolean>(false);
   const [showReviewForm, setShowReviewForm] = useState<boolean>(false);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [savingBookmark, setSavingBookmark] = useState<boolean>(false);
   
   // Review form state
   const [rating, setRating] = useState<number>(5);
@@ -65,13 +73,14 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  // Load reviews on modal open
+  // Load reviews and saved state on modal open
   useEffect(() => {
     if (isOpen && place) {
       setShowReviewForm(false);
       setReviewSuccessMsg("");
       setReviewErrorMsg("");
       setReportingReviewId(null);
+      setIsSaved(Boolean(place.is_saved));
       
       const fetchReviews = async () => {
         setLoadingReviews(true);
@@ -148,6 +157,20 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
     }
   };
 
+  const handleToggleBookmark = async () => {
+    if (!place || savingBookmark) return;
+    setSavingBookmark(true);
+    try {
+      const res = await api.toggleSavePlace(place.id);
+      setIsSaved(res.saved);
+      if (onBookmarkChange) onBookmarkChange(place.id, res.saved);
+    } catch (err) {
+      console.warn("Failed to toggle bookmark:", err);
+    } finally {
+      setSavingBookmark(false);
+    }
+  };
+
   if (!isOpen || !place) return null;
 
   const safeCategory = typeof place.category === "string" && place.category ? place.category : "Place";
@@ -162,6 +185,16 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
 
   const isLive = place.is_live || place.source === "google_places" || place.source === "openstreetmap";
   const isStale = place.data_state === "STALE";
+
+  const resolvedSlug =
+    destinationSlug ||
+    destinationName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/^-+|-+$/g, "") ||
+    "manali";
+
+  const directionsUrl =
+    place.latitude && place.longitude
+      ? `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + " " + (destinationName || ""))}`;
 
   return (
     <div 
@@ -190,14 +223,30 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924]/90 via-[#0F2924]/30 to-transparent pointer-events-none" />
 
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            aria-label="Close Modal"
-            className="absolute top-4 right-4 p-2 rounded-full bg-[#0F2924]/70 text-[#EFE5D2] hover:bg-[#B65E3C] transition-all border border-white/20"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Header Action Buttons */}
+          <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <button
+              type="button"
+              onClick={handleToggleBookmark}
+              disabled={savingBookmark}
+              aria-label={isSaved ? "Saved to collection" : "Save to travel collection"}
+              className={`p-2 rounded-full border transition-all cursor-pointer ${
+                isSaved
+                  ? "bg-[#B65E3C] text-[#FAF4E8] border-[#B65E3C] shadow-md"
+                  : "bg-[#0F2924]/70 text-[#EFE5D2] hover:bg-[#B65E3C] border-white/20"
+              }`}
+            >
+              <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close Modal"
+              className="p-2 rounded-full bg-[#0F2924]/70 text-[#EFE5D2] hover:bg-[#B65E3C] transition-all border border-white/20 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* Badges & Title */}
           <div className="absolute bottom-3 left-4 right-4 sm:bottom-4 sm:left-5 sm:right-5 text-[#EFE5D2]">
@@ -617,15 +666,52 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
             )}
           </div>
 
-          {/* Address, Details & Tags */}
-          <div className="space-y-2.5 pt-2 border-t border-[#E5D5BA] text-xs text-[#536B52]">
+          {/* Address, Details, Quick Actions & Tags */}
+          <div className="space-y-3 pt-2.5 border-t border-[#E5D5BA] text-xs text-[#536B52]">
             {place.address && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-[#B65E3C] shrink-0 mt-0.5" />
                 <span className="text-[#20211D]/80">{place.address}</span>
               </div>
             )}
-            <div className="flex flex-wrap gap-1.5 pt-1">
+
+            {/* Quick External Actions Strip */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {directionsUrl && (
+                <a
+                  href={directionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FAF7F0] border border-[#E5D5BA] text-xs text-[#173B32] font-semibold transition-colors cursor-pointer"
+                >
+                  <Navigation className="w-3.5 h-3.5 text-[#B65E3C]" />
+                  <span>Get Directions</span>
+                </a>
+              )}
+              {place.phone && (
+                <a
+                  href={`tel:${place.phone}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FAF7F0] border border-[#E5D5BA] text-xs text-[#173B32] font-semibold transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-[#536B52]" />
+                  <span>{place.phone}</span>
+                </a>
+              )}
+              {place.website && (
+                <a
+                  href={place.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FAF7F0] border border-[#E5D5BA] text-xs text-[#173B32] font-semibold transition-colors"
+                >
+                  <Globe className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>Website</span>
+                </a>
+              )}
+            </div>
+
+            {/* Tags */}
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
               {(place.tags || "").split(",").filter(Boolean).map((tag, idx) => (
                 <span key={idx} className="px-2.5 py-1 rounded-md bg-[#FAF7F0] border border-[#E5D5BA] text-[11px] text-[#173B32] font-mono">
                   #{tag.trim()}
@@ -636,26 +722,51 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-[#E5D5BA] bg-[#E5D5BA]/40 flex items-center justify-between gap-3 shrink-0">
-          <button
-            onClick={onClose}
-            className="text-xs font-bold text-[#7B4D36] hover:text-[#173B32] uppercase tracking-wider px-2 cursor-pointer"
-          >
-            Close
-          </button>
+        <div className="p-4 border-t border-[#E5D5BA] bg-[#E5D5BA]/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-xs font-bold text-[#7B4D36] hover:text-[#173B32] uppercase tracking-wider px-2 cursor-pointer"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleBookmark}
+              disabled={savingBookmark}
+              className={`px-3 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                isSaved
+                  ? "bg-[#B65E3C] text-white border-[#B65E3C]"
+                  : "bg-white hover:bg-[#FAF7F0] text-[#173B32] border-[#E5D5BA]"
+              }`}
+            >
+              <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-current text-white" : "text-[#B65E3C]"}`} />
+              <span>{isSaved ? "Saved" : "Save Place"}</span>
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             {onAddToTrip && (
               <button
+                type="button"
                 onClick={() => {
                   onAddToTrip(place);
                   onClose();
                 }}
-                className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-[#FAF7F0] border border-[#B65E3C] text-[#B65E3C] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               >
-                <PlusCircle className="w-3.5 h-3.5 text-[#B49252]" />
+                <PlusCircle className="w-3.5 h-3.5 text-[#B65E3C]" />
                 <span>Add to Journey</span>
               </button>
             )}
+            <Link
+              href={`/plan?dest=${resolvedSlug}&place=${encodeURIComponent(place.name)}`}
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all cursor-pointer"
+            >
+              <Compass className="w-3.5 h-3.5 text-[#B49252]" />
+              <span>Plan Trip Here</span>
+            </Link>
           </div>
         </div>
       </div>

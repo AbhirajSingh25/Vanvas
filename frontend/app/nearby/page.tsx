@@ -717,6 +717,11 @@ function NearbyInner() {
                       setSelectedPlace(p);
                       setModalOpen(true);
                     }}
+                    onBookmarkChange={(pId, isSaved) => {
+                      setPlaces((prev) =>
+                        prev.map((p) => (p.id === pId ? { ...p, is_saved: isSaved } : p))
+                      );
+                    }}
                   />
                 ))}
               </div>
@@ -744,8 +749,14 @@ function NearbyInner() {
       <PlaceModal
         place={selectedPlace}
         destinationName={searchCenter.name}
+        destinationSlug={searchCenter.name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/^-+|-+$/g, "")}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        onBookmarkChange={(pId, isSaved) => {
+          setPlaces((prev) =>
+            prev.map((p) => (p.id === pId ? { ...p, is_saved: isSaved } : p))
+          );
+        }}
       />
     </div>
   );

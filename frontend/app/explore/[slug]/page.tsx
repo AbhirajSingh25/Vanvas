@@ -158,12 +158,14 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
   },
 };
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 
 type OperationalMode = "overview" | "places" | "stays" | "mobility" | "solo";
 
 export default function DestinationDetailPage() {
   const routeParams = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const slug = (Array.isArray(routeParams?.slug) ? routeParams.slug[0] : (routeParams?.slug as string)) || "";
   const { isCompact } = useDensity();
   const { openAskVanvas, setTravelContext } = useAskVanvas();
@@ -277,6 +279,46 @@ export default function DestinationDetailPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const handleModeChange = (mode: OperationalMode) => {
+    setActiveMode(mode);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", mode);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
+  // Sync tab/mode from searchParams on mount or URL change
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab");
+    if (tabParam) {
+      if (tabParam === "stays" || tabParam === "hotels") setActiveMode("stays");
+      else if (tabParam === "mobility" || tabParam === "rentals") setActiveMode("mobility");
+      else if (tabParam === "places") setActiveMode("places");
+      else if (tabParam === "solo") setActiveMode("solo");
+      else if (tabParam === "overview") setActiveMode("overview");
+    }
+  }, [searchParams]);
+
+  // Auto-open place modal if searchParams contains place query
+  useEffect(() => {
+    const placeParam = searchParams?.get("place");
+    if (placeParam && places.length > 0 && !selectedPlace) {
+      const target = placeParam.toLowerCase().trim();
+      const match = places.find(
+        (p) =>
+          p.id.toLowerCase() === target ||
+          (p.slug && p.slug.toLowerCase() === target) ||
+          p.name.toLowerCase() === target ||
+          p.name.toLowerCase().replace(/[^a-z0-9]/g, "-") === target.replace(/[^a-z0-9]/g, "-")
+      );
+      if (match) {
+        setSelectedPlace(match);
+        setModalOpen(true);
+      }
+    }
+  }, [searchParams, places, selectedPlace]);
 
   useEffect(() => {
     if (!destLoading) return;
@@ -990,7 +1032,7 @@ export default function DestinationDetailPage() {
                     key={mode.id}
                     type="button"
                     onClick={() => {
-                      setActiveMode(mode.id as OperationalMode);
+                      handleModeChange(mode.id as OperationalMode);
                       window.scrollTo({ top: 400, behavior: "smooth" });
                     }}
                     className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
@@ -2113,9 +2155,24 @@ export default function DestinationDetailPage() {
       {/* Place Detail Modal */}
       <PlaceModal
         place={selectedPlace}
-        destinationName={destination.name}
+        destinationName={destination?.name || slug}
+        destinationSlug={destination?.slug || slug}
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has("place")) {
+              url.searchParams.delete("place");
+              window.history.replaceState({}, "", url.toString());
+            }
+          }
+        }}
+        onBookmarkChange={(placeId, isSaved) => {
+          setPlaces((prev) =>
+            prev.map((p) => (p.id === placeId ? { ...p, is_saved: isSaved } : p))
+          );
+        }}
       />
 
       {/* Stay Detail Modal */}

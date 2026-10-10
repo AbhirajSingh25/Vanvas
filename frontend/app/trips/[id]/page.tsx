@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Sparkles, Navigation, Clock, CloudRain, Wallet, Users, Compass,
   MapPin, CheckCircle2, Circle, Lock, Unlock, Plus, Trash2,
@@ -49,6 +50,7 @@ import { Booking } from "@/types";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tripId } = use(params);
+  const searchParams = useSearchParams();
   const { isCompact } = useDensity();
 
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -64,13 +66,18 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-  // Active Tab: 'overview' | 'itinerary' | 'bookings' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist'
-  const [activeTab, setActiveTab] = useState<string>("overview");
+  // Active Tab: 'overview' | 'itinerary' | 'bookings' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist' | 'circles'
+  const urlTab = searchParams?.get("tab");
+  const [activeTab, setActiveTab] = useState<string>(() => urlTab || "overview");
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState({}, "", url.toString());
+
       const tabsElement = document.getElementById("trip-tabs-navigation");
       if (tabsElement) {
         const topOffset =
@@ -82,6 +89,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       }
     }
   };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams?.get("tab");
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   // Ask VANVAS Unified Copilot
   const { openAskVanvas, setTravelContext, registerTripRefreshCallback } = useAskVanvas();

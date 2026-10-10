@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Calendar, Bookmark, Plus, MapPin, ArrowRight, Sparkles, Compass } from "lucide-react";
 import { api } from "@/lib/api";
 import { TripSummary, Place } from "@/types";
@@ -14,15 +15,35 @@ import { CompactTripCard, CompactPlaceCard } from "@/components/compact";
 import { TripCardSkeleton, CardSkeleton } from "@/components/ui/ParchmentSkeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-export default function TripsDashboardPage() {
+function TripsDashboardInner() {
   const { isCompact } = useDensity();
-  const [activeTab, setActiveTab] = useState<"trips" | "saved">("trips");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get("tab");
+  const [activeTab, setActiveTab] = useState<"trips" | "saved">(() => (tabParam === "saved" ? "saved" : "trips"));
   const [trips, setTrips] = useState<TripSummary[]>([]);
   const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
+
+  const handleTabChange = (tabId: "trips" | "saved") => {
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
+  useEffect(() => {
+    const currentTabParam = searchParams?.get("tab");
+    if (currentTabParam === "saved" && activeTab !== "saved") {
+      setActiveTab("saved");
+    } else if (currentTabParam === "trips" && activeTab !== "trips") {
+      setActiveTab("trips");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     Promise.all([api.getTrips(), api.getSavedPlaces()])
@@ -122,7 +143,7 @@ export default function TripsDashboardPage() {
         {/* Tab Switcher */}
         <div className="flex items-center gap-2 border-b border-[#E5D5BA] pb-2">
           <button
-            onClick={() => setActiveTab("trips")}
+            onClick={() => handleTabChange("trips")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === "trips"
                 ? "bg-[#173B32] text-[#EFE5D2] shadow-xs border border-[#173B32]"
@@ -134,7 +155,7 @@ export default function TripsDashboardPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("saved")}
+            onClick={() => handleTabChange("saved")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === "saved"
                 ? "bg-[#173B32] text-[#EFE5D2] shadow-xs border border-[#173B32]"
@@ -272,9 +293,27 @@ export default function TripsDashboardPage() {
 
       <PlaceModal
         place={selectedPlace}
+        destinationName={selectedPlace?.name ? "Travel Sanctuary" : ""}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        onBookmarkChange={(pId, isSaved) => {
+          if (!isSaved) setSavedPlaces((prev) => prev.filter((p) => p.id !== pId));
+        }}
       />
     </div>
+  );
+}
+
+export default function TripsDashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#EFE5D2] py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex items-center justify-center">
+          <div className="w-10 h-10 border-3 border-[#173B32] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <TripsDashboardInner />
+    </Suspense>
   );
 }

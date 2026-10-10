@@ -538,9 +538,10 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    if (act === "open_place" && (payload.slug || payload.id)) {
-      const destSlug = currentContext.destinationSlug || "manali";
-      router.push(`/explore/${destSlug}?place=${payload.slug || payload.id}`);
+    if (act === "open_place" && (payload.slug || payload.id || payload.name)) {
+      const destSlug = payload.destination || currentContext.destinationSlug || "manali";
+      const placeIdentifier = payload.slug || payload.id || payload.name;
+      router.push(`/explore/${destSlug}?place=${encodeURIComponent(placeIdentifier)}`);
       closeAskVanvas();
       return;
     }
@@ -661,7 +662,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setStatusMessage(null);
         }
       } else {
-        router.push(`/explore/${destSlug}`);
+        router.push(`/plan?dest=${encodeURIComponent(destSlug)}`);
         closeAskVanvas();
       }
       return;
