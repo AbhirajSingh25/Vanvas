@@ -12,6 +12,7 @@ import { TravelStamp } from "@/components/ui/TravelStamp";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
 import { api } from "@/lib/api";
+import { acquireScrollLock, releaseScrollLock } from "@/lib/scrollLock";
 
 interface PlaceModalProps {
   place: Place | null;
@@ -38,6 +39,7 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
   const [showReviewForm, setShowReviewForm] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [savingBookmark, setSavingBookmark] = useState<boolean>(false);
+  const [bookmarkErrorMsg, setBookmarkErrorMsg] = useState<string>("");
   
   // Review form state
   const [rating, setRating] = useState<number>(5);
@@ -64,11 +66,13 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
       }
     };
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      acquireScrollLock();
       window.addEventListener("keydown", handleKeyDown);
     }
     return () => {
-      document.body.style.overflow = "";
+      if (isOpen) {
+        releaseScrollLock();
+      }
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -79,6 +83,7 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
       setShowReviewForm(false);
       setReviewSuccessMsg("");
       setReviewErrorMsg("");
+      setBookmarkErrorMsg("");
       setReportingReviewId(null);
       setIsSaved(Boolean(place.is_saved));
       
@@ -160,12 +165,15 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
   const handleToggleBookmark = async () => {
     if (!place || savingBookmark) return;
     setSavingBookmark(true);
+    setBookmarkErrorMsg("");
     try {
       const res = await api.toggleSavePlace(place.id);
       setIsSaved(res.saved);
       if (onBookmarkChange) onBookmarkChange(place.id, res.saved);
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Failed to toggle bookmark:", err);
+      setBookmarkErrorMsg(err?.message || "Please sign in to save places to your travel collection.");
+      setTimeout(() => setBookmarkErrorMsg(""), 5000);
     } finally {
       setSavingBookmark(false);
     }
@@ -306,6 +314,19 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
 
         {/* Content Body: Journal Page */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-sm">
+          {/* Bookmark Error banner if bookmarking fails */}
+          {bookmarkErrorMsg && (
+            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 flex items-start gap-2.5 text-xs animate-vanvas-fade">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Bookmark Action Notice</p>
+                <p className="text-[11px] text-rose-700/90 leading-normal">
+                  {bookmarkErrorMsg}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Stale data warning banner if applicable */}
           {isStale && (
             <div className="p-3 rounded-2xl bg-amber-50 border border-amber-300/80 text-amber-900 flex items-start gap-2.5 text-xs">

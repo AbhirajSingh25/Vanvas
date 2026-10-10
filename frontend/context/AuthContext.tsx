@@ -144,10 +144,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  function clearPrivateUserData() {
+    if (typeof window === "undefined") return;
+    try {
+      storageAdapter.removeItem("vanvas_token");
+      storageAdapter.removeItem("vanvas_user_profile");
+      storageAdapter.removeItem("vanvas_cached_trips");
+      storageAdapter.removeItem("vanvas_cached_saved_places");
+
+      // Purge all user-specific cached trip packs and sub-resources
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (
+          key &&
+          (key.startsWith("vanvas_trip_") ||
+            key.startsWith("vanvas_offline_trip_") ||
+            key.startsWith("vanvas_offline_budget_") ||
+            key.startsWith("vanvas_offline_group_") ||
+            key.startsWith("vanvas_offline_checklist_") ||
+            key.startsWith("vanvas_offline_weather_") ||
+            key.startsWith("vanvas_offline_bookings_"))
+        ) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {}
+  }
+
   const login = async (email: string, pass: string): Promise<User> => {
     setIsLoading(true);
     try {
       const res = await api.login(email.trim().toLowerCase(), pass);
+      // If logging into a different account, purge prior account's private cached data
+      const priorProfileRaw = storageAdapter.getItem("vanvas_user_profile");
+      if (priorProfileRaw) {
+        try {
+          const prior = JSON.parse(priorProfileRaw);
+          if (prior?.id && prior.id !== res.user.id) {
+            clearPrivateUserData();
+          }
+        } catch {}
+      }
       storageAdapter.setItem("vanvas_token", res.access_token);
       storageAdapter.setItem("vanvas_user_profile", JSON.stringify(res.user));
       setToken(res.access_token);
@@ -188,8 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     deactivatePushToken().catch(() => {});
-    storageAdapter.removeItem("vanvas_token");
-    storageAdapter.removeItem("vanvas_user_profile");
+    clearPrivateUserData();
 
     // Attempt graceful backend session cleanup
     api.logoutSession().catch(() => {});

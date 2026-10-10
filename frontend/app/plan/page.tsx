@@ -60,25 +60,39 @@ function PlanWizard() {
   // Step 5: WHAT IS YOUR BUDGET?
   // Step 6: HOW ARE YOU GETTING THERE?
   // Step 7: REVIEW & GENERATE
-  const [currentStep, setCurrentStep] = useState<number>(() => (urlOrigin ? (hasExplicitDest ? 3 : 2) : 1));
+  const initialStep = urlOrigin ? (hasExplicitDest ? 3 : 2) : 1;
+  const [currentStep, setCurrentStep] = useState<number>(() => initialStep);
   const [stepDirection, setStepDirection] = useState<"next" | "prev">("next");
 
   // Keep browser back button in sync with wizard step state
   useEffect(() => {
+    // Initialize current history entry if vanvasStep is missing, preserving router state
+    if (typeof window !== "undefined") {
+      const existingStep = window.history.state?.vanvasStep;
+      if (typeof existingStep !== "number") {
+        window.history.replaceState({ ...(window.history.state || {}), vanvasStep: initialStep }, "", window.location.href);
+      }
+    }
+
     const handlePopState = (e: PopStateEvent) => {
       if (e.state && typeof e.state.vanvasStep === "number") {
+        setStepDirection(e.state.vanvasStep < currentStep ? "prev" : "next");
         setCurrentStep(e.state.vanvasStep);
+      } else {
+        // Popped back to initial entry before wizard progression
+        setStepDirection("prev");
+        setCurrentStep(initialStep);
       }
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+  }, [initialStep, currentStep]);
 
   const goToStep = (stepNumber: number, direction: "next" | "prev" = "next") => {
     setStepDirection(direction);
     setCurrentStep(stepNumber);
     if (typeof window !== "undefined") {
-      window.history.pushState({ vanvasStep: stepNumber }, "", window.location.href);
+      window.history.pushState({ ...(window.history.state || {}), vanvasStep: stepNumber }, "", window.location.href);
     }
   };
 
@@ -460,12 +474,20 @@ function PlanWizard() {
       clearInterval(timer);
 
       // Pre-cache trip into local storage for immediate visibility in /trips & offline
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && trip?.id) {
         try {
           localStorage.setItem(`vanvas_trip_${trip.id}`, JSON.stringify(trip));
           localStorage.setItem(`vanvas_offline_trip_${trip.id}`, JSON.stringify(trip));
-          const existingRaw = localStorage.getItem("vanvas_cached_trips");
-          const existingList = existingRaw ? JSON.parse(existingRaw) : [];
+          let existingList: any[] = [];
+          try {
+            const existingRaw = localStorage.getItem("vanvas_cached_trips");
+            if (existingRaw) {
+              const parsed = JSON.parse(existingRaw);
+              if (Array.isArray(parsed)) existingList = parsed;
+            }
+          } catch {
+            existingList = [];
+          }
           const newSummary = {
             id: trip.id,
             title: trip.title || `Expedition to ${selectedDestObject?.name || cleanTarget}`,
@@ -481,7 +503,7 @@ function PlanWizard() {
             status: "active",
             hero_image: selectedDestObject?.image_url,
           };
-          const filtered = Array.isArray(existingList) ? existingList.filter((item: any) => item.id !== trip.id) : [];
+          const filtered = existingList.filter((item: any) => item && item.id !== trip.id);
           localStorage.setItem("vanvas_cached_trips", JSON.stringify([newSummary, ...filtered]));
         } catch {}
       }
@@ -637,8 +659,11 @@ function PlanWizard() {
                 <button
                   type="button"
                   onClick={() => {
-                    setStepDirection("prev");
-                    setCurrentStep((prev) => Math.max(1, prev - 1));
+                    if (typeof window !== "undefined" && window.history.state?.vanvasStep > 1) {
+                      window.history.back();
+                    } else {
+                      goToStep(Math.max(1, currentStep - 1), "prev");
+                    }
                   }}
                   className="p-1.5 rounded-xl hover:bg-[#EFE5D2] interactive-btn text-[#173B32] cursor-pointer flex items-center gap-1 text-xs font-bold"
                   aria-label="Previous question"
@@ -1280,10 +1305,7 @@ function PlanWizard() {
               {/* Explicit Continue Button */}
               <button
                 type="button"
-                onClick={() => {
-                  setStepDirection("next");
-                  setCurrentStep(7);
-                }}
+                onClick={() => goToStep(7, "next")}
                 className="w-full py-3.5 rounded-2xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md interactive-btn transition-all mt-4"
               >
                 <span>Continue to Review</span>
@@ -1383,10 +1405,7 @@ function PlanWizard() {
                   <span><strong>Dates:</strong> {startDate} → {endDate}</span>
                   <button
                     type="button"
-                    onClick={() => {
-                      setStepDirection("prev");
-                      setCurrentStep(6);
-                    }}
+                    onClick={() => goToStep(6, "prev")}
                     className="text-[#B65E3C] font-bold text-xs underline cursor-pointer hover:text-[#173B32]"
                   >
                     ← Change Transport
@@ -1494,10 +1513,7 @@ function PlanWizard() {
 
               <button
                 type="button"
-                onClick={() => {
-                  setStepDirection("prev");
-                  setCurrentStep(1);
-                }}
+                onClick={() => goToStep(1, "prev")}
                 className="w-full text-center text-xs font-mono text-[#7B4D36] hover:text-[#173B32] underline cursor-pointer"
               >
                 Edit all preferences

@@ -36,6 +36,20 @@ function TripsDashboardInner() {
     }
   };
 
+  const handleBookmarkToggle = (pId: string, isSaved: boolean) => {
+    if (!isSaved) {
+      setSavedPlaces((prev) => {
+        const next = prev.filter((p) => p.id !== pId);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("vanvas_cached_saved_places", JSON.stringify(next));
+          } catch {}
+        }
+        return next;
+      });
+    }
+  };
+
   useEffect(() => {
     const currentTabParam = searchParams?.get("tab");
     if (currentTabParam === "saved" && activeTab !== "saved") {
@@ -63,10 +77,19 @@ function TripsDashboardInner() {
         if (typeof window !== "undefined") {
           setIsOffline(true);
           try {
+            let loadedFromCache = false;
             const cachedTrips = localStorage.getItem("vanvas_cached_trips");
             if (cachedTrips) {
-              setTrips(JSON.parse(cachedTrips));
-            } else {
+              try {
+                const parsed = JSON.parse(cachedTrips);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setTrips(parsed);
+                  loadedFromCache = true;
+                }
+              } catch {}
+            }
+
+            if (!loadedFromCache) {
               // Reconstruct from any offline trip packs in storage
               const reconstructed: TripSummary[] = [];
               for (let i = 0; i < localStorage.length; i++) {
@@ -104,7 +127,12 @@ function TripsDashboardInner() {
 
             const cachedSaved = localStorage.getItem("vanvas_cached_saved_places");
             if (cachedSaved) {
-              setSavedPlaces(JSON.parse(cachedSaved));
+              try {
+                const parsedSaved = JSON.parse(cachedSaved);
+                if (Array.isArray(parsedSaved)) {
+                  setSavedPlaces(parsedSaved);
+                }
+              } catch {}
             }
           } catch {}
         }
@@ -265,9 +293,7 @@ function TripsDashboardInner() {
                   setSelectedPlace(p);
                   setModalOpen(true);
                 }}
-                onBookmarkChange={(pId, isSaved) => {
-                  if (!isSaved) setSavedPlaces((prev) => prev.filter((p) => p.id !== pId));
-                }}
+                onBookmarkChange={handleBookmarkToggle}
               />
             ))}
           </div>
@@ -282,9 +308,7 @@ function TripsDashboardInner() {
                   setSelectedPlace(p);
                   setModalOpen(true);
                 }}
-                onBookmarkChange={(pId, isSaved) => {
-                  if (!isSaved) setSavedPlaces((prev) => prev.filter((p) => p.id !== pId));
-                }}
+                onBookmarkChange={handleBookmarkToggle}
               />
             ))}
           </div>
@@ -296,9 +320,7 @@ function TripsDashboardInner() {
         destinationName={selectedPlace?.name ? "Travel Sanctuary" : ""}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onBookmarkChange={(pId, isSaved) => {
-          if (!isSaved) setSavedPlaces((prev) => prev.filter((p) => p.id !== pId));
-        }}
+        onBookmarkChange={handleBookmarkToggle}
       />
     </div>
   );

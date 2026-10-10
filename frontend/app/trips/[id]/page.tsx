@@ -67,15 +67,23 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   // Active Tab: 'overview' | 'itinerary' | 'bookings' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist' | 'circles'
+  const VALID_TABS = ["overview", "itinerary", "bookings", "stays_rentals", "food", "budget", "group", "checklist", "circles"] as const;
+  const resolveValidTab = (rawTab: string | null | undefined): string => {
+    if (!rawTab) return "overview";
+    const clean = rawTab.trim().toLowerCase();
+    return VALID_TABS.includes(clean as any) ? clean : "overview";
+  };
+
   const urlTab = searchParams?.get("tab");
-  const [activeTab, setActiveTab] = useState<string>(() => urlTab || "overview");
+  const [activeTab, setActiveTab] = useState<string>(() => resolveValidTab(urlTab));
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
+    const valid = resolveValidTab(tabId);
+    setActiveTab(valid);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      url.searchParams.set("tab", tabId);
+      url.searchParams.set("tab", valid);
       window.history.replaceState({}, "", url.toString());
 
       const tabsElement = document.getElementById("trip-tabs-navigation");
@@ -92,10 +100,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   useEffect(() => {
     const tabFromUrl = searchParams?.get("tab");
-    if (tabFromUrl && tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl);
+    const valid = resolveValidTab(tabFromUrl);
+    if (valid !== activeTab) {
+      setActiveTab(valid);
     }
-  }, [searchParams]);
+  }, [searchParams, activeTab]);
 
   // Ask VANVAS Unified Copilot
   const { openAskVanvas, setTravelContext, registerTripRefreshCallback } = useAskVanvas();

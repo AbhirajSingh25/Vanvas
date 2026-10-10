@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { acquireScrollLock, releaseScrollLock } from "@/lib/scrollLock";
 import {
   Send,
   Sparkles,
@@ -73,13 +74,13 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   // Lock body scroll when open
   useEffect(() => {
     if (isModalOpen) {
-      document.body.style.overflow = "hidden";
+      acquireScrollLock();
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = "unset";
+      if (isModalOpen) {
+        releaseScrollLock();
+      }
     };
   }, [isModalOpen]);
 

@@ -15,6 +15,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { TravelStamp } from "@/components/ui/TravelStamp";
+import { acquireScrollLock, releaseScrollLock } from "@/lib/scrollLock";
 
 interface ChaloLauncherModalProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    document.body.style.overflow = "hidden";
+    acquireScrollLock();
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -40,7 +41,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = "";
+      releaseScrollLock();
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
