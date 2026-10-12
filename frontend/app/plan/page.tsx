@@ -19,6 +19,8 @@ import { getCurrentGPSPosition } from "@/lib/locationService";
 import {
   CANONICAL_DESTINATIONS,
   CANONICAL_HINDI_NAMES,
+  resolveCanonicalDestination,
+  getCanonicalHindiName,
 } from "@/lib/canonicalDestinations";
 
 const POPULAR_ORIGIN_HUBS = [
@@ -37,9 +39,10 @@ const POPULAR_ORIGIN_HUBS = [
 function PlanWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawInitial = searchParams?.get("dest") || searchParams?.get("destination") || "manali";
-  const initialDest = rawInitial.replace(/^(dyn|dest)-/, "").trim() || "manali";
-  const hasExplicitDest = Boolean(searchParams?.get("dest") || searchParams?.get("destination"));
+  const rawInitial = searchParams?.get("dest") || searchParams?.get("destination") || "";
+  const resolvedCanonical = rawInitial ? resolveCanonicalDestination(rawInitial) : undefined;
+  const initialDest = resolvedCanonical ? resolvedCanonical.slug : (rawInitial.replace(/^(dyn|dest)-/, "").trim() || "manali");
+  const [hasExplicitDest, setHasExplicitDest] = useState<boolean>(Boolean(rawInitial));
   const urlPlace = searchParams?.get("place") || searchParams?.get("place_name") || "";
   const urlOrigin = searchParams?.get("origin") || "";
   const urlBudget = searchParams?.get("budget") || "";
@@ -66,7 +69,6 @@ function PlanWizard() {
 
   // Keep browser back button in sync with wizard step state
   useEffect(() => {
-    // Initialize current history entry if vanvasStep is missing, preserving router state
     if (typeof window !== "undefined") {
       const existingStep = window.history.state?.vanvasStep;
       if (typeof existingStep !== "number") {
@@ -79,7 +81,6 @@ function PlanWizard() {
         setStepDirection(e.state.vanvasStep < currentStep ? "prev" : "next");
         setCurrentStep(e.state.vanvasStep);
       } else {
-        // Popped back to initial entry before wizard progression
         setStepDirection("prev");
         setCurrentStep(initialStep);
       }
@@ -96,6 +97,17 @@ function PlanWizard() {
     }
   };
 
+  const handleBack = () => {
+    // If destination was pre-selected from search/homepage and user is on Step 3, skip Step 2 and go straight to Step 1
+    if (currentStep === 3 && hasExplicitDest) {
+      goToStep(1, "prev");
+    } else if (typeof window !== "undefined" && window.history.state?.vanvasStep > 1) {
+      window.history.back();
+    } else {
+      goToStep(Math.max(1, currentStep - 1), "prev");
+    }
+  };
+
   // Step 1: Origin State
   const [originCity, setOriginCity] = useState<string>(urlOrigin || "");
   const [originSearch, setOriginSearch] = useState<string>("");
@@ -105,13 +117,58 @@ function PlanWizard() {
   // Step 2: Destination Resolution State
   const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
   const [loadingDestinations, setLoadingDestinations] = useState(true);
-  const [selectedDestId, setSelectedDestId] = useState<string>(initialDest);
-  const [selectedDestObject, setSelectedDestObject] = useState<Destination | any | null>(null);
+  const [selectedDestId, setSelectedDestId] = useState<string>(resolvedCanonical ? resolvedCanonical.id : initialDest);
+  const [selectedDestObject, setSelectedDestObject] = useState<Destination | any | null>(resolvedCanonical || null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
+
+  // Restore pending plan destination from localStorage if not provided in searchParams
+  useEffect(() => {
+    if (!rawInitial && typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("vanvas_pending_plan_dest");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.slug || parsed.name || parsed.id)) {
+            const canonical = resolveCanonicalDestination(parsed.slug || parsed.name);
+            if (canonical) {
+              setSelectedDestId(canonical.id);
+              setSelectedDestObject(canonical);
+              setHasExplicitDest(true);
+            } else {
+              setSelectedDestId(parsed.id || parsed.slug);
+              setSelectedDestObject(parsed);
+              setHasExplicitDest(true);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Could not restore stored destination:", e);
+      }
+    }
+  }, [rawInitial]);
+
+  // Persist selected destination to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedDestObject && typeof window !== "undefined") {
+      try {
+        const payload = {
+          id: selectedDestObject.id || `dest-${selectedDestObject.slug}`,
+          slug: selectedDestObject.slug || selectedDestId,
+          name: selectedDestObject.name,
+          hindi_name: selectedDestObject.hindi_name || getCanonicalHindiName(selectedDestObject.slug),
+          state: selectedDestObject.state,
+          region: selectedDestObject.region,
+          matched_alias: selectedDestObject.matched_alias,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem("vanvas_pending_plan_dest", JSON.stringify(payload));
+      } catch (e) {}
+    }
+  }, [selectedDestObject, selectedDestId]);
 
   // Step 3: Dates & Duration State
   const [dateSelectionType, setDateSelectionType] = useState<"this_weekend" | "next_week" | "next_month" | "custom">("this_weekend");
@@ -288,12 +345,26 @@ function PlanWizard() {
     setSearchQuery("");
     setSearchResults([]);
     setIsResolving(true);
+    setHasExplicitDest(true);
     try {
       const rawQ =
         typeof destItem === "string"
           ? destItem
           : destItem.canonical_slug || destItem.name || destItem.slug;
       const q = String(rawQ).replace(/^(dyn|dest)-/, "").trim();
+
+      // Check local canonical resolver first (sub-1ms resolution)
+      const local = resolveCanonicalDestination(q);
+      if (local) {
+        setSelectedDestId(local.id);
+        setSelectedDestObject(local);
+        if (autoAdvance) {
+          setTimeout(() => goToStep(3, "next"), 150);
+        }
+        setIsResolving(false);
+        return;
+      }
+
       const res = await api.resolveDestination(q);
       if (res) {
         setSelectedDestId(res.id || res.slug);
@@ -509,6 +580,9 @@ function PlanWizard() {
       }
 
       try {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("vanvas_pending_plan_dest");
+        }
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } catch {}
 
@@ -658,13 +732,7 @@ function PlanWizard() {
               {currentStep > 1 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (typeof window !== "undefined" && window.history.state?.vanvasStep > 1) {
-                      window.history.back();
-                    } else {
-                      goToStep(Math.max(1, currentStep - 1), "prev");
-                    }
-                  }}
+                  onClick={handleBack}
                   className="p-1.5 rounded-xl hover:bg-[#EFE5D2] interactive-btn text-[#173B32] cursor-pointer flex items-center gap-1 text-xs font-bold"
                   aria-label="Previous question"
                 >
@@ -708,6 +776,53 @@ function PlanWizard() {
                   Pick your departure city or share your current location.
                 </p>
               </div>
+
+              {/* Destination Pre-Selected Banner */}
+              {hasExplicitDest && selectedDestObject && (
+                <div
+                  data-testid="selected-destination-banner"
+                  className="bg-[#FAF7F0] border-2 border-[#173B32]/30 rounded-2xl p-4 flex items-center justify-between shadow-xs animate-fadeIn"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-center shrink-0">
+                      <MapPin className="w-5 h-5 text-[#B49252]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                          Destination Selected
+                        </span>
+                        {selectedDestObject.matched_alias && (
+                          <span className="text-[10px] font-mono bg-[#E5D5BA] text-[#173B32] px-1.5 py-0.5 rounded font-semibold">
+                            via {selectedDestObject.matched_alias}
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-serif font-black text-base text-[#173B32]">
+                        {selectedDestObject.name}
+                        {(selectedDestObject.hindi_name || getCanonicalHindiName(selectedDestObject.slug)) && (
+                          <span className="text-sm font-serif font-normal text-[#B65E3C] ml-1.5">
+                            ({selectedDestObject.hindi_name || getCanonicalHindiName(selectedDestObject.slug)})
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-[11px] text-[#7B4D36]">
+                        {selectedDestObject.state ? `${selectedDestObject.state}, ${selectedDestObject.country || "India"}` : selectedDestObject.region || "India"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHasExplicitDest(false);
+                      goToStep(2, "next");
+                    }}
+                    className="text-xs font-mono font-bold text-[#B65E3C] hover:text-[#173B32] underline hover:no-underline px-2 py-1 rounded cursor-pointer shrink-0"
+                  >
+                    Change →
+                  </button>
+                </div>
+              )}
 
               {/* Explicit GPS Request Button (User action only) */}
               <button

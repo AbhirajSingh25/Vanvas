@@ -660,10 +660,10 @@ class LiveGeocodingProvider(GeocodingProvider):
             geo_cache.set(cache_key, matched[:limit], ttl_seconds=600)
             return matched[:limit]
 
-        # 2. Query Photon Komoot API with multi-result ranking
+        # 2. Query Photon Komoot API with multi-result ranking (built specifically for fast autocomplete)
         try:
             url = f"https://photon.komoot.io/api/?q={httpx.URL(clean_q)}&limit={max(limit, 6)}"
-            async with httpx.AsyncClient(timeout=2.5, headers=self.headers) as client:
+            async with httpx.AsyncClient(timeout=1.5, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
                     data = res.json()
@@ -707,56 +707,8 @@ class LiveGeocodingProvider(GeocodingProvider):
         except Exception as e:
             logger.warning(f"Photon autocomplete failed: {e}")
 
-        if len(matched) >= limit:
-            geo_cache.set(cache_key, matched[:limit], ttl_seconds=600)
-            return matched[:limit]
-
-        # 3. Query OpenStreetMap Nominatim with structured ranking
-        try:
-            await _acquire_nominatim_slot()
-            url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(clean_q)}&format=json&addressdetails=1&limit={max(limit, 6)}"
-            async with httpx.AsyncClient(timeout=3.0, headers=self.headers) as client:
-                res = await client.get(url)
-                if res.status_code == 200:
-                    data = res.json()
-                    candidates = []
-                    for item in data:
-                        addr = item.get("address", {})
-                        place_type = item.get("type") or item.get("class") or "city"
-                        item_name = item.get("name") or ""
-                        if item_name and (clean_q in item_name.lower() or item_name.lower().startswith(clean_q)):
-                            city_name = item_name
-                        else:
-                            city_name = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality") or addr.get("county") or item.get("name") or clean_q.title()
-                        state = addr.get("state") or addr.get("region") or ""
-                        country = addr.get("country") or "India"
-
-                        score = self._score_place_type(place_type, city_name, clean_q)
-                        formatted = self._format_destination_result(
-                            name=city_name,
-                            state=state,
-                            country=country,
-                            lat=float(item.get("lat", 0.0)),
-                            lng=float(item.get("lon", 0.0)),
-                            place_type=place_type,
-                            source="openstreetmap",
-                            source_id=str(item.get("osm_id", "")),
-                            altitude_meters=1000,
-                            is_curated=False
-                        )
-                        candidates.append((score, formatted))
-
-                    candidates.sort(key=lambda x: x[0], reverse=True)
-                    for _, cand in candidates:
-                        if not any(m["name"].lower() == cand["name"].lower() for m in matched):
-                            matched.append(cand)
-        except Exception as e:
-            logger.warning(f"Live geocoding autocomplete error: {e}")
-
-        result = matched[:limit]
-        health_tracker.record_success("geocoding", 1.0)
-        geo_cache.set(cache_key, result, ttl_seconds=600)
-        return result
+        geo_cache.set(cache_key, matched[:limit], ttl_seconds=600)
+        return matched[:limit]
 
     async def geocode(self, query: str) -> Optional[Dict[str, Any]]:
         clean_q = self._clean_query(query).lower()

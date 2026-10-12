@@ -882,6 +882,34 @@ export const CANONICAL_HINDI_NAMES: Record<string, string> = {
   "sariska-bhangarh": "सरिस्का और भानगढ़",
   sariska: "सरिस्का",
   bhangarh: "भानगढ़",
+  banaras: "वाराणसी",
+  benaras: "वाराणसी",
+  kashi: "वाराणसी",
+  benares: "वाराणसी",
+  deoriatal: "तुंगनाथ–चंद्रशिला",
+  bhagsunag: "धर्मशाला",
+  "mcleod ganj": "धर्मशाला",
+  bombay: "मुंबई",
+  bangalore: "बेंगलुरु",
+  calcutta: "कोलकाता",
+  madras: "चेन्नई",
+  pondy: "पुडुचेरी",
+  pondi: "पुडुचेरी",
+  puducherry: "पुडुचेरी",
+  alappuzha: "अलेप्पी",
+  kaza: "स्पीति घाटी",
+  tabo: "स्पीति घाटी",
+  sohra: "शिलांग",
+  cherrapunji: "शिलांग",
+  kodai: "कोडाइकनाल",
+  madikeri: "कूर्ग",
+  coorg: "कूर्ग",
+  ooty: "ऊटी",
+  udhagamandalam: "ऊटी",
+  hampi: "हम्पी",
+  jodhpur: "जोधपुर",
+  pushkar: "पुष्कर",
+  nainital: "नैनीताल",
   dehradun: "देहरादून",
   chandigarh: "चंडीगढ़",
   "morni-hills": "मोरनी हिल्स",
@@ -890,7 +918,50 @@ export const CANONICAL_HINDI_NAMES: Record<string, string> = {
 };
 
 /**
- * Returns canonical Hindi name for any destination slug or name
+ * Common destination aliases and spelling variants mapped to canonical destination slugs
+ */
+export const FRONTEND_DESTINATION_ALIASES: Record<string, { slug: string; matchedAlias: string }> = {
+  banaras: { slug: "varanasi", matchedAlias: "Banaras" },
+  benaras: { slug: "varanasi", matchedAlias: "Benaras" },
+  benares: { slug: "varanasi", matchedAlias: "Benares" },
+  kashi: { slug: "varanasi", matchedAlias: "Kashi" },
+  kashidham: { slug: "varanasi", matchedAlias: "Kashi" },
+  chopta: { slug: "tungnath-chandrashila", matchedAlias: "Chopta" },
+  tungnath: { slug: "tungnath-chandrashila", matchedAlias: "Tungnath" },
+  chandrashila: { slug: "tungnath-chandrashila", matchedAlias: "Chandrashila" },
+  deoriatal: { slug: "tungnath-chandrashila", matchedAlias: "Deoria Tal" },
+  mcleodganj: { slug: "dharamshala", matchedAlias: "McLeod Ganj" },
+  "mcleod ganj": { slug: "dharamshala", matchedAlias: "McLeod Ganj" },
+  bhagsunag: { slug: "dharamshala", matchedAlias: "Bhagsunag" },
+  bombay: { slug: "mumbai", matchedAlias: "Bombay" },
+  bangalore: { slug: "bengaluru", matchedAlias: "Bangalore" },
+  calcutta: { slug: "kolkata", matchedAlias: "Calcutta" },
+  madras: { slug: "chennai", matchedAlias: "Madras" },
+  pondy: { slug: "pondicherry", matchedAlias: "Pondy" },
+  pondi: { slug: "pondicherry", matchedAlias: "Pondicherry" },
+  puducherry: { slug: "pondicherry", matchedAlias: "Puducherry" },
+  alappuzha: { slug: "alleppey", matchedAlias: "Alappuzha" },
+  kaza: { slug: "spiti", matchedAlias: "Kaza" },
+  tabo: { slug: "spiti", matchedAlias: "Tabo" },
+  ladakh: { slug: "leh", matchedAlias: "Ladakh" },
+  kainchi: { slug: "kainchi-dham", matchedAlias: "Kainchi" },
+  "kainchi dham": { slug: "kainchi-dham", matchedAlias: "Kainchi Dham" },
+  "neem karoli": { slug: "kainchi-dham", matchedAlias: "Neem Karoli Baba Ashram" },
+  cherrapunji: { slug: "shillong", matchedAlias: "Cherrapunji" },
+  sohra: { slug: "shillong", matchedAlias: "Sohra" },
+  kodai: { slug: "kodaikanal", matchedAlias: "Kodai" },
+  kodaikanal: { slug: "kodaikanal", matchedAlias: "Kodaikanal" },
+  madikeri: { slug: "coorg", matchedAlias: "Madikeri" },
+  coorg: { slug: "coorg", matchedAlias: "Coorg" },
+  udhagamandalam: { slug: "ooty", matchedAlias: "Ooty" },
+  ooty: { slug: "ooty", matchedAlias: "Ooty" },
+  tosh: { slug: "kasol", matchedAlias: "Tosh" },
+  chalal: { slug: "kasol", matchedAlias: "Chalal" },
+  kheerganga: { slug: "kasol", matchedAlias: "Kheerganga" },
+};
+
+/**
+ * Returns canonical Hindi name for any destination slug, alias, or name
  */
 export function getCanonicalHindiName(slugOrName?: string | null): string {
   if (!slugOrName) return "";
@@ -898,7 +969,17 @@ export function getCanonicalHindiName(slugOrName?: string | null): string {
     .toLowerCase()
     .replace(/^(dyn|dest)-/, "")
     .trim();
-  return CANONICAL_HINDI_NAMES[cleaned] || "";
+  
+  if (CANONICAL_HINDI_NAMES[cleaned]) {
+    return CANONICAL_HINDI_NAMES[cleaned];
+  }
+
+  const alias = FRONTEND_DESTINATION_ALIASES[cleaned];
+  if (alias && CANONICAL_HINDI_NAMES[alias.slug]) {
+    return CANONICAL_HINDI_NAMES[alias.slug];
+  }
+
+  return "";
 }
 
 /**
@@ -915,5 +996,43 @@ export function findCanonicalDestination(slugOrId?: string | null): CanonicalDes
       d.slug.toLowerCase() === cleaned ||
       d.id.toLowerCase() === `dest-${cleaned}` ||
       d.name.toLowerCase() === cleaned
+  );
+}
+
+/**
+ * Resolves any query, alias (e.g. "Banaras" -> "varanasi"), or name to canonical destination
+ */
+export function resolveCanonicalDestination(query?: string | null): CanonicalDestination | undefined {
+  if (!query) return undefined;
+  const cleaned = query
+    .toLowerCase()
+    .replace(/^(dyn|dest)-/, "")
+    .trim();
+
+  // 1. Exact canonical slug or ID or name
+  const direct = findCanonicalDestination(cleaned);
+  if (direct) return direct;
+
+  // 2. Exact alias
+  const aliasMatch = FRONTEND_DESTINATION_ALIASES[cleaned];
+  if (aliasMatch) {
+    const dest = findCanonicalDestination(aliasMatch.slug);
+    if (dest) return dest;
+  }
+
+  // 3. Partial alias match
+  for (const [aliasKey, aliasData] of Object.entries(FRONTEND_DESTINATION_ALIASES)) {
+    if (cleaned.includes(aliasKey) || aliasKey.includes(cleaned)) {
+      const dest = findCanonicalDestination(aliasData.slug);
+      if (dest) return dest;
+    }
+  }
+
+  // 4. Case-insensitive substring match
+  return CANONICAL_DESTINATIONS.find(
+    (d) =>
+      d.name.toLowerCase().includes(cleaned) ||
+      d.slug.toLowerCase().includes(cleaned) ||
+      (d.state && d.state.toLowerCase().includes(cleaned))
   );
 }
