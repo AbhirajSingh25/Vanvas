@@ -9,7 +9,11 @@ import {
   StructuredAssistantResponse,
   normalizeAssistantResponse,
   ActionContract,
+  isTripPlanningQuery,
+  extractPlanningDestination,
+  resolvePlannerLaunchDetails,
 } from "@/lib/askVanvasNormalizer";
+import { resolveCanonicalDestination } from "@/lib/canonicalDestinations";
 import { ACTION_REGISTRY, ActionId } from "@/lib/actionRegistry";
 
 export interface MessageItem {
@@ -35,6 +39,7 @@ interface AskVanvasContextType {
   isOpen: boolean;
   openAskVanvas: (override?: Partial<TravelContext>, initialQuery?: string) => void;
   closeAskVanvas: () => void;
+  launchPlanner: (destinationOverride?: { slug?: string; name?: string; id?: string }) => void;
   currentContext: TravelContext;
   setTravelContext: (ctx: Partial<TravelContext>) => void;
   messages: MessageItem[];
@@ -283,6 +288,24 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsOpen(false);
   }, []);
 
+  const launchPlanner = useCallback((destinationOverride?: { slug?: string; name?: string; id?: string }) => {
+    const details = resolvePlannerLaunchDetails(currentContext, destinationOverride);
+    if (details.destSlug && details.destName) {
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("vanvas_pending_plan_dest", JSON.stringify({
+            id: details.destId || `dest-${details.destSlug}`,
+            slug: details.destSlug,
+            name: details.destName,
+            timestamp: Date.now(),
+          }));
+        } catch {}
+      }
+    }
+    closeAskVanvas();
+    router.push(details.url);
+  }, [currentContext, router, closeAskVanvas]);
+
   const clearConfirmation = useCallback(() => {
     setConfirmation(null);
   }, []);
@@ -297,6 +320,24 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const textToSend = (queryText || "").trim();
     if (!textToSend && !imageUrl) return;
     if (loading || isSendingRef.current) return;
+
+    // Fast-path: Check for deterministic trip planning intent (e.g. "I'm planning a trip")
+    // Launches existing planner contract directly without generative AI dependency or failure risk
+    if (isTripPlanningQuery(textToSend)) {
+      const explicitDest = extractPlanningDestination(textToSend);
+      if (explicitDest) {
+        const canonical = resolveCanonicalDestination(explicitDest);
+        launchPlanner({
+          slug: canonical ? canonical.slug : explicitDest.toLowerCase().replace(/\s+/g, "-"),
+          name: canonical ? canonical.name : explicitDest,
+          id: canonical ? canonical.id : `dest-${explicitDest.toLowerCase().replace(/\s+/g, "-")}`,
+        });
+      } else {
+        launchPlanner();
+      }
+      isSendingRef.current = false;
+      return;
+    }
 
     isSendingRef.current = true;
 
@@ -360,15 +401,31 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setStatusMessage("Finding places...");
     }
 
-    const userMessage: MessageItem = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      text: effectiveQuery || "Analyze this attached image.",
-      imageUrl,
-      timestamp: new Date().toISOString(),
-    };
+    const effectiveUserText = effectiveQuery || "Analyze this attached image.";
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => {
+      // 1. Remove previous assistant error card if this is a retry attempt
+      let cleanPrev = prev;
+      const lastMsg = cleanPrev[cleanPrev.length - 1];
+      if (lastMsg && lastMsg.role === "assistant" && lastMsg.structured?.provenance === "UNAVAILABLE") {
+        cleanPrev = cleanPrev.slice(0, cleanPrev.length - 1);
+      }
+
+      // 2. Prevent duplicate user message bubble if retrying the identical query
+      const lastUserMsg = cleanPrev[cleanPrev.length - 1];
+      if (lastUserMsg && lastUserMsg.role === "user" && lastUserMsg.text === effectiveUserText) {
+        return cleanPrev;
+      }
+
+      const userMessage: MessageItem = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        text: effectiveUserText,
+        imageUrl,
+        timestamp: new Date().toISOString(),
+      };
+      return [...cleanPrev, userMessage];
+    });
 
     // Offline safety guard: honestly report unavailable without endless network retries
     if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -438,8 +495,24 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.warn("Copilot API response handling error:", err);
       const isAuthError =
         err?.status === 401 ||
+        err?.status === 403 ||
         err?.message?.toLowerCase().includes("authentication required") ||
-        err?.message?.toLowerCase().includes("not authenticated");
+        err?.message?.toLowerCase().includes("not authenticated") ||
+        err?.message?.toLowerCase().includes("unauthorized");
+
+      const isTimeout =
+        err?.isTimeout ||
+        err?.status === 504 ||
+        err?.status === 408 ||
+        err?.message?.toLowerCase().includes("timeout") ||
+        err?.message?.toLowerCase().includes("timed out");
+
+      const isNetwork =
+        err?.status === 0 ||
+        err?.isNetworkError ||
+        err?.message?.toLowerCase().includes("failed to fetch") ||
+        err?.message?.toLowerCase().includes("network error") ||
+        (typeof navigator !== "undefined" && !navigator.onLine);
 
       if (isAuthError) {
         const authTitle = "SIGN IN TO ASK VANVAS";
@@ -452,6 +525,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           actions: [
             { id: "auth-signin", label: "Sign In", action: "navigate", payload: "/login", icon: "compass", variant: "primary" },
             { id: "auth-register", label: "Create Account", action: "navigate", payload: "/register", icon: "compass", variant: "secondary" },
+            { id: "auth-plan", label: "Plan a Trip", action: "launch_planner", icon: "compass", variant: "outline" },
           ],
           provenance: "CURATED",
           rawText: authText,
@@ -467,7 +541,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             timestamp: new Date().toISOString(),
           },
         ]);
-      } else if (err?.isTimeout || err?.status === 504) {
+      } else if (isTimeout) {
         const timeoutTitle = "MOUNTAIN ENGINE WAKING UP";
         const timeoutText = "Our mountain reasoning engine is warming up from a brief pause. Please tap Retry below in just a moment.";
         const timeoutStructured: StructuredAssistantResponse = {
@@ -476,7 +550,8 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           summary: timeoutText,
           items: [],
           actions: [
-            { id: "retry-query", label: "Retry Now", action: "query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
+            { id: "retry-query", label: "Retry Now", action: "retry_query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
+            { id: "plan-trip", label: "Plan a Trip", action: "launch_planner", icon: "compass", variant: "secondary" },
           ],
           provenance: "UNAVAILABLE",
           rawText: timeoutText,
@@ -492,16 +567,44 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             timestamp: new Date().toISOString(),
           },
         ]);
+      } else if (isNetwork) {
+        const netTitle = "CONNECTION INTERRUPTED";
+        const netText = "Unable to reach VANVAS servers. Please check your internet connection or mobile data and try again.";
+        const netStructured: StructuredAssistantResponse = {
+          type: "CLARIFICATION",
+          title: netTitle,
+          summary: netText,
+          items: [],
+          actions: [
+            { id: "retry-query", label: "Retry Connection", action: "retry_query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
+            { id: "plan-trip", label: "Plan a Trip", action: "launch_planner", icon: "compass", variant: "secondary" },
+          ],
+          provenance: "UNAVAILABLE",
+          rawText: netText,
+        };
+        setLastResponse(netStructured);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            text: netText,
+            structured: netStructured,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
       } else {
         const fallbackTitle = "TRAVEL INTELLIGENCE TEMPORARILY UNAVAILABLE";
-        const fallbackText = err?.message || "Live place discovery is temporarily unavailable. You can still view your saved trip information.\n\nYour trip data is safe.";
+        const fallbackText = err?.message || "Live place discovery is temporarily unavailable. You can still plan your expedition and explore destinations directly.";
         const errorStructured: StructuredAssistantResponse = {
           type: "CLARIFICATION",
           title: fallbackTitle,
           summary: "Live place discovery is temporarily unavailable. Your trip data is safe.",
           items: [],
           actions: [
-            { id: "retry-query", label: "Retry", action: "query", payload: effectiveQuery, icon: "refresh", variant: "primary" },
+            { id: "plan-trip", label: "Plan My Trip", action: "launch_planner", icon: "compass", variant: "primary" },
+            { id: "retry-query", label: "Retry", action: "retry_query", payload: effectiveQuery, icon: "refresh", variant: "secondary" },
+            { id: "explore-dest", label: "Explore Places", action: "navigate", payload: "/explore", icon: "compass", variant: "outline" },
           ],
           provenance: "UNAVAILABLE",
           rawText: fallbackText,
@@ -576,10 +679,19 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    // 1. Direct Query / Follow-up Action
-    if (act === "query") {
-      const q = typeof payload === "string" ? payload : actionItem.label;
+    // 1. Direct Query / Follow-up Action / Retry
+    if (act === "query" || act === "retry_query") {
+      const q = typeof payload === "string" ? payload : (payload?.query || actionItem.label);
       await sendMessage(q);
+      return;
+    }
+
+    // 1b. Deterministic Planner Launch Action
+    if (act === "launch_planner" || act === "navigate_planner") {
+      const destOverride = payload?.destination
+        ? { slug: payload.destination, name: payload.destination_name, id: payload.destination_id }
+        : undefined;
+      launchPlanner(destOverride);
       return;
     }
 
@@ -895,6 +1007,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isOpen,
         openAskVanvas,
         closeAskVanvas,
+        launchPlanner,
         currentContext,
         setTravelContext,
         messages,

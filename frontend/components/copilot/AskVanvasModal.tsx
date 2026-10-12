@@ -58,6 +58,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const [isGettingGps, setIsGettingGps] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isSubmittingRef = useRef<boolean>(false);
 
   // Sync prop context if passed directly
   useEffect(() => {
@@ -133,25 +134,30 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
   const handleSubmit = async (e?: React.FormEvent, customQuery?: string) => {
     if (e) e.preventDefault();
     const queryToSend = customQuery || input;
-    if ((!queryToSend.trim() && !attachedImage) || context.loading) return;
+    if ((!queryToSend.trim() && !attachedImage) || context.loading || isSubmittingRef.current) return;
 
+    isSubmittingRef.current = true;
     let uploadedUrl: string | undefined = undefined;
 
-    if (attachedImage) {
-      setIsUploadingImage(true);
-      try {
-        const uploadRes = await api.uploadCopilotImage(attachedImage.file);
-        uploadedUrl = uploadRes.image_url;
-      } catch (err) {
-        console.error("Image upload failed:", err);
-      } finally {
-        setIsUploadingImage(false);
-        handleRemoveImage();
+    try {
+      if (attachedImage) {
+        setIsUploadingImage(true);
+        try {
+          const uploadRes = await api.uploadCopilotImage(attachedImage.file);
+          uploadedUrl = uploadRes.image_url;
+        } catch (err) {
+          console.error("Image upload failed:", err);
+        } finally {
+          setIsUploadingImage(false);
+          handleRemoveImage();
+        }
       }
-    }
 
-    if (!customQuery) setInput("");
-    await context.sendMessage(queryToSend, uploadedUrl);
+      if (!customQuery) setInput("");
+      await context.sendMessage(queryToSend, uploadedUrl);
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   const handleUseGPS = async () => {
@@ -209,6 +215,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         { label: "Food & Cafes", query: `Where should we eat in ${dest}?` },
         { label: "Stays", query: `Find verified stays in ${dest}` },
         { label: "Plan my day", query: `Build a 1-day plan for ${dest}` },
+        { label: `Plan ${dest} trip`, query: `I'm planning a trip to ${dest}` },
       ];
     }
     return [
@@ -216,7 +223,7 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
       { label: "Food nearby", query: "Food nearby" },
       { label: "Stays", query: "Find verified stays" },
       { label: "Plan my day", query: "Plan my day" },
-      { label: "I'm travelling", query: "I'm planning a trip" },
+      { label: "Plan a trip", query: "I'm planning a trip" },
     ];
   };
 
@@ -390,8 +397,9 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
               <button
                 key={idx}
                 type="button"
+                disabled={context.loading}
                 onClick={() => handleSubmit(undefined, chip.query)}
-                className="shrink-0 px-2.5 py-1 rounded-lg bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#173B32] hover:text-[#FAF7F0] dark:hover:bg-[#B49252] dark:hover:text-[#172019] text-[#173B32] dark:text-[#FAF7F0] text-[11px] font-mono font-bold border border-[#E5D5BA] dark:border-[#384A3E] transition-all cursor-pointer active:scale-95 touch-manipulation select-none"
+                className="shrink-0 px-2.5 py-1 rounded-lg bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#173B32] hover:text-[#FAF7F0] dark:hover:bg-[#B49252] dark:hover:text-[#172019] text-[#173B32] dark:text-[#FAF7F0] text-[11px] font-mono font-bold border border-[#E5D5BA] dark:border-[#384A3E] transition-all cursor-pointer active:scale-95 touch-manipulation select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
               >
                 {chip.label}
               </button>

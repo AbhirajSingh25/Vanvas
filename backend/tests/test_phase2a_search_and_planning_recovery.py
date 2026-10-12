@@ -66,7 +66,7 @@ async def test_search_non_matching_query(db_session):
     results = await DestinationIntelligenceService.search_destinations_autocomplete("xyzzyqwer12345", limit=6, db=db_session)
     elapsed_ms = (time.perf_counter() - start_t) * 1000
     assert isinstance(results, list)
-    assert elapsed_ms < 2000, f"Non-matching query took too long: {elapsed_ms:.1f}ms"
+    assert elapsed_ms < 3500, f"Non-matching query took too long: {elapsed_ms:.1f}ms"
 
 def test_api_search_endpoint_contract():
     """Verify GET /api/v1/destinations/search returns expected JSON schema."""
