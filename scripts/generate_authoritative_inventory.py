@@ -274,8 +274,19 @@ def build_inventory():
             v_type = r.get("vehicle_type", "Scooter")
             v_img = r.get("image_url", "")
             
-            is_bike = any(k in v_type.lower() or k in v_name.lower() for k in ["bike", "motorcycle", "bullet", "himalayan", "scram", "mtb", "cycle"])
-            ent_type = "motorbike" if is_bike else "scooter"
+            v_type_lower = v_type.lower()
+            if "car" in v_type_lower:
+                ent_type = "car"
+            elif "mountain bike" in v_type_lower or "bicycle" in v_type_lower:
+                ent_type = "bicycle"
+            elif "adventure" in v_type_lower or "himalayan" in v_name.lower():
+                ent_type = "adventure_motorcycle"
+            elif "classic 350" in v_type_lower or "motorcycle" in v_type_lower or "bullet" in v_type_lower:
+                ent_type = "motorbike"
+            elif "scooter" in v_type_lower:
+                ent_type = "scooter"
+            else:
+                ent_type = "scooter"
             rental_key = f"{dest_slug}:{v_name}"
             if rental_key in seen_rentals:
                 continue

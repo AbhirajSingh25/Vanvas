@@ -1,0 +1,170 @@
+{
+  "summary": {
+    "total_inventory_entities": 391,
+    "inventory_verified_on_disk": 391,
+    "inventory_missing_on_disk": 0,
+    "codebase_missing_count": 5,
+    "runtime_missing_count": 0,
+    "test_fixtures_count": 5
+  },
+  "codebase_missing_reconciliation": [
+    {
+      "path": "/images/destinations/manali/illustration.generated.webp",
+      "occurrences": [
+        "backend\\tests\\test_creative_art_provider.py"
+      ],
+      "classification": "Test fixture or example reference",
+      "explanation": "Synthetic or negative test case used in unit tests (e.g. verifying placeholder rejection or mock generator output name).",
+      "action": "PRESERVED_AS_TEST_FIXTURE (No disk asset required, test validates assertion logic).",
+      "exists_in_public": false
+    },
+    {
+      "path": "/images/places/geometric-moon.webp",
+      "occurrences": [
+        "backend\\tests\\test_explore_and_global_artwork_governance.py"
+      ],
+      "classification": "Test fixture or example reference",
+      "explanation": "Synthetic or negative test case used in unit tests (e.g. verifying placeholder rejection or mock generator output name).",
+      "action": "PRESERVED_AS_TEST_FIXTURE (No disk asset required, test validates assertion logic).",
+      "exists_in_public": false
+    },
+    {
+      "path": "/images/places/placeholder.png",
+      "occurrences": [
+        "backend\\tests\\test_explore_and_global_artwork_governance.py"
+      ],
+      "classification": "Test fixture or example reference",
+      "explanation": "Synthetic or negative test case used in unit tests (e.g. verifying placeholder rejection or mock generator output name).",
+      "action": "PRESERVED_AS_TEST_FIXTURE (No disk asset required, test validates assertion logic).",
+      "exists_in_public": false
+    },
+    {
+      "path": "/images/places/simple-moon-mountain.webp",
+      "occurrences": [
+        "backend\\tests\\test_explore_and_global_artwork_governance.py"
+      ],
+      "classification": "Test fixture or example reference",
+      "explanation": "Synthetic or negative test case used in unit tests (e.g. verifying placeholder rejection or mock generator output name).",
+      "action": "PRESERVED_AS_TEST_FIXTURE (No disk asset required, test validates assertion logic).",
+      "exists_in_public": false
+    },
+    {
+      "path": "/images/places/vector-art.svg",
+      "occurrences": [
+        "backend\\tests\\test_explore_and_global_artwork_governance.py"
+      ],
+      "classification": "Test fixture or example reference",
+      "explanation": "Synthetic or negative test case used in unit tests (e.g. verifying placeholder rejection or mock generator output name).",
+      "action": "PRESERVED_AS_TEST_FIXTURE (No disk asset required, test validates assertion logic).",
+      "exists_in_public": false
+    }
+  ],
+  "historical_15_references_reconciliation": [
+    {
+      "reference": "/artworks/munnar.jpg",
+      "exists": true,
+      "file_size_bytes": 1017243,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/artworks/spiti.jpg",
+      "exists": true,
+      "file_size_bytes": 624180,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/artworks/jaisalmer.jpg",
+      "exists": true,
+      "file_size_bytes": 370144,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/artworks/varanasi.jpg",
+      "exists": true,
+      "file_size_bytes": 592268,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/artworks/leh.jpg",
+      "exists": true,
+      "file_size_bytes": 683143,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/artworks/tungnath-chandrashila.jpg",
+      "exists": true,
+      "file_size_bytes": 392360,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/images/places/universal/trail.webp",
+      "exists": true,
+      "file_size_bytes": 206136,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/images/places/universal/adventure.webp",
+      "exists": true,
+      "file_size_bytes": 206136,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/images/destinations/munnar/illustration.jpg",
+      "exists": true,
+      "file_size_bytes": 1017243,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/images/destinations/spiti/illustration.jpg",
+      "exists": true,
+      "file_size_bytes": 624180,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/images/places/goa/anjuna-beach-cove.webp",
+      "exists": true,
+      "file_size_bytes": 377838,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/images/places/goa/stays/casa-da-graca-heritage-homestay.webp",
+      "exists": true,
+      "file_size_bytes": 321678,
+      "classification": "Runtime asset actually missing (REPAIRED in Phase 2B commit 83fab01)",
+      "current_status": "RESOLVED_ON_DISK"
+    },
+    {
+      "reference": "/images/places/geometric-moon.webp",
+      "exists": false,
+      "file_size_bytes": 0,
+      "classification": "Test fixture or example reference",
+      "current_status": "INTENTIONAL_TEST_FIXTURE"
+    },
+    {
+      "reference": "/images/places/placeholder.png",
+      "exists": false,
+      "file_size_bytes": 0,
+      "classification": "Test fixture or example reference",
+      "current_status": "INTENTIONAL_TEST_FIXTURE"
+    },
+    {
+      "reference": "/images/places/vector-art.svg",
+      "exists": false,
+      "file_size_bytes": 0,
+      "classification": "Test fixture or example reference",
+      "current_status": "INTENTIONAL_TEST_FIXTURE"
+    }
+  ],
+  "inventory_missing": []
+}

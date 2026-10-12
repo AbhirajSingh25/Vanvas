@@ -13682,7 +13682,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "car",
     "entity_id": "rental-agra-toyota-innova-crysta-heritage-cab",
     "canonical_slug": "toyota-innova-crysta-heritage-cab",
     "entity_name": "Toyota Innova Crysta Heritage Cab",
@@ -13717,7 +13717,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (car)"
   },
   {
     "entity_type": "scooter",
@@ -13948,7 +13948,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-dharamshala-classic-350-dhauladhar-cruiser",
     "canonical_slug": "classic-350-dhauladhar-cruiser",
     "entity_name": "Classic 350 Dhauladhar Cruiser",
@@ -13983,7 +13983,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
     "entity_type": "scooter",
@@ -14024,7 +14024,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-goa-classic-350-coastal-heritage-cruiser",
     "canonical_slug": "classic-350-coastal-heritage-cruiser",
     "entity_name": "Classic 350 Coastal Heritage Cruiser",
@@ -14059,10 +14059,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "car",
     "entity_id": "rental-goa-mahindra-thar-4x4-convertible",
     "canonical_slug": "mahindra-thar-4x4-convertible",
     "entity_name": "Mahindra Thar 4x4 Convertible",
@@ -14097,7 +14097,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (car)"
   },
   {
     "entity_type": "scooter",
@@ -14138,7 +14138,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-jaipur-classic-350-reborn-desert-chrome",
     "canonical_slug": "classic-350-reborn-desert-chrome",
     "entity_name": "Classic 350 Reborn Desert Chrome",
@@ -14173,10 +14173,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "car",
     "entity_id": "rental-jaipur-toyota-innova-crysta-royal-cruiser",
     "canonical_slug": "toyota-innova-crysta-royal-cruiser",
     "entity_name": "Toyota Innova Crysta Royal Cruiser",
@@ -14211,7 +14211,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (car)"
   },
   {
     "entity_type": "scooter",
@@ -14252,7 +14252,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-jaisalmer-classic-350-thar-desert-cruiser",
     "canonical_slug": "classic-350-thar-desert-cruiser",
     "entity_name": "Classic 350 Thar Desert Cruiser",
@@ -14287,7 +14287,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
     "entity_type": "scooter",
@@ -14328,7 +14328,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-kainchi-dham-classic-350-kumaon-hill-cruiser",
     "canonical_slug": "classic-350-kumaon-hill-cruiser",
     "entity_name": "Classic 350 Kumaon Hill Cruiser",
@@ -14363,7 +14363,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
     "entity_type": "scooter",
@@ -14404,7 +14404,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-kasol-classic-350-parvati-mountain-cruiser",
     "canonical_slug": "classic-350-parvati-mountain-cruiser",
     "entity_name": "Classic 350 Parvati Mountain Cruiser",
@@ -14439,7 +14439,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
     "entity_type": "scooter",
@@ -14518,7 +14518,7 @@
     "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
-    "entity_type": "motorbike",
+    "entity_type": "adventure_motorcycle",
     "entity_id": "rental-leh-royal-enfield-himalayan-450-high-pass-tourer",
     "canonical_slug": "royal-enfield-himalayan-450-high-pass-tourer",
     "entity_name": "Royal Enfield Himalayan 450 High-Pass Tourer",
@@ -14553,10 +14553,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (motorbike)"
+    "audit_notes": "Deterministic vehicle illustration (adventure_motorcycle)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-leh-classic-350-leh-palace-cruiser",
     "canonical_slug": "classic-350-leh-palace-cruiser",
     "entity_name": "Classic 350 Leh Palace Cruiser",
@@ -14591,7 +14591,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
     "entity_type": "scooter",
@@ -14632,7 +14632,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "motorbike",
+    "entity_type": "adventure_motorcycle",
     "entity_id": "rental-manali-royal-enfield-himalayan-450-adventure",
     "canonical_slug": "royal-enfield-himalayan-450-adventure",
     "entity_name": "Royal Enfield Himalayan 450 Adventure",
@@ -14667,10 +14667,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (motorbike)"
+    "audit_notes": "Deterministic vehicle illustration (adventure_motorcycle)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-manali-royal-enfield-classic-350-solang-tourer",
     "canonical_slug": "royal-enfield-classic-350-solang-tourer",
     "entity_name": "Royal Enfield Classic 350 Solang Tourer",
@@ -14705,7 +14705,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
     "entity_type": "scooter",
@@ -14822,7 +14822,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-morni-hills-classic-350-shivalik-cruiser",
     "canonical_slug": "classic-350-shivalik-cruiser",
     "entity_name": "Classic 350 Shivalik Cruiser",
@@ -14857,7 +14857,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
     "entity_type": "scooter",
@@ -14898,7 +14898,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "motorbike",
+    "entity_type": "adventure_motorcycle",
     "entity_id": "rental-munnar-royal-enfield-himalayan-450-misty-ghats-tourer",
     "canonical_slug": "royal-enfield-himalayan-450-misty-ghats-tourer",
     "entity_name": "Royal Enfield Himalayan 450 Misty Ghats Tourer",
@@ -14933,10 +14933,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (motorbike)"
+    "audit_notes": "Deterministic vehicle illustration (adventure_motorcycle)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-murthal-classic-350-gt-road-highway-cruiser",
     "canonical_slug": "classic-350-gt-road-highway-cruiser",
     "entity_name": "Classic 350 GT Road Highway Cruiser",
@@ -14971,7 +14971,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
     "entity_type": "scooter",
@@ -15012,7 +15012,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-mussoorie-classic-350-hill-climber",
     "canonical_slug": "classic-350-hill-climber",
     "entity_name": "Classic 350 Hill Climber",
@@ -15047,10 +15047,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "car",
     "entity_id": "rental-mussoorie-toyota-innova-hill-express",
     "canonical_slug": "toyota-innova-hill-express",
     "entity_name": "Toyota Innova Hill Express",
@@ -15085,10 +15085,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (car)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-neemrana-classic-350-aravalli-fort-tourer",
     "canonical_slug": "classic-350-aravalli-fort-tourer",
     "entity_name": "Classic 350 Aravalli Fort Tourer",
@@ -15123,10 +15123,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "car",
     "entity_id": "rental-neemrana-mahindra-scorpio-n-highway-cruiser",
     "canonical_slug": "mahindra-scorpio-n-highway-cruiser",
     "entity_name": "Mahindra Scorpio-N Highway Cruiser",
@@ -15161,7 +15161,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (car)"
   },
   {
     "entity_type": "scooter",
@@ -15202,7 +15202,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-rishikesh-classic-350-ganga-explorer",
     "canonical_slug": "classic-350-ganga-explorer",
     "entity_name": "Classic 350 Ganga Explorer",
@@ -15237,10 +15237,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
-    "entity_type": "motorbike",
+    "entity_type": "bicycle",
     "entity_id": "rental-rishikesh-trek-marlin-mountain-bike-mtb",
     "canonical_slug": "trek-marlin-mountain-bike-mtb",
     "entity_name": "Trek Marlin Mountain Bike MTB",
@@ -15275,10 +15275,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (motorbike)"
+    "audit_notes": "Deterministic vehicle illustration (bicycle)"
   },
   {
-    "entity_type": "motorbike",
+    "entity_type": "adventure_motorcycle",
     "entity_id": "rental-sariska-bhangarh-royal-enfield-himalayan-450-safari-tourer",
     "canonical_slug": "royal-enfield-himalayan-450-safari-tourer",
     "entity_name": "Royal Enfield Himalayan 450 Safari Tourer",
@@ -15313,10 +15313,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (motorbike)"
+    "audit_notes": "Deterministic vehicle illustration (adventure_motorcycle)"
   },
   {
-    "entity_type": "motorbike",
+    "entity_type": "adventure_motorcycle",
     "entity_id": "rental-spiti-royal-enfield-himalayan-450-high-pass-tourer",
     "canonical_slug": "royal-enfield-himalayan-450-high-pass-tourer",
     "entity_name": "Royal Enfield Himalayan 450 High Pass Tourer",
@@ -15351,10 +15351,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (motorbike)"
+    "audit_notes": "Deterministic vehicle illustration (adventure_motorcycle)"
   },
   {
-    "entity_type": "motorbike",
+    "entity_type": "adventure_motorcycle",
     "entity_id": "rental-tungnath-chandrashila-royal-enfield-himalayan-450-alpine-explorer",
     "canonical_slug": "royal-enfield-himalayan-450-alpine-explorer",
     "entity_name": "Royal Enfield Himalayan 450 Alpine Explorer",
@@ -15389,7 +15389,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (motorbike) | NOTE: VehicleArtwork.tsx registry updated to category: 'adventure_motorcycle'"
+    "audit_notes": "Deterministic vehicle illustration (adventure_motorcycle) | NOTE: VehicleArtwork.tsx registry updated to category: 'adventure_motorcycle'"
   },
   {
     "entity_type": "scooter",
@@ -15468,7 +15468,7 @@
     "audit_notes": "Deterministic vehicle illustration (scooter)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "motorbike",
     "entity_id": "rental-udaipur-classic-350-old-city-lake-cruiser",
     "canonical_slug": "classic-350-old-city-lake-cruiser",
     "entity_name": "Classic 350 Old City Lake Cruiser",
@@ -15503,10 +15503,10 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (motorbike)"
   },
   {
-    "entity_type": "scooter",
+    "entity_type": "car",
     "entity_id": "rental-udaipur-maruti-ertiga-lakeside-cruiser",
     "canonical_slug": "maruti-ertiga-lakeside-cruiser",
     "entity_name": "Maruti Ertiga Lakeside Cruiser",
@@ -15541,7 +15541,7 @@
     "recommended_correction": "Mapped deterministically through DESTINATION_VEHICLE_REGISTRY in VehicleArtwork.tsx",
     "confidence_level": "HIGH",
     "audit_status": "VALID_KEEP",
-    "audit_notes": "Deterministic vehicle illustration (scooter)"
+    "audit_notes": "Deterministic vehicle illustration (car)"
   },
   {
     "entity_type": "scooter",
