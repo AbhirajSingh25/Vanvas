@@ -2375,7 +2375,7 @@ export const SEEDED_ONE_DAY_PLANS: OneDayPlan[] = [
         localTip: "Zero motorized vehicles allowed on Camel's Back in evenings; peaceful walking.",
         lat: 30.4580,
         lng: 78.0700,
-        imageUrl: "/images/places/mussoorie/camels-back.webp"
+        imageUrl: "/images/places/mussoorie/camels-back-road.webp"
       }
     ]
   },

@@ -1,0 +1,32 @@
+{
+  "VehicleArtwork.tsx": {
+    "total_refs": 82,
+    "unique_refs": 56,
+    "missing_count": 0,
+    "missing": []
+  },
+  "placeVisualResolver.ts": {
+    "total_refs": 789,
+    "unique_refs": 674,
+    "missing_count": 0,
+    "missing": []
+  },
+  "trekContentModel.ts": {
+    "total_refs": 49,
+    "unique_refs": 15,
+    "missing_count": 0,
+    "missing": []
+  },
+  "canonical_dataset.py": {
+    "total_refs": 443,
+    "unique_refs": 417,
+    "missing_count": 0,
+    "missing": []
+  },
+  "seed_real_rentals.py": {
+    "total_refs": 67,
+    "unique_refs": 36,
+    "missing_count": 0,
+    "missing": []
+  }
+}

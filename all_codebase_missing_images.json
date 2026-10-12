@@ -1,0 +1,51 @@
+{
+  "total_referenced": 2081,
+  "total_missing": 15,
+  "missing_paths": {
+    "/images/destinations/manali/illustration.generated.webp": [
+      "backend\\tests\\test_creative_art_provider.py"
+    ],
+    "/images/destinations/munnar/illustration.jpg": [
+      "backend\\app\\providers\\artwork_provider.py"
+    ],
+    "/images/destinations/spiti/illustration.jpg": [
+      "backend\\app\\providers\\artwork_provider.py"
+    ],
+    "/images/places/geometric-moon.webp": [
+      "backend\\tests\\test_explore_and_global_artwork_governance.py"
+    ],
+    "/images/places/goa/anjuna-beach-cove.webp": [
+      "backend\\scripts\\sync_backend_provider.py"
+    ],
+    "/images/places/placeholder.png": [
+      "backend\\tests\\test_explore_and_global_artwork_governance.py"
+    ],
+    "/images/places/simple-moon-mountain.webp": [
+      "backend\\tests\\test_explore_and_global_artwork_governance.py"
+    ],
+    "/images/places/vector-art.svg": [
+      "backend\\tests\\test_explore_and_global_artwork_governance.py"
+    ],
+    "/images/vehicles/chandigarh_bullet.jpg": [
+      "backend\\scripts\\update_canonical_dataset_images.py"
+    ],
+    "/images/vehicles/dehradun_scooter.jpg": [
+      "backend\\scripts\\update_canonical_dataset_images.py"
+    ],
+    "/images/vehicles/dharamshala_kangra_scooter.jpg": [
+      "backend\\scripts\\update_canonical_dataset_images.py"
+    ],
+    "/images/vehicles/leh_ladakh_bullet.jpg": [
+      "backend\\scripts\\update_canonical_dataset_images.py"
+    ],
+    "/images/vehicles/munnar_tea_scooter.jpg": [
+      "backend\\scripts\\update_canonical_dataset_images.py"
+    ],
+    "/images/vehicles/spiti_bullet.jpg": [
+      "backend\\scripts\\update_canonical_dataset_images.py"
+    ],
+    "/images/vehicles/varanasi_ghat_scooter.jpg": [
+      "backend\\scripts\\update_canonical_dataset_images.py"
+    ]
+  }
+}

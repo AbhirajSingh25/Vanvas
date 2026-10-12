@@ -4,6 +4,7 @@ import React from "react";
 import { X, MapPin, Phone, Globe, Navigation, ShieldCheck, BedDouble, Star, Clock, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 import { Hotel } from "@/types";
 import { VanvasImage } from "@/components/ui/VanvasImage";
+import { resolveHotelArtwork } from "@/lib/placeVisualResolver";
 
 interface StayDetailModalProps {
   isOpen: boolean;
@@ -17,6 +18,15 @@ export function StayDetailModal({
   hotel
 }: StayDetailModalProps) {
   if (!isOpen || !hotel) return null;
+
+  const visualRes = resolveHotelArtwork({
+    propertyName: hotel.name,
+    destinationName: (hotel as any).destination_name || (hotel as any).destination?.name || "",
+    hotelStyle: hotel.hotel_style,
+    existingImageUrl: hotel.image_url,
+    source: hotel.source,
+    isLive: hotel.is_live,
+  });
 
   const phone = (hotel as any).phone || (hotel as any).contact_phone;
   const website = (hotel as any).website || (hotel as any).official_url;
@@ -35,7 +45,8 @@ export function StayDetailModal({
         {/* Hero Image / Header */}
         <div className="relative h-48 sm:h-56 bg-[#173B32] overflow-hidden shrink-0">
           <VanvasImage
-            src={hotel.image_url || "/images/places/universal/stay.webp"}
+            src={visualRes.imageUrl}
+            fallbackSrc={visualRes.fallbackUrl}
             alt={hotel.name}
             className="w-full h-full object-cover"
           />

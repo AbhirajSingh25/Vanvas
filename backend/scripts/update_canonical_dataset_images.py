@@ -63,21 +63,21 @@ for dest_slug, rentals in ds.ADDITIONAL_RENTALS_BY_DEST.items():
         elif dest_slug == "mussoorie":
             assigned_img = "/images/vehicles/mussoorie_landour_scooter.jpg"
         elif dest_slug == "varanasi":
-            assigned_img = "/images/vehicles/varanasi_ghat_scooter.jpg"
+            assigned_img = "/images/vehicles/varanasi_ghat_approach_scooter.jpg"
         elif dest_slug == "dharamshala":
-            assigned_img = "/images/vehicles/dharamshala_kangra_scooter.jpg"
+            assigned_img = "/images/vehicles/dharamshala_mcleod_scooter.jpg"
         elif dest_slug == "kasol":
             assigned_img = "/images/vehicles/kasol_parvati_bullet.jpg"
         elif dest_slug == "leh":
-            assigned_img = "/images/vehicles/leh_ladakh_bullet.jpg"
+            assigned_img = "/images/vehicles/leh_palace_bullet.jpg"
         elif dest_slug == "spiti":
-            assigned_img = "/images/vehicles/spiti_bullet.jpg"
+            assigned_img = "/images/vehicles/spiti_arid_adventure_bike.jpg"
         elif dest_slug == "munnar":
-            assigned_img = "/images/vehicles/munnar_tea_scooter.jpg"
+            assigned_img = "/images/vehicles/kerala_tea_plantation_scooter.jpg"
         elif dest_slug == "dehradun":
-            assigned_img = "/images/vehicles/dehradun_scooter.jpg"
+            assigned_img = "/images/vehicles/dehradun_rajpur_scooter.jpg"
         elif dest_slug == "chandigarh":
-            assigned_img = "/images/vehicles/chandigarh_bullet.jpg"
+            assigned_img = "/images/vehicles/chandigarh_boulevard_ev.jpg"
         else:
             assigned_img = f"/images/vehicles/{dest_slug}_scooter.jpg"
             if not (ROOT_DIR / "frontend" / "public" / assigned_img.lstrip("/")).exists():
