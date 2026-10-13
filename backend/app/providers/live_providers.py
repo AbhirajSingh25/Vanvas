@@ -1704,35 +1704,45 @@ class LiveImageProvider(ImageProvider):
         self.access_key = access_key
 
     async def search_images(self, query: str, limit: int = 3) -> List[str]:
-        # High quality fallback photography index
+        # Authentic VANVAS editorial artwork and terrain fallback registry
         curated_images = {
-            "manali": "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=1200",
-            "rishikesh": "https://images.unsplash.com/photo-1603477849335-5178347f77f3?w=1200",
-            "kasol": "https://images.unsplash.com/photo-1593181629936-11c609b8db9b?w=1200",
-            "dharamshala": "https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=1200",
-            "mcleod": "https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=1200",
-            "goa": "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=1200",
-            "jaipur": "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200",
-            "udaipur": "https://images.unsplash.com/photo-1615836245337-f5b9b2303f10?w=1200",
-            "mussoorie": "https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?w=1200",
-            "spiti": "https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=1200",
-            "leh": "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?w=1200",
-            "ladakh": "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?w=1200",
-            "kedarnath": "https://images.unsplash.com/photo-1604928141064-207cea6f571f?w=1200",
-            "varanasi": "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=1200",
-            "kerala": "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1200",
-            "munnar": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1200",
-            "meghalaya": "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=1200",
-            "shillong": "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=1200",
-            "sikkim": "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=1200",
-            "mumbai": "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1200",
-            "delhi": "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1200",
-            "bengaluru": "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=1200",
-            "bali": "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200",
-            "dubai": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200",
-            "bhutan": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200",
-            "nepal": "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1200",
-            "thailand": "https://images.unsplash.com/photo-1506665531195-3566af2b4dfa?w=1200",
+            "manali": "/images/destinations/manali/hero.jpg",
+            "rishikesh": "/images/destinations/rishikesh/hero.jpg",
+            "kasol": "/images/destinations/kasol/hero.jpg",
+            "dharamshala": "/images/destinations/dharamshala/hero.jpg",
+            "mcleod": "/images/destinations/dharamshala/hero.jpg",
+            "goa": "/images/destinations/goa/hero.jpg",
+            "jaipur": "/images/destinations/jaipur/hero.jpg",
+            "udaipur": "/images/destinations/udaipur/hero.jpg",
+            "mussoorie": "/images/destinations/mussoorie/hero.jpg",
+            "spiti": "/images/destinations/spiti/hero.jpg",
+            "leh": "/images/destinations/leh/hero.jpg",
+            "ladakh": "/images/destinations/leh/hero.jpg",
+            "kedarnath": "/images/destinations/fallbacks/himalayan.jpg",
+            "varanasi": "/images/destinations/varanasi/hero.jpg",
+            "kerala": "/images/destinations/fallbacks/coastal.jpg",
+            "munnar": "/images/destinations/munnar/hero.jpg",
+            "tungnath": "/images/destinations/tungnath-chandrashila/hero.jpg",
+            "chopta": "/images/destinations/tungnath-chandrashila/hero.jpg",
+            "kainchi": "/images/destinations/kainchi-dham/hero.jpg",
+            "agra": "/images/destinations/agra/hero.jpg",
+            "chandigarh": "/images/destinations/chandigarh/hero.jpg",
+            "dehradun": "/images/destinations/dehradun/hero.jpg",
+            "delhi": "/images/destinations/fallbacks/valley.jpg",
+            "pune": "/images/destinations/fallbacks/valley.jpg",
+            "gokarna": "/images/destinations/fallbacks/coastal.jpg",
+            "kolkata": "/images/destinations/fallbacks/valley.jpg",
+            "ayodhya": "/images/destinations/fallbacks/valley.jpg",
+            "meghalaya": "/images/destinations/fallbacks/valley.jpg",
+            "shillong": "/images/destinations/fallbacks/valley.jpg",
+            "sikkim": "/images/destinations/fallbacks/himalayan.jpg",
+            "mumbai": "/images/destinations/fallbacks/coastal.jpg",
+            "bengaluru": "/images/destinations/fallbacks/valley.jpg",
+            "bali": "/images/destinations/fallbacks/coastal.jpg",
+            "dubai": "/images/destinations/fallbacks/desert.jpg",
+            "bhutan": "/images/destinations/fallbacks/himalayan.jpg",
+            "nepal": "/images/destinations/fallbacks/himalayan.jpg",
+            "thailand": "/images/destinations/fallbacks/coastal.jpg",
         }
 
         q = query.lower()
@@ -1742,13 +1752,13 @@ class LiveImageProvider(ImageProvider):
 
         # Mountain and nature fallbacks
         if any(k in q for k in ["himalaya", "hill", "peak", "pass", "ridge", "snow", "altitude"]):
-            return ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200"]
+            return ["/images/destinations/fallbacks/himalayan.jpg"]
         if any(k in q for k in ["beach", "coast", "sea", "ocean", "island"]):
-            return ["https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=1200"]
+            return ["/images/destinations/fallbacks/coastal.jpg"]
         if any(k in q for k in ["desert", "sand", "fort", "palace"]):
-            return ["https://images.unsplash.com/photo-1599661046289-e31897846e41?w=1200"]
+            return ["/images/destinations/fallbacks/desert.jpg"]
 
-        return ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200"]
+        return ["/images/destinations/fallbacks/valley.jpg"]
 
 
 class HaversineRoutingProvider(RoutingProvider):

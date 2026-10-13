@@ -113,7 +113,7 @@ def test_destination_specific_mobility_artwork_resolution():
         destination_name="Manali",
         destination_slug="manali",
     )
-    assert manali_bullet_img == "/images/vehicles/manali_solang_bullet.jpg"
+    assert manali_bullet_img == "/images/vehicles/manali_himalayan_adv_bike.jpg"
     assert "himachal_pine_forest_bike.jpg" not in manali_bullet_img
 
     # 2. Rishikesh

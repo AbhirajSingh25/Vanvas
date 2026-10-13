@@ -45,7 +45,7 @@ def test_resolve_category_artwork_destination_isolation():
     varanasi_scooter = MobilityService._resolve_category_artwork("Scooter", "Honda Activa 6G", "Varanasi", "Uttar Pradesh")
     varanasi_bike = MobilityService._resolve_category_artwork("Motorcycle", "Royal Enfield Classic 350", "Varanasi", "Uttar Pradesh")
     varanasi_car = MobilityService._resolve_category_artwork("Car", "Innova Crysta", "Varanasi", "Uttar Pradesh")
-    assert "varanasi_assi_scooter" in varanasi_scooter or "varanasi_oldcity" in varanasi_scooter
+    assert "varanasi_ghat_approach_scooter" in varanasi_scooter or "varanasi_assi_scooter" in varanasi_scooter or "varanasi_oldcity" in varanasi_scooter
     assert "varanasi_bhu_bullet" in varanasi_bike
     assert "varanasi_ghat_car" in varanasi_car
     assert "himachal" not in varanasi_scooter

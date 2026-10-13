@@ -9,8 +9,9 @@ import {
   Phone, CheckCircle2, ChevronRight, BedDouble, Navigation,
   Clock, Shield, Star, Mountain, Eye, Footprints, Info,
   Search, Plus, RefreshCw, Layers, ExternalLink, Calendar,
-  Trees, Landmark, Flame, Waves, Wind, MessageCircle
+  Trees, Landmark, Flame, Waves, Wind, MessageCircle, Lock, Bookmark
 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { api } from "@/lib/api";
 import { Destination, Place, Hotel, RentalOption, SoloTravelerCard, TravelCircle, SoloDestinationIntelligence } from "@/types";
 import { VanvasImage } from "@/components/ui/VanvasImage";
@@ -29,7 +30,7 @@ import { MobilityDetailModal } from "@/components/solo/MobilityDetailModal";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { Avatar } from "@/components/ui/Avatar";
 import { useDensity } from "@/context/DensityContext";
-import { CompactTravelerCard, CompactPlaceCard } from "@/components/compact";
+import { tabIndicatorTransition, routeScreenVariants } from "@/lib/motion";
 
 // Available Travel Styles with distinctive motifs
 const TRAVEL_STYLES = [
@@ -58,12 +59,15 @@ const PRESET_DESTINATION_CHIPS = [
   { slug: "munnar", name: "Munnar", state: "Kerala" },
 ];
 
+type SoloTabType = "discover" | "travellers" | "circles" | "safety_saved";
+
 function SoloPageContent() {
   const { isCompact } = useDensity();
   const searchParams = useSearchParams();
   const router = useRouter();
   const destQuery = searchParams.get("dest") || "manali";
 
+  const [activeTab, setActiveTab] = useState<SoloTabType>("discover");
   const [activeSlug, setActiveSlug] = useState(destQuery.toLowerCase());
   const [searchInputValue, setSearchInputValue] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -90,7 +94,7 @@ function SoloPageContent() {
 
   // Category Filter & Pagination
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [visiblePlacesCount, setVisiblePlacesCount] = useState<number>(18);
+  const [visiblePlacesCount, setVisiblePlacesCount] = useState<number>(12);
 
   // Modals
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -103,6 +107,10 @@ function SoloPageContent() {
   const [isCreateCircleOpen, setIsCreateCircleOpen] = useState(false);
   const [chatPartner, setChatPartner] = useState<SoloTravelerCard | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showAiAtmosphere, setShowAiAtmosphere] = useState(false);
+
+  // Privacy setting
+  const [isProfileVisible, setIsProfileVisible] = useState(true);
 
   // Autocomplete debounce ref
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -111,9 +119,8 @@ function SoloPageContent() {
   const loadDestinationData = async (slug: string, styles: string[] = selectedStyles) => {
     try {
       setLoading(true);
-      
-      // 1. Fetch recommendations (smartly ranked places, stays, mobility)
-      const recRes = await api.getDestinationRecommendations(slug, styles);
+
+      const recRes = await api.getDestinationRecommendations(slug, styles).catch(() => null);
       if (recRes) {
         setPlaces(recRes.recommended_places || []);
         setHotels(recRes.recommended_stays || []);
@@ -121,11 +128,9 @@ function SoloPageContent() {
         setStyleCounts(recRes.style_breakdown || {});
       }
 
-      // 2. Fetch solo field intelligence
-      const intelRes = await api.getDestinationSoloIntelligence(slug);
+      const intelRes = await api.getDestinationSoloIntelligence(slug).catch(() => null);
       setIntelligence(intelRes);
 
-      // 3. Fetch destination metadata
       const destDetail = await api.getDestinationDetail(slug).catch(() => null);
       if (destDetail && destDetail.destination) {
         setDestination(destDetail.destination);
@@ -146,13 +151,11 @@ function SoloPageContent() {
         });
       }
 
-      // 4. Fetch social data (travelers & circles)
       const travelersRes = await api.discoverSoloTravelers({ destination_slug: slug, mode: "before_trip" }).catch(() => ({ travelers: [] }));
       setTravelers(travelersRes.travelers || []);
 
       const circlesRes = await api.discoverCircles({ destination_slug: slug }).catch(() => []);
       setCircles(circlesRes || []);
-
     } catch (err: any) {
       console.error("Failed to load destination data:", err);
     } finally {
@@ -164,18 +167,16 @@ function SoloPageContent() {
     loadDestinationData(activeSlug, selectedStyles);
   }, [activeSlug]);
 
-  // Handle Travel Style Toggle
   const toggleTravelStyle = async (styleId: string) => {
     let nextStyles: string[];
     if (selectedStyles.includes(styleId)) {
-      if (selectedStyles.length === 1) return; // Keep at least one
+      if (selectedStyles.length === 1) return;
       nextStyles = selectedStyles.filter((s) => s !== styleId);
     } else {
       nextStyles = [...selectedStyles, styleId];
     }
     setSelectedStyles(nextStyles);
 
-    // Refresh recommendations without reloading page
     try {
       const recRes = await api.getDestinationRecommendations(activeSlug, nextStyles);
       if (recRes) {
@@ -189,7 +190,6 @@ function SoloPageContent() {
     }
   };
 
-  // Autocomplete Search Handler
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchInputValue(val);
@@ -215,792 +215,760 @@ function SoloPageContent() {
     }, 250);
   };
 
-  // Switch to selected destination
   const handleSelectDestination = (slug: string, name?: string) => {
     const clean = slug.toLowerCase().replace(/^(dyn|dest)-/, "");
     setActiveSlug(clean);
     setSearchInputValue("");
     setSearchResults([]);
-    router.push(`/solo?dest=${encodeURIComponent(clean)}`, { scroll: false });
+    setIsSearching(false);
+    setResearchError(null);
+    router.replace(`/solo?dest=${clean}`, { scroll: false });
   };
 
-  // Trigger Universal Destination Research Pipeline for Any Input
-  const handleResearchArbitraryDestination = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const query = searchInputValue.trim();
-    if (!query) return;
+  const handleTriggerResearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchInputValue.trim() || isResearching) return;
 
-    setResearchError(null);
     try {
       setIsResearching(true);
-      setResearchStage("Geocoding & resolving destination...");
-      
-      const res = await api.researchDestination(query);
-      if (res && res.canonical_slug) {
-        setResearchStage("Normalizing verified places, stays & local transit...");
-        setActiveSlug(res.canonical_slug);
-        setSearchInputValue("");
-        setSearchResults([]);
-        router.push(`/solo?dest=${encodeURIComponent(res.canonical_slug)}`, { scroll: false });
+      setResearchError(null);
+      setResearchStage("Connecting to Indian geographic intelligence...");
+
+      const res = await api.researchDestination(searchInputValue.trim());
+      if (res && res.slug) {
+        setResearchStage("Compiling verified stays and local trails...");
+        handleSelectDestination(res.slug, res.name);
+      } else {
+        setResearchError("Could not resolve destination. Showing closest verified destination.");
       }
     } catch (err: any) {
-      setResearchError(`Could not research '${query}': ${err.message || "Please check spelling and try again."}`);
+      setResearchError(err?.message || "Research request timed out. Please select a preset destination.");
     } finally {
       setIsResearching(false);
       setResearchStage("");
     }
   };
 
-  const displayName = destination?.name || intelligence?.name || activeSlug.replace(/-/g, " ").toUpperCase();
-  const atmosphereType = intelligence?.atmosphere_type || "mountain";
-  const mobilityHeading = atmosphereType === "mountain" ? "Valley Mobility & Scooter Fleets" : "Getting Around & Local Mobility";
+  const displayName = destination?.name || activeSlug.charAt(0).toUpperCase() + activeSlug.slice(1);
+  const categoriesList = ["All", ...Array.from(new Set(places.map((p) => p.category).filter(Boolean)))];
 
-  // Filter places by category
-  const categoriesList: string[] = ["All", ...Array.from(new Set(places.map((p) => p.category || "Place").filter((c): c is string => Boolean(c))))];
-  const filteredPlaces = selectedCategory === "All"
-    ? places
-    : places.filter((p) => (p.category || "").toLowerCase() === selectedCategory.toLowerCase());
+  const filteredPlaces = places.filter((p) => {
+    if (selectedCategory === "All") return true;
+    return p.category?.toLowerCase() === selectedCategory.toLowerCase();
+  });
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-[#20211D] relative selection:bg-[#E05A2B]/20 selection:text-[#173B32]">
-      
-      {/* Decorative Atmosphere Line Art Canvas */}
-      <SoloAtmosphere atmosphereType={atmosphereType} />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12 sm:space-y-16 relative z-10">
-        
-        {/* ========================================================= */}
-        {/* 1. HERO & UNIVERSAL DESTINATION SEARCH */}
-        {/* ========================================================= */}
-        <section className="space-y-6 pt-4 sm:pt-8 text-center sm:text-left max-w-4xl">
-          <div className="flex items-center justify-center sm:justify-start gap-2">
-            <span className="px-3 py-1 rounded-full bg-[#173B32] text-[#FAF4E8] text-[10px] font-mono font-bold uppercase tracking-wider shadow-xs">
-              VANVAS SOLO FIELD COMPANION
-            </span>
-            <span className="text-xs font-mono text-[#B49252] font-bold">
-              {intelligence?.atmosphere_type?.toUpperCase() || "HIMALAYAN"} EDITION
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-[#173B32] tracking-tight leading-[1.1]">
-              Go alone. <br className="hidden sm:block" />
-              <span className="text-[#E05A2B] italic font-normal">Never feel unprepared.</span>
-            </h1>
-            <p className="text-sm sm:text-base text-[#20211D]/80 max-w-2xl leading-relaxed">
-              A quiet, research-backed field companion for travelling solo across India. Tell VANVAS where you are headed — we research verified places, verified stays, local mobility, and compatible wanderers.
-            </p>
-          </div>
-
-          {/* Universal Destination Search Input */}
-          <div className="relative max-w-2xl pt-2">
-            <form onSubmit={handleResearchArbitraryDestination} className="relative flex items-center shadow-lg rounded-3xl overflow-hidden border border-[#D8CBB2] bg-white">
-              <div className="pl-5 pr-3 text-[#173B32]">
-                <Search className="w-5 h-5" />
-              </div>
-              <input
-                type="text"
-                value={searchInputValue}
-                onChange={handleSearchInput}
-                placeholder="Where are you going? (e.g. Manali, Varkala, Chopta, Hampi, Goa...)"
-                className="w-full py-4 pr-32 text-sm sm:text-base text-[#173B32] placeholder:text-[#20211D]/50 focus:outline-none bg-transparent"
-              />
-              <button
-                type="submit"
-                disabled={isResearching || !searchInputValue.trim()}
-                className="absolute right-2 px-5 py-2.5 rounded-2xl bg-[#E05A2B] hover:bg-[#C8491D] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
-              >
-                {isResearching ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Researching...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Research</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Autocomplete Dropdown */}
-            {searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#D8CBB2] rounded-2xl shadow-xl z-30 overflow-hidden divide-y divide-[#D8CBB2]/50 animate-in fade-in zoom-in-95 duration-150">
-                {searchResults.map((res: any, idx: number) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSelectDestination(res.canonical_slug || res.slug || res.name, res.name)}
-                    className="w-full px-5 py-3.5 text-left hover:bg-[#FAF7F0] flex items-center justify-between transition-colors cursor-pointer group"
-                  >
-                    <div>
-                      <span className="font-serif font-bold text-sm text-[#173B32] group-hover:text-[#E05A2B]">
-                        {res.name}
-                      </span>
-                      <span className="text-xs text-[#20211D]/60 ml-2">
-                        {res.state || res.region || "India"}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-[#B49252]" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Researching Progressive Loading State */}
-          {isResearching && (
-            <div className="p-4 rounded-2xl bg-[#E05A2B]/10 border border-[#E05A2B]/20 text-xs text-[#E05A2B] font-medium flex items-center gap-3 animate-pulse">
-              <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
-              <span>{researchStage || "Researching this place for your solo trip..."}</span>
-            </div>
-          )}
-
-          {/* Research Error Notice */}
-          {researchError && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium flex items-center gap-3">
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-              <span>{researchError}</span>
-            </div>
-          )}
-
-          {/* Preset Destination Chips (Quick Shortcuts) */}
-          <div className="space-y-2 pt-1">
-            <span className="text-[11px] font-mono uppercase text-[#20211D]/60 font-bold block">
-              Quick Shortcut Chips
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_DESTINATION_CHIPS.map((chip) => {
-                const isActive = activeSlug === chip.slug;
-                return (
-                  <button
-                    key={chip.slug}
-                    onClick={() => handleSelectDestination(chip.slug, chip.name)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-                      isActive
-                        ? "bg-[#173B32] text-white border border-[#173B32]"
-                        : "bg-white border border-[#D8CBB2] text-[#173B32] hover:bg-[#E5D5BA]/50"
-                    }`}
-                  >
-                    {chip.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* ========================================================= */}
-        {/* 2. HOW DO YOU WANT TO EXPERIENCE {DESTINATION}? */}
-        {/* ========================================================= */}
-        <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#D8CBB2] pb-4">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-[#E05A2B] font-bold tracking-wider block">
-                RECOMMENDATION MODES
+    <div className="min-h-screen bg-[#FAF4E8] text-[#20211D] pb-32">
+      {/* 1. COMPACT EDITORIAL HEADER */}
+      <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-8 pb-6 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
+                SOLO SANCTUARY • एकल यात्रा
               </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#173B32]">
-                How do you want to experience {displayName}?
-              </h2>
             </div>
-            <p className="text-xs text-[#20211D]/70 font-medium">
-              Multi-select active: {selectedStyles.length} {selectedStyles.length === 1 ? "style" : "styles"} selected
+            <h1 className="font-serif text-2xl sm:text-3xl font-black text-[#FAF7F0] tracking-tight">
+              Solo Travel: {displayName}
+            </h1>
+            <p className="text-xs text-[#D8DED5]/80 font-sans mt-0.5">
+              Curated for solitude, safety, and spontaneous companionship.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-            {TRAVEL_STYLES.map((st) => {
-              const isSelected = selectedStyles.includes(st.id);
-              const count = styleCounts[st.id] ?? places.length;
-              const IconComp = st.icon;
+          <div className="flex items-center gap-2">
+            <TravelStamp label={displayName.toUpperCase()} variant="terracotta" />
+            <Link
+              href={`/plan?dest=${activeSlug}`}
+              className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+              <span>Plan This Trip</span>
+            </Link>
+          </div>
+        </div>
 
-              return (
-                <button
-                  key={st.id}
-                  onClick={() => toggleTravelStyle(st.id)}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 shadow-2xs ${
-                    isSelected
-                      ? "bg-white border-[#173B32] ring-1 ring-[#173B32]"
-                      : "bg-[#FAF7F0] border-[#D8CBB2] hover:bg-white hover:border-[#173B32]/60"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className={`p-2 rounded-xl ${isSelected ? "bg-[#173B32] text-white" : "bg-white border border-[#D8CBB2] text-[#173B32]"}`}>
-                      <IconComp className="w-4 h-4" />
-                    </div>
-                    <span className="text-[10px] font-mono font-bold text-[#B49252]">
-                      {count} {count === 1 ? "spot" : "spots"}
-                    </span>
+        {/* 2. TOP SEGMENTED TAB CONTROL */}
+        <div className="max-w-6xl mx-auto mt-6">
+          <div className="flex items-center p-1 rounded-2xl bg-[#0F2924] border border-[#B49252]/30 max-w-xl">
+            <button
+              onClick={() => setActiveTab("discover")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
+                activeTab === "discover" ? "text-[#173B32]" : "text-[#D8DED5]/70 hover:text-white"
+              }`}
+            >
+              {activeTab === "discover" && (
+                <motion.div
+                  layoutId="soloTabActivePill"
+                  transition={tabIndicatorTransition}
+                  className="absolute inset-0 bg-[#EFE5D2] rounded-xl z-0"
+                />
+              )}
+              <Compass className="w-3.5 h-3.5 relative z-10" />
+              <span className="relative z-10">Discover</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("travellers")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
+                activeTab === "travellers" ? "text-[#173B32]" : "text-[#D8DED5]/70 hover:text-white"
+              }`}
+            >
+              {activeTab === "travellers" && (
+                <motion.div
+                  layoutId="soloTabActivePill"
+                  transition={tabIndicatorTransition}
+                  className="absolute inset-0 bg-[#EFE5D2] rounded-xl z-0"
+                />
+              )}
+              <Users className="w-3.5 h-3.5 relative z-10" />
+              <span className="relative z-10">Travellers ({travelers.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("circles")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
+                activeTab === "circles" ? "text-[#173B32]" : "text-[#D8DED5]/70 hover:text-white"
+              }`}
+            >
+              {activeTab === "circles" && (
+                <motion.div
+                  layoutId="soloTabActivePill"
+                  transition={tabIndicatorTransition}
+                  className="absolute inset-0 bg-[#EFE5D2] rounded-xl z-0"
+                />
+              )}
+              <Flame className="w-3.5 h-3.5 relative z-10" />
+              <span className="relative z-10">Circles ({circles.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("safety_saved")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
+                activeTab === "safety_saved" ? "text-[#173B32]" : "text-[#D8DED5]/70 hover:text-white"
+              }`}
+            >
+              {activeTab === "safety_saved" && (
+                <motion.div
+                  layoutId="soloTabActivePill"
+                  transition={tabIndicatorTransition}
+                  className="absolute inset-0 bg-[#EFE5D2] rounded-xl z-0"
+                />
+              )}
+              <ShieldCheck className="w-3.5 h-3.5 relative z-10" />
+              <span className="relative z-10">Safety</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. MAIN CONTENT CONTAINER WITH ANIMATED TAB PANELS */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <AnimatePresence mode="wait">
+          {/* TAB 1: DISCOVER */}
+          {activeTab === "discover" && (
+            <motion.div
+              key="tab-discover"
+              variants={routeScreenVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="space-y-8"
+            >
+              {/* Destination Selector & Shortcuts */}
+              <div className="bg-[#EFE5D2] p-4.5 rounded-3xl border-2 border-[#E5D5BA] space-y-3">
+                <form onSubmit={handleTriggerResearch} className="relative flex items-center">
+                  <Search className="w-4 h-4 text-[#7B4D36] absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchInputValue}
+                    onChange={handleSearchInput}
+                    placeholder="Switch destination (e.g. Manali, Chopta, Hampi, Varkala, Goa)..."
+                    className="w-full pl-10 pr-24 py-2.5 bg-[#FAF7F0] border border-[#E5D5BA] rounded-2xl text-xs font-semibold text-[#173B32] focus:outline-none focus:border-[#173B32]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isResearching || !searchInputValue.trim()}
+                    className="absolute right-1.5 px-3 py-1.5 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isResearching ? "..." : "Go"}
+                  </button>
+                </form>
+
+                {/* Autocomplete Dropdown */}
+                {searchResults.length > 0 && (
+                  <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-2xl shadow-xl overflow-hidden divide-y divide-[#E5D5BA]">
+                    {searchResults.map((res: any, idx: number) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectDestination(res.canonical_slug || res.slug || res.name, res.name)}
+                        className="w-full px-4 py-2.5 text-left hover:bg-[#EFE5D2] flex items-center justify-between transition-colors cursor-pointer"
+                      >
+                        <span className="font-bold text-xs text-[#173B32]">{res.name}</span>
+                        <span className="text-[10px] text-[#7B4D36]">{res.state || "India"}</span>
+                      </button>
+                    ))}
                   </div>
+                )}
 
+                {/* Preset Chips */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {PRESET_DESTINATION_CHIPS.map((chip) => {
+                    const isActive = activeSlug === chip.slug;
+                    return (
+                      <button
+                        key={chip.slug}
+                        onClick={() => handleSelectDestination(chip.slug, chip.name)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
+                            : "bg-[#FAF7F0] text-[#173B32] border border-[#E5D5BA] hover:bg-[#FAF4E8]"
+                        }`}
+                      >
+                        {chip.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Travel Style Selection Cards */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-2">
                   <div>
-                    <h4 className="font-serif text-sm font-bold text-[#173B32]">
-                      {st.label}
-                    </h4>
-                    <p className="text-[11px] text-[#20211D]/70 leading-relaxed line-clamp-2">
-                      {st.desc}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ========================================================= */}
-        {/* 3. FIND YOUR PEOPLE & TRAVEL CIRCLES (ABOVE THE FOLD) */}
-        {/* ========================================================= */}
-        <section className="space-y-6">
-          <div className="bg-[#FAF7F0] border border-[#D8CBB2] rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="space-y-1.5 max-w-xl">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#E05A2B]/10 text-[#E05A2B] text-[10px] font-mono font-bold uppercase tracking-wider">
-                    FIND YOUR PEOPLE
-                  </span>
-                  {travelers.length > 0 && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#173B32]/10 text-[#173B32] text-[10px] font-bold">
-                      {travelers.length} Solo {travelers.length === 1 ? "Traveler" : "Travelers"} Around You
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                      CURATED FILTERS
                     </span>
-                  )}
+                    <h3 className="font-serif font-black text-xl text-[#173B32]">
+                      Choose Your Travel Style
+                    </h3>
+                  </div>
+                  <span className="text-xs text-[#7B4D36] font-mono">
+                    {selectedStyles.length} active
+                  </span>
                 </div>
 
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#173B32]">
-                  Solo Travelers & Circles in {displayName}
-                </h3>
-                <p className="text-xs sm:text-sm text-[#20211D]/80 leading-relaxed">
-                  Discover compatible solo wanderers with overlapping travel dates, connect directly, or join community-organized morning hikes and cafe crawls.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3 w-full md:w-auto">
-                <button
-                  onClick={() => setIsCreateCircleOpen(true)}
-                  className="flex-1 md:flex-initial px-4 py-3 rounded-2xl bg-[#E05A2B] hover:bg-[#C8491D] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create a Circle</span>
-                </button>
-                <Link
-                  href="/profile?tab=solo"
-                  className="px-4 py-3 rounded-2xl bg-white border border-[#D8CBB2] hover:bg-[#E5D5BA]/50 text-[#173B32] text-xs font-bold transition-colors shadow-xs whitespace-nowrap"
-                >
-                  Set Travel Dates
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Social Columns: Matching Travelers + Active Circles */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            {/* Solo Traveler Matches */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-[#173B32] uppercase tracking-wider flex items-center gap-1.5">
-                <Compass className="w-4 h-4 text-[#E05A2B]" />
-                <span>Solo Travelers with Overlapping Plans</span>
-              </h4>
-
-              {travelers.length === 0 ? (
-                <div className="p-8 rounded-3xl bg-white border border-[#D8CBB2] text-center space-y-2.5">
-                  <Users className="w-6 h-6 text-[#B49252] mx-auto" />
-                  <h5 className="font-serif font-bold text-[#173B32] text-sm">
-                    No solo travellers have joined {displayName} yet.
-                  </h5>
-                  <p className="text-xs text-[#20211D]/70 max-w-xs mx-auto leading-relaxed">
-                    Set your dates in Solo Settings to be discoverable when other travellers arrive.
-                  </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {TRAVEL_STYLES.map((st) => {
+                    const isSelected = selectedStyles.includes(st.id);
+                    const IconComp = st.icon;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => toggleTravelStyle(st.id)}
+                        className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                          isSelected
+                            ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] shadow-sm"
+                            : "bg-[#FAF7F0] text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                        }`}
+                      >
+                        <IconComp className={`w-4 h-4 ${isSelected ? "text-[#B49252]" : "text-[#B65E3C]"}`} />
+                        <div>
+                          <span className="font-serif font-bold text-xs block leading-tight">
+                            {st.label}
+                          </span>
+                          <span className={`text-[10px] block mt-0.5 ${isSelected ? "text-[#D8DED5]/70" : "text-[#7B4D36]"}`}>
+                            {styleCounts[st.id] || places.length} spots
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : (
-                isCompact ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {travelers.slice(0, 6).map((t) => (
-                      <CompactTravelerCard
-                        key={t.user_id}
-                        traveler={t}
-                        onOpenProfile={(traveler) => {
-                          setSelectedTraveler(traveler);
-                          setIsTravelerModalOpen(true);
-                        }}
-                        onOpenChat={(traveler) => {
-                          setChatPartner(traveler);
-                          setIsChatOpen(true);
-                        }}
+              </div>
+
+              {/* Curated Places */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-2">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                      VERIFIED PLACES
+                    </span>
+                    <h3 className="font-serif font-black text-xl text-[#173B32]">
+                      Places for Solitude & Connection in {displayName}
+                    </h3>
+                  </div>
+                  <span className="text-xs text-[#7B4D36] font-mono">
+                    Showing {Math.min(visiblePlacesCount, filteredPlaces.length)} of {filteredPlaces.length}
+                  </span>
+                </div>
+
+                {loading ? (
+                  <div className="py-16 text-center space-y-2">
+                    <RefreshCw className="w-6 h-6 text-[#B49252] animate-spin mx-auto" />
+                    <p className="text-xs text-[#7B4D36]">Loading places in {displayName}...</p>
+                  </div>
+                ) : filteredPlaces.length === 0 ? (
+                  <div className="p-8 text-center bg-[#FAF7F0] rounded-3xl border border-[#E5D5BA]">
+                    <Compass className="w-8 h-8 text-[#B49252] mx-auto mb-2" />
+                    <p className="text-sm font-serif font-bold text-[#173B32]">No places match the active style filter.</p>
+                    <p className="text-xs text-[#7B4D36] mt-1">Try selecting an additional travel style above.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredPlaces.slice(0, visiblePlacesCount).map((p) => (
+                      <PlaceCard
+                        key={p.id}
+                        place={p}
+                        onSelect={() => setSelectedPlace(p)}
                       />
                     ))}
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {travelers.slice(0, 4).map((t) => (
-                      <div
-                        key={t.user_id}
-                        className="p-4 rounded-2xl bg-white border border-[#D8CBB2] hover:border-[#173B32] flex items-center justify-between gap-4 transition-all shadow-2xs"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            user={{
-                              full_name: t.full_name,
-                              avatar_url: t.avatar_url,
-                              avatar_type: t.avatar_type,
-                              avatar_preset: t.avatar_preset,
-                            }}
-                            size="md"
-                          />
-                          <div>
-                            <h5 className="font-serif font-bold text-sm text-[#173B32]">
-                              {t.full_name}
-                            </h5>
-                            <p className="text-[11px] text-[#20211D]/70">
-                              {t.travel_style || "Solo Explorer"} · {t.overlapping_days || 0} overlapping days
-                            </p>
-                          </div>
-                        </div>
+                )}
 
-                        <div className="flex items-center gap-2">
-                          {t.connection_status === "ACCEPTED" ? (
-                            <button
-                              onClick={() => {
-                                setChatPartner(t);
-                                setIsChatOpen(true);
-                              }}
-                              className="px-3.5 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5 text-[#B49252]" />
-                              <span>Chat</span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setSelectedTraveler(t);
-                                setIsTravelerModalOpen(true);
-                              }}
-                              className="px-3.5 py-1.5 rounded-xl bg-[#E05A2B] hover:bg-[#C8491D] text-white text-xs font-bold shadow-xs cursor-pointer"
-                            >
-                              Connect
-                            </button>
-                          )}
+                {filteredPlaces.length > visiblePlacesCount && (
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setVisiblePlacesCount((prev) => prev + 12)}
+                      className="px-6 py-2.5 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] text-[#173B32] border-2 border-[#E5D5BA] text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      Show More Places (+12)
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Verified Solo Stays & Hostels */}
+              {hotels.length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-[#E5D5BA]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                        HOSTELS & BOUTIQUE STAYS
+                      </span>
+                      <h3 className="font-serif font-black text-xl text-[#173B32]">
+                        Where to Stay Solo in {displayName}
+                      </h3>
+                    </div>
+                    <span className="text-xs text-[#7B4D36] font-mono">
+                      {hotels.length} verified stays
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {hotels.slice(0, 6).map((h) => (
+                      <div
+                        key={h.id}
+                        onClick={() => setSelectedHotel(h)}
+                        className="p-4 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] transition-all cursor-pointer shadow-xs space-y-2 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-[#173B32]/10 text-[#173B32]">
+                            {h.property_type || "Boutique Stay"}
+                          </span>
+                          <span className="text-xs font-mono font-bold text-[#B49252]">
+                            ★ {h.rating || "4.8"}
+                          </span>
+                        </div>
+                        <h4 className="font-serif font-bold text-base text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug">
+                          {h.name}
+                        </h4>
+                        <p className="text-xs text-[#7B4D36] line-clamp-2">
+                          {h.address || h.hotel_style || "Verified boutique stay"}
+                        </p>
+                        <div className="pt-1 flex items-center justify-between text-xs font-bold text-[#173B32]">
+                          <span>{h.price_per_night ? `₹${h.price_per_night.toLocaleString()} / night` : "Check tariff"}</span>
+                          <span className="text-[#B65E3C] group-hover:translate-x-0.5 transition-transform">Details →</span>
                         </div>
                       </div>
                     ))}
                   </div>
-                )
+                </div>
               )}
-            </div>
 
-            {/* Active Circles in Destination */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-[#173B32] uppercase tracking-wider flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-[#B49252]" />
-                <span>Forming Travel Circles ({circles.length})</span>
-              </h4>
+              {/* Optional Field Intelligence Drawer */}
+              <div className="pt-4 border-t border-[#E5D5BA]">
+                <button
+                  type="button"
+                  onClick={() => setShowAiAtmosphere(!showAiAtmosphere)}
+                  className="w-full p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center justify-between cursor-pointer hover:bg-[#E5D5BA]/40 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#B49252]" />
+                    <span className="text-xs font-bold text-[#173B32]">
+                      {showAiAtmosphere ? "Hide Field Intelligence & Weather" : `View ${displayName} Solo Atmosphere & Weather Guide`}
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono text-[#7B4D36]">
+                    {showAiAtmosphere ? "Collapse ▲" : "Expand ▼"}
+                  </span>
+                </button>
 
-              {circles.length === 0 ? (
-                <div className="p-8 rounded-3xl bg-white border border-[#D8CBB2] text-center space-y-2.5">
-                  <Flame className="w-6 h-6 text-[#E05A2B] mx-auto" />
-                  <h5 className="font-serif font-bold text-[#173B32] text-sm">
-                    No active circles in {displayName} right now.
-                  </h5>
-                  <p className="text-xs text-[#20211D]/70 max-w-xs mx-auto leading-relaxed">
-                    Start a sunrise hike, cafe crawl, or temple walk circle and invite nearby travellers.
+                {showAiAtmosphere && intelligence && (
+                  <div className="mt-4 p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] relative overflow-hidden space-y-4">
+                    <SoloAtmosphere
+                      atmosphereType={intelligence.atmosphere_type || "mountain"}
+                      className="opacity-20"
+                    />
+                    <div className="relative z-10 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-serif font-bold text-base text-[#173B32]">
+                          {intelligence.tagline || `${displayName} Solo Travel Field Note`}
+                        </h4>
+                        <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-[#173B32] text-[#FAF4E8] font-bold">
+                          ★ {intelligence.solo_friendliness_score || 8.5}/10 Friendliness Score
+                        </span>
+                      </div>
+                      {intelligence.weather_summary && (
+                        <p className="text-xs text-[#7B4D36] font-medium leading-relaxed">
+                          ⛅ <strong>Atmosphere & Weather:</strong> {intelligence.weather_summary}
+                        </p>
+                      )}
+                      {intelligence.safe_areas && intelligence.safe_areas.length > 0 && (
+                        <div className="text-xs text-[#20211D]">
+                          <strong className="text-[#173B32]">Recommended Localities:</strong> {intelligence.safe_areas.join(" • ")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 2: TRAVELLERS */}
+          {activeTab === "travellers" && (
+            <motion.div
+              key="tab-travellers"
+              variants={routeScreenVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="space-y-6"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5D5BA] pb-3">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                    VERIFIED COMMUNITY
+                  </span>
+                  <h3 className="font-serif font-black text-2xl text-[#173B32]">
+                    Solo Explorers in {displayName}
+                  </h3>
+                  <p className="text-xs text-[#7B4D36] mt-0.5">
+                    Connect for cafe work, trail walks, or sunset views. Profiles protected by mutual consent.
+                  </p>
+                </div>
+                <span className="text-xs font-mono font-bold text-[#173B32] bg-[#EFE5D2] px-3 py-1 rounded-full border border-[#E5D5BA]">
+                  {travelers.length} active travellers
+                </span>
+              </div>
+
+              {travelers.length === 0 ? (
+                <div className="p-12 text-center bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] space-y-3">
+                  <Users className="w-10 h-10 text-[#B49252] mx-auto" />
+                  <h4 className="font-serif font-bold text-lg text-[#173B32]">
+                    No other travellers registered for {displayName} this week.
+                  </h4>
+                  <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
+                    You can start a Travel Circle in the next tab to invite other wanderers when they arrive.
                   </p>
                   <button
+                    type="button"
+                    onClick={() => setActiveTab("circles")}
+                    className="px-5 py-2.5 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold uppercase transition-colors"
+                  >
+                    Open Circles Tab
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {travelers.map((t) => (
+                    <div
+                      key={t.user_id}
+                      className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] transition-all shadow-xs space-y-3"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            user={{ full_name: t.full_name, avatar_url: t.avatar_url, avatar_type: t.avatar_type, avatar_preset: t.avatar_preset }}
+                            size="md"
+                            borderColor="border-[#B49252]"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-serif font-bold text-base text-[#173B32] leading-tight">
+                                {t.full_name}
+                              </h4>
+                              {t.connection_status === "ACCEPTED" && (
+                                <span title="Connected Traveller">
+                                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-mono text-[#7B4D36] uppercase font-bold">
+                              {t.travel_style || "Solo Explorer"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {t.bio && (
+                        <p className="text-xs text-[#20211D]/80 italic line-clamp-2">
+                          &ldquo;{t.bio}&rdquo;
+                        </p>
+                      )}
+
+                      <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[#7B4D36]">
+                          {t.overlapping_days ? `${t.overlapping_days} overlapping days` : "In destination now"}
+                        </span>
+                        {t.connection_status === "ACCEPTED" ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setChatPartner(t);
+                              setIsChatOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 text-[#B49252]" />
+                            <span>Chat</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTraveler(t);
+                              setIsTravelerModalOpen(true);
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold cursor-pointer transition-colors"
+                          >
+                            Connect
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* TAB 3: CIRCLES */}
+          {activeTab === "circles" && (
+            <motion.div
+              key="tab-circles"
+              variants={routeScreenVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="space-y-6"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5D5BA] pb-3">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                    SHARED ACTIVITIES
+                  </span>
+                  <h3 className="font-serif font-black text-2xl text-[#173B32]">
+                    Travel Circles in {displayName}
+                  </h3>
+                  <p className="text-xs text-[#7B4D36] mt-0.5">
+                    Spontaneous group hikes, sunrise walks, and dinner tables. Zero commitment.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateCircleOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer self-start sm:self-auto shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>Create Circle</span>
+                </button>
+              </div>
+
+              {circles.length === 0 ? (
+                <div className="p-12 text-center bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] space-y-3">
+                  <Flame className="w-10 h-10 text-[#B65E3C] mx-auto" />
+                  <h4 className="font-serif font-bold text-lg text-[#173B32]">
+                    No active circles in {displayName} yet.
+                  </h4>
+                  <p className="text-xs text-[#7B4D36] max-w-sm mx-auto">
+                    Start a sunrise hike to a scenic viewpoint or a cafe co-working table and invite other solo travelers.
+                  </p>
+                  <button
+                    type="button"
                     onClick={() => setIsCreateCircleOpen(true)}
-                    className="px-4 py-2 rounded-xl bg-[#173B32] text-white text-xs font-bold hover:bg-[#20453B] transition-colors cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
                   >
                     Start First Circle
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {circles.slice(0, 4).map((c) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {circles.map((c) => (
                     <div
                       key={c.id}
-                      className="p-4 rounded-2xl bg-white border border-[#D8CBB2] hover:border-[#173B32] flex items-center justify-between gap-4 transition-all shadow-2xs"
+                      className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] transition-all shadow-xs space-y-3"
                     >
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#173B32]/10 text-[#173B32] text-[10px] font-mono font-bold uppercase">
+                          {c.activity_type}
+                        </span>
+                        <span className="text-xs font-mono font-bold text-[#B49252]">
+                          {c.members_count} / {c.max_members} Travelers
+                        </span>
+                      </div>
+
                       <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="px-2 py-0.5 rounded-md bg-[#173B32]/10 text-[#173B32] text-[9px] font-mono font-bold uppercase">
-                            {c.activity_type}
-                          </span>
-                          <span className="text-[10px] font-mono font-bold text-[#B49252]">
-                            {c.members_count}/{c.max_members} Travelers
-                          </span>
-                        </div>
-                        <h5 className="font-serif font-bold text-sm text-[#173B32] line-clamp-1">
+                        <h4 className="font-serif font-bold text-lg text-[#173B32]">
                           {c.name}
-                        </h5>
-                        <p className="text-[11px] text-[#20211D]/70 flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-[#E05A2B]" />
-                          <span>{c.meetup_point}</span>
+                        </h4>
+                        <p className="text-xs text-[#7B4D36] flex items-center gap-1 mt-1">
+                          <MapPin className="w-3.5 h-3.5 text-[#B65E3C] shrink-0" />
+                          <span>Meetup: {c.meetup_point}</span>
                         </p>
                       </div>
 
-                      <button
-                        onClick={() => {
-                          setSelectedCircleId(c.id);
-                          setIsCircleModalOpen(true);
-                        }}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap"
-                      >
-                        <span>{c.is_member ? "Open Chat" : "Join Circle"}</span>
-                        <ArrowRight className="w-3 h-3 text-[#B49252]" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-          </div>
-        </section>
-
-        {/* ========================================================= */}
-        {/* 4. PLACES WORTH EXPERIENCING ALONE IN {DESTINATION} */}
-        {/* ========================================================= */}
-        <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#D8CBB2] pb-4">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-[#E05A2B] font-bold tracking-wider block">
-                CURATED FOR SOLITUDE & CONNECTION
-              </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#173B32]">
-                Places Worth Experiencing Alone in {displayName}
-              </h2>
-            </div>
-
-            <div className="text-xs text-[#20211D]/70 font-mono font-bold">
-              Showing {Math.min(visiblePlacesCount, filteredPlaces.length)} of {filteredPlaces.length} places
-            </div>
-          </div>
-
-          {/* Category Filter Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            {categoriesList.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  selectedCategory.toLowerCase() === cat.toLowerCase()
-                    ? "bg-[#173B32] text-white shadow-xs"
-                    : "bg-white border border-[#D8CBB2] text-[#173B32] hover:bg-[#E5D5BA]/50"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Places Grid */}
-          {loading ? (
-            <div className="py-16 text-center space-y-2">
-              <RefreshCw className="w-6 h-6 text-[#B49252] animate-spin mx-auto" />
-              <p className="text-xs text-[#20211D]/60">Compiling verified solo places in {displayName}...</p>
-            </div>
-          ) : filteredPlaces.length === 0 ? (
-            <div className="p-12 rounded-3xl bg-white border border-[#D8CBB2] text-center space-y-3">
-              <Mountain className="w-8 h-8 text-[#B49252] mx-auto" />
-              <h4 className="font-serif font-bold text-base text-[#173B32]">
-                No places found in this category.
-              </h4>
-              <p className="text-xs text-[#20211D]/70 max-w-sm mx-auto">
-                Try switching to &apos;All&apos; categories or researching additional spots with the search bar above.
-              </p>
-            </div>
-          ) : (
-            <>
-              {isCompact ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                  {filteredPlaces.slice(0, visiblePlacesCount).map((place) => (
-                    <CompactPlaceCard
-                      key={place.id}
-                      place={place}
-                      onSelect={(p: Place) => setSelectedPlace(p)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {filteredPlaces.slice(0, visiblePlacesCount).map((place) => (
-                    <PlaceCard
-                      key={place.id}
-                      place={place}
-                      destinationName={displayName}
-                      onSelect={(p: Place) => setSelectedPlace(p)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Load More Button */}
-              {visiblePlacesCount < filteredPlaces.length && (
-                <div className="text-center pt-4">
-                  <button
-                    onClick={() => setVisiblePlacesCount((prev) => prev + 18)}
-                    className="px-6 py-3 rounded-2xl bg-white border border-[#D8CBB2] hover:bg-[#FAF7F0] text-[#173B32] text-xs font-bold uppercase tracking-wider transition-colors shadow-xs cursor-pointer"
-                  >
-                    Load More Places ({filteredPlaces.length - visiblePlacesCount} remaining)
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-
-        {/* ========================================================= */}
-        {/* 5. ESSENTIAL FIELD INTELLIGENCE FOR {DESTINATION} */}
-        {/* ========================================================= */}
-        {intelligence && (
-          <section className="space-y-6">
-            <div className="border-b border-[#D8CBB2] pb-4">
-              <span className="text-[10px] font-mono uppercase text-[#173B32] font-bold tracking-wider block">
-                FIELD PROTOCOLS
-              </span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#173B32]">
-                Essential Field Intelligence for {displayName}
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              
-              {/* Safe Areas */}
-              <div className="p-6 rounded-3xl bg-white border border-[#D8CBB2] space-y-3 shadow-2xs">
-                <h4 className="font-serif text-base font-bold text-[#173B32] flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#173B32]" />
-                  <span>Safe Zones & Walking Areas</span>
-                </h4>
-                <ul className="space-y-2 text-xs text-[#20211D]/80">
-                  {intelligence.safe_areas.map((area, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#173B32] mt-1.5 shrink-0" />
-                      <span>{area}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Transit & Mobility */}
-              <div className="p-6 rounded-3xl bg-white border border-[#D8CBB2] space-y-3 shadow-2xs">
-                <h4 className="font-serif text-base font-bold text-[#173B32] flex items-center gap-2">
-                  <Navigation className="w-4 h-4 text-[#E05A2B]" />
-                  <span>Getting Around & Local Transit</span>
-                </h4>
-                <ul className="space-y-2 text-xs text-[#20211D]/80">
-                  {intelligence.getting_around.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#E05A2B] mt-1.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Solo Dining & Cafes */}
-              <div className="p-6 rounded-3xl bg-white border border-[#D8CBB2] space-y-3 shadow-2xs">
-                <h4 className="font-serif text-base font-bold text-[#173B32] flex items-center gap-2">
-                  <Coffee className="w-4 h-4 text-[#B49252]" />
-                  <span>Solo Dining & Reading Cafes</span>
-                </h4>
-                <ul className="space-y-2 text-xs text-[#20211D]/80">
-                  {intelligence.dining_tips.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#B49252] mt-1.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Stays Advice */}
-              <div className="p-6 rounded-3xl bg-white border border-[#D8CBB2] space-y-3 shadow-2xs">
-                <h4 className="font-serif text-base font-bold text-[#173B32] flex items-center gap-2">
-                  <BedDouble className="w-4 h-4 text-[#173B32]" />
-                  <span>Stay & Sanctuary Advice</span>
-                </h4>
-                <ul className="space-y-2 text-xs text-[#20211D]/80">
-                  {intelligence.stay_tips.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#173B32] mt-1.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Etiquette & Customs */}
-              <div className="p-6 rounded-3xl bg-white border border-[#D8CBB2] space-y-3 shadow-2xs">
-                <h4 className="font-serif text-base font-bold text-[#173B32] flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#B49252]" />
-                  <span>Local Customs & Etiquette</span>
-                </h4>
-                <ul className="space-y-2 text-xs text-[#20211D]/80">
-                  {intelligence.etiquette.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#B49252] mt-1.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Emergency Numbers */}
-              <div className="p-6 rounded-3xl bg-white border border-[#D8CBB2] space-y-3 shadow-2xs">
-                <h4 className="font-serif text-base font-bold text-[#173B32] flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-emerald-700" />
-                  <span>Verified Emergency Numbers</span>
-                </h4>
-                <div className="space-y-2 text-xs">
-                  {intelligence.emergency_contacts.map((c, idx) => (
-                    <a
-                      key={idx}
-                      href={`tel:${c.number}`}
-                      className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] flex items-center justify-between transition-colors cursor-pointer"
-                    >
-                      <span className="text-[#20211D]/80 font-medium truncate pr-2">{c.label}</span>
-                      <span className="font-mono font-bold text-[#173B32]">{c.number}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-          </section>
-        )}
-
-        {/* ========================================================= */}
-        {/* 6. STAYS & SANCTUARIES */}
-        {/* ========================================================= */}
-        {hotels.length > 0 && (
-          <section className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#D8CBB2] pb-4">
-              <div>
-                <span className="text-[10px] font-mono uppercase text-[#E05A2B] font-bold tracking-wider block">
-                  REST & RETREAT
-                </span>
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#173B32]">
-                  Stays & Sanctuaries in {displayName}
-                </h2>
-              </div>
-              <p className="text-xs text-[#20211D]/70 font-medium">
-                {hotels.length} verified solo-friendly properties
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {hotels.map((h) => (
-                <div
-                  key={h.id}
-                  className="bg-white border border-[#D8CBB2] hover:border-[#173B32] rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
-                >
-                  <div className="relative h-44 bg-[#173B32] overflow-hidden">
-                    <VanvasImage
-                      src={h.image_url || "/images/places/universal/stay.webp"}
-                      alt={h.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-mono font-bold">
-                      {h.hotel_style || "Sanctuary"}
-                    </div>
-                  </div>
-
-                  <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-serif text-base font-bold text-[#173B32] line-clamp-1">
-                          {h.name}
-                        </h4>
-                        {h.rating && (
-                          <span className="flex items-center gap-1 text-xs font-bold text-[#B49252]">
-                            <Star className="w-3.5 h-3.5 fill-[#B49252]" />
-                            {h.rating.toFixed(1)}
-                          </span>
-                        )}
+                      <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[#7B4D36]">
+                          {c.is_member ? "You are a member" : "Open to join"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCircleId(c.id);
+                            setIsCircleModalOpen(true);
+                          }}
+                          className="px-4 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                        >
+                          <span>{c.is_member ? "Open Chat" : "Join Circle"}</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-[#B49252]" />
+                        </button>
                       </div>
-                      <p className="text-xs text-[#20211D]/70 line-clamp-1 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-[#E05A2B] shrink-0" />
-                        <span>{h.address}</span>
-                      </p>
-                      <p className="text-sm font-bold text-[#173B32]">
-                        ₹{h.price_per_night ? h.price_per_night.toLocaleString() : "—"}{" "}
-                        <span className="text-[11px] font-normal text-[#20211D]/60">/ night</span>
-                      </p>
                     </div>
-
-                    <button
-                      onClick={() => setSelectedHotel(h)}
-                      className="w-full py-2.5 rounded-xl bg-[#FAF7F0] border border-[#D8CBB2] hover:bg-[#173B32] hover:text-white text-[#173B32] text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                    >
-                      View Property & Booking
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+              )}
+            </motion.div>
+          )}
 
-        {/* ========================================================= */}
-        {/* 7. GETTING AROUND & LOCAL MOBILITY */}
-        {/* ========================================================= */}
-        {rentals.length > 0 && (
-          <section className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#D8CBB2] pb-4">
-              <div>
-                <span className="text-[10px] font-mono uppercase text-[#173B32] font-bold tracking-wider block">
-                  SELF-DRIVE & TRANSIT
+          {/* TAB 4: SAFETY & SAVED */}
+          {activeTab === "safety_saved" && (
+            <motion.div
+              key="tab-safety"
+              variants={routeScreenVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="space-y-6"
+            >
+              <div className="border-b border-[#E5D5BA] pb-3">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                  FIELD PROTOCOLS & PRIVACY
                 </span>
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#173B32]">
-                  {mobilityHeading}
-                </h2>
+                <h3 className="font-serif font-black text-2xl text-[#173B32]">
+                  Solo Safety & Ground Rules
+                </h3>
+                <p className="text-xs text-[#7B4D36] mt-0.5">
+                  Verified emergency infrastructure and privacy settings for {displayName}.
+                </p>
               </div>
-              <p className="text-xs text-[#20211D]/70 font-medium">
-                {rentals.length} verified operators in {displayName}
-              </p>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {rentals.map((r) => (
-                <div
-                  key={r.id}
-                  onClick={() => setSelectedRental(r)}
-                  className="p-5 rounded-3xl bg-white border border-[#D8CBB2] hover:border-[#173B32] transition-all cursor-pointer shadow-2xs space-y-3 group"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] flex items-center justify-center p-1 text-[#173B32] overflow-hidden">
-                      <VehicleArtwork
-                        type={r.vehicle_type}
-                        name={r.vehicle_name}
-                        destination={displayName}
-                        imageUrl={r.image_url}
-                        className="w-full h-full object-cover rounded-xl"
-                        showBadge={false}
-                      />
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#E05A2B]/10 text-[#E05A2B] text-[10px] font-mono font-bold uppercase">
-                      {r.vehicle_type}
-                    </span>
+              {/* Emergency Helplines Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-[#B65E3C] uppercase">
+                    WOMEN TRAVEL SAFETY
+                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-serif font-bold text-base text-[#173B32]">1091</span>
+                    <a
+                      href="tel:1091"
+                      className="px-2.5 py-1 rounded-lg bg-[#173B32] text-white text-[11px] font-bold"
+                    >
+                      Call
+                    </a>
                   </div>
-
-                  <div>
-                    <h4 className="font-serif font-bold text-base text-[#173B32] group-hover:text-[#E05A2B] transition-colors">
-                      {r.provider_name}
-                    </h4>
-                    <p className="text-xs text-[#20211D]/70">{r.vehicle_name}</p>
-                    <p className="text-xs font-bold text-[#173B32] mt-1">
-                      {r.price_per_day ? `₹${r.price_per_day.toLocaleString()} / day` : "Inquire at counter"}
-                    </p>
-                  </div>
+                  <p className="text-[10px] text-[#7B4D36]">National 24/7 dedicated helpline</p>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
 
+                <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-[#B65E3C] uppercase">
+                    ALL-INDIA EMERGENCY
+                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-serif font-bold text-base text-[#173B32]">112</span>
+                    <a
+                      href="tel:112"
+                      className="px-2.5 py-1 rounded-lg bg-[#173B32] text-white text-[11px] font-bold"
+                    >
+                      Call
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-[#7B4D36]">Police, Fire, Ambulance unified</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-[#B65E3C] uppercase">
+                    MOUNTAIN & TOURIST RESCUE
+                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-serif font-bold text-base text-[#173B32]">1364</span>
+                    <a
+                      href="tel:1364"
+                      className="px-2.5 py-1 rounded-lg bg-[#173B32] text-white text-[11px] font-bold"
+                    >
+                      Call
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-[#7B4D36]">Tourist Police & Trail Assistance</p>
+                </div>
+              </div>
+
+              {/* Safety Checklist */}
+              <div className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-3">
+                <h4 className="font-serif font-bold text-base text-[#173B32] flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>Ground Rules for Traveling Solo</span>
+                </h4>
+                <ul className="space-y-2 text-xs text-[#20211D]/85">
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-700 font-bold shrink-0">✓</span>
+                    <span><strong>Share Live Location:</strong> Always share your location link with at least one trusted friend or family member before heading onto unpaved trails.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-700 font-bold shrink-0">✓</span>
+                    <span><strong>Verified Hostels & Stays:</strong> Stays listed on VANVAS are pre-screened for 24/7 reception and lockable storage.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-700 font-bold shrink-0">✓</span>
+                    <span><strong>Sunset Rule in Hills:</strong> Avoid walking back from remote waterfalls or viewpoints alone after dusk. Mountain temperatures drop rapidly.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Privacy Control */}
+              <div className="p-5 rounded-3xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center justify-between">
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-[#173B32]">
+                    Profile Visibility in {displayName}
+                  </h4>
+                  <p className="text-xs text-[#7B4D36] mt-0.5">
+                    When enabled, verified travelers visiting {displayName} during your dates can discover you.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsProfileVisible(!isProfileVisible)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isProfileVisible
+                      ? "bg-[#173B32] text-[#FAF4E8]"
+                      : "bg-[#FAF7F0] text-[#7B4D36] border border-[#E5D5BA]"
+                  }`}
+                >
+                  {isProfileVisible ? "Visible" : "Incognito"}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      {/* ========================================================= */}
-      {/* INTERACTIVE MODALS */}
-      {/* ========================================================= */}
+      {/* MODALS */}
       <PlaceModal
         place={selectedPlace}
         isOpen={Boolean(selectedPlace)}
@@ -1050,7 +1018,6 @@ function SoloPageContent() {
         onClose={() => setIsCircleModalOpen(false)}
         onCircleLeft={(cId) => setCircles((prev) => prev.filter((c) => c.id !== cId))}
       />
-
     </div>
   );
 }

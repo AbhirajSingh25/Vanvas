@@ -26,11 +26,14 @@ async def search_destinations_autocomplete(
     db: Session = Depends(get_db)
 ):
     """
-    Live autocomplete search supporting curated and arbitrary global/Indian destinations.
-    City / locality ranking prioritized over country matches.
+    Live autocomplete search supporting curated canonical destinations, Indian aliases,
+    and arbitrary global/Indian destinations via resilient geocoding fallback.
     """
-    geocoder = ProviderFactory.get_geocoding_provider()
-    results = await geocoder.autocomplete(q, limit=limit)
+    results = await DestinationIntelligenceService.search_destinations_autocomplete(
+        query=q,
+        limit=limit,
+        db=db
+    )
     return results
 
 @router.post("/resolve")

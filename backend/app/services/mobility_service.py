@@ -405,9 +405,9 @@ class MobilityService:
         is_car = any(k in query for k in ["car", "self-drive", "self drive", "suv", "sedan", "hatchback", "thar", "creta", "swift", "baleno", "i20", "scorpio", "seltos"])
         is_bicycle = (any(k in query for k in ["bicycle", "cycle", "mtb", "pedal"]) and "motor" not in query)
         is_electric = any(k in query for k in ["electric", "ev", "ather", "ola", "chetak", "iqube"])
-        is_adv = (any(k in query for k in ["himalayan", "adventure", "adv", "450", "411", "xpulse", "off-road", "rally", "touring"])) and not is_electric
-        is_bullet = any(k in query for k in ["bullet", "classic", "enfield", "350", "cruiser", "hunter", "meteor", "interceptor", "motorcycle", "bike", "fz", "pulsar", "apache", "avenger"])
         is_scooter = any(k in query for k in ["scooter", "activa", "jupiter", "access", "vespa", "moped", "ntorq", "fascino", "dio", "pleasure", "burgman", "scooty"]) or is_electric
+        is_adv = (not is_scooter) and (any(k in query for k in ["himalayan", "adventure", "adv", "450", "411", "xpulse", "off-road", "rally", "touring"]))
+        is_bullet = (not is_scooter) and (not is_adv) and any(k in query for k in ["bullet", "classic", "enfield", "350", "cruiser", "hunter", "meteor", "interceptor", "motorcycle", "bike", "fz", "pulsar", "apache", "avenger"])
 
         # 1. Goa
         if any(k in dest_str for k in ["goa", "gokarna"]):
@@ -449,7 +449,7 @@ class MobilityService:
                 return "/images/vehicles/adventure_motorcycle.jpg"
             if is_bullet:
                 return "/images/vehicles/varanasi_bhu_bullet.jpg"
-            return "/images/vehicles/varanasi_assi_scooter.jpg"
+            return "/images/vehicles/varanasi_ghat_approach_scooter.jpg"
 
         # 5. Leh
         if any(k in dest_str for k in ["leh", "ladakh"]):
@@ -475,15 +475,19 @@ class MobilityService:
 
         # 8. Rishikesh
         if any(k in dest_str for k in ["rishikesh", "tapovan"]):
+            if is_bicycle:
+                return "/images/vehicles/rishikesh_ganga_mtb.jpg"
             if is_adv:
-                return "/images/vehicles/uttarakhand_forest_bike.jpg"
+                return "/images/vehicles/adventure_motorcycle.jpg"
             if is_bullet:
                 return "/images/vehicles/rishikesh_ganga_bullet.jpg"
             return "/images/vehicles/rishikesh_tapovan_scooter.jpg"
 
         # 9. Manali
         if any(k in dest_str for k in ["manali", "solang"]):
-            if is_bullet or is_adv:
+            if is_adv:
+                return "/images/vehicles/manali_himalayan_adv_bike.jpg"
+            if is_bullet:
                 return "/images/vehicles/manali_solang_bullet.jpg"
             return "/images/vehicles/manali_beas_scooter.jpg"
 

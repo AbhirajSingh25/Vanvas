@@ -279,7 +279,7 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
     default: {
       src: "/images/vehicles/leh_high_altitude_motorcycle.webp",
       label: "Royal Enfield Himalayan 450 High-Pass Tourer",
-      category: "automatic_scooter",
+      category: "adventure_motorcycle",
     },
   },
   // Manali
@@ -410,7 +410,7 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
     default: {
       src: "/images/vehicles/neemrana_fort_bullet.webp",
       label: "Classic 350 Aravalli Fort Tourer",
-      category: "automatic_scooter",
+      category: "classic_bullet",
     },
   },
   // Rishikesh
@@ -421,9 +421,14 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       category: "automatic_scooter",
     },
     motorcycle: {
+      src: "/images/vehicles/rishikesh_ganga_bullet.webp",
+      label: "Classic 350 Ganga Explorer",
+      category: "classic_bullet",
+    },
+    bicycle: {
       src: "/images/vehicles/rishikesh_ganga_mtb.webp",
       label: "Trek Marlin Mountain Bike MTB",
-      category: "classic_bullet",
+      category: "mountain_bike",
     },
     default: {
       src: "/images/vehicles/rishikesh_tapovan_scooter.webp",
@@ -441,7 +446,7 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
     default: {
       src: "/images/vehicles/sariska_safari_adv_bike.webp",
       label: "Royal Enfield Himalayan 450 Safari Tourer",
-      category: "automatic_scooter",
+      category: "adventure_motorcycle",
     },
   },
   // Spiti
@@ -454,7 +459,7 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
     default: {
       src: "/images/vehicles/spiti_arid_adventure_bike.webp",
       label: "Royal Enfield Himalayan 450 High Pass Tourer",
-      category: "automatic_scooter",
+      category: "adventure_motorcycle",
     },
   },
   // Tungnath-Chandrashila
@@ -472,7 +477,7 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
     default: {
       src: "/images/vehicles/chopta_tungnath_adv_bike.webp",
       label: "Royal Enfield Himalayan 450 Alpine Explorer",
-      category: "automatic_scooter",
+      category: "adventure_motorcycle",
     },
   },
   // Udaipur
@@ -636,41 +641,44 @@ export function resolveVehicleArtwork(
     combined.includes("scooty");
 
   const isAdventure =
-    combined.includes("adventure_motorcycle") ||
-    combined.includes("adventure motorcycle") ||
-    combined.includes("himalayan") ||
-    combined.includes("adventure") ||
-    combined.includes("adv") ||
-    combined.includes("450") ||
-    combined.includes("411") ||
-    combined.includes("off-road") ||
-    combined.includes("offroad") ||
-    combined.includes("scrambler") ||
-    combined.includes("xpulse") ||
-    combined.includes("ktm") ||
-    combined.includes("gs") ||
-    combined.includes("rally");
+    !isScooter &&
+    (combined.includes("adventure_motorcycle") ||
+      combined.includes("adventure motorcycle") ||
+      combined.includes("himalayan") ||
+      combined.includes("adventure") ||
+      combined.includes("adv") ||
+      combined.includes("450") ||
+      combined.includes("411") ||
+      combined.includes("off-road") ||
+      combined.includes("offroad") ||
+      combined.includes("scrambler") ||
+      combined.includes("xpulse") ||
+      combined.includes("ktm") ||
+      combined.includes("gs") ||
+      combined.includes("rally"));
 
   const isClassicBullet =
-    combined.includes("classic_bullet") ||
-    combined.includes("classic bullet") ||
-    combined.includes("bullet") ||
-    combined.includes("classic") ||
-    combined.includes("enfield") ||
-    combined.includes("royal enfield") ||
-    combined.includes("350") ||
-    combined.includes("cruiser") ||
-    combined.includes("standard") ||
-    combined.includes("interceptor") ||
-    combined.includes("hunter") ||
-    combined.includes("meteor") ||
-    combined.includes("gt 650") ||
-    combined.includes("motorcycle") ||
-    combined.includes("bike") ||
-    combined.includes("fz") ||
-    combined.includes("pulsar") ||
-    combined.includes("apache") ||
-    combined.includes("avenger");
+    !isScooter &&
+    !isAdventure &&
+    (combined.includes("classic_bullet") ||
+      combined.includes("classic bullet") ||
+      combined.includes("bullet") ||
+      combined.includes("classic") ||
+      combined.includes("enfield") ||
+      combined.includes("royal enfield") ||
+      combined.includes("350") ||
+      combined.includes("cruiser") ||
+      combined.includes("standard") ||
+      combined.includes("interceptor") ||
+      combined.includes("hunter") ||
+      combined.includes("meteor") ||
+      combined.includes("gt 650") ||
+      combined.includes("motorcycle") ||
+      combined.includes("bike") ||
+      combined.includes("fz") ||
+      combined.includes("pulsar") ||
+      combined.includes("apache") ||
+      combined.includes("avenger"));
 
   const isCar =
     !isClassicBullet &&

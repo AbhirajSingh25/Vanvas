@@ -1,0 +1,11 @@
+{
+  "summary": {
+    "total_entities_audited": 391,
+    "exact_dedicated_artwork_count": 391,
+    "destination_category_artwork_count": 0,
+    "universal_fallback_count": 0,
+    "exact_artwork_percentage": 100.0,
+    "total_generation_manifest_items": 0
+  },
+  "generation_manifest": []
+}

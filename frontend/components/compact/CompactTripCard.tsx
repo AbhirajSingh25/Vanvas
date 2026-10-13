@@ -13,7 +13,7 @@ export const CompactTripCard: React.FC<CompactTripCardProps> = ({ trip }) => {
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="group bg-[#FAF7F0] rounded-2xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-4 shadow-2xs hover:shadow-md transition-all duration-200 flex items-center justify-between gap-4"
+      className="group bg-[#FAF7F0] rounded-2xl border-2 border-[#E5D5BA] hover:border-[#173B32] p-4 shadow-2xs hover:shadow-md interactive-card touch-press flex items-center justify-between gap-4"
     >
       <div className="space-y-1 min-w-0 flex-1">
         <div className="flex items-center gap-2">

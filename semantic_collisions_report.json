@@ -1,0 +1,11 @@
+{
+  "summary": {
+    "total_entities_audited": 391,
+    "total_collisions_detected": 0,
+    "critical_collisions": 0,
+    "warning_collisions": 0,
+    "database_hotel_hero_collisions": 0
+  },
+  "collisions": [],
+  "database_hotel_hero_collisions": []
+}

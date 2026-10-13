@@ -1,0 +1,21 @@
+{
+  "total_referenced": 2074,
+  "total_missing": 5,
+  "missing_paths": {
+    "/images/destinations/manali/illustration.generated.webp": [
+      "backend\\tests\\test_creative_art_provider.py"
+    ],
+    "/images/places/geometric-moon.webp": [
+      "backend\\tests\\test_explore_and_global_artwork_governance.py"
+    ],
+    "/images/places/placeholder.png": [
+      "backend\\tests\\test_explore_and_global_artwork_governance.py"
+    ],
+    "/images/places/simple-moon-mountain.webp": [
+      "backend\\tests\\test_explore_and_global_artwork_governance.py"
+    ],
+    "/images/places/vector-art.svg": [
+      "backend\\tests\\test_explore_and_global_artwork_governance.py"
+    ]
+  }
+}

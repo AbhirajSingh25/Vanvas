@@ -743,7 +743,8 @@ class RoadTripService:
 
         total_computed = actual_fuel_cost + tolls_est + stay_est + food_est + act_est + parking_est + custom_total
         final_total = custom_budget if (custom_budget and custom_budget > 1000) else total_computed
-        per_person = round(final_total / max(1, travellers), 2)
+        total_rounded = round(final_total, 2)
+        per_person = round(total_rounded / max(1, travellers), 2)
 
         return RoadTripBudgetEstimate(
             fuel_estimated=actual_fuel_cost,
@@ -752,7 +753,7 @@ class RoadTripService:
             food_estimated=food_est,
             activities_estimated=act_est,
             parking_other_estimated=parking_est,
-            total_estimated=round(final_total, 2),
+            total_estimated=total_rounded,
             per_person_estimated=per_person,
             travellers_count=travellers,
             is_custom_budget=bool(custom_budget and custom_budget > 1000),

@@ -76,8 +76,8 @@ function TreksInner() {
 
   return (
     <div className="min-h-screen bg-[#111A16] text-[#EFE5D2] pb-28 selection:bg-[#E05A2B] selection:text-white">
-      {/* 1. EXPEDITION FIELD HERO */}
-      <section className="relative min-h-[65vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-20 overflow-hidden border-b border-[#2C3E35]">
+      {/* 1. EXPEDITION FIELD HERO (Compact, task-focused Expedition Desk) */}
+      <section className="relative px-4 sm:px-6 lg:px-8 py-8 sm:py-12 overflow-hidden border-b border-[#2C3E35]">
         {/* Topographic Contour Texture & Mountain Backdrop */}
         <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1C2C24] via-[#111A16] to-[#0A100D] opacity-95" />
         
@@ -90,7 +90,7 @@ function TreksInner() {
           }}
         />
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-6">
+        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-4">
           {/* Header Badges */}
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="px-3.5 py-1 rounded-full bg-[#E05A2B] text-white text-[11px] font-mono font-black tracking-widest uppercase shadow-lg border border-[#FF7D52]/40 flex items-center gap-1.5">
@@ -102,18 +102,38 @@ function TreksInner() {
             </span>
           </div>
 
-          <div className="space-y-2">
-            <span className="font-devanagari text-2xl sm:text-3xl text-[#B49252] font-bold tracking-widest block">
+          <div className="space-y-1">
+            <span className="font-devanagari text-xl sm:text-2xl text-[#B49252] font-bold tracking-widest block">
               पर्वत आरोहण • हिमालय पदयात्रा
             </span>
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black tracking-tight text-[#FAF4E8] leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-serif font-black tracking-tight text-[#FAF4E8] leading-tight">
               WHERE DO YOU WANT TO CLIMB?
             </h1>
           </div>
 
-          <p className="text-sm sm:text-base text-[#B3C4B9] max-w-2xl mx-auto font-serif italic leading-relaxed">
-            &ldquo;From your very first rhododendron forest trail to serious high-altitude Himalayan summits. Real routes, verified elevation profiles, honest gear checklists, and field intelligence.&rdquo;
+          <p className="text-xs sm:text-sm text-[#B3C4B9] max-w-xl mx-auto font-serif italic leading-relaxed">
+            Real routes, verified elevation profiles, honest gear checklists, and mountain intelligence.
           </p>
+
+          {/* Expedition Desk Quick Answers: Difficulty, Duration, Budget, Season */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl mx-auto pt-2 text-center text-xs font-mono">
+            <div className="p-2 rounded-xl bg-[#14201A] border border-[#2B4034]">
+              <span className="text-[10px] text-[#6D8578] uppercase block">Difficulty</span>
+              <span className="text-[#FAF4E8] font-bold">Easy to High Alpine</span>
+            </div>
+            <div className="p-2 rounded-xl bg-[#14201A] border border-[#2B4034]">
+              <span className="text-[10px] text-[#6D8578] uppercase block">Duration</span>
+              <span className="text-[#FAF4E8] font-bold">1 Day – 6 Days</span>
+            </div>
+            <div className="p-2 rounded-xl bg-[#14201A] border border-[#2B4034]">
+              <span className="text-[10px] text-[#6D8578] uppercase block">Est. Budget</span>
+              <span className="text-[#E05A2B] font-bold">₹1,500 – ₹12,000</span>
+            </div>
+            <div className="p-2 rounded-xl bg-[#14201A] border border-[#2B4034]">
+              <span className="text-[10px] text-[#6D8578] uppercase block">Prime Season</span>
+              <span className="text-[#B49252] font-bold">Mar–Jun & Sep–Dec</span>
+            </div>
+          </div>
 
           {/* Quick Search & Expedition Filter Bar */}
           <div className="pt-4 max-w-3xl mx-auto">

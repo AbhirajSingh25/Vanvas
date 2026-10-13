@@ -60,7 +60,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
           if (onSelect) onSelect(place);
         }
       }}
-      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 ${
+      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 ${
         isCompact ? "card-compact" : ""
       }`}
     >

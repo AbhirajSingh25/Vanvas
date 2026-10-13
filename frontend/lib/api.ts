@@ -20,56 +20,31 @@ import {
 } from "@/types";
 import { storageAdapter } from "./storage";
 
-function getApiBaseUrl(): string {
-  // Browser runtime environment detection
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local");
-    
-    // If running on local machine, allow custom NEXT_PUBLIC_API_URL or default to local backend
-    if (isLocalhost) {
-      if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "") {
-        let base = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, "");
-        if (!base.endsWith("/api/v1")) {
-          base = `${base}/api/v1`;
-        }
-        return base;
-      }
-      return "http://127.0.0.1:8000/api/v1";
-    }
+const PRODUCTION_API_FALLBACK = "https://vanvas-api.onrender.com/api/v1";
+const LOCAL_API_DEFAULT = "http://127.0.0.1:8000/api/v1";
 
-    // In production browser:
-    // If NEXT_PUBLIC_API_URL is an explicit remote HTTPS URL (and not localhost), use it,
-    // otherwise ALWAYS use relative "/api/v1" to leverage same-origin Next.js rewrites without CORS or mixed-content issues.
-    if (
-      process.env.NEXT_PUBLIC_API_URL &&
-      process.env.NEXT_PUBLIC_API_URL.startsWith("https://") &&
-      !process.env.NEXT_PUBLIC_API_URL.includes("localhost") &&
-      !process.env.NEXT_PUBLIC_API_URL.includes("127.0.0.1")
-    ) {
-      let base = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, "");
-      if (!base.endsWith("/api/v1")) {
-        base = `${base}/api/v1`;
-      }
-      return base;
-    }
-
-    return "/api/v1";
+function normalizeApiUrl(url: string): string {
+  let clean = url.trim().replace(/\/+$/, "");
+  if (!clean.endsWith("/api/v1")) {
+    clean = `${clean}/api/v1`;
   }
+  return clean;
+}
 
-  // Server-side (SSR / SSG / Route Handlers)
+export function getApiBaseUrl(): string {
+  // 1. Explicitly configured API URL via environment
   if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== "") {
-    let base = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, "");
-    if (!base.endsWith("/api/v1")) {
-      base = `${base}/api/v1`;
-    }
-    return base;
+    return normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
   }
 
-  if (process.env.NODE_ENV === "production") {
+  // 2. Browser runtime: use relative path so requests route seamlessly
+  // through Next.js rewrites to the verified Render backend in both production and local dev
+  if (typeof window !== "undefined") {
     return "/api/v1";
   }
-  return "http://localhost:8000/api/v1";
+
+  // 3. Server-side runtime (SSR / SSG / Route Handlers)
+  return PRODUCTION_API_FALLBACK;
 }
 
 const API_BASE_URL = getApiBaseUrl();
@@ -148,17 +123,29 @@ async function fetchApi<T>(endpoint: string, options: RequestInit & { timeoutMs?
       } catch {
         errorDetail = `${res.status} ${res.statusText}`;
       }
-      throw new Error(errorDetail);
+      const apiError: any = new Error(errorDetail);
+      apiError.status = res.status;
+      apiError.statusText = res.statusText;
+      apiError.endpoint = endpoint;
+      throw apiError;
     }
 
     return res.json();
   } catch (err: any) {
     clearTimeout(timeoutId);
-    if (err.name === "AbortError") {
-      throw new Error("Request timed out while connecting to VANVAS servers. The server might be waking up; please try again in a few moments.");
+    if (err.name === "AbortError" || err.isTimeout) {
+      const timeoutError: any = new Error("Request timed out while connecting to VANVAS servers. The server might be waking up; please try again in a moment.");
+      timeoutError.status = 504;
+      timeoutError.isTimeout = true;
+      timeoutError.endpoint = endpoint;
+      throw timeoutError;
     }
-    if (err.message === "Failed to fetch") {
-      throw new Error("Unable to connect to VANVAS servers. Please check your internet connection or try again.");
+    if (err.message === "Failed to fetch" || err.isNetworkError) {
+      const netError: any = new Error("Unable to connect to VANVAS servers. Please check your internet connection or try again.");
+      netError.status = 0;
+      netError.isNetworkError = true;
+      netError.endpoint = endpoint;
+      throw netError;
     }
     throw err;
   }

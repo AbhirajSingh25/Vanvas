@@ -3475,7 +3475,7 @@ export const UNIVERSAL_CATEGORY_FALLBACKS: Record<string, string> = {
   heritage: "/images/places/universal/heritage.webp",
   cafe: "/images/places/universal/cafe.webp",
   food: "/images/places/universal/food.webp",
-  shopping: "/images/places/universal/cafe.webp",
+  shopping: "/images/places/universal/shopping.webp",
   adventure: "/images/places/universal/nature.webp",
   transport: "/images/places/universal/transport.webp",
   stay: "/images/places/universal/stay.webp",

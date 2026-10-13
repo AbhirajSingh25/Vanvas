@@ -12,7 +12,7 @@ import {
   Sparkles, MapPin, Compass, Edit3, CheckCircle2, AlertCircle,
   ExternalLink, Trash2, Shield, Heart, Utensils, Car, Trees,
   Clock, ArrowRight, X, RefreshCw, Camera, Upload, Image as ImageIcon,
-  Users
+  Users, LogOut
 } from "lucide-react";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { Avatar } from "@/components/ui/Avatar";
@@ -20,7 +20,7 @@ import { AVATAR_PRESETS, AvatarPreset } from "@/lib/avatarPresets";
 import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
 
 function ProfileContent() {
-  const { user, updateProfile, uploadAvatar, selectAvatarPreset, deleteAvatar } = useAuth();
+  const { user, logout, updateProfile, uploadAvatar, selectAvatarPreset, deleteAvatar } = useAuth();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const initialTab = tabParam === "saved" ? "saved" : tabParam === "avatar" ? "avatar" : tabParam === "trips" ? "trips" : tabParam === "solo" ? "solo" : "overview";
@@ -309,22 +309,31 @@ function ProfileContent() {
             </div>
 
             {/* Profile Action Buttons */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
               <button
                 type="button"
                 onClick={openEditModal}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-[#D8CBB2] text-xs font-bold text-[#173B32] hover:bg-[#E5D5BA]/50 transition-colors shadow-xs cursor-pointer"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-[#D8CBB2] text-xs font-bold text-[#173B32] hover:bg-[#E5D5BA]/50 transition-colors shadow-xs cursor-pointer active:scale-97"
               >
                 <Edit3 className="w-3.5 h-3.5 text-[#B49252]" />
                 <span>Edit Profile</span>
               </button>
               <Link
                 href="/settings"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#173B32] text-xs font-bold text-[#EFE5D2] hover:bg-[#20453B] transition-colors shadow-xs"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#173B32] text-xs font-bold text-[#EFE5D2] hover:bg-[#20453B] transition-colors shadow-xs active:scale-97"
               >
                 <SettingsIcon className="w-3.5 h-3.5 text-[#B49252]" />
                 <span>Settings</span>
               </Link>
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#B65E3C]/10 border border-[#B65E3C]/30 text-xs font-bold text-[#B65E3C] hover:bg-[#B65E3C] hover:text-[#FAF7F0] transition-colors shadow-xs cursor-pointer active:scale-97"
+                title="Sign Out of VANVAS"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
             </div>
           </div>
         </div>

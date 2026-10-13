@@ -1,5 +1,6 @@
 import { CopilotChatResponse } from "@/types";
 import { ActionId, ACTION_REGISTRY } from "./actionRegistry";
+import { resolveCanonicalDestination } from "./canonicalDestinations";
 
 export type LocationProvenance =
   | "user_explicit"
@@ -124,6 +125,157 @@ export interface StructuredAssistantResponse {
     notes?: string[];
   };
   rawText?: string;
+}
+
+/**
+ * Checks if a user query represents a trip planning intent that should
+ * launch the interactive expedition planner rather than open-ended AI chat.
+ */
+export function isTripPlanningQuery(text: string): boolean {
+  const q = text.toLowerCase().trim();
+  if (!q) return false;
+
+  const directMatches = [
+    "i'm planning a trip",
+    "im planning a trip",
+    "i am planning a trip",
+    "planning a trip",
+    "plan a trip",
+    "plan my trip",
+    "start planning",
+    "plan trip",
+    "plan an expedition",
+    "i want to plan a trip",
+    "want to plan a trip",
+    "help me plan a trip",
+    "let's plan a trip",
+    "lets plan a trip",
+    "i'm travelling",
+    "im travelling",
+    "i'm traveling",
+    "im traveling",
+    "i want to travel",
+    "build a trip",
+    "create a trip",
+    "create trip",
+  ];
+
+  if (directMatches.includes(q)) return true;
+
+  if (/^plan\s+(a\s+|my\s+|our\s+)?(trip|itinerary|journey|expedition)$/i.test(q)) {
+    return true;
+  }
+
+  if (/\b(?:planning a trip to|plan a trip to|plan my trip to|want to plan a trip to)\s+[a-zA-Z\s]{3,30}/i.test(q)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Extracts explicit destination from trip planning statements.
+ * E.g., "planning a trip to Manali" -> "Manali"
+ */
+export function extractPlanningDestination(text: string): string | null {
+  const q = text.trim();
+  const match =
+    q.match(/\b(?:planning a trip to|plan a trip to|plan my trip to|want to plan a trip to|i(?:'m| am|m) (?:travelling|traveling|heading|going) to)\s+([a-zA-Z\s]{3,30}?)(?:\.|$|,|\!|\?)/i);
+  if (match && match[1]) {
+    const raw = match[1].trim();
+    if (!["the", "a", "our", "my", "this", "that", "india"].includes(raw.toLowerCase())) {
+      return raw.replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolves planner navigation parameters deterministically.
+ * Preserves canonical destination if known or falls back to destination selection without guessing.
+ */
+export function resolvePlannerLaunchDetails(
+  context?: TravelContext,
+  destinationOverride?: { slug?: string; name?: string; id?: string }
+): {
+  url: string;
+  destSlug?: string;
+  destId?: string;
+  destName?: string;
+  hasExplicitDest: boolean;
+} {
+  const candidateRaw =
+    destinationOverride?.slug ||
+    destinationOverride?.name ||
+    context?.destinationSlug ||
+    context?.destinationName ||
+    context?.trip?.destination?.slug ||
+    context?.trip?.destination?.name;
+
+  if (candidateRaw) {
+    const canonical = resolveCanonicalDestination(candidateRaw);
+    if (canonical) {
+      const params = new URLSearchParams({
+        dest: canonical.slug,
+        destId: canonical.id,
+        destName: canonical.name,
+      });
+      return {
+        url: `/plan?${params.toString()}`,
+        destSlug: canonical.slug,
+        destId: canonical.id,
+        destName: canonical.name,
+        hasExplicitDest: true,
+      };
+    }
+
+    const cleanSlug = candidateRaw.toLowerCase().replace(/\s+/g, "-");
+    const cleanName = candidateRaw.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+    const destId = destinationOverride?.id || `dest-${cleanSlug}`;
+    const params = new URLSearchParams({
+      dest: cleanSlug,
+      destId,
+      destName: cleanName,
+    });
+    return {
+      url: `/plan?${params.toString()}`,
+      destSlug: cleanSlug,
+      destId,
+      destName: cleanName,
+      hasExplicitDest: true,
+    };
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("vanvas_pending_plan_dest");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && (parsed.slug || parsed.name)) {
+          const canonical = resolveCanonicalDestination(parsed.slug || parsed.name);
+          if (canonical) {
+            const params = new URLSearchParams({
+              dest: canonical.slug,
+              destId: canonical.id,
+              destName: canonical.name,
+            });
+            return {
+              url: `/plan?${params.toString()}`,
+              destSlug: canonical.slug,
+              destId: canonical.id,
+              destName: canonical.name,
+              hasExplicitDest: true,
+            };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  return {
+    url: "/plan",
+    hasExplicitDest: false,
+  };
 }
 
 /**
@@ -332,6 +484,15 @@ export function normalizeAssistantResponse(
     summary = "Upcoming scheduled itinerary waypoint.";
     provenance = "LIVE";
   }
+  // 12. Planner Intent
+  else if (isTripPlanningQuery(queryLower) || res?.actions?.some((a) => a.action_type === "navigate_planner")) {
+    responseType = "ACTION";
+    title = effectiveDestination ? `PLAN ${effectiveDestination.toUpperCase()} TRIP` : "EXPEDITION PLANNER";
+    summary = effectiveDestination
+      ? `Interactive trip planner for ${effectiveDestination}.`
+      : "Interactive expedition planner for Indian destinations.";
+    provenance = "CURATED";
+  }
 
   // Extract structured items from backend tool results
   const items: AssistantItem[] = [];
@@ -472,6 +633,33 @@ export function normalizeAssistantResponse(
       payload: { slug: context.destinationSlug },
       icon: "compass",
       variant: "secondary",
+    });
+  }
+
+  // Map backend navigate_planner actions
+  if (res?.actions && Array.isArray(res.actions)) {
+    for (const act of res.actions) {
+      if (act.action_type === "navigate_planner") {
+        actions.unshift({
+          id: `planner-${Date.now()}`,
+          label: act.title || (effectiveDestination ? `Plan ${effectiveDestination} Trip` : "Open Trip Planner"),
+          action: "launch_planner",
+          payload: act.payload || { destination: effectiveDestination },
+          icon: "compass",
+          variant: "primary",
+        });
+      }
+    }
+  }
+
+  if (responseType === "ACTION" && actions.length === 0) {
+    actions.push({
+      id: "launch-planner-action",
+      label: effectiveDestination ? `Plan ${effectiveDestination} Trip` : "Open Trip Planner",
+      action: "launch_planner",
+      payload: { destination: effectiveDestination },
+      icon: "compass",
+      variant: "primary",
     });
   }
 

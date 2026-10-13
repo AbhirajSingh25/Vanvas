@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.models.models import User, Trip, TripMember, Place, Conversation, ConversationMessage, Destination
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_current_user_optional
 from app.providers.ai.factory import AIFactory
 from app.providers.ai.tools import VANVAS_COPILOT_TOOLS
 from app.providers.ai.dispatcher import AIToolDispatcher
@@ -169,18 +169,76 @@ class CopilotChatResponse(BaseModel):
 async def copilot_chat(
     req: CopilotChatRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user_optional),
 ):
     """
-    Authenticated endpoint to chat with VANVAS Copilot with persistent multi-turn memory.
+    Endpoint to chat with VANVAS Copilot with persistent multi-turn memory.
     Reasons over verified destination, trip, weather, and place facts through registered tools.
+    Provides deterministic fast-path for trip planning actions without unnecessary AI dependency.
     """
     start_time = time.time()
     clean_msg = req.message.strip()
     if not clean_msg:
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    # 1. Security check: Trip Authorization
+    # 1. Deterministic Fast-Path: Trip Planning Intent ("I'm planning a trip")
+    # Always available as a dependable product action for guests and authenticated travellers alike
+    msg_clean_lower = clean_msg.lower().strip()
+    is_plan_trip_query = any(k in msg_clean_lower for k in [
+        "planning a trip", "plan a trip", "plan my trip", "start planning",
+        "plan an expedition", "plan trip", "help me plan a trip", "i'm travelling",
+        "im travelling", "i'm traveling", "im traveling", "i want to plan a trip",
+        "want to plan a trip", "lets plan a trip", "let's plan a trip", "build a trip",
+        "create a trip", "create trip"
+    ]) or msg_clean_lower in ["plan a trip", "i'm planning a trip", "im planning a trip", "planning a trip"]
+
+    if is_plan_trip_query:
+        explicit_dest = extract_explicit_destination(clean_msg)
+        target_slug = explicit_dest or req.destination_slug
+        dest_rec = None
+        if target_slug:
+            dest_rec = db.query(Destination).filter(
+                (Destination.slug == target_slug) |
+                (Destination.id == target_slug) |
+                (Destination.name.ilike(target_slug.replace("-", " ")))
+            ).first()
+
+        if dest_rec or target_slug:
+            disp_name = dest_rec.name if dest_rec else target_slug.replace("-", " ").title()
+            resp_slug = dest_rec.slug if dest_rec else target_slug
+            plan_url = f"/plan?dest={resp_slug}&destId=dest-{resp_slug}&destName={disp_name}"
+            fast_resp_text = f"Ready to plan your trip to {disp_name}! Opening the interactive expedition planner..."
+            action_title = f"Plan {disp_name} Trip"
+        else:
+            plan_url = "/plan"
+            fast_resp_text = "Ready to plan your next journey across India! Opening the expedition planner to choose your destination..."
+            action_title = "Open Trip Planner"
+
+        fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "plan_trip"}
+        return CopilotChatResponse(
+            conversation_id=req.conversation_id,
+            message=fast_resp_text,
+            actions=[{
+                "action_type": "navigate_planner",
+                "title": action_title,
+                "payload": {
+                    "url": plan_url,
+                    "destination": target_slug,
+                    "destination_name": disp_name if (dest_rec or target_slug) else None,
+                }
+            }],
+            metadata=fast_meta
+        )
+
+    # 1.5. Security check: User Authentication for personalized conversational sessions
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 2. Security check: Trip Authorization
     trip = None
     if req.trip_id:
         trip = db.query(Trip).filter(Trip.id == req.trip_id).first()
@@ -846,7 +904,11 @@ async def copilot_chat(
         logger.error(f"Copilot reasoning exception: {e}")
         return CopilotChatResponse(
             conversation_id=conv.id,
-            message="Live place discovery is temporarily unavailable. You can still view your saved trip information and explore curated places.",
+            message="Live place discovery is temporarily unavailable. You can still plan your expedition and explore curated destinations directly.",
+            actions=[
+                {"action_type": "navigate_planner", "title": "Open Trip Planner", "payload": {"url": "/plan"}},
+                {"action_type": "navigate", "title": "Explore Destinations", "payload": {"url": "/explore"}},
+            ],
             error=str(e),
             metadata={"provider": ai_provider.name, "latency_ms": round((time.time() - start_time) * 1000, 2)}
         )
