@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer-core";
 import path from "path";
 
-const ARTIFACT_DIR = "C:\\Users\\user\\.gemini\\antigravity-ide\\brain\\c1ae0555-1b21-4922-925e-a10bd7dedcd8";
+const ARTIFACT_DIR = process.env.ARTIFACT_DIR || "C:\\Users\\user\\.gemini\\antigravity-ide\\brain\\52767824-72cd-477a-a679-b0a207d79912";
 const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
