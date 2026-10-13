@@ -9,21 +9,28 @@ import {
   Calendar, AlertTriangle, ShieldCheck, CheckCircle2, Flame,
   RefreshCw, Check, Droplets, Utensils, Home, Info, Phone,
   ChevronDown, ChevronUp, Clock, AlertCircle, Shield, ShoppingBag,
-  Users, DollarSign, Crosshair, ArrowLeft
+  Users, DollarSign, Crosshair, ArrowLeft, X
 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { getTrekBySlug, TrekItem, TrekRouteOption, TrekWaypoint, TrekGearItem } from "@/lib/trekContentModel";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { VanvasMap, VanvasMapMarker, VanvasMapRouteSegment } from "@/components/ui/VanvasMap";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
+import { TravelStamp } from "@/components/ui/TravelStamp";
+import { VanvasTabBar, TabItem } from "@/components/ui/VanvasTabBar";
+import { VanvasAdaptiveModal } from "@/components/ui/VanvasAdaptiveModal";
 import { useAskVanvas } from "@/context/AskVanvasContext";
+import { routeScreenVariants } from "@/lib/motion";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+type TrekTabType = "overview" | "route" | "conditions" | "gear" | "budget";
+
 export default function TrekDetailPage(props: PageProps) {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0F1713]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#FAF4E8]" />}>
       <TrekDetailContent {...props} />
     </Suspense>
   );
@@ -35,23 +42,21 @@ function TrekDetailContent({ params }: PageProps) {
   const trek = getTrekBySlug(slug);
   const { openAskVanvas } = useAskVanvas();
 
-  const [selectedRouteId, setSelectedRouteId] = useState<string>(
-    trek?.routes[0]?.id || ""
-  );
-  const [selectedWaypointId, setSelectedWaypointId] = useState<string>(
-    trek?.waypoints[0]?.id || ""
-  );
+  const [activeTrekTab, setActiveTrekTab] = useState<TrekTabType>("overview");
+  const [selectedRouteId, setSelectedRouteId] = useState<string>(trek?.routes[0]?.id || "");
+  const [selectedWaypointId, setSelectedWaypointId] = useState<string>(trek?.waypoints[0]?.id || "");
   const [gearMode, setGearMode] = useState<"STUDENT" | "BUDGET" | "STANDARD" | "PREMIUM">("STUDENT");
   const [gearActions, setGearActions] = useState<Record<string, "buy" | "rent" | "borrow" | "skip">>({});
   const [groupSize, setGroupSize] = useState<number>(2);
   const [isGroupBudget, setIsGroupBudget] = useState<boolean>(false);
+  const [selectedWaypointForModal, setSelectedWaypointForModal] = useState<TrekWaypoint | null>(null);
+
   const [isTrailModeActive, setIsTrailModeActive] = useState<boolean>(() => {
     const mode = searchParams?.get("mode");
     const trail = searchParams?.get("trail");
     return mode === "trail" || trail === "1" || trail === "true";
   });
   const [trailWaypointIndex, setTrailWaypointIndex] = useState<number>(0);
-  const [activeTrekTab, setActiveTrekTab] = useState<"overview" | "route" | "gear" | "budget" | "safety">("overview");
 
   // Sync Trail Mode from URL query parameter
   useEffect(() => {
@@ -64,17 +69,17 @@ function TrekDetailContent({ params }: PageProps) {
 
   if (!trek) {
     return (
-      <div className="min-h-screen bg-[#111A16] flex flex-col items-center justify-center text-[#EFE5D2] gap-4 px-4 text-center">
-        <Mountain className="w-12 h-12 text-[#E05A2B]" />
-        <h2 className="text-2xl font-serif font-black text-[#FAF4E8]">
+      <div className="min-h-screen bg-[#FAF4E8] flex flex-col items-center justify-center text-[#20211D] gap-4 px-4 text-center">
+        <Mountain className="w-12 h-12 text-[#B65E3C]" />
+        <h2 className="text-2xl font-serif font-black text-[#173B32]">
           Trek Not Found in Expedition Registry
         </h2>
-        <p className="text-xs text-[#8FA699] max-w-md leading-relaxed">
-          Could not locate the requested trail slug &ldquo;{slug}&rdquo;. Discover all verified Himalayan expeditions below.
+        <p className="text-xs text-[#7B4D36] max-w-md leading-relaxed">
+          Could not locate the trail slug &ldquo;{slug}&rdquo;. Explore all verified Himalayan expeditions below.
         </p>
         <Link
           href="/treks"
-          className="px-5 py-2.5 rounded-xl bg-[#E05A2B] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#C8491D] transition-colors"
+          className="px-5 py-2.5 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider hover:bg-[#20453B] transition-colors"
         >
           Return to All Treks
         </Link>
@@ -85,9 +90,8 @@ function TrekDetailContent({ params }: PageProps) {
   const activeRoute = trek.routes.find((r) => r.id === selectedRouteId) || trek.routes[0];
   const activeWaypoint = trek.waypoints.find((w) => w.id === selectedWaypointId) || trek.waypoints[0];
   const currentTrailWaypoint = trek.waypoints[trailWaypointIndex] || trek.waypoints[0];
-  const nextTrailWaypoint = trek.waypoints[trailWaypointIndex + 1] || null;
 
-  // Gear calculations
+  // Gear cost calculation
   const calculateGearCost = () => {
     let total = 0;
     trek.gearChecklist.forEach((item) => {
@@ -98,39 +102,35 @@ function TrekDetailContent({ params }: PageProps) {
     return total;
   };
 
-  // Budget calculations
-  const basePerPerson =
-    trek.budget.baseTransportCost +
-    trek.budget.foodPerDayCost * trek.durationDays +
-    trek.budget.campStayCostPerNight * Math.max(1, trek.durationDays - 1) +
-    trek.budget.permitCost +
-    trek.budget.gearRentalEstimate +
-    trek.budget.emergencyBuffer;
+  // Budget calculation
+  const perPersonBaseBudget = trek.approxBudgetPerPerson;
+  const gearCost = calculateGearCost();
+  const perPersonTotal = perPersonBaseBudget + gearCost;
+  const groupTotal = perPersonTotal * groupSize;
+  const displayTotal = isGroupBudget ? groupTotal : perPersonTotal;
 
-  const totalPerPerson = basePerPerson + (groupSize > 1 ? trek.budget.guideOptionalCostPerDay / groupSize : trek.budget.guideOptionalCostPerDay);
-  const displayTotal = isGroupBudget ? Math.round(totalPerPerson * groupSize) : Math.round(totalPerPerson);
-
-  const diffColor =
+  const diffBadgeClass =
     trek.difficulty === "Easy"
-      ? "bg-emerald-950 text-emerald-300 border-emerald-700/60"
+      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
       : trek.difficulty === "Moderate"
-      ? "bg-amber-950 text-amber-300 border-amber-700/60"
-      : "bg-red-950 text-red-300 border-red-700/60";
+      ? "bg-amber-50 text-amber-800 border-amber-200"
+      : "bg-rose-50 text-rose-800 border-rose-200";
 
   return (
-    <div className="min-h-screen bg-[#0F1713] text-[#EFE5D2] pb-32 selection:bg-[#E05A2B] selection:text-white">
-      {/* ON-THE-TRAIL MODE OVERLAY */}
+    <div className="min-h-screen bg-[#FAF4E8] text-[#20211D] pb-32">
+      {/* FULL-SCREEN ON-THE-TRAIL MODE OVERLAY */}
       {isTrailModeActive && (
-        <div className="fixed inset-0 z-50 bg-[#0A100D]/98 text-[#EFE5D2] flex flex-col h-full overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-[#0E2019] text-[#FAF4E8] flex flex-col h-full overflow-hidden">
           {/* Top Sticky Header */}
-          <div className="shrink-0 bg-[#0E1612] border-b border-[#2A3E33] px-4 py-3 flex items-center justify-between z-10">
+          <div className="shrink-0 bg-[#0A1813] border-b border-[#2A3E33] px-4 py-3 flex items-center justify-between z-10">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-xs font-mono font-black text-emerald-400 uppercase tracking-widest">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-xs font-mono font-bold text-emerald-300 uppercase tracking-widest">
                 TRAIL COCKPIT • {trek.title}
               </span>
             </div>
             <button
+              type="button"
               onClick={() => setIsTrailModeActive(false)}
               className="px-3 py-1 rounded-lg bg-[#1E2E25] hover:bg-[#2B4034] text-xs font-mono font-bold text-[#EFE5D2] border border-[#3B5446] cursor-pointer"
             >
@@ -148,17 +148,18 @@ function TrekDetailContent({ params }: PageProps) {
                 return (
                   <button
                     key={wp.id}
+                    type="button"
                     onClick={() => setTrailWaypointIndex(idx)}
                     className={`shrink-0 px-3 py-1.5 rounded-xl text-left border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-mono ${
                       isCurrent
-                        ? "bg-[#E05A2B] text-white border-[#E05A2B] font-bold shadow-md"
+                        ? "bg-[#B65E3C] text-white border-[#B65E3C] font-bold shadow-md"
                         : isPassed
                         ? "bg-[#1E2E25] text-emerald-300 border-[#2A3E33]"
                         : "bg-[#121B16] text-[#8FA699] border-[#1F2D24]"
                     }`}
                   >
                     <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
-                      isCurrent ? "bg-white text-[#E05A2B] font-black" : isPassed ? "bg-emerald-800 text-white" : "bg-[#25372C] text-[#8FA699]"
+                      isCurrent ? "bg-white text-[#B65E3C] font-black" : isPassed ? "bg-emerald-800 text-white" : "bg-[#25372C] text-[#8FA699]"
                     }`}>
                       {idx + 1}
                     </span>
@@ -170,7 +171,7 @@ function TrekDetailContent({ params }: PageProps) {
 
             {/* Current Waypoint Heading */}
             <div className="text-center space-y-1">
-              <span className="text-xs font-mono text-[#B49252] uppercase tracking-wider">
+              <span className="text-xs font-mono text-[#B49252] uppercase tracking-wider font-bold">
                 Waypoint {trailWaypointIndex + 1} of {trek.waypoints.length}
               </span>
               <h2 className="text-2xl sm:text-4xl font-serif font-black text-white">
@@ -184,76 +185,48 @@ function TrekDetailContent({ params }: PageProps) {
             {/* Altitude & Topographic Data Card */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="bg-[#15221B] p-3.5 rounded-xl border border-[#2B4034] text-center">
-                <span className="block text-[10px] font-mono text-[#6D8578] uppercase">Elevation</span>
+                <span className="block text-[10px] font-mono text-[#8FA699] uppercase">Elevation</span>
                 <span className="text-lg sm:text-2xl font-mono font-black text-[#FAF4E8]">
                   {currentTrailWaypoint.elevationFormatted}
                 </span>
               </div>
               <div className="bg-[#15221B] p-3.5 rounded-xl border border-[#2B4034] text-center">
-                <span className="block text-[10px] font-mono text-[#6D8578] uppercase">Trail Distance</span>
-                <span className="text-lg sm:text-2xl font-mono font-black text-[#E05A2B]">
+                <span className="block text-[10px] font-mono text-[#8FA699] uppercase">Trail Distance</span>
+                <span className="text-lg sm:text-2xl font-mono font-black text-[#B65E3C]">
                   {currentTrailWaypoint.distanceFromStartKm} km
                 </span>
               </div>
               <div className="bg-[#15221B] p-3.5 rounded-xl border border-[#2B4034] text-center">
-                <span className="block text-[10px] font-mono text-[#6D8578] uppercase">Water Point</span>
+                <span className="block text-[10px] font-mono text-[#8FA699] uppercase">Water Point</span>
                 <span className={`text-xs sm:text-sm font-mono font-bold block mt-1 ${currentTrailWaypoint.waterAvailable ? "text-emerald-400" : "text-amber-400"}`}>
                   {currentTrailWaypoint.waterAvailable ? "✓ Spring Active" : "✕ Carry Water"}
                 </span>
               </div>
               <div className="bg-[#15221B] p-3.5 rounded-xl border border-[#2B4034] text-center">
-                <span className="block text-[10px] font-mono text-[#6D8578] uppercase">Food & Shelter</span>
+                <span className="block text-[10px] font-mono text-[#8FA699] uppercase">Food &amp; Shelter</span>
                 <span className={`text-xs sm:text-sm font-mono font-bold block mt-1 ${currentTrailWaypoint.foodAvailable ? "text-emerald-400" : "text-[#8FA699]"}`}>
                   {currentTrailWaypoint.foodAvailable ? "✓ Dhaba / Camp" : "Wilderness Only"}
                 </span>
               </div>
             </div>
 
-            {/* Field Notes & Safety Directive */}
-            <div className="bg-[#1A2A22] p-4 sm:p-5 rounded-2xl border border-[#395344] space-y-2">
+            {/* Field Notes & Directives */}
+            <div className="bg-[#15221B] p-4 sm:p-5 rounded-2xl border border-[#2B4034] space-y-2">
               <div className="flex items-center gap-2 text-xs font-mono text-[#B49252] uppercase font-bold">
-                <Info className="w-4 h-4 text-[#E05A2B]" />
+                <Info className="w-4 h-4 text-[#B65E3C]" />
                 <span>Immediate Trail Directives</span>
               </div>
-              <p className="text-xs sm:text-sm text-[#D8E4DC] leading-relaxed font-serif">
+              <p className="text-xs sm:text-sm text-[#D8E4DC] leading-relaxed font-sans">
                 {currentTrailWaypoint.fieldNotes}
               </p>
             </div>
-
-            {/* Next Waypoint Preview */}
-            {nextTrailWaypoint ? (
-              <div className="bg-[#131C17] p-4 rounded-xl border border-[#25372C] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-mono text-[#8FA699] uppercase">Next Target Ahead</span>
-                  <h4 className="text-sm font-bold text-white">{nextTrailWaypoint.name}</h4>
-                  <span className="text-xs font-mono text-[#B49252]">
-                    {nextTrailWaypoint.elevationFormatted} • est. {nextTrailWaypoint.timeFromPrev}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setTrailWaypointIndex((prev) => Math.min(trek.waypoints.length - 1, prev + 1))}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#E05A2B] hover:bg-[#C8491D] text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95"
-                >
-                  <span>Reach Next WP</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="bg-emerald-950/80 border border-emerald-600/50 p-4 rounded-xl text-center space-y-1">
-                <h4 className="text-emerald-200 font-bold font-serif text-lg">
-                  Summit / Destination Reached!
-                </h4>
-                <p className="text-xs text-emerald-300/80 font-mono">
-                  Take in the panorama, stay hydrated, and begin safe descent before afternoon weather changes.
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Bottom Fixed Trail Control Strip */}
-          <div className="shrink-0 bg-[#0E1612] border-t border-[#2A3E33] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+          <div className="shrink-0 bg-[#0A1813] border-t border-[#2A3E33] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
             <div className="max-w-3xl mx-auto w-full flex items-center justify-between gap-3">
               <button
+                type="button"
                 disabled={trailWaypointIndex === 0}
                 onClick={() => setTrailWaypointIndex((prev) => Math.max(0, prev - 1))}
                 className="px-3.5 py-2 rounded-xl bg-[#15201A] border border-[#2B4034] text-xs font-mono text-[#FAF4E8] disabled:opacity-30 cursor-pointer hover:bg-[#1E2E25]"
@@ -266,6 +239,7 @@ function TrekDetailContent({ params }: PageProps) {
               </span>
 
               <button
+                type="button"
                 disabled={trailWaypointIndex >= trek.waypoints.length - 1}
                 onClick={() => setTrailWaypointIndex((prev) => Math.min(trek.waypoints.length - 1, prev + 1))}
                 className="px-3.5 py-2 rounded-xl bg-[#15201A] border border-[#2B4034] text-xs font-mono text-[#FAF4E8] disabled:opacity-30 cursor-pointer hover:bg-[#1E2E25]"
@@ -277,819 +251,699 @@ function TrekDetailContent({ params }: PageProps) {
         </div>
       )}
 
-      {/* 1. EXPEDITION TOP HEADER & BREADCRUMB */}
-      <div
-        style={{ top: "var(--vanvas-top-offset, 4rem)" }}
-        className="sticky z-30 bg-[#0E1612]/95 backdrop-blur-md border-b border-[#24352D] py-3"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+      {/* 1. STICKY TOP BREADCRUMB & PRIMARY ACTION STRIP */}
+      <div className="sticky top-0 z-30 bg-[#FAF7F0]/95 backdrop-blur-md border-b-2 border-[#E5D5BA] py-2.5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs font-mono">
-            <Link href="/treks" className="text-[#8FA699] hover:text-[#E05A2B] flex items-center gap-1">
+            <Link href="/treks" className="text-[#7B4D36] hover:text-[#173B32] flex items-center gap-1 font-bold">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>All Treks</span>
             </Link>
-            <span className="text-[#3A5043]">/</span>
-            <span className="text-[#FAF4E8] font-semibold truncate">{trek.title}</span>
+            <span className="text-[#E5D5BA]">/</span>
+            <span className="text-[#173B32] font-bold truncate">{trek.title}</span>
           </div>
 
-          {/* Primary Actions: Open Route, Ask VANVAS, Start Trek */}
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => openAskVanvas({ destinationName: trek.title, title: `ASK VANVAS · ${trek.title.toUpperCase()}` }, `Tell me safety tips, gear essentials, and route advice for ${trek.title}`)}
-              className="px-3 py-1.5 rounded-full bg-[#B49252]/20 hover:bg-[#B49252]/30 text-[#B49252] text-[11px] font-mono border border-[#B49252]/40 flex items-center gap-1 cursor-pointer transition-colors"
+              className="px-3 py-1.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] text-xs font-mono border border-[#E5D5BA] flex items-center gap-1 cursor-pointer transition-colors"
             >
-              <Sparkles className="w-3 h-3" />
+              <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
               <span>Ask VANVAS</span>
             </button>
+
             <button
+              type="button"
               onClick={() => setIsTrailModeActive(true)}
-              className="px-3.5 py-1.5 rounded-full bg-[#E05A2B] hover:bg-[#C8491D] text-white text-[11px] font-mono font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-md cursor-pointer transition-all active:scale-95"
+              className="px-3.5 py-1.5 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-white text-xs font-mono font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
             >
               <Crosshair className="w-3.5 h-3.5" />
-              <span>Start Trail Mode</span>
+              <span>Trail Mode</span>
             </button>
           </div>
-        </div>
-
-        {/* 5-Destination Trek Cockpit Tabs */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2.5 pb-0.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          {[
-            { id: "overview", label: "Overview", icon: Mountain },
-            { id: "route", label: "Route & Map", icon: MapPin },
-            { id: "gear", label: "Gear & Prep", icon: ShoppingBag },
-            { id: "budget", label: "Budget", icon: DollarSign },
-            { id: "safety", label: "Safety & SOS", icon: Shield },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTrekTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setActiveTrekTab(tab.id as any);
-                  const el = document.getElementById(`trek-${tab.id}-section`);
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
-                  isActive
-                    ? "bg-[#E05A2B] text-white shadow-xs"
-                    : "bg-[#14201A] text-[#8FA699] hover:bg-[#1E2E25] hover:text-[#FAF4E8] border border-[#24352D]"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
         </div>
       </div>
 
-      {/* 2. EXPEDITION HERO SECTION */}
-      <section id="trek-overview-section" className="relative h-[60vh] min-h-[440px] max-h-[540px] bg-[#0A100D] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden border-b border-[#2A3E33]">
-        <div className="absolute inset-0 z-0">
-          <VanvasImage
-            src={trek.heroImage}
-            alt={trek.title}
-            priority={true}
-            className="w-full h-full object-cover opacity-80 scale-102 transition-transform duration-1000"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F1713] via-[#0F1713]/60 to-black/35 pointer-events-none z-1" />
-
-        <div className="relative z-10 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-3 max-w-3xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${diffColor}`}>
+      {/* 2. COMPACT EDITORIAL EXPEDITION HEADER */}
+      <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-8 pb-7 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+          <div className="space-y-1 max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
+                HIMALAYAN TREK • {trek.mountainRange}
+              </span>
+              <span className={`px-2 py-0.2 rounded text-[10px] font-mono font-bold uppercase border ${diffBadgeClass}`}>
                 {trek.difficulty}
               </span>
-              <span className="px-2.5 py-0.5 rounded-md bg-[#B49252] text-[#0A100D] text-[10px] font-black uppercase tracking-wider">
-                {trek.viewScore} VIEW
-              </span>
-              <span className="px-2.5 py-0.5 rounded-md bg-[#1D2E25] text-[#A6C0B2] text-[10px] font-mono border border-[#344D3F]">
-                {trek.mountainRange}
-              </span>
             </div>
 
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-3xl font-serif text-[#B49252] font-semibold block">
-                {trek.hindiTitle}
-              </span>
-              <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-black tracking-tight text-[#FAF4E8]">
-                {trek.title}
-              </h1>
-            </div>
+            <h1 className="font-serif text-2xl sm:text-4xl font-black text-[#FAF7F0] tracking-tight">
+              {trek.title} <span className="font-devanagari text-lg text-[#B49252] font-normal">({trek.hindiTitle})</span>
+            </h1>
 
-            <p className="text-xs sm:text-sm text-[#D1DFD7] font-serif italic max-w-2xl leading-relaxed">
+            <p className="text-xs text-[#D8DED5]/90 font-sans leading-relaxed">
               &ldquo;{trek.tagline}&rdquo;
             </p>
           </div>
 
-          {/* Quick Altitude Badge & Context Link */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-            <div className="bg-[#15221B]/90 backdrop-blur-md p-3.5 rounded-2xl border border-[#2F473A] text-right space-y-0.5">
-              <span className="text-[10px] font-mono text-[#8FA699] uppercase block">Summit Altitude</span>
-              <span className="text-2xl sm:text-3xl font-mono font-black text-[#E05A2B]">
+          <div className="flex items-center gap-2">
+            <div className="bg-[#0F2924] p-3 rounded-2xl border border-[#B49252]/30 text-right">
+              <span className="text-[10px] font-mono text-[#B49252] uppercase block font-bold">Summit Altitude</span>
+              <span className="text-xl sm:text-2xl font-mono font-black text-[#FAF7F0]">
                 {trek.peakAltitudeFormatted}
               </span>
-              <span className="text-[10px] font-mono text-[#B49252] block">
-                Base: {trek.baseCamp}
+            </div>
+
+            <Link
+              href={`/plan?dest=${trek.slug}&mode=trek`}
+              className="px-4 py-3 rounded-2xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+              <span>Plan This Trek</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* URGENT SAFETY CALLOUT (NEVER HIDDEN) */}
+        {trek.altitudeRiskIndicator?.includes("AMS") && (
+          <div className="max-w-6xl mx-auto mt-4 p-3.5 rounded-2xl bg-amber-950/80 border border-amber-500/50 text-amber-200 text-xs font-mono flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                <strong>HIGH ALTITUDE ACCLIMATIZATION REQUIRED:</strong> Trail ascends above 3,500m threshold. Do not rush elevation gain.
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => setActiveTrekTab("conditions")}
+              className="underline text-amber-300 font-bold shrink-0 cursor-pointer"
+            >
+              Safety Guidelines →
+            </button>
+          </div>
+        )}
+      </section>
 
-            {trek.destinationSlug && (
-              <Link
-                href={`/explore/${trek.destinationSlug}`}
-                className="px-4 py-3.5 rounded-2xl bg-[#1A2A22] hover:bg-[#25392F] text-[#FAF4E8] text-xs font-bold font-mono border border-[#344D3F] flex items-center justify-center gap-1.5 transition-colors"
+      {/* 3. SCANNABLE EXPEDITION FACT STRIP */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center text-xs font-mono">
+          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
+            <span className="text-[9px] uppercase text-[#7B4D36] block">Distance</span>
+            <span className="text-[#173B32] font-bold">{trek.totalDistanceKm} km round trip</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
+            <span className="text-[9px] uppercase text-[#7B4D36] block">Duration</span>
+            <span className="text-[#173B32] font-bold">{trek.durationDays === 1 ? trek.durationHours : `${trek.durationDays} Days`}</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
+            <span className="text-[9px] uppercase text-[#7B4D36] block">Difficulty</span>
+            <span className="text-[#173B32] font-bold">{trek.difficulty}</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
+            <span className="text-[9px] uppercase text-[#7B4D36] block">Best Season</span>
+            <span className="text-[#173B32] font-bold truncate block" title={trek.bestSeason}>{trek.bestSeason}</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
+            <span className="text-[9px] uppercase text-[#7B4D36] block">Approx Budget</span>
+            <span className="text-[#B65E3C] font-bold">₹{trek.approxBudgetPerPerson}/person</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
+            <span className="text-[9px] uppercase text-[#7B4D36] block">Routes</span>
+            <span className="text-[#173B32] font-bold">{trek.routes.length} Verified</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. COMPACT HORIZONTAL TAB BAR NAVIGATION */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <VanvasTabBar<TrekTabType>
+          tabs={[
+            { id: "overview", label: "Overview", icon: Mountain },
+            { id: "route", label: "Route & Map", icon: MapPin, count: trek.waypoints.length },
+            { id: "conditions", label: "Conditions & Safety", icon: Shield },
+            { id: "gear", label: "Gear & Prep", icon: ShoppingBag, count: trek.gearChecklist.length },
+            { id: "budget", label: "Budget", icon: DollarSign },
+          ]}
+          activeTab={activeTrekTab}
+          onTabChange={setActiveTrekTab}
+          layoutId="trekActiveTabPill"
+          variant="parchment"
+          className="max-w-2xl"
+        />
+
+        {/* 5. TAB PANELS */}
+        <div className="mt-6">
+          <AnimatePresence mode="wait">
+            {/* TAB 1: OVERVIEW */}
+            {activeTrekTab === "overview" && (
+              <motion.div
+                key="tab-trek-overview"
+                variants={routeScreenVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="space-y-6"
               >
-                <span>Region Hub ({trek.destinationSlug})</span>
-                <ChevronRight className="w-3.5 h-3.5 text-[#B49252]" />
-              </Link>
+                {/* Visual Terrain Image & Quick Context */}
+                <div className="relative h-64 sm:h-80 w-full rounded-3xl overflow-hidden border-2 border-[#E5D5BA]">
+                  <VanvasImage
+                    src={trek.heroImage}
+                    alt={trek.title}
+                    priority={true}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white text-xs font-mono">
+                    <span className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl">
+                      🏔️ {trek.mountainRange} • Base: {trek.baseCamp}
+                    </span>
+                    <span className="bg-[#B65E3C] px-3 py-1.5 rounded-xl font-bold">
+                      {trek.viewScore} SCENERY SCORE
+                    </span>
+                  </div>
+                </div>
+
+                {/* Ascent Route Comparison */}
+                <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
+                  <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-3">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-[#B65E3C] font-bold">
+                        VERIFIED APPROACH TRAILS
+                      </span>
+                      <h3 className="font-serif font-bold text-xl text-[#173B32]">
+                        Ascent Trail Options
+                      </h3>
+                    </div>
+                    <span className="text-xs text-[#7B4D36] font-mono">
+                      {trek.routes.length} Verified Option{trek.routes.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {trek.routes.map((route) => {
+                      const isSelected = selectedRouteId === route.id;
+                      return (
+                        <div
+                          key={route.id}
+                          onClick={() => setSelectedRouteId(route.id)}
+                          className={`p-4 rounded-2xl border-2 transition-all cursor-pointer space-y-2.5 ${
+                            isSelected
+                              ? "bg-white border-[#173B32] shadow-sm"
+                              : "bg-[#FAF7F0] border-[#E5D5BA] hover:bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-serif font-bold text-base text-[#173B32]">
+                              {route.name}
+                            </h4>
+                            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-[#173B32]/10 text-[#173B32] font-bold">
+                              {route.sceneryScore}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-[#7B4D36] leading-relaxed">
+                            {route.summary}
+                          </p>
+
+                          <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-xs font-mono text-[#173B32]">
+                            <span>{route.distanceKm} km • {route.estimatedTime}</span>
+                            <span className="text-[#B65E3C] font-bold">+{route.elevationGainMeters}m</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Fellowship & Circles */}
+                <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#B65E3C] font-bold uppercase tracking-wider">
+                    <Users className="w-4 h-4" />
+                    <span>Trek Circles • Fellow Trekkers</span>
+                  </div>
+                  <h3 className="font-serif font-bold text-xl text-[#173B32]">
+                    Find Companions for {trek.title}
+                  </h3>
+                  <p className="text-xs text-[#7B4D36] leading-relaxed font-sans max-w-xl">
+                    Connect with other solo adventurers planning this trail on compatible dates. Safety in numbers.
+                  </p>
+                  <div className="pt-2">
+                    <TravelingSoloSection
+                      destinationId={trek.id}
+                      destinationName={trek.title}
+                    />
+                  </div>
+                </div>
+              </motion.div>
             )}
-          </div>
-        </div>
-      </section>
 
-      {/* 3. EXPEDITION FACT STRIP */}
-      <section className="bg-[#15201A] border-b border-[#24352D] py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
-            <div className="p-2.5 rounded-xl bg-[#0D1511] border border-[#203027]">
-              <span className="text-[9px] font-mono uppercase text-[#6D8578] block">Total Distance</span>
-              <span className="text-sm font-mono font-bold text-[#FAF4E8]">{trek.totalDistanceKm} km round trip</span>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#0D1511] border border-[#203027]">
-              <span className="text-[9px] font-mono uppercase text-[#6D8578] block">Trail Duration</span>
-              <span className="text-sm font-mono font-bold text-[#FAF4E8]">{trek.durationDays === 1 ? trek.durationHours : `${trek.durationDays} Days`}</span>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#0D1511] border border-[#203027]">
-              <span className="text-[9px] font-mono uppercase text-[#6D8578] block">Best Season</span>
-              <span className="text-xs font-mono font-semibold text-[#FAF4E8] truncate block" title={trek.bestSeason}>{trek.bestSeason}</span>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#0D1511] border border-[#203027]">
-              <span className="text-[9px] font-mono uppercase text-[#6D8578] block">Altitude Safety</span>
-              <span className="text-xs font-mono font-bold text-[#B49252] truncate block">{trek.altitudeRiskIndicator}</span>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#0D1511] border border-[#203027]">
-              <span className="text-[9px] font-mono uppercase text-[#6D8578] block">Approx Budget</span>
-              <span className="text-sm font-mono font-bold text-[#E05A2B]">₹{trek.approxBudgetPerPerson} / person</span>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#0D1511] border border-[#203027]">
-              <span className="text-[9px] font-mono uppercase text-[#6D8578] block">Trail Options</span>
-              <span className="text-sm font-mono font-bold text-white">{trek.routes.length} Verified Route{trek.routes.length > 1 ? "s" : ""}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. EXPEDITION ROUTE COMPARISON (A key VANVAS differentiator) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
-        <div className="border-b border-[#2A3E33] pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-          <div className="space-y-1">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
-              TRAIL FORKS & APPROACH COMPARISON
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
-              Compare Ascent Routes
-            </h2>
-          </div>
-          <span className="text-xs text-[#8FA699] font-mono">
-            Understand distance, exposure, crowd density & scenery scores
-          </span>
-        </div>
-
-        {/* Route Select Tabs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {trek.routes.map((route) => {
-            const isSelected = selectedRouteId === route.id;
-            return (
-              <div
-                key={route.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelectedRouteId(route.id)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedRouteId(route.id); }}
-                className={`p-5 rounded-2xl border transition-all cursor-pointer text-left space-y-3 ${
-                  isSelected
-                    ? "bg-[#18261F] border-[#E05A2B] shadow-xl ring-1 ring-[#E05A2B]"
-                    : "bg-[#121B16] border-[#25372C] hover:border-[#385141]"
-                }`}
+            {/* TAB 2: ROUTE & MAP */}
+            {activeTrekTab === "route" && (
+              <motion.div
+                key="tab-trek-route"
+                variants={routeScreenVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="space-y-6"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${isSelected ? "bg-[#E05A2B]" : "bg-[#486654]"}`} />
-                    <h3 className="font-serif font-bold text-lg text-white">{route.name}</h3>
+                {/* Leaflet Topographic Map */}
+                <div className="p-4 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-serif font-bold text-lg text-[#173B32]">
+                        Topographic Trail Map
+                      </h3>
+                      <p className="text-xs text-[#7B4D36]">
+                        {trek.mountainRange} • Peak: {trek.peakAltitudeFormatted} • {trek.totalDistanceKm} km
+                      </p>
+                    </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded-md bg-[#B49252] text-[#0A100D] font-mono text-[10px] font-black">
-                    {route.sceneryScore} SCENERY
-                  </span>
+
+                  <div className="h-80 sm:h-96 rounded-2xl overflow-hidden border border-[#E5D5BA]">
+                    {(() => {
+                      const mapMarkers: VanvasMapMarker[] = trek.waypoints.map((wp): VanvasMapMarker => ({
+                        id: wp.id,
+                        title: wp.name,
+                        hindiTitle: wp.hindiName,
+                        type: wp.isSummit ? "summit" : wp.isBaseCamp ? "start" : wp.waterAvailable ? "water" : "waypoint",
+                        lat: wp.latitude,
+                        lng: wp.longitude,
+                        elevationMeters: wp.elevationMeters,
+                        description: wp.fieldNotes,
+                        categoryLabel: wp.terrainType,
+                        provenance: "VERIFIED",
+                        actionLabel: "Inspect Waypoint"
+                      }));
+
+                      const routeSegments: VanvasMapRouteSegment[] = [
+                        {
+                          id: `route-${trek.id}`,
+                          name: trek.title,
+                          coordinates: trek.waypoints.map((wp) => ({ lat: wp.latitude, lng: wp.longitude, alt: wp.elevationMeters })),
+                          color: "#B65E3C",
+                          elevationGain: trek.routes[0]?.elevationGainMeters || 1000,
+                          distanceKm: trek.totalDistanceKm
+                        }
+                      ];
+
+                      return (
+                        <VanvasMap
+                          mode="trek"
+                          title={`${trek.title} Topographic Trail`}
+                          center={{ lat: trek.waypoints[0]?.latitude || 30.48, lng: trek.waypoints[0]?.longitude || 79.2 }}
+                          markers={mapMarkers}
+                          routes={routeSegments}
+                          selectedMarkerId={selectedWaypointId}
+                          onSelectMarker={(m) => {
+                            if (m) setSelectedWaypointId(m.id);
+                          }}
+                          height={380}
+                        />
+                      );
+                    })()}
+                  </div>
                 </div>
 
-                <p className="text-xs text-[#9BB1A4] font-serif leading-relaxed">
-                  {route.summary}
-                </p>
-
-                {/* Route Stat Metrics */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[#24352D] text-[11px] font-mono">
-                  <div>
-                    <span className="block text-[9px] uppercase text-[#6D8578]">Distance</span>
-                    <span className="text-[#FAF4E8] font-bold">{route.distanceKm} km</span>
-                  </div>
-                  <div>
-                    <span className="block text-[9px] uppercase text-[#6D8578]">Elevation Gain</span>
-                    <span className="text-[#E05A2B] font-bold">
-                      {route.elevationGainMeters ? `+${route.elevationGainMeters} m` : "Elevation gain unavailable"}
+                {/* Waypoints Sequence List */}
+                <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
+                  <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-3">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-[#B65E3C] font-bold">
+                        ELEVATION PROFILE &amp; STAGES
+                      </span>
+                      <h3 className="font-serif font-bold text-xl text-[#173B32]">
+                        Waypoints along the Trail
+                      </h3>
+                    </div>
+                    <span className="text-xs text-[#7B4D36] font-mono">
+                      {trek.waypoints.length} waypoints
                     </span>
                   </div>
-                  <div>
-                    <span className="block text-[9px] uppercase text-[#6D8578]">Estimated Time</span>
-                    <span className="text-[#FAF4E8]">{route.estimatedTime}</span>
+
+                  <div className="space-y-3">
+                    {trek.waypoints.map((wp, idx) => (
+                      <div
+                        key={wp.id}
+                        onClick={() => setSelectedWaypointForModal(wp)}
+                        className="p-4 rounded-2xl bg-white border border-[#E5D5BA] hover:border-[#173B32] transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0 ${
+                            wp.isSummit ? "bg-[#B65E3C] text-white" : "bg-[#173B32] text-white"
+                          }`}>
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <h4 className="font-serif font-bold text-sm text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
+                              {wp.name} <span className="text-xs text-[#7B4D36] font-devanagari font-normal">({wp.hindiName})</span>
+                            </h4>
+                            <span className="text-[11px] text-[#7B4D36]">
+                              {wp.terrainType} • {wp.timeFromPrev}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-xs font-mono text-[#173B32]">
+                          <span className="font-bold">{wp.elevationFormatted}</span>
+                          <span className={wp.waterAvailable ? "text-emerald-700 font-bold" : "text-amber-700"}>
+                            {wp.waterAvailable ? "💧 Water OK" : "⚠️ Carry Water"}
+                          </span>
+                          <span className="text-[#B65E3C] group-hover:translate-x-0.5 transition-transform">Details →</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <span className="block text-[9px] uppercase text-[#6D8578]">Technical Grade</span>
-                    <span className="text-[#B49252]">{route.technicalExposure}</span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* TAB 3: CONDITIONS & SAFETY */}
+            {activeTrekTab === "conditions" && (
+              <motion.div
+                key="tab-trek-conditions"
+                variants={routeScreenVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="space-y-6"
+              >
+                {/* Urgent Safety Guidelines Card */}
+                <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
+                  <div className="flex items-center gap-2 border-b border-[#E5D5BA] pb-3">
+                    <Shield className="w-5 h-5 text-[#B65E3C]" />
+                    <h3 className="font-serif font-bold text-xl text-[#173B32]">
+                      Trail Safety &amp; Medical Directives
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] space-y-1">
+                      <span className="text-[10px] font-mono text-[#B65E3C] uppercase font-bold">Altitude Risk</span>
+                      <h4 className="font-serif font-bold text-sm text-[#173B32]">{trek.altitudeRiskIndicator}</h4>
+                      <p className="text-xs text-[#7B4D36]">
+                        Drink 3-4 liters of water daily. If headache or nausea occurs, descend 300m immediately.
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] space-y-1">
+                      <span className="text-[10px] font-mono text-[#B65E3C] uppercase font-bold">Mobile Network</span>
+                      <h4 className="font-serif font-bold text-sm text-[#173B32]">{trek.fieldIntelligence.mobileNetwork}</h4>
+                      <p className="text-xs text-[#7B4D36]">
+                        Download offline maps before leaving roadhead.
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] space-y-1">
+                      <span className="text-[10px] font-mono text-[#B65E3C] uppercase font-bold">Nearest Medical Aid</span>
+                      <h4 className="font-serif font-bold text-sm text-[#173B32]">{trek.fieldIntelligence.nearestHospital}</h4>
+                      <p className="text-xs text-[#7B4D36]">
+                        Last motorable roadhead: {trek.fieldIntelligence.lastMotorablePoint}.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] space-y-1">
+                    <span className="text-[10px] font-mono uppercase text-[#B65E3C] font-bold">
+                      Permits &amp; Environmental Regulation
+                    </span>
+                    <p className="text-xs text-[#173B32] leading-relaxed">
+                      {trek.fieldIntelligence.permitsRequired}
+                    </p>
                   </div>
                 </div>
 
-                <div className="bg-[#0D1511] p-2.5 rounded-xl border border-[#1E2D24] text-[11px] flex items-center justify-between text-[#8FA699] font-mono">
-                  <span>Recommended for: <strong className="text-[#D1DFD7] font-serif">{route.recommendedFor}</strong></span>
-                  <span>Water Points: <strong className="text-emerald-400">{route.waterPointsCount}</strong></span>
+                {/* Season & Weather Breakdown */}
+                <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-3">
+                  <h3 className="font-serif font-bold text-lg text-[#173B32]">
+                    Seasonality &amp; Access Windows
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#20211D]">
+                    <div className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA]">
+                      <strong className="block text-[#173B32] mb-1">Prime Trekking Season:</strong>
+                      {trek.fieldIntelligence.idealSeasonMonths}
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA]">
+                      <strong className="block text-[#173B32] mb-1">Winter Access &amp; Snow:</strong>
+                      {trek.fieldIntelligence.winterAccess}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              </motion.div>
+            )}
+
+            {/* TAB 4: GEAR & PREP */}
+            {activeTrekTab === "gear" && (
+              <motion.div
+                key="tab-trek-gear"
+                variants={routeScreenVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="space-y-6"
+              >
+                <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5D5BA] pb-3">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-[#B65E3C] font-bold">
+                        PACKING &amp; RENTALS
+                      </span>
+                      <h3 className="font-serif font-bold text-xl text-[#173B32]">
+                        Gear Planner &amp; Optimizer
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-[#EFE5D2] p-1 rounded-xl border border-[#E5D5BA]">
+                      {(["STUDENT", "BUDGET", "STANDARD", "PREMIUM"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setGearMode(mode)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold tracking-wider uppercase transition-all cursor-pointer ${
+                            gearMode === mode
+                              ? "bg-[#173B32] text-[#FAF4E8]"
+                              : "text-[#7B4D36] hover:text-[#173B32]"
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {trek.gearChecklist.map((item) => {
+                      const currentAction =
+                        gearActions[item.id] ||
+                        (item.canSkip && gearMode === "STUDENT" ? "skip" : item.canBorrow ? "borrow" : "rent");
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.2 rounded text-[9px] font-mono font-bold uppercase ${
+                                item.priority === "ESSENTIAL" ? "bg-rose-50 text-rose-800 border border-rose-200" : "bg-blue-50 text-blue-800 border border-blue-200"
+                              }`}>
+                                {item.priority}
+                              </span>
+                              <h4 className="font-serif font-bold text-sm text-[#173B32]">{item.name}</h4>
+                            </div>
+                            {gearMode === "STUDENT" && item.studentAlternative && (
+                              <p className="text-xs text-[#B49252] font-sans">
+                                Hack: {item.studentAlternative}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0 text-xs font-mono">
+                            <button
+                              type="button"
+                              onClick={() => setGearActions({ ...gearActions, [item.id]: "buy" })}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border cursor-pointer ${
+                                currentAction === "buy" ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32]" : "bg-[#FAF7F0] text-[#7B4D36] border-[#E5D5BA]"
+                              }`}
+                            >
+                              Buy (₹{item.buyApproxCost})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setGearActions({ ...gearActions, [item.id]: "rent" })}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border cursor-pointer ${
+                                currentAction === "rent" ? "bg-[#B65E3C] text-white border-[#B65E3C]" : "bg-[#FAF7F0] text-[#7B4D36] border-[#E5D5BA]"
+                              }`}
+                            >
+                              Rent (₹{item.rentApproxCostPerDay * trek.durationDays})
+                            </button>
+                            {item.canBorrow && (
+                              <button
+                                type="button"
+                                onClick={() => setGearActions({ ...gearActions, [item.id]: "borrow" })}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border cursor-pointer ${
+                                  currentAction === "borrow" ? "bg-emerald-700 text-white border-emerald-700" : "bg-[#FAF7F0] text-[#7B4D36] border-[#E5D5BA]"
+                                }`}
+                              >
+                                Borrow (₹0)
+                              </button>
+                            )}
+                            {item.canSkip && (
+                              <button
+                                type="button"
+                                onClick={() => setGearActions({ ...gearActions, [item.id]: "skip" })}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border cursor-pointer ${
+                                  currentAction === "skip" ? "bg-stone-600 text-white border-stone-600" : "bg-[#FAF7F0] text-[#7B4D36] border-[#E5D5BA]"
+                                }`}
+                              >
+                                Skip (₹0)
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* TAB 5: BUDGET */}
+            {activeTrekTab === "budget" && (
+              <motion.div
+                key="tab-trek-budget"
+                variants={routeScreenVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="space-y-6"
+              >
+                <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5D5BA] pb-3">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-[#B65E3C] font-bold">
+                        COST TRANSPARENCY
+                      </span>
+                      <h3 className="font-serif font-bold text-xl text-[#173B32]">
+                        Trek Budget Calculator
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 text-xs font-mono">
+                        <span className="text-[#7B4D36]">Group:</span>
+                        {[1, 2, 3, 4, 6].map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => setGroupSize(size)}
+                            className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              groupSize === size
+                                ? "bg-[#173B32] text-white"
+                                : "bg-white text-[#173B32] border border-[#E5D5BA]"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsGroupBudget(!isGroupBudget)}
+                        className="px-3 py-1.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-mono font-bold text-[#173B32] cursor-pointer"
+                      >
+                        {isGroupBudget ? "Group Total" : "Per Person"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] text-center">
+                      <span className="text-[10px] font-mono text-[#7B4D36] uppercase block">Base Expedition Cost</span>
+                      <span className="text-xl font-serif font-black text-[#173B32]">
+                        ₹{perPersonBaseBudget.toLocaleString()} / person
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] text-center">
+                      <span className="text-[10px] font-mono text-[#7B4D36] uppercase block">Gear Buffer</span>
+                      <span className="text-xl font-serif font-black text-[#173B32]">
+                        ₹{gearCost.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] text-center">
+                      <span className="text-[10px] font-mono text-[#7B4D36] uppercase block">
+                        {isGroupBudget ? `Group of ${groupSize} Total` : "Total Per Person"}
+                      </span>
+                      <span className="text-xl font-serif font-black text-[#B65E3C]">
+                        ≈ ₹{displayTotal.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-mono text-[#7B4D36] space-y-1">
+                    <div className="flex justify-between">
+                      <span>Shared Sumo / Local Bus:</span>
+                      <strong>₹{trek.budget.baseTransportCost}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Food &amp; Trail Rations:</span>
+                      <strong>₹{trek.budget.foodPerDayCost * trek.durationDays}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Permits &amp; Eco Fees:</span>
+                      <strong>₹{trek.budget.permitCost}</strong>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </section>
 
-      {/* 5. TOPOGRAPHIC EXPEDITION MAP & WAYPOINT VISUALIZER */}
-      <section id="trek-route-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="border-b border-[#2A3E33] pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-          <div className="space-y-1">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
-              TOPOGRAPHIC TRAIL LOG & ELEVATION PROFILE
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
-              Expedition Route & Waypoints
-            </h2>
-          </div>
-          <span className="text-xs text-[#8FA699] font-mono">
-            Tap any waypoint along the trail to inspect water, terrain, and field notes
-          </span>
-        </div>
-
-        {/* Topographic Trail Map */}
-        {(() => {
-          const mapMarkers: VanvasMapMarker[] = trek.waypoints.map((wp): VanvasMapMarker => ({
-            id: wp.id,
-            title: wp.name,
-            hindiTitle: wp.hindiName,
-            type: wp.isSummit ? "summit" : wp.isBaseCamp ? "start" : wp.waterAvailable ? "water" : "waypoint",
-            lat: wp.latitude,
-            lng: wp.longitude,
-            elevationMeters: wp.elevationMeters,
-            description: wp.fieldNotes,
-            categoryLabel: wp.terrainType,
-            provenance: "VERIFIED",
-            actionLabel: "Inspect Waypoint"
-          }));
-
-          const routeSegments: VanvasMapRouteSegment[] = [
-            {
-              id: `route-${trek.id}`,
-              name: trek.title,
-              coordinates: trek.waypoints.map((wp) => ({ lat: wp.latitude, lng: wp.longitude, alt: wp.elevationMeters })),
-              color: "#E05A2B",
-              elevationGain: trek.routes[0]?.elevationGainMeters || 1000,
-              distanceKm: trek.totalDistanceKm
-            }
-          ];
-
-          return (
-            <VanvasMap
-              mode="trek"
-              title={`${trek.title} Topographic Trail`}
-              subtitle={`${trek.mountainRange} • Peak: ${trek.peakAltitudeFormatted} • ${trek.totalDistanceKm} km total`}
-              center={{ lat: trek.waypoints[0]?.latitude || 30.48, lng: trek.waypoints[0]?.longitude || 79.2 }}
-              markers={mapMarkers}
-              routes={routeSegments}
-              selectedMarkerId={selectedWaypointId}
-              onSelectMarker={(m) => {
-                if (m) setSelectedWaypointId(m.id);
-              }}
-              height={440}
-            />
-          );
-        })()}
-
-        {/* Interactive Waypoint Ribbon / Stepper */}
-        <div className="bg-[#14201A] p-4 sm:p-6 rounded-3xl border border-[#2A3E33] space-y-6">
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-            {trek.waypoints.map((wp, idx) => {
-              const isSelected = wp.id === selectedWaypointId;
-              return (
-                <button
-                  key={wp.id}
-                  onClick={() => setSelectedWaypointId(wp.id)}
-                  className={`px-4 py-3 rounded-2xl text-left shrink-0 transition-all border cursor-pointer ${
-                    isSelected
-                      ? "bg-[#1E2E25] border-[#E05A2B] shadow-lg ring-1 ring-[#E05A2B]"
-                      : "bg-[#0E1713] border-[#223329] hover:border-[#324B3C]"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold ${
-                      wp.isSummit ? "bg-[#E05A2B] text-white" : isSelected ? "bg-[#B49252] text-[#0A100D]" : "bg-[#25372C] text-[#8FA699]"
-                    }`}>
-                      {idx + 1}
-                    </span>
-                    <span className="text-xs font-bold text-white whitespace-nowrap">{wp.name}</span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-2 text-[10px] font-mono text-[#8FA699]">
-                    <span className="text-[#E05A2B] font-bold">{wp.elevationFormatted}</span>
-                    <span>•</span>
-                    <span>{wp.distanceFromStartKm} km</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Active Waypoint Field Note Inspector */}
-          <div className="bg-[#0E1612] p-5 sm:p-6 rounded-2xl border border-[#273B2F] grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            <div className="lg:col-span-7 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-md bg-[#1A2E24] text-[#B49252] text-[10px] font-mono uppercase border border-[#B49252]/40">
-                  {activeWaypoint.isSummit ? "SUMMIT PINNACLE" : activeWaypoint.isBaseCamp ? "BASE ROADHEAD" : "MID-TRAIL WAYPOINT"}
-                </span>
-                <span className="text-xs font-mono text-[#6D8578]">
-                  [ {activeWaypoint.latitude.toFixed(4)}°N, {activeWaypoint.longitude.toFixed(4)}°E ]
-                </span>
-              </div>
-
-              <div className="space-y-0.5">
-                <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
-                  {activeWaypoint.name}
-                </h3>
-                <span className="font-devanagari text-sm text-[#B49252]">
-                  {activeWaypoint.hindiName}
-                </span>
-              </div>
-
-              <p className="text-xs sm:text-sm text-[#B3C4B9] font-serif leading-relaxed">
-                {activeWaypoint.fieldNotes}
-              </p>
-
-              {/* Waypoint Facility Indicators */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 text-[11px] font-mono">
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Elevation</span>
-                  <span className="text-[#FAF4E8] font-bold">{activeWaypoint.elevationFormatted}</span>
-                </div>
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Distance from Start</span>
-                  <span className="text-[#E05A2B] font-bold">{activeWaypoint.distanceFromStartKm} km</span>
-                </div>
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Distance to Next</span>
-                  <span className="text-[#B49252] font-bold">{activeWaypoint.distanceToNext || "Summit Reach"}</span>
-                </div>
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Ascent Time</span>
-                  <span className="text-[#FAF4E8]">{activeWaypoint.timeFromPrev}</span>
-                </div>
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Water Spring</span>
-                  <span className={activeWaypoint.waterAvailable ? "text-emerald-400 font-bold" : "text-amber-400"}>
-                    {activeWaypoint.waterAvailable ? "✓ Spring Active" : "✕ Carry Water"}
-                  </span>
-                </div>
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Food & Stalls</span>
-                  <span className={activeWaypoint.foodAvailable ? "text-emerald-400 font-bold" : "text-[#6D8578]"}>
-                    {activeWaypoint.foodAvailable ? "✓ Chai / Maggi" : "✕ Self-Contained"}
-                  </span>
-                </div>
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Shelter / Camps</span>
-                  <span className={activeWaypoint.shelterAvailable ? "text-emerald-400 font-bold" : "text-[#6D8578]"}>
-                    {activeWaypoint.shelterAvailable ? "✓ Alpine Shelter" : "✕ Open Ridge"}
-                  </span>
-                </div>
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Mobile Signal</span>
-                  <span className="text-[#A6BAAE] font-bold">{activeWaypoint.signalNote || "No Signal"}</span>
-                </div>
-                <div className="bg-[#14201A] p-2.5 rounded-xl border border-[#203026]">
-                  <span className="block text-[9px] uppercase text-[#6D8578]">Terrain Difficulty</span>
-                  <span className="text-[#E05A2B] font-bold">{activeWaypoint.difficulty || activeWaypoint.terrainType}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Waypoint Image / Visual representation */}
-            <div className="lg:col-span-5 relative h-48 sm:h-56 w-full rounded-2xl overflow-hidden border border-[#2A3E33]">
+      {/* WAYPOINT DETAIL MODAL */}
+      <VanvasAdaptiveModal
+        isOpen={Boolean(selectedWaypointForModal)}
+        onClose={() => setSelectedWaypointForModal(null)}
+        title={selectedWaypointForModal?.name}
+        subtitle={selectedWaypointForModal ? `${selectedWaypointForModal.elevationFormatted} • ${selectedWaypointForModal.terrainType}` : undefined}
+      >
+        {selectedWaypointForModal && (
+          <div className="space-y-4">
+            <div className="relative h-44 rounded-2xl overflow-hidden border border-[#E5D5BA]">
               <VanvasImage
-                src={activeWaypoint.imageUrl || trek.heroImage}
-                alt={activeWaypoint.name}
+                src={selectedWaypointForModal.imageUrl || trek.heroImage}
+                alt={selectedWaypointForModal.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute bottom-2 left-2 bg-[#0A100D]/80 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-mono text-[#EFE5D2]">
-                {activeWaypoint.terrainType}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. VISUAL DIFFICULTY BREAKDOWN */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="border-b border-[#2A3E33] pb-4">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
-            PHYSIOLOGICAL & TECHNICAL DEMANDS
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
-            Why is this rated {trek.difficulty}?
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Visual Meters */}
-          <div className="lg:col-span-6 bg-[#14201A] p-5 sm:p-6 rounded-3xl border border-[#2A3E33] space-y-4">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#FAF4E8]">
-              Trail Demand Ratings (1 – 10 Scale)
-            </h3>
-
-            {[
-              { label: "Cardiovascular & Fitness Demand", val: trek.difficultyFactors.fitnessDemand, desc: "Endurance needed for ascent" },
-              { label: "Altitude & AMS Vulnerability", val: trek.difficultyFactors.altitudeRisk, desc: "Risk above 3,000m threshold" },
-              { label: "Trail Steepness & Gradient", val: trek.difficultyFactors.steepnessGrade, desc: "Continuous vertical incline" },
-              { label: "Terrain Technicality & Footing", val: trek.difficultyFactors.terrainTechnicality, desc: "Loose scree, boulders or ice" },
-              { label: "Ridge Exposure Risk", val: trek.difficultyFactors.exposureRisk, desc: "Narrow drop-offs & wind exposure" },
-              { label: "Weather Volatility & Drop", val: trek.difficultyFactors.weatherVolatility, desc: "Sudden temperature or rain changes" },
-            ].map((meter) => (
-              <div key={meter.label} className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-[#D1DFD7]">{meter.label}</span>
-                  <span className="font-bold text-[#E05A2B]">{meter.val} / 10</span>
-                </div>
-                <div className="w-full h-2 bg-[#0E1612] rounded-full overflow-hidden border border-[#223328]">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-600 via-[#B49252] to-[#E05A2B] rounded-full transition-all duration-700"
-                    style={{ width: `${meter.val * 10}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-[#6D8578] font-mono">{meter.desc}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Field Guide Reasoning */}
-          <div className="lg:col-span-6 bg-[#14201A] p-5 sm:p-6 rounded-3xl border border-[#2A3E33] space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#FAF4E8]">
-                Expedition Medical & Terrain Notes
-              </h3>
-              <ul className="space-y-2.5">
-                {trek.difficultyFactors.explanation.map((exp, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-[#B3C4B9] font-serif leading-relaxed">
-                    <span className="w-4 h-4 rounded-full bg-[#E05A2B]/20 text-[#E05A2B] flex items-center justify-center text-[10px] font-mono shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <span>{exp}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
 
-            <div className="bg-[#0E1612] p-4 rounded-2xl border border-[#273B2F] space-y-1">
-              <span className="text-[10px] font-mono text-[#B49252] uppercase font-bold">
-                Acclimatization Protocol
-              </span>
-              <p className="text-xs text-[#8FA699] font-serif">
-                Drink at least 3 litres of water daily on the trail. If feeling dizziness or persistent headache, descend 300m immediately.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. INTERACTIVE GEAR PLANNER (Student / Budget / Standard / Premium) */}
-      <section id="trek-gear-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="border-b border-[#2A3E33] pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div className="space-y-1">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
-              RUGGED PACKING & RENTAL SYSTEM
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
-              Gear Planner & Cost Optimizer
-            </h2>
-          </div>
-
-          {/* Mode Switcher */}
-          <div className="flex items-center gap-1.5 bg-[#14201A] p-1.5 rounded-xl border border-[#2A3E33]">
-            {(["STUDENT", "BUDGET", "STANDARD", "PREMIUM"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setGearMode(mode)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold tracking-wider uppercase transition-all cursor-pointer ${
-                  gearMode === mode
-                    ? "bg-[#E05A2B] text-white shadow-md"
-                    : "text-[#8FA699] hover:text-white"
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Gear Checklist Cards */}
-        <div className="space-y-3">
-          {trek.gearChecklist.map((item) => {
-            const currentAction =
-              gearActions[item.id] ||
-              (item.canSkip && gearMode === "STUDENT" ? "skip" : item.canBorrow ? "borrow" : "rent");
-
-            return (
-              <div
-                key={item.id}
-                className="bg-[#14201A] p-4 rounded-2xl border border-[#2A3E33] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              >
-                <div className="space-y-1 max-w-xl">
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
-                      item.priority === "ESSENTIAL" ? "bg-red-950 text-red-300 border border-red-700/60" : "bg-blue-950 text-blue-300 border border-blue-700/60"
-                    }`}>
-                      {item.priority}
-                    </span>
-                    <h4 className="font-serif font-bold text-sm text-white">{item.name}</h4>
-                  </div>
-                  {gearMode === "STUDENT" && (
-                    <p className="text-xs text-[#B49252] font-serif">
-                      Student Hack: {item.studentAlternative}
-                    </p>
-                  )}
-                  {item.condition && (
-                    <span className="text-[10px] text-[#8FA699] font-mono block">
-                      Condition: {item.condition}
-                    </span>
-                  )}
-                </div>
-
-                {/* Buy / Rent / Borrow / Skip Selector */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    onClick={() => setGearActions({ ...gearActions, [item.id]: "buy" })}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase cursor-pointer border ${
-                      currentAction === "buy" ? "bg-[#B49252] text-[#0A100D] border-[#B49252]" : "bg-[#0E1612] text-[#8FA699] border-[#223328]"
-                    }`}
-                  >
-                    Buy (₹{item.buyApproxCost})
-                  </button>
-                  <button
-                    onClick={() => setGearActions({ ...gearActions, [item.id]: "rent" })}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase cursor-pointer border ${
-                      currentAction === "rent" ? "bg-[#E05A2B] text-white border-[#E05A2B]" : "bg-[#0E1612] text-[#8FA699] border-[#223328]"
-                    }`}
-                  >
-                    Rent (₹{item.rentApproxCostPerDay * trek.durationDays})
-                  </button>
-                  {item.canBorrow && (
-                    <button
-                      onClick={() => setGearActions({ ...gearActions, [item.id]: "borrow" })}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase cursor-pointer border ${
-                        currentAction === "borrow" ? "bg-emerald-700 text-white border-emerald-600" : "bg-[#0E1612] text-[#8FA699] border-[#223328]"
-                      }`}
-                    >
-                      Borrow (₹0)
-                    </button>
-                  )}
-                  {item.canSkip && (
-                    <button
-                      onClick={() => setGearActions({ ...gearActions, [item.id]: "skip" })}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase cursor-pointer border ${
-                        currentAction === "skip" ? "bg-neutral-700 text-white border-neutral-500" : "bg-[#0E1612] text-[#8FA699] border-[#223328]"
-                      }`}
-                    >
-                      Skip (₹0)
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 8. TRANSPARENT BUDGET CALCULATOR */}
-      <section id="trek-budget-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="border-b border-[#2A3E33] pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div className="space-y-1">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
-              COST TRANSPARENCY & EXPENSE ESTIMATOR
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
-              Trek Budget Calculator
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Group Size Selector */}
-            <div className="flex items-center gap-1.5 text-xs font-mono">
-              <span className="text-[#8FA699]">Group:</span>
-              {[1, 2, 3, 4, 6].map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setGroupSize(size)}
-                  className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    groupSize === size
-                      ? "bg-[#E05A2B] text-white"
-                      : "bg-[#14201A] text-[#8FA699] border border-[#24352D]"
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-
-            {/* Total vs Per Person Toggle */}
-            <button
-              onClick={() => setIsGroupBudget(!isGroupBudget)}
-              className="px-3 py-1.5 rounded-lg bg-[#14201A] border border-[#2A3E33] text-xs font-mono text-[#FAF4E8] cursor-pointer"
-            >
-              {isGroupBudget ? "Showing: Group Total" : "Showing: Per Person"}
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 bg-[#14201A] p-5 sm:p-6 rounded-3xl border border-[#2A3E33] space-y-4">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#FAF4E8]">
-              Transparent Line-Item Breakdown
-            </h3>
-
-            <div className="space-y-2.5 text-xs font-mono">
-              <div className="flex items-center justify-between py-1.5 border-b border-[#203027]">
-                <span className="text-[#D1DFD7]">Approach Transport (Shared Sumo / Bus)</span>
-                <span className="text-[#FAF4E8] font-bold">₹{trek.budget.baseTransportCost}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-[#203027]">
-                <span className="text-[#D1DFD7]">Trail Meals & Hydration ({trek.durationDays} Days @ ₹{trek.budget.foodPerDayCost}/day)</span>
-                <span className="text-[#FAF4E8] font-bold">₹{trek.budget.foodPerDayCost * trek.durationDays}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-[#203027]">
-                <span className="text-[#D1DFD7]">Alpine Campsite / Meadow Stay ({Math.max(1, trek.durationDays - 1)} Nights)</span>
-                <span className="text-[#FAF4E8] font-bold">₹{trek.budget.campStayCostPerNight * Math.max(1, trek.durationDays - 1)}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-[#203027]">
-                <span className="text-[#D1DFD7]">Forest Department Permits & Eco Fees</span>
-                <span className="text-[#FAF4E8] font-bold">₹{trek.budget.permitCost}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-[#203027]">
-                <span className="text-[#D1DFD7]">Optional Local Guide (₹{trek.budget.guideOptionalCostPerDay} split across {groupSize})</span>
-                <span className="text-[#FAF4E8] font-bold">₹{Math.round(trek.budget.guideOptionalCostPerDay / groupSize)}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-[#203027]">
-                <span className="text-[#D1DFD7]">Gear Rental Buffer</span>
-                <span className="text-[#FAF4E8] font-bold">₹{trek.budget.gearRentalEstimate}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5">
-                <span className="text-[#D1DFD7]">Emergency Buffer (Cash for mules/ponies)</span>
-                <span className="text-[#FAF4E8] font-bold">₹{trek.budget.emergencyBuffer}</span>
-              </div>
-            </div>
-
-            {/* Student Cost Hacks */}
-            <div className="pt-3 border-t border-[#203027] space-y-2">
-              <span className="text-[10px] font-mono uppercase text-[#B49252] font-bold">
-                Student & Backpacker Hacks
-              </span>
-              <ul className="space-y-1.5">
-                {trek.budget.studentHacks.map((hack, i) => (
-                  <li key={i} className="text-xs text-[#9BB1A4] font-serif flex items-start gap-2">
-                    <span className="text-[#B49252]">•</span>
-                    <span>{hack}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Grand Total Summary Box */}
-          <div className="lg:col-span-4 bg-[#18261F] p-6 rounded-3xl border border-[#344D3F] flex flex-col justify-between space-y-6 text-center">
-            <div className="space-y-2">
-              <span className="text-xs font-mono uppercase tracking-widest text-[#B49252]">
-                {isGroupBudget ? `Group of ${groupSize} Total` : "Per Person Estimate"}
-              </span>
-              <div className="text-4xl sm:text-5xl font-mono font-black text-[#E05A2B]">
-                ₹{displayTotal}
-              </div>
-              <span className="text-[11px] font-mono text-[#8FA699] block">
-                Includes transport, meals, camping & permits
-              </span>
-            </div>
-
-            <button
-              onClick={() => setIsTrailModeActive(true)}
-              className="w-full py-3.5 bg-[#E05A2B] hover:bg-[#C8491D] text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-            >
-              <Footprints className="w-4 h-4" />
-              <span>Launch Trail Cockpit</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 9. TREK SOLO TRAVELER CIRCLES */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="bg-[#14201A] border border-[#2B4034] rounded-3xl p-6 sm:p-8">
-          <div className="flex items-center gap-2 text-xs font-mono text-[#E05A2B] font-bold uppercase tracking-wider mb-2">
-            <Users className="w-4 h-4" />
-            <span>Trek Circles • Fellow Trekkers</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8] mb-2">
-            Trek Fellowship & Circles
-          </h2>
-          <p className="text-xs sm:text-sm text-[#8FA699] max-w-2xl leading-relaxed mb-6 font-serif">
-            Discover other solo trekkers heading to {trek.title} with overlapping dates and compatible pacing. Form or join a verified alpine trek circle for safety and shared expedition joy.
-          </p>
-          <TravelingSoloSection
-            destinationId={trek.id}
-            destinationName={trek.title}
-          />
-        </div>
-      </section>
-
-      {/* 10. PRACTICAL FIELD INTELLIGENCE & SAFETY */}
-      <section id="trek-safety-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="border-b border-[#2A3E33] pb-4">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
-            GROUND LOGISTICS & SURVIVAL PROTOCOLS
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#FAF4E8]">
-            Field Intelligence
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-[#14201A] p-5 rounded-2xl border border-[#24352D] space-y-2">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#FAF4E8]">
-              <Calendar className="w-4 h-4 text-[#B49252]" />
-              <span>Seasonality & Winter Access</span>
-            </div>
-            <p className="text-xs text-[#9BB1A4] font-serif leading-relaxed">
-              {trek.fieldIntelligence.idealSeasonMonths}
+            <p className="text-xs text-[#20211D]/90 leading-relaxed font-sans">
+              {selectedWaypointForModal.fieldNotes}
             </p>
-            <p className="text-xs text-[#6D8578] font-serif">
-              Winter: {trek.fieldIntelligence.winterAccess}
-            </p>
-          </div>
 
-          <div className="bg-[#14201A] p-5 rounded-2xl border border-[#24352D] space-y-2">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#FAF4E8]">
-              <Phone className="w-4 h-4 text-[#B49252]" />
-              <span>Cellular & Emergency Network</span>
+            <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
+                <span className="block text-[10px] text-[#7B4D36]">Water Status</span>
+                <span className={selectedWaypointForModal.waterAvailable ? "text-emerald-700 font-bold" : "text-amber-700 font-bold"}>
+                  {selectedWaypointForModal.waterAvailable ? "Active Spring" : "No Water Source"}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA]">
+                <span className="block text-[10px] text-[#7B4D36]">Ascent Time</span>
+                <span className="font-bold text-[#173B32]">
+                  {selectedWaypointForModal.timeFromPrev}
+                </span>
+              </div>
             </div>
-            <p className="text-xs text-[#9BB1A4] font-serif leading-relaxed">
-              {trek.fieldIntelligence.mobileNetwork}
-            </p>
-            <p className="text-xs text-[#E05A2B] font-mono">
-              Nearest Hospital: {trek.fieldIntelligence.nearestHospital}
-            </p>
           </div>
-
-          <div className="bg-[#14201A] p-5 rounded-2xl border border-[#24352D] space-y-2">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#FAF4E8]">
-              <Shield className="w-4 h-4 text-[#B49252]" />
-              <span>Permits & Last Motorable Point</span>
-            </div>
-            <p className="text-xs text-[#9BB1A4] font-serif leading-relaxed">
-              {trek.fieldIntelligence.permitsRequired}
-            </p>
-            <p className="text-xs text-[#FAF4E8] font-mono">
-              Roadhead: {trek.fieldIntelligence.lastMotorablePoint}
-            </p>
-          </div>
-        </div>
-
-        {/* Trail Etiquette Strip */}
-        <div className="bg-[#121B16] p-5 rounded-2xl border border-[#25372C] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h4 className="text-xs font-mono font-bold uppercase text-[#FAF4E8]">
-              Leave-No-Trace Alpine Code
-            </h4>
-            <p className="text-xs text-[#8FA699] font-serif">
-              Pack out all non-biodegradable trash. Keep high mountain springs uncontaminated.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-lg bg-[#1D2E25] text-emerald-300 font-mono text-[10px] border border-emerald-700/40">
-              ✓ Verified Expedition
-            </span>
-          </div>
-        </div>
-      </section>
+        )}
+      </VanvasAdaptiveModal>
     </div>
   );
 }
