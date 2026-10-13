@@ -4,7 +4,7 @@ import React, { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  Mountain, Compass, MapPin, Footprints, ShieldAlert,
+  Mountain, Compass, MapPin, Footprints,
   ArrowRight, Filter, Sparkles, Navigation, Layers,
   ChevronRight, Calendar, AlertTriangle, ShieldCheck,
   CheckCircle2, Flame, RefreshCw, SlidersHorizontal, Eye
@@ -14,6 +14,14 @@ import { VanvasImage } from "@/components/ui/VanvasImage";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { CompactTrekCard } from "@/components/compact";
 import { useDensity } from "@/context/DensityContext";
+
+export default function TreksPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FAF4E8]" />}>
+      <TreksInner />
+    </Suspense>
+  );
+}
 
 function TreksInner() {
   const { isCompact } = useDensity();
@@ -75,175 +83,143 @@ function TreksInner() {
   };
 
   return (
-    <div className="min-h-screen bg-[#111A16] text-[#EFE5D2] pb-28 selection:bg-[#E05A2B] selection:text-white">
-      {/* 1. EXPEDITION FIELD HERO (Compact, task-focused Expedition Desk) */}
-      <section className="relative px-4 sm:px-6 lg:px-8 py-8 sm:py-12 overflow-hidden border-b border-[#2C3E35]">
-        {/* Topographic Contour Texture & Mountain Backdrop */}
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1C2C24] via-[#111A16] to-[#0A100D] opacity-95" />
-        
-        {/* Subtle Topo Grid Background Lines */}
-        <div
-          className="absolute inset-0 opacity-15 pointer-events-none"
-          style={{
-            backgroundImage: `radial-gradient(#B49252 1px, transparent 1px), linear-gradient(to right, #24352D 1px, transparent 1px), linear-gradient(to bottom, #24352D 1px, transparent 1px)`,
-            backgroundSize: "40px 40px, 80px 80px, 80px 80px"
-          }}
-        />
-
-        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-4">
-          {/* Header Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="px-3.5 py-1 rounded-full bg-[#E05A2B] text-white text-[11px] font-mono font-black tracking-widest uppercase shadow-lg border border-[#FF7D52]/40 flex items-center gap-1.5">
-              <Footprints className="w-3.5 h-3.5" />
-              <span>TREK EXPEDITION DESK</span>
-            </span>
-            <span className="px-3 py-1 rounded-full bg-[#1A2E24] text-[#B49252] text-[11px] font-mono tracking-wider uppercase border border-[#B49252]/40">
-              [ 2,680M – 4,329M ALTITUDE RANGE ]
-            </span>
-          </div>
-
-          <div className="space-y-1">
-            <span className="font-devanagari text-xl sm:text-2xl text-[#B49252] font-bold tracking-widest block">
-              पर्वत आरोहण • हिमालय पदयात्रा
-            </span>
-            <h1 className="text-3xl sm:text-5xl font-serif font-black tracking-tight text-[#FAF4E8] leading-tight">
-              WHERE DO YOU WANT TO CLIMB?
+    <div className="min-h-screen bg-[#FAF4E8] text-[#20211D] pb-32">
+      {/* 1. COMPACT EDITORIAL EXPEDITION DESK HEADER */}
+      <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-8 pb-7 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
+                EXPEDITION DESK • हिमालय अभियान
+              </span>
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-black text-[#FAF7F0] tracking-tight">
+              Himalayan Treks &amp; Trails
             </h1>
+            <p className="text-xs text-[#D8DED5]/80 font-sans mt-0.5">
+              Real routes, verified elevation profiles, honest gear checklists, and mountain intelligence.
+            </p>
           </div>
 
-          <p className="text-xs sm:text-sm text-[#B3C4B9] max-w-xl mx-auto font-serif italic leading-relaxed">
-            Real routes, verified elevation profiles, honest gear checklists, and mountain intelligence.
-          </p>
-
-          {/* Expedition Desk Quick Answers: Difficulty, Duration, Budget, Season */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl mx-auto pt-2 text-center text-xs font-mono">
-            <div className="p-2 rounded-xl bg-[#14201A] border border-[#2B4034]">
-              <span className="text-[10px] text-[#6D8578] uppercase block">Difficulty</span>
-              <span className="text-[#FAF4E8] font-bold">Easy to High Alpine</span>
-            </div>
-            <div className="p-2 rounded-xl bg-[#14201A] border border-[#2B4034]">
-              <span className="text-[10px] text-[#6D8578] uppercase block">Duration</span>
-              <span className="text-[#FAF4E8] font-bold">1 Day – 6 Days</span>
-            </div>
-            <div className="p-2 rounded-xl bg-[#14201A] border border-[#2B4034]">
-              <span className="text-[10px] text-[#6D8578] uppercase block">Est. Budget</span>
-              <span className="text-[#E05A2B] font-bold">₹1,500 – ₹12,000</span>
-            </div>
-            <div className="p-2 rounded-xl bg-[#14201A] border border-[#2B4034]">
-              <span className="text-[10px] text-[#6D8578] uppercase block">Prime Season</span>
-              <span className="text-[#B49252] font-bold">Mar–Jun & Sep–Dec</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <TravelStamp label="HIMALAYAS" variant="terracotta" />
+            <Link
+              href="/plan?mode=trek"
+              className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+              <span>Plan a Trek</span>
+            </Link>
           </div>
+        </div>
 
-          {/* Quick Search & Expedition Filter Bar */}
-          <div className="pt-4 max-w-3xl mx-auto">
-            <div className="bg-[#18261F] p-3 sm:p-4 rounded-2xl border border-[#344D40] shadow-2xl flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative flex-1 w-full">
-                <Compass className="w-5 h-5 text-[#B49252] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search trek name, mountain range, or region (e.g. Tungnath, Kedarkantha)..."
-                  className="w-full pl-11 pr-4 py-3 bg-[#0E1713] border border-[#2B4034] rounded-xl text-xs sm:text-sm text-[#FAF4E8] placeholder-[#6D8578] focus:outline-none focus:border-[#E05A2B] transition-colors"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => {}}
-                  className="w-full sm:w-auto px-6 py-3 bg-[#E05A2B] hover:bg-[#C8491D] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                >
-                  <Mountain className="w-4 h-4" />
-                  <span>Find Trails ({filteredTreks.length})</span>
-                </button>
-              </div>
-            </div>
+        {/* Top Quick Answers Ribbon: Difficulty, Duration, Est. Budget, Prime Season */}
+        <div className="max-w-6xl mx-auto mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs font-mono">
+          <div className="p-2.5 rounded-2xl bg-[#0F2924] border border-[#B49252]/20">
+            <span className="text-[10px] text-[#B49252] uppercase block font-bold">Difficulty</span>
+            <span className="text-[#FAF7F0] font-bold">Easy to High Alpine</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#0F2924] border border-[#B49252]/20">
+            <span className="text-[10px] text-[#B49252] uppercase block font-bold">Duration</span>
+            <span className="text-[#FAF7F0] font-bold">1 Day – 6 Days</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#0F2924] border border-[#B49252]/20">
+            <span className="text-[10px] text-[#B49252] uppercase block font-bold">Est. Budget</span>
+            <span className="text-[#FAF7F0] font-bold">₹1,500 – ₹12,000</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#0F2924] border border-[#B49252]/20">
+            <span className="text-[10px] text-[#B49252] uppercase block font-bold">Prime Season</span>
+            <span className="text-[#FAF7F0] font-bold">Mar–Jun &amp; Sep–Dec</span>
           </div>
         </div>
       </section>
 
-      {/* 2. EXPEDITION CONTROLS & FILTER SYSTEM */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-[#16221C] rounded-2xl border border-[#2A3E33] p-4 sm:p-6 mb-8 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#2A3E33] pb-4">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4 text-[#E05A2B]" />
-              <h2 className="text-sm font-bold tracking-wider uppercase text-[#FAF4E8]">
-                Expedition Parameters & Filters
-              </h2>
+      {/* 2. SEARCH & EXPEDITION FILTERS CARD */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-3 relative z-20">
+        <div className="bg-[#FAF7F0] p-5 sm:p-6 rounded-3xl border-2 border-[#E5D5BA] shadow-md space-y-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Compass className="w-4 h-4 text-[#B49252] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search trek name, mountain range, or region (e.g. Tungnath, Kedarkantha, Hampta)..."
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5D5BA] rounded-2xl text-xs font-semibold text-[#173B32] placeholder-[#7B4D36] focus:outline-none focus:border-[#173B32] transition-colors"
+              />
             </div>
-            
+
             {(selectedDifficulty !== "All" || selectedDuration !== "All" || selectedScenery !== "All" || searchQuery) && (
               <button
+                type="button"
                 onClick={resetFilters}
-                className="text-xs text-[#E05A2B] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs text-[#B65E3C] hover:underline flex items-center gap-1 font-mono font-bold cursor-pointer shrink-0"
               >
                 <RefreshCw className="w-3 h-3" />
-                <span>Reset all parameters</span>
+                <span>Reset Filters</span>
               </button>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-[#E5D5BA]">
             {/* Difficulty Filter */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#8FA699]">
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">
                 Difficulty Grade
               </label>
               <select
                 value={selectedDifficulty}
                 onChange={(e) => setSelectedDifficulty(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#0E1713] border border-[#2B4034] rounded-xl text-xs text-[#FAF4E8] focus:outline-none focus:border-[#E05A2B]"
+                className="w-full px-3 py-2 bg-white border border-[#E5D5BA] rounded-xl text-xs font-medium text-[#173B32] focus:outline-none focus:border-[#173B32]"
               >
                 <option value="All">All Difficulties</option>
-                <option value="Easy">Easy (Gentle gradient, baseline fitness)</option>
-                <option value="Moderate">Moderate (Alpine switchbacks, 5-7 hrs)</option>
-                <option value="Challenging">Challenging (Steep snow/scree, multi-day)</option>
-                <option value="Alpine / Demanding">Alpine / Demanding (Technical, high altitude)</option>
+                <option value="Easy">Easy (Gentle gradient)</option>
+                <option value="Moderate">Moderate (5-7 hrs switchbacks)</option>
+                <option value="Challenging">Challenging (Steep snow/scree)</option>
+                <option value="Alpine / Demanding">Alpine / Demanding (Technical)</option>
               </select>
             </div>
 
             {/* Duration Filter */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#8FA699]">
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">
                 Expedition Duration
               </label>
               <select
                 value={selectedDuration}
                 onChange={(e) => setSelectedDuration(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#0E1713] border border-[#2B4034] rounded-xl text-xs text-[#FAF4E8] focus:outline-none focus:border-[#E05A2B]"
+                className="w-full px-3 py-2 bg-white border border-[#E5D5BA] rounded-xl text-xs font-medium text-[#173B32] focus:outline-none focus:border-[#173B32]"
               >
                 <option value="All">All Durations</option>
-                <option value="1 Day">1-Day Day Trek (Summit & Return)</option>
-                <option value="Multi-day (2-4 Days)">Multi-Day (2 – 4 Days Alpine Camp)</option>
+                <option value="1 Day">1-Day Day Trek</option>
+                <option value="Multi-day (2-4 Days)">Multi-Day (2 – 4 Days)</option>
                 <option value="Long Expedition (5+ Days)">Long Expedition (5+ Days)</option>
               </select>
             </div>
 
             {/* Scenery Score Filter */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#8FA699]">
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">
                 Visual View Score
               </label>
               <select
                 value={selectedScenery}
                 onChange={(e) => setSelectedScenery(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#0E1713] border border-[#2B4034] rounded-xl text-xs text-[#FAF4E8] focus:outline-none focus:border-[#E05A2B]"
+                className="w-full px-3 py-2 bg-white border border-[#E5D5BA] rounded-xl text-xs font-medium text-[#173B32] focus:outline-none focus:border-[#173B32]"
               >
-                <option value="All">All Scenery Categories</option>
-                <option value="PANORAMIC">Panoramic 360° (Great Himalayan Ranges)</option>
-                <option value="HIGH">High Ridge (Direct cliff & peak views)</option>
-                <option value="MODERATE">Moderate (Forest clearings & meadows)</option>
+                <option value="All">All Scenery</option>
+                <option value="PANORAMIC">Panoramic 360° View</option>
+                <option value="HIGH">High Ridge &amp; Peak Views</option>
+                <option value="MODERATE">Forest &amp; Meadow Clearings</option>
               </select>
             </div>
 
             {/* Approx Budget Slider */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-[#8FA699]">
-                <span>Approx Budget Max</span>
-                <span className="text-[#B49252] font-bold">₹{maxBudget} / person</span>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">
+                <span>Max Approx Budget</span>
+                <span className="text-[#B65E3C]">₹{maxBudget}/person</span>
               </div>
               <input
                 type="range"
@@ -252,170 +228,135 @@ function TreksInner() {
                 step={200}
                 value={maxBudget}
                 onChange={(e) => setMaxBudget(Number(e.target.value))}
-                className="w-full accent-[#E05A2B] bg-[#0E1713] h-2 rounded-lg cursor-pointer"
+                className="w-full accent-[#B65E3C] h-2 rounded-lg cursor-pointer mt-1"
               />
             </div>
           </div>
         </div>
-
-        {/* 3. FEATURED EXPEDITION CARDS GRID */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between text-xs text-[#8FA699] border-b border-[#2A3E33] pb-3">
-            <span className="font-mono">
-              Displaying <strong className="text-[#FAF4E8]">{filteredTreks.length}</strong> Himalayan & Sahyadri Trails
-            </span>
-            <span className="text-[11px] font-mono text-[#B49252]">
-              All data verified with topographic coordinates
-            </span>
-          </div>
-
-          {filteredTreks.length === 0 ? (
-            <div className="py-20 text-center rounded-3xl bg-[#16221C] border border-[#2A3E33] space-y-4 max-w-xl mx-auto">
-              <Mountain className="w-12 h-12 text-[#E05A2B] mx-auto opacity-75" />
-              <div className="space-y-1">
-                <h3 className="text-xl font-serif font-black text-[#FAF4E8]">No matching treks found</h3>
-                <p className="text-xs text-[#8FA699] leading-relaxed max-w-md mx-auto">
-                  Try adjusting your budget slider or clearing the difficulty and duration filters.
-                </p>
-              </div>
-              <button
-                onClick={resetFilters}
-                className="px-5 py-2.5 rounded-xl bg-[#E05A2B] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#C8491D] transition-colors"
-              >
-                Show All Treks
-              </button>
-            </div>
-          ) : isCompact ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {filteredTreks.map((trek) => (
-                <CompactTrekCard key={trek.id} trek={trek} />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTreks.map((trek) => {
-                const diffColor =
-                  trek.difficulty === "Easy"
-                    ? "bg-emerald-950 text-emerald-300 border-emerald-700/60"
-                    : trek.difficulty === "Moderate"
-                    ? "bg-amber-950 text-amber-300 border-amber-700/60"
-                    : "bg-red-950 text-red-300 border-red-700/60";
-
-                const sceneryBadgeColor =
-                  trek.viewScore === "PANORAMIC"
-                    ? "bg-[#B49252] text-[#0A100D] font-black"
-                    : "bg-[#25392F] text-[#EFE5D2] font-semibold";
-
-                return (
-                  <Link
-                    key={trek.id}
-                    href={`/treks/${trek.slug}`}
-                    className="group bg-[#15201A] rounded-2xl border border-[#2A3E33] hover:border-[#E05A2B] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
-                  >
-                    {/* Visual Terrain Image & Elevation Stamps */}
-                    <div className="relative h-56 w-full overflow-hidden bg-[#0E1713]">
-                      <VanvasImage
-                        src={trek.heroImage}
-                        alt={trek.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-85"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#15201A] via-transparent to-black/30 pointer-events-none" />
-
-                      {/* Top Badges */}
-                      <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${diffColor}`}>
-                          {trek.difficulty}
-                        </span>
-                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] uppercase tracking-wider ${sceneryBadgeColor}`}>
-                          {trek.viewScore} VIEW
-                        </span>
-                      </div>
-
-                      {/* Altitude Risk Flag if applicable */}
-                      {trek.altitudeRiskIndicator.includes("AMS") && (
-                        <div className="absolute top-3 right-3 bg-red-900/90 text-red-200 border border-red-500/50 px-2 py-0.5 rounded-md text-[9px] font-mono font-bold flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3 text-red-400" />
-                          <span>AMS RISK</span>
-                        </div>
-                      )}
-
-                      {/* Bottom Image Stats */}
-                      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs">
-                        <div className="bg-[#0A100D]/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 font-mono text-[#FAF4E8] font-bold flex items-center gap-1.5">
-                          <Mountain className="w-3.5 h-3.5 text-[#E05A2B]" />
-                          <span>{trek.peakAltitudeFormatted}</span>
-                        </div>
-                        <div className="bg-[#0A100D]/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 font-mono text-[#FAF4E8]">
-                          {trek.durationDays === 1 ? trek.durationHours : `${trek.durationDays} Days`}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content Body */}
-                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-1.5 text-[11px] text-[#B49252] font-mono uppercase tracking-wider">
-                          <MapPin className="w-3 h-3 text-[#E05A2B]" />
-                          <span>{trek.region}, {trek.state}</span>
-                        </div>
-
-                        <h3 className="text-xl font-serif font-black text-[#FAF4E8] group-hover:text-[#E05A2B] transition-colors leading-snug">
-                          {trek.title}
-                        </h3>
-
-                        <p className="text-xs text-[#9BB1A4] line-clamp-2 leading-relaxed font-serif">
-                          {trek.expeditionOverview}
-                        </p>
-                      </div>
-
-                      {/* Fact Strip & Budget */}
-                      <div className="pt-3 border-t border-[#25372D] space-y-3">
-                        <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-[#8FA699]">
-                          <div className="bg-[#0D1612] p-2 rounded-lg border border-[#1E2D25]">
-                            <span className="block text-[9px] uppercase text-[#6D8578]">Base Camp</span>
-                            <span className="text-[#FAF4E8] font-semibold truncate block">{trek.baseCamp}</span>
-                          </div>
-                          <div className="bg-[#0D1612] p-2 rounded-lg border border-[#1E2D25]">
-                            <span className="block text-[9px] uppercase text-[#6D8578]">Approx Budget</span>
-                            <span className="text-[#B49252] font-bold">₹{trek.approxBudgetPerPerson} / person</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs pt-1">
-                          <span className="text-[11px] text-[#8FA699] font-mono">
-                            {trek.routes.length} Route Option{trek.routes.length > 1 ? "s" : ""}
-                          </span>
-                          <span className="text-[#E05A2B] font-bold text-xs flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                            <span>Open Field Journal</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </section>
-    </div>
-  );
-}
 
-export default function TreksPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#111A16] flex flex-col items-center justify-center text-[#EFE5D2] gap-3">
-          <Mountain className="w-10 h-10 text-[#E05A2B] animate-pulse" />
-          <span className="text-xs font-mono text-[#B49252]">
-            Loading Himalayan Expedition Operating Layer...
+      {/* 3. EXPEDITION CARDS GRID */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-4">
+        <div className="flex items-center justify-between text-xs text-[#7B4D36] border-b border-[#E5D5BA] pb-3">
+          <span className="font-mono">
+            Displaying <strong className="text-[#173B32]">{filteredTreks.length}</strong> Verified Mountain Trails
+          </span>
+          <span className="text-[11px] font-mono text-[#B49252] font-bold">
+            All routes backed by GPS waypoints
           </span>
         </div>
-      }
-    >
-      <TreksInner />
-    </Suspense>
+
+        {filteredTreks.length === 0 ? (
+          <div className="py-16 text-center rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] space-y-3 max-w-xl mx-auto">
+            <Mountain className="w-10 h-10 text-[#B49252] mx-auto opacity-75" />
+            <h3 className="text-xl font-serif font-black text-[#173B32]">No matching treks found</h3>
+            <p className="text-xs text-[#7B4D36] leading-relaxed max-w-md mx-auto">
+              Try adjusting your budget slider or resetting the difficulty and duration parameters.
+            </p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="px-5 py-2.5 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider"
+            >
+              Show All Treks
+            </button>
+          </div>
+        ) : isCompact ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {filteredTreks.map((trek) => (
+              <CompactTrekCard key={trek.id} trek={trek} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredTreks.map((trek) => {
+              const diffBadgeClass =
+                trek.difficulty === "Easy"
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  : trek.difficulty === "Moderate"
+                  ? "bg-amber-50 text-amber-800 border-amber-200"
+                  : "bg-rose-50 text-rose-800 border-rose-200";
+
+              return (
+                <Link
+                  key={trek.id}
+                  href={`/treks/${trek.slug}`}
+                  className="group bg-[#FAF7F0] rounded-3xl border-2 border-[#E5D5BA] hover:border-[#173B32] overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                >
+                  {/* Terrain Image */}
+                  <div className="relative h-48 w-full overflow-hidden bg-[#EFE5D2]">
+                    <VanvasImage
+                      src={trek.heroImage}
+                      alt={trek.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+
+                    {/* Top Badges */}
+                    <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
+                      <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${diffBadgeClass}`}>
+                        {trek.difficulty}
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-[#EFE5D2] text-[#173B32]">
+                        {trek.viewScore} VIEW
+                      </span>
+                    </div>
+
+                    {/* Altitude Risk Flag if applicable */}
+                    {trek.altitudeRiskIndicator?.includes("AMS") && (
+                      <div className="absolute top-3 right-3 bg-red-800 text-white px-2 py-0.5 rounded-md text-[9px] font-mono font-bold flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-amber-300" />
+                        <span>AMS RISK</span>
+                      </div>
+                    )}
+
+                    {/* Bottom Altitude and Duration */}
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-xs">
+                      <div className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg font-mono text-white font-bold flex items-center gap-1">
+                        <Mountain className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>{trek.peakAltitudeFormatted}</span>
+                      </div>
+                      <div className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg font-mono text-white">
+                        {trek.durationDays === 1 ? trek.durationHours : `${trek.durationDays} Days`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Trek Details Content */}
+                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-mono text-[#7B4D36]">
+                        <span>{trek.region}, {trek.state}</span>
+                        <span className="font-devanagari text-xs text-[#B49252]">{trek.hindiTitle}</span>
+                      </div>
+                      <h3 className="font-serif font-bold text-lg text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug">
+                        {trek.title}
+                      </h3>
+                      <p className="text-xs text-[#20211D]/80 line-clamp-2 pt-1 font-sans">
+                        {trek.tagline || trek.expeditionOverview}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs">
+                      <div>
+                        <span className="text-[10px] font-mono text-[#7B4D36] block">Approx Budget</span>
+                        <span className="font-serif font-bold text-sm text-[#173B32]">
+                          ₹{trek.approxBudgetPerPerson.toLocaleString()} / person
+                        </span>
+                      </div>
+
+                      <span className="px-3 py-1.5 rounded-xl bg-[#173B32] group-hover:bg-[#B65E3C] text-[#FAF4E8] text-xs font-bold uppercase transition-colors flex items-center gap-1">
+                        <span>Details</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-[#B49252]" />
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }

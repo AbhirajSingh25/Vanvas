@@ -29,6 +29,7 @@ import { StayDetailModal } from "@/components/solo/StayDetailModal";
 import { MobilityDetailModal } from "@/components/solo/MobilityDetailModal";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { Avatar } from "@/components/ui/Avatar";
+import { VanvasTabBar } from "@/components/ui/VanvasTabBar";
 import { useDensity } from "@/context/DensityContext";
 import { tabIndicatorTransition, routeScreenVariants } from "@/lib/motion";
 
@@ -291,75 +292,19 @@ function SoloPageContent() {
 
         {/* 2. TOP SEGMENTED TAB CONTROL */}
         <div className="max-w-6xl mx-auto mt-6">
-          <div className="flex items-center p-1 rounded-2xl bg-[#0F2924] border border-[#B49252]/30 max-w-xl">
-            <button
-              onClick={() => setActiveTab("discover")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
-                activeTab === "discover" ? "text-[#173B32]" : "text-[#D8DED5]/70 hover:text-white"
-              }`}
-            >
-              {activeTab === "discover" && (
-                <motion.div
-                  layoutId="soloTabActivePill"
-                  transition={tabIndicatorTransition}
-                  className="absolute inset-0 bg-[#EFE5D2] rounded-xl z-0"
-                />
-              )}
-              <Compass className="w-3.5 h-3.5 relative z-10" />
-              <span className="relative z-10">Discover</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("travellers")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
-                activeTab === "travellers" ? "text-[#173B32]" : "text-[#D8DED5]/70 hover:text-white"
-              }`}
-            >
-              {activeTab === "travellers" && (
-                <motion.div
-                  layoutId="soloTabActivePill"
-                  transition={tabIndicatorTransition}
-                  className="absolute inset-0 bg-[#EFE5D2] rounded-xl z-0"
-                />
-              )}
-              <Users className="w-3.5 h-3.5 relative z-10" />
-              <span className="relative z-10">Travellers ({travelers.length})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("circles")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
-                activeTab === "circles" ? "text-[#173B32]" : "text-[#D8DED5]/70 hover:text-white"
-              }`}
-            >
-              {activeTab === "circles" && (
-                <motion.div
-                  layoutId="soloTabActivePill"
-                  transition={tabIndicatorTransition}
-                  className="absolute inset-0 bg-[#EFE5D2] rounded-xl z-0"
-                />
-              )}
-              <Flame className="w-3.5 h-3.5 relative z-10" />
-              <span className="relative z-10">Circles ({circles.length})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("safety_saved")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
-                activeTab === "safety_saved" ? "text-[#173B32]" : "text-[#D8DED5]/70 hover:text-white"
-              }`}
-            >
-              {activeTab === "safety_saved" && (
-                <motion.div
-                  layoutId="soloTabActivePill"
-                  transition={tabIndicatorTransition}
-                  className="absolute inset-0 bg-[#EFE5D2] rounded-xl z-0"
-                />
-              )}
-              <ShieldCheck className="w-3.5 h-3.5 relative z-10" />
-              <span className="relative z-10">Safety</span>
-            </button>
-          </div>
+          <VanvasTabBar<SoloTabType>
+            tabs={[
+              { id: "discover", label: "Discover", icon: Compass },
+              { id: "travellers", label: "Travellers", icon: Users, count: travelers.length },
+              { id: "circles", label: "Circles", icon: Flame, count: circles.length },
+              { id: "safety_saved", label: "Safety", icon: ShieldCheck },
+            ]}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            layoutId="soloTabActivePill"
+            variant="dark"
+            className="max-w-xl"
+          />
         </div>
       </section>
 
