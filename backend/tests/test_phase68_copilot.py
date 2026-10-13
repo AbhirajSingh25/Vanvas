@@ -19,6 +19,7 @@ from app.providers.ai.dispatcher import AIToolDispatcher
 from app.providers.ai.tools import VANVAS_COPILOT_TOOLS
 from unittest.mock import AsyncMock, patch
 from app.services.copilot_context import build_copilot_context
+from app.api.deps import get_current_user_optional
 from app.providers.ai.gemini_provider import DisabledAIProvider, GeminiProvider
 
 client = TestClient(app)
@@ -239,20 +240,24 @@ def test_copilot_context_assembly(db, traveller_user, sample_trip):
     assert context["destination_context"] is not None
 
 
-def test_copilot_chat_endpoint_success(sample_trip):
+def test_copilot_chat_endpoint_success(sample_trip, traveller_user):
     """POST /api/v1/copilot/chat executes reasoning and returns validated response structure."""
-    res = client.post("/api/v1/copilot/chat", json={
-        "message": "I have 3 hours in Mussoorie. Suggest a relaxed cafe walk.",
-        "trip_id": sample_trip.id,
-        "destination_slug": "mussoorie"
-    })
-    assert res.status_code == 200
-    data = res.json()
-    assert "message" in data
-    assert "actions" in data
-    assert "places" in data
-    assert "metadata" in data
-    assert "latency_ms" in data["metadata"]
+    app.dependency_overrides[get_current_user_optional] = lambda: traveller_user
+    try:
+        res = client.post("/api/v1/copilot/chat", json={
+            "message": "I have 3 hours in Mussoorie. Suggest a relaxed cafe walk.",
+            "trip_id": sample_trip.id,
+            "destination_slug": "mussoorie"
+        })
+        assert res.status_code == 200
+        data = res.json()
+        assert "message" in data
+        assert "actions" in data
+        assert "places" in data
+        assert "metadata" in data
+        assert "latency_ms" in data["metadata"]
+    finally:
+        app.dependency_overrides.pop(get_current_user_optional, None)
 
 
 def test_copilot_chat_rejects_empty_message():
