@@ -251,8 +251,8 @@ function TrekDetailContent({ params }: PageProps) {
         </div>
       )}
 
-      {/* 1. STICKY TOP BREADCRUMB & PRIMARY ACTION STRIP */}
-      <div className="sticky top-0 z-30 bg-[#FAF7F0]/95 backdrop-blur-md border-b-2 border-[#E5D5BA] py-2.5">
+      {/* 1. DESKTOP BREADCRUMB (HIDDEN ON MOBILE TO PREVENT DUPLICATE TITLE BARS) */}
+      <div className="hidden xl:block bg-[#FAF7F0]/95 border-b border-[#E5D5BA] py-2.5">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs font-mono">
             <Link href="/treks" className="text-[#7B4D36] hover:text-[#173B32] flex items-center gap-1 font-bold">
@@ -285,105 +285,110 @@ function TrekDetailContent({ params }: PageProps) {
         </div>
       </div>
 
-      {/* 2. COMPACT EDITORIAL EXPEDITION HEADER */}
-      <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-8 pb-7 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1 max-w-2xl">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
-                HIMALAYAN TREK • {trek.mountainRange}
-              </span>
-              <span className={`px-2 py-0.2 rounded text-[10px] font-mono font-bold uppercase border ${diffBadgeClass}`}>
-                {trek.difficulty}
-              </span>
+      {/* 2. PARCHMENT-LED TREK HERO */}
+      <section className="bg-[#FAF7F0] border-b-2 border-[#E5D5BA] text-[#20211D] px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 pb-6 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto space-y-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1.5 max-w-2xl min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                  {trek.mountainRange} • {trek.region}
+                </span>
+                <span className={`px-2 py-0.2 rounded text-[10px] font-mono font-bold uppercase border ${diffBadgeClass}`}>
+                  {trek.difficulty}
+                </span>
+              </div>
+
+              <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-black text-[#173B32] tracking-tight leading-tight">
+                {trek.title} <span className="font-devanagari text-base sm:text-lg text-[#B49252] font-normal">({trek.hindiTitle})</span>
+              </h1>
+
+              <p className="text-xs sm:text-sm text-[#7B4D36] leading-relaxed">
+                {trek.tagline || trek.expeditionOverview}
+              </p>
             </div>
 
-            <h1 className="font-serif text-2xl sm:text-4xl font-black text-[#FAF7F0] tracking-tight">
-              {trek.title} <span className="font-devanagari text-lg text-[#B49252] font-normal">({trek.hindiTitle})</span>
-            </h1>
+            {/* Actions: Plan Trek & Trail Mode (Strictly within viewport) */}
+            <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto shrink-0 pt-1 sm:pt-0">
+              <Link
+                href={`/plan?dest=${trek.slug}&mode=trek`}
+                className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-98"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>Plan This Trek</span>
+              </Link>
 
-            <p className="text-xs text-[#D8DED5]/90 font-sans leading-relaxed">
-              &ldquo;{trek.tagline}&rdquo;
-            </p>
-          </div>
+              <button
+                type="button"
+                onClick={() => setIsTrailModeActive(true)}
+                className="px-4 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-white text-xs font-mono font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-98"
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+                <span>Trail Mode</span>
+              </button>
 
-          <div className="flex items-center gap-2">
-            <div className="bg-[#0F2924] p-3 rounded-2xl border border-[#B49252]/30 text-right">
-              <span className="text-[10px] font-mono text-[#B49252] uppercase block font-bold">Summit Altitude</span>
-              <span className="text-xl sm:text-2xl font-mono font-black text-[#FAF7F0]">
-                {trek.peakAltitudeFormatted}
-              </span>
+              <button
+                type="button"
+                onClick={() => openAskVanvas({ destinationName: trek.title, title: `ASK VANVAS · ${trek.title.toUpperCase()}` }, `Tell me safety tips, gear essentials, and route advice for ${trek.title}`)}
+                className="p-2.5 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA] flex items-center justify-center cursor-pointer transition-colors"
+                title="Ask VANVAS AI"
+                aria-label="Ask VANVAS AI"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+              </button>
             </div>
-
-            <Link
-              href={`/plan?dest=${trek.slug}&mode=trek`}
-              className="px-4 py-3 rounded-2xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
-              <span>Plan This Trek</span>
-            </Link>
           </div>
+
+          {/* Quick Scannable Metrics Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs font-mono pt-2 border-t border-[#E5D5BA]">
+            <div className="p-2 rounded-xl bg-white border border-[#E5D5BA]">
+              <span className="text-[9px] uppercase text-[#7B4D36] block">Distance</span>
+              <span className="text-[#173B32] font-bold">{trek.totalDistanceKm} km round trip</span>
+            </div>
+            <div className="p-2 rounded-xl bg-white border border-[#E5D5BA]">
+              <span className="text-[9px] uppercase text-[#7B4D36] block">Duration</span>
+              <span className="text-[#173B32] font-bold">{trek.durationDays === 1 ? trek.durationHours : `${trek.durationDays} Days`}</span>
+            </div>
+            <div className="p-2 rounded-xl bg-white border border-[#E5D5BA]">
+              <span className="text-[9px] uppercase text-[#7B4D36] block">Summit Altitude</span>
+              <span className="text-[#173B32] font-bold">{trek.peakAltitudeFormatted}</span>
+            </div>
+            <div className="p-2 rounded-xl bg-white border border-[#E5D5BA]">
+              <span className="text-[9px] uppercase text-[#7B4D36] block">Est. Budget</span>
+              <span className="text-[#B65E3C] font-bold">₹{trek.approxBudgetPerPerson}/person</span>
+            </div>
+          </div>
+
+          {/* Essential Safety Warnings Callout */}
+          {trek.altitudeRiskIndicator?.includes("AMS") && (
+            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="truncate sm:whitespace-normal">
+                  <strong>HIGH ALTITUDE ACCLIMATIZATION REQUIRED:</strong> Trail ascends above 3,500m threshold. Do not rush elevation gain.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTrekTab("conditions")}
+                className="underline text-amber-800 font-bold shrink-0 cursor-pointer text-[11px]"
+              >
+                Safety →
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* URGENT SAFETY CALLOUT (NEVER HIDDEN) */}
-        {trek.altitudeRiskIndicator?.includes("AMS") && (
-          <div className="max-w-6xl mx-auto mt-4 p-3.5 rounded-2xl bg-amber-950/80 border border-amber-500/50 text-amber-200 text-xs font-mono flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>
-                <strong>HIGH ALTITUDE ACCLIMATIZATION REQUIRED:</strong> Trail ascends above 3,500m threshold. Do not rush elevation gain.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setActiveTrekTab("conditions")}
-              className="underline text-amber-300 font-bold shrink-0 cursor-pointer"
-            >
-              Safety Guidelines →
-            </button>
-          </div>
-        )}
       </section>
 
-      {/* 3. SCANNABLE EXPEDITION FACT STRIP */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center text-xs font-mono">
-          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
-            <span className="text-[9px] uppercase text-[#7B4D36] block">Distance</span>
-            <span className="text-[#173B32] font-bold">{trek.totalDistanceKm} km round trip</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
-            <span className="text-[9px] uppercase text-[#7B4D36] block">Duration</span>
-            <span className="text-[#173B32] font-bold">{trek.durationDays === 1 ? trek.durationHours : `${trek.durationDays} Days`}</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
-            <span className="text-[9px] uppercase text-[#7B4D36] block">Difficulty</span>
-            <span className="text-[#173B32] font-bold">{trek.difficulty}</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
-            <span className="text-[9px] uppercase text-[#7B4D36] block">Best Season</span>
-            <span className="text-[#173B32] font-bold truncate block" title={trek.bestSeason}>{trek.bestSeason}</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
-            <span className="text-[9px] uppercase text-[#7B4D36] block">Approx Budget</span>
-            <span className="text-[#B65E3C] font-bold">₹{trek.approxBudgetPerPerson}/person</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA]">
-            <span className="text-[9px] uppercase text-[#7B4D36] block">Routes</span>
-            <span className="text-[#173B32] font-bold">{trek.routes.length} Verified</span>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. COMPACT HORIZONTAL TAB BAR NAVIGATION */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      {/* 3. COMPACT HORIZONTAL TAB BAR NAVIGATION */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
         <VanvasTabBar<TrekTabType>
           tabs={[
-            { id: "overview", label: "Overview", icon: Mountain },
-            { id: "route", label: "Route & Map", icon: MapPin, count: trek.waypoints.length },
-            { id: "conditions", label: "Conditions & Safety", icon: Shield },
-            { id: "gear", label: "Gear & Prep", icon: ShoppingBag, count: trek.gearChecklist.length },
+            { id: "overview", label: "Overview", shortLabel: "About", icon: Mountain },
+            { id: "route", label: "Route", icon: MapPin },
+            { id: "conditions", label: "Safety", icon: Shield },
+            { id: "gear", label: "Gear", icon: ShoppingBag },
             { id: "budget", label: "Budget", icon: DollarSign },
           ]}
           activeTab={activeTrekTab}

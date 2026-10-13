@@ -309,12 +309,20 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
       setMapReady(true);
 
       // Invalidate size on next tick to ensure correct canvas sizing
-      setTimeout(() => {
-        if (map) map.invalidateSize();
+      const resizeTimer = setTimeout(() => {
+        if (isMounted && leafletMapRef.current) {
+          try {
+            leafletMapRef.current.invalidateSize();
+          } catch {}
+        }
       }, 200);
 
       const handleResize = () => {
-        if (map) map.invalidateSize();
+        if (leafletMapRef.current) {
+          try {
+            leafletMapRef.current.invalidateSize();
+          } catch {}
+        }
       };
       window.addEventListener("resize", handleResize);
       window.addEventListener("orientationchange", handleResize);
@@ -325,7 +333,9 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
     return () => {
       isMounted = false;
       if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
+        try {
+          leafletMapRef.current.remove();
+        } catch {}
         leafletMapRef.current = null;
       }
     };
@@ -334,9 +344,12 @@ export const VanvasMap: React.FC<VanvasMapProps> = ({
   // Invalidate map size on fullscreen toggle
   useEffect(() => {
     if (leafletMapRef.current) {
-      setTimeout(() => {
-        leafletMapRef.current?.invalidateSize();
+      const fsTimer = setTimeout(() => {
+        try {
+          leafletMapRef.current?.invalidateSize();
+        } catch {}
       }, 250);
+      return () => clearTimeout(fsTimer);
     }
   }, [isFullscreen]);
 

@@ -42,35 +42,56 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
   const firstName = user?.full_name ? user.full_name.split(" ")[0] : null;
 
   return (
-    <div className="xl:hidden w-full bg-[#EFE5D2] text-[#20211D] px-4 py-5 space-y-6 pb-24">
-      {/* 1. GREETING & COMMAND BAR */}
-      <div className="space-y-1.5 pt-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#B65E3C] animate-pulse" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7B4D36]">
-              COMMAND CENTER • यात्रा नियंत्रण
-            </span>
-          </div>
-          <TravelStamp label="HIMALAYAS" variant="forest" />
-        </div>
-
+    <div className="xl:hidden w-full bg-[#EFE5D2] text-[#20211D] px-4 py-4 space-y-5 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
+      {/* 1. GREETING */}
+      <div className="space-y-1 pt-1">
         <h1 className="font-serif text-2xl font-black text-[#173B32] tracking-tight">
           {firstName ? `नमस्ते, ${firstName}` : "नमस्ते, यात्री"}
         </h1>
-        <p className="text-xs text-[#20211D]/75 font-sans leading-relaxed">
-          Where does your heart want to wander today?
+        <p className="text-xs text-[#7B4D36] font-medium leading-relaxed">
+          Where does your journey lead today?
         </p>
       </div>
 
-      {/* 2. PRIMARY SEARCH BAR */}
-      <div className="bg-[#FAF7F0] p-1.5 rounded-2xl border-2 border-[#D8CBB2] shadow-sm">
+      {/* 2. COMPACT SEARCH BAR */}
+      <div className="bg-[#FAF7F0] p-1.5 rounded-2xl border-2 border-[#D8CBB2] shadow-xs">
         <DestinationSearchBar />
       </div>
 
-      {/* 3. ACTIVE TRIP COCKPIT (IF TRAVELING) */}
+      {/* 3. PRIMARY & SECONDARY ACTIONS */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <Link
+          href="/plan"
+          className="p-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF4E8] shadow-sm active:scale-98 transition-all flex flex-col justify-between min-h-[96px] group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#FAF4E8]/80 font-bold">WIZARD</span>
+            <ArrowRight className="w-4 h-4 text-[#FAF4E8] group-hover:translate-x-0.5 transition-transform" />
+          </div>
+          <div>
+            <span className="font-serif font-black text-sm block">Plan My Trip</span>
+            <span className="text-[10px] text-[#FAF4E8]/80 font-devanagari">योजना बनाएं</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/explore"
+          className="p-4 rounded-2xl bg-[#FAF7F0] border-2 border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-98 transition-all flex flex-col justify-between min-h-[96px]"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36] font-bold">SANCTUARIES</span>
+            <Compass className="w-4 h-4 text-[#173B32]" />
+          </div>
+          <div>
+            <span className="font-serif font-bold text-sm text-[#173B32] block">Explore Destinations</span>
+            <span className="text-[10px] text-[#7B4D36] font-devanagari">गंतव्य खोजें</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* 4. ACTIVE TRIP COCKPIT (IF TRAVELING) */}
       {activeTrip && (
-        <div className="bg-[#173B32] text-[#EFE5D2] p-4.5 rounded-3xl border border-[#B49252]/40 shadow-xl space-y-3 relative overflow-hidden animate-vanvas-sheet">
+        <div className="bg-[#173B32] text-[#EFE5D2] p-4 rounded-3xl border border-[#B49252]/40 shadow-xl space-y-3 relative overflow-hidden animate-vanvas-sheet">
           <div className="flex items-center justify-between border-b border-[#E5D5BA]/20 pb-2">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -84,7 +105,7 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
           </div>
 
           <div>
-            <h3 className="font-serif font-black text-xl text-[#FAF7F0] leading-snug">
+            <h3 className="font-serif font-black text-lg text-[#FAF7F0] leading-snug">
               {activeTrip.title}
             </h3>
             <p className="text-xs text-[#D8DED5]/80 font-mono mt-0.5">
@@ -95,111 +116,82 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
           <div className="flex items-center gap-2 pt-1">
             <Link
               href={`/trips/${activeTrip.id}`}
-              className="flex-1 py-2.5 px-3 rounded-xl bg-[#FAF7F0] text-[#173B32] text-xs font-bold text-center tracking-wide hover:bg-[#EFE5D2] active:scale-98 transition-all shadow-xs"
+              className="flex-1 py-2 px-3 rounded-xl bg-[#FAF7F0] text-[#173B32] text-xs font-bold text-center tracking-wide hover:bg-[#EFE5D2] active:scale-98 transition-all shadow-xs"
             >
-              Open Itinerary Cockpit
+              Open Itinerary
             </Link>
             <button
               type="button"
               onClick={() => openAskVanvas({ tripId: activeTrip.id }, "What should we do next right now?")}
-              className="py-2.5 px-3.5 rounded-xl bg-[#B65E3C] text-[#FAF7F0] text-xs font-bold tracking-wide active:scale-98 transition-all flex items-center gap-1 shadow-xs"
+              className="py-2 px-3.5 rounded-xl bg-[#B65E3C] text-[#FAF7F0] text-xs font-bold tracking-wide active:scale-98 transition-all flex items-center gap-1 shadow-xs"
               aria-label="Replan or Ask Copilot"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#FAF7F0]" />
-              <span>Ask Copilot</span>
+              <span>Copilot</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* 4. PRIMARY ACTION CARD: PLAN AN EXPEDITION */}
-      <div className="bg-gradient-to-br from-[#FAF7F0] to-[#EAE0CD] p-5 rounded-3xl border-2 border-[#D8CBB2] shadow-md space-y-3 relative overflow-hidden">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <span className="text-[10px] font-mono font-bold text-[#B65E3C] uppercase tracking-wider">
-              SPONTANEOUS TRAVEL
-            </span>
-            <h2 className="font-serif font-black text-xl text-[#173B32]">
-              Plan a New Journey
-            </h2>
-            <p className="text-xs text-[#20211D]/75 leading-relaxed">
-              Adaptive 3-to-14-day trail itineraries with verified stays, mountain dhabas, and riverside spots.
-            </p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-[#B65E3C]/10 border border-[#B65E3C]/20 flex items-center justify-center shrink-0">
-            <Compass className="w-6 h-6 text-[#B65E3C]" />
-          </div>
-        </div>
-
-        <Link
-          href="/plan"
-          className="w-full py-3 px-4 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF7F0] text-xs font-bold uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center gap-2"
-        >
-          <span>Start Trip Wizard</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
-
-      {/* 5. TACTILE QUICK ACTIONS GRID */}
+      {/* 5. SCANNABLE TRAVEL MODES */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="font-serif font-bold text-sm text-[#173B32]">
-            Travel Toolset
+            Choose Travel Mode
           </h3>
-          <span className="text-[10px] font-devanagari text-[#7B4D36]">त्वरित कार्य</span>
+          <span className="text-[10px] font-mono uppercase tracking-wider text-[#7B4D36]">4 MODES</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2">
           <Link
-            href="/explore"
-            className="p-3.5 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-97 transition-all flex items-center gap-3 touch-manipulation"
+            href="/road-trip"
+            className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-98 transition-all flex items-center gap-2.5 touch-manipulation"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#173B32]/10 flex items-center justify-center shrink-0">
-              <Compass className="w-5 h-5 text-[#173B32]" />
+            <div className="w-8 h-8 rounded-xl bg-[#173B32]/10 flex items-center justify-center shrink-0">
+              <Route className="w-4 h-4 text-[#173B32]" />
             </div>
             <div className="min-w-0">
-              <div className="font-serif font-bold text-xs text-[#173B32] truncate">Explore</div>
-              <div className="text-[10px] text-[#7B4D36] truncate">26 Sanctuaries</div>
+              <div className="font-serif font-bold text-xs text-[#173B32] truncate">Road Trip</div>
+              <div className="text-[10px] text-[#7B4D36] truncate">Passes &amp; Corridors</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/one-day"
+            className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-98 transition-all flex items-center gap-2.5 touch-manipulation"
+          >
+            <div className="w-8 h-8 rounded-xl bg-[#B65E3C]/10 flex items-center justify-center shrink-0">
+              <Compass className="w-4 h-4 text-[#B65E3C]" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-serif font-bold text-xs text-[#173B32] truncate">Day Escape</div>
+              <div className="text-[10px] text-[#7B4D36] truncate">3h to Full Day</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/treks"
+            className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-98 transition-all flex items-center gap-2.5 touch-manipulation"
+          >
+            <div className="w-8 h-8 rounded-xl bg-[#173B32]/10 flex items-center justify-center shrink-0">
+              <Mountain className="w-4 h-4 text-[#173B32]" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-serif font-bold text-xs text-[#173B32] truncate">Himalayan Treks</div>
+              <div className="text-[10px] text-[#7B4D36] truncate">Verified Trails</div>
             </div>
           </Link>
 
           <Link
             href="/nearby"
-            className="p-3.5 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-97 transition-all flex items-center gap-3 touch-manipulation"
+            className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-98 transition-all flex items-center gap-2.5 touch-manipulation"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#B65E3C]/10 flex items-center justify-center shrink-0">
-              <MapPin className="w-5 h-5 text-[#B65E3C]" />
+            <div className="w-8 h-8 rounded-xl bg-[#B49252]/15 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4 text-[#B49252]" />
             </div>
             <div className="min-w-0">
               <div className="font-serif font-bold text-xs text-[#173B32] truncate">Nearby Radar</div>
-              <div className="text-[10px] text-[#7B4D36] truncate">Cafés & Stays</div>
-            </div>
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => openAskVanvas()}
-            className="p-3.5 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-97 transition-all flex items-center gap-3 text-left cursor-pointer touch-manipulation"
-          >
-            <div className="w-9 h-9 rounded-xl bg-[#B49252]/15 flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5 text-[#B49252]" />
-            </div>
-            <div className="min-w-0">
-              <div className="font-serif font-bold text-xs text-[#173B32] truncate">Ask VANVAS</div>
-              <div className="text-[10px] text-[#7B4D36] truncate">Mountain AI</div>
-            </div>
-          </button>
-
-          <Link
-            href="/road-trip"
-            className="p-3.5 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-xs active:scale-97 transition-all flex items-center gap-3 touch-manipulation"
-          >
-            <div className="w-9 h-9 rounded-xl bg-[#173B32]/10 flex items-center justify-center shrink-0">
-              <Route className="w-5 h-5 text-[#173B32]" />
-            </div>
-            <div className="min-w-0">
-              <div className="font-serif font-bold text-xs text-[#173B32] truncate">Road Trip</div>
-              <div className="text-[10px] text-[#7B4D36] truncate">Passes & Stops</div>
+              <div className="text-[10px] text-[#7B4D36] truncate">Cafés &amp; Dhabas</div>
             </div>
           </Link>
         </div>

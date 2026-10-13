@@ -79,7 +79,7 @@ export const Header: React.FC = () => {
 
   // Route metadata resolver for the Mobile App Bar
   const getRouteMeta = (path: string) => {
-    if (path === "/") return { title: "VANVAS", hindi: "चलो निकलते हैं", isRoot: true, fallback: "/" };
+    if (path === "/") return { title: "", hindi: "", isRoot: true, fallback: "/" };
     if (path === "/explore") return { title: "Explore", hindi: "खोज", isRoot: true, fallback: "/" };
     if (path === "/trips") return { title: "My Expeditions", hindi: "यात्रा डायरी", isRoot: true, fallback: "/" };
     if (path === "/nearby") return { title: "Nearby Radar", hindi: "आस-पास", isRoot: true, fallback: "/" };
@@ -318,16 +318,20 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Center: Contextual Title */}
+          {/* Center: Contextual Title (displayed on sub-routes, left logo alone on home route) */}
           <div className="flex-1 text-center px-2 min-w-0">
-            <h1 className="text-xs sm:text-sm font-serif font-bold text-[#173B32] truncate">
-              {currentRouteMeta.title}
-            </h1>
-            {currentRouteMeta.hindi && (
-              <p className="text-[10px] font-devanagari text-[#7B4D36] opacity-75 truncate -mt-0.5">
-                {currentRouteMeta.hindi}
-              </p>
-            )}
+            {currentRouteMeta.title ? (
+              <>
+                <h1 className="text-xs sm:text-sm font-serif font-bold text-[#173B32] truncate">
+                  {currentRouteMeta.title}
+                </h1>
+                {currentRouteMeta.hindi && (
+                  <p className="text-[10px] font-devanagari text-[#7B4D36] opacity-75 truncate -mt-0.5">
+                    {currentRouteMeta.hindi}
+                  </p>
+                )}
+              </>
+            ) : null}
           </div>
 
           {/* Right: User Avatar / Account Sheet OR Sign In */}

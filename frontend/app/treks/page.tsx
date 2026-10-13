@@ -84,60 +84,34 @@ function TreksInner() {
 
   return (
     <div className="min-h-screen bg-[#FAF4E8] text-[#20211D] pb-32">
-      {/* 1. COMPACT EDITORIAL EXPEDITION DESK HEADER */}
-      <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-8 pb-7 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+      {/* 1. PARCHMENT-LED CONCISE HEADING */}
+      <section className="bg-[#FAF7F0] border-b-2 border-[#E5D5BA] px-4 sm:px-6 lg:px-8 pt-6 pb-6">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
-                EXPEDITION DESK • हिमालय अभियान
-              </span>
-            </div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-black text-[#FAF7F0] tracking-tight">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C] block mb-0.5">
+              HIMALAYAN TRAILS • हिमालय ट्रेक
+            </span>
+            <h1 className="font-serif text-2xl sm:text-3xl font-black text-[#173B32] tracking-tight">
               Himalayan Treks &amp; Trails
             </h1>
-            <p className="text-xs text-[#D8DED5]/80 font-sans mt-0.5">
-              Real routes, verified elevation profiles, honest gear checklists, and mountain intelligence.
+            <p className="text-xs text-[#7B4D36] font-sans mt-0.5">
+              Verified routes, elevation profiles, gear essentials, and mountain intelligence.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <TravelStamp label="HIMALAYAS" variant="terracotta" />
-            <Link
-              href="/plan?mode=trek"
-              className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
-              <span>Plan a Trek</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Top Quick Answers Ribbon: Difficulty, Duration, Est. Budget, Prime Season */}
-        <div className="max-w-6xl mx-auto mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs font-mono">
-          <div className="p-2.5 rounded-2xl bg-[#0F2924] border border-[#B49252]/20">
-            <span className="text-[10px] text-[#B49252] uppercase block font-bold">Difficulty</span>
-            <span className="text-[#FAF7F0] font-bold">Easy to High Alpine</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-[#0F2924] border border-[#B49252]/20">
-            <span className="text-[10px] text-[#B49252] uppercase block font-bold">Duration</span>
-            <span className="text-[#FAF7F0] font-bold">1 Day – 6 Days</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-[#0F2924] border border-[#B49252]/20">
-            <span className="text-[10px] text-[#B49252] uppercase block font-bold">Est. Budget</span>
-            <span className="text-[#FAF7F0] font-bold">₹1,500 – ₹12,000</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-[#0F2924] border border-[#B49252]/20">
-            <span className="text-[10px] text-[#B49252] uppercase block font-bold">Prime Season</span>
-            <span className="text-[#FAF7F0] font-bold">Mar–Jun &amp; Sep–Dec</span>
-          </div>
+          <Link
+            href="/plan?mode=trek"
+            className="px-4 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5 shrink-0"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+            <span>Plan a Trek</span>
+          </Link>
         </div>
       </section>
 
-      {/* 2. SEARCH & EXPEDITION FILTERS CARD */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-3 relative z-20">
-        <div className="bg-[#FAF7F0] p-5 sm:p-6 rounded-3xl border-2 border-[#E5D5BA] shadow-md space-y-4">
+      {/* 2. RESTRAINED FILTERS CARD */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
+        <div className="bg-[#FAF7F0] p-4 sm:p-5 rounded-3xl border-2 border-[#E5D5BA] shadow-xs space-y-3">
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <div className="relative flex-1 w-full">
               <Compass className="w-4 h-4 text-[#B49252] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />

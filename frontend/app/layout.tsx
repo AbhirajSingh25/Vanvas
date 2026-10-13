@@ -158,7 +158,7 @@ export default function RootLayout({
                     <UpdateNotificationBanner />
                     <ServiceWorkerRegister />
                     <Header />
-                    <main className="flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] xl:pb-0">{children}</main>
+                    <main className="flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] xl:pb-0">{children}</main>
                     <Footer />
                     <MobileNav />
                     <FloatingCopilotTrigger />

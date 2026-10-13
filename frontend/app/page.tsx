@@ -61,12 +61,13 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Installed App Mode (PWA Standalone, iOS Standalone, Capacitor Native) */}
-      {isStandaloneApp ? (
+      {/* Mobile Experience (Mobile Web, iOS Safari, Android, Standalone PWA) */}
+      <div className="xl:hidden">
         <MobileTravelCommandCenter destinations={destinations} activeTrip={activeTrip} />
-      ) : (
-        /* Website Experience (Desktop & Responsive Mobile Web) */
-        <div className="relative overflow-hidden bg-[#EFE5D2] text-[#20211D]">
+      </div>
+
+      {/* Desktop Experience (Desktop Screen Viewport >= xl) */}
+      <div className="hidden xl:block relative overflow-hidden bg-[#EFE5D2] text-[#20211D]">
         {/* ======================================================== */}
         {/* SECTION 1: LAYERED HERO WITH HIMALAYAN ARTWORK           */}
         {/* ======================================================== */}
@@ -651,7 +652,6 @@ export default function HomePage() {
         </div>
       </section>
         </div>
-      )}
     </>
   );
 }

@@ -178,6 +178,14 @@ function OneDayEscapeContent() {
   const [isPlanningLoading, setIsPlanningLoading] = useState(false);
   const [planSuccessNotice, setPlanSuccessNotice] = useState<string | null>(null);
 
+  // Progressive Step State (Step A: journey -> Step B: experience -> Step C: itinerary)
+  const [currentStep, setCurrentStep] = useState<"journey" | "experience" | "itinerary">(() => {
+    if (destParam) return "itinerary";
+    return "journey";
+  });
+  const [isHubSheetOpen, setIsHubSheetOpen] = useState(false);
+  const [hubSearchQuery, setHubSearchQuery] = useState("");
+
   // Checklist interactive states
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
@@ -384,262 +392,342 @@ function OneDayEscapeContent() {
 
   return (
     <div className="min-h-screen bg-[#FAF4E8] text-[#20211D] pb-32">
-      {/* 1. COMPACT EDITORIAL DAY ESCAPE HEADER */}
-      <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-8 pb-7 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
-                DAY ESCAPE COCKPIT • एक दिवसीय सफ़र
-              </span>
-            </div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-black text-[#FAF7F0] tracking-tight">
-              Day Escape: {activePlan.destinationArea}
-            </h1>
-            <p className="text-xs text-[#D8DED5]/80 font-sans mt-0.5">
-              Leave in the morning. Return tonight. Pure spontaneous discovery.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <TravelStamp label={activePlan.destinationArea.toUpperCase()} variant="terracotta" />
-            <button
-              type="button"
-              onClick={handlePlanThisTrip}
-              disabled={isPlanningLoading}
-              className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
-              <span>{isPlanningLoading ? "Loading..." : "Plan in Vanvas"}</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. COMPACT 3-QUESTION PLANNING EXPERIENCE */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-3 relative z-20">
-        <div className="bg-[#FAF7F0] p-5 sm:p-6 rounded-3xl border-2 border-[#E5D5BA] shadow-md space-y-5">
-          {/* QUESTION 1: WHERE AM I GOING / STARTING? */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#B65E3C] font-bold flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>1. Where are you starting &amp; heading?</span>
-              </label>
-              <button
-                type="button"
-                onClick={handleGPSDetect}
-                disabled={isLocating}
-                className="text-[10px] font-mono font-bold text-[#173B32] hover:text-[#B65E3C] flex items-center gap-1 cursor-pointer"
-              >
-                <LocateFixed className={`w-3 h-3 ${isLocating ? "animate-spin" : ""}`} />
-                <span>{isLocating ? "Locating..." : "Use GPS"}</span>
-              </button>
-            </div>
-
-            {/* Starting Hubs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {ONE_DAY_HUBS.map((hub) => {
-                const isSelected = selectedHubId === hub.id && !isCustomMode;
-                return (
-                  <button
-                    key={hub.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedHubId(hub.id);
-                      setIsCustomMode(false);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                      isSelected
-                        ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32] shadow-xs"
-                        : "bg-[#EFE5D2]/50 text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
-                    }`}
-                  >
-                    {hub.name}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Available Destination Corridors for this Origin */}
-            {plansForOrigin.length > 0 && (
-              <div className="pt-1 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                <span className="text-[10px] font-mono text-[#7B4D36] shrink-0 font-bold uppercase">
-                  Corridors:
+      {/* ======================================================== */}
+      {/* STEP A: CHOOSE THE JOURNEY                               */}
+      {/* ======================================================== */}
+      {currentStep === "journey" && (
+        <>
+          <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-7 pb-6 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
+            <div className="max-w-4xl mx-auto space-y-1 relative z-10">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
+                  STEP 1 OF 2 • CHOOSE YOUR JOURNEY
                 </span>
-                {plansForOrigin.map((p) => {
-                  const isSelected = activePlan.id === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setSelectedPlanId(p.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
-                        isSelected
-                          ? "bg-[#B65E3C] text-[#FAF4E8] border-[#B65E3C] font-bold shadow-xs"
-                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:border-[#173B32]"
-                      }`}
-                    >
-                      {p.destinationArea} ({p.totalDistanceKm} km)
-                    </button>
-                  );
-                })}
               </div>
-            )}
-          </div>
+              <h1 className="font-serif text-2xl sm:text-3xl font-black text-[#FAF7F0] tracking-tight">
+                Where are you starting &amp; heading?
+              </h1>
+              <p className="text-xs text-[#D8DED5]/80 font-sans mt-0.5">
+                Select your origin hub and discover verified day-corridors returning tonight.
+              </p>
+            </div>
+          </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-[#E5D5BA]">
-            {/* QUESTION 2: HOW MUCH TIME DO I HAVE? */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#B65E3C] font-bold flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                <span>2. How much time do you have?</span>
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: "3h" as DayDurationOption, label: "3 Hours", desc: "Quick Escape" },
-                  { id: "6h" as DayDurationOption, label: "6 Hours", desc: "Half Day" },
-                  { id: "full_day" as DayDurationOption, label: "Full Day", desc: "Dawn to Dusk" },
-                ].map((dur) => {
-                  const isSelected = selectedDuration === dur.id;
-                  return (
-                    <button
-                      key={dur.id}
-                      type="button"
-                      onClick={() => setSelectedDuration(dur.id)}
-                      className={`p-2.5 rounded-2xl border-2 text-center transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32] shadow-xs"
-                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]/40"
-                      }`}
-                    >
-                      <span className="block font-serif font-bold text-xs">{dur.label}</span>
-                      <span className={`block text-[10px] font-mono ${isSelected ? "text-[#B49252]" : "text-[#7B4D36]"}`}>
-                        {dur.desc}
-                      </span>
-                    </button>
-                  );
-                })}
+          <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-3 relative z-20 space-y-4">
+            <div className="bg-[#FAF7F0] p-5 sm:p-6 rounded-3xl border-2 border-[#E5D5BA] shadow-md space-y-5">
+              {/* Origin Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-[#B65E3C] font-bold flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Departure Origin: <strong className="text-[#173B32]">{activeOriginLabel}</strong></span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleGPSDetect}
+                    disabled={isLocating}
+                    className="text-[10px] font-mono font-bold text-[#173B32] hover:text-[#B65E3C] flex items-center gap-1 cursor-pointer"
+                  >
+                    <LocateFixed className={`w-3 h-3 ${isLocating ? "animate-spin" : ""}`} />
+                    <span>{isLocating ? "Locating..." : "Use GPS"}</span>
+                  </button>
+                </div>
+
+                {/* Primary Hub Chips & Sheet Trigger */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {ONE_DAY_HUBS.slice(0, 7).map((hub) => {
+                    const isSelected = selectedHubId === hub.id && !isCustomMode;
+                    return (
+                      <button
+                        key={hub.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedHubId(hub.id);
+                          setIsCustomMode(false);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                          isSelected
+                            ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32] shadow-xs"
+                            : "bg-[#EFE5D2]/50 text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                        }`}
+                      >
+                        {hub.name}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setIsHubSheetOpen(true)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-[#B65E3C] text-[#B65E3C] bg-white hover:bg-[#B65E3C]/10 cursor-pointer"
+                  >
+                    + More Cities ({ONE_DAY_HUBS.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Corridors for this Origin */}
+              <div className="space-y-2 pt-2 border-t border-[#E5D5BA]">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-[#B65E3C] font-bold flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Choose Destination Corridor ({plansForOrigin.length} Available)</span>
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {plansForOrigin.map((p) => {
+                    const isSelected = activePlan.id === p.id;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => setSelectedPlanId(p.id)}
+                        className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                          isSelected
+                            ? "bg-white border-[#B65E3C] shadow-sm ring-1 ring-[#B65E3C]/30"
+                            : "bg-[#FAF7F0] border-[#E5D5BA] hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-serif font-bold text-sm text-[#173B32]">
+                            {p.destinationArea}
+                          </h4>
+                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                            isSelected ? "bg-[#B65E3C] text-white" : "bg-[#173B32]/10 text-[#173B32]"
+                          }`}>
+                            {p.totalDistanceKm} km
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#7B4D36] line-clamp-1">
+                          {p.title}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Continue Action */}
+              <div className="pt-2 border-t border-[#E5D5BA]">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep("experience")}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Continue to Experience Style</span>
+                  <ArrowRight className="w-4 h-4 text-[#FAF4E8]" />
+                </button>
               </div>
             </div>
+          </section>
+        </>
+      )}
 
-            {/* QUESTION 3: WHAT KIND OF EXPERIENCE DO I WANT? */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-[#B65E3C] font-bold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>3. Preferred Experience Style</span>
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {DAY_ESCAPE_STYLES.map((st) => {
-                  const isSelected = selectedStyleId === st.id;
-                  return (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => setSelectedStyleId(st.id)}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-1 ${
-                        isSelected
-                          ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32] shadow-xs"
-                          : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]/50"
-                      }`}
-                    >
-                      <span>{st.icon}</span>
-                      <span>{st.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* PRIMARY ACTION BUTTON */}
-          <div className="pt-2 border-t border-[#E5D5BA] flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs font-mono text-[#7B4D36]">
-              <span className="w-2 h-2 rounded-full bg-emerald-600" />
-              <span>
-                {activePlan.title} • {activePlan.totalDistanceKm} km round trip
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+      {/* ======================================================== */}
+      {/* STEP B: CHOOSE THE EXPERIENCE                            */}
+      {/* ======================================================== */}
+      {currentStep === "experience" && (
+        <>
+          <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-6 pb-6 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
+            <div className="max-w-4xl mx-auto space-y-1 relative z-10">
               <button
                 type="button"
-                onClick={() => setIsTimingModalOpen(true)}
-                className="px-3.5 py-2 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA] text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                onClick={() => setCurrentStep("journey")}
+                className="inline-flex items-center gap-1 text-xs text-[#FAF7F0]/80 hover:text-white font-mono mb-1 cursor-pointer"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span>Adjust Timings</span>
+                ← Back to Journey
               </button>
-
-              <button
-                type="button"
-                onClick={handleUpdatePlan}
-                className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <span>Update Itinerary</span>
-                <ArrowRight className="w-3.5 h-3.5 text-[#B49252]" />
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
+                  STEP 2 OF 2 • CHOOSE YOUR EXPERIENCE
+                </span>
+              </div>
+              <h1 className="font-serif text-2xl sm:text-3xl font-black text-[#FAF7F0] tracking-tight">
+                Tailor Your Day Escape
+              </h1>
+              <p className="text-xs text-[#D8DED5]/80 font-sans mt-0.5">
+                {activeOriginLabel} → {activePlan.destinationArea} • {activePlan.totalDistanceKm} km round trip
+              </p>
             </div>
-          </div>
+          </section>
 
-          {planSuccessNotice && (
-            <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-800 flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{planSuccessNotice}</span>
+          <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-3 relative z-20 space-y-4">
+            <div className="bg-[#FAF7F0] p-5 sm:p-6 rounded-3xl border-2 border-[#E5D5BA] shadow-md space-y-5">
+              {/* Duration Options */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-[#B65E3C] font-bold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Available Time Window</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "3h" as DayDurationOption, label: "3 Hours", desc: "Quick Escape" },
+                    { id: "6h" as DayDurationOption, label: "6 Hours", desc: "Half Day" },
+                    { id: "full_day" as DayDurationOption, label: "Full Day", desc: "Dawn to Dusk" },
+                  ].map((dur) => {
+                    const isSelected = selectedDuration === dur.id;
+                    return (
+                      <button
+                        key={dur.id}
+                        type="button"
+                        onClick={() => setSelectedDuration(dur.id)}
+                        className={`p-3 rounded-2xl border-2 text-center transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32] shadow-xs"
+                            : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]/40"
+                        }`}
+                      >
+                        <span className="block font-serif font-bold text-xs">{dur.label}</span>
+                        <span className={`block text-[10px] font-mono mt-0.5 ${isSelected ? "text-[#B49252]" : "text-[#7B4D36]"}`}>
+                          {dur.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Interest Style */}
+              <div className="space-y-2 pt-2 border-t border-[#E5D5BA]">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-[#B65E3C] font-bold flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Preferred Experience Style</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {DAY_ESCAPE_STYLES.map((st) => {
+                    const isSelected = selectedStyleId === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setSelectedStyleId(st.id)}
+                        className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32] shadow-xs"
+                            : "bg-white text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]/50"
+                        }`}
+                      >
+                        <span>{st.icon}</span>
+                        <span>{st.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Plan Action */}
+              <div className="pt-2 border-t border-[#E5D5BA]">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep("itinerary")}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-[#B49252]" />
+                  <span>Plan My Day Itinerary</span>
+                  <ArrowRight className="w-4 h-4 text-[#B49252]" />
+                </button>
+              </div>
             </div>
-          )}
-        </div>
-      </section>
+          </section>
+        </>
+      )}
 
-      {/* 3. REUSABLE HORIZONTAL TAB NAVIGATION */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5D5BA] pb-3 mb-6">
-          <div>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
-              ACTIVE CORRIDOR COCKPIT
-            </span>
-            <h2 className="font-serif font-black text-xl text-[#173B32]">
-              {activePlan.originCity} → {activePlan.destinationArea}
-            </h2>
-          </div>
+      {/* ======================================================== */}
+      {/* STEP C: VIEW THE ITINERARY & COCKPIT                     */}
+      {/* ======================================================== */}
+      {currentStep === "itinerary" && (
+        <>
+          <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-6 pb-6 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
+            <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep("experience")}
+                  className="inline-flex items-center gap-1 text-xs text-[#FAF7F0]/80 hover:text-white font-mono mb-1.5 cursor-pointer"
+                >
+                  ← Adjust Planning
+                </button>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B49252]">
+                    DAY ESCAPE COCKPIT • एक दिवसीय सफ़र
+                  </span>
+                </div>
+                <h1 className="font-serif text-2xl sm:text-3xl font-black text-[#FAF7F0] tracking-tight">
+                  {activePlan.destinationArea}
+                </h1>
+                <p className="text-xs text-[#D8DED5]/80 font-sans mt-0.5">
+                  {activePlan.originCity} → {activePlan.destinationArea} • {activePlan.totalDistanceKm} km round trip
+                </p>
+              </div>
 
-          <div className="flex items-center gap-2">
-            <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
-              calculatedFeasibility.rating === "COMFORTABLE"
-                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                : calculatedFeasibility.rating === "TIGHT"
-                ? "bg-amber-50 text-amber-800 border-amber-200"
-                : "bg-rose-50 text-rose-800 border-rose-200"
-            }`}>
-              {calculatedFeasibility.rating} TIMING
-            </span>
+              <div className="flex items-center gap-2">
+                <TravelStamp label={activePlan.destinationArea.toUpperCase()} variant="terracotta" />
+                <button
+                  type="button"
+                  onClick={handlePlanThisTrip}
+                  disabled={isPlanningLoading}
+                  className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9F4F30] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                  <span>{isPlanningLoading ? "Loading..." : "Plan in Vanvas"}</span>
+                </button>
+              </div>
+            </div>
+          </section>
 
-            <button
-              type="button"
-              onClick={handleGetDirections}
-              className="px-3 py-1 rounded-full bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-            >
-              <Navigation className="w-3 h-3 text-[#B65E3C]" />
-              <span>Directions</span>
-            </button>
-          </div>
-        </div>
+          {/* REUSABLE HORIZONTAL TAB NAVIGATION */}
+          <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5D5BA] pb-3 mb-5">
+              <div className="flex items-center gap-2 flex-wrap text-xs font-mono text-[#7B4D36]">
+                <Clock className="w-4 h-4 text-[#B65E3C]" />
+                <span>Departure: <strong>{departureTime}</strong></span>
+                <span>•</span>
+                <span>Return: <strong>{calculatedReturnHomeTime}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => setIsTimingModalOpen(true)}
+                  className="ml-1 px-2.5 py-0.5 rounded-lg bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] font-bold text-[11px] cursor-pointer"
+                >
+                  Adjust Time
+                </button>
+              </div>
 
-        <VanvasTabBar<OneDayTabType>
-          tabs={[
-            { id: "itinerary", label: "Itinerary", icon: Clock, count: adaptedStops.length },
-            { id: "route", label: "Route & Map", icon: MapPin },
-            { id: "budget", label: "Budget", icon: Wallet },
-            { id: "checklist", label: "Checklist", icon: CheckSquare },
-            { id: "rentals", label: "Rentals", icon: Car, count: activePlan.rentals.length },
-          ]}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          layoutId="oneDayTabActivePill"
-          variant="parchment"
-          className="max-w-2xl"
-        />
+              <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold border ${
+                  calculatedFeasibility.rating === "COMFORTABLE"
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : calculatedFeasibility.rating === "TIGHT"
+                    ? "bg-amber-50 text-amber-800 border-amber-200"
+                    : "bg-rose-50 text-rose-800 border-rose-200"
+                }`}>
+                  {calculatedFeasibility.rating}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleGetDirections}
+                  className="px-3 py-1 rounded-full bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] border border-[#E5D5BA] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Navigation className="w-3 h-3 text-[#B65E3C]" />
+                  <span>Directions</span>
+                </button>
+              </div>
+            </div>
+
+            <VanvasTabBar<OneDayTabType>
+              tabs={[
+                { id: "itinerary", label: "Stops", icon: Clock, count: adaptedStops.length },
+                { id: "route", label: "Route", icon: MapPin },
+                { id: "budget", label: "Budget", icon: Wallet },
+                { id: "checklist", label: "Prep", icon: CheckSquare },
+                { id: "rentals", label: "Rentals", icon: Car, count: activePlan.rentals.length },
+              ]}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              layoutId="oneDayTabActivePill"
+              variant="parchment"
+              className="max-w-2xl"
+            />
 
         {/* 4. ANIMATED TAB PANELS */}
         <div className="mt-6">
@@ -957,6 +1045,47 @@ function OneDayEscapeContent() {
           </AnimatePresence>
         </div>
       </section>
+    </>
+  )}
+
+      {/* HUB SELECTOR SHEET (ADAPTIVE POPUP / BOTTOM SHEET) */}
+      <VanvasAdaptiveModal
+        isOpen={isHubSheetOpen}
+        onClose={() => setIsHubSheetOpen(false)}
+        title="Select Departure Origin"
+        subtitle="Choose from all verified Indian hubs"
+      >
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={hubSearchQuery}
+            onChange={(e) => setHubSearchQuery(e.target.value)}
+            placeholder="Search city (e.g. Pune, Goa, Kolkata, Manali)..."
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#D8CBB2] bg-white text-xs text-[#173B32] focus:outline-none focus:border-[#173B32]"
+          />
+          <div className="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto no-scrollbar pt-1">
+            {ONE_DAY_HUBS.filter(h => h.name.toLowerCase().includes(hubSearchQuery.toLowerCase()) || h.state.toLowerCase().includes(hubSearchQuery.toLowerCase())).map((hub) => (
+              <button
+                key={hub.id}
+                type="button"
+                onClick={() => {
+                  setSelectedHubId(hub.id);
+                  setIsCustomMode(false);
+                  setIsHubSheetOpen(false);
+                }}
+                className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
+                  selectedHubId === hub.id
+                    ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32]"
+                    : "bg-[#FAF7F0] text-[#173B32] border-[#E5D5BA] hover:bg-[#EFE5D2]"
+                }`}
+              >
+                <div className="text-xs font-bold truncate">{hub.name}</div>
+                <div className="text-[10px] text-[#7B4D36] truncate">{hub.state}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </VanvasAdaptiveModal>
 
       {/* STOP DETAIL MODAL (ADAPTIVE POPUP / BOTTOM SHEET) */}
       <VanvasAdaptiveModal

@@ -7,6 +7,7 @@ import { tabIndicatorTransition } from "@/lib/motion";
 export interface TabItem<T extends string = string> {
   id: T;
   label: string;
+  shortLabel?: string;
   icon?: React.ComponentType<{ className?: string }>;
   count?: number | string;
   badge?: string;
@@ -56,8 +57,8 @@ export function VanvasTabBar<T extends string = string>({
             id={`tab-${tab.id}`}
             type="button"
             onClick={() => onTabChange(tab.id)}
-            className={`flex-1 min-w-max py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer select-none active:scale-[0.98] ${
-              size === "sm" ? "py-1.5 px-2.5 text-[11px]" : "py-2 px-3.5 text-xs"
+            className={`flex-1 min-w-0 sm:min-w-max rounded-xl font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 relative cursor-pointer select-none active:scale-[0.98] ${
+              size === "sm" ? "py-1.5 px-1 sm:px-2.5 text-[11px]" : "py-1.5 sm:py-2 px-1 sm:px-3 text-[11px] sm:text-xs"
             } ${
               isActive
                 ? isDark
@@ -80,7 +81,7 @@ export function VanvasTabBar<T extends string = string>({
 
             {IconComp && (
               <IconComp
-                className={`w-3.5 h-3.5 relative z-10 shrink-0 ${
+                className={`w-3.5 h-3.5 relative z-10 shrink-0 hidden sm:block ${
                   isActive
                     ? isDark
                       ? "text-[#173B32]"
@@ -92,11 +93,20 @@ export function VanvasTabBar<T extends string = string>({
               />
             )}
 
-            <span className="relative z-10 truncate">{tab.label}</span>
+            <span className="relative z-10 truncate">
+              {tab.shortLabel ? (
+                <>
+                  <span className="sm:hidden">{tab.shortLabel}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </>
+              ) : (
+                tab.label
+              )}
+            </span>
 
             {tab.count !== undefined && (
               <span
-                className={`relative z-10 text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ml-0.5 ${
+                className={`relative z-10 text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ml-0.5 hidden sm:inline-block ${
                   isActive
                     ? isDark
                       ? "bg-[#173B32]/15 text-[#173B32]"
