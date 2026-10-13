@@ -514,6 +514,20 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         err?.message?.toLowerCase().includes("network error") ||
         (typeof navigator !== "undefined" && !navigator.onLine);
 
+      const pushOrUpdateErrorMessage = (msg: MessageItem) => {
+        setMessages((prev) => {
+          if (prev.length === 0) return [msg];
+          const last = prev[prev.length - 1];
+          if (
+            last.role === "assistant" &&
+            (last.structured?.type === "CLARIFICATION" || last.structured?.provenance === "UNAVAILABLE")
+          ) {
+            return [...prev.slice(0, -1), msg];
+          }
+          return [...prev, msg];
+        });
+      };
+
       if (isAuthError) {
         const authTitle = "SIGN IN TO ASK VANVAS";
         const authText = "Sign in to chat with Ask VANVAS, receive personalized mountain recommendations, and access live travel intelligence.";
@@ -531,16 +545,13 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           rawText: authText,
         };
         setLastResponse(authStructured);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            text: authText,
-            structured: authStructured,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        pushOrUpdateErrorMessage({
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          text: authText,
+          structured: authStructured,
+          timestamp: new Date().toISOString(),
+        });
       } else if (isTimeout) {
         const timeoutTitle = "MOUNTAIN ENGINE WAKING UP";
         const timeoutText = "Our mountain reasoning engine is warming up from a brief pause. Please tap Retry below in just a moment.";
@@ -557,16 +568,13 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           rawText: timeoutText,
         };
         setLastResponse(timeoutStructured);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            text: timeoutText,
-            structured: timeoutStructured,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        pushOrUpdateErrorMessage({
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          text: timeoutText,
+          structured: timeoutStructured,
+          timestamp: new Date().toISOString(),
+        });
       } else if (isNetwork) {
         const netTitle = "CONNECTION INTERRUPTED";
         const netText = "Unable to reach VANVAS servers. Please check your internet connection or mobile data and try again.";
@@ -583,16 +591,13 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           rawText: netText,
         };
         setLastResponse(netStructured);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            text: netText,
-            structured: netStructured,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        pushOrUpdateErrorMessage({
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          text: netText,
+          structured: netStructured,
+          timestamp: new Date().toISOString(),
+        });
       } else {
         const fallbackTitle = "TRAVEL INTELLIGENCE TEMPORARILY UNAVAILABLE";
         const fallbackText = err?.message || "Live place discovery is temporarily unavailable. You can still plan your expedition and explore destinations directly.";
@@ -610,16 +615,13 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           rawText: fallbackText,
         };
         setLastResponse(errorStructured);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            text: fallbackText,
-            structured: errorStructured,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        pushOrUpdateErrorMessage({
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          text: fallbackText,
+          structured: errorStructured,
+          timestamp: new Date().toISOString(),
+        });
       }
     } finally {
       isSendingRef.current = false;

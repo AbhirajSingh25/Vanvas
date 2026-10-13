@@ -51,6 +51,7 @@ function TrekDetailContent({ params }: PageProps) {
     return mode === "trail" || trail === "1" || trail === "true";
   });
   const [trailWaypointIndex, setTrailWaypointIndex] = useState<number>(0);
+  const [activeTrekTab, setActiveTrekTab] = useState<"overview" | "route" | "gear" | "budget" | "safety">("overview");
 
   // Sync Trail Mode from URL query parameter
   useEffect(() => {
@@ -294,15 +295,6 @@ function TrekDetailContent({ params }: PageProps) {
           {/* Primary Actions: Open Route, Ask VANVAS, Start Trek */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                const el = document.getElementById("trek-route-section");
-                el?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="px-3 py-1.5 rounded-full bg-[#1A2A22] hover:bg-[#25392F] text-[#FAF4E8] text-[11px] font-mono border border-[#344D3F] cursor-pointer transition-colors"
-            >
-              Open Route
-            </button>
-            <button
               onClick={() => openAskVanvas({ destinationName: trek.title, title: `ASK VANVAS · ${trek.title.toUpperCase()}` }, `Tell me safety tips, gear essentials, and route advice for ${trek.title}`)}
               className="px-3 py-1.5 rounded-full bg-[#B49252]/20 hover:bg-[#B49252]/30 text-[#B49252] text-[11px] font-mono border border-[#B49252]/40 flex items-center gap-1 cursor-pointer transition-colors"
             >
@@ -314,14 +306,47 @@ function TrekDetailContent({ params }: PageProps) {
               className="px-3.5 py-1.5 rounded-full bg-[#E05A2B] hover:bg-[#C8491D] text-white text-[11px] font-mono font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-md cursor-pointer transition-all active:scale-95"
             >
               <Crosshair className="w-3.5 h-3.5" />
-              <span>Start Trek</span>
+              <span>Start Trail Mode</span>
             </button>
           </div>
+        </div>
+
+        {/* 5-Destination Trek Cockpit Tabs */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2.5 pb-0.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {[
+            { id: "overview", label: "Overview", icon: Mountain },
+            { id: "route", label: "Route & Map", icon: MapPin },
+            { id: "gear", label: "Gear & Prep", icon: ShoppingBag },
+            { id: "budget", label: "Budget", icon: DollarSign },
+            { id: "safety", label: "Safety & SOS", icon: Shield },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTrekTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setActiveTrekTab(tab.id as any);
+                  const el = document.getElementById(`trek-${tab.id}-section`);
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? "bg-[#E05A2B] text-white shadow-xs"
+                    : "bg-[#14201A] text-[#8FA699] hover:bg-[#1E2E25] hover:text-[#FAF4E8] border border-[#24352D]"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* 2. EXPEDITION HERO SECTION */}
-      <section className="relative h-[60vh] min-h-[440px] max-h-[540px] bg-[#0A100D] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden border-b border-[#2A3E33]">
+      <section id="trek-overview-section" className="relative h-[60vh] min-h-[440px] max-h-[540px] bg-[#0A100D] flex items-end px-4 sm:px-6 lg:px-8 pb-10 overflow-hidden border-b border-[#2A3E33]">
         <div className="absolute inset-0 z-0">
           <VanvasImage
             src={trek.heroImage}
@@ -749,7 +774,7 @@ function TrekDetailContent({ params }: PageProps) {
       </section>
 
       {/* 7. INTERACTIVE GEAR PLANNER (Student / Budget / Standard / Premium) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <section id="trek-gear-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="border-b border-[#2A3E33] pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="space-y-1">
             <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
@@ -857,7 +882,7 @@ function TrekDetailContent({ params }: PageProps) {
       </section>
 
       {/* 8. TRANSPARENT BUDGET CALCULATOR */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <section id="trek-budget-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="border-b border-[#2A3E33] pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="space-y-1">
             <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
@@ -996,7 +1021,7 @@ function TrekDetailContent({ params }: PageProps) {
       </section>
 
       {/* 10. PRACTICAL FIELD INTELLIGENCE & SAFETY */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <section id="trek-safety-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="border-b border-[#2A3E33] pb-4">
           <span className="text-[11px] font-mono uppercase tracking-widest text-[#B49252]">
             GROUND LOGISTICS & SURVIVAL PROTOCOLS

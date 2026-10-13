@@ -398,7 +398,13 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
                 key={idx}
                 type="button"
                 disabled={context.loading}
-                onClick={() => handleSubmit(undefined, chip.query)}
+                onClick={() => {
+                  if (chip.query.toLowerCase().includes("planning a trip") || chip.label.toLowerCase() === "plan a trip") {
+                    context.launchPlanner();
+                  } else {
+                    handleSubmit(undefined, chip.query);
+                  }
+                }}
                 className="shrink-0 px-2.5 py-1 rounded-lg bg-[#EFE5D2] dark:bg-[#2A382E] hover:bg-[#173B32] hover:text-[#FAF7F0] dark:hover:bg-[#B49252] dark:hover:text-[#172019] text-[#173B32] dark:text-[#FAF7F0] text-[11px] font-mono font-bold border border-[#E5D5BA] dark:border-[#384A3E] transition-all cursor-pointer active:scale-95 touch-manipulation select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
               >
                 {chip.label}

@@ -24,7 +24,19 @@ export function useStandalone(): StandaloneState {
 
     const isIosStandalone = (window.navigator as any).standalone === true;
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
-    const isStandalone = mediaQuery.matches || isIosStandalone;
+    const isCapacitorNative = Boolean((window as any)?.Capacitor?.isNativePlatform?.());
+    let isForced = false;
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const m = sp.get("mode") || sp.get("app");
+      if (m === "app" || m === "standalone" || m === "true" || m === "1") {
+        isForced = true;
+      } else if (localStorage.getItem("vanvas_force_runtime_mode") === "standalone") {
+        isForced = true;
+      }
+    } catch {}
+
+    const isStandalone = mediaQuery.matches || isIosStandalone || isCapacitorNative || isForced;
 
     setState({
       isStandalone,
@@ -35,7 +47,7 @@ export function useStandalone(): StandaloneState {
     const handler = (e: MediaQueryListEvent) => {
       setState((prev) => ({
         ...prev,
-        isStandalone: e.matches || ((window.navigator as any).standalone === true),
+        isStandalone: e.matches || ((window.navigator as any).standalone === true) || isCapacitorNative || isForced,
       }));
     };
 

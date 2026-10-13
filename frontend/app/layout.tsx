@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { DensityProvider } from "@/context/DensityContext";
+import { RuntimeModeProvider } from "@/context/RuntimeModeContext";
 import { AskVanvasProvider } from "@/context/AskVanvasContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -152,21 +153,23 @@ export default function RootLayout({
           <AuthProvider>
             <ThemeProvider>
               <DensityProvider>
-                <AskVanvasProvider>
-                  <UpdateNotificationBanner />
-                  <ServiceWorkerRegister />
-                  <Header />
-                  <main className="flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] xl:pb-0">{children}</main>
-                  <Footer />
-                  <MobileNav />
-                  <FloatingCopilotTrigger />
-                  <AskVanvasModal />
-                  <InstallPrompt />
-                  <StartupExperience />
-                  <CapacitorInit />
-                  <AppLifecycleHandler />
-                  <Analytics />
-                </AskVanvasProvider>
+                <RuntimeModeProvider>
+                  <AskVanvasProvider>
+                    <UpdateNotificationBanner />
+                    <ServiceWorkerRegister />
+                    <Header />
+                    <main className="flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] xl:pb-0">{children}</main>
+                    <Footer />
+                    <MobileNav />
+                    <FloatingCopilotTrigger />
+                    <AskVanvasModal />
+                    <InstallPrompt />
+                    <StartupExperience />
+                    <CapacitorInit />
+                    <AppLifecycleHandler />
+                    <Analytics />
+                  </AskVanvasProvider>
+                </RuntimeModeProvider>
               </DensityProvider>
             </ThemeProvider>
           </AuthProvider>

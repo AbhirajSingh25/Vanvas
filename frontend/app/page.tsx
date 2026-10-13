@@ -21,11 +21,13 @@ import { CANONICAL_DESTINATIONS, CANONICAL_HINDI_NAMES, getCanonicalHindiName } 
 import { CANONICAL_EXPEDITION_MODES } from "@/lib/expeditionModes";
 import { useAuth } from "@/context/AuthContext";
 import { useDensity } from "@/context/DensityContext";
+import { useRuntimeMode } from "@/context/RuntimeModeContext";
 import { MobileTravelCommandCenter } from "@/components/home/MobileTravelCommandCenter";
 
 export default function HomePage() {
   const { user } = useAuth();
   const { isCompact } = useDensity();
+  const { isStandaloneApp } = useRuntimeMode();
   const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
   const [userTrips, setUserTrips] = useState<TripSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,11 +61,12 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Mobile App View & Installed iPhone PWA: Travel Command Center */}
-      <MobileTravelCommandCenter destinations={destinations} activeTrip={activeTrip} />
-
-      {/* Desktop Website Experience: Preserved High-Density Editorial */}
-      <div className="hidden xl:block relative overflow-hidden bg-[#EFE5D2] text-[#20211D]">
+      {/* Installed App Mode (PWA Standalone, iOS Standalone, Capacitor Native) */}
+      {isStandaloneApp ? (
+        <MobileTravelCommandCenter destinations={destinations} activeTrip={activeTrip} />
+      ) : (
+        /* Website Experience (Desktop & Responsive Mobile Web) */
+        <div className="relative overflow-hidden bg-[#EFE5D2] text-[#20211D]">
         {/* ======================================================== */}
         {/* SECTION 1: LAYERED HERO WITH HIMALAYAN ARTWORK           */}
         {/* ======================================================== */}
@@ -647,7 +650,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      </div>
+        </div>
+      )}
     </>
   );
 }
