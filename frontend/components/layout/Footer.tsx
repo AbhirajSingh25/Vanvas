@@ -36,7 +36,7 @@ export const Footer: React.FC = () => {
   }
 
   return (
-    <footer className="block border-t border-[#31483D] bg-[#0F2924] text-[#EFE5D2] pt-12 sm:pt-16 pb-20 md:pb-20 px-4 sm:px-6 lg:px-8 mt-16 sm:mt-24 relative overflow-hidden">
+    <footer className={`${pathname === "/" ? "hidden xl:block" : "block"} border-t border-[#31483D] bg-[#0F2924] text-[#EFE5D2] pt-12 sm:pt-16 pb-20 md:pb-20 px-4 sm:px-6 lg:px-8 mt-16 sm:mt-24 relative overflow-hidden`}>
       {/* Background Subtle Contour Texture */}
       <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#EFE5D2_1px,transparent_1px)] [background-size:24px_24px]" />
 
