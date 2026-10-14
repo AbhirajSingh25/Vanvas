@@ -2543,3 +2543,212 @@ export function getOneDayPlansForOrigin(
 
   return plans;
 }
+
+export interface DestinationDayTripMapping {
+  slug: string;
+  name: string;
+  hindiName: string;
+  state: string;
+  hubId: string;
+  planId: string;
+  tagline: string;
+}
+
+export const SUPPORTED_QUICK_ESCAPES: DestinationDayTripMapping[] = [
+  {
+    slug: "neemrana",
+    name: "Neemrana",
+    hindiName: "नीमराना",
+    state: "Rajasthan",
+    hubId: "delhi",
+    planId: "delhi-neemrana-fort",
+    tagline: "Aravalli Hill Fort & Stepwell Run",
+  },
+  {
+    slug: "murthal",
+    name: "Murthal",
+    hindiName: "मुरथल",
+    state: "Haryana",
+    hubId: "delhi",
+    planId: "delhi-murthal-haveli",
+    tagline: "GT Karnal Road Tandoori Parathas",
+  },
+  {
+    slug: "damdama",
+    name: "Damdama Lake",
+    hindiName: "दमदमा झील",
+    state: "Haryana",
+    hubId: "delhi",
+    planId: "delhi-damdama-sohna",
+    tagline: "Aravalli Offroad & Lakeside Ridge",
+  },
+  {
+    slug: "rishikesh",
+    name: "Rishikesh",
+    hindiName: "ऋषिकेश",
+    state: "Uttarakhand",
+    hubId: "delhi",
+    planId: "delhi-rishikesh-rapids",
+    tagline: "White Water Rapids & River Cafés",
+  },
+  {
+    slug: "jaipur",
+    name: "Jaipur",
+    hindiName: "जयपुर",
+    state: "Rajasthan",
+    hubId: "delhi",
+    planId: "delhi-jaipur-highway",
+    tagline: "Pink City Amber Fort & Pyaaz Kachoris",
+  },
+  {
+    slug: "agra",
+    name: "Agra",
+    hindiName: "आगरा",
+    state: "Uttar Pradesh",
+    hubId: "delhi",
+    planId: "delhi-agra-taj-expressway",
+    tagline: "Taj Mahal Sunrise & Mehtab Bagh",
+  },
+  {
+    slug: "mathura",
+    name: "Mathura & Vrindavan",
+    hindiName: "मथुरा",
+    state: "Uttar Pradesh",
+    hubId: "delhi",
+    planId: "delhi-mathura-vrindavan",
+    tagline: "Yamuna Ghats & Banke Bihari Trail",
+  },
+  {
+    slug: "dehradun",
+    name: "Dehradun",
+    hindiName: "देहरादून",
+    state: "Uttarakhand",
+    hubId: "delhi",
+    planId: "delhi-dehradun-expressway",
+    tagline: "Robber's Cave & Colonial Bakeries",
+  },
+  {
+    slug: "chandigarh",
+    name: "Chandigarh",
+    hindiName: "चंडीगढ़",
+    state: "Punjab/Haryana",
+    hubId: "delhi",
+    planId: "delhi-chandigarh-expressway",
+    tagline: "Rock Garden & Sukhna Lake Breeze",
+  },
+  {
+    slug: "morni-hills",
+    name: "Morni Hills",
+    hindiName: "मोरनी हिल्स",
+    state: "Haryana",
+    hubId: "delhi",
+    planId: "delhi-morni-hills",
+    tagline: "Pine Ridge & Tikkar Taal Lake",
+  },
+  {
+    slug: "mussoorie",
+    name: "Mussoorie",
+    hindiName: "मसूरी",
+    state: "Uttarakhand",
+    hubId: "dehradun",
+    planId: "dehradun-mussoorie-landour",
+    tagline: "Landour Bakehouse & Misty Ridge",
+  },
+];
+
+export interface ResolvedDayEscape {
+  plan: OneDayPlan | null;
+  hub: OneDayHub | null;
+  isExplicitRequest: boolean;
+  requestedDestination: string | null;
+  unsupportedReason?: string;
+}
+
+export function resolveOneDayPlanSelection(params: {
+  planId?: string | null;
+  destination?: string | null;
+  origin?: string | null;
+  activeHubId?: string;
+}): ResolvedDayEscape {
+  const { planId, destination, origin, activeHubId } = params;
+
+  // 1. Direct planId match
+  if (planId) {
+    const directMatch = SEEDED_ONE_DAY_PLANS.find((p) => p.id === planId);
+    if (directMatch) {
+      const hub = ONE_DAY_HUBS.find((h) =>
+        directMatch.originCity.toLowerCase().includes(h.name.toLowerCase()) ||
+        directMatch.originCity.toLowerCase().includes(h.id)
+      ) || ONE_DAY_HUBS[0];
+      return {
+        plan: directMatch,
+        hub,
+        isExplicitRequest: true,
+        requestedDestination: destination || directMatch.destinationArea,
+      };
+    }
+  }
+
+  // 2. Explicit destination search
+  if (destination) {
+    const cleanDest = destination.trim().toLowerCase();
+
+    // Check canonical Quick Escape mapping
+    const quickMap = SUPPORTED_QUICK_ESCAPES.find(
+      (m) => m.slug.toLowerCase() === cleanDest || m.name.toLowerCase() === cleanDest
+    );
+    if (quickMap) {
+      const plan = SEEDED_ONE_DAY_PLANS.find((p) => p.id === quickMap.planId);
+      const hub = ONE_DAY_HUBS.find((h) => h.id === quickMap.hubId) || ONE_DAY_HUBS[0];
+      if (plan) {
+        return {
+          plan,
+          hub,
+          isExplicitRequest: true,
+          requestedDestination: destination,
+        };
+      }
+    }
+
+    // Check all seeded plans by destinationArea or title
+    const searchMatch = SEEDED_ONE_DAY_PLANS.find(
+      (p) =>
+        p.destinationArea.toLowerCase().includes(cleanDest) ||
+        p.title.toLowerCase().includes(cleanDest) ||
+        cleanDest.includes(p.destinationArea.toLowerCase().split(" ")[0])
+    );
+    if (searchMatch) {
+      const hub = ONE_DAY_HUBS.find((h) =>
+        searchMatch.originCity.toLowerCase().includes(h.name.toLowerCase()) ||
+        searchMatch.originCity.toLowerCase().includes(h.id)
+      ) || ONE_DAY_HUBS[0];
+      return {
+        plan: searchMatch,
+        hub,
+        isExplicitRequest: true,
+        requestedDestination: destination,
+      };
+    }
+
+    // Destination was EXPLICITLY requested, but NO one-day plan exists for it!
+    // NEVER fall back to Murthal or any other unrelated plan!
+    return {
+      plan: null,
+      hub: null,
+      isExplicitRequest: true,
+      requestedDestination: destination,
+      unsupportedReason: `No verified one-day round trip plan available for "${destination}".`,
+    };
+  }
+
+  // 3. Clean planner opening without destination: return origin's first plan
+  const currentHub = ONE_DAY_HUBS.find((h) => h.id === (origin || activeHubId || "delhi")) || ONE_DAY_HUBS[0];
+  const plansForHub = getOneDayPlansForOrigin(currentHub.name);
+  return {
+    plan: plansForHub[0] || SEEDED_ONE_DAY_PLANS[0],
+    hub: currentHub,
+    isExplicitRequest: false,
+    requestedDestination: null,
+  };
+}
+

@@ -9,23 +9,26 @@ import { useAuth } from "@/context/AuthContext";
 import {
   Compass, Calendar, MapPin, Sparkles, ChevronLeft,
   User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield, ShieldCheck,
-  X, MessageSquare
+  X, MessageSquare, SlidersHorizontal, Check
 } from "lucide-react";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { Avatar } from "@/components/ui/Avatar";
 import { useDensity } from "@/context/DensityContext";
+import { DensitySwitcher } from "@/components/ui/DensitySwitcher";
 import { ConnectivityBanner } from "@/components/pwa/ConnectivityBanner";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { isCompact } = useDensity();
+  const { density, setDensity, isCompact } = useDensity();
   const { openAskVanvas } = useAskVanvas();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
+  const [densityMenuOpen, setDensityMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileSheetRef = useRef<HTMLDivElement>(null);
+  const densityRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
   // Measure and synchronize dynamic top sticky header offset for child pages (e.g. sticky tabs)
@@ -55,6 +58,9 @@ export const Header: React.FC = () => {
       }
       if (mobileSheetRef.current && !mobileSheetRef.current.contains(event.target as Node)) {
         setMobileAccountOpen(false);
+      }
+      if (densityRef.current && !densityRef.current.contains(event.target as Node)) {
+        setDensityMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -167,6 +173,9 @@ export const Header: React.FC = () => {
 
           {/* Desktop Header Right Actions */}
           <div className="flex items-center gap-3">
+            {/* Global Density Switcher */}
+            <DensitySwitcher showLabel={true} />
+
             {/* Ask VANVAS AI Copilot Button */}
             <button
               type="button"
@@ -334,8 +343,81 @@ export const Header: React.FC = () => {
             ) : null}
           </div>
 
-          {/* Right: User Avatar / Account Sheet OR Sign In */}
-          <div className="flex items-center justify-end min-w-[70px]">
+          {/* Right: Mobile Density Control + User Avatar / Sign In */}
+          <div className="flex items-center justify-end gap-1.5 min-w-[70px]">
+            {/* Compact Mobile Density Popover */}
+            <div className="relative" ref={densityRef}>
+              <button
+                type="button"
+                onClick={() => setDensityMenuOpen(!densityMenuOpen)}
+                className={`p-1.5 rounded-full border transition-all cursor-pointer flex items-center justify-center ${
+                  densityMenuOpen
+                    ? "bg-[#173B32] text-[#FAF7F0] border-[#173B32]"
+                    : "border-[#D8CBB2] bg-[#FAF4E8] text-[#173B32] hover:bg-[#E5D5BA]/50"
+                }`}
+                aria-label="Change layout density (Original or Compact)"
+                aria-expanded={densityMenuOpen}
+                title="Change layout density"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#173B32]" />
+              </button>
+
+              {/* Accessible Density Popover */}
+              {densityMenuOpen && (
+                <div
+                  role="dialog"
+                  aria-label="Layout view options"
+                  className="absolute right-0 mt-2 w-56 bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl p-2.5 z-50 animate-vanvas-scale space-y-1.5"
+                >
+                  <div className="px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#7B4D36]">
+                    PAGE VIEW DENSITY
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDensity("original");
+                      setDensityMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all cursor-pointer ${
+                      !isCompact
+                        ? "bg-[#173B32] text-[#FAF4E8] font-bold shadow-xs"
+                        : "text-[#20211D] hover:bg-[#E5D5BA]/60"
+                    }`}
+                  >
+                    <div>
+                      <div className="font-serif text-xs font-bold">Original</div>
+                      <div className={`text-[10px] ${!isCompact ? "text-[#EFE5D2]/80" : "text-[#7B4D36]"}`}>
+                        Immersive &amp; spacious
+                      </div>
+                    </div>
+                    {!isCompact && <Check className="w-4 h-4 text-[#B49252]" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDensity("compact");
+                      setDensityMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all cursor-pointer ${
+                      isCompact
+                        ? "bg-[#173B32] text-[#FAF4E8] font-bold shadow-xs"
+                        : "text-[#20211D] hover:bg-[#E5D5BA]/60"
+                    }`}
+                  >
+                    <div>
+                      <div className="font-serif text-xs font-bold">Compact</div>
+                      <div className={`text-[10px] ${isCompact ? "text-[#EFE5D2]/80" : "text-[#7B4D36]"}`}>
+                        Information-dense cards
+                      </div>
+                    </div>
+                    {isCompact && <Check className="w-4 h-4 text-[#B49252]" />}
+                  </button>
+                </div>
+              )}
+            </div>
+
             {user ? (
               <button
                 type="button"

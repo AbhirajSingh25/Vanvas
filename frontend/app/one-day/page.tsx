@@ -20,7 +20,9 @@ import {
   OneDayHub,
   OneDayVibe,
   FeasibilityRating,
-  getOneDayPlansForOrigin
+  getOneDayPlansForOrigin,
+  resolveOneDayPlanSelection,
+  SUPPORTED_QUICK_ESCAPES
 } from "@/lib/oneDayContentModel";
 import { getCurrentGPSPosition, UserLocationState } from "@/lib/locationService";
 import { VanvasImage } from "@/components/ui/VanvasImage";
@@ -131,6 +133,7 @@ function OneDayEscapeContent() {
 
   const fromParam = searchParams.get("from") || searchParams.get("origin") || "";
   const destParam = searchParams.get("dest") || searchParams.get("destination") || "";
+  const planIdParam = searchParams.get("planId") || searchParams.get("id") || "";
   const vibeParam = searchParams.get("vibe") || searchParams.get("style") || "";
 
   // 1. Where am I going / starting?
@@ -219,28 +222,27 @@ function OneDayEscapeContent() {
     return filtered.length > 0 ? filtered : basePlans;
   }, [activeOriginLabel, selectedStyleId, activeStyle, selectedDuration]);
 
-  // Active Plan Resolution
-  const activePlan = useMemo(() => {
-    if (destParam) {
-      const matchDest = plansForOrigin.find((p) =>
-        p.destinationArea.toLowerCase().includes(destParam.toLowerCase()) ||
-        p.title.toLowerCase().includes(destParam.toLowerCase())
-      );
-      if (matchDest) return matchDest;
-    }
-    if (selectedPlanId) {
-      const found = plansForOrigin.find((p) => p.id === selectedPlanId);
-      if (found) return found;
-    }
-    return plansForOrigin[0] || SEEDED_ONE_DAY_PLANS[0];
-  }, [plansForOrigin, selectedPlanId, destParam]);
+  // Active Plan Resolution using canonical mapping
+  const planResolution = useMemo(() => {
+    return resolveOneDayPlanSelection({
+      planId: planIdParam || selectedPlanId,
+      destination: destParam,
+      origin: activeOriginLabel,
+      activeHubId: selectedHubId,
+    });
+  }, [planIdParam, selectedPlanId, destParam, activeOriginLabel, selectedHubId]);
 
-  // Sync selectedPlanId when plans change
+  const activePlan = planResolution.plan;
+
+  // Sync selectedPlanId and hub when resolved
   useEffect(() => {
-    if (plansForOrigin.length > 0 && !plansForOrigin.some((p) => p.id === selectedPlanId)) {
-      setSelectedPlanId(plansForOrigin[0].id);
+    if (planResolution.plan && planResolution.plan.id !== selectedPlanId) {
+      setSelectedPlanId(planResolution.plan.id);
     }
-  }, [plansForOrigin, selectedPlanId]);
+    if (planResolution.hub && planResolution.hub.id !== selectedHubId) {
+      setSelectedHubId(planResolution.hub.id);
+    }
+  }, [planResolution.plan?.id, planResolution.hub?.id, selectedPlanId, selectedHubId]);
 
   // Sync departure / return times
   useEffect(() => {
@@ -248,10 +250,11 @@ function OneDayEscapeContent() {
       setDepartureTime(activePlan.departureTime || "06:30 AM");
       setReturnDeadline(activePlan.returnTime || "09:30 PM");
     }
-  }, [activePlan?.id]);
+  }, [activePlan?.id, activePlan?.departureTime, activePlan?.returnTime]);
 
   // Timeline recalculation
   const adaptedStops = useMemo(() => {
+    if (!activePlan) return [];
     const startMins = parseTimeToMinutes(departureTime);
     let currentMins = startMins;
 
@@ -291,12 +294,12 @@ function OneDayEscapeContent() {
 
   // Return home time & feasibility
   const calculatedReturnHomeMins = useMemo(() => {
-    if (adaptedStops.length === 0) return parseTimeToMinutes(departureTime) + 480;
+    if (!activePlan || adaptedStops.length === 0) return parseTimeToMinutes(departureTime) + 480;
     const lastStop = adaptedStops[adaptedStops.length - 1];
     const lastStopDepartMins = parseTimeToMinutes(lastStop.calculatedDeparture);
     const returnDriveMins = Math.max(45, Math.round((activePlan.totalDistanceKm * 0.45) * 1.2));
     return lastStopDepartMins + returnDriveMins;
-  }, [adaptedStops, activePlan.totalDistanceKm, departureTime]);
+  }, [adaptedStops, activePlan?.totalDistanceKm, departureTime]);
 
   const calculatedReturnHomeTime = useMemo(() => {
     return formatMinutesToTime(calculatedReturnHomeMins);
@@ -325,6 +328,7 @@ function OneDayEscapeContent() {
 
   // Budget calculations
   const totalTripCost = useMemo(() => {
+    if (!activePlan) return 0;
     const { transportFuel, foodSnacks, activityTickets, parkingTolls, miscEmergency } = activePlan.budgetBreakdown;
     const totalVehicleCosts = transportFuel + parkingTolls;
     const totalIndividualCosts = (foodSnacks + activityTickets + miscEmergency) * groupSize;
@@ -362,6 +366,7 @@ function OneDayEscapeContent() {
 
   // Google Maps navigation link
   const handleGetDirections = () => {
+    if (!activePlan) return;
     const destinationCoord = activePlan.stops[activePlan.stops.length - 1] || activePlan.stops[0];
     const originQuery = activeOriginLabel;
     const destQuery = destinationCoord.lat && destinationCoord.lng
@@ -373,6 +378,7 @@ function OneDayEscapeContent() {
 
   // Handoff to full planner
   const handlePlanThisTrip = () => {
+    if (!activePlan) return;
     setIsPlanningLoading(true);
     if (typeof window !== "undefined") {
       localStorage.setItem("vanvas_prefill_destination", activePlan.destinationArea);
@@ -386,6 +392,7 @@ function OneDayEscapeContent() {
   };
 
   const handleUpdatePlan = () => {
+    if (!activePlan) return;
     setPlanSuccessNotice(`Itinerary updated for ${activePlan.destinationArea} (${selectedDuration === "3h" ? "3 Hours" : selectedDuration === "6h" ? "6 Hours" : "Full Day"})`);
     setTimeout(() => setPlanSuccessNotice(null), 3000);
   };
@@ -475,7 +482,7 @@ function OneDayEscapeContent() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {plansForOrigin.map((p) => {
-                    const isSelected = activePlan.id === p.id;
+                    const isSelected = activePlan?.id === p.id;
                     return (
                       <div
                         key={p.id}
@@ -545,7 +552,7 @@ function OneDayEscapeContent() {
                 Tailor Your Day Escape
               </h1>
               <p className="text-xs text-[#D8DED5]/80 font-sans mt-0.5">
-                {activeOriginLabel} → {activePlan.destinationArea} • {activePlan.totalDistanceKm} km round trip
+                {activeOriginLabel} → {activePlan?.destinationArea || "Selected Sanctuary"} • {activePlan?.totalDistanceKm || 0} km round trip
               </p>
             </div>
           </section>
@@ -636,7 +643,51 @@ function OneDayEscapeContent() {
       {/* ======================================================== */}
       {currentStep === "itinerary" && (
         <>
-          <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-6 pb-6 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
+          {!activePlan ? (
+            <div className="max-w-2xl mx-auto px-4 py-12 sm:py-16 text-center space-y-6">
+              <div className="bg-[#FAF7F0] border-2 border-[#D8CBB2] rounded-3xl p-6 sm:p-10 shadow-md space-y-5 animate-fadeIn">
+                <div className="w-14 h-14 rounded-full bg-[#B65E3C]/10 text-[#B65E3C] flex items-center justify-center mx-auto">
+                  <Compass className="w-7 h-7" />
+                </div>
+                <div className="space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#B65E3C]">
+                    NO VERIFIED SINGLE-DAY ESCAPE
+                  </span>
+                  <h2 className="font-serif text-2xl font-bold text-[#173B32]">
+                    {destParam ? destParam.charAt(0).toUpperCase() + destParam.slice(1).replace(/-/g, " ") : "Destination"} is an Expedition
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[#20211D]/80 leading-relaxed max-w-lg mx-auto">
+                    We could not find a realistic one-day round trip for <strong className="text-[#173B32]">{destParam}</strong> from {activeOriginLabel}.
+                    High-altitude sanctuaries like Manali, Kasol, and Dharamshala require multi-day expeditions rather than a single-day round trip.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  {destParam && (
+                    <Link
+                      href={`/explore/${encodeURIComponent(destParam.toLowerCase())}`}
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#173B32] text-xs font-bold uppercase tracking-wider text-[#EFE5D2] hover:bg-[#20453B] transition-all flex items-center justify-center gap-2 shadow-xs"
+                    >
+                      <span>Explore {destParam} Multi-Day Guide</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-[#B49252]" />
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push("/one-day");
+                      setSelectedPlanId("");
+                    }}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white border border-[#D8CBB2] text-xs font-bold text-[#173B32] hover:bg-[#E5D5BA]/40 transition-colors cursor-pointer"
+                  >
+                    Browse Verified Day Trips
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <section className="bg-[#173B32] text-[#EFE5D2] px-4 sm:px-6 lg:px-8 pt-6 pb-6 border-b-2 border-[#E5D5BA]/30 relative overflow-hidden">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
               <div>
                 <button
@@ -1045,8 +1096,10 @@ function OneDayEscapeContent() {
           </AnimatePresence>
         </div>
       </section>
-    </>
-  )}
+            </>
+          )}
+        </>
+      )}
 
       {/* HUB SELECTOR SHEET (ADAPTIVE POPUP / BOTTOM SHEET) */}
       <VanvasAdaptiveModal

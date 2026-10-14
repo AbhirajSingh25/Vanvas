@@ -1,18 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import { useDensity } from "@/context/DensityContext";
 
 interface DensitySwitcherProps {
   className?: string;
   showLabel?: boolean;
+  idPrefix?: string;
 }
 
 export function DensitySwitcher({
   className = "",
   showLabel = true,
+  idPrefix,
 }: DensitySwitcherProps) {
   const { density, setDensity, isCompact } = useDensity();
+  const generatedId = useId();
+  const baseId = idPrefix || `density-${generatedId.replace(/:/g, "")}`;
+  const originalId = `${baseId}-original`;
+  const compactId = `${baseId}-compact`;
 
   return (
     <div
@@ -28,7 +34,7 @@ export function DensitySwitcher({
 
       <button
         type="button"
-        id="density-btn-original"
+        id={originalId}
         onClick={() => setDensity("original")}
         aria-label="Switch to Original Mode"
         aria-pressed={!isCompact}
@@ -49,7 +55,7 @@ export function DensitySwitcher({
 
       <button
         type="button"
-        id="density-btn-compact"
+        id={compactId}
         onClick={() => setDensity("compact")}
         aria-label="Switch to Compact Mode"
         aria-pressed={isCompact}

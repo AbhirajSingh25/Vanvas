@@ -18,6 +18,7 @@ import { TravelStamp } from "@/components/ui/TravelStamp";
 import { Avatar } from "@/components/ui/Avatar";
 import { AVATAR_PRESETS, AvatarPreset } from "@/lib/avatarPresets";
 import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
+import { AvatarCropper } from "@/components/profile/AvatarCropper";
 
 function ProfileContent() {
   const { user, logout, updateProfile, uploadAvatar, selectAvatarPreset, deleteAvatar } = useAuth();
@@ -53,6 +54,11 @@ function ProfileContent() {
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reusable Avatar Cropper State
+  const [cropperFile, setCropperFile] = useState<File | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [cropperOrigin, setCropperOrigin] = useState<"direct" | "modal">("direct");
+
   const handleSelectPresetDirect = async (presetId: string) => {
     setAvatarLoading(true);
     setAvatarError(null);
@@ -68,7 +74,7 @@ function ProfileContent() {
     }
   };
 
-  const handleDirectFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDirectFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -85,20 +91,11 @@ function ProfileContent() {
       return;
     }
 
-    setAvatarLoading(true);
     setAvatarError(null);
     setAvatarSuccess(null);
-
-    try {
-      await uploadAvatar(file);
-      setAvatarSuccess("Custom profile photo uploaded and activated!");
-      setTimeout(() => setAvatarSuccess(null), 3500);
-    } catch (err: any) {
-      setAvatarError(err.message || "Failed to upload profile photo.");
-    } finally {
-      setAvatarLoading(false);
-      if (directFileInputRef.current) directFileInputRef.current.value = "";
-    }
+    setCropperFile(file);
+    setCropperOrigin("direct");
+    setIsCropperOpen(true);
   };
 
   const handleDirectDeleteAvatar = async () => {
@@ -172,14 +169,48 @@ function ProfileContent() {
       return;
     }
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    const newPreview = URL.createObjectURL(file);
-    setSelectedFile(file);
-    setPreviewUrl(newPreview);
-    setRemoveAvatarRequested(false);
     setProfileSaveError(null);
+    setCropperFile(file);
+    setCropperOrigin("modal");
+    setIsCropperOpen(true);
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    setIsCropperOpen(false);
+    setCropperFile(null);
+
+    if (cropperOrigin === "direct") {
+      setAvatarLoading(true);
+      setAvatarError(null);
+      setAvatarSuccess(null);
+      try {
+        await uploadAvatar(croppedFile);
+        setAvatarSuccess("Custom profile photo cropped, uploaded, and activated!");
+        setTimeout(() => setAvatarSuccess(null), 3500);
+      } catch (err: any) {
+        setAvatarError(err.message || "Failed to upload profile photo.");
+      } finally {
+        setAvatarLoading(false);
+        if (directFileInputRef.current) directFileInputRef.current.value = "";
+      }
+    } else {
+      // Modal origin: stage croppedFile for handleSaveProfile and update preview
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setSelectedFile(croppedFile);
+      setPreviewUrl(URL.createObjectURL(croppedFile));
+      setRemoveAvatarRequested(false);
+      setProfileSaveError(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleCropCancel = () => {
+    setIsCropperOpen(false);
+    setCropperFile(null);
+    if (directFileInputRef.current) directFileInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemovePhoto = () => {
@@ -953,6 +984,14 @@ function ProfileContent() {
           </div>
         </div>
       )}
+
+      {/* Interactive Avatar Cropper Modal */}
+      <AvatarCropper
+        file={cropperFile}
+        isOpen={isCropperOpen}
+        onCropComplete={handleCropComplete}
+        onCancel={handleCropCancel}
+      />
     </div>
   );
 }

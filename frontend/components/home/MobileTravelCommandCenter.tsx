@@ -17,6 +17,8 @@ import { Destination, TripSummary, Place } from "@/types";
 import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 import { api } from "@/lib/api";
 
+import { SUPPORTED_QUICK_ESCAPES } from "@/lib/oneDayContentModel";
+
 interface MobileTravelCommandCenterProps {
   destinations?: Destination[];
   activeTrip?: TripSummary | null;
@@ -43,12 +45,10 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
 
   const firstName = user?.full_name ? user.full_name.split(" ")[0] : null;
 
-  // Real destinations supporting one-day escapes
+  // Real destinations with verified one-day round-trip plans
   const quickEscapes = useMemo(() => {
-    return destinations
-      .filter((d: any) => d.one_day_available || ["manali", "rishikesh", "jaipur", "kasol", "dharamshala"].includes(d.slug))
-      .slice(0, 6);
-  }, [destinations]);
+    return SUPPORTED_QUICK_ESCAPES.slice(0, 6);
+  }, []);
 
   // 5 Canonical Functional Travel Modes
   const TRAVEL_MODES = [
@@ -495,17 +495,17 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
           </div>
 
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-3.5 sm:-mx-4 px-3.5 sm:px-4 snap-x snap-mandatory touch-manipulation">
-            {quickEscapes.map((dest) => (
+            {quickEscapes.map((escape) => (
               <Link
-                key={`quick-${dest.slug}`}
-                href={`/one-day?destination=${dest.slug}`}
+                key={`quick-${escape.slug}`}
+                href={`/one-day?planId=${escape.planId}&destination=${escape.slug}&origin=${escape.hubId}`}
                 className={`shrink-0 rounded-xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] active:scale-98 transition-all flex items-center gap-2.5 snap-start touch-manipulation ${
-                  isCompact ? "w-44 p-2" : "w-52 p-2.5"
+                  isCompact ? "w-48 p-2" : "w-56 p-2.5"
                 }`}
               >
-                <div className="w-9 h-9 rounded-lg bg-[#173B32] overflow-hidden shrink-0 relative">
+                <div className="w-10 h-10 rounded-lg bg-[#173B32] overflow-hidden shrink-0 relative">
                   <DestinationArtwork
-                    slug={dest.slug}
+                    slug={escape.slug}
                     aspectRatio="square"
                     className="w-full h-full object-cover"
                   />
@@ -516,10 +516,10 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
                       isCompact ? "text-[11px]" : "text-xs"
                     }`}
                   >
-                    {dest.name}
+                    {escape.name}
                   </div>
                   <div className="text-[9.5px] text-[#7B4D36] font-mono truncate">
-                    {dest.state || "Single-Day Escape"}
+                    {escape.tagline || escape.state}
                   </div>
                 </div>
               </Link>
