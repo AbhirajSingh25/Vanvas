@@ -518,6 +518,7 @@ class ItineraryDayResponse(BaseModel):
 
 # ----------------- Trip Schemas -----------------
 class TripCreateRequest(BaseModel):
+    title: Optional[str] = None
     destination_id: str
     start_date: date
     end_date: date
@@ -547,7 +548,7 @@ class TripCreateRequest(BaseModel):
         if not v or not v.strip():
             raise ValueError("Transport mode (transport_mode) is required.")
         v_clean = v.strip().lower().replace(" ", "_")
-        valid_modes = {"bus", "train", "flight", "road_trip", "cab"}
+        valid_modes = {"bus", "train", "flight", "road_trip", "cab", "trek"}
         if v_clean not in valid_modes:
             raise ValueError(f"transport_mode must be one of: {', '.join(sorted(valid_modes))}")
         return v_clean

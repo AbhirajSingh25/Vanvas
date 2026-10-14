@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { DestinationSearchBar } from "@/components/search/DestinationSearchBar";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
-import { DensitySwitcher } from "@/components/ui/DensitySwitcher";
+import { SpotlightCarousel } from "@/components/ui/SpotlightCarousel";
 import { useDensity } from "@/context/DensityContext";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { useAuth } from "@/context/AuthContext";
@@ -20,7 +20,7 @@ import { api } from "@/lib/api";
 import { SUPPORTED_QUICK_ESCAPES } from "@/lib/oneDayContentModel";
 
 interface MobileTravelCommandCenterProps {
-  destinations?: Destination[];
+  destinations?: (Destination | (typeof CANONICAL_DESTINATIONS)[number])[];
   activeTrip?: TripSummary | null;
 }
 
@@ -102,29 +102,22 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
         isCompact ? "px-3.5 py-2.5 space-y-3 pb-3" : "px-4 py-3.5 space-y-4 pb-4"
       }`}
     >
-      {/* 1. GREETING & DENSITY SWITCHER */}
-      <div className="flex items-center justify-between gap-2.5 pt-0.5">
-        <div className="min-w-0">
-          <h1
-            className={`font-serif font-black text-[#173B32] tracking-tight truncate transition-all ${
-              isCompact ? "text-xl" : "text-2xl"
-            }`}
-          >
-            {firstName ? `नमस्ते, ${firstName}` : "नमस्ते, यात्री"}
-          </h1>
-          <p
-            className={`text-[#7B4D36] font-medium leading-tight transition-all ${
-              isCompact ? "text-[11px]" : "text-xs"
-            }`}
-          >
-            Where does your journey lead today?
-          </p>
-        </div>
-
-        {/* Original / Compact Control */}
-        <div className="shrink-0">
-          <DensitySwitcher showLabel={false} />
-        </div>
+      {/* 1. GREETING */}
+      <div className="pt-0.5">
+        <h1
+          className={`font-serif font-black text-[#173B32] tracking-tight truncate transition-all ${
+            isCompact ? "text-xl" : "text-2xl"
+          }`}
+        >
+          {firstName ? `नमस्ते, ${firstName}` : "नमस्ते, यात्री"}
+        </h1>
+        <p
+          className={`text-[#7B4D36] font-medium leading-tight transition-all ${
+            isCompact ? "text-[11px]" : "text-xs"
+          }`}
+        >
+          Where does your journey lead today?
+        </p>
       </div>
 
       {/* 2. COMPACT SEARCH BAR */}
@@ -409,14 +402,17 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
           </Link>
         </div>
 
-        {/* Horizontal Carousel */}
-        <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar pb-1 -mx-3.5 sm:-mx-4 px-3.5 sm:px-4 snap-x snap-mandatory touch-manipulation">
-          {destinations.slice(0, 8).map((dest) => (
+        {/* Spotlight Carousel */}
+        <SpotlightCarousel
+          items={destinations.slice(0, 8)}
+          keyExtractor={(dest) => dest.slug}
+          ariaLabel="Curated Sanctuaries Carousel"
+          itemClassName={isCompact ? "w-44" : "w-56"}
+          renderItem={(dest, { isActive }) => (
             <Link
-              key={dest.slug}
               href={`/explore/${dest.slug}`}
-              className={`shrink-0 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] overflow-hidden shadow-2xs hover:shadow-md active:scale-98 transition-all flex flex-col group snap-start touch-manipulation ${
-                isCompact ? "w-44" : "w-56"
+              className={`block rounded-2xl bg-[#FAF7F0] border overflow-hidden shadow-2xs hover:shadow-md active:scale-98 transition-all flex flex-col group touch-manipulation ${
+                isActive ? "border-[#173B32] shadow-md ring-1 ring-[#173B32]/20" : "border-[#D8CBB2]"
               }`}
             >
               <div
@@ -467,8 +463,8 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
                 </p>
               </div>
             </Link>
-          ))}
-        </div>
+          )}
+        />
       </div>
 
       {/* 7. QUICK ESCAPES (ONLY WHEN REAL DATA AVAILABLE) */}

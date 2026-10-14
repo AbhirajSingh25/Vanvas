@@ -100,7 +100,7 @@ function TreksInner() {
           </div>
 
           <Link
-            href="/plan?mode=trek"
+            href="/treks/plan"
             className="px-4 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5 shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />

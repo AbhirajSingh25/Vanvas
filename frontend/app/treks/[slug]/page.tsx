@@ -312,7 +312,7 @@ function TrekDetailContent({ params }: PageProps) {
             {/* Actions: Plan Trek & Trail Mode (Strictly within viewport) */}
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto shrink-0 pt-1 sm:pt-0">
               <Link
-                href={`/plan?dest=${trek.slug}&mode=trek`}
+                href={`/treks/${trek.slug}/plan`}
                 className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-98"
               >
                 <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />

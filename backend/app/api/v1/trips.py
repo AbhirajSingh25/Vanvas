@@ -187,10 +187,21 @@ async def create_trip(
         chosen_transport_mode = trip_in.transport_mode.strip().lower().replace(" ", "_")
         transport_details_str = json.dumps(trip_in.transport_details) if trip_in.transport_details else None
 
+        effective_trip_mode = "standard"
+        if trip_in.planning_mode == "trek" or chosen_transport_mode == "trek":
+            effective_trip_mode = "trek"
+        elif chosen_transport_mode == "road_trip" or trip_in.planning_mode == "road_trip":
+            effective_trip_mode = "road_trip"
+        elif trip_in.planning_mode == "one_day":
+            effective_trip_mode = "one_day"
+
+        default_title = f"{destination.name} Trek Expedition" if effective_trip_mode == "trek" else f"Spontaneous Journey to {destination.name}"
+        effective_title = trip_in.title.strip() if trip_in.title and trip_in.title.strip() else default_title
+
         trip = Trip(
             user_id=current_user.id,
             destination_id=destination.id,
-            title=f"Spontaneous Journey to {destination.name}",
+            title=effective_title,
             start_date=trip_in.start_date,
             end_date=trip_in.end_date,
             num_days=num_days,
@@ -203,7 +214,7 @@ async def create_trip(
             activity_intensity=trip_in.activity_intensity,
             interests=",".join(trip_in.interests),
             origin_city=trip_in.origin_city.strip(),
-            trip_mode="road_trip" if chosen_transport_mode == "road_trip" else "standard",
+            trip_mode=effective_trip_mode,
             transport_mode=chosen_transport_mode,
             transport_details_json=transport_details_str,
             hotel_id=hotel.id if hotel else None,

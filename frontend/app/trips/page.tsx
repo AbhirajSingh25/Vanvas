@@ -297,9 +297,19 @@ function TripsDashboardInner() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924] via-[#0F2924]/40 to-black/20" />
 
-                    <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-md bg-[#173B32]/90 text-[#EFE5D2] text-[10px] font-bold uppercase tracking-wider border border-[#536B52]">
-                      {t.status}
-                    </span>
+                    {t.trip_mode === "trek" || t.title.toLowerCase().includes("trek") ? (
+                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-md bg-[#B65E3C] text-[#FAF4E8] text-[10px] font-mono font-bold uppercase tracking-wider border border-[#7B4D36]/30 shadow-xs">
+                        TREK EXPEDITION
+                      </span>
+                    ) : t.trip_mode === "road_trip" ? (
+                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-md bg-[#B49252] text-[#173B32] text-[10px] font-mono font-bold uppercase tracking-wider border border-[#7B4D36]/30 shadow-xs">
+                        ROAD TRIP
+                      </span>
+                    ) : (
+                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-md bg-[#173B32]/90 text-[#EFE5D2] text-[10px] font-bold uppercase tracking-wider border border-[#536B52]">
+                        {t.status}
+                      </span>
+                    )}
 
                     <div className="absolute bottom-3 left-3 right-3 text-[#EFE5D2]">
                       <h3 className="font-serif font-black text-xl leading-snug">{t.title}</h3>

@@ -55,6 +55,19 @@ function PlanWizard() {
   const { user, login, register } = useAuth();
   const { isCompact } = useDensity();
 
+  // Legacy trek mode redirect: Never plan treks through the generic destination wizard
+  useEffect(() => {
+    const mode = searchParams?.get("mode");
+    if (mode === "trek") {
+      const dest = searchParams?.get("dest") || searchParams?.get("destination");
+      if (dest) {
+        router.replace(`/treks/${dest}/plan`);
+      } else {
+        router.replace("/treks/plan");
+      }
+    }
+  }, [searchParams, router]);
+
   // Progressive Step State: 1 to 6 (Mandatory flow), plus 7 (Review)
   // Step 1: WHERE ARE YOU STARTING FROM?
   // Step 2: WHERE ARE YOU GOING?

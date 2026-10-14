@@ -17,9 +17,19 @@ export const CompactTripCard: React.FC<CompactTripCardProps> = ({ trip }) => {
     >
       <div className="space-y-1 min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] text-[9px] font-mono font-bold uppercase tracking-wider">
-            {trip.status}
-          </span>
+          {trip.trip_mode === "trek" || trip.title.toLowerCase().includes("trek") ? (
+            <span className="px-2 py-0.5 rounded bg-[#B65E3C] text-white text-[9px] font-mono font-bold uppercase tracking-wider">
+              TREK
+            </span>
+          ) : trip.trip_mode === "road_trip" ? (
+            <span className="px-2 py-0.5 rounded bg-[#B49252] text-[#173B32] text-[9px] font-mono font-bold uppercase tracking-wider">
+              ROAD TRIP
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] text-[9px] font-mono font-bold uppercase tracking-wider">
+              {trip.status}
+            </span>
+          )}
           <span className="text-[10px] font-mono text-[#7B4D36]">
             {trip.start_date} → {trip.end_date}
           </span>

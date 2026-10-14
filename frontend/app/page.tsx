@@ -13,7 +13,6 @@ import { JournalNote } from "@/components/ui/JournalNote";
 import { DevanagariHeading } from "@/components/ui/DevanagariHeading";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 import { DestinationSearchBar } from "@/components/search/DestinationSearchBar";
-import { DensitySwitcher } from "@/components/ui/DensitySwitcher";
 import { CompactTravelModeCard, CompactDestinationCard } from "@/components/compact";
 import { api } from "@/lib/api";
 import { Destination, TripSummary } from "@/types";
@@ -197,17 +196,12 @@ export default function HomePage() {
       {/* SECTION 1B: CHOOSE YOUR WAY TO TRAVEL                    */}
       {/* ======================================================== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#D8CBB2] pb-6">
+        <div className="border-b border-[#D8CBB2] pb-6">
           <DevanagariHeading
             devanagari="अपनी यात्रा चुनें"
             english="Choose Your Way to Travel"
             subtitle="Five dedicated visual environments built for different travel mentalities."
           />
-
-          {/* Density / View Switcher directly on Home */}
-          <div className="self-start sm:self-auto shrink-0">
-            <DensitySwitcher />
-          </div>
         </div>
 
         {isCompact ? (

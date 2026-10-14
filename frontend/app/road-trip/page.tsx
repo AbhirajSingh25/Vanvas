@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { RoutePlottingLoader } from "@/components/road-trip/RoutePlottingLoader";
 import {
   Navigation, Compass, Fuel, Clock, MapPin, Users,
   Sparkles, ArrowRight, ArrowLeft, BedDouble, Coffee, Check,
@@ -73,6 +74,8 @@ function RoadTripCockpit() {
 
   // Results state
   const [corridors, setCorridors] = useState<RoadTripCorridor[]>([]);
+  const [corridorsLoading, setCorridorsLoading] = useState(false);
+  const [corridorsError, setCorridorsError] = useState<string | null>(null);
   const [plan, setPlan] = useState<RoadTripPlanResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -90,11 +93,26 @@ function RoadTripCockpit() {
   const [budgetModel, setBudgetModel] = useState<BudgetModelValues | null>(null);
   const [defaultBudgetModel, setDefaultBudgetModel] = useState<BudgetModelValues | null>(null);
 
+  const fetchCorridors = useCallback(() => {
+    setCorridorsLoading(true);
+    setCorridorsError(null);
+    api.getRoadTripCorridors()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCorridors(data);
+        }
+      })
+      .catch((err) => {
+        setCorridorsError(err?.message || "Failed to load popular corridors. You can still plan any custom route.");
+      })
+      .finally(() => {
+        setCorridorsLoading(false);
+      });
+  }, []);
+
   // Load popular corridors on mount and handle query params
   useEffect(() => {
-    api.getRoadTripCorridors()
-      .then(setCorridors)
-      .catch(() => {});
+    fetchCorridors();
 
     const urlOrigin = searchParams?.get("origin");
     const urlDest = searchParams?.get("dest") || searchParams?.get("destination");
@@ -102,6 +120,7 @@ function RoadTripCockpit() {
       setOrigin(urlOrigin);
       setDestination(urlDest);
       setLoading(true);
+      setErrorState(null);
       api.planRoadTrip({
         origin: urlOrigin,
         destination: urlDest,
@@ -120,7 +139,7 @@ function RoadTripCockpit() {
         })
         .finally(() => setLoading(false));
     }
-  }, [searchParams]);
+  }, [searchParams, fetchCorridors, startDate]);
 
   // Sync Road Trip context to Ask VANVAS
   useEffect(() => {
@@ -1147,18 +1166,40 @@ function RoadTripCockpit() {
         /* VIEW B: PROGRESSIVE 1-QUESTION-AT-A-TIME FLOW            */
         /* ======================================================== */
         <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          {/* Loading Indicator */}
+          {/* Bespoke VANVAS Route Plotting Experience */}
           {loading && (
-            <div className="fixed inset-0 z-50 bg-[#0F2924]/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-[#EFE5D2] animate-in fade-in duration-200">
-              <div className="w-14 h-14 rounded-2xl bg-[#B65E3C] flex items-center justify-center shadow-2xl mb-4">
-                <Navigation className="w-7 h-7 text-[#FAF4E8] animate-spin" />
+            <RoutePlottingLoader
+              origin={origin}
+              destination={destination}
+              vehicleType={vehicleType}
+              tripStyle={tripStyle}
+              error={errorState}
+              onRetry={() => {
+                setErrorState(null);
+                handleBuildRoadTrip();
+              }}
+              onDismissError={() => {
+                setErrorState(null);
+                setLoading(false);
+              }}
+            />
+          )}
+
+          {/* Popular Corridors Error & Recovery */}
+          {currentStep === 1 && corridorsError && (
+            <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span className="font-medium">{corridorsError}</span>
               </div>
-              <h3 className="font-serif font-black text-2xl text-[#FAF4E8] mb-2">
-                Plotting Highway Corridor: {origin} → {destination}
-              </h3>
-              <p className="text-xs sm:text-sm font-mono text-[#D8DED5] animate-pulse">
-                Fetching real OSRM road geometry, highway stops &amp; fuel stops...
-              </p>
+              <button
+                type="button"
+                onClick={fetchCorridors}
+                disabled={corridorsLoading}
+                className="px-3 py-1 rounded-xl bg-amber-800 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-amber-900 shrink-0 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {corridorsLoading ? "Loading..." : "Retry Corridors"}
+              </button>
             </div>
           )}
 
@@ -1173,13 +1214,14 @@ function RoadTripCockpit() {
                   <button
                     key={c.id}
                     type="button"
+                    data-testid="corridor-card"
                     onClick={() => handleSelectCorridor(c)}
-                    className="p-3 rounded-2xl bg-white hover:bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#B65E3C] text-left transition-all cursor-pointer shadow-2xs"
+                    className="p-3 rounded-2xl bg-white hover:bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#B65E3C] text-left transition-all cursor-pointer shadow-2xs group"
                   >
                     <span className="text-[9px] font-mono font-bold text-[#B65E3C] uppercase block">
                       {c.origin} → {c.destination}
                     </span>
-                    <h4 className="font-serif font-bold text-xs text-[#173B32]">
+                    <h4 className="font-serif font-bold text-xs text-[#173B32] group-hover:text-[#B65E3C] transition-colors truncate">
                       {c.title}
                     </h4>
                   </button>
@@ -1246,6 +1288,7 @@ function RoadTripCockpit() {
                       <button
                         key={city}
                         type="button"
+                        data-testid="origin-city-btn"
                         onClick={() => handleSelectOrigin(city)}
                         className={`p-3.5 rounded-2xl text-xs font-bold text-center transition-all cursor-pointer border-2 ${
                           isSelected
@@ -1262,6 +1305,7 @@ function RoadTripCockpit() {
                 <div className="pt-1 flex gap-2">
                   <input
                     type="text"
+                    data-testid="origin-custom-input"
                     value={originSearch}
                     onChange={(e) => setOriginSearch(e.target.value)}
                     placeholder="Or enter other starting city..."
