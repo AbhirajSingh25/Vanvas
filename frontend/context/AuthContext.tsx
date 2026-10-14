@@ -245,18 +245,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (data: ProfileUpdatePayload): Promise<User> => {
     const updated = await api.updateProfile(data);
     setUser(updated);
+    storageAdapter.setItem("vanvas_user_profile", JSON.stringify(updated));
     return updated;
   };
 
   const uploadAvatar = async (file: File): Promise<{ avatar_url: string; message: string }> => {
     const res = await api.uploadProfileAvatar(file);
     if (user) {
-      setUser({
+      const updatedUser: User = {
         ...user,
         avatar_url: res.avatar_url,
         avatar_type: "uploaded",
         avatar_preset: undefined,
-      });
+      };
+      setUser(updatedUser);
+      storageAdapter.setItem("vanvas_user_profile", JSON.stringify(updatedUser));
     }
     return res;
   };
@@ -264,12 +267,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const selectAvatarPreset = async (preset: string): Promise<{ avatar_url: string; avatar_preset: string; message: string }> => {
     const res = await api.selectAvatarPreset(preset);
     if (user) {
-      setUser({
+      const updatedUser: User = {
         ...user,
         avatar_url: res.avatar_url,
         avatar_type: "preset",
         avatar_preset: res.avatar_preset,
-      });
+      };
+      setUser(updatedUser);
+      storageAdapter.setItem("vanvas_user_profile", JSON.stringify(updatedUser));
     }
     return res;
   };
@@ -277,12 +282,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const deleteAvatar = async (): Promise<{ message: string }> => {
     const res = await api.deleteProfileAvatar();
     if (user) {
-      setUser({
+      const updatedUser: User = {
         ...user,
         avatar_url: undefined,
         avatar_type: "preset",
         avatar_preset: "himalayan-explorer",
-      });
+      };
+      setUser(updatedUser);
+      storageAdapter.setItem("vanvas_user_profile", JSON.stringify(updatedUser));
     }
     return res;
   };

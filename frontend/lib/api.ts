@@ -51,19 +51,38 @@ const API_BASE_URL = getApiBaseUrl();
 
 export function resolveAvatarUrl(avatarUrl?: string | null): string | undefined {
   if (!avatarUrl) return undefined;
+  const trimmed = avatarUrl.trim();
+  if (!trimmed) return undefined;
+
+  // Direct absolute, blob or data URLs
   if (
-    avatarUrl.startsWith("http://") ||
-    avatarUrl.startsWith("https://") ||
-    avatarUrl.startsWith("data:") ||
-    avatarUrl.startsWith("blob:")
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:")
   ) {
-    return avatarUrl;
+    return trimmed;
   }
-  if (avatarUrl.startsWith("/avatars/") || avatarUrl.startsWith("/images/")) {
-    return avatarUrl;
+
+  // Preset or public static images
+  if (trimmed.startsWith("/avatars/") || trimmed.startsWith("/images/")) {
+    return trimmed;
   }
+
+  // Storage key format e.g. "users/<id>/avatar/<file>.webp"
+  if (trimmed.startsWith("users/") || trimmed.startsWith("/users/")) {
+    const cleanKey = trimmed.replace(/^\/+/, "");
+    return `/api/v1/auth/profile/avatar/file/${cleanKey}`;
+  }
+
+  // Sub-routes under auth or uploads without /api/v1 prefix
+  if (trimmed.replace(/^\/+/, "").startsWith("auth/")) {
+    const clean = trimmed.replace(/^\/+/, "");
+    return `/api/v1/${clean}`;
+  }
+
   const base = getApiBaseUrl().replace(/\/api\/v1\/?$/, "");
-  const cleanPath = avatarUrl.startsWith("/") ? avatarUrl : `/${avatarUrl}`;
+  const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return `${base}${cleanPath}`;
 }
 

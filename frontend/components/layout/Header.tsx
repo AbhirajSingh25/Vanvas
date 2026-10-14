@@ -9,13 +9,15 @@ import { useAuth } from "@/context/AuthContext";
 import {
   Compass, Calendar, MapPin, Sparkles, ChevronLeft,
   User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield, ShieldCheck,
-  X, MessageSquare, SlidersHorizontal, Check
+  SlidersHorizontal, Check
 } from "lucide-react";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { Avatar } from "@/components/ui/Avatar";
 import { useDensity } from "@/context/DensityContext";
 import { DensitySwitcher } from "@/components/ui/DensitySwitcher";
 import { ConnectivityBanner } from "@/components/pwa/ConnectivityBanner";
+import { motion, AnimatePresence } from "motion/react";
+import { popoverVariants } from "@/lib/motion";
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -27,7 +29,7 @@ export const Header: React.FC = () => {
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const [densityMenuOpen, setDensityMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const mobileSheetRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const densityRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
@@ -50,22 +52,56 @@ export const Header: React.FC = () => {
     };
   }, []);
 
-  // Close profile dropdown on click outside
+  // Close menus on outside click or touch
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setProfileDropdownOpen(false);
       }
-      if (mobileSheetRef.current && !mobileSheetRef.current.contains(event.target as Node)) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(target)) {
         setMobileAccountOpen(false);
       }
-      if (densityRef.current && !densityRef.current.contains(event.target as Node)) {
+      if (densityRef.current && !densityRef.current.contains(target)) {
         setDensityMenuOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setProfileDropdownOpen(false);
+        setMobileAccountOpen(false);
+        setDensityMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
+
+  // Close menus when route changes
+  useEffect(() => {
+    setProfileDropdownOpen(false);
+    setMobileAccountOpen(false);
+    setDensityMenuOpen(false);
+  }, [pathname]);
+
+  // Support Android Back button dismissing the open popover before route change
+  useEffect(() => {
+    if (!mobileAccountOpen) return;
+    const handlePopState = () => {
+      setMobileAccountOpen(false);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [mobileAccountOpen]);
 
   const handleLogout = () => {
     setProfileDropdownOpen(false);
@@ -132,81 +168,89 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <>
-      <header
-        ref={headerRef}
-        className="sticky top-0 z-40 w-full border-b border-[#D8CBB2] bg-[#EFE5D2]/92 backdrop-blur-md transition-all pt-[env(safe-area-inset-top,0px)]"
-      >
-        <ConnectivityBanner />
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-40 w-full border-b border-[#D8CBB2] bg-[#EFE5D2]/92 backdrop-blur-md transition-all pt-[env(safe-area-inset-top,0px)]"
+    >
+      <ConnectivityBanner />
 
-        {/* ======================================================== */}
-        {/* DESKTOP HEADER (>= xl)                                   */}
-        {/* ======================================================== */}
-        <div className={`hidden xl:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 items-center justify-between transition-all ${
-          isCompact ? "h-14 sm:h-16" : "h-16 sm:h-20"
-        }`}>
-          {/* Brand Logo & Wordmark */}
-          <Logo size={isCompact ? "sm" : "md"} />
+      {/* ======================================================== */}
+      {/* DESKTOP HEADER (>= xl)                                   */}
+      {/* ======================================================== */}
+      <div className={`hidden xl:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 items-center justify-between transition-all ${
+        isCompact ? "h-14 sm:h-16" : "h-16 sm:h-20"
+      }`}>
+        {/* Brand Logo & Wordmark */}
+        <Logo size={isCompact ? "sm" : "md"} />
 
-          {/* Desktop Editorial Navigation */}
-          <nav className="flex items-center gap-1 xl:gap-2">
-            {navLinks.map((item) => {
-              const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide interactive-pill flex items-center gap-1.5 ${
-                    isActive
-                      ? "bg-[#173B32] text-[#EFE5D2] shadow-sm font-bold"
-                      : "text-[#20211D]/80 hover:text-[#173B32] hover:bg-[#E5D5BA]/60"
-                  }`}
-                >
-                  <span>{item.name}</span>
-                  <span className="font-devanagari text-[10px] opacity-60 font-normal">
-                    ({item.devanagari})
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
+        {/* Desktop Editorial Navigation */}
+        <nav className="flex items-center gap-1 xl:gap-2">
+          {navLinks.map((item) => {
+            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide interactive-pill flex items-center gap-1.5 ${
+                  isActive
+                    ? "bg-[#173B32] text-[#EFE5D2] shadow-xs font-bold"
+                    : "text-[#20211D]/80 hover:text-[#173B32] hover:bg-[#E5D5BA]/60"
+                }`}
+              >
+                <span>{item.name}</span>
+                <span className="font-devanagari text-[10px] opacity-60 font-normal">
+                  ({item.devanagari})
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
 
-          {/* Desktop Header Right Actions */}
-          <div className="flex items-center gap-3">
-            {/* Global Density Switcher */}
-            <DensitySwitcher showLabel={true} />
+        {/* Desktop Header Right Actions */}
+        <div className="flex items-center gap-3">
+          {/* Global Density Switcher */}
+          <DensitySwitcher showLabel={true} />
 
-            {/* Ask VANVAS AI Copilot Button */}
-            <button
-              type="button"
-              onClick={() => openAskVanvas()}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#B49252]/60 bg-[#173B32] text-xs font-semibold text-[#FAF7F0] hover:bg-[#20453B] hover:shadow-md interactive-btn group cursor-pointer shadow-xs"
-              title="Ask VANVAS Travel Assistant"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#B49252] group-hover:rotate-12 transition-transform" />
-              <span>Ask VANVAS</span>
-              <span className="font-devanagari text-[10px] text-[#B49252] font-normal">पूछें</span>
-            </button>
+          {/* Ask VANVAS AI Copilot Button */}
+          <button
+            type="button"
+            onClick={() => openAskVanvas()}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#B49252]/60 bg-[#173B32] text-xs font-semibold text-[#FAF7F0] hover:bg-[#20453B] hover:shadow-md interactive-btn group cursor-pointer shadow-xs"
+            title="Ask VANVAS Travel Assistant"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#B49252] group-hover:rotate-12 transition-transform" />
+            <span>Ask VANVAS</span>
+            <span className="font-devanagari text-[10px] text-[#B49252] font-normal">पूछें</span>
+          </button>
 
-            {/* Authenticated User Menu vs Guest Login Button */}
-            {user ? (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs text-[#20211D] hover:border-[#173B32] hover:shadow-sm interactive-btn group cursor-pointer"
-                  aria-expanded={profileDropdownOpen}
-                  aria-haspopup="true"
-                >
-                  <Avatar user={user} size="xs" borderColor="border-[#B49252]/40" />
-                  <span className="font-medium max-w-[120px] truncate">{user.full_name}</span>
-                  <ChevronDown className={`w-3 h-3 text-[#173B32]/70 transition-transform ${profileDropdownOpen ? "rotate-180" : ""}`} />
-                </button>
+          {/* Authenticated User Menu vs Guest Login Button */}
+          {user ? (
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs text-[#20211D] hover:border-[#173B32] hover:shadow-xs interactive-btn group cursor-pointer"
+                aria-expanded={profileDropdownOpen}
+                aria-haspopup="true"
+              >
+                <Avatar user={user} size="xs" borderColor="border-[#B49252]/40" />
+                <span className="font-medium max-w-[120px] truncate">{user.full_name}</span>
+                <ChevronDown className={`w-3 h-3 text-[#173B32]/70 transition-transform ${profileDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
 
-                {/* Profile Dropdown Menu */}
+              {/* Desktop Profile Popover */}
+              <AnimatePresence>
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl py-2 z-50 animate-vanvas-scale">
-                    <div className="px-4 py-3 border-b border-[#D8CBB2]/60">
+                  <motion.div
+                    key="desktop-profile-popover"
+                    variants={popoverVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    style={{ transformOrigin: "top right" }}
+                    className="absolute right-0 mt-2 w-64 bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl py-2 z-50 divide-y divide-[#D8CBB2]/50"
+                  >
+                    <div className="px-4 py-3">
                       <div className="font-serif font-bold text-sm text-[#173B32] truncate">
                         {user.full_name}
                       </div>
@@ -226,7 +270,7 @@ export const Header: React.FC = () => {
                         className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
                       >
                         <UserIcon className="w-3.5 h-3.5 text-[#B49252]" />
-                        <span>Profile & Travel Journal</span>
+                        <span>Profile &amp; Travel Journal</span>
                       </Link>
 
                       <Link
@@ -235,7 +279,7 @@ export const Header: React.FC = () => {
                         className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
                       >
                         <Bookmark className="w-3.5 h-3.5 text-[#B49252]" />
-                        <span>Saved Places & Gems</span>
+                        <span>Saved Places &amp; Gems</span>
                       </Link>
 
                       <Link
@@ -262,11 +306,11 @@ export const Header: React.FC = () => {
                         className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
                       >
                         <Settings className="w-3.5 h-3.5 text-[#B49252]" />
-                        <span>Account & Settings</span>
+                        <span>Account &amp; Settings</span>
                       </Link>
                     </div>
 
-                    <div className="pt-1 border-t border-[#D8CBB2]/60">
+                    <div className="pt-1">
                       <button
                         type="button"
                         onClick={handleLogout}
@@ -276,98 +320,106 @@ export const Header: React.FC = () => {
                         <span>Sign Out</span>
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs font-semibold text-[#173B32] hover:bg-[#E5D5BA] hover:shadow-sm transition-all"
-              >
-                <LogIn className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Sign In</span>
-                <span className="font-devanagari text-[10px] text-[#B49252] font-normal">लॉगिन</span>
-              </Link>
-            )}
-
-            {/* Primary Terracotta CTA */}
+              </AnimatePresence>
+            </div>
+          ) : (
             <Link
-              href="/plan"
-              className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase shadow-md hover:shadow-lg transition-all transform active:scale-95 flex items-center gap-2 border border-[#7B4D36]/20"
+              href="/login"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-xs font-semibold text-[#173B32] hover:bg-[#E5D5BA] hover:shadow-xs transition-all"
             >
-              <span>Plan My Trip</span>
-              <span className="font-devanagari text-[10px] opacity-80 lowercase">चलो</span>
+              <LogIn className="w-3.5 h-3.5 text-[#B49252]" />
+              <span>Sign In</span>
+              <span className="font-devanagari text-[10px] text-[#B49252] font-normal">लॉगिन</span>
             </Link>
-          </div>
+          )}
+
+          {/* Primary Terracotta CTA */}
+          <Link
+            href="/plan"
+            className="px-5 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] text-xs font-bold tracking-wider uppercase shadow-xs hover:shadow-md transition-all transform active:scale-95 flex items-center gap-2 border border-[#7B4D36]/20"
+          >
+            <span>Plan My Trip</span>
+            <span className="font-devanagari text-[10px] opacity-80 lowercase">चलो</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* MOBILE APP HEADER (< xl)                                 */}
+      {/* ======================================================== */}
+      <div className="xl:hidden h-14 px-3 flex items-center justify-between max-w-lg mx-auto">
+        {/* Left: Root Logo OR Sub-route Back Button */}
+        <div className="flex items-center gap-1 min-w-[70px]">
+          {currentRouteMeta.isRoot ? (
+            <Link href="/" className="flex items-center gap-1.5 group cursor-pointer" aria-label="VANVAS Home">
+              <Emblem size={28} variant="forest" />
+              <span className="font-serif font-black text-sm tracking-wide text-[#173B32]">
+                VANVAS
+              </span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleBack(currentRouteMeta.fallback)}
+              className="flex items-center gap-1 py-1.5 px-2 -ml-1 rounded-xl text-[#173B32] hover:bg-[#E5D5BA]/50 active:scale-95 transition-all cursor-pointer"
+              aria-label="Go Back"
+            >
+              <ChevronLeft className="w-5 h-5 text-[#173B32] stroke-[2.5]" />
+              <Emblem size={22} variant="forest" />
+            </button>
+          )}
         </div>
 
-        {/* ======================================================== */}
-        {/* MOBILE APP HEADER (< xl)                                 */}
-        {/* ======================================================== */}
-        <div className="xl:hidden h-14 px-3 flex items-center justify-between max-w-lg mx-auto">
-          {/* Left: Root Logo OR Sub-route Back Button */}
-          <div className="flex items-center gap-1 min-w-[70px]">
-            {currentRouteMeta.isRoot ? (
-              <Link href="/" className="flex items-center gap-1.5 group cursor-pointer" aria-label="VANVAS Home">
-                <Emblem size={28} variant="forest" />
-                <span className="font-serif font-black text-sm tracking-wide text-[#173B32]">
-                  VANVAS
-                </span>
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleBack(currentRouteMeta.fallback)}
-                className="flex items-center gap-1 py-1.5 px-2 -ml-1 rounded-xl text-[#173B32] hover:bg-[#E5D5BA]/50 active:scale-95 transition-all cursor-pointer"
-                aria-label="Go Back"
-              >
-                <ChevronLeft className="w-5 h-5 text-[#173B32] stroke-[2.5]" />
-                <Emblem size={22} variant="forest" />
-              </button>
-            )}
-          </div>
+        {/* Center: Contextual Title (displayed on sub-routes, left logo alone on home route) */}
+        <div className="flex-1 text-center px-2 min-w-0">
+          {currentRouteMeta.title ? (
+            <>
+              <h1 className="text-xs sm:text-sm font-serif font-bold text-[#173B32] truncate">
+                {currentRouteMeta.title}
+              </h1>
+              {currentRouteMeta.hindi && (
+                <p className="text-[10px] font-devanagari text-[#7B4D36] opacity-75 truncate -mt-0.5">
+                  {currentRouteMeta.hindi}
+                </p>
+              )}
+            </>
+          ) : null}
+        </div>
 
-          {/* Center: Contextual Title (displayed on sub-routes, left logo alone on home route) */}
-          <div className="flex-1 text-center px-2 min-w-0">
-            {currentRouteMeta.title ? (
-              <>
-                <h1 className="text-xs sm:text-sm font-serif font-bold text-[#173B32] truncate">
-                  {currentRouteMeta.title}
-                </h1>
-                {currentRouteMeta.hindi && (
-                  <p className="text-[10px] font-devanagari text-[#7B4D36] opacity-75 truncate -mt-0.5">
-                    {currentRouteMeta.hindi}
-                  </p>
-                )}
-              </>
-            ) : null}
-          </div>
+        {/* Right: Mobile Density Control + User Avatar / Sign In */}
+        <div className="flex items-center justify-end gap-1.5 min-w-[70px]">
+          {/* Compact Mobile Density Popover */}
+          <div className="relative" ref={densityRef}>
+            <button
+              type="button"
+              onClick={() => setDensityMenuOpen(!densityMenuOpen)}
+              className={`p-1.5 rounded-full border transition-all cursor-pointer flex items-center justify-center ${
+                densityMenuOpen
+                  ? "bg-[#173B32] text-[#FAF7F0] border-[#173B32]"
+                  : "border-[#D8CBB2] bg-[#FAF4E8] text-[#173B32] hover:bg-[#E5D5BA]/50"
+              }`}
+              aria-label="Change layout density (Original or Compact)"
+              aria-expanded={densityMenuOpen}
+              title="Change layout density"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#173B32]" />
+            </button>
 
-          {/* Right: Mobile Density Control + User Avatar / Sign In */}
-          <div className="flex items-center justify-end gap-1.5 min-w-[70px]">
-            {/* Compact Mobile Density Popover */}
-            <div className="relative" ref={densityRef}>
-              <button
-                type="button"
-                onClick={() => setDensityMenuOpen(!densityMenuOpen)}
-                className={`p-1.5 rounded-full border transition-all cursor-pointer flex items-center justify-center ${
-                  densityMenuOpen
-                    ? "bg-[#173B32] text-[#FAF7F0] border-[#173B32]"
-                    : "border-[#D8CBB2] bg-[#FAF4E8] text-[#173B32] hover:bg-[#E5D5BA]/50"
-                }`}
-                aria-label="Change layout density (Original or Compact)"
-                aria-expanded={densityMenuOpen}
-                title="Change layout density"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-[#173B32]" />
-              </button>
-
-              {/* Accessible Density Popover */}
+            {/* Accessible Density Popover with Unified Motion */}
+            <AnimatePresence>
               {densityMenuOpen && (
-                <div
+                <motion.div
+                  key="mobile-density-popover"
+                  variants={popoverVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  style={{ transformOrigin: "top right" }}
                   role="dialog"
                   aria-label="Layout view options"
-                  className="absolute right-0 mt-2 w-56 bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl p-2.5 z-50 animate-vanvas-scale space-y-1.5"
+                  className="absolute right-0 mt-2 w-56 bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl p-2.5 z-50 space-y-1.5"
                 >
                   <div className="px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#7B4D36]">
                     PAGE VIEW DENSITY
@@ -414,153 +466,148 @@ export const Header: React.FC = () => {
                     </div>
                     {isCompact && <Check className="w-4 h-4 text-[#B49252]" />}
                   </button>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
+          </div>
 
-            {user ? (
+          {/* User Account Popover Trigger & Anchored Menu */}
+          {user ? (
+            <div className="relative" ref={mobileMenuRef}>
               <button
                 type="button"
-                onClick={() => setMobileAccountOpen(true)}
+                onClick={() => setMobileAccountOpen(!mobileAccountOpen)}
                 className="flex items-center gap-1 p-1 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-[#173B32] active:scale-95 transition-transform cursor-pointer"
                 aria-label="Open User Account Menu"
+                aria-expanded={mobileAccountOpen}
+                aria-haspopup="true"
               >
                 <Avatar user={user} size="xs" borderColor="border-[#B49252]/50" />
               </button>
-            ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-[11px] font-semibold text-[#173B32] active:scale-95 transition-transform"
-              >
-                <LogIn className="w-3 h-3 text-[#B49252]" />
-                <span>Sign In</span>
-              </Link>
-            )}
-          </div>
-        </div>
 
-        {/* ======================================================== */}
-        {/* MOBILE ACCOUNT SLIDE-OVER SHEET                          */}
-        {/* ======================================================== */}
-        {mobileAccountOpen && user && (
-          <div
-            className="xl:hidden fixed inset-0 z-50 bg-[#0F2924]/70 backdrop-blur-xs flex items-end justify-center animate-vanvas-fade"
-            onClick={() => setMobileAccountOpen(false)}
-          >
-            <div
-              ref={mobileSheetRef}
-              className="bg-[#FAF7F0] border-t-2 border-[#E5D5BA] rounded-t-3xl w-full max-w-md shadow-2xl p-5 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] animate-vanvas-sheet"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Sheet Drag Indicator & Header */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-10 h-1 rounded-full bg-[#D8CBB2]" />
-                <div className="w-full flex items-center justify-between pt-1">
-                  <div className="flex items-center gap-3">
-                    <Avatar user={user} size="md" borderColor="border-[#B49252]" />
-                    <div className="text-left min-w-0">
-                      <div className="font-serif font-bold text-sm text-[#173B32] truncate">
-                        {user.full_name}
-                      </div>
-                      <div className="text-xs text-[#7B4D36] truncate">
-                        {user.email}
-                      </div>
-                      <span className="inline-block mt-0.5 px-2 py-0.2 rounded-full bg-[#173B32]/10 text-[9px] font-bold text-[#173B32] uppercase tracking-wider">
-                        {user.role === "admin" ? "Admin" : "Verified Traveler"}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setMobileAccountOpen(false)}
-                    className="p-2 rounded-full text-[#173B32] hover:bg-[#E5D5BA]/60 cursor-pointer"
-                    aria-label="Close Profile Menu"
+              {/* ANCHORED MOBILE ACCOUNT POPOVER (Compact native app dropdown) */}
+              <AnimatePresence>
+                {mobileAccountOpen && (
+                  <motion.div
+                    key="mobile-profile-popover"
+                    variants={popoverVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    style={{ transformOrigin: "top right" }}
+                    role="menu"
+                    aria-label="Account options"
+                    className="absolute right-0 mt-2 w-[290px] max-w-[calc(100vw-24px)] max-h-[calc(100dvh-5rem)] overflow-y-auto bg-[#FAF7F0] border border-[#D8CBB2] rounded-2xl shadow-xl py-2 z-50 divide-y divide-[#D8CBB2]/50 overscroll-contain"
                   >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+                    {/* Compact Header Summary */}
+                    <div className="px-3.5 py-2.5 flex items-center gap-2.5">
+                      <Avatar user={user} size="sm" borderColor="border-[#B49252]" />
+                      <div className="min-w-0 flex-1 text-left">
+                        <div className="font-serif font-bold text-xs text-[#173B32] truncate">
+                          {user.full_name}
+                        </div>
+                        <div className="text-[10px] text-[#7B4D36] truncate">
+                          {user.email}
+                        </div>
+                        <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-[#173B32]/10 text-[9px] font-bold text-[#173B32] uppercase">
+                          <Shield className="w-2.5 h-2.5" />
+                          <span>{user.role === "admin" ? "Admin" : "Verified Traveler"}</span>
+                        </div>
+                      </div>
+                    </div>
 
-              {/* Sheet Navigation Items */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5D5BA]">
-                <Link
-                  href="/profile"
-                  onClick={() => setMobileAccountOpen(false)}
-                  className="p-3 rounded-2xl bg-white border border-[#E5D5BA] flex items-center gap-2.5 active:scale-95 transition-transform"
-                >
-                  <UserIcon className="w-4 h-4 text-[#B49252]" />
-                  <div className="text-left">
-                    <div className="text-xs font-bold text-[#173B32]">Journal</div>
-                    <div className="text-[10px] text-[#7B4D36]">Profile & Memories</div>
-                  </div>
-                </Link>
+                    {/* Menu Navigation Rows */}
+                    <div className="py-1">
+                      <Link
+                        href="/profile"
+                        onClick={() => setMobileAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 active:bg-[#E5D5BA]/80 transition-colors font-medium rounded-lg mx-1"
+                      >
+                        <UserIcon className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                        <span>Profile &amp; Travel Journal</span>
+                      </Link>
 
-                <Link
-                  href="/bookings"
-                  onClick={() => setMobileAccountOpen(false)}
-                  className="p-3 rounded-2xl bg-white border border-[#E5D5BA] flex items-center gap-2.5 active:scale-95 transition-transform"
-                >
-                  <ShieldCheck className="w-4 h-4 text-[#B49252]" />
-                  <div className="text-left">
-                    <div className="text-xs font-bold text-[#173B32]">Bookings</div>
-                    <div className="text-[10px] text-[#7B4D36]">Vouchers & Passes</div>
-                  </div>
-                </Link>
+                      <Link
+                        href="/profile?tab=saved"
+                        onClick={() => setMobileAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 active:bg-[#E5D5BA]/80 transition-colors font-medium rounded-lg mx-1"
+                      >
+                        <Bookmark className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                        <span>Saved Places &amp; Gems</span>
+                      </Link>
 
-                <Link
-                  href="/profile?tab=saved"
-                  onClick={() => setMobileAccountOpen(false)}
-                  className="p-3 rounded-2xl bg-white border border-[#E5D5BA] flex items-center gap-2.5 active:scale-95 transition-transform"
-                >
-                  <Bookmark className="w-4 h-4 text-[#B49252]" />
-                  <div className="text-left">
-                    <div className="text-xs font-bold text-[#173B32]">Saved Gems</div>
-                    <div className="text-[10px] text-[#7B4D36]">Favorites</div>
-                  </div>
-                </Link>
+                      <Link
+                        href="/trips"
+                        onClick={() => setMobileAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 active:bg-[#E5D5BA]/80 transition-colors font-medium rounded-lg mx-1"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                        <span>My Expeditions</span>
+                      </Link>
 
-                <Link
-                  href="/settings"
-                  onClick={() => setMobileAccountOpen(false)}
-                  className="p-3 rounded-2xl bg-white border border-[#E5D5BA] flex items-center gap-2.5 active:scale-95 transition-transform"
-                >
-                  <Settings className="w-4 h-4 text-[#B49252]" />
-                  <div className="text-left">
-                    <div className="text-xs font-bold text-[#173B32]">Settings</div>
-                    <div className="text-[10px] text-[#7B4D36]">Preferences</div>
-                  </div>
-                </Link>
-              </div>
+                      <Link
+                        href="/bookings"
+                        onClick={() => setMobileAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 active:bg-[#E5D5BA]/80 transition-colors font-medium rounded-lg mx-1"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                        <span>My Bookings &amp; Vouchers</span>
+                      </Link>
 
-              {/* Copilot Action inside Sheet */}
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileAccountOpen(false);
-                  openAskVanvas();
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#173B32] text-[#FAF7F0] font-semibold text-xs flex items-center justify-between shadow-xs cursor-pointer active:scale-95 transition-transform"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#B49252]" />
-                  <span>Ask VANVAS Travel Copilot</span>
-                </div>
-                <span className="font-devanagari text-[11px] text-[#B49252]">पूछें</span>
-              </button>
+                      <Link
+                        href="/settings"
+                        onClick={() => setMobileAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 active:bg-[#E5D5BA]/80 transition-colors font-medium rounded-lg mx-1"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                        <span>Account &amp; Settings</span>
+                      </Link>
+                    </div>
 
-              {/* Sign Out Button */}
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full py-2 px-4 rounded-xl border border-[#B65E3C]/40 text-[#B65E3C] hover:bg-[#B65E3C]/10 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out of VANVAS</span>
-              </button>
+                    {/* Copilot Action inside Popover */}
+                    <div className="py-1 px-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileAccountOpen(false);
+                          openAskVanvas();
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[#173B32] text-[#FAF7F0] font-semibold text-xs active:bg-[#20453B] transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                          <span>Ask VANVAS Copilot</span>
+                        </div>
+                        <span className="font-devanagari text-[10px] text-[#B49252]">पूछें</span>
+                      </button>
+                    </div>
+
+                    {/* Sign Out Button */}
+                    <div className="pt-1 px-1">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-[#B65E3C] hover:bg-[#B65E3C]/10 active:bg-[#B65E3C]/20 transition-colors font-semibold text-left rounded-lg cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5 shrink-0" />
+                        <span>Sign Out of VANVAS</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </div>
-        )}
-      </header>
-    </>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#D8CBB2] bg-[#FAF4E8] text-[11px] font-semibold text-[#173B32] active:scale-95 transition-transform"
+            >
+              <LogIn className="w-3 h-3 text-[#B49252]" />
+              <span>Sign In</span>
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
   );
 };

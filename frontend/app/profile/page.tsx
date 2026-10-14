@@ -19,6 +19,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { AVATAR_PRESETS, AvatarPreset } from "@/lib/avatarPresets";
 import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
 import { AvatarCropper } from "@/components/profile/AvatarCropper";
+import { motion, AnimatePresence } from "motion/react";
+import { tabIndicatorTransition, tabContentVariants } from "@/lib/motion";
 
 function ProfileContent() {
   const { user, logout, updateProfile, uploadAvatar, selectAvatarPreset, deleteAvatar } = useAuth();
@@ -416,8 +418,8 @@ function ProfileContent() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-2 border-b border-[#D8CBB2] pb-1 overflow-x-auto">
+        {/* Tab Navigation with Animated Spring Indicator */}
+        <div className="flex items-center gap-2 border-b border-[#D8CBB2] pb-1 overflow-x-auto relative">
           {[
             { id: "overview", label: "Overview & Persona", icon: UserIcon },
             { id: "solo", label: "Solo & Circles (मण्डली)", icon: Users },
@@ -432,14 +434,21 @@ function ProfileContent() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors whitespace-nowrap cursor-pointer active:scale-95 ${
                   isActive
-                    ? "bg-[#173B32] text-[#EFE5D2] shadow-sm"
+                    ? "text-[#EFE5D2]"
                     : "text-[#20211D]/70 hover:text-[#173B32] hover:bg-[#E5D5BA]/50"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#B49252]" : ""}`} />
-                <span>{tab.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="profileActiveTabIndicator"
+                    transition={tabIndicatorTransition}
+                    className="absolute inset-0 bg-[#173B32] rounded-xl shadow-xs z-0"
+                  />
+                )}
+                <Icon className={`w-3.5 h-3.5 relative z-10 ${isActive ? "text-[#B49252]" : ""}`} />
+                <span className="relative z-10">{tab.label}</span>
               </button>
             );
           })}

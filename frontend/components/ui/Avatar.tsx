@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { resolveAvatarUrl } from "@/lib/api";
 import { getAvatarPresetById } from "@/lib/avatarPresets";
 
@@ -42,6 +42,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   onClick,
 }) => {
   const [imgError, setImgError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const displayName = name || user?.full_name || "Traveler";
 
@@ -55,7 +56,10 @@ export const Avatar: React.FC<AvatarProps> = ({
     return displayName.charAt(0).toUpperCase();
   }, [displayName]);
 
-  // Compute effective image URL
+  // Compute effective image URL with strict priority:
+  // 1. Explicit prop src
+  // 2. Uploaded avatar_url (if avatar_type === 'uploaded' or valid uploaded url exists)
+  // 3. Illustrated preset (if avatar_type === 'preset' or no uploaded avatar exists)
   const effectiveSrc = useMemo(() => {
     // 1. Explicit src passed as prop
     if (src) {
@@ -63,14 +67,32 @@ export const Avatar: React.FC<AvatarProps> = ({
       return resolveAvatarUrl(src);
     }
 
-    // 2. User avatar_preset
-    if (user?.avatar_preset) {
-      const preset = getAvatarPresetById(user.avatar_preset);
-      if (preset) return preset.src;
+    if (!user) return null;
+
+    const isExplicitUploaded = user.avatar_type === "uploaded";
+    const hasUploadedUrl = Boolean(
+      user.avatar_url &&
+      !user.avatar_url.startsWith("/avatars/presets/") &&
+      !user.avatar_url.startsWith("/avatars/")
+    );
+
+    // Prefer uploaded avatar photo
+    if (isExplicitUploaded && user.avatar_url) {
+      return resolveAvatarUrl(user.avatar_url);
     }
 
-    // 3. User avatar_url
-    if (user?.avatar_url) {
+    if (hasUploadedUrl && user.avatar_type !== "preset") {
+      return resolveAvatarUrl(user.avatar_url);
+    }
+
+    // Preset illustrated avatar
+    if (user.avatar_preset) {
+      const preset = getAvatarPresetById(user.avatar_preset);
+      if (preset?.src) return preset.src;
+    }
+
+    // Fallback to avatar_url
+    if (user.avatar_url) {
       if (user.avatar_url.startsWith("/avatars/")) return user.avatar_url;
       return resolveAvatarUrl(user.avatar_url);
     }
@@ -78,7 +100,20 @@ export const Avatar: React.FC<AvatarProps> = ({
     return null;
   }, [src, user]);
 
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Reset error and loading state whenever the effective source changes
+  useEffect(() => {
+    setImgError(false);
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setIsLoading(false);
+    } else {
+      setIsLoading(Boolean(effectiveSrc));
+    }
+  }, [effectiveSrc]);
+
   const sizeCfg = SIZE_CLASSES[size] || SIZE_CLASSES.md;
+  const isSmall = size === "xs" || size === "sm";
 
   return (
     <div
@@ -90,16 +125,31 @@ export const Avatar: React.FC<AvatarProps> = ({
       } ${className}`}
       title={displayName}
     >
-      {effectiveSrc && !imgError ? (
-        <img
-          src={effectiveSrc}
-          alt={displayName}
-          className="w-full h-full object-cover"
-          onError={() => setImgError(true)}
-          loading="lazy"
-        />
-      ) : (
-        <span className="tracking-tight drop-shadow-sm">{initials}</span>
+      {/* Fallback initials always present in background */}
+      <span className="tracking-tight drop-shadow-xs">{initials}</span>
+
+      {effectiveSrc && !imgError && (
+        <>
+          {/* Restrained loading placeholder background while image is loading */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-[#173B32] opacity-75 animate-pulse pointer-events-none" />
+          )}
+          <img
+            ref={imgRef}
+            src={effectiveSrc}
+            alt={displayName}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${
+              isLoading ? "opacity-0" : "opacity-100"
+            }`}
+            onLoad={() => setIsLoading(false)}
+            onError={() => {
+              setImgError(true);
+              setIsLoading(false);
+            }}
+            loading={isSmall ? "eager" : "lazy"}
+            decoding="async"
+          />
+        </>
       )}
     </div>
   );

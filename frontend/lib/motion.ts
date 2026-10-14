@@ -138,6 +138,38 @@ export const tabIndicatorTransition: Transition = {
   damping: 34,
 };
 
+// Anchored Popover / Dropdown Menu (e.g. Profile, Density)
+export const popoverVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.97, y: -4 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: 0.2, ease: MOTION_EASINGS.easeOut },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.97,
+    y: -4,
+    transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+  },
+};
+
+// Tab content crossfade and subtle displacement
+export const tabContentVariants: Variants = {
+  initial: { opacity: 0, y: 4 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.2, ease: MOTION_EASINGS.easeOut },
+  },
+  exit: {
+    opacity: 0,
+    y: -4,
+    transition: { duration: 0.14 },
+  },
+};
+
 // Featured Card 3D Flip (intentional reveals)
 export const cardFlipVariants: Variants = {
   front: { rotateY: 0, transition: { duration: MOTION_DURATIONS.normal } },
