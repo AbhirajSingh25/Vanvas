@@ -51,7 +51,9 @@ jobs:
 
       - name: Grant Execute Permission to Gradle Wrapper
         working-directory: ./frontend/android
-        run: chmod +x gradlew
+        run: |
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
 
       - name: Setup Android SDK Permissions & Platform 35
         run: |
