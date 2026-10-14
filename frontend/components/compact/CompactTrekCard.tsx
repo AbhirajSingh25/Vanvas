@@ -21,46 +21,47 @@ export const CompactTrekCard: React.FC<CompactTrekCardProps> = ({ trek }) => {
   return (
     <Link
       href={`/treks/${trek.slug}`}
-      className="group bg-[#15201A] rounded-2xl border border-[#2A3E33] hover:border-[#E05A2B] overflow-hidden shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between h-[180px] sm:h-[195px]"
+      data-testid="compact-trek-card"
+      className="group bg-[#15201A] rounded-2xl border border-[#2A3E33] hover:border-[#E05A2B] p-2.5 sm:p-3 shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-between gap-3 text-left min-h-[82px] sm:min-h-[88px] relative overflow-hidden"
     >
-      <div className="relative h-20 sm:h-22 w-full overflow-hidden bg-[#0E1713]">
+      {/* Smaller, clear thumbnail aligned on the left */}
+      <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-[#0E1713] shrink-0 border border-[#25372D]">
         <VanvasImage
           src={trek.heroImage}
           alt={trek.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#15201A] via-transparent to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+        <span className="absolute bottom-0.5 right-1 text-[8px] font-mono font-bold text-[#E05A2B]">
+          {trek.peakAltitudeFormatted}
+        </span>
+      </div>
 
-        <div className="absolute top-1.5 left-2">
-          <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-mono font-bold uppercase border ${diffColor}`}>
+      {/* Trek title and metadata aligned on the right */}
+      <div className="flex-1 min-w-0 space-y-0.5">
+        <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold text-[#8FA699] uppercase tracking-wider">
+          <span className={`px-1 py-0.2 rounded text-[8px] font-mono border ${diffColor}`}>
             {trek.difficulty}
           </span>
+          <span className="truncate">{trek.region}</span>
         </div>
 
-        <div className="absolute bottom-1 right-2">
-          <span className="text-[10px] font-mono font-bold text-[#E05A2B]">
-            {trek.peakAltitudeFormatted}
-          </span>
+        <h4 className="font-serif font-black text-sm text-[#FAF4E8] group-hover:text-[#E05A2B] transition-colors leading-tight truncate">
+          {trek.title}
+        </h4>
+
+        <div className="flex items-center gap-2 text-[10px] font-mono text-[#B49252]">
+          <span>₹{trek.approxBudgetPerPerson}</span>
+          <span>·</span>
+          <span className="text-[#8FA699]">{trek.durationDays === 1 ? trek.durationHours : `${trek.durationDays} Days`}</span>
         </div>
       </div>
 
-      <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between space-y-1">
-        <div>
-          <h4 className="font-serif font-black text-sm text-[#FAF4E8] group-hover:text-[#E05A2B] transition-colors leading-tight truncate">
-            {trek.title}
-          </h4>
-          <p className="text-[10px] font-mono text-[#8FA699] truncate mt-0.5">
-            {trek.region} · {trek.durationDays === 1 ? trek.durationHours : `${trek.durationDays} Days`}
-          </p>
-        </div>
-
-        <div className="pt-1.5 border-t border-[#25372D] flex items-center justify-between text-[10px] font-mono">
-          <span className="text-[#B49252]">₹{trek.approxBudgetPerPerson}</span>
-          <span className="text-[#E05A2B] font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-            <span>Trail</span>
-            <ArrowRight className="w-3 h-3" />
-          </span>
-        </div>
+      {/* Trailing arrow */}
+      <div className="shrink-0 self-center">
+        <span className="w-7 h-7 rounded-lg bg-[#25372D] group-hover:bg-[#E05A2B] text-[#FAF4E8] transition-colors flex items-center justify-center">
+          <ArrowRight className="w-3.5 h-3.5" />
+        </span>
       </div>
     </Link>
   );

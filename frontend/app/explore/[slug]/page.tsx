@@ -33,6 +33,7 @@ import {
   DestinationDayTrip
 } from "@/lib/destinationContentModel";
 import { useDensity } from "@/context/DensityContext";
+import { recordRecentDestination } from "@/lib/recentDestinations";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { CompactPlaceCard, CompactStayCard, CompactRentalCard, CompactTrekStrip } from "@/components/compact";
 import { CheckoutModal } from "@/components/booking/CheckoutModal";
@@ -176,9 +177,10 @@ export default function DestinationDetailPage() {
   const [weather, setWeather] = useState<WeatherSnapshot[]>([]);
   const [currentWeather, setCurrentWeather] = useState<StructuredWeather | null>(null);
 
-  // Sync Destination context to Ask VANVAS
+  // Sync Destination context to Ask VANVAS and record in recent destinations
   useEffect(() => {
     if (destination) {
+      recordRecentDestination(destination.slug || slug, destination.name);
       setTravelContext({
         type: "destination",
         destinationName: destination.name,
@@ -193,6 +195,7 @@ export default function DestinationDetailPage() {
       });
     } else if (slug) {
       const formattedName = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      recordRecentDestination(slug, formattedName);
       setTravelContext({
         type: "destination",
         destinationName: formattedName,

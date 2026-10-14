@@ -14,7 +14,6 @@ import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrig
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { CapacitorInit } from "@/components/capacitor/CapacitorInit";
-import { StartupExperience } from "@/components/startup/StartupExperience";
 import { AppLifecycleHandler } from "@/components/capacitor/AppLifecycleHandler";
 import { UpdateNotificationBanner } from "@/components/version/UpdateNotificationBanner";
 import { ErrorBoundary } from "@/components/monitoring/ErrorBoundary";
@@ -164,7 +163,6 @@ export default function RootLayout({
                     <FloatingCopilotTrigger />
                     <AskVanvasModal />
                     <InstallPrompt />
-                    <StartupExperience />
                     <CapacitorInit />
                     <AppLifecycleHandler />
                     <Analytics />

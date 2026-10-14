@@ -18,6 +18,7 @@ import { CANONICAL_DESTINATIONS } from "@/lib/canonicalDestinations";
 import { api } from "@/lib/api";
 
 import { SUPPORTED_QUICK_ESCAPES } from "@/lib/oneDayContentModel";
+import { TravelDesk } from "@/components/home/TravelDesk";
 
 interface MobileTravelCommandCenterProps {
   destinations?: (Destination | (typeof CANONICAL_DESTINATIONS)[number])[];
@@ -402,68 +403,105 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
           </Link>
         </div>
 
-        {/* Spotlight Carousel */}
+        {/* Spotlight Carousel with Original (Vertical Editorial) and Compact (Horizontal Row) density variants */}
         <SpotlightCarousel
           items={destinations.slice(0, 8)}
           keyExtractor={(dest) => dest.slug}
           ariaLabel="Curated Sanctuaries Carousel"
-          itemClassName={isCompact ? "w-44" : "w-56"}
-          renderItem={(dest, { isActive }) => (
-            <Link
-              href={`/explore/${dest.slug}`}
-              className={`block rounded-2xl bg-[#FAF7F0] border overflow-hidden shadow-2xs hover:shadow-md active:scale-98 transition-all flex flex-col group touch-manipulation ${
-                isActive ? "border-[#173B32] shadow-md ring-1 ring-[#173B32]/20" : "border-[#D8CBB2]"
-              }`}
-            >
-              <div
-                className={`relative w-full bg-[#173B32] overflow-hidden ${
-                  isCompact ? "h-22" : "h-28"
+          itemClassName={isCompact ? "w-64" : "w-64 sm:w-72"}
+          renderItem={(dest, { isActive }) =>
+            isCompact ? (
+              /* COMPACT VARIANT: Small clear left thumbnail + right metadata */
+              <Link
+                href={`/explore/${dest.slug}`}
+                data-testid={`spotlight-card-${dest.slug}`}
+                className={`block rounded-2xl bg-[#FAF7F0] border p-2.5 shadow-2xs hover:shadow-md active:scale-98 transition-all flex items-center gap-3 group touch-manipulation min-h-[82px] ${
+                  isActive
+                    ? "border-[#173B32] shadow-md ring-1 ring-[#173B32]/25 bg-white"
+                    : "border-[#D8CBB2]"
                 }`}
               >
-                <DestinationArtwork
-                  slug={dest.slug}
-                  aspectRatio="wide"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-                <div className="absolute top-2 left-2 flex items-center gap-1">
-                  {dest.state && (
-                    <span className="px-1.5 py-0.5 rounded bg-black/60 text-[#FAF7F0] text-[8.5px] font-mono font-bold backdrop-blur-xs">
-                      {dest.state}
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#173B32] shrink-0 border border-[#D8CBB2]">
+                  <DestinationArtwork
+                    slug={dest.slug}
+                    aspectRatio="square"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                  {dest.altitude_meters ? (
+                    <span className="absolute bottom-0.5 right-1 text-[8px] font-mono font-bold text-[#FAF7F0]">
+                      {dest.altitude_meters}m
                     </span>
-                  )}
+                  ) : null}
                 </div>
-                {dest.altitude_meters ? (
-                  <span className="absolute bottom-1.5 right-2 text-[9px] font-mono font-semibold text-[#EFE5D2]/90">
-                    {dest.altitude_meters}m
-                  </span>
-                ) : null}
-              </div>
-              <div className={`space-y-0.5 ${isCompact ? "p-2" : "p-2.5"}`}>
-                <div className="flex items-center justify-between gap-1">
-                  <h4
-                    className={`font-serif font-bold text-[#173B32] group-hover:text-[#B65E3C] transition-colors truncate ${
-                      isCompact ? "text-xs" : "text-sm"
-                    }`}
-                  >
+
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-[9.5px] font-mono text-[#7B4D36]">
+                    <span className="font-bold text-[#173B32] truncate">{dest.state || "Sanctuary"}</span>
+                    {dest.hindi_name && (
+                      <span className="font-devanagari text-[#B49252] font-semibold shrink-0">
+                        · {dest.hindi_name}
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="font-serif font-black text-sm text-[#173B32] group-hover:text-[#B65E3C] transition-colors truncate">
                     {dest.name}
                   </h4>
-                  {dest.hindi_name && (
-                    <span className="font-devanagari text-[10px] text-[#B49252] shrink-0 font-medium">
-                      {dest.hindi_name}
-                    </span>
-                  )}
+                  <p className="text-[10px] text-[#20211D]/70 font-sans truncate">
+                    {dest.tagline || dest.description || "Himalayan sanctuary"}
+                  </p>
                 </div>
-                <p
-                  className={`text-[#20211D]/70 font-sans line-clamp-1 leading-snug ${
-                    isCompact ? "text-[10px]" : "text-[11px]"
-                  }`}
-                >
-                  {dest.tagline || dest.description || "Himalayan sanctuary"}
-                </p>
-              </div>
-            </Link>
-          )}
+              </Link>
+            ) : (
+              /* ORIGINAL VARIANT: Large editorial photograph + roomier card */
+              <Link
+                href={`/explore/${dest.slug}`}
+                data-testid={`spotlight-card-${dest.slug}`}
+                className={`block rounded-3xl bg-[#FAF7F0] border overflow-hidden shadow-2xs hover:shadow-md active:scale-98 transition-all flex flex-col group touch-manipulation ${
+                  isActive
+                    ? "border-[#173B32] shadow-lg ring-2 ring-[#173B32]/20"
+                    : "border-[#D8CBB2]"
+                }`}
+              >
+                <div className="relative w-full h-34 sm:h-38 bg-[#173B32] overflow-hidden">
+                  <DestinationArtwork
+                    slug={dest.slug}
+                    aspectRatio="wide"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1">
+                    {dest.state && (
+                      <span className="px-2 py-0.5 rounded bg-black/60 text-[#FAF7F0] text-[9px] font-mono font-bold backdrop-blur-xs">
+                        {dest.state}
+                      </span>
+                    )}
+                  </div>
+                  {dest.altitude_meters ? (
+                    <span className="absolute bottom-2 right-2.5 text-[9.5px] font-mono font-semibold text-[#EFE5D2]/95 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-xs">
+                      {dest.altitude_meters}m
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="p-3 sm:p-3.5 space-y-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <h4 className="font-serif font-black text-base text-[#173B32] group-hover:text-[#B65E3C] transition-colors truncate">
+                      {dest.name}
+                    </h4>
+                    {dest.hindi_name && (
+                      <span className="font-devanagari text-xs text-[#B49252] shrink-0 font-medium">
+                        {dest.hindi_name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[#20211D]/75 font-sans text-xs line-clamp-2 leading-snug">
+                    {dest.tagline || dest.description || "Himalayan sanctuary"}
+                  </p>
+                </div>
+              </Link>
+            )
+          }
         />
       </div>
 
@@ -524,7 +562,10 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
         </div>
       )}
 
-      {/* 8. SAVED PLACES (CONTEXTUAL: ONLY WHEN REAL SAVED PLACES EXIST) */}
+      {/* 8. USEFUL APP-NATIVE TRAVEL DESK / FIELD KIT */}
+      <TravelDesk activeTrip={activeTrip} isCompact={isCompact} />
+
+      {/* 9. SAVED PLACES (CONTEXTUAL: ONLY WHEN REAL SAVED PLACES EXIST) */}
       {savedPlaces.length > 0 && (
         <div
           className={

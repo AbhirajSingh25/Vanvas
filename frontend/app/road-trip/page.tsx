@@ -92,6 +92,7 @@ function RoadTripCockpit() {
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [budgetModel, setBudgetModel] = useState<BudgetModelValues | null>(null);
   const [defaultBudgetModel, setDefaultBudgetModel] = useState<BudgetModelValues | null>(null);
+  const activeRequestIdRef = React.useRef<number>(0);
 
   const fetchCorridors = useCallback(() => {
     setCorridorsLoading(true);
@@ -278,6 +279,7 @@ function RoadTripCockpit() {
 
   // Execute Road Trip Plan
   const handleBuildRoadTrip = async () => {
+    const reqId = ++activeRequestIdRef.current;
     setLoading(true);
     setErrorState(null);
     try {
@@ -290,12 +292,16 @@ function RoadTripCockpit() {
         start_date: startDate,
         preferences: selectedPriorities,
       });
+      // Drop response if a newer request has been triggered
+      if (reqId !== activeRequestIdRef.current) return;
       setPlan(resp);
       setSelectedDayTab(1);
+      setErrorState(null);
+      setLoading(false);
     } catch (err: any) {
-      const errMsg = err?.message || "Route temporarily unavailable.";
+      if (reqId !== activeRequestIdRef.current) return;
+      const errMsg = err?.message || "Route calculation temporarily unavailable. Please retry or adjust corridor.";
       setErrorState(errMsg);
-    } finally {
       setLoading(false);
     }
   };
@@ -1167,7 +1173,7 @@ function RoadTripCockpit() {
         /* ======================================================== */
         <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           {/* Bespoke VANVAS Route Plotting Experience */}
-          {loading && (
+          {(loading || Boolean(errorState)) && (
             <RoutePlottingLoader
               origin={origin}
               destination={destination}

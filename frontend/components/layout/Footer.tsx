@@ -9,12 +9,8 @@ import { Heart, Compass, Sparkles } from "lucide-react";
 export const Footer: React.FC = () => {
   const pathname = usePathname();
 
-  // Authentication and admin screens stay visually quiet without footer noise
-  const isQuietRoute =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/register") ||
-    pathname.startsWith("/join") ||
-    pathname.startsWith("/admin");
+  // Mobile signature is shown exclusively on mobile web & PWA at the actual end of Home (/)
+  const isMobileHome = pathname === "/";
 
   // Desktop full editorial marketing footer is only shown on public marketing routes
   const isDesktopMarketingRoute =
@@ -29,9 +25,10 @@ export const Footer: React.FC = () => {
     <>
       {/* ======================================================== */}
       {/* MOBILE APP SIGNATURE (Mobile Web & Installed PWA)        */}
+      {/* Rendered ONLY on Home (/)                                */}
       {/* ======================================================== */}
-      {!isQuietRoute && (
-        <div className="xl:hidden py-6 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] text-center text-[#7B4D36]/80 space-y-1 select-none">
+      {isMobileHome && (
+        <div data-testid="mobile-crafted-signature" className="xl:hidden py-6 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] text-center text-[#7B4D36]/80 space-y-1 select-none">
           <div className="flex items-center justify-center gap-1.5 text-xs font-medium">
             <span>Crafted with</span>
             <Heart className="w-3.5 h-3.5 text-[#B65E3C] fill-[#B65E3C] inline shrink-0" />

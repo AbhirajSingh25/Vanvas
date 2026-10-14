@@ -15,7 +15,7 @@ export function CapacitorInit() {
   useEffect(() => {
     if (!isCapacitorNative()) return;
 
-    // 1. Initialize Status Bar
+    // 1. Initialize Status Bar with deep forest styling
     const configureStatusBar = async () => {
       try {
         const isDark = document.documentElement.classList.contains("dark");
@@ -35,16 +35,29 @@ export function CapacitorInit() {
 
     configureStatusBar();
 
-    // 2. Hide Splash Screen cleanly after client hydration
+    // 2. Hide Splash Screen cleanly once app shell is hydrated & ready
     const hideSplash = async () => {
       try {
-        await SplashScreen.hide();
+        await SplashScreen.hide({ fadeOutDuration: 250 });
       } catch {
         // Ignored if splash screen is unavailable
       }
     };
 
-    const splashTimer = setTimeout(hideSplash, 300);
+    // Give the app shell a brief moment (180ms) to paint the first useful screen, then fade out native splash
+    const splashTimer = setTimeout(hideSplash, 180);
+
+    // Failsafe timeout: ensure native splash is NEVER permanently stuck
+    const failsafeTimer = setTimeout(hideSplash, 9000);
+
+    return () => {
+      clearTimeout(splashTimer);
+      clearTimeout(failsafeTimer);
+    };
+  }, []); // Run ONCE on application hydration, NOT on every pathname change
+
+  useEffect(() => {
+    if (!isCapacitorNative()) return;
 
     // 3. Android Hardware / Gesture Back Button Handling
     let backListenerHandle: { remove: () => void } | null = null;
@@ -137,13 +150,12 @@ export function CapacitorInit() {
     document.addEventListener("click", handleGlobalClick, { capture: true });
 
     return () => {
-      clearTimeout(splashTimer);
       if (backListenerHandle) {
         backListenerHandle.remove();
       }
       document.removeEventListener("click", handleGlobalClick, { capture: true });
     };
-  }, [pathname, router]);
+  }, [router]);
 
   return null;
 }

@@ -394,6 +394,7 @@ export const Header: React.FC = () => {
           <div className="relative" ref={densityRef}>
             <button
               type="button"
+              data-testid="header-density-toggle"
               onClick={() => setDensityMenuOpen(!densityMenuOpen)}
               className={`p-1.5 rounded-full border transition-all cursor-pointer flex items-center justify-center ${
                 densityMenuOpen
