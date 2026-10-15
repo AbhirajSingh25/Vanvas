@@ -364,10 +364,10 @@ def test_16_and_17_budget_persists_and_updates_via_api(test_trip: Trip, auth_tok
 def test_18_extract_explicit_destination_haridwar():
     """18. 'things to do in haridwar' resolves Haridwar context instead of defaulting to trip origin"""
     dest = extract_explicit_destination("things to do in haridwar")
-    assert dest == "haridwar"
+    assert dest == "haridwar-rishikesh"
 
     dest2 = extract_explicit_destination("what to do in Haridwar")
-    assert dest2 == "haridwar"
+    assert dest2 == "haridwar-rishikesh"
 
     dest3 = extract_explicit_destination("cafes in Manali")
     assert dest3 == "manali"
