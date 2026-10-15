@@ -81,26 +81,30 @@ jobs:
             exit 1
           fi
 
-      - name: Upload Debug Build Output Log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-debug-output
-          path: /tmp/gradle_output.txt
-
       - name: Prepare Debug APK Artifact & Checksum
         id: prep-debug-apk
-        working-directory: ./frontend/android/app/build/outputs/apk/debug
+        working-directory: ./frontend/android
         run: |
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           APK_NAME="VANVAS-Android-v0.2.0-${SHORT_SHA}-debug.apk"
-          cp app-debug.apk "${APK_NAME}"
+          echo "Locating built APK in app/build..."
+          APK_SRC=$(find app/build -name "*debug*.apk" -o -name "app-debug.apk" | head -n 1)
+          if [ -z "$APK_SRC" ]; then
+            echo "ERROR: No debug APK found in app/build"
+            find . -name "*.apk"
+            exit 1
+          fi
+          echo "Found APK: $APK_SRC"
+          APK_DIR=$(dirname "$APK_SRC")
+          cp "$APK_SRC" "${APK_DIR}/${APK_NAME}"
+          cd "$APK_DIR"
           sha256sum "${APK_NAME}" > "${APK_NAME}.sha256"
           SHA_VALUE=$(cat "${APK_NAME}.sha256" | awk '{print $1}')
           FILE_SIZE=$(du -h "${APK_NAME}" | cut -f1)
           echo "apk_name=${APK_NAME}" >> $GITHUB_OUTPUT
           echo "sha256=${SHA_VALUE}" >> $GITHUB_OUTPUT
           echo "file_size=${FILE_SIZE}" >> $GITHUB_OUTPUT
+          echo "Successfully prepared: ${APK_NAME} (${FILE_SIZE}, SHA-256: ${SHA_VALUE})"
 
       - name: Check For Release Signing Secrets
         id: check-secrets
@@ -124,12 +128,16 @@ jobs:
           export ANDROID_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}"
           export ANDROID_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}"
           
-          ./gradlew assembleRelease --stacktrace
+          bash ./gradlew assembleRelease --stacktrace
           
-          cd app/build/outputs/apk/release
-          SIGNED_APK="VANVAS-Android-v0.2.0-${SHORT_SHA}-release-signed.apk"
-          cp app-release.apk "${SIGNED_APK}"
-          sha256sum "${SIGNED_APK}" > "${SIGNED_APK}.sha256"
+          RELEASE_APK_SRC=$(find app/build -name "*release*.apk" | head -n 1)
+          if [ -n "$RELEASE_APK_SRC" ]; then
+            RELEASE_DIR=$(dirname "$RELEASE_APK_SRC")
+            SIGNED_APK="VANVAS-Android-v0.2.0-${SHORT_SHA}-release-signed.apk"
+            cp "$RELEASE_APK_SRC" "${RELEASE_DIR}/${SIGNED_APK}"
+            cd "$RELEASE_DIR"
+            sha256sum "${SIGNED_APK}" > "${SIGNED_APK}.sha256"
+          fi
           
           # Clean up temporary keystore file
           rm -f "${KEYSTORE_PATH}"
@@ -139,8 +147,8 @@ jobs:
         with:
           name: VANVAS-Android-${{ github.sha }}-debug
           path: |
-            frontend/android/app/build/outputs/apk/debug/VANVAS-Android-*-debug.apk
-            frontend/android/app/build/outputs/apk/debug/VANVAS-Android-*-debug.apk.sha256
+            frontend/android/**/VANVAS-Android-*-debug.apk
+            frontend/android/**/VANVAS-Android-*-debug.apk.sha256
           retention-days: 30
 
       - name: Upload Signed Release APK Artifact (If Built)
