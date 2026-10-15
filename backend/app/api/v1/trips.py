@@ -1093,9 +1093,23 @@ async def im_here_mode(
         "status": "on_track" if (spent + est_arrival_spend) <= total_budget else "budget_tight"
     }
 
+    check_in_time = (
+        hotel.check_in_time
+        if hotel and hotel.check_in_time
+        else "11:00 AM"
+    )
+
+    if is_check_in_ready:
+        check_in_message = "Hotel check-in is open."
+    else:
+        check_in_message = (
+            f"Hotel check-in starts at {check_in_time}; "
+            "bags can be dropped first."
+        )
+
     timing_guidance = (
         f"Arrival at {start_dt.strftime('%I:%M %p')}. "
-        f"{'Hotel check-in is open.' if is_check_in_ready else f'Hotel check-in starts at {hotel.check_in_time if hotel else "11:00 AM"}; bags can be dropped first.'} "
+        f"{check_in_message} "
         f"Optimized {len(micro_items)}-step sequence for your first {int(avail_hours)} hours."
     )
 
