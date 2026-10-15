@@ -457,13 +457,24 @@ export const api = {
     });
   },
 
-  async getImHereContext(tripId: string, lat?: number, lng?: number, locationName?: string): Promise<ImHereResponse> {
+  async getImHereContext(
+    tripId: string,
+    lat?: number,
+    lng?: number,
+    locationName?: string,
+    currentTime?: string,
+    hoursAvailable?: number,
+    delayMinutes?: number
+  ): Promise<ImHereResponse> {
     return fetchApi(`/trips/${tripId}/im-here`, {
       method: "POST",
       body: JSON.stringify({
         current_lat: lat,
         current_lng: lng,
         current_location_name: locationName,
+        current_time: currentTime,
+        hours_available: hoursAvailable,
+        delay_minutes: delayMinutes,
       }),
     });
   },

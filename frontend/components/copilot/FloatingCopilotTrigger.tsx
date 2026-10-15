@@ -60,7 +60,7 @@ export const FloatingCopilotTrigger: React.FC<FloatingCopilotTriggerProps> = ({
           animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
           exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.85, y: 12 }}
           transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-3.5 xl:bottom-6 xl:right-6 z-30 pointer-events-auto"
+          className="fixed bottom-[var(--vanvas-ask-vanvas-bottom,calc(4.25rem+env(safe-area-inset-bottom,0px)))] right-3.5 xl:bottom-6 xl:right-6 z-40 pointer-events-auto"
         >
           <motion.button
             type="button"

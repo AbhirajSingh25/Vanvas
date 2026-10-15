@@ -157,7 +157,7 @@ export default function RootLayout({
                     <UpdateNotificationBanner />
                     <ServiceWorkerRegister />
                     <Header />
-                    <main className="flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] xl:pb-0">{children}</main>
+                    <main className="flex-1 pb-[var(--vanvas-content-bottom-clearance,calc(4.75rem+env(safe-area-inset-bottom,0px)))] xl:pb-0">{children}</main>
                     <Footer />
                     <MobileNav />
                     <FloatingCopilotTrigger />

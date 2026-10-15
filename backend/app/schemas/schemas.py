@@ -713,6 +713,10 @@ class ImHereRequest(BaseModel):
     current_lat: Optional[float] = None
     current_lng: Optional[float] = None
     current_location_name: Optional[str] = None
+    current_time: Optional[str] = None
+    hours_available: Optional[float] = 3.0
+    delay_minutes: Optional[int] = 0
+    problem_type: Optional[str] = None
 
 class ImHereResponse(BaseModel):
     current_location_name: str
@@ -722,6 +726,12 @@ class ImHereResponse(BaseModel):
     nearby_food: List[PlaceResponse]
     nearby_attractions: List[PlaceResponse]
     local_transport_options: List[Dict[str, Any]]
+    now_step: Optional[ItineraryItemResponse] = None
+    next_step: Optional[ItineraryItemResponse] = None
+    later_steps: Optional[List[ItineraryItemResponse]] = None
+    weather_info: Optional[Dict[str, Any]] = None
+    budget_info: Optional[Dict[str, Any]] = None
+    activation_time: Optional[str] = None
 
 # ----------------- Arrival Optimizer -----------------
 class ArrivalOptimizerRequest(BaseModel):

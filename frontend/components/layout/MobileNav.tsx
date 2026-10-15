@@ -38,11 +38,10 @@ export const MobileNav: React.FC = () => {
     <>
       <nav
         aria-label="Mobile Navigation"
-        className={`xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#EFE5D2]/95 backdrop-blur-md border-t border-[#E5D5BA] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] shadow-2xl transition-all ${
-          isCompact ? "pt-1" : "pt-1.5"
-        }`}
+        id="vanvas-mobile-nav"
+        className="xl:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#EFE5D2]/95 backdrop-blur-md border-t border-[#E5D5BA] px-2 pb-[var(--vanvas-safe-area-bottom,env(safe-area-inset-bottom,0px))] shadow-lg transition-all"
       >
-        <div className="flex items-center justify-around relative max-w-lg mx-auto">
+        <div className="flex items-center justify-around relative max-w-lg mx-auto h-[var(--vanvas-mobile-nav-bar-height,3.5rem)]">
           {navItems.map((item) => {
             const Icon = item.icon;
 
@@ -54,8 +53,8 @@ export const MobileNav: React.FC = () => {
                   whileTap={{ scale: 0.92 }}
                   whileHover={{ scale: 1.05 }}
                   onClick={() => setChaloLauncherOpen(true)}
-                  className={`flex flex-col items-center justify-center relative group cursor-pointer select-none touch-manipulation min-w-[52px] min-h-[48px] ${
-                    isCompact ? "-top-3" : "-top-3.5"
+                  className={`flex flex-col items-center justify-center relative group cursor-pointer select-none touch-manipulation min-w-[48px] min-h-[48px] ${
+                    isCompact ? "-top-2.5" : "-top-3"
                   }`}
                   aria-label="Open Chalo Action Center"
                 >

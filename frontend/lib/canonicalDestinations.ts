@@ -955,6 +955,32 @@ export const FRONTEND_DESTINATION_ALIASES: Record<string, { slug: string; matche
   coorg: { slug: "coorg", matchedAlias: "Coorg" },
   udhagamandalam: { slug: "ooty", matchedAlias: "Ooty" },
   ooty: { slug: "ooty", matchedAlias: "Ooty" },
+  vrindavan: { slug: "mathura-vrindavan", matchedAlias: "Vrindavan" },
+  brindavan: { slug: "mathura-vrindavan", matchedAlias: "Vrindavan" },
+  mathura: { slug: "mathura-vrindavan", matchedAlias: "Mathura" },
+  "mathura-vrindavan": { slug: "mathura-vrindavan", matchedAlias: "Mathura & Vrindavan" },
+  "mathura vrindavan": { slug: "mathura-vrindavan", matchedAlias: "Mathura & Vrindavan" },
+  braj: { slug: "mathura-vrindavan", matchedAlias: "Braj" },
+  barsana: { slug: "mathura-vrindavan", matchedAlias: "Barsana" },
+  govardhan: { slug: "mathura-vrindavan", matchedAlias: "Govardhan" },
+  jaipur: { slug: "jaipur", matchedAlias: "Jaipur" },
+  manali: { slug: "manali", matchedAlias: "Manali" },
+  rishikesh: { slug: "rishikesh", matchedAlias: "Rishikesh" },
+  haridwar: { slug: "haridwar-rishikesh", matchedAlias: "Haridwar" },
+  dehradun: { slug: "dehradun", matchedAlias: "Dehradun" },
+  mussoorie: { slug: "mussoorie", matchedAlias: "Mussoorie" },
+  dharamshala: { slug: "dharamshala", matchedAlias: "Dharamshala" },
+  kasol: { slug: "kasol", matchedAlias: "Kasol" },
+  goa: { slug: "goa", matchedAlias: "Goa" },
+  shimla: { slug: "shimla", matchedAlias: "Shimla" },
+  nainital: { slug: "nainital", matchedAlias: "Nainital" },
+  udaipur: { slug: "udaipur", matchedAlias: "Udaipur" },
+  jodhpur: { slug: "jodhpur", matchedAlias: "Jodhpur" },
+  jaisalmer: { slug: "jaisalmer", matchedAlias: "Jaisalmer" },
+  pushkar: { slug: "pushkar", matchedAlias: "Pushkar" },
+  varanasi: { slug: "varanasi", matchedAlias: "Varanasi" },
+  agra: { slug: "agra", matchedAlias: "Agra" },
+  amritsar: { slug: "amritsar", matchedAlias: "Amritsar" },
   tosh: { slug: "kasol", matchedAlias: "Tosh" },
   chalal: { slug: "kasol", matchedAlias: "Chalal" },
   kheerganga: { slug: "kasol", matchedAlias: "Kheerganga" },
@@ -1036,3 +1062,70 @@ export function resolveCanonicalDestination(query?: string | null): CanonicalDes
       (d.state && d.state.toLowerCase().includes(cleaned))
   );
 }
+
+/**
+ * Checks if a user query is asking for nearby or current-location recommendations.
+ */
+export function isNearbyQuery(text?: string | null): boolean {
+  if (!text || typeof text !== "string") return false;
+  const raw = text.toLowerCase().trim();
+  return /\b(near me|nearby|around me|close to me|places near|what(?:'s| is) nearby|around here|near by)\b/i.test(raw);
+}
+
+/**
+ * Deterministically extracts an explicit destination mentioned in a user message.
+ * Supports English ("food in Vrindavan", "places to visit in Jaipur", "what cafés should I visit in Jaipur?")
+ * and Hinglish ("Vrindavan mein khane ki jagah batao", "Vrindavan mein khana kahan milega?", "Kasol me", "Manali mai").
+ * Returns the CanonicalDestination if found, or undefined if no explicit destination is mentioned.
+ */
+export function extractExplicitDestinationFromQuery(text?: string | null): CanonicalDestination | undefined {
+  if (!text || typeof text !== "string") return undefined;
+  const raw = text.toLowerCase().trim();
+  if (!raw) return undefined;
+
+  // 1. Try finding known alias or canonical slug using exact word-boundary regex
+  // Sort candidates by length descending to match multi-word phrases first (e.g. "mathura-vrindavan", "kainchi dham")
+  const aliasEntries = Object.entries(FRONTEND_DESTINATION_ALIASES).sort((a, b) => b[0].length - a[0].length);
+
+  for (const [aliasKey, aliasData] of aliasEntries) {
+    const escaped = aliasKey.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const regex = new RegExp(`(?:^|[^a-zA-Z0-9_-])${escaped}(?:$|[^a-zA-Z0-9_-])`, "i");
+    if (regex.test(raw)) {
+      const dest = findCanonicalDestination(aliasData.slug);
+      if (dest) return dest;
+    }
+  }
+
+  // 2. Also check canonical destination slugs and names directly
+  for (const dest of CANONICAL_DESTINATIONS) {
+    const slugEscaped = dest.slug.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const nameEscaped = dest.name.toLowerCase().replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+    if (
+      new RegExp(`(?:^|[^a-zA-Z0-9_-])${slugEscaped}(?:$|[^a-zA-Z0-9_-])`, "i").test(raw) ||
+      new RegExp(`(?:^|[^a-zA-Z0-9_-])${nameEscaped}(?:$|[^a-zA-Z0-9_-])`, "i").test(raw)
+    ) {
+      return dest;
+    }
+  }
+
+  // 3. Check common postposition phrasing in Hinglish: [Destination] mein / me / mai / ke / ki / ka / se
+  const hinglishMatch = raw.match(/([a-zA-Z\s]{3,25})\s+(?:mein|me|mai|ke|ki|ka|se)\b/i);
+  if (hinglishMatch && hinglishMatch[1]) {
+    const cand = hinglishMatch[1].trim();
+    const resolved = resolveCanonicalDestination(cand);
+    if (resolved) return resolved;
+  }
+
+  // 4. Check common preposition phrasing in English: in/to/at/around/for [Destination]
+  const englishMatch = raw.match(/\b(?:in|to|at|for|around|explore|visit)\s+([a-zA-Z\s]{3,25})(?:\.|\?|!|,|$)/i);
+  if (englishMatch && englishMatch[1]) {
+    const cand = englishMatch[1].trim();
+    if (!["the", "a", "our", "my", "this", "that", "india", "here", "hotel", "there"].includes(cand.toLowerCase())) {
+      const resolved = resolveCanonicalDestination(cand);
+      if (resolved) return resolved;
+    }
+  }
+
+  return undefined;
+}
+

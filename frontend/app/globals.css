@@ -18,6 +18,11 @@
     
     /* Safe area and sticky header offsets */
     --vanvas-top-offset: calc(4rem + env(safe-area-inset-top, 0px));
+    --vanvas-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --vanvas-mobile-nav-bar-height: 3.5rem;
+    --vanvas-mobile-nav-height: calc(var(--vanvas-mobile-nav-bar-height) + var(--vanvas-safe-area-bottom));
+    --vanvas-ask-vanvas-bottom: calc(var(--vanvas-mobile-nav-height) + 0.75rem);
+    --vanvas-content-bottom-clearance: calc(var(--vanvas-mobile-nav-height) + 1.25rem);
 
     /* Brand Accents */
     --primary: #173B32;
@@ -70,6 +75,10 @@
     --image-height: 140px;
     --grid-gap: 0.875rem;
     --vanvas-top-offset: calc(3.5rem + env(safe-area-inset-top, 0px));
+    --vanvas-mobile-nav-bar-height: 3.25rem;
+    --vanvas-mobile-nav-height: calc(var(--vanvas-mobile-nav-bar-height) + var(--vanvas-safe-area-bottom));
+    --vanvas-ask-vanvas-bottom: calc(var(--vanvas-mobile-nav-height) + 0.625rem);
+    --vanvas-content-bottom-clearance: calc(var(--vanvas-mobile-nav-height) + 1rem);
   }
 
   html.dark,

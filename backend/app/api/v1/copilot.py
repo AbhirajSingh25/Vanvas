@@ -669,8 +669,9 @@ async def copilot_chat(
 
     # D. Simple Food / Cafes Fast Path
     is_simple_food_query = any(k in msg_clean_lower for k in [
-        "best food", "food in ", "best cafes", "where to eat", "good food", "top cafes", "cafes in "
-    ]) or msg_clean_lower in ["food", "cafes", "cafés", "dinner", "breakfast", "lunch"]
+        "best food", "food in ", "best cafes", "where to eat", "good food", "top cafes", "cafes in ",
+        "khane ki jagah", "khana", "restaurant", "restaurants in", "dhaba", "dhabas in", "dining"
+    ]) or any(k == msg_clean_lower for k in ["food", "cafes", "cafés", "dinner", "breakfast", "lunch", "khana"])
 
     if is_simple_food_query and dest_target_slug:
         dest_rec = db.query(Destination).filter((Destination.slug == dest_target_slug) | (Destination.id == dest_target_slug)).first()
@@ -716,6 +717,43 @@ async def copilot_chat(
                     places=places_data,
                     metadata=fast_meta
                 )
+            else:
+                fast_resp_text = f"No verified dining places were found for {dest_rec.name} in our catalog yet. You can explore other curated sanctuaries or search live discovery."
+                fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "food_places_empty"}
+                assistant_msg = ConversationMessage(
+                    conversation_id=conv.id,
+                    role="assistant",
+                    content=fast_resp_text,
+                    metadata_json=json.dumps(fast_meta),
+                )
+                db.add(assistant_msg)
+                db.commit()
+                return CopilotChatResponse(
+                    conversation_id=conv.id,
+                    message=fast_resp_text,
+                    actions=[{"action_type": "navigate_explore", "title": "Explore Sanctuaries", "payload": {}}],
+                    places=[],
+                    metadata=fast_meta
+                )
+        elif explicit_dest:
+            # Explicit destination was specified by user but not found in DB
+            fast_resp_text = f"No verified matches were found for '{dest_target_slug.replace('-', ' ').title()}' in our catalog. Would you like to explore nearby sanctuaries or plan a custom trip?"
+            fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "destination_not_found"}
+            assistant_msg = ConversationMessage(
+                conversation_id=conv.id,
+                role="assistant",
+                content=fast_resp_text,
+                metadata_json=json.dumps(fast_meta),
+            )
+            db.add(assistant_msg)
+            db.commit()
+            return CopilotChatResponse(
+                conversation_id=conv.id,
+                message=fast_resp_text,
+                actions=[{"action_type": "navigate_explore", "title": "Explore Sanctuaries", "payload": {}}],
+                places=[],
+                metadata=fast_meta
+            )
 
     # E. Explore Places / Things to Do Fast Path
     is_explore_places_query = any(k in msg_clean_lower for k in [
@@ -819,6 +857,24 @@ async def copilot_chat(
                         {"action_type": "add_place_to_itinerary", "title": "Add to trip", "payload": {"destination": dest_rec.slug}}
                     ],
                     places=places_data,
+                    metadata=fast_meta
+                )
+            elif explicit_dest:
+                fast_resp_text = f"No verified attractions were found for {dest_rec.name if dest_rec else dest_target_slug.replace('-', ' ').title()} in our catalog yet. You can explore nearby sanctuaries or plan a custom trip."
+                fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "places_empty"}
+                assistant_msg = ConversationMessage(
+                    conversation_id=conv.id,
+                    role="assistant",
+                    content=fast_resp_text,
+                    metadata_json=json.dumps(fast_meta),
+                )
+                db.add(assistant_msg)
+                db.commit()
+                return CopilotChatResponse(
+                    conversation_id=conv.id,
+                    message=fast_resp_text,
+                    actions=[{"action_type": "navigate_explore", "title": "Explore Sanctuaries", "payload": {}}],
+                    places=[],
                     metadata=fast_meta
                 )
 

@@ -1,52 +1,181 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Navigation, Clock, Hotel, Utensils, Compass, Bike, X,
-  CheckCircle, ArrowRight, MapPin, AlertCircle, Sun, Loader2
+  CheckCircle, ArrowRight, MapPin, AlertCircle, Sun, Loader2,
+  CloudRain, RotateCcw, HelpCircle, Car, Footprints, Wallet,
+  ChevronDown, ChevronUp, RefreshCw, AlertTriangle, Sparkles, Check
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { ImHereResponse } from "@/types";
+import { ImHereResponse, ItineraryItem } from "@/types";
 import { TravelStamp } from "@/components/ui/TravelStamp";
+import { useAskVanvas } from "@/context/AskVanvasContext";
 
 interface ImHereDrawerProps {
   tripId: string;
   isOpen: boolean;
   onClose: () => void;
   destinationId?: string;
+  destinationName?: string;
+  destinationSlug?: string;
 }
 
-export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({ tripId, isOpen, onClose }) => {
+interface ProblemOption {
+  id: string;
+  label: string;
+  icon: string;
+  immediateAdvice: string;
+  queryText: string;
+}
+
+const COMMON_PROBLEMS: ProblemOption[] = [
+  {
+    id: "cab_cancelled",
+    label: "Cab Cancelled / No Ride",
+    icon: "🚕",
+    immediateAdvice: "Head to the official prepaid union counter outside Gate 1. Fixed rates apply without surge pricing.",
+    queryText: "My cab was cancelled at the arrival hub. How can I get reliable transport to my stay right now?"
+  },
+  {
+    id: "hotel_unavailable",
+    label: "Hotel Not Ready / Issue",
+    icon: "🏨",
+    immediateAdvice: "Ask the front desk for luggage cloakroom storage so you can relax at a nearby café while they prepare your room.",
+    queryText: "My hotel room is not ready yet. Where can I drop my bags or relax nearby in the meantime?"
+  },
+  {
+    id: "heavy_rain",
+    label: "Bad Weather / Heavy Rain",
+    icon: "🌧️",
+    immediateAdvice: "Switch outdoor walks to cozy indoor heritage cafes and covered bazaars. Keep waterproof gear accessible.",
+    queryText: "It is raining heavily. Recommend indoor cafes or covered cultural spots nearby to wait out the rain."
+  },
+  {
+    id: "need_essentials",
+    label: "Need Food, Pharmacy or ATM",
+    icon: "💊",
+    immediateAdvice: "Local medical stores and main market ATMs are typically clustered along the central Mall Road / Station Road.",
+    queryText: "I urgently need a pharmacy, ATM, and quick warm food near my arrival location."
+  },
+  {
+    id: "feeling_exhausted",
+    label: "Exhausted / Need Rest",
+    icon: "😴",
+    immediateAdvice: "Postpone intense sightseeing. We recommend taking an unhurried 90-minute nap or quiet tea break first.",
+    queryText: "I am feeling exhausted after the journey. Reorganize my arrival afternoon for maximum rest and low physical effort."
+  },
+  {
+    id: "lost_luggage",
+    label: "Luggage Delayed / Missing",
+    icon: "🧳",
+    immediateAdvice: "File a Property Irregularity Report (PIR) with your transit operator before leaving the terminal.",
+    queryText: "My luggage was delayed or misplaced during transit. What steps should I take and where can I buy essential clothes/toiletries nearby?"
+  }
+];
+
+export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({
+  tripId,
+  isOpen,
+  onClose,
+  destinationName = "Destination",
+  destinationSlug
+}) => {
+  const { openAskVanvas } = useAskVanvas();
+
+  // Primary data state
   const [data, setData] = useState<ImHereResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [geoStatus, setGeoStatus] = useState<"idle" | "detecting" | "granted" | "denied" | "unavailable">("idle");
-  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
+  // Time & Location context
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "detecting" | "granted" | "denied" | "unavailable">("idle");
+  const [hoursAvailable, setHoursAvailable] = useState<number>(3);
+  const [delayMinutes, setDelayMinutes] = useState<number>(0);
+  const [arrivalTimestamp, setArrivalTimestamp] = useState<string>("");
+
+  // UI state
+  const [completedItemIds, setCompletedItemIds] = useState<Set<string>>(new Set());
+  const [skippedItemIds, setSkippedItemIds] = useState<Set<string>>(new Set());
+  const [showLaterExpanded, setShowLaterExpanded] = useState<boolean>(false);
+  const [showProblemSheet, setShowProblemSheet] = useState<boolean>(false);
+  const [selectedProblem, setSelectedProblem] = useState<ProblemOption | null>(null);
+
+  // Local storage persistence key
+  const storageKey = `vanvas_im_here_${tripId}`;
+
+  // Initialize time on open
+  useEffect(() => {
+    if (isOpen) {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const currentFormatted = `${hh}:${mm}`;
+      setArrivalTimestamp(currentFormatted);
+
+      // Load persisted state if any
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.completed) setCompletedItemIds(new Set(parsed.completed));
+          if (parsed.skipped) setSkippedItemIds(new Set(parsed.skipped));
+          if (parsed.delay) setDelayMinutes(parsed.delay);
+          if (parsed.hours) setHoursAvailable(parsed.hours);
+        }
+      } catch (e) {
+        console.warn("Could not load persisted I'M HERE state:", e);
+      }
+    }
+  }, [isOpen, tripId, storageKey]);
+
+  // Persist state changes
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({
+        completed: Array.from(completedItemIds),
+        skipped: Array.from(skippedItemIds),
+        delay: delayMinutes,
+        hours: hoursAvailable,
+      }));
+    } catch (e) {
+      console.warn("Failed to persist I'M HERE state:", e);
+    }
+  }, [completedItemIds, skippedItemIds, delayMinutes, hoursAvailable, isOpen, storageKey]);
+
+  // Keyboard escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        if (showProblemSheet) {
+          setShowProblemSheet(false);
+        } else {
+          onClose();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, showProblemSheet, onClose]);
 
+  // Request GPS
   const handleRequestGPS = () => {
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       setGeoStatus("detecting");
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        (pos) => {
           setGeoStatus("granted");
-          setUserCoords({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserCoords(coords);
+          // Refetch with exact coordinates
+          fetchPlan(coords.lat, coords.lng, hoursAvailable, delayMinutes);
         },
-        (error) => {
-          console.warn("Geolocation permission:", error.message);
+        (err) => {
+          console.warn("GPS error:", err.message);
           setGeoStatus("denied");
         },
         { timeout: 8000, enableHighAccuracy: true }
@@ -56,71 +185,191 @@ export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({ tripId, isOpen, onCl
     }
   };
 
+  // Fetch plan from backend
+  const fetchPlan = useCallback(async (
+    lat?: number,
+    lng?: number,
+    hours: number = hoursAvailable,
+    delay: number = delayMinutes
+  ) => {
+    try {
+      setRefreshing(true);
+      const res = await api.getImHereContext(
+        tripId,
+        lat,
+        lng,
+        undefined,
+        arrivalTimestamp || undefined,
+        hours,
+        delay
+      );
+      setData(res);
+    } catch (err) {
+      console.error("Failed to fetch I'M HERE context:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [tripId, arrivalTimestamp, hoursAvailable, delayMinutes]);
+
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
-      api.getImHereContext(tripId)
-        .then((res) => setData(res))
-        .catch((err) => console.error(err))
-        .finally(() => setLoading(false));
+      fetchPlan(userCoords?.lat, userCoords?.lng, hoursAvailable, delayMinutes);
     }
-  }, [isOpen, tripId]);
+  }, [isOpen, fetchPlan]);
+
+  // Filter items based on user actions (completed & skipped)
+  const activePlanItems = useMemo(() => {
+    if (!data?.next_3_hours_plan) return [];
+    return data.next_3_hours_plan.filter(item => !skippedItemIds.has(item.id));
+  }, [data, skippedItemIds]);
+
+  // Now, Next, Later hierarchy
+  const nowItem = useMemo(() => {
+    // First non-completed item in sequence
+    return activePlanItems.find(item => !completedItemIds.has(item.id)) || null;
+  }, [activePlanItems, completedItemIds]);
+
+  const nextItem = useMemo(() => {
+    if (!nowItem) return null;
+    const nowIdx = activePlanItems.findIndex(i => i.id === nowItem.id);
+    if (nowIdx >= 0 && nowIdx + 1 < activePlanItems.length) {
+      return activePlanItems[nowIdx + 1];
+    }
+    return null;
+  }, [activePlanItems, nowItem]);
+
+  const laterItems = useMemo(() => {
+    if (!nowItem) return [];
+    const nowIdx = activePlanItems.findIndex(i => i.id === nowItem.id);
+    if (nowIdx >= 0 && nowIdx + 2 < activePlanItems.length) {
+      return activePlanItems.slice(nowIdx + 2);
+    }
+    return [];
+  }, [activePlanItems, nowItem]);
+
+  // Mark step done
+  const handleMarkDone = (itemId: string) => {
+    setCompletedItemIds(prev => {
+      const next = new Set(prev);
+      next.add(itemId);
+      return next;
+    });
+  };
+
+  // Skip step
+  const handleSkipStep = (itemId: string) => {
+    setSkippedItemIds(prev => {
+      const next = new Set(prev);
+      next.add(itemId);
+      return next;
+    });
+  };
+
+  // Add delay (+30 mins)
+  const handleRunningLate = () => {
+    const newDelay = delayMinutes + 30;
+    setDelayMinutes(newDelay);
+    fetchPlan(userCoords?.lat, userCoords?.lng, hoursAvailable, newDelay);
+  };
+
+  // Change available hours ("I Have X Hours")
+  const handleHoursSelect = (hours: number) => {
+    setHoursAvailable(hours);
+    fetchPlan(userCoords?.lat, userCoords?.lng, hours, delayMinutes);
+  };
+
+  // Reset plan
+  const handleResetPlan = () => {
+    setCompletedItemIds(new Set());
+    setSkippedItemIds(new Set());
+    setDelayMinutes(0);
+    fetchPlan(userCoords?.lat, userCoords?.lng, hoursAvailable, 0);
+  };
+
+  // Deep-link to Ask VANVAS for problem solving
+  const handleAskVanvasProblem = (problem: ProblemOption) => {
+    setShowProblemSheet(false);
+    onClose();
+    openAskVanvas(
+      {
+        destinationSlug: destinationSlug || (data?.current_location_name ? data.current_location_name.toLowerCase().replace(/[^a-z0-9]/g, '-') : undefined),
+        destinationName: destinationName || data?.current_location_name,
+        tripId: tripId,
+        coordinates: userCoords ? { lat: userCoords.lat, lng: userCoords.lng } : undefined,
+      },
+      problem.queryText
+    );
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0F2924]/75 backdrop-blur-sm animate-fadeIn"
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#0F2924]/80 backdrop-blur-md animate-fadeIn"
       onClick={onClose}
     >
-      <div 
-        className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-slideUp"
+      <div
+        className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-slideUp relative"
         onClick={(e) => e.stopPropagation()}
+        style={{ paddingBottom: "var(--vanvas-safe-area-bottom, 0px)" }}
       >
         {/* Header Banner */}
-        <div className="p-5 sm:p-6 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36]">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-lg shrink-0">
-              <Navigation className="w-6 h-6 animate-bounce" />
+        <div className="p-4 sm:p-5 bg-[#0F2924] text-[#EFE5D2] flex items-center justify-between border-b border-[#243E36] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-[#B65E3C] text-[#EFE5D2] flex items-center justify-center shadow-md shrink-0">
+              <Navigation className="w-5 h-5 text-[#FAF4E8]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <TravelStamp label="पहुँच गए • I'M HERE" variant="terracotta" />
-                <span className="text-[10px] text-[#B49252] font-mono font-bold uppercase">
-                  LIVE CONTEXT
+                <span className="text-[10px] text-[#B49252] font-mono font-bold uppercase tracking-wider">
+                  NOW • NEXT • LATER
                 </span>
               </div>
-              <h2 className="text-xl font-serif font-black tracking-tight mt-1 text-[#FAF4E8]">
-                You Just Arrived At Your Destination
+              <h2 className="text-lg sm:text-xl font-serif font-black tracking-tight mt-0.5 text-[#FAF4E8]">
+                Arrival Operating Experience
               </h2>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="p-2 rounded-full text-[#D8DED5] hover:bg-[#173B32] transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fetchPlan(userCoords?.lat, userCoords?.lng, hoursAvailable, delayMinutes)}
+              disabled={refreshing}
+              title="Refresh Plan"
+              aria-label="Refresh Plan"
+              className="p-2 rounded-full text-[#D8DED5] hover:bg-[#173B32] transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-[#B49252]" : ""}`} />
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="p-2 rounded-full text-[#D8DED5] hover:bg-[#173B32] transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 text-sm">
-          {/* Geolocation Status Bar */}
-          <div className="p-3 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center justify-between text-xs font-mono">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-[#B65E3C]" />
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-sm flex-1">
+          {/* Location & Activation Sensor Status Bar */}
+          <div className="p-3 rounded-2xl bg-[#EFE5D2]/70 border border-[#E5D5BA] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+            <div className="flex items-center gap-2 min-w-0">
+              <MapPin className="w-4 h-4 text-[#B65E3C] shrink-0" />
               {geoStatus === "granted" && userCoords ? (
-                <span className="text-[#173B32] font-bold">
-                  GPS LIVE: {userCoords.lat.toFixed(3)}°N, {userCoords.lng.toFixed(3)}°E
+                <span className="text-[#173B32] font-bold truncate">
+                  Device GPS: {userCoords.lat.toFixed(3)}°N, {userCoords.lng.toFixed(3)}°E
                 </span>
               ) : geoStatus === "denied" ? (
                 <span className="text-[#7B4D36]">
-                  Tell me your area or city instead.
+                  Using Arrival Hub • GPS Permitted off
                 </span>
               ) : geoStatus === "detecting" ? (
                 <span className="text-[#7B4D36] flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Detecting your coordinates...
+                  <Loader2 className="w-3 h-3 animate-spin" /> Sensing GPS...
                 </span>
               ) : (
                 <button
@@ -128,142 +377,476 @@ export const ImHereDrawer: React.FC<ImHereDrawerProps> = ({ tripId, isOpen, onCl
                   onClick={handleRequestGPS}
                   className="text-[#173B32] font-bold underline hover:text-[#B65E3C] cursor-pointer"
                 >
-                  [Use my location]
+                  [Detect My Exact Location]
                 </button>
               )}
             </div>
 
-            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 uppercase">
-              LOCAL SENSING
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-[#7B4D36] font-bold">
+                Activated: {data?.activation_time || arrivalTimestamp || "Now"}
+              </span>
+              {delayMinutes > 0 && (
+                <span className="text-[10px] font-bold bg-[#B65E3C] text-white px-1.5 py-0.5 rounded">
+                  +{delayMinutes}m late
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* "I Have X Hours" Preset Selector */}
+          <div className="p-3 rounded-2xl bg-white border border-[#E5D5BA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#173B32] font-mono">
+              <Clock className="w-3.5 h-3.5 text-[#B65E3C]" />
+              <span>Available Time Window:</span>
+            </div>
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              {[1, 2, 3, 4].map(h => (
+                <button
+                  key={h}
+                  onClick={() => handleHoursSelect(h)}
+                  className={`px-3 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex-1 sm:flex-none ${
+                    hoursAvailable === h
+                      ? "bg-[#173B32] text-[#FAF4E8] shadow-xs"
+                      : "bg-[#FAF7F0] hover:bg-[#EFE5D2] text-[#173B32] border border-[#E5D5BA]"
+                  }`}
+                >
+                  {h} Hour{h > 1 ? "s" : ""}
+                </button>
+              ))}
+            </div>
           </div>
 
           {loading ? (
             <div className="py-16 flex flex-col items-center justify-center space-y-3 text-[#173B32]">
               <div className="w-9 h-9 border-3 border-[#B65E3C] border-t-transparent rounded-full animate-spin" />
               <p className="text-xs font-serif italic text-[#7B4D36]">
-                Analyzing arrival time, hotel check-in &amp; nearest local food spots...
+                Calibrating arrival timeline, hotel check-in &amp; nearest stops from {arrivalTimestamp || "now"}...
               </p>
             </div>
           ) : data ? (
             <>
-              {/* Timing & Destination Status Pill */}
-              <div className="p-4 rounded-2xl bg-white border-2 border-[#E5D5BA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+              {/* Hotel & Timing Status Banner */}
+              <div className="p-3.5 rounded-2xl bg-white border-2 border-[#E5D5BA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
                 <div>
                   <div className="text-[10px] text-[#7B4D36] font-bold uppercase tracking-wider font-mono">
-                    Current Destination Hub
+                    Arrival Hub &amp; Region
                   </div>
-                  <div className="font-serif font-black text-[#173B32] text-lg">
+                  <div className="font-serif font-black text-[#173B32] text-base sm:text-lg">
                     {data.current_location_name}
                   </div>
+                  <div className="text-xs text-[#7B4D36] mt-0.5 leading-relaxed font-light">
+                    {data.timing_guidance}
+                  </div>
                 </div>
+
                 {data.hotel_info && (
-                  <div className="bg-[#FAF7F0] px-3.5 py-2 rounded-xl border border-[#E5D5BA] flex items-center gap-2">
-                    <Hotel className="w-4 h-4 text-[#B65E3C]" />
+                  <div className="bg-[#FAF7F0] p-2.5 rounded-xl border border-[#E5D5BA] flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                    <Hotel className="w-4 h-4 text-[#B65E3C] shrink-0" />
                     <div className="text-xs font-mono">
-                      <div className="font-bold text-[#173B32]">{data.hotel_info.name}</div>
-                      <div className="text-[#7B4D36] text-[10px]">Check-in: {data.hotel_info.check_in_time}</div>
+                      <div className="font-bold text-[#173B32] truncate max-w-[200px]">{data.hotel_info.name}</div>
+                      <div className="text-[#7B4D36] text-[10px]">
+                        Check-in: {data.hotel_info.check_in_time} • {data.hotel_info.distance_km}km
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Next 3 Hours Micro-Plan */}
+              {/* ---------------- NOW / NEXT / LATER SECTION ---------------- */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-serif font-bold text-base text-[#173B32] flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#B65E3C]" />
-                    <span>Next 3 Hours Sequence</span>
+                    <Compass className="w-4 h-4 text-[#B65E3C]" />
+                    <span>Real-Time Arrival Flow</span>
                   </h3>
-                  <span className="text-[10px] font-mono font-bold text-[#7B4D36] uppercase bg-[#EFE5D2] px-2 py-0.5 rounded">
-                    Zero Zigzag
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleRunningLate}
+                      className="text-[11px] font-mono text-[#B65E3C] hover:text-[#9E4D2E] font-bold flex items-center gap-1 cursor-pointer bg-[#FAF7F0] px-2 py-0.5 rounded-lg border border-[#E5D5BA]"
+                    >
+                      <span>Running late? (+30m)</span>
+                    </button>
+                    {(completedItemIds.size > 0 || skippedItemIds.size > 0 || delayMinutes > 0) && (
+                      <button
+                        onClick={handleResetPlan}
+                        title="Reset Timeline"
+                        className="text-[10px] font-mono text-[#7B4D36] hover:text-[#173B32] flex items-center gap-1 cursor-pointer"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Reset</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-2.5">
-                  {data.next_3_hours_plan.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] flex items-start gap-3 hover:border-[#173B32] transition-colors shadow-2xs"
-                    >
-                      <span className="px-2 py-1 rounded-lg bg-[#173B32] text-[#EFE5D2] font-bold text-xs font-mono shrink-0">
-                        {item.start_time}
+                {/* 1. NOW CARD (Primary prominent step) */}
+                {nowItem ? (
+                  <div className="p-4 rounded-2xl bg-[#0F2924] text-[#EFE5D2] border-2 border-[#243E36] shadow-md space-y-3 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-[#B65E3C] text-white font-mono font-black text-xs uppercase tracking-wider animate-pulse">
+                          NOW
+                        </span>
+                        <span className="font-mono text-xs text-[#B49252] font-bold">
+                          {nowItem.start_time} - {nowItem.end_time}
+                        </span>
+                      </div>
+                      <span className="text-xs font-mono text-[#D8DED5]/80">
+                        ~{nowItem.duration_mins} mins
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-serif font-bold text-sm text-[#173B32] truncate">
-                            {item.title}
-                          </h4>
-                          <span className="text-xs font-mono text-[#7B4D36] shrink-0">
-                            {item.duration_mins}m
-                          </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-serif font-bold text-base text-[#FAF4E8]">
+                        {nowItem.title}
+                      </h4>
+                      <p className="text-xs text-[#D8DED5] mt-1 font-light leading-relaxed">
+                        {nowItem.notes}
+                      </p>
+                      {nowItem.reason_for_recommendation && (
+                        <div className="mt-2 text-[11px] text-[#B49252] font-mono flex items-center gap-1">
+                          <span>★</span>
+                          <span>{nowItem.reason_for_recommendation}</span>
                         </div>
-                        <p className="text-xs text-[#7B4D36] mt-0.5 font-light leading-relaxed">
-                          {item.notes}
-                        </p>
-                        {item.reason_for_recommendation && (
-                          <div className="mt-1 text-[11px] text-[#B65E3C] font-mono flex items-center gap-1">
-                            <span>★</span>
-                            <span>{item.reason_for_recommendation}</span>
-                          </div>
-                        )}
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-[#243E36] flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => handleMarkDone(nowItem.id)}
+                        className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Done / Completed</span>
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleSkipStep(nowItem.id)}
+                          className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#D8DED5] font-mono text-xs transition-colors cursor-pointer"
+                        >
+                          Skip
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <div className="font-bold text-sm">All Arrival Steps Completed!</div>
+                      <div className="text-xs text-emerald-700">You are settled in {destinationName}. Ready for full trip itinerary.</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. NEXT CARD (Following milestone) */}
+                {nextItem && (
+                  <div className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] space-y-2 shadow-2xs hover:border-[#173B32] transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-mono font-bold text-[11px] uppercase tracking-wider">
+                          NEXT
+                        </span>
+                        <span className="font-mono text-xs text-[#7B4D36]">
+                          {nextItem.start_time} - {nextItem.end_time}
+                        </span>
+                      </div>
+                      <span className="text-xs font-mono text-[#7B4D36]">
+                        {nextItem.duration_mins}m
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-serif font-bold text-sm text-[#173B32]">
+                        {nextItem.title}
+                      </h4>
+                      <p className="text-xs text-[#7B4D36] mt-0.5 font-light leading-relaxed">
+                        {nextItem.notes}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-[11px] text-[#7B4D36] font-mono">
+                      <span>Travel buffer: ~{nextItem.travel_time_from_prev_mins}m</span>
+                      <button
+                        onClick={() => handleSkipStep(nextItem.id)}
+                        className="text-[#7B4D36] hover:text-[#173B32] underline cursor-pointer"
+                      >
+                        Skip this step
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. LATER SECTION (Collapsible downstream items) */}
+                {laterItems.length > 0 && (
+                  <div className="rounded-2xl border border-[#E5D5BA] bg-[#FAF7F0] overflow-hidden">
+                    <button
+                      onClick={() => setShowLaterExpanded(prev => !prev)}
+                      className="w-full p-3 flex items-center justify-between text-xs font-mono font-bold text-[#173B32] hover:bg-[#EFE5D2]/50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="px-1.5 py-0.5 rounded bg-[#EFE5D2] text-[10px]">
+                          LATER ({laterItems.length})
+                        </span>
+                        <span>Downstream Itinerary Milestones</span>
+                      </div>
+                      {showLaterExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+
+                    {showLaterExpanded && (
+                      <div className="p-3 pt-0 space-y-2 border-t border-[#E5D5BA]/60">
+                        {laterItems.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2.5 rounded-xl bg-white border border-[#E5D5BA] flex items-start justify-between gap-2 text-xs"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[11px] text-[#B65E3C] font-bold">
+                                  {item.start_time}
+                                </span>
+                                <h5 className="font-serif font-bold text-[#173B32]">
+                                  {item.title}
+                                </h5>
+                              </div>
+                              <p className="text-[11px] text-[#7B4D36] mt-0.5 line-clamp-1">
+                                {item.notes}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-mono text-[#7B4D36] shrink-0">
+                              {item.duration_mins}m
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Nearest Food & Local Transport */}
+              {/* ---------------- GROUNDED WEATHER & BUDGET SECTION ---------------- */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Nearby Food */}
-                <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] space-y-2">
-                  <h4 className="font-bold text-xs text-[#173B32] uppercase tracking-wider flex items-center gap-1.5 font-mono">
-                    <Utensils className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    <span>Nearest Local Food</span>
-                  </h4>
-                  <div className="space-y-1.5">
-                    {data.nearby_food.slice(0, 2).map((food) => (
-                      <div key={food.id} className="p-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-xs">
-                        <div className="font-serif font-bold text-[#173B32]">{food.name}</div>
-                        <div className="text-[10px] font-mono text-[#7B4D36]">{food.category} • ~₹{food.approx_cost}</div>
+                {/* Weather Awareness */}
+                {data.weather_info && (
+                  <div className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] space-y-2 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#173B32] uppercase tracking-wider font-mono">
+                        {data.weather_info.is_rain ? (
+                          <CloudRain className="w-3.5 h-3.5 text-sky-600" />
+                        ) : (
+                          <Sun className="w-3.5 h-3.5 text-amber-500" />
+                        )}
+                        <span>Arrival Weather</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]">
+                        {data.weather_info.freshness}
+                      </span>
+                    </div>
 
-                {/* Local Mobility */}
-                <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] space-y-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-serif font-black text-xl text-[#173B32]">
+                        {Math.round(data.weather_info.temperature_c)}°C
+                      </span>
+                      <span className="text-xs font-bold text-[#7B4D36]">
+                        {data.weather_info.condition}
+                      </span>
+                      <span className="text-[11px] font-mono text-sky-700 ml-auto">
+                        Rain: {data.weather_info.precipitation_probability}%
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-[#7B4D36] font-light leading-relaxed">
+                      {data.weather_info.advisory}
+                    </p>
+                  </div>
+                )}
+
+                {/* Budget Awareness */}
+                {data.budget_info && (
+                  <div className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] space-y-2 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#173B32] uppercase tracking-wider font-mono">
+                        <Wallet className="w-3.5 h-3.5 text-[#B65E3C]" />
+                        <span>Budget Overview</span>
+                      </div>
+                      <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase ${
+                        data.budget_info.status === "on_track"
+                          ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          : "bg-amber-50 text-amber-800 border border-amber-200"
+                      }`}>
+                        {data.budget_info.status.replace("_", " ")}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 text-center font-mono">
+                      <div className="bg-[#FAF7F0] p-1.5 rounded-lg border border-[#E5D5BA]">
+                        <div className="text-[9px] text-[#7B4D36]">SPENT</div>
+                        <div className="text-xs font-bold text-[#173B32]">
+                          ₹{Math.round(data.budget_info.budget_spent)}
+                        </div>
+                      </div>
+                      <div className="bg-[#FAF7F0] p-1.5 rounded-lg border border-[#E5D5BA]">
+                        <div className="text-[9px] text-[#7B4D36]">EST. HERE</div>
+                        <div className="text-xs font-bold text-[#B65E3C]">
+                          ₹{Math.round(data.budget_info.estimated_arrival_spend)}
+                        </div>
+                      </div>
+                      <div className="bg-[#FAF7F0] p-1.5 rounded-lg border border-[#E5D5BA]">
+                        <div className="text-[9px] text-[#7B4D36]">REMAINING</div>
+                        <div className="text-xs font-bold text-emerald-800">
+                          ₹{Math.round(data.budget_info.remaining_budget)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-[#7B4D36] font-mono text-center">
+                      Estimated costs are not deducted until actually spent.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* ---------------- GROUNDED LOCAL MOBILITY ALTERNATIVES ---------------- */}
+              <div className="p-4 rounded-2xl bg-white border border-[#E5D5BA] space-y-3">
+                <div className="flex items-center justify-between">
                   <h4 className="font-bold text-xs text-[#173B32] uppercase tracking-wider flex items-center gap-1.5 font-mono">
                     <Bike className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    <span>Local Transport</span>
+                    <span>Realistic Transport Options from Arrival Point</span>
                   </h4>
-                  <div className="space-y-1.5">
-                    {data.local_transport_options.slice(0, 2).map((t, idx) => (
-                      <div key={idx} className="p-2 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-xs">
-                        <div className="flex items-center justify-between font-bold text-[#173B32]">
-                          <span>{t.mode}</span>
-                          <span className="text-[#B65E3C] font-mono">{t.est_fare}</span>
-                        </div>
-                        <div className="text-[10px] text-[#7B4D36] mt-0.5">{t.tip}</div>
+                  <span className="text-[10px] font-mono text-[#7B4D36]">Verified tariffs</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {data.local_transport_options.map((t, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] flex flex-col justify-between space-y-1.5 text-xs"
+                    >
+                      <div className="flex items-center justify-between font-bold text-[#173B32]">
+                        <span className="truncate">{t.mode}</span>
+                        <span className="text-[#B65E3C] font-mono shrink-0">{t.est_fare}</span>
                       </div>
-                    ))}
-                  </div>
+
+                      {t.duration && (
+                        <div className="text-[11px] font-mono text-[#173B32]">
+                          Est. travel: {t.duration}
+                        </div>
+                      )}
+
+                      <div className="text-[10px] text-[#7B4D36] font-light leading-snug">
+                        {t.tip || (t.pickup_location ? `Pickup: ${t.pickup_location}` : "Available outside gate.")}
+                      </div>
+
+                      {t.provenance && (
+                        <div className="text-[9px] font-mono text-[#7B4D36]/80 pt-1 border-t border-[#E5D5BA]/60">
+                          Tariff: {t.provenance}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </>
           ) : null}
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 border-t border-[#E5D5BA] bg-[#FAF7F0] flex items-center justify-between">
-          <span className="text-xs font-mono text-[#7B4D36]">VANVAS is guiding your day in real-time.</span>
+        {/* ---------------- FOOTER & "SOMETHING WENT WRONG" TRIGGER ---------------- */}
+        <div className="p-3.5 sm:p-4 border-t border-[#E5D5BA] bg-[#FAF7F0] flex items-center justify-between gap-3 shrink-0">
+          <button
+            onClick={() => setShowProblemSheet(true)}
+            className="px-3.5 py-2 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] text-[#173B32] text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-[#B65E3C]" />
+            <span>Something went wrong?</span>
+          </button>
+
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] text-xs font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer"
+            className="px-5 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] text-xs font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer"
           >
-            Done
+            Back to Trip
           </button>
         </div>
+
+        {/* ---------------- CONTEXTUAL "SOMETHING WENT WRONG" SHEET ---------------- */}
+        {showProblemSheet && (
+          <div
+            className="absolute inset-0 bg-[#0F2924]/85 backdrop-blur-md z-60 flex flex-col justify-end p-0 sm:p-4 animate-fadeIn"
+            onClick={() => setShowProblemSheet(false)}
+          >
+            <div
+              className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4 shadow-2xl animate-slideUp text-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-[#E5D5BA]">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-[#B65E3C]" />
+                  <h3 className="font-serif font-black text-lg text-[#173B32]">
+                    What Went Wrong?
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowProblemSheet(false);
+                    setSelectedProblem(null);
+                  }}
+                  className="p-1 rounded-full text-[#7B4D36] hover:bg-[#EFE5D2]"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-xs text-[#7B4D36] font-light">
+                Select your immediate issue. VANVAS provides grounded step-by-step guidance and connects to conversational assistance:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {COMMON_PROBLEMS.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedProblem(p)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      selectedProblem?.id === p.id
+                        ? "bg-[#173B32] text-[#FAF4E8] border-[#173B32] shadow-sm"
+                        : "bg-white hover:bg-[#FAF7F0] text-[#173B32] border-[#E5D5BA]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-xs">
+                      <span>{p.icon}</span>
+                      <span>{p.label}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {selectedProblem && (
+                <div className="p-4 rounded-2xl bg-white border-2 border-[#B65E3C]/40 space-y-3">
+                  <div className="font-bold text-xs uppercase tracking-wider text-[#B65E3C] font-mono">
+                    Immediate Actionable Advice
+                  </div>
+                  <p className="text-xs text-[#173B32] leading-relaxed">
+                    {selectedProblem.immediateAdvice}
+                  </p>
+
+                  <div className="pt-2 flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => handleAskVanvasProblem(selectedProblem)}
+                      className="px-4 py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                      <span>Ask VANVAS for Help</span>
+                    </button>
+                    <span className="text-[10px] font-mono text-[#7B4D36]">
+                      Resolves in {destinationName} context
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

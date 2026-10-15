@@ -1,6 +1,6 @@
 import { CopilotChatResponse } from "@/types";
 import { ActionId, ACTION_REGISTRY } from "./actionRegistry";
-import { resolveCanonicalDestination } from "./canonicalDestinations";
+import { resolveCanonicalDestination, extractExplicitDestinationFromQuery } from "./canonicalDestinations";
 
 export type LocationProvenance =
   | "user_explicit"
@@ -381,13 +381,18 @@ export function normalizeAssistantResponse(
     };
   }
 
-  // Extract explicit destination keyword in query (e.g. "things to do in Haridwar", "places in Haridwar")
+  // Extract explicit destination keyword in query (e.g. "things to do in Haridwar", "Vrindavan mein khane ki jagah")
   let explicitQueryDestination: string | null = null;
-  const inDestMatch = queryLower.match(/\b(?:in|to|for|at|around|near|explore)\s+([a-zA-Z\s]{3,30}?)(?:\?|$|\.|\!|\,)/i);
-  if (inDestMatch && inDestMatch[1]) {
-    const rawMatch = inDestMatch[1].trim();
-    if (!["the", "a", "our", "my", "this", "that", "route", "morning", "afternoon", "evening", "night", "today", "trip"].includes(rawMatch.toLowerCase())) {
-      explicitQueryDestination = rawMatch.replace(/\b\w/g, (c) => c.toUpperCase());
+  const explicitCanon = extractExplicitDestinationFromQuery(userQuery);
+  if (explicitCanon) {
+    explicitQueryDestination = explicitCanon.name;
+  } else {
+    const inDestMatch = queryLower.match(/\b(?:in|to|for|at|around|near|explore)\s+([a-zA-Z\s]{3,30}?)(?:\?|$|\.|\!|\,)/i);
+    if (inDestMatch && inDestMatch[1]) {
+      const rawMatch = inDestMatch[1].trim();
+      if (!["the", "a", "our", "my", "this", "that", "route", "morning", "afternoon", "evening", "night", "today", "trip"].includes(rawMatch.toLowerCase())) {
+        explicitQueryDestination = rawMatch.replace(/\b\w/g, (c) => c.toUpperCase());
+      }
     }
   }
   const effectiveDestination = explicitQueryDestination || activePlace;

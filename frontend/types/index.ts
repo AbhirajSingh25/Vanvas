@@ -930,8 +930,32 @@ export interface ImHereResponse {
   local_transport_options: Array<{
     mode: string;
     est_fare: string;
-    tip: string;
+    tip?: string;
+    duration?: string;
+    pickup_location?: string;
+    walking_distance?: string;
+    booking_needed?: boolean;
+    provenance?: string;
   }>;
+  now_step?: ItineraryItem;
+  next_step?: ItineraryItem;
+  later_steps?: ItineraryItem[];
+  weather_info?: {
+    temperature_c: number;
+    condition: string;
+    precipitation_probability: number;
+    advisory: string;
+    freshness: string;
+    is_rain: boolean;
+  };
+  budget_info?: {
+    budget_total: number;
+    budget_spent: number;
+    remaining_budget: number;
+    estimated_arrival_spend: number;
+    status: string;
+  };
+  activation_time?: string;
 }
 
 export interface ArrivalRecommendation {

@@ -316,65 +316,44 @@ def extract_session_decisions(message_text: str) -> Dict[str, Any]:
     return decisions
 
 
-DESTINATION_KEYWORD_MAP = {
-    "dehradun": "dehradun",
-    "delhi": "delhi",
-    "kainchi dham": "kainchi-dham",
-    "kainchi": "kainchi-dham",
-    "tungnath": "tungnath-chandrashila",
-    "chandrashila": "tungnath-chandrashila",
-    "chopta": "tungnath-chandrashila",
-    "manali": "manali",
-    "haridwar": "haridwar",
-    "rishikesh": "rishikesh",
-    "kasol": "kasol",
-    "dharamshala": "dharamshala",
-    "mcleodganj": "dharamshala",
-    "mumbai": "mumbai",
-    "jaipur": "jaipur",
-    "goa": "goa",
-    "leh": "leh",
-    "ladakh": "leh",
-    "spiti": "spiti",
-    "munnar": "munnar",
-    "varanasi": "varanasi",
-    "udaipur": "udaipur",
-    "mussoorie": "mussoorie",
-    "shimla": "shimla",
-    "nainital": "nainital",
-    "agra": "agra",
-    "jodhpur": "jodhpur",
-    "jaisalmer": "jaisalmer",
-    "pushkar": "pushkar",
-    "hampi": "hampi",
-    "ooty": "ooty",
-    "kodaikanal": "kodaikanal",
-    "coorg": "coorg",
-    "gokarna": "gokarna",
-    "alleppey": "alleppey",
-    "pondicherry": "pondicherry",
-}
+from app.services.destination_aliases import DESTINATION_ALIASES, resolve_alias_to_slug
 
 def extract_explicit_destination(text: str) -> Optional[str]:
-    """Deterministically extracts explicit destination signal from text."""
+    """
+    Deterministically extracts explicit destination signal from text.
+    Supports English ("Food in Vrindavan", "What cafes to visit in Jaipur", "Places in Manali")
+    and Hinglish ("Vrindavan mein khane ki jagah batao", "Vrindavan mein khana kahan milega?", "Kasol me").
+    Prioritizes explicit user destination over any conversation default.
+    """
     if not text or not isinstance(text, str):
         return None
     lower = text.lower().strip()
-    
-    # Check known keyword mappings first
-    for kw, slug in sorted(DESTINATION_KEYWORD_MAP.items(), key=lambda x: -len(x[0])):
-        if re.search(rf"\b{re.escape(kw)}\b", lower):
+
+    # 1. Check known aliases sorted by length descending using word boundary regex
+    for alias_key, slug in sorted(DESTINATION_ALIASES.items(), key=lambda x: -len(x[0])):
+        pattern = rf"(?:^|[^a-zA-Z0-9_-]){re.escape(alias_key)}(?:$|[^a-zA-Z0-9_-])"
+        if re.search(pattern, lower):
             return slug
 
-    # Match preposition patterns (e.g., "things to do in Haridwar", "places to visit in Haridwar")
-    prep_match = re.search(r"\b(?:in|to|for|at|around|near|explore)\s+([a-zA-Z\s]{3,30}?)(?:\?|$|\.|\!|\,)", lower)
+    # 2. Match Hinglish postposition patterns: [Destination] mein / me / mai / ke / ki / ka / se
+    hinglish_match = re.search(r"\b([a-zA-Z\s]{3,30})\s+(?:mein|me|mai|ke|ki|ka|se)\b", lower)
+    if hinglish_match and hinglish_match.group(1):
+        cand = hinglish_match.group(1).strip()
+        alias_res = resolve_alias_to_slug(cand)
+        if alias_res:
+            return alias_res[0]
+
+    # 3. Match English preposition patterns: in / to / for / at / around / near / explore / visit [Destination]
+    prep_match = re.search(r"\b(?:in|to|for|at|around|near|explore|visit)\s+([a-zA-Z\s]{3,30}?)(?:\?|$|\.|\!|\,)", lower)
     if prep_match and prep_match.group(1):
         cand = prep_match.group(1).strip()
-        cand_slug = cand.replace(" ", "-")
-        if cand in DESTINATION_KEYWORD_MAP:
-            return DESTINATION_KEYWORD_MAP[cand]
-        if len(cand) >= 3 and not cand.startswith(("the ", "a ", "our ", "my ")):
-            return cand_slug
+        if not cand.startswith(("the ", "a ", "our ", "my ", "this ", "that ")):
+            alias_res = resolve_alias_to_slug(cand)
+            if alias_res:
+                return alias_res[0]
+            cand_slug = cand.replace(" ", "-")
+            if len(cand) >= 3 and cand not in ["here", "hotel", "there", "india"]:
+                return cand_slug
 
     return None
 

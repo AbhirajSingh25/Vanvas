@@ -1001,6 +1001,20 @@ export default function DestinationDetailPage() {
                   <span>Get Directions</span>
                 </a>
 
+                {/* Grounded Destination Instagram Reels Entry */}
+                <a
+                  href={`https://www.instagram.com/explore/tags/${encodeURIComponent((destination.slug || slug || destination.name.toLowerCase()).replace(/[^a-z0-9]/gi, ""))}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`See ${destination.name} reels on Instagram`}
+                  aria-label={`See ${destination.name} reels on Instagram (opens in new tab)`}
+                  className="px-5 py-4 rounded-2xl bg-[#EFE5D2]/15 hover:bg-[#EFE5D2]/25 backdrop-blur-md border border-[#D8DED5]/30 text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer group"
+                >
+                  <Camera className="w-4 h-4 text-[#B49252] group-hover:scale-110 transition-transform" />
+                  <span>Watch Reels</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-[#D8DED5]/70" />
+                </a>
+
                 <Link
                   href={`/plan?dest=${destination.id || slug}`}
                   className="px-7 py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center justify-center gap-2 transition-all transform active:scale-95 border border-[#7B4D36]/30"
@@ -1152,6 +1166,19 @@ export default function DestinationDetailPage() {
                         <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                       </Link>
                     </div>
+
+                    <a
+                      href={`https://www.instagram.com/explore/tags/${encodeURIComponent((destination.slug || slug || destination.name.toLowerCase()).replace(/[^a-z0-9]/gi, ""))}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 rounded-xl bg-[#EFE5D2]/70 hover:bg-[#EFE5D2] text-[#173B32] font-bold text-left flex items-center justify-between transition-all group cursor-pointer border border-[#E5D5BA]"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Camera className="w-3.5 h-3.5 text-[#B65E3C] group-hover:scale-110 transition-transform" />
+                        <span>See {destination.name} Reels</span>
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-all" />
+                    </a>
                   </div>
                 </div>
               </div>

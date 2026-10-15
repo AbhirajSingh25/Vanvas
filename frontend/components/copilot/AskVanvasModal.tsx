@@ -184,21 +184,31 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
 
   // Dynamic Suggested Prompts based on Context
   const getSuggestedPrompts = () => {
+    const hasConversationStarted = context.messages.length > 1;
+    const dest = context.currentContext.destinationName;
+
     if (context.currentContext.type === "trip") {
-      const dest = context.currentContext.destinationName || context.currentContext.trip?.destination?.name;
+      const tripDest = dest || context.currentContext.trip?.destination?.name;
+      if (hasConversationStarted) {
+        return [
+          { label: "What's next?", query: "What is next on our itinerary right now?" },
+          { label: "Food & Cafes", query: tripDest ? `Best food and cafes in ${tripDest}` : "Where should we eat nearby?" },
+          { label: "Replan", query: "Replan my day" },
+        ];
+      }
       return [
         { label: "What's next?", query: "What is next on our itinerary right now?" },
-        { label: dest ? `Places in ${dest}` : "Trip places", query: dest ? `Top places in ${dest}` : "What places should we visit next on our trip?" },
-        { label: dest ? `Food in ${dest}` : "Good food", query: dest ? `Best food and cafes in ${dest}` : "Where should we eat nearby?" },
-        { label: "Replan today", query: "I'm 2 hours late. Replan today" },
-        { label: "Who owes me?", query: "Who owes me money on this trip?" },
+        { label: tripDest ? `Food in ${tripDest}` : "Food", query: tripDest ? `Best food and cafes in ${tripDest}` : "Where should we eat nearby?" },
+        { label: tripDest ? `Places in ${tripDest}` : "Places", query: tripDest ? `Top places in ${tripDest}` : "What places should we visit next on our trip?" },
+        { label: "Replan today", query: "Replan today" },
+        { label: "Budget & Split", query: "How much have we spent so far?" },
       ];
     }
     if (context.currentContext.type === "road_trip") {
       return [
-        { label: "Where should we stop?", query: "Where should we stop on this route?" },
+        { label: "Where to stop?", query: "Where should we stop on this route?" },
         { label: "Best dhaba", query: "Best dhaba for lunch on this road trip?" },
-        { label: "Find stay near stop", query: "Find verified stays near our next stop" },
+        { label: "Nearby stay", query: "Find verified stays near our next stop" },
       ];
     }
     if (context.currentContext.type === "budget") {
@@ -208,21 +218,31 @@ export const AskVanvasModal: React.FC<AskVanvasModalProps> = ({
         { label: "Split an expense", query: "How do we split our latest expense?" },
       ];
     }
-    if (context.currentContext.destinationName) {
-      const dest = context.currentContext.destinationName;
+    if (dest) {
+      if (hasConversationStarted) {
+        return [
+          { label: "Food & Cafes", query: `Where should we eat in ${dest}?` },
+          { label: "Things to do", query: `Top places to visit in ${dest}` },
+          { label: "Stays", query: `Find verified stays in ${dest}` },
+        ];
+      }
       return [
-        { label: "Things to do", query: `What should I do in ${dest} today?` },
         { label: "Food & Cafes", query: `Where should we eat in ${dest}?` },
-        { label: "Stays", query: `Find verified stays in ${dest}` },
-        { label: "Plan my day", query: `Build a 1-day plan for ${dest}` },
+        { label: "Things to do", query: `What should I do in ${dest} today?` },
+        { label: "Verified Stays", query: `Find verified stays in ${dest}` },
         { label: `Plan ${dest} trip`, query: `I'm planning a trip to ${dest}` },
+      ];
+    }
+    if (hasConversationStarted) {
+      return [
+        { label: "Food nearby", query: "Food nearby" },
+        { label: "Nearby places", query: "Places near me" },
       ];
     }
     return [
       { label: "Things to do", query: "Things to do" },
       { label: "Food nearby", query: "Food nearby" },
-      { label: "Stays", query: "Find verified stays" },
-      { label: "Plan my day", query: "Plan my day" },
+      { label: "Verified Stays", query: "Find verified stays" },
       { label: "Plan a trip", query: "I'm planning a trip" },
     ];
   };

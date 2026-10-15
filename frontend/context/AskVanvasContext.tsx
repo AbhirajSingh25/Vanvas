@@ -13,7 +13,11 @@ import {
   extractPlanningDestination,
   resolvePlannerLaunchDetails,
 } from "@/lib/askVanvasNormalizer";
-import { resolveCanonicalDestination } from "@/lib/canonicalDestinations";
+import {
+  resolveCanonicalDestination,
+  extractExplicitDestinationFromQuery,
+  isNearbyQuery,
+} from "@/lib/canonicalDestinations";
 import { ACTION_REGISTRY, ActionId } from "@/lib/actionRegistry";
 
 export interface MessageItem {
@@ -341,6 +345,32 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     isSendingRef.current = true;
 
+    // Deterministic Context Resolution:
+    // Priority 1: Explicit destination mentioned in the current user message
+    const explicitDestMatch = extractExplicitDestinationFromQuery(textToSend);
+    let effectiveDestSlug: string | undefined = undefined;
+    let isDifferentDestination = false;
+
+    if (explicitDestMatch) {
+      effectiveDestSlug = explicitDestMatch.slug;
+      if (currentContext.destinationSlug && currentContext.destinationSlug !== explicitDestMatch.slug) {
+        isDifferentDestination = true;
+      }
+      // Update destination context for current conversation so follow-ups retain this destination
+      setCurrentContext((prev) => ({
+        ...prev,
+        destinationName: explicitDestMatch.name,
+        destinationSlug: explicitDestMatch.slug,
+        destinationProvenance: "user_explicit",
+      }));
+    } else if (isNearbyQuery(textToSend)) {
+      // Priority 5: Current GPS location only when asking for nearby/current location
+      effectiveDestSlug = undefined;
+    } else {
+      // Priority 2/3/4: Current detail page, active trip, or interaction context
+      effectiveDestSlug = currentContext.destinationSlug || undefined;
+    }
+
     // Check if user explicitly stated their current location (e.g., "I'm in Indore", "I am in Dehradun")
     const inCityMatch = textToSend.match(/\bi(?:'m| am|m) in ([a-zA-Z\s]+?)(?:\.|$|,|\!)/i) ||
                         textToSend.match(/\bcurrently in ([a-zA-Z\s]+?)(?:\.|$|,|\!)/i);
@@ -359,6 +389,7 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (travelToMatch && travelToMatch[1]) {
       const explicitDest = travelToMatch[1].trim().replace(/\b\w/g, (c) => c.toUpperCase());
       const explicitSlug = explicitDest.toLowerCase().replace(/\s+/g, "-");
+      effectiveDestSlug = explicitSlug;
       setCurrentContext((prev) => ({
         ...prev,
         destinationName: explicitDest,
@@ -454,11 +485,14 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setLoading(true);
 
     try {
+      // Only attach trip_id if query does not explicitly target an unrelated different destination
+      const shouldAttachTrip = !isDifferentDestination && (currentContext.tripId || currentContext.trip?.id);
+
       const payload: any = {
         message: effectiveQuery || "Analyze this attached travel image.",
-        conversation_id: conversationId || undefined,
-        trip_id: currentContext.tripId || currentContext.trip?.id || undefined,
-        destination_slug: currentContext.destinationSlug || undefined,
+        conversation_id: isDifferentDestination ? undefined : (conversationId || undefined),
+        trip_id: shouldAttachTrip ? (currentContext.tripId || currentContext.trip?.id) : undefined,
+        destination_slug: effectiveDestSlug,
         image_url: imageUrl,
       };
 
@@ -472,7 +506,16 @@ export const AskVanvasProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setConversationId(res.conversation_id);
       }
 
-      const structured = normalizeAssistantResponse(res.message, res, currentContext, effectiveQuery);
+      const effectiveContext: TravelContext = explicitDestMatch
+        ? {
+            ...currentContext,
+            destinationName: explicitDestMatch.name,
+            destinationSlug: explicitDestMatch.slug,
+            destinationProvenance: "user_explicit",
+          }
+        : currentContext;
+
+      const structured = normalizeAssistantResponse(res.message, res, effectiveContext, effectiveQuery);
       setLastResponse(structured);
       if (structured.items && structured.items.length > 0) {
         setSelectedEntity(structured.items[0]);

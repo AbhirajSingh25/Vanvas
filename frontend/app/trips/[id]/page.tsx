@@ -1681,6 +1681,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         isOpen={imHereOpen}
         onClose={() => setImHereOpen(false)}
         destinationId={trip.destination_id}
+        destinationName={trip.destination?.name}
+        destinationSlug={trip.destination?.slug}
       />
 
       <DynamicReplanModal
