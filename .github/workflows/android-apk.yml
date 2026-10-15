@@ -64,15 +64,24 @@ jobs:
 
       - name: Build Debug APK
         working-directory: ./frontend/android
-        run: bash ./gradlew assembleDebug --stacktrace
+        run: |
+          echo "=== DIAGNOSTICS ==="
+          java -version
+          echo "JAVA_HOME: $JAVA_HOME"
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          ls -la
+          echo "=== GRADLE WRAPPER VERSION ==="
+          bash ./gradlew --version || true
+          echo "=== RUNNING ASSEMBLE DEBUG ==="
+          set -o pipefail
+          bash ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/gradle_output.txt
 
-      - name: Upload Debug Build Failure Log
-        if: failure()
+      - name: Upload Debug Build Output Log
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gradle-debug-build-failure-reports
-          path: |
-            frontend/android/app/build/reports/
+          name: gradle-debug-output
+          path: /tmp/gradle_output.txt
 
       - name: Prepare Debug APK Artifact & Checksum
         id: prep-debug-apk
