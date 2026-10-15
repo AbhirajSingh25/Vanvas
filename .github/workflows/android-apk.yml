@@ -73,8 +73,13 @@ jobs:
           echo "=== GRADLE WRAPPER VERSION ==="
           bash ./gradlew --version || true
           echo "=== RUNNING ASSEMBLE DEBUG ==="
-          set -o pipefail
-          bash ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/gradle_output.txt
+          if ! bash ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/gradle_output.txt; then
+            echo "::error::Gradle assembleDebug failed! Dumping output:"
+            while IFS= read -r line; do
+              echo "::warning::$line"
+            done < /tmp/gradle_output.txt
+            exit 1
+          fi
 
       - name: Upload Debug Build Output Log
         if: always()
