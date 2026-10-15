@@ -65,24 +65,36 @@ jobs:
       - name: Build Debug APK
         working-directory: ./frontend/android
         run: |
-          bash ./gradlew assembleDebug --stacktrace > /tmp/gradle_output.txt 2>&1 || true
-          while IFS= read -r line; do
-            echo "::error title=GradleLog::$line"
-          done < /tmp/gradle_output.txt
-          if ! grep -q "BUILD SUCCESSFUL" /tmp/gradle_output.txt; then
+          set -euo pipefail
+          echo "=== Java and Android SDK Diagnostics ==="
+          java -version
+          echo "JAVA_HOME: ${JAVA_HOME:-unset}"
+          echo "ANDROID_HOME: ${ANDROID_HOME:-unset}"
+          echo "=== Gradle Version ==="
+          bash ./gradlew --version
+          echo "=== Assembling Debug APK ==="
+          bash ./gradlew assembleDebug --stacktrace 2>&1 | tee /tmp/gradle_output.txt
+          echo "=== Generated APK Files ==="
+          ls -la app/build/outputs/apk/debug/
+          DEBUG_APK=$(find app/build/outputs/apk/debug/ -type f -name "*.apk" | head -n 1)
+          if [ -z "$DEBUG_APK" ] || [ ! -s "$DEBUG_APK" ]; then
+            echo "ERROR: Non-empty debug APK not found in app/build/outputs/apk/debug/"
             exit 1
           fi
+          echo "Successfully built debug APK: $DEBUG_APK"
 
       - name: Prepare Debug APK Artifact & Checksum
         id: prep-debug-apk
         working-directory: ./frontend/android
         run: |
+          set -euo pipefail
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           APK_NAME="VANVAS-Android-v0.2.0-${SHORT_SHA}-debug.apk"
-          echo "Locating built APK in app/build..."
-          APK_SRC=$(find app/build -name "*debug*.apk" -o -name "app-debug.apk" | head -n 1)
-          if [ -z "$APK_SRC" ]; then
-            echo "ERROR: No debug APK found in app/build"
+          echo "Locating built APK under app/build/outputs/apk/debug/..."
+          APK_SRC=$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -n 1)
+          if [ -z "$APK_SRC" ] || [ ! -s "$APK_SRC" ]; then
+            echo "ERROR: No valid non-empty APK found under app/build/outputs/apk/debug/"
+            echo "Discovered APK files:"
             find . -name "*.apk"
             exit 1
           fi
@@ -90,6 +102,10 @@ jobs:
           APK_DIR=$(dirname "$APK_SRC")
           cp "$APK_SRC" "${APK_DIR}/${APK_NAME}"
           cd "$APK_DIR"
+          if [ ! -s "${APK_NAME}" ]; then
+            echo "ERROR: Artifact ${APK_NAME} does not exist or is empty"
+            exit 1
+          fi
           sha256sum "${APK_NAME}" > "${APK_NAME}.sha256"
           SHA_VALUE=$(cat "${APK_NAME}.sha256" | awk '{print $1}')
           FILE_SIZE=$(du -h "${APK_NAME}" | cut -f1)
