@@ -898,73 +898,113 @@ async def im_here_mode(
     is_check_in_ready = curr_total_mins >= (ci_total_mins - 30)
 
     # Calculate travel time from arrival point to hotel (~4 mins/km, min 8m)
-    transit_to_hotel_mins = max(8, int(hotel_dist * 4))
+    is_intercity_transit = hotel_dist > 10.0
+    transit_to_hotel_mins = max(15, int(hotel_dist * 3.5)) if is_intercity_transit else max(8, int(hotel_dist * 4))
 
     # Step 1: NOW
     step1_start = start_dt
-    step1_duration = 35 if not is_check_in_ready else 45
+    step1_duration = transit_to_hotel_mins if is_intercity_transit else (35 if not is_check_in_ready else 45)
     step1_end = step1_start + timedelta(minutes=step1_duration)
 
-    if is_check_in_ready:
+    if is_intercity_transit:
+        step1_title = f"Mountain Transit: {curr_loc_name} → {dest.name if dest else 'Destination'}"
+        step1_notes = f"Board local hill cab, shared taxi, or mountain bus from {curr_loc_name} up to {dest.name if dest else 'the valley'} (~{round(hotel_dist * 1.5, 1)} km scenic mountain road)."
+        step1_reason = f"Essential first milestone to reach {dest.name if dest else 'the destination'} from your transit hub."
+        step1_category = "Transit"
+    elif is_check_in_ready:
         step1_title = f"Check-In & Freshen Up at {hotel_name}"
         step1_notes = f"Room is ready for check-in ({hotel.check_in_time if hotel else '11:00 AM'}). Settle in, unpack and freshen up."
         step1_reason = "Official check-in window is open. Rest before afternoon exploration."
+        step1_category = "Stay"
     else:
         step1_title = f"Luggage Drop at {hotel_name} Front Desk"
         step1_notes = f"Arrived ahead of {hotel.check_in_time if hotel else '11:00 AM'} check-in. Drop heavy backpacks safely at reception cloakroom."
         step1_reason = "Lightens your baggage so you can explore unburdened."
+        step1_category = "Stay"
 
     step1 = ItineraryItemResponse(
         id="here-now-1",
         itinerary_id="here",
         place_id=None,
         title=step1_title,
-        category="Stay",
+        category=step1_category,
         start_time=step1_start.strftime("%H:%M"),
         end_time=step1_end.strftime("%H:%M"),
         duration_mins=step1_duration,
         estimated_cost=0.0,
-        travel_time_from_prev_mins=transit_to_hotel_mins,
+        travel_time_from_prev_mins=transit_to_hotel_mins if not is_intercity_transit else 0,
         distance_from_prev_km=round(hotel_dist, 2),
         notes=step1_notes,
         reason_for_recommendation=step1_reason,
         map_lat=hotel_lat,
         map_lng=hotel_lng,
         booking_url=None,
-        opening_hours="24/7 Desk",
+        opening_hours="24/7 Desk" if step1_category == "Stay" else "Regular Day Transit",
         status="active",
         is_locked=True
     )
 
-    # Step 2: NEXT (Nearby Food / Café)
+    # Step 2: NEXT
     best_food = food_places[0] if food_places else None
-    food_dist = haversine_distance_km(hotel_lat, hotel_lng, best_food.latitude, best_food.longitude) if best_food else 0.5
-    transit_to_food_mins = max(5, int(food_dist * 5))
-    step2_start = step1_end + timedelta(minutes=transit_to_food_mins)
-    step2_duration = 50
-    step2_end = step2_start + timedelta(minutes=step2_duration)
+    if is_intercity_transit:
+        step2_start = step1_end + timedelta(minutes=10)
+        step2_duration = 35 if not is_check_in_ready else 45
+        step2_end = step2_start + timedelta(minutes=step2_duration)
+        if is_check_in_ready:
+            step2_title = f"Check-In & Freshen Up at {hotel_name}"
+            step2_notes = f"Arrive in {dest.name if dest else 'the hills'}. Check in ({hotel.check_in_time if hotel else '11:00 AM'}), unpack and freshen up."
+        else:
+            step2_title = f"Luggage Drop at {hotel_name} Front Desk"
+            step2_notes = f"Drop heavy bags safely at hotel front desk before afternoon exploration."
+        step2 = ItineraryItemResponse(
+            id="here-next-2",
+            itinerary_id="here",
+            place_id=None,
+            title=step2_title,
+            category="Stay",
+            start_time=step2_start.strftime("%H:%M"),
+            end_time=step2_end.strftime("%H:%M"),
+            duration_mins=step2_duration,
+            estimated_cost=0.0,
+            travel_time_from_prev_mins=10,
+            distance_from_prev_km=1.0,
+            notes=step2_notes,
+            reason_for_recommendation="Drop luggage and freshen up after the mountain road transit.",
+            map_lat=hotel_lat,
+            map_lng=hotel_lng,
+            booking_url=None,
+            opening_hours="24/7 Desk",
+            status="upcoming",
+            is_locked=False
+        )
+    else:
+        food_dist = haversine_distance_km(hotel_lat, hotel_lng, best_food.latitude, best_food.longitude) if best_food else 0.5
+        transit_to_food_mins = max(5, int(food_dist * 5))
+        step2_start = step1_end + timedelta(minutes=transit_to_food_mins)
+        step2_duration = 50
+        step2_end = step2_start + timedelta(minutes=step2_duration)
 
-    step2 = ItineraryItemResponse(
-        id="here-next-2",
-        itinerary_id="here",
-        place_id=best_food.id if best_food else None,
-        title=f"Local Refreshment at {best_food.name}" if best_food else "Warm Chai & Local Brunch",
-        category="Food",
-        start_time=step2_start.strftime("%H:%M"),
-        end_time=step2_end.strftime("%H:%M"),
-        duration_mins=step2_duration,
-        estimated_cost=best_food.approx_cost if best_food else 180.0,
-        travel_time_from_prev_mins=transit_to_food_mins,
-        distance_from_prev_km=round(food_dist, 2),
-        notes="Enjoy fresh regional specialties and energizing tea or coffee after your journey.",
-        reason_for_recommendation="Nearest verified food venue from your stay with top traveler ratings.",
-        map_lat=best_food.latitude if best_food else hotel_lat,
-        map_lng=best_food.longitude if best_food else hotel_lng,
-        booking_url=None,
-        opening_hours="07:30 - 22:30",
-        status="upcoming",
-        is_locked=False
-    )
+        step2 = ItineraryItemResponse(
+            id="here-next-2",
+            itinerary_id="here",
+            place_id=best_food.id if best_food else None,
+            title=f"Local Refreshment at {best_food.name}" if best_food else "Warm Chai & Local Brunch",
+            category="Food",
+            start_time=step2_start.strftime("%H:%M"),
+            end_time=step2_end.strftime("%H:%M"),
+            duration_mins=step2_duration,
+            estimated_cost=best_food.approx_cost if best_food else 180.0,
+            travel_time_from_prev_mins=transit_to_food_mins,
+            distance_from_prev_km=round(food_dist, 2),
+            notes="Enjoy fresh regional specialties and energizing tea or coffee after your journey.",
+            reason_for_recommendation="Nearest verified food venue from your stay with top traveler ratings.",
+            map_lat=best_food.latitude if best_food else hotel_lat,
+            map_lng=best_food.longitude if best_food else hotel_lng,
+            booking_url=None,
+            opening_hours="07:30 - 22:30",
+            status="upcoming",
+            is_locked=False
+        )
 
     # Step 3: LATER (First Highlight Activity)
     best_attr = attractions[0] if attractions else None

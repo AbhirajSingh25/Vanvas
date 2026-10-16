@@ -24,6 +24,7 @@ from app.services.copilot_context import (
     extract_session_decisions,
     extract_explicit_destination,
 )
+from app.itinerary.clustering import haversine_distance_km
 from app.services.traveller_memory_service import TravellerMemoryService
 from app.services.storage_service import StorageService
 from app.core.rate_limiter import rate_limit
@@ -754,6 +755,148 @@ async def copilot_chat(
                 places=[],
                 metadata=fast_meta
             )
+
+    # D1. "Which is closest?" / "Nearest" Fast Path
+    is_closest_query = any(k in msg_clean_lower for k in [
+        "which is closest", "which one is closest", "which is the closest", "which is nearer",
+        "which place is closest", "closest one", "nearest one", "sabse paas", "paas kaun sa hai"
+    ]) or msg_clean_lower in ["closest", "nearest", "which is closest?", "which one is closest?"]
+
+    if is_closest_query and dest_target_slug:
+        dest_rec = db.query(Destination).filter((Destination.slug == dest_target_slug) | (Destination.id == dest_target_slug)).first()
+        if dest_rec:
+            user_lat = None
+            user_lng = None
+            if req.context:
+                user_lat = req.context.get("latitude") or req.context.get("user_lat")
+                user_lng = req.context.get("longitude") or req.context.get("user_lng")
+                if not user_lat and isinstance(req.context.get("coords"), dict):
+                    user_lat = req.context["coords"].get("latitude")
+                    user_lng = req.context["coords"].get("longitude")
+
+            cand_places = db.query(Place).filter(
+                Place.destination_id == dest_rec.id,
+                Place.is_active == True
+            ).all()
+
+            if cand_places:
+                if user_lat is not None and user_lng is not None:
+                    try:
+                        u_lat = float(user_lat)
+                        u_lng = float(user_lng)
+                        sorted_places = sorted(
+                            cand_places,
+                            key=lambda p: haversine_distance_km(u_lat, u_lng, p.latitude, p.longitude)
+                        )
+                        top_p = sorted_places[0]
+                        dist_km = round(haversine_distance_km(u_lat, u_lng, top_p.latitude, top_p.longitude), 1)
+                        fast_resp_text = f"**{top_p.name}** is the closest verified spot to your current location (approximately {dist_km} km away). Located at {top_p.address or dest_rec.name}."
+                    except Exception:
+                        top_p = max(cand_places, key=lambda p: (p.rating or 0.0))
+                        fast_resp_text = f"**{top_p.name}** is the most central and highly rated spot in {dest_rec.name}."
+                        sorted_places = cand_places
+                else:
+                    sorted_places = sorted(cand_places, key=lambda p: (p.rating or 0.0), reverse=True)
+                    top_p = sorted_places[0]
+                    fast_resp_text = f"Among verified recommendations in {dest_rec.name}, **{top_p.name}** ({top_p.address or top_p.category}) is the central landmark recommendation. Enable GPS if you would like walking directions from your current spot!"
+
+                places_data = [{
+                    "place_id": p.id,
+                    "name": p.name,
+                    "category": p.category,
+                    "approx_cost": p.approx_cost,
+                    "rating": p.rating,
+                    "latitude": p.latitude,
+                    "longitude": p.longitude,
+                    "description": p.description or f"Verified in {dest_rec.name}",
+                } for p in sorted_places[:4]]
+
+                fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "which_is_closest"}
+                assistant_msg = ConversationMessage(
+                    conversation_id=conv.id,
+                    role="assistant",
+                    content=fast_resp_text,
+                    metadata_json=json.dumps(fast_meta),
+                )
+                db.add(assistant_msg)
+                db.commit()
+                return CopilotChatResponse(
+                    conversation_id=conv.id,
+                    message=fast_resp_text,
+                    actions=[{"action_type": "view_place", "title": f"View {top_p.name}", "payload": {"place_id": top_p.id, "slug": dest_rec.slug}}],
+                    places=places_data,
+                    metadata=fast_meta
+                )
+
+    # D2. "Nearby" food / place query handling
+    is_nearby_query = any(k in msg_clean_lower for k in ["nearby", "near me", "aas paas", "paas mein"])
+    if is_nearby_query and not explicit_dest:
+        user_lat = None
+        user_lng = None
+        if req.context:
+            user_lat = req.context.get("latitude") or req.context.get("user_lat")
+            user_lng = req.context.get("longitude") or req.context.get("user_lng")
+            if not user_lat and isinstance(req.context.get("coords"), dict):
+                user_lat = req.context["coords"].get("latitude")
+                user_lng = req.context["coords"].get("longitude")
+
+        if user_lat is None or user_lng is None:
+            fast_resp_text = "To find spots right near where you are standing, please grant location access or specify your current town/destination (e.g. 'Food near Vrindavan')."
+            fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "nearby_location_clarification"}
+            assistant_msg = ConversationMessage(
+                conversation_id=conv.id,
+                role="assistant",
+                content=fast_resp_text,
+                metadata_json=json.dumps(fast_meta),
+            )
+            db.add(assistant_msg)
+            db.commit()
+            return CopilotChatResponse(
+                conversation_id=conv.id,
+                message=fast_resp_text,
+                actions=[{"action_type": "request_location", "title": "Enable GPS", "payload": {}}],
+                places=[],
+                metadata=fast_meta
+            )
+        else:
+            try:
+                u_lat = float(user_lat)
+                u_lng = float(user_lng)
+                all_places = db.query(Place).filter(Place.is_active == True).all()
+                if all_places:
+                    nearby_places = sorted(
+                        all_places,
+                        key=lambda p: haversine_distance_km(u_lat, u_lng, p.latitude, p.longitude)
+                    )[:4]
+                    places_data = [{
+                        "place_id": p.id,
+                        "name": p.name,
+                        "category": p.category,
+                        "approx_cost": p.approx_cost,
+                        "rating": p.rating,
+                        "latitude": p.latitude,
+                        "longitude": p.longitude,
+                        "description": p.description or "Verified nearby location",
+                    } for p in nearby_places]
+                    fast_resp_text = f"Found {len(places_data)} verified places near your current location:"
+                    fast_meta = {"provider": "vanvas_fast_path", "latency_ms": round((time.time() - start_time) * 1000, 2), "intent": "nearby_places_found"}
+                    assistant_msg = ConversationMessage(
+                        conversation_id=conv.id,
+                        role="assistant",
+                        content=fast_resp_text,
+                        metadata_json=json.dumps(fast_meta),
+                    )
+                    db.add(assistant_msg)
+                    db.commit()
+                    return CopilotChatResponse(
+                        conversation_id=conv.id,
+                        message=fast_resp_text,
+                        actions=[],
+                        places=places_data,
+                        metadata=fast_meta
+                    )
+            except Exception:
+                pass
 
     # E. Explore Places / Things to Do Fast Path
     is_explore_places_query = any(k in msg_clean_lower for k in [

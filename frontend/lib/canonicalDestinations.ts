@@ -1044,6 +1044,24 @@ export function resolveCanonicalDestination(query?: string | null): CanonicalDes
   if (aliasMatch) {
     const dest = findCanonicalDestination(aliasMatch.slug);
     if (dest) return dest;
+    return {
+      id: `dest-${aliasMatch.slug}`,
+      name: aliasMatch.matchedAlias,
+      slug: aliasMatch.slug,
+      hindi_name: getCanonicalHindiName(aliasMatch.slug) || aliasMatch.matchedAlias,
+      state: "India",
+      region: "Exploration Corridor",
+      tagline: `Historic & scenic sanctuary of ${aliasMatch.matchedAlias}`,
+      description: `Curated places, food, and stays in ${aliasMatch.matchedAlias}.`,
+      hero_image: `/images/destinations/${aliasMatch.slug}/hero.jpg`,
+      latitude: 27.5706,
+      longitude: 77.6599,
+      altitude_meters: 180,
+      best_time_to_visit: "Round the Year",
+      weather_type: "Pleasant",
+      is_featured: true,
+      is_curated: true,
+    };
   }
 
   // 3. Partial alias match
@@ -1051,6 +1069,24 @@ export function resolveCanonicalDestination(query?: string | null): CanonicalDes
     if (cleaned.includes(aliasKey) || aliasKey.includes(cleaned)) {
       const dest = findCanonicalDestination(aliasData.slug);
       if (dest) return dest;
+      return {
+        id: `dest-${aliasData.slug}`,
+        name: aliasData.matchedAlias,
+        slug: aliasData.slug,
+        hindi_name: getCanonicalHindiName(aliasData.slug) || aliasData.matchedAlias,
+        state: "India",
+        region: "Exploration Corridor",
+        tagline: `Historic & scenic sanctuary of ${aliasData.matchedAlias}`,
+        description: `Curated places, food, and stays in ${aliasData.matchedAlias}.`,
+        hero_image: `/images/destinations/${aliasData.slug}/hero.jpg`,
+        latitude: 27.5706,
+        longitude: 77.6599,
+        altitude_meters: 180,
+        best_time_to_visit: "Round the Year",
+        weather_type: "Pleasant",
+        is_featured: true,
+        is_curated: true,
+      };
     }
   }
 
@@ -1093,6 +1129,24 @@ export function extractExplicitDestinationFromQuery(text?: string | null): Canon
     if (regex.test(raw)) {
       const dest = findCanonicalDestination(aliasData.slug);
       if (dest) return dest;
+      return {
+        id: `dest-${aliasData.slug}`,
+        name: aliasData.matchedAlias,
+        slug: aliasData.slug,
+        hindi_name: getCanonicalHindiName(aliasData.slug) || aliasData.matchedAlias,
+        state: "India",
+        region: "Exploration Corridor",
+        tagline: `Historic & scenic sanctuary of ${aliasData.matchedAlias}`,
+        description: `Curated places, food, and stays in ${aliasData.matchedAlias}.`,
+        hero_image: `/images/destinations/${aliasData.slug}/hero.jpg`,
+        latitude: 27.5706,
+        longitude: 77.6599,
+        altitude_meters: 180,
+        best_time_to_visit: "Round the Year",
+        weather_type: "Pleasant",
+        is_featured: true,
+        is_curated: true,
+      };
     }
   }
 

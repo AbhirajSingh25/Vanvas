@@ -28,6 +28,7 @@ export type TravelContextType =
   | "stay"
   | "road_trip"
   | "trip"
+  | "plan"
   | "budget"
   | "nearby";
 
@@ -462,7 +463,17 @@ export function normalizeAssistantResponse(
     provenance = "CURATED";
   }
   // 8. Food / Dining Intent
-  else if (queryLower.includes("eat") || queryLower.includes("food") || queryLower.includes("cafe") || queryLower.includes("dhaba")) {
+  else if (
+    queryLower.includes("eat") ||
+    queryLower.includes("food") ||
+    queryLower.includes("cafe") ||
+    queryLower.includes("dhaba") ||
+    queryLower.includes("khana") ||
+    queryLower.includes("khane") ||
+    queryLower.includes("restaurant") ||
+    queryLower.includes("dining") ||
+    (res?.metadata as any)?.intent === "food_places"
+  ) {
     responseType = "PLACE_LIST";
     title = effectiveDestination ? `FOOD · ${effectiveDestination.toUpperCase()}` : "FOOD & DINING";
     summary = effectiveDestination ? `Top dining options and cafes in ${effectiveDestination}.` : "Curated cafes and dining.";

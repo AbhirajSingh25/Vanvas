@@ -104,13 +104,16 @@ export const MobileNav: React.FC = () => {
                     {item.label}
                   </span>
 
-                  {item.isActive && (
-                    <motion.span
-                      layoutId="mobileNavActiveDot"
-                      transition={tabIndicatorTransition}
-                      className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#173B32] z-10"
-                    />
-                  )}
+                  {/* Dedicated reserved slot for active indicator with visible gap */}
+                  <div className="w-full flex items-center justify-center h-1.5 mt-1 relative z-10" aria-hidden="true">
+                    {item.isActive && (
+                      <motion.span
+                        layoutId="mobileNavActiveDot"
+                        transition={tabIndicatorTransition}
+                        className="w-1.5 h-1.5 rounded-full bg-[#173B32]"
+                      />
+                    )}
+                  </div>
                 </motion.div>
               </Link>
             );

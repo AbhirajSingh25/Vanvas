@@ -38,10 +38,11 @@ export const FloatingCopilotTrigger: React.FC<FloatingCopilotTriggerProps> = ({
     };
   }, []);
 
-  // Suppress floating trigger on clean auth screens
+  // Suppress floating trigger on clean auth screens and /plan wizard (which has inline contextual action)
   const isAuthRoute = pathname === "/login" || pathname === "/register" || pathname === "/join";
+  const isPlanRoute = pathname.startsWith("/plan");
 
-  const isVisible = !isModalOpen && !isKeyboardOpen && !isAuthRoute;
+  const isVisible = !isModalOpen && !isKeyboardOpen && !isAuthRoute && !isPlanRoute;
 
   const handleClick = () => {
     if (onClick) {

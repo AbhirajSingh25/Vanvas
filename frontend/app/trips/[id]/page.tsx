@@ -53,7 +53,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const searchParams = useSearchParams();
   const { isCompact } = useDensity();
 
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [trip, setTrip] = useState<Trip | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cachedRaw = localStorage.getItem(`vanvas_trip_${tripId}`) || localStorage.getItem(`vanvas_offline_trip_${tripId}`);
+        if (cachedRaw) {
+          return JSON.parse(cachedRaw);
+        }
+      } catch {}
+    }
+    return null;
+  });
   const [tripWeather, setTripWeather] = useState<StructuredWeather | null>(null);
   const [budgetData, setBudgetData] = useState<BudgetSummary | null>(null);
   const [groupData, setGroupData] = useState<GroupSummary | null>(null);
@@ -63,7 +73,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [arrivalData, setArrivalData] = useState<ArrivalOptimizerResponse | null>(null);
   const [offlinePackOpen, setOfflinePackOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cachedRaw = localStorage.getItem(`vanvas_trip_${tripId}`) || localStorage.getItem(`vanvas_offline_trip_${tripId}`);
+        if (cachedRaw) return false;
+      } catch {}
+    }
+    return true;
+  });
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   // Active Tab: 'overview' | 'itinerary' | 'bookings' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist' | 'circles'

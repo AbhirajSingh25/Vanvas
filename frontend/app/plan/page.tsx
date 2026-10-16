@@ -13,7 +13,10 @@ import { api } from "@/lib/api";
 import { Destination, TransportOption } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { useDensity } from "@/context/DensityContext";
-import confetti from "canvas-confetti";
+import { useAskVanvas } from "@/context/AskVanvasContext";
+import { JourneyTakesShapeLoader } from "@/components/plan/JourneyTakesShapeLoader";
+import { motion, AnimatePresence } from "motion/react";
+import { wizardStepVariants } from "@/lib/motion";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { getCurrentGPSPosition } from "@/lib/locationService";
 import {
@@ -36,6 +39,16 @@ const POPULAR_ORIGIN_HUBS = [
   { name: "Ahmedabad", slug: "ahmedabad", label: "Ahmedabad" },
 ];
 
+const STEP_META = [
+  { step: 1, name: "Origin", question: "Where are you starting from?" },
+  { step: 2, name: "Destination", question: "Where do you want to go?" },
+  { step: 3, name: "Dates", question: "When are you travelling?" },
+  { step: 4, name: "Travellers", question: "Who is travelling with you?" },
+  { step: 5, name: "Budget", question: "What is your travel budget & style?" },
+  { step: 6, name: "Transport", question: "How do you want to get there?" },
+  { step: 7, name: "Review", question: "Review your expedition" },
+];
+
 function PlanWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,6 +67,7 @@ function PlanWizard() {
 
   const { user, login, register } = useAuth();
   const { isCompact } = useDensity();
+  const { openAskVanvas } = useAskVanvas();
 
   // Legacy trek mode redirect: Never plan treks through the generic destination wizard
   useEffect(() => {
@@ -492,19 +506,6 @@ function PlanWizard() {
     }
 
     setIsGenerating(true);
-    const msgs = [
-      "Securing route transit details...",
-      "Clustering scenic stops & local trails...",
-      "Matching verified stays & mountain dhabas...",
-      "Calculating realistic day timing...",
-      "Binding your personalized VANVAS journal...",
-    ];
-    let idx = 0;
-    const timer = setInterval(() => {
-      idx = (idx + 1) % msgs.length;
-      setGenMessage(msgs[idx]);
-    }, 700);
-
     setGenerationError(null);
     try {
       const targetSlug =
@@ -555,8 +556,6 @@ function PlanWizard() {
         planning_mode: daysCount === 1 ? "one_day" : daysCount === 2 ? "weekend" : "multi_day",
       });
 
-      clearInterval(timer);
-
       // Pre-cache trip into local storage for immediate visibility in /trips & offline
       if (typeof window !== "undefined" && trip?.id) {
         try {
@@ -589,25 +588,18 @@ function PlanWizard() {
           };
           const filtered = existingList.filter((item: any) => item && item.id !== trip.id);
           localStorage.setItem("vanvas_cached_trips", JSON.stringify([newSummary, ...filtered]));
+          localStorage.removeItem("vanvas_pending_plan_dest");
         } catch {}
       }
 
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("vanvas_pending_plan_dest");
-        }
-        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-      } catch {}
-
+      // Navigate immediately when actual result is ready (no artificial delays or confetti)
       if (selectedTransportMode.toLowerCase().includes("road")) {
         router.push(`/road-trip?origin=${encodeURIComponent(originCity.trim())}&dest=${encodeURIComponent(cleanTarget)}&tripId=${trip.id}&travellers=${travellersCount}&budget=${budgetEstimate}`);
       } else {
         router.push(`/trips/${trip.id}`);
       }
     } catch (err: any) {
-      clearInterval(timer);
-      setIsGenerating(false);
-      setGenerationError(err.message || "Failed to generate trip. Please try again.");
+      setGenerationError(err.message || "Failed to generate expedition. Please verify network and retry.");
     }
   };
 
@@ -722,54 +714,85 @@ function PlanWizard() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#EFE5D2] flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="max-w-xl mx-auto w-full">
-        {/* Loading Overlay */}
+        {/* The Journey Takes Shape Route Loader */}
         {isGenerating && (
-          <div className="fixed inset-0 z-50 bg-[#0F2924]/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-[#EFE5D2] animate-fadeIn">
-            <div className="w-14 h-14 rounded-2xl bg-[#B65E3C] flex items-center justify-center shadow-2xl mb-4">
-              <Sparkles className="w-7 h-7 text-[#FAF4E8] animate-spin" />
-            </div>
-            <h3 className="font-serif font-black text-2xl text-[#FAF4E8] mb-2">
-              Building Your Trip from {currentOriginName} to {currentDestName}
-            </h3>
-            <p className="text-xs sm:text-sm font-mono text-[#D8DED5] animate-pulse">
-              {genMessage}
-            </p>
-          </div>
+          <JourneyTakesShapeLoader
+            origin={currentOriginName}
+            destination={selectedDestId}
+            destinationName={currentDestName}
+            transportMode={selectedTransportMode}
+            daysCount={daysCount}
+            error={generationError}
+            onRetry={handleBuildTrip}
+            onEditJourney={() => {
+              setIsGenerating(false);
+              setGenerationError(null);
+            }}
+          />
         )}
 
         {/* Card Container */}
-        <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden transition-all duration-300">
+        <div className={`bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 ${
+          isCompact ? "p-4 sm:p-6" : "p-5 sm:p-8"
+        }`}>
           {/* Top Progress & Navigation Header */}
-          <div className="flex items-center justify-between border-b border-[#E5D5BA] pb-4 mb-6">
-            <div className="flex items-center gap-2">
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="p-1.5 rounded-xl hover:bg-[#EFE5D2] interactive-btn text-[#173B32] cursor-pointer flex items-center gap-1 text-xs font-bold"
-                  aria-label="Previous question"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back</span>
-                </button>
-              )}
-              {currentStep === 1 && (
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
-                  VANVAS PLANNER
+          <div className="border-b border-[#E5D5BA] pb-4 mb-5 sm:mb-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {currentStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="py-1 px-2.5 rounded-xl hover:bg-[#EFE5D2] text-[#173B32] cursor-pointer flex items-center gap-1.5 text-xs font-bold transition-colors interactive-btn"
+                    aria-label="Previous step"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
+                  </button>
+                ) : (
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C] bg-[#FAF4E8] px-2 py-0.5 rounded border border-[#E5D5BA]">
+                    EXPEDITION WIZARD
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold text-[#173B32]">
+                  Step 0{currentStep} / 07 • {STEP_META[currentStep - 1]?.name}
                 </span>
-              )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-[#173B32]">
-                {currentStep <= 7 ? `0${currentStep} / 07` : "07 / 07"}
-              </span>
-              <div className="w-16 sm:w-24 bg-[#E5D5BA] h-1.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-[#173B32] h-full transition-all duration-300 ease-out rounded-full"
-                  style={{ width: `${(Math.min(currentStep, 7) / 7) * 100}%` }}
-                />
-              </div>
+            {/* 7-Step Progress Stepper */}
+            <div className="flex items-center justify-between gap-1 sm:gap-2">
+              {STEP_META.map((s) => {
+                const isCompleted = s.step < currentStep;
+                const isCurrent = s.step === currentStep;
+                return (
+                  <div key={s.step} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className={`w-full h-1.5 rounded-full transition-all duration-300 ${
+                        isCompleted
+                          ? "bg-[#173B32]"
+                          : isCurrent
+                          ? "bg-[#B65E3C]"
+                          : "bg-[#E5D5BA]"
+                      }`}
+                    />
+                    <span
+                      className={`text-[9px] font-mono hidden sm:inline-block transition-colors ${
+                        isCurrent
+                          ? "text-[#B65E3C] font-bold"
+                          : isCompleted
+                          ? "text-[#173B32] font-medium"
+                          : "text-[#7B4D36]/40"
+                      }`}
+                    >
+                      {s.name}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -1622,30 +1645,56 @@ function PlanWizard() {
                 </div>
               )}
 
-              {/* Build My Trip Button */}
-              <button
-                type="button"
-                onClick={handleBuildTrip}
-                disabled={isGenerating || !user}
-                className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] disabled:opacity-50 interactive-btn text-[#EFE5D2] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-[#B49252]" />
-                <span>
-                  {!user
-                    ? "Sign In Above to Build Trip"
-                    : selectedTransportMode.toLowerCase().includes("road")
-                    ? "Launch Map Road Trip →"
-                    : "Build My Trip →"}
-                </span>
-              </button>
+              {/* Review Actions Stack */}
+              <div className="pt-2 space-y-3">
+                {/* Primary Action: Build My Trip */}
+                <button
+                  type="button"
+                  id="vanvas-build-my-trip-btn"
+                  onClick={handleBuildTrip}
+                  disabled={isGenerating || !user}
+                  className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] disabled:opacity-50 interactive-btn text-[#FAF4E8] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl cursor-pointer transition-all"
+                >
+                  <Sparkles className="w-4 h-4 text-[#B49252]" />
+                  <span>
+                    {!user
+                      ? "Sign In Above to Build Trip"
+                      : selectedTransportMode.toLowerCase().includes("road")
+                      ? "Launch Map Road Trip →"
+                      : "Build My Trip →"}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => goToStep(1, "prev")}
-                className="w-full text-center text-xs font-mono text-[#7B4D36] hover:text-[#173B32] underline cursor-pointer"
-              >
-                Edit all preferences
-              </button>
+                {/* Secondary Actions: Edit Preferences & Ask VANVAS */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => goToStep(1, "prev")}
+                    className="py-3 px-3 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] font-semibold text-xs tracking-wide flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-[#7B4D36]" />
+                    <span>Edit Preferences</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openAskVanvas({
+                        type: "plan",
+                        currentLocation: currentOriginName,
+                        destinationName: currentDestName,
+                        destinationSlug: selectedDestObject?.slug || selectedDestId,
+                        title: `PLANNING · ${currentDestName.toUpperCase()}`,
+                        subtitle: `${currentOriginName} → ${currentDestName} · ${daysCount} Days`,
+                      });
+                    }}
+                    className="py-3 px-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] font-semibold text-xs tracking-wide flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                    <span>Ask VANVAS</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

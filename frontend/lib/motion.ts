@@ -175,3 +175,28 @@ export const cardFlipVariants: Variants = {
   front: { rotateY: 0, transition: { duration: MOTION_DURATIONS.normal } },
   back: { rotateY: 180, transition: { duration: MOTION_DURATIONS.normal } },
 };
+
+// Wizard Step forward/backward horizontal slide + fade
+export const wizardStepVariants: Variants = {
+  enter: (direction: "next" | "prev") => ({
+    x: direction === "next" ? 20 : -20,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      duration: MOTION_DURATIONS.fast,
+      ease: MOTION_EASINGS.easeOut,
+    },
+  },
+  exit: (direction: "next" | "prev") => ({
+    x: direction === "next" ? -20 : 20,
+    opacity: 0,
+    transition: {
+      duration: MOTION_DURATIONS.micro,
+      ease: [0.4, 0, 1, 1],
+    },
+  }),
+};
+
