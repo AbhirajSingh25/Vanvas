@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { MapPin, Navigation, AlertCircle, RefreshCw, ArrowLeft, Compass } from "lucide-react";
+import { Navigation, AlertCircle, RefreshCw, ArrowLeft, Compass, MapPin } from "lucide-react";
+import { VanvasImage } from "@/components/ui/VanvasImage";
+import { resolveDestinationAsset } from "@/lib/visualIntelligence";
 
 interface JourneyTakesShapeLoaderProps {
   origin: string;
@@ -31,149 +33,180 @@ export const JourneyTakesShapeLoader: React.FC<JourneyTakesShapeLoaderProps> = (
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsSlow(true);
-    }, 7000);
+    }, 6000);
     return () => clearTimeout(timer);
   }, []);
+
+  const visualAsset = resolveDestinationAsset(destination || destinationName);
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#EFE5D2]/90 backdrop-blur-md transition-all duration-300"
+      className="w-full rounded-3xl bg-[#FAF7F0] border-2 border-[#173B32] shadow-2xl overflow-hidden text-[#173B32] relative transition-all duration-300 animate-fadeIn"
     >
-      <div className="w-full max-w-lg rounded-2xl bg-[#0F2924] border border-[#31483D] shadow-2xl overflow-hidden text-[#EFE5D2] relative">
-        {/* Subtle Topographic Background Pattern */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#FAF4E8_1px,transparent_1px)] [background-size:20px_20px]"
-        />
+      {error ? (
+        /* Clear, Restrained Error State */
+        <div className="p-6 sm:p-10 space-y-6 text-center bg-[#FAF7F0]">
+          <div className="w-14 h-14 rounded-full bg-[#B65E3C]/15 border-2 border-[#B65E3C]/30 mx-auto flex items-center justify-center text-[#B65E3C]">
+            <AlertCircle className="w-7 h-7" />
+          </div>
 
-        {error ? (
-          /* Error State with Recovery Actions */
-          <div className="p-6 sm:p-8 space-y-6 relative z-10 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#B65E3C]/20 border border-[#B65E3C]/40 mx-auto flex items-center justify-center text-[#B65E3C]">
-              <AlertCircle className="w-7 h-7" />
+          <div className="space-y-2">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C] bg-[#FAF4E8] px-2.5 py-1 rounded-full border border-[#E5D5BA]">
+              EXPEDITION NOTICE
+            </span>
+            <h3 className="font-serif text-2xl sm:text-3xl font-black text-[#173B32]">
+              Expedition Could Not Be Built
+            </h3>
+            <p className="text-xs sm:text-sm text-[#7B4D36] max-w-md mx-auto leading-relaxed">
+              {error}
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF4E8] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Retry Expedition</span>
+              </button>
+            )}
+            {onEditJourney && (
+              <button
+                type="button"
+                onClick={onEditJourney}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4 text-[#7B4D36]" />
+                <span>Edit Preferences</span>
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Dedicated Journey in Motion Canvas */
+        <div className="flex flex-col">
+          {/* Top Stamp Bar */}
+          <div className="p-4 sm:p-5 bg-[#FAF7F0] border-b border-[#E5D5BA] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4 text-[#B49252]" />
+              <span className="text-[11px] font-bold tracking-widest uppercase text-[#173B32] font-mono">
+                JOURNEY IN MOTION
+              </span>
             </div>
+            <span className="text-[11px] font-mono font-bold text-[#7B4D36] bg-[#EFE5D2] px-2.5 py-0.5 rounded-full">
+              {daysCount} Days · {transportMode}
+            </span>
+          </div>
 
-            <div className="space-y-2">
-              <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#FAF4E8]">
-                Expedition Could Not Be Built
-              </h3>
-              <p className="text-sm text-[#D8DED5]/80 max-w-md mx-auto leading-relaxed">
-                {error}
+          {/* Visual Anchors Header: Origin -> Destination */}
+          <div className="p-5 sm:p-6 bg-[#FAF7F0] border-b border-[#E5D5BA] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Origin Anchor */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7B4D36] flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-[#173B32]" />
+                <span>Origin Hub</span>
+              </span>
+              <p className="font-serif text-lg sm:text-xl font-bold text-[#173B32]">
+                {origin || "Starting Point"}
               </p>
             </div>
 
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              {onRetry && (
-                <button
-                  type="button"
-                  onClick={onRetry}
-                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF4E8] font-semibold text-sm flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Retry Expedition</span>
-                </button>
-              )}
-              {onEditJourney && (
-                <button
-                  type="button"
-                  onClick={onEditJourney}
-                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#D8DED5] border border-[#31483D] font-medium text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Edit Preferences</span>
-                </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          /* Active "The Journey Takes Shape" Route Animation */
-          <div className="p-6 sm:p-8 space-y-6 relative z-10">
-            {/* Header Stamp */}
-            <div className="flex items-center justify-between border-b border-[#243E36] pb-4">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-[#B49252] animate-spin-slow" />
-                <span className="text-[11px] font-bold tracking-widest uppercase text-[#B49252] font-mono">
-                  VANVAS EXPEDITION ENGINE
-                </span>
-              </div>
-              <span className="text-[11px] text-[#D8DED5]/70 font-mono">
-                {daysCount} Days • {transportMode}
-              </span>
+            {/* Connecting Route Arrow */}
+            <div className="hidden sm:flex items-center gap-2 text-[#B49252]">
+              <div className="w-12 h-0.5 bg-gradient-to-r from-[#173B32] via-[#B49252] to-[#B65E3C]" />
+              <Navigation className="w-4 h-4 rotate-90 shrink-0" />
+              <div className="w-12 h-0.5 bg-gradient-to-r from-[#B49252] via-[#B65E3C] to-[#173B32]" />
             </div>
 
-            {/* Origin -> Destination Banner */}
-            <div className="flex items-center justify-between gap-4">
+            {/* Destination Anchor with Contextual Artwork */}
+            <div className="flex items-center gap-3 self-end sm:self-auto text-right">
               <div className="space-y-0.5">
-                <span className="text-[10px] uppercase font-mono tracking-wider text-[#D8DED5]/60">
-                  Starting Point
-                </span>
-                <p className="font-serif text-lg sm:text-xl font-bold text-[#FAF4E8] truncate max-w-[140px] sm:max-w-[180px]">
-                  {origin}
-                </p>
-              </div>
-
-              <div className="flex-1 flex items-center justify-center px-2">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-[#31483D] via-[#B49252]/50 to-[#31483D]" />
-                <Navigation className="w-4 h-4 text-[#B49252] mx-2 rotate-90 shrink-0" />
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-[#31483D] via-[#B49252]/50 to-[#31483D]" />
-              </div>
-
-              <div className="space-y-0.5 text-right">
-                <span className="text-[10px] uppercase font-mono tracking-wider text-[#D8DED5]/60">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
                   Sanctuary Destination
                 </span>
-                <p className="font-serif text-lg sm:text-xl font-bold text-[#FAF4E8] truncate max-w-[140px] sm:max-w-[180px]">
+                <p className="font-serif text-lg sm:text-2xl font-black text-[#173B32]">
                   {destinationName || destination}
                 </p>
               </div>
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-[#E5D5BA] border border-[#173B32]/30 shrink-0 shadow-xs">
+                <VanvasImage
+                  src={visualAsset.primarySrc}
+                  fallbackSrc={visualAsset.fallbackSrc}
+                  alt={destinationName || destination}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Forest-Green Route Surface with Fine Topographic Map Contours */}
+          <div className="p-6 sm:p-8 bg-[#0F2924] text-[#EFE5D2] relative overflow-hidden space-y-6">
+            {/* Topographic Contour Background */}
+            <div aria-hidden="true" className="absolute inset-0 pointer-events-none opacity-15">
+              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="contour-pattern" width="100" height="100" patternUnits="userSpaceOnUse">
+                    <path
+                      d="M0 20 Q 25 5, 50 20 T 100 20 M0 50 Q 25 35, 50 50 T 100 50 M0 80 Q 25 65, 50 80 T 100 80"
+                      fill="none"
+                      stroke="#FAF4E8"
+                      strokeWidth="0.7"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#contour-pattern)" />
+              </svg>
             </div>
 
-            {/* SVG Progressive Route Canvas */}
-            <div className="relative py-4 px-2">
+            {/* SVG Animated Route Line Canvas */}
+            <div className="relative py-2">
               <svg
-                viewBox="0 0 360 120"
+                viewBox="0 0 400 130"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className="w-full h-28 sm:h-32 overflow-visible"
+                className="w-full h-32 sm:h-36 overflow-visible"
               >
-                {/* Background Grid Lines */}
+                {/* Elevation Baseline Grid */}
                 <path
-                  d="M10 60 H350 M60 10 V110 M180 10 V110 M300 10 V110"
+                  d="M20 65 H380 M100 15 V115 M200 15 V115 M300 15 V115"
                   stroke="#243E36"
                   strokeWidth="0.8"
                   strokeDasharray="2 4"
                 />
 
-                {/* Illustrated Route Arc (Curved mountain road) */}
+                {/* Base Route Track */}
                 <path
-                  d="M 30 75 C 100 20, 140 105, 210 45 S 290 85, 330 35"
+                  d="M 30 85 C 90 25, 150 110, 220 50 S 310 95, 370 40"
                   stroke="#243E36"
-                  strokeWidth="3"
+                  strokeWidth="3.5"
                   strokeLinecap="round"
                 />
 
-                {/* Progressive Route Drawing */}
+                {/* Animated Route Line Drawing */}
                 <motion.path
-                  d="M 30 75 C 100 20, 140 105, 210 45 S 290 85, 330 35"
-                  stroke="url(#route-gradient)"
+                  d="M 30 85 C 90 25, 150 110, 220 50 S 310 95, 370 40"
+                  stroke="url(#explorer-route-gradient)"
                   strokeWidth="3.5"
                   strokeLinecap="round"
-                  initial={shouldReduceMotion ? { pathLength: 1 } : { pathLength: 0 }}
-                  animate={{ pathLength: [0.1, 1, 0.95, 1] }}
+                  initial={shouldReduceMotion ? { pathLength: 1 } : { pathLength: 0.15 }}
+                  animate={{ pathLength: [0.15, 1, 0.95, 1] }}
                   transition={{
-                    duration: 3.2,
+                    duration: 3.5,
                     ease: "easeInOut",
                     repeat: Infinity,
                     repeatType: "reverse",
                   }}
                 />
 
-                {/* Moving Expedition Marker Dot */}
+                {/* Traveling Route Marker */}
                 {!shouldReduceMotion && (
                   <motion.circle
-                    r="4.5"
+                    r="5"
                     fill="#B65E3C"
                     stroke="#FAF4E8"
                     strokeWidth="2"
@@ -185,40 +218,58 @@ export const JourneyTakesShapeLoader: React.FC<JourneyTakesShapeLoaderProps> = (
                       repeat: Infinity,
                     }}
                     style={{
-                      offsetPath: "path('M 30 75 C 100 20, 140 105, 210 45 S 290 85, 330 35')",
+                      offsetPath: "path('M 30 85 C 90 25, 150 110, 220 50 S 310 95, 370 40')",
                     }}
                   />
                 )}
 
-                {/* Waypoint 1: Foothill Transit Hub */}
-                <circle cx="120" cy="58" r="3" fill="#B49252" />
-                <text x="120" y="74" fill="#D8DED5" fontSize="8" textAnchor="middle" opacity="0.75" fontFamily="monospace">
-                  Foothills
-                </text>
+                {/* Waypoint 1: Plains Exit Corridor */}
+                <motion.g
+                  initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4, duration: 0.4 }}
+                >
+                  <circle cx="120" cy="65" r="3.5" fill="#B49252" />
+                  <text x="120" y="82" fill="#D8DED5" fontSize="8.5" textAnchor="middle" opacity="0.85" fontFamily="monospace">
+                    Corridor Exit
+                  </text>
+                </motion.g>
 
-                {/* Waypoint 2: Mountain Ridge Pass */}
-                <circle cx="210" cy="45" r="3" fill="#B49252" />
-                <text x="210" y="34" fill="#D8DED5" fontSize="8" textAnchor="middle" opacity="0.75" fontFamily="monospace">
-                  Pass &amp; View
-                </text>
+                {/* Waypoint 2: Valley Ingress */}
+                <motion.g
+                  initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.8, duration: 0.4 }}
+                >
+                  <circle cx="220" cy="50" r="3.5" fill="#B49252" />
+                  <text x="220" y="38" fill="#D8DED5" fontSize="8.5" textAnchor="middle" opacity="0.85" fontFamily="monospace">
+                    Valley Ingress
+                  </text>
+                </motion.g>
 
-                {/* Waypoint 3: Sanctuary Valley */}
-                <circle cx="280" cy="68" r="3" fill="#B49252" />
-                <text x="280" y="84" fill="#D8DED5" fontSize="8" textAnchor="middle" opacity="0.75" fontFamily="monospace">
-                  Valley Ingress
-                </text>
+                {/* Waypoint 3: Mountain Ascent */}
+                <motion.g
+                  initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.2, duration: 0.4 }}
+                >
+                  <circle cx="305" cy="76" r="3.5" fill="#B49252" />
+                  <text x="305" y="94" fill="#D8DED5" fontSize="8.5" textAnchor="middle" opacity="0.85" fontFamily="monospace">
+                    Ascent &amp; Stays
+                  </text>
+                </motion.g>
 
-                {/* Origin Marker */}
-                <circle cx="30" cy="75" r="6" fill="#173B32" stroke="#FAF4E8" strokeWidth="2" />
-                <circle cx="30" cy="75" r="2.5" fill="#FAF4E8" />
+                {/* Origin Anchor Node */}
+                <circle cx="30" cy="85" r="7" fill="#173B32" stroke="#FAF4E8" strokeWidth="2" />
+                <circle cx="30" cy="85" r="2.5" fill="#FAF4E8" />
 
-                {/* Destination Marker */}
-                <circle cx="330" cy="35" r="7" fill="#B65E3C" stroke="#FAF4E8" strokeWidth="2" />
-                <circle cx="330" cy="35" r="3" fill="#FAF4E8" />
+                {/* Destination Sanctuary Node */}
+                <circle cx="370" cy="40" r="8" fill="#B65E3C" stroke="#FAF4E8" strokeWidth="2.5" />
+                <circle cx="370" cy="40" r="3" fill="#FAF4E8" />
 
                 {/* Gradient Definition */}
                 <defs>
-                  <linearGradient id="route-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <linearGradient id="explorer-route-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#B49252" />
                     <stop offset="50%" stopColor="#FAF4E8" />
                     <stop offset="100%" stopColor="#B65E3C" />
@@ -227,22 +278,22 @@ export const JourneyTakesShapeLoader: React.FC<JourneyTakesShapeLoaderProps> = (
               </svg>
             </div>
 
-            {/* Status Footer */}
-            <div className="space-y-1.5 text-center pt-1 border-t border-[#243E36]">
+            {/* Supporting Lifecycle Status */}
+            <div className="pt-3 border-t border-[#243E36] text-center space-y-1">
               <h4 className="font-serif text-base sm:text-lg font-bold text-[#FAF4E8]">
                 {isSlow
-                  ? "Finalizing trails & authentic mountain stays..."
-                  : `Preparing your journey to ${destinationName || destination}...`}
+                  ? `Assembling mountain stays & local timing for ${destinationName || destination}...`
+                  : `Mapping expedition corridor to ${destinationName || destination}...`}
               </h4>
-              <p className="text-xs text-[#D8DED5]/70 max-w-sm mx-auto">
+              <p className="text-xs text-[#D8DED5]/70 max-w-sm mx-auto font-light">
                 {isSlow
-                  ? "Assembling route distances, timing windows, and verified places."
-                  : "Curating verified trails, mountain stays, and arrival logistics."}
+                  ? "Verifying trail connections, altitude acclimation windows, and route checkpoints."
+                  : "Curating verified trails, authentic mountain stays, and arrival logistics."}
               </p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

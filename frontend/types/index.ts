@@ -348,6 +348,7 @@ export interface ItineraryItem {
   map_lng?: number;
   booking_url?: string;
   opening_hours?: string;
+  image_url?: string;
   status: string; // upcoming, in_progress, completed, skipped
   is_locked: boolean;
 }

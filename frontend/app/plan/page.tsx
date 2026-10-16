@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useDensity } from "@/context/DensityContext";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { JourneyTakesShapeLoader } from "@/components/plan/JourneyTakesShapeLoader";
+import { CompactPlanWizard } from "@/components/plan/CompactPlanWizard";
 import { motion, AnimatePresence } from "motion/react";
 import { wizardStepVariants } from "@/lib/motion";
 import { TravelStamp } from "@/components/ui/TravelStamp";
@@ -715,7 +716,7 @@ function PlanWizard() {
     <div className="min-h-[calc(100vh-4rem)] bg-[#EFE5D2] flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="max-w-xl mx-auto w-full">
         {/* The Journey Takes Shape Route Loader */}
-        {isGenerating && (
+        {isGenerating ? (
           <JourneyTakesShapeLoader
             origin={currentOriginName}
             destination={selectedDestId}
@@ -729,13 +730,72 @@ function PlanWizard() {
               setGenerationError(null);
             }}
           />
-        )}
-
-        {/* Card Container */}
-        <div className={`bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 ${
-          isCompact ? "p-4 sm:p-6" : "p-5 sm:p-8"
-        }`}>
-          {/* Top Progress & Navigation Header */}
+        ) : isCompact ? (
+          <CompactPlanWizard
+            originCity={originCity}
+            setOriginCity={setOriginCity}
+            originSearch={originSearch}
+            setOriginSearch={setOriginSearch}
+            handleSelectOrigin={handleSelectOrigin}
+            handleRequestGPS={handleRequestGPS}
+            isLocatingGPS={isLocatingGPS}
+            gpsError={gpsError}
+            destinations={destinations}
+            selectedDestId={selectedDestId}
+            selectedDestObject={selectedDestObject}
+            handleSelectDestination={handleSelectDestination}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchResults={searchResults}
+            isSearching={isSearching}
+            isResolving={isResolving}
+            resolveError={resolveError}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
+            daysCount={daysCount}
+            handleDatePresetSelect={handleDatePresetSelect}
+            handleDaysSelect={handleDaysSelect}
+            companionType={companionType}
+            travellersCount={travellersCount}
+            setTravellersCount={setTravellersCount}
+            handleCompanionSelect={handleCompanionSelect}
+            travelStyle={travelStyle}
+            handleStyleSelect={handleStyleSelect}
+            budgetEstimate={budgetEstimate}
+            selectedTransportMode={selectedTransportMode}
+            handleTransportSelect={handleTransportSelect}
+            selectedTransportOption={selectedTransportOption}
+            setSelectedTransportOption={setSelectedTransportOption}
+            transportOptions={transportOptions}
+            loadingTransport={loadingTransport}
+            currentStep={currentStep}
+            goToStep={goToStep}
+            handleBack={handleBack}
+            stepDirection={stepDirection}
+            handleBuildTrip={handleBuildTrip}
+            isGenerating={isGenerating}
+            generationError={generationError}
+            user={user}
+            authMode={authMode}
+            setAuthMode={setAuthMode}
+            authEmail={authEmail}
+            setAuthEmail={setAuthEmail}
+            authPassword={authPassword}
+            setAuthPassword={setAuthPassword}
+            authFullName={authFullName}
+            setAuthFullName={setAuthFullName}
+            authError={authError}
+            authSubmitting={authSubmitting}
+            handleInlineAuth={handleInlineAuth}
+            currentOriginName={currentOriginName}
+            currentDestName={currentDestName}
+            openAskVanvas={openAskVanvas}
+          />
+        ) : (
+          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 p-5 sm:p-8">
+            {/* Top Progress & Navigation Header */}
           <div className="border-b border-[#E5D5BA] pb-4 mb-5 sm:mb-6 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1698,6 +1758,7 @@ function PlanWizard() {
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

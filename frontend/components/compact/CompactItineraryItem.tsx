@@ -4,9 +4,12 @@ import React, { useState } from "react";
 import { CheckCircle2, Circle, ChevronDown, ChevronUp, Lock, Unlock, Navigation, Sparkles } from "lucide-react";
 import { ItineraryItem } from "@/types";
 import { normalizeItineraryItem } from "@/lib/itineraryNormalizer";
+import { VanvasImage } from "@/components/ui/VanvasImage";
+import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
 
 interface CompactItineraryItemProps {
   item: ItineraryItem;
+  destinationName?: string;
   onToggleStatus?: (itemId: string, currentStatus: string) => void;
   onToggleLock?: (itemId: string, currentLock: boolean) => void;
   onOpenDetails?: (item: ItineraryItem) => void;
@@ -14,52 +17,83 @@ interface CompactItineraryItemProps {
 
 export const CompactItineraryItem: React.FC<CompactItineraryItemProps> = ({
   item,
+  destinationName = "",
   onToggleStatus,
   onToggleLock,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const stop = normalizeItineraryItem(item);
 
+  const visualRes = resolvePlaceArtwork(
+    stop.placeName,
+    destinationName,
+    stop.category,
+    item.image_url,
+    false,
+    undefined
+  );
+
   return (
     <div
-      className={`rounded-2xl border transition-all ${
+      className={`rounded-2xl border transition-all duration-200 ${
         stop.isCompleted
-          ? "bg-[#E5D5BA]/40 border-[#E5D5BA] opacity-75"
+          ? "bg-[#E5D5BA]/40 border-[#E5D5BA] opacity-80"
           : "bg-[#FAF7F0] border-[#E5D5BA] hover:border-[#173B32] shadow-2xs"
       }`}
     >
-      {/* Main Scannable Row: TIME -> PLACE -> SHORT PURPOSE */}
+      {/* Main Scannable Row: TIME PILL -> THUMBNAIL -> PLACE -> SHORT PURPOSE */}
       <div className="p-3 sm:p-3.5 flex items-center justify-between gap-3">
-        {/* Checkbox & Time */}
+        {/* Checkbox & Time & Small Thumbnail */}
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
+            id={`toggle-item-status-${stop.id}`}
+            data-testid="toggle-item-status-btn"
             onClick={() => onToggleStatus && onToggleStatus(stop.id, stop.isCompleted ? "completed" : "upcoming")}
-            className="text-[#173B32] hover:text-[#B65E3C] transition-colors cursor-pointer"
+            className="text-[#173B32] hover:text-[#B65E3C] transition-all cursor-pointer p-0.5"
             aria-label={stop.isCompleted ? "Mark uncompleted" : "Mark completed"}
           >
             {stop.isCompleted ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-700 fill-emerald-100" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-700 fill-emerald-100" />
             ) : (
-              <Circle className="w-4 h-4 text-[#7B4D36]" />
+              <Circle className="w-5 h-5 text-[#7B4D36] hover:scale-110 transition-transform duration-150" />
             )}
           </button>
-          <span className="font-mono font-bold text-xs sm:text-sm text-[#173B32]">
-            {stop.time}
-          </span>
+
+          {/* Contextual Visual Thumbnail */}
+          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-[#E5D5BA] shrink-0 border border-[#E5D5BA]">
+            <VanvasImage
+              src={visualRes.imageUrl}
+              fallbackSrc={visualRes.fallbackUrl}
+              alt={stop.placeName}
+              className="w-full h-full object-cover"
+            />
+          </div>
         </div>
 
-        {/* Place & 1 Short Purpose Line */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-serif font-black text-xs sm:text-sm text-[#173B32] truncate">
-              {stop.placeName}
+        {/* Place & Time & 1 Short Purpose Line */}
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-mono font-bold text-[11px] sm:text-xs text-[#173B32] bg-[#FAF4E8] px-1.5 py-0.2 rounded border border-[#E5D5BA]">
+              {stop.time}
             </span>
             <span className="px-1.5 py-0.2 rounded bg-[#173B32]/10 text-[#173B32] text-[8.5px] font-mono font-bold uppercase shrink-0">
               {stop.category}
             </span>
+            {stop.travelTimeMins > 0 && (
+              <span className="text-[9.5px] font-mono text-[#7B4D36]/80 hidden sm:inline">
+                {stop.travelTimeMins}m transit
+              </span>
+            )}
           </div>
-          <p className="text-[11px] text-[#7B4D36] truncate mt-0.5 font-medium">
+
+          <h4 className={`font-serif font-black text-xs sm:text-sm text-[#173B32] truncate transition-colors ${
+            stop.isCompleted ? "line-through opacity-70" : ""
+          }`}>
+            {stop.placeName}
+          </h4>
+
+          <p className="text-[11px] text-[#7B4D36] truncate font-medium">
             {stop.shortPurpose}
           </p>
         </div>

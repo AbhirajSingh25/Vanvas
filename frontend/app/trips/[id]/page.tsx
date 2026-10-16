@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -46,6 +46,8 @@ import { BookingConfirmationModal } from "@/components/booking/BookingConfirmati
 import { TripIntelligenceCenter } from "@/components/trip/TripIntelligenceCenter";
 import { TripWorkspaceSkeleton, ItineraryItemSkeleton } from "@/components/ui/ParchmentSkeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { VanvasImage } from "@/components/ui/VanvasImage";
+import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
 import { Booking } from "@/types";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -322,19 +324,37 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     });
   }, [registerTripRefreshCallback]);
 
+  const inFlightStatusUpdates = useRef<Set<string>>(new Set());
+
   const handleToggleItemStatus = async (itemId: string, currentStatus: string) => {
+    if (inFlightStatusUpdates.current.has(itemId)) return;
+    inFlightStatusUpdates.current.add(itemId);
+
     const newStatus = currentStatus === "completed" ? "upcoming" : "completed";
+    const previousTrip = trip;
+
+    // 1. Immediate optimistic local update (< 10ms)
+    if (trip) {
+      const updatedIts = trip.itineraries.map((day) => ({
+        ...day,
+        items: day.items.map((it) => (it.id === itemId ? { ...it, status: newStatus } : it)),
+      }));
+      setTrip({ ...trip, itineraries: updatedIts });
+    }
+
+    // 2. Background sync to backend API
     try {
       await api.updateItineraryItem(tripId, itemId, newStatus);
-      if (trip) {
-        const updatedIts = trip.itineraries.map((day) => ({
-          ...day,
-          items: day.items.map((it) => (it.id === itemId ? { ...it, status: newStatus } : it)),
-        }));
-        setTrip({ ...trip, itineraries: updatedIts });
+    } catch (err: any) {
+      console.error("Failed to update stop status:", err);
+      // Rollback to previous state on failure
+      if (previousTrip) {
+        setTrip(previousTrip);
       }
-    } catch (err) {
-      console.error(err);
+      setNotificationMsg("Could not sync stop update. Check network connection.");
+      setTimeout(() => setNotificationMsg(null), 4000);
+    } finally {
+      inFlightStatusUpdates.current.delete(itemId);
     }
   };
 
@@ -578,6 +598,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             {/* Compact Actions Bar */}
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E5D5BA]">
               <button
+                id="vanvas-im-here-trigger-btn"
+                data-testid="im-here-trigger-btn"
                 onClick={() => setImHereOpen(true)}
                 className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
@@ -713,6 +735,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             <div className="pt-2 flex flex-wrap gap-3">
               {/* I'M HERE Main Trigger */}
               <button
+                id="vanvas-im-here-trigger-btn"
+                data-testid="im-here-trigger-btn"
                 onClick={() => setImHereOpen(true)}
                 className="px-6 py-3 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-xl transition-all transform active:scale-95 flex items-center gap-2 cursor-pointer"
               >
@@ -916,6 +940,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                       <CompactItineraryItem
                         key={item.id}
                         item={item}
+                        destinationName={trip.destination?.name || ""}
                         onToggleStatus={handleToggleItemStatus}
                         onToggleLock={handleToggleLock}
                       />
@@ -923,20 +948,38 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {currentDayItinerary?.items.slice(0, 3).map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-start gap-3.5"
-                      >
-                        <span className="px-2.5 py-1 rounded bg-[#173B32] text-[#EFE5D2] text-xs font-bold font-mono">
-                          {item.start_time}
-                        </span>
-                        <div className="flex-1">
-                          <div className="font-serif font-bold text-base text-[#173B32]">{item.title}</div>
-                          <p className="text-xs text-[#20211D]/75 mt-0.5 font-light">{item.notes}</p>
+                    {currentDayItinerary?.items.slice(0, 3).map((item, idx) => {
+                      const visual = resolvePlaceArtwork(
+                        item.title,
+                        trip.destination?.name || "",
+                        item.category,
+                        item.image_url,
+                        false,
+                        undefined
+                      );
+                      return (
+                        <div
+                          key={idx}
+                          className="p-3.5 sm:p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center gap-3.5"
+                        >
+                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[#FAF7F0] shrink-0 border border-[#E5D5BA]">
+                            <VanvasImage
+                              src={visual.imageUrl}
+                              fallbackSrc={visual.fallbackUrl}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="px-2.5 py-1 rounded bg-[#173B32] text-[#EFE5D2] text-xs font-bold font-mono shrink-0">
+                            {item.start_time}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-serif font-bold text-base text-[#173B32] truncate">{item.title}</div>
+                            <p className="text-xs text-[#20211D]/75 mt-0.5 font-light line-clamp-1">{item.notes}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1106,6 +1149,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   <div key={`${selectedDayNumber}-${item.id}`} className={`animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)}`}>
                     <CompactItineraryItem
                       item={item}
+                      destinationName={trip.destination?.name || ""}
                       onToggleStatus={handleToggleItemStatus}
                       onToggleLock={handleToggleLock}
                     />
@@ -1118,11 +1162,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   const isCompleted = item.status === "completed" || item.status === "COMPLETED";
                   const isSkipped = item.status === "skipped" || item.status === "SKIPPED";
                   const isMissed = item.status === "missed" || item.status === "MISSED";
+                  const visual = resolvePlaceArtwork(
+                    item.title,
+                    trip.destination?.name || "",
+                    item.category,
+                    item.image_url,
+                    false,
+                    undefined
+                  );
 
                 return (
                   <div
                     key={`${selectedDayNumber}-${item.id}`}
-                    className={`p-6 rounded-3xl border-2 transition-all flex flex-col sm:flex-row items-start gap-4 animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)} ${
+                    className={`p-5 sm:p-6 rounded-3xl border-2 transition-all flex flex-col sm:flex-row items-start gap-4 sm:gap-5 animate-vanvas-slide-up stagger-${Math.min(idx + 1, 8)} ${
                       isCompleted
                         ? "bg-[#E5D5BA]/40 border-[#E5D5BA] opacity-75"
                         : isMissed
@@ -1132,23 +1184,37 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                         : "bg-[#FAF7F0] border-[#E5D5BA] shadow-xs hover:border-[#173B32]/50 interactive-card"
                     }`}
                   >
-                    {/* Status & Timing */}
-                    <div className="flex sm:flex-col items-center justify-between sm:justify-start gap-2 w-full sm:w-28 shrink-0">
-                      <button
-                        onClick={() => handleToggleItemStatus(item.id, item.status)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-[#173B32] hover:text-[#B65E3C] cursor-pointer"
-                      >
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-700 fill-emerald-100" />
-                        ) : (
-                          <Circle className="w-5 h-5 text-[#7B4D36]" />
-                        )}
-                        <span className="sm:hidden">{isCompleted ? "Done" : "Mark Done"}</span>
-                      </button>
+                    {/* Status & Timing & Roomy Visual Thumbnail */}
+                    <div className="flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-3 w-full sm:w-28 shrink-0">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleItemStatus(item.id, item.status)}
+                          className="flex items-center gap-1.5 text-xs font-bold text-[#173B32] hover:text-[#B65E3C] cursor-pointer"
+                        >
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-700 fill-emerald-100" />
+                          ) : (
+                            <Circle className="w-5 h-5 text-[#7B4D36]" />
+                          )}
+                          <span className="sm:hidden">{isCompleted ? "Done" : "Mark Done"}</span>
+                        </button>
+                        <span className="font-mono font-bold text-xs text-[#173B32] bg-[#FAF4E8] px-2 py-0.5 rounded border border-[#E5D5BA]">
+                          {item.start_time}
+                        </span>
+                      </div>
 
-                      <div className="text-right sm:text-left">
-                        <div className="font-mono font-bold text-sm text-[#173B32]">{item.start_time}</div>
-                        <div className="text-[11px] text-[#7B4D36] font-mono">{item.end_time} ({item.duration_mins}m)</div>
+                      {/* Roomy Contextual Place Artwork */}
+                      <div className="relative w-16 h-16 sm:w-24 sm:h-20 rounded-2xl overflow-hidden bg-[#E5D5BA] shrink-0 border border-[#E5D5BA] shadow-xs">
+                        <VanvasImage
+                          src={visual.imageUrl}
+                          fallbackSrc={visual.fallbackUrl}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="text-[10px] text-[#7B4D36] font-mono hidden sm:block">
+                        {item.end_time} ({item.duration_mins}m)
                       </div>
                     </div>
 
