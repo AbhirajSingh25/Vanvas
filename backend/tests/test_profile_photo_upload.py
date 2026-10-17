@@ -387,3 +387,83 @@ def test_database_migration_schema_includes_avatar_storage_key():
     columns = [col["name"] for col in inspector.get_columns("users")]
     assert "avatar_storage_key" in columns
     assert "avatar_url" in columns
+    table_names = inspector.get_table_names()
+    assert "user_avatar_blobs" in table_names
+    blob_cols = [col["name"] for col in inspector.get_columns("user_avatar_blobs")]
+    assert "storage_key" in blob_cols
+    assert "data" in blob_cols
+    assert "content_type" in blob_cols
+
+
+# 19. End-to-End Durable Avatar Persistence Across Backend Restart / Ephemeral Disk Wipe
+def test_avatar_persistence_across_backend_restart_and_reauth(tmp_path):
+    import shutil
+    from pathlib import Path
+    from app.models.models import UserAvatarBlob
+
+    # 1. Create user and upload test avatar
+    user, token, headers = create_test_user("durable@vanvas.com", "Durable Explorer")
+    img_bytes = generate_test_image(format="JPEG", size=(350, 350), color="rgb(45, 90, 60)")
+
+    upload_res = client.post(
+        "/api/v1/auth/profile/avatar",
+        headers=headers,
+        files={"file": ("durable_photo.jpg", img_bytes, "image/jpeg")}
+    )
+    assert upload_res.status_code == 200
+    upload_data = upload_res.json()
+    avatar_url = upload_data["avatar_url"]
+    assert upload_data["avatar_type"] == "uploaded"
+
+    # 2. Confirm database record
+    db = TestingSessionLocal()
+    u = db.query(User).filter(User.id == user.id).first()
+    assert u.avatar_url == avatar_url
+    assert u.avatar_storage_key is not None
+    storage_key = u.avatar_storage_key
+
+    # Check UserAvatarBlob exists in DB
+    blob = db.query(UserAvatarBlob).filter(UserAvatarBlob.user_id == user.id).first()
+    assert blob is not None
+    assert blob.byte_size > 0
+    assert len(blob.data) > 0
+    assert blob.content_type == "image/webp"
+    db.close()
+
+    # 3. Fetch initial avatar bytes
+    serve_res = client.get(avatar_url)
+    assert serve_res.status_code == 200
+    assert serve_res.headers["content-type"] == "image/webp"
+    initial_bytes = serve_res.content
+    assert len(initial_bytes) > 0
+
+    # 4. Fetch user profile again (/auth/me)
+    me_res = client.get("/api/v1/auth/me", headers=headers)
+    assert me_res.status_code == 200
+    me_data = me_res.json()
+    assert me_data["avatar_url"] == avatar_url
+    assert me_data["avatar_type"] == "uploaded"
+
+    # 5. SIMULATE CONTAINER RESTART / EPHEMERAL DISK WIPE
+    # Completely delete the uploads directory on disk
+    upload_dir = Path(settings.STORAGE_UPLOAD_DIR)
+    if upload_dir.exists():
+        shutil.rmtree(str(upload_dir))
+    assert not upload_dir.exists()
+
+    # 6. Fetch the avatar URL again after disk wipe:
+    # Must recover from database and return valid image bytes (HTTP 200, not 404!)
+    after_restart_res = client.get(avatar_url)
+    assert after_restart_res.status_code == 200
+    assert after_restart_res.headers["content-type"] == "image/webp"
+    assert after_restart_res.content == initial_bytes
+
+    # 7. Log in again with fresh credentials and verify persistent avatar metadata
+    login_res = client.post(
+        "/api/v1/auth/login",
+        json={"email": "durable@vanvas.com", "password": "securepass123"}
+    )
+    assert login_res.status_code == 200
+    login_data = login_res.json()
+    assert login_data["user"]["avatar_url"] == avatar_url
+    assert login_data["user"]["avatar_type"] == "uploaded"

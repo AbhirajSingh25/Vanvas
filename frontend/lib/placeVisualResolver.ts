@@ -4502,18 +4502,45 @@ export function classifyCategoryTheme(category: string, placeName: string = ""):
   const cat = (category || "").toLowerCase();
   const name = (placeName || "").toLowerCase();
 
-  if (cat.includes("mobility") || cat.includes("rental") || cat.includes("transport") || cat.includes("scooter") || cat.includes("bike") || cat.includes("vehicle")) {
+  // 1. Transit / Transfer / Mobility / Rides
+  if (
+    cat.includes("mobility") || cat.includes("rental") || cat.includes("transport") || cat.includes("transit") ||
+    cat.includes("transfer") || cat.includes("scooter") || cat.includes("bike") || cat.includes("vehicle") ||
+    cat.includes("commute") || cat.includes("ride") ||
+    name.includes("transfer") || name.includes("transit") || name.includes("rentals") || name.includes("rental") ||
+    name.includes("scooters") || name.includes("scooter") || name.includes("motorcycle") || name.includes("bike hub") ||
+    name.includes("fleet") || name.includes("self-drive") || name.includes("cab") || name.includes("taxi") ||
+    name.includes("shuttle") || name.includes("bus stand") || name.includes("railway station") ||
+    name.includes("airport") || name.includes("drive to") || name.includes("drive from") || name.includes("pickup")
+  ) {
     return "transport";
   }
-  if (name.includes("rentals") || name.includes("rental") || name.includes("scooters") || name.includes("scooter") || name.includes("motorcycle") || name.includes("bike hub") || name.includes("fleet") || name.includes("self-drive")) {
-    return "transport";
-  }
-  if (cat.includes("stay") || cat.includes("hotel") || cat.includes("resort") || cat.includes("hostel") || cat.includes("homestay") || cat.includes("sanctuary")) {
+
+  // 2. Stay / Accommodation / Luggage / Check-in / Freshen up
+  if (
+    cat.includes("stay") || cat.includes("hotel") || cat.includes("resort") || cat.includes("hostel") ||
+    cat.includes("homestay") || cat.includes("sanctuary") || cat.includes("luggage") || cat.includes("checkin") ||
+    cat.includes("check-in") ||
+    name.includes("hotel") || name.includes("resort") || name.includes("homestay") || name.includes("hostel") ||
+    name.includes("guesthouse") || name.includes("guest house") || name.includes("cottage") || name.includes("palace hotel") ||
+    name.includes("inn &") || name.includes("inn and") || name.includes("luggage") || name.includes("freshen up") ||
+    name.includes("fresh up") || name.includes("check in") || name.includes("check-in") || name.includes("checkin") ||
+    name.includes("unpack") || name.includes("drop bags") || name.includes("settle in") || name.includes("settle into") ||
+    name.includes("room check") || name.includes("rest at stay") || name.includes("rest at hotel")
+  ) {
     return "stay";
   }
-  if (name.includes("hotel") || name.includes("resort") || name.includes("homestay") || name.includes("hostel") || name.includes("guesthouse") || name.includes("guest house") || name.includes("cottage") || name.includes("palace hotel") || name.includes("inn &") || name.includes("inn and")) {
-    return "stay";
+
+  // 3. Arrival / Entry / Touchdown
+  if (
+    name.includes("arrive in") || name.includes("arrival in") || name.includes("welcome to") ||
+    name.includes("touch down") || name.startsWith("arrive") || name.startsWith("arrival") ||
+    name.includes("reach ")
+  ) {
+    return "arrival";
   }
+
+  // 4. Spiritual / Temple / Monastery / Church
   if (name.includes("temple") || name.includes("ashram") || name.includes("mandir") || name.includes("kund") || name.includes("aarti") || name.includes("ghat") || name.includes("dham") || name.includes("gurudwara") || name.includes("math")) {
     return "spiritual";
   }
@@ -4526,15 +4553,23 @@ export function classifyCategoryTheme(category: string, placeName: string = ""):
   if (name.includes("church") || name.includes("cathedral") || name.includes("basilica") || cat.includes("church")) {
     return "church";
   }
-  if (cat.includes("caf") || cat.includes("bakery") || cat.includes("coffee") || name.includes("cafe") || name.includes("café") || name.includes("bakery") || name.includes("coffee") || name.includes("bistro") || name.includes("roastery")) {
+
+  // 5. Cafes & Bakeries
+  if (cat.includes("caf") || cat.includes("bakery") || cat.includes("coffee") || name.includes("cafe") || name.includes("café") || name.includes("bakery") || name.includes("coffee") || name.includes("bistro") || name.includes("roastery") || name.includes("tea house")) {
     return "cafe";
   }
-  if (cat.includes("food") || cat.includes("dining") || cat.includes("restaurant") || cat.includes("street") || name.includes("dhaba") || name.includes("restaurant") || name.includes("dining") || name.includes("lassi") || name.includes("sweets") || name.includes("food") || name.includes("kitchen") || name.includes("thali") || name.includes("bhojanalaya")) {
+
+  // 6. Food, Dining & Meals
+  if (cat.includes("food") || cat.includes("dining") || cat.includes("restaurant") || cat.includes("street") || cat.includes("breakfast") || cat.includes("lunch") || cat.includes("dinner") || name.includes("dhaba") || name.includes("restaurant") || name.includes("dining") || name.includes("lassi") || name.includes("sweets") || name.includes("food") || name.includes("kitchen") || name.includes("thali") || name.includes("bhojanalaya") || name.includes("breakfast") || name.includes("lunch") || name.includes("dinner") || name.includes("brunch") || name.includes("siddu") || name.includes("snack") || name.includes("chai")) {
     return "food";
   }
+
+  // 7. Heritage / Culture / Monuments
   if (cat.includes("heritage") || cat.includes("culture") || cat.includes("monument") || cat.includes("historic") || cat.includes("fort") || cat.includes("palace") || cat.includes("museum") || name.includes("fort") || name.includes("palace") || name.includes("haveli") || name.includes("museum") || name.includes("ruins") || name.includes("memorial") || name.includes("tomb") || name.includes("archaeological")) {
     return "heritage";
   }
+
+  // 8. Water bodies
   if (cat.includes("waterfall") || cat.includes("falls") || name.includes("waterfall") || name.includes("falls")) {
     return "waterfall";
   }
@@ -4544,12 +4579,23 @@ export function classifyCategoryTheme(category: string, placeName: string = ""):
   if (cat.includes("beach") || cat.includes("coast") || name.includes("beach") || name.includes("cove") || name.includes("coast")) {
     return "beach";
   }
+
+  // 9. Viewpoints
   if (cat.includes("viewpoint") || cat.includes("scenic") || name.includes("viewpoint") || name.includes("crest") || name.includes("top") || name.includes("sunset point") || name.includes("peak") || name.includes("summit") || name.includes("pass")) {
     return "viewpoint";
   }
-  if (cat.includes("nature") || cat.includes("trail") || cat.includes("wildlife") || cat.includes("forest") || cat.includes("park") || cat.includes("garden") || cat.includes("trek") || cat.includes("adventure") || name.includes("trail") || name.includes("meadow") || name.includes("forest") || name.includes("park") || name.includes("garden") || name.includes("wildlife") || name.includes("safari") || name.includes("sanctuary")) {
+
+  // 10. Trails & Treks
+  if (cat.includes("trail") || cat.includes("trek") || cat.includes("hike") || name.includes("trail") || name.includes("trek") || name.includes("hike") || name.includes("ridge") || name.includes("climb")) {
+    return "trail";
+  }
+
+  // 11. Nature & Wildlife
+  if (cat.includes("nature") || cat.includes("wildlife") || cat.includes("forest") || cat.includes("park") || cat.includes("garden") || cat.includes("adventure") || name.includes("meadow") || name.includes("forest") || name.includes("park") || name.includes("garden") || name.includes("wildlife") || name.includes("safari") || name.includes("sanctuary")) {
     return "nature";
   }
+
+  // 12. Shopping & Markets
   if (cat.includes("market") || cat.includes("shopping") || cat.includes("craft") || cat.includes("shop") || name.includes("market") || name.includes("bazaar") || name.includes("mall") || name.includes("chowk") || name.includes("plaza") || name.includes("shop")) {
     return "shopping";
   }
@@ -4558,6 +4604,7 @@ export function classifyCategoryTheme(category: string, placeName: string = ""):
 }
 
 function getUniversalFallback(theme: string): string {
+  if (theme === "arrival") return UNIVERSAL_CATEGORY_FALLBACKS.nature;
   return UNIVERSAL_CATEGORY_FALLBACKS[theme] || UNIVERSAL_CATEGORY_FALLBACKS.nature;
 }
 
@@ -4884,7 +4931,10 @@ export function resolvePlaceArtwork(
   }
 
   const destConfig = matchedDest ? DESTINATION_CATEGORY_REGISTRY[matchedDest] : undefined;
-  const destCategoryFallback = destConfig?.categories?.[theme] || undefined;
+  const destCategoryFallback =
+    theme === "arrival"
+      ? (destConfig?.generic || destConfig?.categories?.nature || universalFallback)
+      : (destConfig?.categories?.[theme] || undefined);
   const safeFallback = destCategoryFallback || universalFallback;
 
   // PRIORITY 1: Verified Real External Photograph (Live / Wikimedia photo)

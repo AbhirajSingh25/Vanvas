@@ -42,7 +42,8 @@ export const Avatar: React.FC<AvatarProps> = ({
   onClick,
 }) => {
   const [imgError, setImgError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [displayedSrc, setDisplayedSrc] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const displayName = name || user?.full_name || "Traveler";
 
@@ -102,18 +103,45 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Reset error and loading state whenever the effective source changes
+  // Transition from previous image to next image smoothly without flashing initials
   useEffect(() => {
     setImgError(false);
-    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+    if (!effectiveSrc) {
+      setDisplayedSrc(null);
       setIsLoading(false);
-    } else {
-      setIsLoading(Boolean(effectiveSrc));
+      return;
     }
+
+    // If effectively the same src, keep it
+    if (effectiveSrc === displayedSrc) {
+      return;
+    }
+
+    // Preload image to ensure seamless transition
+    setIsLoading(true);
+    const probe = new Image();
+    probe.src = effectiveSrc;
+    probe.onload = () => {
+      setDisplayedSrc(effectiveSrc);
+      setIsLoading(false);
+      setImgError(false);
+    };
+    probe.onerror = () => {
+      if (!displayedSrc) {
+        setImgError(true);
+      }
+      setIsLoading(false);
+    };
+
+    return () => {
+      probe.onload = null;
+      probe.onerror = null;
+    };
   }, [effectiveSrc]);
 
   const sizeCfg = SIZE_CLASSES[size] || SIZE_CLASSES.md;
   const isSmall = size === "xs" || size === "sm";
+  const activeImage = displayedSrc || effectiveSrc;
 
   return (
     <div
@@ -125,23 +153,27 @@ export const Avatar: React.FC<AvatarProps> = ({
       } ${className}`}
       title={displayName}
     >
-      {/* Fallback initials always present in background */}
-      <span className="tracking-tight drop-shadow-xs">{initials}</span>
+      {/* Fallback initials displayed only if no image or genuine failure */}
+      {(!activeImage || imgError) && (
+        <span className="tracking-tight drop-shadow-xs">{initials}</span>
+      )}
 
-      {effectiveSrc && !imgError && (
+      {activeImage && !imgError && (
         <>
-          {/* Restrained loading placeholder background while image is loading */}
-          {isLoading && (
+          {isLoading && !displayedSrc && (
             <div className="absolute inset-0 bg-[#173B32] opacity-75 animate-pulse pointer-events-none" />
           )}
           <img
             ref={imgRef}
-            src={effectiveSrc}
+            src={activeImage}
             alt={displayName}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${
-              isLoading ? "opacity-0" : "opacity-100"
+              isLoading && !displayedSrc ? "opacity-0" : "opacity-100"
             }`}
-            onLoad={() => setIsLoading(false)}
+            onLoad={() => {
+              setIsLoading(false);
+              setImgError(false);
+            }}
             onError={() => {
               setImgError(true);
               setIsLoading(false);

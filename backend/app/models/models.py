@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, Text, DateTime, Date, ForeignKey, Enum as SQLEnum
+    Column, String, Integer, Float, Boolean, Text, DateTime, Date, ForeignKey, Enum as SQLEnum, LargeBinary
 )
 from sqlalchemy.orm import relationship
 from app.database.session import Base
@@ -49,10 +49,25 @@ class User(Base):
     notification_records = relationship("NotificationItem", back_populates="user", cascade="all, delete-orphan")
     travel_memories = relationship("TravellerMemory", back_populates="user", cascade="all, delete-orphan")
     memory_observations = relationship("MemoryObservation", back_populates="user", cascade="all, delete-orphan")
+    avatar_blobs = relationship("UserAvatarBlob", back_populates="user", cascade="all, delete-orphan")
 
     @property
     def is_verified(self) -> bool:
         return self.email_verified_at is not None
+
+class UserAvatarBlob(Base):
+    __tablename__ = "user_avatar_blobs"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    storage_key = Column(String(255), unique=True, index=True, nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    content_type = Column(String(100), default="image/webp", nullable=False)
+    byte_size = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="avatar_blobs")
 
 class EmailVerificationToken(Base):
     __tablename__ = "email_verification_tokens"

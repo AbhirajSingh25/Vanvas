@@ -9,7 +9,7 @@ import {
   ExternalLink, Share2, MessageSquare, Coffee, BedDouble, Bike,
   CheckSquare, ArrowRight, ShieldCheck, Sun, Info, Heart, Printer,
   Bus, Train, Plane, Car, CarTaxiFront, History, FastForward,
-  AlertTriangle, RefreshCw, X, AlertCircle
+  AlertTriangle, RefreshCw, X, AlertCircle, ChevronDown
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -40,6 +40,8 @@ import { useAskVanvas } from "@/context/AskVanvasContext";
 import { TravelModeCockpit } from "@/components/trip/TravelModeCockpit";
 import { OfflineTripPackDrawer } from "@/components/trip/OfflineTripPackDrawer";
 import { CompactItineraryItem, CompactStayCard, CompactRentalCard } from "@/components/compact";
+import { StayDetailDrawer } from "@/components/trip/StayDetailDrawer";
+import { RentalDetailDrawer } from "@/components/trip/RentalDetailDrawer";
 import { VanvasSplitView } from "@/components/trip/VanvasSplitView";
 import { TripBookingsTab } from "@/components/trip/TripBookingsTab";
 import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
@@ -85,6 +87,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     return true;
   });
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [selectedStayDrawerOpen, setSelectedStayDrawerOpen] = useState(false);
+  const [selectedRentalDrawerOpen, setSelectedRentalDrawerOpen] = useState(false);
+  const [moreToolsOpen, setMoreToolsOpen] = useState(false);
 
   // Active Tab: 'overview' | 'itinerary' | 'bookings' | 'stays_rentals' | 'food' | 'budget' | 'group' | 'checklist' | 'circles'
   const VALID_TABS = ["overview", "itinerary", "bookings", "stays_rentals", "food", "budget", "group", "checklist", "circles"] as const;
@@ -595,58 +600,96 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Compact Actions Bar */}
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E5D5BA]">
+            {/* Responsive Trip Actions Area */}
+            <div className="pt-2 space-y-2.5 border-t border-[#E5D5BA]">
+              {/* Primary Action: Full-width I'M HERE Arrival Mode */}
               <button
+                type="button"
                 id="vanvas-im-here-trigger-btn"
                 data-testid="im-here-trigger-btn"
                 onClick={() => setImHereOpen(true)}
-                className="px-4 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="w-full min-h-[52px] p-3.5 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF4E8] font-bold shadow-md transition-all active:scale-[0.99] flex items-center justify-between gap-3 cursor-pointer"
               >
-                <Navigation className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>I&rsquo;m Here</span>
+                <div className="flex items-center gap-2.5">
+                  <Navigation className="w-5 h-5 text-[#B49252] animate-pulse shrink-0" />
+                  <div className="text-left">
+                    <span className="block font-serif text-sm tracking-wide uppercase">I’M HERE · ARRIVAL MODE</span>
+                    <span className="block font-mono text-[10px] text-[#FAF4E8]/80 font-normal">Now / Next / Later transit guidance</span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-[#B49252] shrink-0" />
               </button>
 
-              <button
-                onClick={() => setReplanOpen(true)}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#B65E3C]" />
-                <span>Replan / Adjust</span>
-              </button>
+              {/* Secondary Actions Grid: Exactly 2 equal columns at 360px+ / 4 columns at tablet+ */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setQuickPlanOpen(true)}
+                  className="h-11 sm:h-12 px-3 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center justify-center gap-1.5 transition-colors cursor-pointer truncate shadow-2xs"
+                >
+                  <Clock className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                  <span className="truncate">Plan 3 Hours</span>
+                </button>
 
-              <button
-                onClick={() => setInviteModalOpen(true)}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5 cursor-pointer"
-              >
-                <Share2 className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Share</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setReplanOpen(true)}
+                  className="h-11 sm:h-12 px-3 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center justify-center gap-1.5 transition-colors cursor-pointer truncate shadow-2xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#B65E3C] shrink-0" />
+                  <span className="truncate">Replan / Late</span>
+                </button>
 
-              <button
-                onClick={() => setOfflinePackOpen(true)}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5 cursor-pointer"
-                title="Download or Print Offline Trip Pack"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                <span>Offline Pack</span>
-              </button>
+                <Link
+                  href={`/trips/${trip.id}/journal`}
+                  className="h-11 sm:h-12 px-3 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center justify-center gap-1.5 transition-colors truncate shadow-2xs"
+                >
+                  <Printer className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                  <span className="truncate">Journal</span>
+                </Link>
 
-              <Link
-                href={`/trips/${trip.id}/journal`}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#EFE5D2] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5"
-              >
-                <Printer className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Journal</span>
-              </Link>
+                <button
+                  type="button"
+                  onClick={() => openAskVanvas()}
+                  className="h-11 sm:h-12 px-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs truncate"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                  <span className="truncate">Ask VANVAS</span>
+                </button>
+              </div>
 
-              <button
-                onClick={() => openAskVanvas()}
-                className="px-3.5 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#EFE5D2] font-bold text-xs flex items-center gap-1.5 ml-auto cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Ask VANVAS</span>
-              </button>
+              {/* Contextual More Tools Expandable */}
+              <div className="pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setMoreToolsOpen(!moreToolsOpen)}
+                  className="text-[11px] font-mono font-bold text-[#7B4D36] hover:text-[#173B32] flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span>{moreToolsOpen ? "Hide extra tools" : "More trip tools (Offline pack, Invite friends)..."}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${moreToolsOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {moreToolsOpen && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 animate-fadeIn">
+                    <button
+                      type="button"
+                      onClick={() => setOfflinePackOpen(true)}
+                      className="h-9 px-3 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                      <span>Offline Pack</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInviteModalOpen(true)}
+                      className="h-9 px-3 rounded-xl bg-[#EFE5D2] hover:bg-[#E5D5BA] border border-[#E5D5BA] text-xs font-bold text-[#173B32] flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                      <span>Invite Friends</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -731,54 +774,63 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Prominent Action Floating Triggers */}
-            <div className="pt-2 flex flex-wrap gap-3">
-              {/* I'M HERE Main Trigger */}
+            {/* Responsive Trip Actions Area */}
+            <div className="pt-3 space-y-3">
+              {/* Primary Action: Full-width I'M HERE Arrival Mode */}
               <button
+                type="button"
                 id="vanvas-im-here-trigger-btn"
                 data-testid="im-here-trigger-btn"
                 onClick={() => setImHereOpen(true)}
-                className="px-6 py-3 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#EFE5D2] font-bold text-xs uppercase tracking-wider shadow-xl transition-all transform active:scale-95 flex items-center gap-2 cursor-pointer"
+                className="w-full min-h-[54px] p-3.5 sm:p-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF4E8] font-bold shadow-xl transition-all active:scale-[0.99] flex items-center justify-between gap-3 cursor-pointer"
               >
-                <Navigation className="w-4 h-4 text-[#B49252] animate-pulse" />
-                <span>I&rsquo;M HERE ARRIVAL MODE</span>
+                <div className="flex items-center gap-3">
+                  <Navigation className="w-5 h-5 text-[#B49252] animate-pulse shrink-0" />
+                  <div className="text-left">
+                    <span className="block font-serif text-sm sm:text-base tracking-wide uppercase">I’M HERE · ARRIVAL MODE</span>
+                    <span className="block font-mono text-[10px] text-[#FAF4E8]/80 font-normal">Now / Next / Later transit guidance</span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-[#B49252] shrink-0" />
               </button>
 
-              {/* Quick Plan Trigger */}
-              <button
-                onClick={() => setQuickPlanOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Clock className="w-4 h-4 text-[#B49252]" />
-                <span>Plan Next 3 Hours</span>
-              </button>
+              {/* Secondary Actions Grid: Exactly 2 equal columns at 360px+ / 4 columns at tablet+ */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setQuickPlanOpen(true)}
+                  className="h-11 sm:h-12 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#FAF4E8] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer truncate"
+                >
+                  <Clock className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                  <span className="truncate">Plan 3 Hours</span>
+                </button>
 
-              {/* Dynamic Replan Trigger */}
-              <button
-                onClick={() => setReplanOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <CloudRain className="w-4 h-4 text-emerald-300" />
-                <span>Late / Raining / Tired?</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setReplanOpen(true)}
+                  className="h-11 sm:h-12 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#FAF4E8] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer truncate"
+                >
+                  <CloudRain className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                  <span className="truncate">Replan / Late</span>
+                </button>
 
-              {/* Print / Export Journal Trigger */}
-              <Link
-                href={`/trips/${trip.id}/journal`}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#EFE5D2] font-semibold text-xs transition-all flex items-center gap-1.5"
-              >
-                <Printer className="w-4 h-4 text-[#B49252]" />
-                <span>Export Journal</span>
-              </Link>
+                <Link
+                  href={`/trips/${trip.id}/journal`}
+                  className="h-11 sm:h-12 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[#FAF4E8] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors truncate"
+                >
+                  <Printer className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                  <span className="truncate">Export Journal</span>
+                </Link>
 
-              {/* AI Copilot Trigger */}
-              <button
-                onClick={() => openAskVanvas()}
-                className="px-5 py-2.5 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 ml-auto cursor-pointer shadow-xs"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Ask VANVAS</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => openAskVanvas()}
+                  className="h-11 sm:h-12 px-3 rounded-xl bg-[#B49252] hover:bg-[#9E7D3F] text-[#0F2924] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs truncate"
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Ask VANVAS</span>
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -1000,10 +1052,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   isCompact ? (
                     <CompactStayCard
                       hotel={trip.hotel}
-                      onSelect={() => handleTabChange("stays_rentals")}
+                      onSelect={() => setSelectedStayDrawerOpen(true)}
+                      destinationName={trip.destination?.name}
                     />
                   ) : (
-                    <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-3">
+                    <div
+                      onClick={() => setSelectedStayDrawerOpen(true)}
+                      className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs space-y-3 cursor-pointer transition-colors"
+                    >
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
                           आशियाना • Booked Stay
@@ -1014,7 +1070,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                       <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
                       <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
                         <span>Check-in: {trip.hotel.check_in_time}</span>
-                        <span>{trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night}/night` : "Check availability"}</span>
+                        <span>{trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night.toLocaleString()}/night` : "Price not available"}</span>
                       </div>
                     </div>
                   )
@@ -1025,10 +1081,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   isCompact ? (
                     <CompactRentalCard
                       rental={trip.rental}
-                      onSelect={() => handleTabChange("stays_rentals")}
+                      onSelect={() => setSelectedRentalDrawerOpen(true)}
+                      destinationName={trip.destination?.name}
                     />
                   ) : (
-                    <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-3">
+                    <div
+                      onClick={() => setSelectedRentalDrawerOpen(true)}
+                      className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs space-y-3 cursor-pointer transition-colors"
+                    >
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
                           सवारी • Active Scooter
@@ -1039,7 +1099,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                       <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name}</p>
                       <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
                         <span>{trip.rental.location}</span>
-                        <span>{trip.rental.price_per_day ? `₹${trip.rental.price_per_day}/day` : "Price on enquiry"}</span>
+                        <span>{trip.rental.price_per_day ? `₹${trip.rental.price_per_day.toLocaleString()}/day` : "Price not available"}</span>
                       </div>
                     </div>
                   )
@@ -1361,7 +1421,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               {trip.hotel ? (
                 <div className="space-y-2">
                   <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">Booked Stay</span>
-                  <CompactStayCard hotel={trip.hotel} />
+                  <CompactStayCard
+                    hotel={trip.hotel}
+                    onSelect={() => setSelectedStayDrawerOpen(true)}
+                    destinationName={trip.destination?.name}
+                  />
                 </div>
               ) : (
                 <div className="p-6 text-center text-xs text-[#7B4D36] bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA]">No hotel attached yet.</div>
@@ -1370,7 +1434,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               {trip.rental ? (
                 <div className="space-y-2">
                   <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">Scooter / Vehicle</span>
-                  <CompactRentalCard rental={trip.rental} />
+                  <CompactRentalCard
+                    rental={trip.rental}
+                    onSelect={() => setSelectedRentalDrawerOpen(true)}
+                    destinationName={trip.destination?.name}
+                  />
                 </div>
               ) : (
                 <div className="p-6 text-center text-xs text-[#7B4D36] bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA]">No rental attached.</div>
@@ -1512,16 +1580,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
 
                 {trip.hotel ? (
-                  <div className="space-y-3">
+                  <div
+                    onClick={() => setSelectedStayDrawerOpen(true)}
+                    className="space-y-3 cursor-pointer group"
+                  >
                     <img
                       src={trip.hotel.image_url || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600"}
                       alt={trip.hotel.name}
-                      className="w-full h-48 rounded-2xl object-cover border border-[#E5D5BA]"
+                      className="w-full h-48 rounded-2xl object-cover border border-[#E5D5BA] group-hover:border-[#173B32] transition-colors"
                     />
                     <div className="flex items-center justify-between">
-                      <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.hotel.name}</h4>
+                      <h4 className="font-serif font-bold text-base text-[#173B32] group-hover:text-[#B65E3C] transition-colors">{trip.hotel.name}</h4>
                       <span className="text-sm font-mono font-bold text-[#B65E3C]">
-                        {trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night} / night` : "Check availability"}
+                        {trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night.toLocaleString()} / night` : "Price not available"}
                       </span>
                     </div>
                     <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
@@ -1529,6 +1600,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                       <div className="font-semibold text-[#173B32]">Amenities: {trip.hotel.amenities}</div>
                       <div className="text-[#7B4D36]">Check-in: {trip.hotel.check_in_time} • Check-out: {trip.hotel.check_out_time}</div>
                     </div>
+                    <button
+                      type="button"
+                      aria-label={`View details for ${trip.hotel.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedStayDrawerOpen(true);
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF4E8] font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      View Stay Details &amp; Directions →
+                    </button>
                   </div>
                 ) : (
                   <div className="py-8 text-center text-xs text-[#7B4D36]">No hotel attached yet.</div>
@@ -1546,8 +1628,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
 
                 {trip.rental ? (
-                  <div className="space-y-3">
-                    <div className="w-full h-48 rounded-2xl overflow-hidden border border-[#E5D5BA] relative">
+                  <div
+                    onClick={() => setSelectedRentalDrawerOpen(true)}
+                    className="space-y-3 cursor-pointer group"
+                  >
+                    <div className="w-full h-48 rounded-2xl overflow-hidden border border-[#E5D5BA] group-hover:border-[#173B32] transition-colors relative">
                       <VehicleArtwork
                         type={trip.rental.vehicle_type}
                         name={trip.rental.vehicle_name}
@@ -1556,9 +1641,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <h4 className="font-serif font-bold text-base text-[#173B32]">{trip.rental.vehicle_name}</h4>
+                      <h4 className="font-serif font-bold text-base text-[#173B32] group-hover:text-[#B65E3C] transition-colors">{trip.rental.vehicle_name}</h4>
                       <span className="text-sm font-mono font-bold text-[#173B32]">
-                        {trip.rental.price_per_day ? `₹${trip.rental.price_per_day} / day` : "Price on enquiry"}
+                        {trip.rental.price_per_day ? `₹${trip.rental.price_per_day.toLocaleString()} / day` : "Price not available"}
                       </span>
                     </div>
                     <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name} • Deposit: ₹{trip.rental.deposit_amount}</p>
@@ -1566,6 +1651,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                       <div className="font-semibold text-[#173B32]">Pickup: {trip.rental.location}</div>
                       <div className="text-[#7B4D36]">Operating Hours: {trip.rental.opening_hours}</div>
                     </div>
+                    <button
+                      type="button"
+                      aria-label={`View rental details for ${trip.rental.vehicle_name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedRentalDrawerOpen(true);
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF4E8] font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      View Rental Details &amp; Location →
+                    </button>
                   </div>
                 ) : (
                   <div className="py-8 text-center text-xs text-[#7B4D36]">No rental attached.</div>
@@ -1876,6 +1972,24 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           );
         }}
       />
+      {/* Contextual Stay & Rental Detail Drawers */}
+      {trip.hotel && (
+        <StayDetailDrawer
+          hotel={trip.hotel}
+          isOpen={selectedStayDrawerOpen}
+          onClose={() => setSelectedStayDrawerOpen(false)}
+          destinationName={trip.destination?.name}
+        />
+      )}
+
+      {trip.rental && (
+        <RentalDetailDrawer
+          rental={trip.rental}
+          isOpen={selectedRentalDrawerOpen}
+          onClose={() => setSelectedRentalDrawerOpen(false)}
+          destinationName={trip.destination?.name}
+        />
+      )}
     </div>
   );
 }

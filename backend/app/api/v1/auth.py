@@ -537,7 +537,9 @@ async def upload_avatar(
         avatar_url = StorageService.upload_profile_photo(
             storage_key=storage_key,
             file_bytes=webp_bytes,
-            content_type="image/webp"
+            content_type="image/webp",
+            user_id=current_user.id,
+            db=db
         )
     except StorageServiceException as e:
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE if ("NOT_CONFIGURED" in e.code or "DISABLED" in e.code) else status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -549,7 +551,7 @@ async def upload_avatar(
     # Clean up old avatar if exists
     if current_user.avatar_storage_key and current_user.avatar_storage_key != storage_key:
         try:
-            StorageService.delete_profile_photo(current_user.avatar_storage_key)
+            StorageService.delete_profile_photo(current_user.avatar_storage_key, db=db)
         except Exception:
             pass
 
@@ -592,7 +594,7 @@ def select_avatar_preset(
     # Clean up uploaded storage key if any
     if current_user.avatar_storage_key:
         try:
-            StorageService.delete_profile_photo(current_user.avatar_storage_key)
+            StorageService.delete_profile_photo(current_user.avatar_storage_key, db=db)
         except Exception:
             pass
         current_user.avatar_storage_key = None
@@ -617,7 +619,7 @@ def delete_avatar(
 ):
     if current_user.avatar_storage_key:
         try:
-            StorageService.delete_profile_photo(current_user.avatar_storage_key)
+            StorageService.delete_profile_photo(current_user.avatar_storage_key, db=db)
         except Exception:
             pass
 
@@ -636,14 +638,14 @@ def delete_avatar(
     )
 
 @router.get("/profile/avatar/file/{key_path:path}")
-def serve_avatar_file(key_path: str):
+def serve_avatar_file(key_path: str, db: Session = Depends(get_db)):
     if ".." in key_path or key_path.startswith("/") or key_path.startswith("\\"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid file path."
         )
 
-    avatar_bytes, mime_type = StorageService.read_local_avatar(key_path)
+    avatar_bytes, mime_type = StorageService.read_local_avatar(key_path, db=db)
     if avatar_bytes is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

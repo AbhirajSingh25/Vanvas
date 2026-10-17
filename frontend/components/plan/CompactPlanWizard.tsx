@@ -687,16 +687,22 @@ export const CompactPlanWizard: React.FC<CompactPlanWizardProps> = ({
             </div>
 
             {/* Total Budget Plain Display */}
-            <div className="p-3 rounded-xl bg-[#FAF7F0] border border-[#B49252]/40 space-y-1 text-xs font-mono">
+            <div className="p-3 rounded-xl bg-[#FAF7F0] border border-[#B49252]/40 space-y-1.5 text-xs font-mono">
               <div className="flex items-center justify-between text-[#173B32]">
-                <span>Total Estimated Trip Budget:</span>
+                <span className="font-bold">Total Estimated Budget:</span>
                 <strong className="text-sm font-black text-[#B65E3C]">
                   ₹{budgetEstimate.toLocaleString()}
                 </strong>
               </div>
-              <div className="text-[10px] text-[#7B4D36] flex items-center justify-between">
+              <div className="flex items-center justify-between text-[11px] text-[#173B32] border-t border-[#E5D5BA]/60 pt-1">
+                <span>Per traveller:</span>
+                <span className="font-bold text-[#173B32]">
+                  ₹{Math.round(budgetEstimate / Math.max(1, travellersCount)).toLocaleString()} / traveller
+                </span>
+              </div>
+              <div className="text-[10px] text-[#7B4D36] flex items-center justify-between pt-0.5">
                 <span>Basis: {daysCount} Days · {travellersCount} {travellersCount > 1 ? "Travellers" : "Traveller"}</span>
-                <span>Est. not a fixed quote</span>
+                <span>Indicative estimate · verified on booking</span>
               </div>
             </div>
           </div>

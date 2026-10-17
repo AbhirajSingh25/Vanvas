@@ -125,6 +125,27 @@ def ensure_database_schema(eng=engine):
                         conn.commit()
                         logger.info(f"Migrated schema: added {col_name} to users table.")
 
+            # Check and create/migrate `user_avatar_blobs` table
+            if "user_avatar_blobs" not in existing_tables:
+                is_sqlite = eng.url.get_backend_name() == "sqlite"
+                data_col_type = "BLOB" if is_sqlite else "BYTEA"
+                conn.execute(text(f"""
+                    CREATE TABLE user_avatar_blobs (
+                        id VARCHAR(36) PRIMARY KEY,
+                        user_id VARCHAR(36) NOT NULL,
+                        storage_key VARCHAR(255) UNIQUE NOT NULL,
+                        data {data_col_type} NOT NULL,
+                        content_type VARCHAR(100) DEFAULT 'image/webp' NOT NULL,
+                        byte_size INTEGER NOT NULL,
+                        created_at TIMESTAMP NULL,
+                        updated_at TIMESTAMP NULL
+                    )
+                """))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_user_avatar_blobs_user_id ON user_avatar_blobs (user_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_user_avatar_blobs_storage_key ON user_avatar_blobs (storage_key)"))
+                conn.commit()
+                logger.info("Migrated schema: created user_avatar_blobs table.")
+
             # Check and migrate `user_preferences` table
             if "user_preferences" in existing_tables:
                 pref_cols = {col["name"] for col in inspector.get_columns("user_preferences")}
