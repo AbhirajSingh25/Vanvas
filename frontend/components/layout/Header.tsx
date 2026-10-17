@@ -376,9 +376,9 @@ export const Header: React.FC = () => {
         <div className="flex-1 text-center px-2 min-w-0">
           {currentRouteMeta.title ? (
             <>
-              <h1 className="text-xs sm:text-sm font-serif font-bold text-[#173B32] truncate">
+              <p className="text-xs sm:text-sm font-serif font-bold text-[#173B32] truncate">
                 {currentRouteMeta.title}
-              </h1>
+              </p>
               {currentRouteMeta.hindi && (
                 <p className="text-[10px] font-devanagari text-[#7B4D36] opacity-75 truncate -mt-0.5">
                   {currentRouteMeta.hindi}

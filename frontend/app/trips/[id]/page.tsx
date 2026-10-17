@@ -50,6 +50,8 @@ import { TripWorkspaceSkeleton, ItineraryItemSkeleton } from "@/components/ui/Pa
 import { EmptyState } from "@/components/ui/EmptyState";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { resolvePlaceArtwork } from "@/lib/placeVisualResolver";
+import { findCanonicalDestination } from "@/lib/canonicalDestinations";
+import { evaluateTripDayCadence, formatReadableDate } from "@/lib/tripDateUtils";
 import { Booking } from "@/types";
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -68,6 +70,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     }
     return null;
   });
+
+  const canonicalDest = React.useMemo(() => {
+    if (!trip) return null;
+    return findCanonicalDestination(trip.destination_id || trip.destination?.slug || trip.destination?.name || "");
+  }, [trip]);
+
+  const resolvedDestinationName = trip?.destination?.name || canonicalDest?.name || "Himalayan Sanctuary";
+  const resolvedTripTitle = trip?.title || `${resolvedDestinationName} Expedition`;
+  const resolvedState = trip?.destination?.state || canonicalDest?.state || "Himachal Pradesh";
+  const resolvedRegion = trip?.destination?.region || canonicalDest?.region || "Himalayan Foothills";
+
   const [tripWeather, setTripWeather] = useState<StructuredWeather | null>(null);
   const [budgetData, setBudgetData] = useState<BudgetSummary | null>(null);
   const [groupData, setGroupData] = useState<GroupSummary | null>(null);
@@ -102,6 +115,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const urlTab = searchParams?.get("tab");
   const [activeTab, setActiveTab] = useState<string>(() => resolveValidTab(urlTab));
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
+
+  const dayCadence = React.useMemo(() => {
+    if (!trip?.start_date) return null;
+    return evaluateTripDayCadence(trip.start_date, trip.end_date, selectedDayNumber || 1);
+  }, [trip?.start_date, trip?.end_date, selectedDayNumber]);
 
   const handleTabChange = (tabId: string) => {
     const valid = resolveValidTab(tabId);
@@ -224,6 +242,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const loadTripData = async () => {
     try {
       const t = await api.getTrip(tripId);
+      if (!t.destination && t.destination_id) {
+        const canonical = findCanonicalDestination(t.destination_id);
+        if (canonical) {
+          t.destination = canonical as any;
+        }
+      }
       setTrip(t);
       setIsOfflineMode(false);
       if (typeof window !== "undefined") {
@@ -489,19 +513,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     FIELD PLAN
                   </span>
                   <span className="text-xs font-mono text-[#7B4D36]">
-                    {trip.destination?.state || "Himachal Pradesh"}
+                    {resolvedDestinationName}, {resolvedState}
                   </span>
                 </div>
 
                 <h1 className="text-3xl sm:text-4xl font-serif font-black tracking-tight text-[#173B32]">
-                  {trip.destination?.name?.toUpperCase() || "MANALI"}
+                  {resolvedTripTitle.toUpperCase()}
                 </h1>
               </div>
 
               {/* Compact Summary Chips: DATES · TRAVELLERS · BUDGET · STYLE */}
               <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
                 <span className="px-3 py-1.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] font-bold">
-                  {trip.start_date && trip.end_date ? `${trip.start_date.slice(5)} → ${trip.end_date.slice(5)}` : "12–16 OCT"}
+                  {trip.start_date && trip.end_date ? `${formatReadableDate(trip.start_date)} → ${formatReadableDate(trip.end_date)}` : "DATES PENDING"}
                 </span>
                 <span className="px-3 py-1.5 rounded-xl bg-[#EFE5D2] border border-[#E5D5BA] text-[#173B32] font-bold">
                   {trip.num_days} DAYS · {trip.travellers_count || 2} TRAVELLERS
@@ -750,13 +774,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <div>
                 <span className="text-sm font-serif text-[#B49252] block">तुम्हारी यात्रा • Active Expedition</span>
                 <h1 className="text-3xl sm:text-6xl font-serif font-black tracking-tight text-[#EFE5D2]">
-                  {trip.destination?.name || "Himalayan"} Trail Hub
+                  {resolvedTripTitle}
                 </h1>
                 <p className="text-xs text-[#D8DED5] mt-1.5 flex items-center gap-2 font-mono">
                   <MapPin className="w-3.5 h-3.5 text-[#B65E3C]" />
-                  <span>{trip.destination?.state}, {trip.destination?.region}</span>
+                  <span>{resolvedDestinationName}, {resolvedState} • {resolvedRegion}</span>
                   <span>•</span>
-                  <span>{trip.start_date} to {trip.end_date}</span>
+                  <span>{formatReadableDate(trip.start_date)} to {formatReadableDate(trip.end_date)} ({trip.num_days} Days)</span>
                 </p>
               </div>
 
@@ -840,7 +864,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       <div
         id="trip-tabs-navigation"
         style={{ top: "var(--vanvas-top-offset, 4rem)" }}
-        className="sticky z-30 bg-[#FAF7F0] border-b-2 border-[#E5D5BA] shadow-xs"
+        className="sticky z-25 bg-[#FAF7F0]/95 backdrop-blur-md border-b-2 border-[#E5D5BA] shadow-xs"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1.5 overflow-x-auto py-2 scrollbar-none">
           {[
@@ -880,7 +904,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* Tab Content Panels */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 scroll-mt-28">
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
           <div className="space-y-6 animate-fadeIn">
@@ -965,146 +989,179 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             {/* Arrival Optimizer Card */}
             {arrivalData && <ArrivalOptimizerCard data={arrivalData} />}
 
-            {/* Today's Highlight Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-              {/* Active Day Highlight */}
-              <div className="md:col-span-2 p-5 sm:p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-3.5">
-                <div className="flex items-center justify-between border-b border-[#E5D5BA]/70 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-[#173B32] text-[#EFE5D2] text-[10px] font-mono font-bold tracking-wider uppercase">
-                      TODAY
-                    </span>
-                    <h3 className="font-serif font-black text-lg text-[#173B32]">
-                      DAY {String(selectedDayNumber || 1).padStart(2, "0")}
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => handleTabChange("itinerary")}
-                    className="text-xs font-mono font-bold text-[#B65E3C] hover:text-[#9E4D2E] uppercase tracking-wider cursor-pointer"
-                  >
-                    VIEW FULL DAY →
-                  </button>
+            {/* Active Day Highlight (Full Width) */}
+            <div className="p-5 sm:p-7 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-[#E5D5BA]/70 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase ${
+                    dayCadence?.status === "today"
+                      ? "bg-emerald-700 text-white"
+                      : dayCadence?.status === "upcoming"
+                      ? "bg-[#173B32] text-[#EFE5D2]"
+                      : "bg-[#7B4D36] text-[#FAF7F0]"
+                  }`}>
+                    {dayCadence?.badgeLabel || "DAY"}
+                  </span>
+                  <h3 className="font-serif font-black text-lg sm:text-xl text-[#173B32]">
+                    {dayCadence ? `DAY ${String(selectedDayNumber || 1).padStart(2, "0")} · ${dayCadence.dayDateStr.toUpperCase()}` : `DAY ${String(selectedDayNumber || 1).padStart(2, "0")}`}
+                  </h3>
                 </div>
+                <button
+                  onClick={() => handleTabChange("itinerary")}
+                  className="text-xs font-mono font-bold text-[#B65E3C] hover:text-[#9E4D2E] uppercase tracking-wider cursor-pointer flex items-center gap-1"
+                >
+                  <span>VIEW FULL DAY</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-                {isCompact ? (
-                  <div className="space-y-2">
-                    {currentDayItinerary?.items.slice(0, 4).map((item) => (
-                      <CompactItineraryItem
+              {isCompact ? (
+                <div className="space-y-2">
+                  {currentDayItinerary?.items.slice(0, 4).map((item) => (
+                    <CompactItineraryItem
+                      key={item.id}
+                      item={item}
+                      destinationName={resolvedDestinationName}
+                      onToggleStatus={handleToggleItemStatus}
+                      onToggleLock={handleToggleLock}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                  {currentDayItinerary?.items.slice(0, 3).map((item) => {
+                    const visual = resolvePlaceArtwork(
+                      item.title,
+                      resolvedDestinationName,
+                      item.category,
+                      item.image_url,
+                      false,
+                      undefined
+                    );
+                    return (
+                      <div
                         key={item.id}
-                        item={item}
-                        destinationName={trip.destination?.name || ""}
-                        onToggleStatus={handleToggleItemStatus}
-                        onToggleLock={handleToggleLock}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {currentDayItinerary?.items.slice(0, 3).map((item, idx) => {
-                      const visual = resolvePlaceArtwork(
-                        item.title,
-                        trip.destination?.name || "",
-                        item.category,
-                        item.image_url,
-                        false,
-                        undefined
-                      );
-                      return (
-                        <div
-                          key={idx}
-                          className="p-3.5 sm:p-4 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center gap-3.5"
-                        >
-                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[#FAF7F0] shrink-0 border border-[#E5D5BA]">
-                            <VanvasImage
-                              src={visual.imageUrl}
-                              fallbackSrc={visual.fallbackUrl}
-                              alt={item.title}
-                              className="w-full h-full object-cover"
-                            />
+                        className="p-3.5 rounded-2xl bg-white border border-[#E5D5BA] hover:border-[#173B32] transition-colors flex items-center gap-3.5"
+                      >
+                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-[#E5D5BA] shrink-0 border border-[#E5D5BA]">
+                          <VanvasImage
+                            src={visual.imageUrl}
+                            fallbackSrc={visual.fallbackUrl}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#7B4D36]">
+                            <span className="font-bold text-[#173B32]">{item.start_time || "Morning"}</span>
+                            <span>•</span>
+                            <span className="uppercase truncate">{item.category}</span>
                           </div>
-                          <span className="px-2.5 py-1 rounded bg-[#173B32] text-[#EFE5D2] text-xs font-bold font-mono shrink-0">
-                            {item.start_time}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-serif font-bold text-base text-[#173B32] truncate">{item.title}</div>
-                            <p className="text-xs text-[#20211D]/75 mt-0.5 font-light line-clamp-1">{item.notes}</p>
+                          <h4 className="font-serif font-bold text-sm text-[#173B32] truncate mt-0.5">{item.title}</h4>
+                          <p className="text-xs text-[#20211D]/75 font-light line-clamp-1">{item.notes}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Travel Intelligence: Weather, Stay & Mobility Adaptive Grid */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#B65E3C]">
+                  Travel Intelligence &amp; Sanctuaries
+                </span>
+              </div>
+
+              {(() => {
+                const hasWeather = Boolean(trip.destination || canonicalDest);
+                const hasHotel = Boolean(trip.hotel);
+                const hasRental = Boolean(trip.rental);
+                const cardCount = (hasWeather ? 1 : 0) + (hasHotel ? 1 : 0) + (hasRental ? 1 : 0);
+
+                const gridClass = cardCount === 1
+                  ? "grid grid-cols-1 max-w-xl mx-auto gap-6"
+                  : cardCount === 2
+                  ? "grid grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto gap-6"
+                  : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
+
+                return (
+                  <div className={gridClass}>
+                    {/* Destination Weather Live Card */}
+                    {hasWeather && (
+                      <VanvasWeatherCard
+                        destinationName={resolvedDestinationName}
+                        structuredWeather={tripWeather}
+                        isCompact={isCompact}
+                      />
+                    )}
+
+                    {/* Stay Card */}
+                    {hasHotel && trip.hotel && (
+                      isCompact ? (
+                        <CompactStayCard
+                          hotel={trip.hotel}
+                          onSelect={() => setSelectedStayDrawerOpen(true)}
+                          destinationName={resolvedDestinationName}
+                        />
+                      ) : (
+                        <div
+                          onClick={() => setSelectedStayDrawerOpen(true)}
+                          className="p-5 sm:p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs space-y-3 cursor-pointer transition-colors flex flex-col justify-between"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
+                                आशियाना • Booked Stay
+                              </span>
+                              <span className="text-xs font-bold text-[#B65E3C]">{trip.hotel.badge}</span>
+                            </div>
+                            <h4 className="font-serif font-bold text-lg text-[#173B32] leading-snug">{trip.hotel.name}</h4>
+                            <p className="text-xs text-[#7B4D36] line-clamp-2">{trip.hotel.address}</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
+                            <span>Check-in: {trip.hotel.check_in_time}</span>
+                            <span>{trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night.toLocaleString()}/night` : "Price not available"}</span>
                           </div>
                         </div>
-                      );
-                    })}
+                      )
+                    )}
+
+                    {/* Scooter/Vehicle Rental Card */}
+                    {hasRental && trip.rental && (
+                      isCompact ? (
+                        <CompactRentalCard
+                          rental={trip.rental}
+                          onSelect={() => setSelectedRentalDrawerOpen(true)}
+                          destinationName={resolvedDestinationName}
+                        />
+                      ) : (
+                        <div
+                          onClick={() => setSelectedRentalDrawerOpen(true)}
+                          className="p-5 sm:p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs space-y-3 cursor-pointer transition-colors flex flex-col justify-between"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
+                                सवारी • Verified Mobility
+                              </span>
+                              <span className="text-xs font-bold text-[#B65E3C]">{trip.rental.vehicle_type}</span>
+                            </div>
+                            <h4 className="font-serif font-bold text-lg text-[#173B32] leading-snug">{trip.rental.vehicle_name}</h4>
+                            <p className="text-xs text-[#7B4D36]">{trip.rental.provider_name} • {trip.rental.location || "Central Pickup"}</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
+                            <span>Pickup Ready</span>
+                            <span>{trip.rental.price_per_day ? `₹${trip.rental.price_per_day.toLocaleString()}/day` : "Price on enquiry"}</span>
+                          </div>
+                        </div>
+                      )
+                    )}
                   </div>
-                )}
-              </div>
-
-              {/* Weather & Stay Card */}
-              <div className="space-y-4">
-                {/* Destination Weather Live Card */}
-                {trip.destination && (
-                  <VanvasWeatherCard
-                    destinationName={trip.destination.name}
-                    structuredWeather={tripWeather}
-                    isCompact={isCompact}
-                  />
-                )}
-
-                {/* Stay Card */}
-                {trip.hotel && (
-                  isCompact ? (
-                    <CompactStayCard
-                      hotel={trip.hotel}
-                      onSelect={() => setSelectedStayDrawerOpen(true)}
-                      destinationName={trip.destination?.name}
-                    />
-                  ) : (
-                    <div
-                      onClick={() => setSelectedStayDrawerOpen(true)}
-                      className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs space-y-3 cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
-                          आशियाना • Booked Stay
-                        </span>
-                        <span className="text-xs font-bold text-[#B65E3C]">{trip.hotel.badge}</span>
-                      </div>
-                      <h4 className="font-serif font-bold text-lg text-[#173B32]">{trip.hotel.name}</h4>
-                      <p className="text-xs text-[#7B4D36]">{trip.hotel.address}</p>
-                      <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
-                        <span>Check-in: {trip.hotel.check_in_time}</span>
-                        <span>{trip.hotel.price_per_night ? `₹${trip.hotel.price_per_night.toLocaleString()}/night` : "Price not available"}</span>
-                      </div>
-                    </div>
-                  )
-                )}
-
-                {/* Scooter Rental Card */}
-                {trip.rental && (
-                  isCompact ? (
-                    <CompactRentalCard
-                      rental={trip.rental}
-                      onSelect={() => setSelectedRentalDrawerOpen(true)}
-                      destinationName={trip.destination?.name}
-                    />
-                  ) : (
-                    <div
-                      onClick={() => setSelectedRentalDrawerOpen(true)}
-                      className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32] shadow-xs space-y-3 cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#7B4D36]">
-                          सवारी • Active Scooter
-                        </span>
-                        <span className="text-xs font-bold text-emerald-800">Ready for pickup</span>
-                      </div>
-                      <h4 className="font-serif font-bold text-lg text-[#173B32]">{trip.rental.vehicle_name}</h4>
-                      <p className="text-xs text-[#7B4D36]">Provider: {trip.rental.provider_name}</p>
-                      <div className="p-3 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between font-mono">
-                        <span>{trip.rental.location}</span>
-                        <span>{trip.rental.price_per_day ? `₹${trip.rental.price_per_day.toLocaleString()}/day` : "Price not available"}</span>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
+                );
+              })()}
             </div>
 
             {/* Trip Fellowship / Members Section */}

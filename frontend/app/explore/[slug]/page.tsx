@@ -22,6 +22,7 @@ import { VanvasImage } from "@/components/ui/VanvasImage";
 import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
+import { DestinationReelsCarousel } from "@/components/destinations/DestinationReelsCarousel";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
 import { getCanonicalHindiName, findCanonicalDestination } from "@/lib/canonicalDestinations";
@@ -58,6 +59,22 @@ const TRAVELLER_PROFILES = [
 const ACCOMMODATION_TYPES = [
   "All", "Homestay", "Hostel", "Hotel", "Camp", "Boutique", "Resort", "Heritage", "Dorm", "Private"
 ];
+
+function getCatalogueGridClass(count: number, isCompact: boolean = false): string {
+  if (count <= 1) {
+    return isCompact
+      ? "grid grid-cols-1 max-w-md mx-auto gap-2.5 sm:gap-3"
+      : "grid grid-cols-1 max-w-xl mx-auto gap-6";
+  }
+  if (count === 2) {
+    return isCompact
+      ? "grid grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto gap-2.5 sm:gap-3"
+      : "grid grid-cols-1 sm:grid-cols-2 max-w-4xl mx-auto gap-6";
+  }
+  return isCompact
+    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3"
+    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+}
 
 interface DestinationTravelGuide {
   seasonality: string;
@@ -601,6 +618,75 @@ export default function DestinationDetailPage() {
                 source: "vanvas_curated",
               }
             ]);
+            setRentals([
+              {
+                id: "kainchi-scooter-1",
+                destination_id: canon.id,
+                vehicle_name: "Honda Activa 6G (Bhowali-Kainchi Fleet)",
+                vehicle_type: "Scooter",
+                price_per_day: 650,
+                provider_name: "Kumaon Valley Wheels",
+                location: "Bhowali Taxi Stand (8km from Kainchi)",
+                latitude: 29.3800,
+                longitude: 79.5200,
+                image_url: "/images/vehicles/kainchi_bhowali_scooter.webp",
+                rating: 4.8,
+              },
+              {
+                id: "kainchi-bike-1",
+                destination_id: canon.id,
+                vehicle_name: "Royal Enfield Classic 350",
+                vehicle_type: "Motorcycle",
+                price_per_day: 1400,
+                provider_name: "Nainital Moto Expedition",
+                location: "Kathgodam Junction & Bhowali",
+                latitude: 29.3800,
+                longitude: 79.5200,
+                image_url: "/images/vehicles/kainchi_kumaon_bike.webp",
+                rating: 4.9,
+              },
+            ]);
+            setHotels([
+              {
+                id: "stay-bara-bungalow",
+                destination_id: canon.id,
+                name: "Bara Bungalow Gethia 1898 Heritage",
+                accommodation_type: "Heritage Boutique",
+                rating: 4.9,
+                price_per_night: 6800,
+                address: "Gethia, Near Bhowali, Nainital",
+                latitude: 29.3650,
+                longitude: 79.5050,
+                image_url: "/images/places/kainchi-dham/stays/bara-bungalow-gethia-1898-heritage.webp",
+              },
+              {
+                id: "stay-rosefinch",
+                destination_id: canon.id,
+                name: "The Rosefinch Sarovar Portico",
+                accommodation_type: "Lakeside Resort",
+                rating: 4.8,
+                price_per_night: 4200,
+                address: "Bhimtal Lake Road, Nainital",
+                latitude: 29.3500,
+                longitude: 79.5500,
+                image_url: "/images/places/kainchi-dham/stays/rosefinch-sarovar-portico.webp",
+              },
+            ]);
+            setCurrentWeather({
+              temperature: 19,
+              condition: "Crisp Valley Sun",
+              humidity: 52,
+              windSpeed: 8,
+              is_available: true,
+              location: "Kainchi Dham",
+              daily: [
+                { date: "2026-10-17", temp_c: 19, temperature_max: 19, temperature_min: 11, condition: "Sunny", is_rain: false, humidity: 52, wind_kph: 8, precipitation_prob: 0 },
+                { date: "2026-10-18", temp_c: 20, temperature_max: 20, temperature_min: 12, condition: "Clear", is_rain: false, humidity: 50, wind_kph: 7, precipitation_prob: 0 },
+                { date: "2026-10-19", temp_c: 18, temperature_max: 18, temperature_min: 10, condition: "Misty", is_rain: false, humidity: 60, wind_kph: 9, precipitation_prob: 10 },
+                { date: "2026-10-20", temp_c: 17, temperature_max: 17, temperature_min: 9, condition: "Partly Cloudy", is_rain: false, humidity: 55, wind_kph: 8, precipitation_prob: 15 },
+                { date: "2026-10-21", temp_c: 18, temperature_max: 18, temperature_min: 10, condition: "Sunny", is_rain: false, humidity: 48, wind_kph: 8, precipitation_prob: 5 },
+              ],
+            });
           } else {
             setPlaces([]);
           }
@@ -638,6 +724,7 @@ export default function DestinationDetailPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchDestination();
   }, [slug]);
 
@@ -865,6 +952,13 @@ export default function DestinationDetailPage() {
             isCompact={true}
           />
 
+          {/* Destination In-App Reels Carousel: See It. Plan It. */}
+          <DestinationReelsCarousel
+            destinationSlug={destination.slug || slug}
+            destinationName={destination.name}
+            className="rounded-2xl border border-[#E5D5BA]"
+          />
+
           {/* PLACES SECTION (COMPACT 2-COLUMN GRID) */}
           {(activeMode === "overview" || activeMode === "places") && (
             <div className="space-y-3">
@@ -874,7 +968,7 @@ export default function DestinationDetailPage() {
                   <span>Curated Places ({places.length})</span>
                 </h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+              <div className={getCatalogueGridClass(places.length, true)}>
                 {places.map((place) => (
                   <CompactPlaceCard
                     key={place.id}
@@ -899,7 +993,7 @@ export default function DestinationDetailPage() {
                   <span>Stays &amp; Sanctuaries ({hotels.length})</span>
                 </h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+              <div className={getCatalogueGridClass(hotels.length, true)}>
                 {hotels.map((hotel) => (
                   <CompactStayCard
                     key={hotel.id}
@@ -923,7 +1017,7 @@ export default function DestinationDetailPage() {
                   <span>Get Around / Rentals ({rentals.length})</span>
                 </h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+              <div className={getCatalogueGridClass(rentals.length, true)}>
                 {rentals.map((rental) => (
                   <CompactRentalCard
                     key={rental.id}
@@ -1092,6 +1186,13 @@ export default function DestinationDetailPage() {
         {/* MODE: OVERVIEW */}
         {activeMode === "overview" && (
           <div className="space-y-12 animate-fadeIn">
+            {/* Destination In-App Reels Carousel: See It. Plan It. */}
+            <DestinationReelsCarousel
+              destinationSlug={destination.slug || slug}
+              destinationName={destination.name}
+              className="rounded-3xl border-2 border-[#E5D5BA]"
+            />
+
             {/* Sanctuary Dispatch Overview */}
             {isCurated && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -1373,7 +1474,7 @@ export default function DestinationDetailPage() {
             </div>
 
             {/* Places Grid with Normalized Frames */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={getCatalogueGridClass(filteredPlaces.length, false)}>
               {filteredPlaces.slice(0, placesVisibleCount).map((place) => (
                 <PlaceCard
                   key={place.id}
@@ -1504,7 +1605,7 @@ export default function DestinationDetailPage() {
               </div>
             ) : hotels.length > 0 ? (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className={getCatalogueGridClass(hotels.length, false)}>
                   {hotels.slice(0, 3).map((h) => {
                     const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
                     const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
@@ -1707,7 +1808,7 @@ export default function DestinationDetailPage() {
                 ))}
               </div>
             ) : rentals.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className={getCatalogueGridClass(rentals.length, false)}>
                 {rentals.map((r) => {
                   const vStatus = r.data_state || r.verification_status || "VERIFIED";
                   const isLiveProvider = vStatus === "LIVE" || vStatus === "LIVE_PROVIDER";

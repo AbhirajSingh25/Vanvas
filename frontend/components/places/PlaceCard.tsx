@@ -77,36 +77,19 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
         <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924]/80 via-transparent to-black/15 pointer-events-none" />
 
         {/* Category Stamp & Source Badge */}
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-          <span className="px-2.5 py-0.5 rounded-md bg-[#173B32]/90 backdrop-blur-md text-[#EFE5D2] text-[10px] font-bold tracking-wider uppercase border border-[#536B52]/40">
-            {safeCategory}
-          </span>
-          {!isCompact && (
-            <span
-              className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider ${
-                place.data_state === "STALE"
-                  ? "bg-amber-800/90 text-amber-100 border border-amber-500/40"
-                  : visualRes.badgeLabel === "LIVE PLACE PHOTO" || isLive
-                  ? "bg-emerald-600/90 text-white border border-emerald-400/40"
-                  : visualRes.badgeLabel === "EXACT PLACE PHOTO"
-                  ? "bg-emerald-700/90 text-emerald-100 border border-emerald-400"
-                  : visualRes.badgeLabel === "VANVAS PLACE ARTWORK"
-                  ? "bg-[#B49252]/90 text-[#0F2924] border border-[#B49252]"
-                  : visualRes.badgeLabel === "DESTINATION CATEGORY ART"
-                  ? "bg-[#173B32]/90 text-[#FAF4E8] border border-[#536B52]"
-                  : visualRes.badgeLabel === "DESTINATION ART"
-                  ? "bg-[#3F4F42]/90 text-[#FAF4E8] border border-[#536B52]"
-                  : visualRes.badgeLabel === "REGIONAL ART"
-                  ? "bg-[#7B4D36]/90 text-[#FAF4E8] border border-[#7B4D36]"
-                  : "bg-neutral-800/90 text-neutral-200 border border-neutral-600"
-              }`}
-            >
-              {place.data_state === "STALE" ? "STALE" : visualRes.badgeLabel}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          {place.is_hidden_gem ? (
+            <span className="px-2.5 py-0.5 rounded-md bg-[#B49252] text-[#0F2924] text-[10px] font-black uppercase tracking-wider shadow-xs">
+              Hidden Gem
+            </span>
+          ) : (
+            <span className="px-2.5 py-0.5 rounded-md bg-[#173B32]/90 backdrop-blur-md text-[#EFE5D2] text-[10px] font-bold tracking-wider uppercase border border-[#536B52]/40">
+              {safeCategory}
             </span>
           )}
-          {place.is_hidden_gem && (
-            <span className="px-2 py-0.5 rounded-md bg-[#B49252] text-[#0F2924] text-[10px] font-black uppercase tracking-wider shadow-xs">
-              Hidden Gem
+          {visualRes.badgeLabel === "EXACT PLACE PHOTO" && (
+            <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-emerald-700/90 text-emerald-100 border border-emerald-400">
+              Exact Photo
             </span>
           )}
         </div>

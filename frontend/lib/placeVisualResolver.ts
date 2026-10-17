@@ -183,7 +183,7 @@ export const EXACT_PLACE_REGISTRY: Record<string, ExactPlaceEntry> = {
     semanticTheme: "nature",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["baba-thakur-das", "baba-thakur-das-and-sons-origin-of-alwar-kalakand", "baba-thakur-das-kalakand", "origin-of-alwar-kalakand", "sons"]
+    aliases: ["baba-thakur-das", "baba-thakur-das-and-sons-origin-of-alwar-kalakand", "baba-thakur-das-kalakand", "origin-of-alwar-kalakand"]
   },
   "alwar-siliserh:jai-samand-lake-oasis": {
     imageUrl: "/images/places/alwar-siliserh/jai-samand-lake-alwar.webp",
@@ -723,7 +723,7 @@ export const EXACT_PLACE_REGISTRY: Record<string, ExactPlaceEntry> = {
     semanticTheme: "nature",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["neem-karoli-baba-ashram", "neem-karoli-baba-sacred-ashram", "neem-karoli-baba-sacred-ashram-and-temple", "temple"]
+    aliases: ["neem-karoli-baba-ashram", "neem-karoli-baba-sacred-ashram", "neem-karoli-baba-sacred-ashram-and-temple"]
   },
   "kainchi-dham:bhowali-fruit-market-and-tea-terraces": {
     imageUrl: "/images/places/kainchi-dham/bhowali-fruit-orchards.webp",
@@ -1497,7 +1497,7 @@ export const EXACT_PLACE_REGISTRY: Record<string, ExactPlaceEntry> = {
     semanticTheme: "nature",
     sourceType: "editorial_artwork",
     source: "vanvas_curated",
-    aliases: ["baba-khetanath-ashram", "baba-khetanath-hilltop-ashram", "baba-khetanath-hilltop-ashram-and-ridge", "ridge"]
+    aliases: ["baba-khetanath-ashram", "baba-khetanath-hilltop-ashram", "baba-khetanath-hilltop-ashram-and-ridge"]
   },
   "neemrana:siliserh-lake-gateway-en-route": {
     imageUrl: "/images/places/neemrana/siliserh-en-route-neemrana.webp",
@@ -4466,12 +4466,13 @@ export const HOTEL_ALIAS_MAP: Record<string, string> = {
 const GENERIC_WORDS_SET = new Set([
   "hotel", "resort", "homestay", "hostel", "guesthouse", "guest-house", "cottage", "palace", "haveli",
   "cafe", "cafes", "restaurant", "dhaba", "dining", "retreat", "sanctuary", "temple", "monastery",
-  "ashram", "waterfall", "falls", "lake", "viewpoint", "point", "sunset", "trail", "trek", "park",
+  "ashram", "waterfall", "falls", "lake", "lakes", "viewpoint", "point", "sunset", "trail", "trek", "park",
   "garden", "gardens", "bazaar", "market", "chowk", "ghat", "dham", "mandir", "wood", "woods", "stone",
-  "himalayan", "apple", "orchard", "loft", "lodge", "camp", "camps", "villa", "villas", "inn", "house",
+  "himalayan", "apple", "orchard", "orchards", "loft", "lodge", "camp", "camps", "villa", "villas", "inn", "house",
   "hub", "fleet", "rentals", "rental", "scooters", "scooter", "bike", "bikes", "motorcycle", "self-drive",
   "drift", "acoustic", "hill", "hills", "view", "views", "pine", "cedar", "beach", "coast", "coastline",
-  "cove", "ridge", "estate", "residency", "stay", "stays", "traveler", "circle", "square"
+  "cove", "ridge", "estate", "residency", "stay", "stays", "traveler", "circle", "square", "sons", "island",
+  "terrace", "terraces", "tea"
 ]);
 
 // Deprecated artwork filter: reject placeholder and vector SVG assets
@@ -4764,7 +4765,25 @@ export function resolveHotelArtwork(
     });
   }
 
-  // PRIORITY 3: Destination-Scoped Alias Matching against EXACT_HOTEL_REGISTRY
+  // PRIORITY 3: Verified Local Property Asset on Disk (Explicit Stays Path)
+  if (existingImageUrl && existingImageUrl.startsWith("/images/places/") && existingImageUrl.includes("/stays/") && !existingImageUrl.includes("/categories/") && !existingImageUrl.includes("/fallbacks/") && !existingImageUrl.includes("/universal/")) {
+    return buildContract({
+      url: existingImageUrl,
+      fallbackUrl: destStayFallback,
+      source: source || "vanvas_curated",
+      sourceType: "editorial_artwork",
+      provenance: "exact_place",
+      semanticCategory: "stay",
+      exactness: "exact",
+      attribution: "VANVAS Verified Property Asset",
+      altText: `${propertyName} in ${destinationName}`,
+      badgeLabel: "VANVAS PLACE ARTWORK",
+      artworkKey: `stay:exact:${destNorm}:${hotelNorm}`,
+      visualDescription: `Verified property artwork for ${propertyName}.`,
+    });
+  }
+
+  // PRIORITY 4: Destination-Scoped Alias Matching against EXACT_HOTEL_REGISTRY
   for (const [regKey, item] of Object.entries(EXACT_HOTEL_REGISTRY)) {
     const [regDest, regHotel] = regKey.split(":");
     if (regDest === destNorm || regDest.includes(destNorm) || destNorm.includes(regDest)) {
@@ -4804,24 +4823,6 @@ export function resolveHotelArtwork(
         }
       }
     }
-  }
-
-  // PRIORITY 4: Verified Local Property Asset on Disk (Explicit Stays Path)
-  if (existingImageUrl && existingImageUrl.startsWith("/images/places/") && existingImageUrl.includes("/stays/") && !existingImageUrl.includes("/categories/") && !existingImageUrl.includes("/fallbacks/") && !existingImageUrl.includes("/universal/")) {
-    return buildContract({
-      url: existingImageUrl,
-      fallbackUrl: destStayFallback,
-      source: source || "vanvas_curated",
-      sourceType: "editorial_artwork",
-      provenance: "exact_place",
-      semanticCategory: "stay",
-      exactness: "exact",
-      attribution: "VANVAS Verified Property Asset",
-      altText: `${propertyName} in ${destinationName}`,
-      badgeLabel: "VANVAS PLACE ARTWORK",
-      artworkKey: `stay:exact:${destNorm}:${hotelNorm}`,
-      visualDescription: `Verified property artwork for ${propertyName}.`,
-    });
   }
 
   // PRIORITY 5: Destination Stay Category Fallback
@@ -4991,7 +4992,25 @@ export function resolvePlaceArtwork(
     });
   }
 
-  // PRIORITY 3: Destination-Scoped Alias Matching against EXACT_PLACE_REGISTRY
+  // PRIORITY 3: Verified Local Asset on Disk (Exact Place Path)
+  if (existingImageUrl && existingImageUrl.startsWith("/images/places/") && !existingImageUrl.includes("/categories/") && !existingImageUrl.includes("/fallbacks/") && !existingImageUrl.includes("/universal/")) {
+    return buildContract({
+      url: existingImageUrl,
+      fallbackUrl: safeFallback,
+      source: source || "vanvas_curated",
+      sourceType: "editorial_artwork",
+      provenance: "exact_place",
+      semanticCategory: theme,
+      exactness: "exact",
+      attribution: "VANVAS Verified Editorial Asset",
+      altText: `${placeName} in ${destinationName}`,
+      badgeLabel: "VANVAS PLACE ARTWORK",
+      artworkKey: `exact:${destNorm}:${placeNorm}`,
+      visualDescription: `Verified editorial asset for ${placeName}.`,
+    });
+  }
+
+  // PRIORITY 4: Destination-Scoped Alias Matching against EXACT_PLACE_REGISTRY
   for (const [regKey, item] of Object.entries(EXACT_PLACE_REGISTRY)) {
     const [regDest, regPlace] = regKey.split(":");
     if (regDest === destNorm || regDest.includes(destNorm) || destNorm.includes(regDest)) {
@@ -5031,24 +5050,6 @@ export function resolvePlaceArtwork(
         }
       }
     }
-  }
-
-  // PRIORITY 4: Verified Local Asset on Disk (Exact Place Path)
-  if (existingImageUrl && existingImageUrl.startsWith("/images/places/") && !existingImageUrl.includes("/categories/") && !existingImageUrl.includes("/fallbacks/") && !existingImageUrl.includes("/universal/")) {
-    return buildContract({
-      url: existingImageUrl,
-      fallbackUrl: safeFallback,
-      source: source || "vanvas_curated",
-      sourceType: "editorial_artwork",
-      provenance: "exact_place",
-      semanticCategory: theme,
-      exactness: "exact",
-      attribution: "VANVAS Verified Editorial Asset",
-      altText: `${placeName} in ${destinationName}`,
-      badgeLabel: "VANVAS PLACE ARTWORK",
-      artworkKey: `exact:${destNorm}:${placeNorm}`,
-      visualDescription: `Verified editorial asset for ${placeName}.`,
-    });
   }
 
   // PRIORITY 5: Destination Category Fallback
