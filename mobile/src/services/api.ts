@@ -47,6 +47,25 @@ export function resolveAvatarUrl(avatarUrl?: string | null): string | undefined 
   return `${PRODUCTION_API_URL}${cleanPath}`;
 }
 
+export function resolveImageUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:")
+  ) {
+    return trimmed;
+  }
+
+  // Prepend Vercel web domain for static assets
+  const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return `https://vanvasai.vercel.app${cleanPath}`;
+}
+
 export interface ApiStatusListener {
   (isWakingUp: boolean, isOffline: boolean): void;
 }

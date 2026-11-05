@@ -15,7 +15,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Destination, Place, Hotel, RentalOption } from "@vanvas/shared";
-import { nativeApi } from "../../src/services/api";
+import { nativeApi, resolveImageUrl } from "../../src/services/api";
 import { PlaceCard } from "../../src/components/PlaceCard";
 import { theme } from "../../src/theme";
 
@@ -81,11 +81,12 @@ export default function DestinationDetailScreen() {
     );
   }
 
-  const heroImage =
+  const rawHero =
     destination.hero_image ||
     destination.cover_image ||
     destination.image_url ||
     "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1200&q=80";
+  const heroImage = resolveImageUrl(rawHero) || rawHero;
 
   return (
     <>
@@ -194,7 +195,17 @@ export default function DestinationDetailScreen() {
           {activeTab === "places" && (
             <View>
               {places.map((place) => (
-                <PlaceCard key={place.id} place={place} />
+                <PlaceCard
+                  key={place.id}
+                  place={place}
+                  onPlan={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push({
+                      pathname: "/(tabs)/plan",
+                      params: { destination: destination.name, place: place.name },
+                    });
+                  }}
+                />
               ))}
             </View>
           )}

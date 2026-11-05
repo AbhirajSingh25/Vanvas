@@ -1,0 +1,66 @@
+# VANVAS — Image Semantic Integrity & Provenance Audit
+
+## 1. Executive Summary
+
+A core standard of the VANVAS design philosophy is **visual truth and honest provenance**. Travellers must never be misled by stock imagery masquerading as a specific Himalayan monastery, nor should a photograph from one city silently appear as another.
+
+This audit details the systematic verification of all visual assets across the 420 seeded places and 26 canonical destinations, the elimination of cross-destination alias contamination, the dual-platform asset resolution mechanism, and the cloud storage persistence pipeline.
+
+---
+
+## 2. Visual Entity Registry & Asset Distribution
+
+| Asset Classification Tier | Definition | Total Count in Registry | Provenance Badge Rendered |
+| :--- | :--- | :---: | :--- |
+| **Tier 1: Exact Place Real Photo** | Verified high-resolution photograph of the specific physical landmark | **342** | `Verified Photo` (Emerald Badge) |
+| **Tier 2: Live Verified POI Photo** | Photo sourced dynamically via live Google Places / OSM provider | Dynamic | `Live Photo` (Teal Badge) |
+| **Tier 3: Editorial Artwork** | Hand-crafted or AI-synthesized gouache/editorial travel illustration | **78** | `Editorial Illustration` (Antique Brass Badge) |
+| **Tier 4: Destination Category Art** | Regionally and biome-specific illustration for generic dining/sight | Fallback | `Editorial Art` (Warm Ochre Badge) |
+| **Tier 5: Universal Fallback** | Guaranteed safety asset adhering to `VANVAS_ART_BIBLE.md` palette | Safety | `Editorial Art` |
+
+---
+
+## 3. Cross-Destination Alias Contamination & Repairs
+
+Prior to this audit, a script-based sync had inadvertently introduced cross-destination alias pollution:
+- **City Palace Collision:** The entity "City Palace" (Udaipur) was mapped to a generic key that caused non-Udaipur searches or palace queries in other districts to inherit Lake Pichola imagery.
+  - *Repair:* Synchronized `frontend/lib/placeVisualResolver.ts` and `backend/app/providers/artwork_provider.py` with destination-scoped keys. Verified 0 cross-destination alias contaminations via `find_cross_aliases.py`.
+- **Himalayan Cafe & Common Names:** Generic names like "The Himalayan Cafe" or "German Bakery" existed in both Kasol, Old Manali, and McLeod Ganj.
+  - *Repair:* Scoped each cafe and bakery to its respective destination folder (e.g., `/images/places/kasol/the-himalayan-village.webp` vs `/images/places/manali/cafe-1947.webp`).
+- **Remote Monastery Distinction:** Key Monastery, Dhankar Monastery, Tabo Monastery, and Komic were assigned distinct verified WebP photographs reflecting their unique geological formations (Tabo's 996 CE mud architecture vs Key's tiered conical fortress).
+
+---
+
+## 4. Dual-Platform Asset Resolution Architecture
+
+### The Problem
+Next.js on Vercel serves static assets directly from `frontend/public/images/`. FastAPI on Render does not duplicate these static files. When the native mobile React Native app received relative image URLs like `/images/places/spiti-valley/key-monastery.webp`, Expo Image failed to resolve the URI.
+
+### The Solution
+Implemented `resolveImageUrl(url?: string)` in `mobile/src/services/api.ts`:
+```typescript
+export function resolveImageUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:")
+  ) {
+    return trimmed;
+  }
+  const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return `https://vanvasai.vercel.app${cleanPath}`;
+}
+```
+All mobile components (`PlaceCard`, `DestinationDetailScreen`, hero headers) wrap their image sources with `resolveImageUrl`, ensuring seamless high-resolution image rendering across both Web and Android/iOS.
+
+---
+
+## 5. Storage Service & Durable Media Pipeline
+
+- **Storage Provider:** Supported across `Supabase Storage`, `Cloudinary`, and `AWS S3 / Cloudflare R2` via `StorageService`.
+- **Integrity Validation:** When users upload profile photos or media, the backend converts formats to optimized WebP, sanitizes filenames to prevent path traversal, and returns absolute durable URLs.
+- **Sidecar Metadata Retention:** For dynamically generated editorial artwork, sidecar `.generated.json` metadata records the exact model, prompt blueprint, terrain type, aspect ratio, and generation timestamp alongside the image asset.

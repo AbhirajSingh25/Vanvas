@@ -65,7 +65,13 @@ def extract_place_aliases(place_name: str, dest_slug: str, image_url: str) -> Li
 
     # Specific common landmark name variations
     if "city-palace" in s_full:
-        aliases.update(["city-palace", f"city-palace-{dest_slug}", f"{dest_slug}-city-palace", f"city-palace-of-{dest_slug}", "city-palace-of-udaipur", "city-palace-udaipur"])
+        aliases.update(["city-palace", f"city-palace-{dest_slug}", f"{dest_slug}-city-palace", f"city-palace-of-{dest_slug}"])
+        if dest_slug == "udaipur":
+            aliases.update(["city-palace-of-udaipur", "city-palace-udaipur"])
+        elif dest_slug == "jaipur":
+            aliases.update(["city-palace-of-jaipur", "city-palace-jaipur"])
+        elif "alwar" in dest_slug:
+            aliases.update(["city-palace-of-alwar", "city-palace-alwar"])
     if "bagore" in s_full:
         aliases.update(["bagore-ki-haveli", "bagore-haveli", "bagore", "bagore-ki-haveli-and-dharohar-dance"])
     if "saheliyon" in s_full:

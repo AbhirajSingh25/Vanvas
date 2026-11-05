@@ -226,6 +226,54 @@ def get_destinations(
     return results
 
 
+def compute_place_clusters(dest_lat: float, dest_lng: float, places_list: list) -> dict:
+    from math import radians, cos, sin, asin, sqrt
+
+    def haversine_km(lat1, lon1, lat2, lon2):
+        if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+            return 0.0
+        try:
+            r = 6371.0
+            p1, p2 = radians(float(lat1)), radians(float(lat2))
+            dp = radians(float(lat2) - float(lat1))
+            dl = radians(float(lon2) - float(lon1))
+            a = sin(dp / 2)**2 + cos(p1) * cos(p2) * sin(dl / 2)**2
+            return round(2 * r * asin(sqrt(a)), 1)
+        except Exception:
+            return 0.0
+
+    immediate = []
+    nearby = []
+    regional = []
+
+    for p in places_list:
+        p_lat = p.get("latitude")
+        p_lng = p.get("longitude")
+        dist = haversine_km(dest_lat, dest_lng, p_lat, p_lng)
+        p["distance_km"] = dist
+        if dist <= 5.0:
+            p["zone"] = "Immediate Town (0-5 km)"
+            immediate.append(p)
+        elif dist <= 25.0:
+            p["zone"] = "Nearby Circuit (5-25 km)"
+            nearby.append(p)
+        else:
+            p["zone"] = "Regional Day Trips (25-75+ km)"
+            regional.append(p)
+
+    active_zones = sum(1 for z in [immediate, nearby, regional] if len(z) > 0)
+    summary = f"{len(places_list)} places discovered across {active_zones} geographic zones ({len(immediate)} in Immediate Town, {len(nearby)} in Nearby Circuit, {len(regional)} in Regional Day Trips)"
+
+    return {
+        "summary": summary,
+        "clusters": {
+            "immediate_town": immediate,
+            "nearby_circuit": nearby,
+            "regional_day_trips": regional,
+        }
+    }
+
+
 @router.get("/{slug_or_id}")
 async def get_destination_detail(
     slug_or_id: str,
@@ -246,7 +294,7 @@ async def get_destination_detail(
         weather_snapshots = db.query(WeatherSnapshot).filter(WeatherSnapshot.destination_id == dest.id).all()
 
         # 1. Complete Curated Places (Always at least 8 places for canonical destinations)
-        if (not places or len(places) < 8) and dest.slug in ADDITIONAL_PLACES_BY_DEST:
+        if dest.slug in ADDITIONAL_PLACES_BY_DEST:
             canonical_places = ADDITIONAL_PLACES_BY_DEST[dest.slug]
             existing_place_slugs = {p.slug if hasattr(p, "slug") else p.get("slug") for p in places}
             for idx, p_data in enumerate(canonical_places):
@@ -439,11 +487,15 @@ async def get_destination_detail(
             for r in rentals
         ]
 
+        clustering_info = compute_place_clusters(float(dest.latitude or 0), float(dest.longitude or 0), places_list)
+
         return {
             "destination": dest,
             "is_curated": bool(dest.is_featured),
             "is_dynamic": not bool(dest.is_featured),
             "places": places_list,
+            "clustering": clustering_info["clusters"],
+            "coverage_summary": clustering_info["summary"],
             "hotels": hotels_list,
             "rentals": rentals_list,
             "weather": weather_snapshots,
@@ -483,6 +535,18 @@ async def get_destination_detail(
         except Exception as e:
             logger.warning(f"Could not load live weather for canonical fallback {canon['name']}: {e}")
 
+        canon_places_list = [
+            {
+                "id": f"p-{canon['slug']}-{p.get('slug', idx)}",
+                "destination_id": f"dest-{canon['slug']}",
+                **p,
+                "data_state": "VERIFIED",
+                "trust_source": "VANVAS_CURATED",
+            }
+            for idx, p in enumerate(c_places)
+        ]
+        canon_clustering = compute_place_clusters(float(canon["latitude"]), float(canon["longitude"]), canon_places_list)
+
         return {
             "destination": {
                 "id": f"dest-{canon['slug']}",
@@ -493,16 +557,9 @@ async def get_destination_detail(
             },
             "is_curated": True,
             "is_dynamic": False,
-            "places": [
-                {
-                    "id": f"p-{canon['slug']}-{p.get('slug', idx)}",
-                    "destination_id": f"dest-{canon['slug']}",
-                    **p,
-                    "data_state": "VERIFIED",
-                    "trust_source": "VANVAS_CURATED",
-                }
-                for idx, p in enumerate(c_places)
-            ],
+            "places": canon_places_list,
+            "clustering": canon_clustering["clusters"],
+            "coverage_summary": canon_clustering["summary"],
             "hotels": [
                 {
                     "id": f"h-{canon['slug']}-{idx}",
@@ -541,9 +598,10 @@ async def get_destination_detail(
     if not dyn_dest:
         raise HTTPException(status_code=404, detail="Destination not found")
     
-    # Fetch live points of interest and accommodation
+    # Fetch live points of interest, hotels, and rentals for dynamic destinations
     live_places = []
     live_hotels = []
+    live_rentals = []
     try:
         places_provider = ProviderFactory.get_places_provider()
         live_places_raw = await places_provider.get_nearby_places(dyn_dest["latitude"], dyn_dest["longitude"], radius_km=15.0)
@@ -587,6 +645,30 @@ async def get_destination_detail(
     except Exception as e:
         logger.warning(f"Could not load live places for {dyn_dest['name']}: {e}")
 
+    try:
+        hotels_provider = ProviderFactory.get_hotels_provider()
+        live_hotels = await hotels_provider.search_hotels(
+            destination=dyn_dest["name"],
+            lat=dyn_dest["latitude"],
+            lng=dyn_dest["longitude"],
+            radius_km=15.0
+        )
+    except Exception as e:
+        logger.warning(f"Could not load live hotels for {dyn_dest['name']}: {e}")
+
+    try:
+        rentals_provider = ProviderFactory.get_rentals_provider()
+        live_rentals = await rentals_provider.search_rentals(
+            destination=dyn_dest["name"],
+            lat=dyn_dest["latitude"],
+            lng=dyn_dest["longitude"],
+            radius_km=15.0
+        )
+    except Exception as e:
+        logger.warning(f"Could not load live rentals for {dyn_dest['name']}: {e}")
+
+    dyn_clustering = compute_place_clusters(float(dyn_dest["latitude"]), float(dyn_dest["longitude"]), live_places)
+
     dyn_weather = {}
     try:
         weather_provider = ProviderFactory.get_weather_provider()
@@ -605,13 +687,15 @@ async def get_destination_detail(
         "is_curated": False,
         "is_dynamic": True,
         "places": live_places,
+        "clustering": dyn_clustering["clusters"],
+        "coverage_summary": dyn_clustering["summary"],
         "hotels": live_hotels,
-        "rentals": [],
+        "rentals": live_rentals,
         "weather": dyn_weather.get("daily", dyn_dest.get("weather", [])),
         "current_weather": dyn_weather,
         "places_count": len(live_places),
         "hotels_count": len(live_hotels),
-        "rentals_count": 0
+        "rentals_count": len(live_rentals)
     }
 
 
@@ -819,6 +903,7 @@ async def get_destination_places(
             (Place.tags.ilike(f"%{search}%"))
         )
     places = query.all()
+    existing_place_slugs = {p.slug for p in places}
     results = []
     for p in places:
         hours_eval = OperatingHoursEngine.evaluate_simple_hours(p.opening_time, p.closing_time, p.latitude, p.longitude)
@@ -865,6 +950,73 @@ async def get_destination_places(
             data_state="VERIFIED",
             trust_source="VANVAS_CURATED",
         ))
+
+    # Supplement missing canonical places from ADDITIONAL_PLACES_BY_DEST
+    if dest.slug in ADDITIONAL_PLACES_BY_DEST:
+        for idx, cp in enumerate(ADDITIONAL_PLACES_BY_DEST[dest.slug]):
+            if cp.get("slug") in existing_place_slugs:
+                continue
+            if category and category != "all" and category.lower() not in cp.get("category", "").lower():
+                continue
+            if is_must_visit is not None and cp.get("is_must_visit", False) != is_must_visit:
+                continue
+            if is_hidden_gem is not None and cp.get("is_hidden_gem", False) != is_hidden_gem:
+                continue
+            if is_indoor is not None and cp.get("is_indoor", False) != is_indoor:
+                continue
+            if price_level and cp.get("price_level") != price_level:
+                continue
+            if search and not any(search.lower() in str(cp.get(k, "")).lower() for k in ("name", "description", "tags")):
+                continue
+            hours_eval = OperatingHoursEngine.evaluate_simple_hours(
+                cp.get("opening_time", "08:00"),
+                cp.get("closing_time", "20:00"),
+                cp.get("latitude", dest.latitude),
+                cp.get("longitude", dest.longitude),
+            )
+            action_links = ActionLinkGenerator.generate_place_action_links(
+                name=cp.get("name", ""),
+                latitude=cp.get("latitude", dest.latitude),
+                longitude=cp.get("longitude", dest.longitude),
+                website=cp.get("booking_url"),
+                phone=None,
+                booking_url=cp.get("booking_url"),
+                source="vanvas_curated",
+                source_id=cp.get("slug", idx),
+            )
+            results.append(PlaceResponse(
+                id=f"p-{dest.slug}-{cp.get('slug', idx)}",
+                destination_id=dest.id,
+                category=cp.get("category", "Culture & Heritage"),
+                name=cp.get("name", "Landmark"),
+                slug=cp.get("slug", "landmark"),
+                description=cp.get("description", ""),
+                address=cp.get("address", f"{dest.name}, {dest.state}"),
+                latitude=cp.get("latitude", dest.latitude),
+                longitude=cp.get("longitude", dest.longitude),
+                price_level=cp.get("price_level", "Free"),
+                approx_cost=cp.get("approx_cost", 0.0),
+                rating=cp.get("rating", 4.8),
+                review_count=cp.get("review_count", 150),
+                opening_time=cp.get("opening_time", "08:00"),
+                closing_time=cp.get("closing_time", "20:00"),
+                hours_available=hours_eval.hours_available,
+                is_open_now=hours_eval.is_open_now,
+                phone=None,
+                website=cp.get("booking_url"),
+                recommended_duration_mins=cp.get("recommended_duration_mins", 60),
+                tags=cp.get("tags", ""),
+                image_url=cp.get("image_url"),
+                why_vanvas_recommends=cp.get("why_vanvas_recommends"),
+                booking_url=cp.get("booking_url"),
+                is_must_visit=cp.get("is_must_visit", True),
+                is_hidden_gem=cp.get("is_hidden_gem", False),
+                is_indoor=cp.get("is_indoor", False),
+                is_saved=False,
+                action_links=action_links,
+                data_state="VERIFIED",
+                trust_source="VANVAS_CURATED",
+            ))
     return results
 
 

@@ -13,9 +13,16 @@ interface PlaceCardProps {
   destinationName?: string;
   onSelect?: (place: Place) => void;
   onBookmarkChange?: (placeId: string, isSaved: boolean) => void;
+  onPlanPlace?: (place: Place) => void;
 }
 
-export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "", onSelect, onBookmarkChange }) => {
+export const PlaceCard: React.FC<PlaceCardProps> = ({
+  place,
+  destinationName = "",
+  onSelect,
+  onBookmarkChange,
+  onPlanPlace,
+}) => {
   const { isCompact } = useDensity();
   const [isSaved, setIsSaved] = useState(place.is_saved || false);
   const [saving, setSaving] = useState(false);
@@ -87,9 +94,17 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
               {safeCategory}
             </span>
           )}
-          {visualRes.badgeLabel === "EXACT PLACE PHOTO" && (
-            <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-emerald-700/90 text-emerald-100 border border-emerald-400">
-              Exact Photo
+          {visualRes.badgeLabel === "EXACT PLACE PHOTO" ? (
+            <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-emerald-700/90 text-emerald-100 border border-emerald-400 shadow-xs">
+              Verified Photo
+            </span>
+          ) : visualRes.badgeLabel === "LIVE PLACE PHOTO" ? (
+            <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-teal-800/90 text-teal-100 border border-teal-500 shadow-xs">
+              Live Photo
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-[#B49252]/90 text-[#0F2924] border border-[#B49252] shadow-xs">
+              Editorial Art
             </span>
           )}
         </div>
@@ -211,10 +226,28 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({ place, destinationName = "
             )}
           </div>
 
-          <span className="text-[#B65E3C] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
-            <span>Explore</span>
-            <ArrowRight className="w-3 h-3" />
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onPlanPlace) {
+                  onPlanPlace(place);
+                } else {
+                  const targetDest = destinationName || place.destination_id || "";
+                  window.location.href = `/plan?destination=${encodeURIComponent(targetDest)}&place=${encodeURIComponent(place.name)}`;
+                }
+              }}
+              className="px-2 py-1 rounded-md bg-[#173B32] hover:bg-[#173B32]/90 text-[#EFE5D2] font-semibold text-[11px] flex items-center gap-1 transition-colors shadow-xs"
+              title={`Plan a trip visiting ${place.name}`}
+            >
+              <span>Plan</span>
+            </button>
+            <span className="text-[#B65E3C] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
+              <span>Explore</span>
+              <ArrowRight className="w-3 h-3" />
+            </span>
+          </div>
         </div>
       </div>
     </div>

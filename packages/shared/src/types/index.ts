@@ -68,6 +68,12 @@ export interface Place {
   tags?: string[];
   is_must_visit?: boolean;
   time_of_day?: string;
+  distance_km?: number;
+  is_live?: boolean;
+  source?: string;
+  why_vanvas_recommends?: string;
+  cluster?: string;
+  zone?: string;
 }
 
 export interface Hotel {

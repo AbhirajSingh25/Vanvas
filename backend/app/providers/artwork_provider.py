@@ -94,7 +94,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "taj-mahal",
-                        "taj-mahal-white-marble-monument"
+                        "taj-mahal-white-marble-monument",
+                        "taj-nature-walk-forest-ridge-trail"
                 ]
         },
         "agra:agra-red-fort-and-jahangiri-mahal": {
@@ -121,9 +122,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "keetham-lake",
                         "mehtab-bagh",
                         "mehtab-bagh-moonlight-river-gardens",
-                        "moonlight-river-gardens"
+                        "moonlight-river-gardens",
+                        "soor-sarovar-bird-sanctuary",
+                        "soor-sarovar-bird-sanctuary-and-keetham-lake"
                 ]
         },
         "agra:fatehpur-sikri-imperial-capital-city": {
@@ -135,8 +139,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "aram-bagh",
+                        "aram-bagh-babur-1528-charbagh-garden",
+                        "babur-1528-charbagh-garden",
                         "fatehpur-sikri",
-                        "fatehpur-sikri-imperial-capital-city"
+                        "fatehpur-sikri-imperial-capital-city",
+                        "korai-tribal-craft-village-en-route-fatehpur"
                 ]
         },
         "agra:tomb-of-itimad-ud-daulah-baby-taj": {
@@ -164,6 +172,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "bedmi-puri",
+                        "dasaprakash-heritage-south-indian-dining",
                         "jalebi",
                         "shankar-mithai-bedmi",
                         "shankar-mithai-bhandar",
@@ -179,8 +188,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kinari-bazaar-heritage-zardozi",
+                        "kinari-bazaar-heritage-zardozi-and-spice-market",
                         "panchhi-petha-original-sadar-bazaar",
-                        "panchhi-petha-store"
+                        "panchhi-petha-store",
+                        "spice-market"
                 ]
         },
         "agra:akbars-great-tomb-at-sikandra": {
@@ -193,7 +205,24 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "akbar-tomb-sikandra",
-                        "akbars-great-tomb-at-sikandra"
+                        "akbars-great-tomb-at-sikandra",
+                        "empress-jodha-bai",
+                        "mariam-uz-zamani-tomb",
+                        "mariam-uz-zamani-tomb-empress-jodha-bai"
+                ]
+        },
+        "agra:chini-ka-rauza-persian-glazed-tile-tomb": {
+                "place_name": "Chini Ka Rauza (Persian Glazed Tile Tomb)",
+                "image_url": "/images/places/agra/hero.webp",
+                "visual_description": "A 1635 Persian architectural masterpiece dedicated to Afzal Khan Shirazi, famous for vibrant turquoise and lapis-lazuli glazed tilework.",
+                "category": "Culture & Heritage",
+                "semantic_theme": "heritage",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "chini-ka-rauza",
+                        "chini-ka-rauza-persian-glazed-tile-tomb",
+                        "persian-glazed-tile-tomb"
                 ]
         },
         "alwar-siliserh:siliserh-lake-palace-and-royal-boat-club": {
@@ -205,9 +234,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "mandavya-hermitage",
                         "royal-boat-club",
                         "siliserh-lake-palace",
-                        "siliserh-lake-palace-and-royal-boat-club"
+                        "siliserh-lake-palace-and-royal-boat-club",
+                        "talvriksha-sacred-springs",
+                        "talvriksha-sacred-springs-and-mandavya-hermitage"
                 ]
         },
         "alwar-siliserh:bala-quila-alwar-hilltop-fort": {
@@ -222,7 +254,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "alwar-hilltop-fort",
                         "bala-quila",
                         "bala-quila-alwar-fort",
-                        "bala-quila-alwar-hilltop-fort"
+                        "bala-quila-alwar-hilltop-fort",
+                        "sita-ram-temple",
+                        "vijay-mandir-palace",
+                        "vijay-mandir-palace-and-sita-ram-temple"
                 ]
         },
         "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal": {
@@ -238,10 +273,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "alwar-city-palace-vinay-vilas-mahal",
                         "alwar-siliserh-city-palace",
                         "city-palace",
+                        "city-palace-alwar",
                         "city-palace-alwar-siliserh",
+                        "city-palace-of-alwar",
                         "city-palace-of-alwar-siliserh",
-                        "city-palace-of-udaipur",
-                        "city-palace-udaipur",
+                        "tijara-atishaya-kshetra-jain-tirtha",
                         "vinay-vilas-mahal"
                 ]
         },
@@ -255,7 +291,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "moosi-maharani-chhatri",
-                        "moosi-maharani-ki-chhatri-cenotaph"
+                        "moosi-maharani-ki-chhatri-cenotaph",
+                        "royal-bathing-stepped-ghats",
+                        "sagar-water-kund",
+                        "sagar-water-kund-and-royal-bathing-stepped-ghats"
                 ]
         },
         "alwar-siliserh:baba-thakur-das-and-sons-origin-of-alwar-kalakand": {
@@ -270,6 +309,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "baba-thakur-das",
                         "baba-thakur-das-and-sons-origin-of-alwar-kalakand",
                         "baba-thakur-das-kalakand",
+                        "clock-tower",
+                        "hope-circus-heritage-market",
+                        "hope-circus-heritage-market-and-clock-tower",
+                        "kalakand-gali",
+                        "kalakand-gali-mawa-artisans-street",
+                        "mawa-artisans-street",
                         "origin-of-alwar-kalakand",
                         "sons"
                 ]
@@ -300,6 +345,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "government-museum-alwar",
                         "government-museum-royal-armor-and-manuscripts",
                         "manuscripts",
+                        "neelkanth-mahadev-ancient-hilltop-sanctuary",
                         "royal-armor"
                 ]
         },
@@ -316,6 +362,20 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "fateh-jung-gumbad",
                         "fateh-jung-ka-gumbad",
                         "fateh-jung-ka-gumbad-1647-tomb"
+                ]
+        },
+        "alwar-siliserh:purjan-vihar-company-garden-british-oasis": {
+                "place_name": "Purjan Vihar (Company Garden British Oasis)",
+                "image_url": "/images/places/alwar-siliserh/hero.webp",
+                "visual_description": "A historic garden laid out in 1868 by Maharaja Sheodan Singh with lush fern houses, grand fountains, and a unique summer cooling palace (Shimla).",
+                "category": "Nature & Viewpoints",
+                "semantic_theme": "nature",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "company-garden-british-oasis",
+                        "purjan-vihar",
+                        "purjan-vihar-company-garden-british-oasis"
                 ]
         },
         "chandigarh:rock-garden-of-chandigarh-nek-chands-fantasy": {
@@ -343,9 +403,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "17th-century-mughal-terraces",
                         "shivalik-views",
                         "sukhna-lake-promenade",
-                        "sukhna-lake-promenade-and-shivalik-views"
+                        "sukhna-lake-promenade-and-shivalik-views",
+                        "yadavindra-gardens-pinjore",
+                        "yadavindra-gardens-pinjore-17th-century-mughal-terraces"
                 ]
         },
         "chandigarh:le-corbusier-capitol-complex-unesco-heritage": {
@@ -357,9 +420,16 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "art-gallery-sector-10",
                         "capitol-complex-unesco",
+                        "giving",
+                        "government-museum",
+                        "government-museum-and-art-gallery-sector-10",
                         "le-corbusier-capitol-complex",
                         "le-corbusier-capitol-complex-unesco-heritage",
+                        "open-hand-monument",
+                        "open-hand-monument-symbol-of-peace-and-giving",
+                        "symbol-of-peace",
                         "unesco-heritage"
                 ]
         },
@@ -372,8 +442,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "japanese-garden-sector-31-zen-sanctuary",
+                        "musical-water-cascade",
                         "rose-garden",
                         "rose-garden-chandigarh",
+                        "terraced-garden",
+                        "terraced-garden-and-musical-water-cascade",
                         "zakir-hussain-rose-garden"
                 ]
         },
@@ -389,7 +463,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "pedestrian-promenade",
                         "sector-17-open-plaza",
                         "sector-17-open-plaza-and-pedestrian-promenade",
-                        "sector-17-plaza"
+                        "sector-17-plaza",
+                        "sindhi-sweets-sector-17-chole-bhature-hub"
                 ]
         },
         "chandigarh:indian-coffee-house-sector-17-legacy-since-1957": {
@@ -433,7 +508,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "boulevard-cycling-trail",
-                        "sector-10-tree-lined-boulevard-cycling-route"
+                        "national-cactus-and-succulent-botanical-garden",
+                        "sector-10-tree-lined-boulevard-cycling-route",
+                        "shivalik-gorge",
+                        "timber-trail-mountain-cable-car",
+                        "timber-trail-mountain-cable-car-shivalik-gorge"
                 ]
         },
         "damdama-sohna:damdama-lake-natural-boating-basin": {
@@ -446,7 +525,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "damdama-lake-boating",
-                        "damdama-lake-natural-boating-basin"
+                        "damdama-lake-natural-boating-basin",
+                        "hidden-aravalli-water-reservoir",
+                        "lost-lake",
+                        "lost-lake-hidden-aravalli-water-reservoir"
                 ]
         },
         "damdama-sohna:sohna-sulphur-hot-springs-and-ancient-shiva-kund": {
@@ -474,7 +556,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "aravalli-bio-diversity-ridge-nature-trails",
-                        "aravalli-bio-trails"
+                        "aravalli-bio-trails",
+                        "badkhal-aravalli-ridge-mountain-drive",
+                        "bhondsi-nature-park",
+                        "bhondsi-nature-park-and-bhuvneshwari-devi-grove",
+                        "bhuvneshwari-devi-grove",
+                        "mangar-bani-sacred-forest",
+                        "mangar-bani-sacred-forest-and-wildlife-corridor",
+                        "wildlife-corridor"
                 ]
         },
         "damdama-sohna:botanix-nature-adventure-park-and-organic-farm": {
@@ -489,6 +578,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "botanix-nature-adventure-park",
                         "botanix-nature-adventure-park-and-organic-farm",
                         "botanix-nature-resort-camp",
+                        "camp-mustang-aravalli-obstacle-base",
                         "organic-farm"
                 ]
         },
@@ -501,6 +591,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "historic-sohna-vintage-car-circuit-trail",
                         "sohna-hilltop-fort-ruins",
                         "sohna-hilltop-fort-ruins-and-viewpoint",
                         "viewpoint"
@@ -541,8 +632,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "aravalli-hills-footprint",
+                        "aravalli-hills-footprint-and-golf-glades",
+                        "butterfly-garden",
+                        "golf-glades",
                         "saras-lake-promenade",
-                        "saras-tourist-resort-damdama-promenade"
+                        "saras-tourist-resort-damdama-promenade",
+                        "tau-devi-lal-botanical-park",
+                        "tau-devi-lal-botanical-park-and-butterfly-garden"
                 ]
         },
         "dehradun:robbers-cave-guchhupani-limestone-gorge": {
@@ -554,7 +651,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "camping-meadows",
                         "guchhupani-limestone-gorge",
+                        "maldevta-pebble-riverbed",
+                        "maldevta-pebble-riverbed-and-camping-meadows",
                         "robbers-cave",
                         "robbers-cave-guchhupani-limestone-gorge"
                 ]
@@ -568,9 +668,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "british-tribute-to-gurkha-bravery",
                         "colonial-colonnades",
                         "forest-research-institute",
-                        "forest-research-institute-colonial-colonnades"
+                        "forest-research-institute-colonial-colonnades",
+                        "khalanga-war-memorial",
+                        "khalanga-war-memorial-british-tribute-to-gurkha-bravery"
                 ]
         },
         "dehradun:mindrolling-monastery-and-great-stupa": {
@@ -582,7 +685,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "3rd-century-bce",
                         "great-stupa",
+                        "kalsi-ashokan-rock-edict",
+                        "kalsi-ashokan-rock-edict-3rd-century-bce",
                         "mindrolling-monastery",
                         "mindrolling-monastery-and-great-stupa"
                 ]
@@ -596,8 +702,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "asan-barrage-bird-sanctuary",
+                        "asan-barrage-bird-sanctuary-and-wetland-reserve",
                         "sahastradhara-springs",
-                        "sahastradhara-thousandfold-sulphur-springs"
+                        "sahastradhara-thousandfold-sulphur-springs",
+                        "shikhar-fall-woodland-cascade",
+                        "shikhar-fall-woodland-cascade-and-stream",
+                        "stream",
+                        "wetland-reserve"
                 ]
         },
         "dehradun:tapkeshwar-mahadev-cave-temple": {
@@ -636,9 +748,13 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "confectioners",
                         "elloras-bakery",
                         "elloras-melting-moments",
                         "elloras-melting-moments-since-1953",
+                        "kumaoni-bal-mithai",
+                        "kumar-sweets",
+                        "kumar-sweets-and-confectioners-kumaoni-bal-mithai",
                         "since-1953"
                 ]
         },
@@ -652,8 +768,25 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "dehradun-zoo",
+                        "lachhiwala-nature-park",
+                        "lachhiwala-nature-park-and-stream-pools",
                         "malsi-deer-park",
-                        "malsi-deer-park-dehradun-zoo"
+                        "malsi-deer-park-dehradun-zoo",
+                        "stream-pools"
+                ]
+        },
+        "dehradun:paltan-bazaar-and-1953-ghanta-ghar-clock-tower": {
+                "place_name": "Paltan Bazaar & 1953 Ghanta Ghar Clock Tower",
+                "image_url": "/images/places/dehradun/hero.webp",
+                "visual_description": "The historic hex-faced stone clock tower and pedestrian bazaar famous for Basmati rice stalls, pahadi spices, woolen shawls, and street food.",
+                "category": "Local Food & Street Eats",
+                "semantic_theme": "shopping",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "1953-ghanta-ghar-clock-tower",
+                        "paltan-bazaar",
+                        "paltan-bazaar-and-1953-ghanta-ghar-clock-tower"
                 ]
         },
         "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple": {
@@ -665,7 +798,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "8th-century",
                         "dalai-lama-temple",
+                        "gyuto-monastery",
+                        "gyuto-monastery-tantric-chanting-and-karmapa-seat",
+                        "karmapa-seat",
+                        "masroor-monolithic-rock-cut-temples",
+                        "masroor-monolithic-rock-cut-temples-8th-century",
+                        "tantric-chanting",
                         "tsuglagkhang-complex",
                         "tsuglagkhang-complex-and-dalai-lama-temple",
                         "tsuglagkhang-temple"
@@ -724,6 +864,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "1852",
+                        "dal-lake-dharamshala",
+                        "dal-lake-dharamshala-and-sacred-deodar-groves",
+                        "sacred-deodar-groves",
                         "st-john-in-the-wilderness-church",
                         "st-john-in-the-wilderness-church-1852",
                         "st-john-wilderness"
@@ -741,6 +884,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "thukpa",
                         "tibet-kitchen",
                         "tibet-kitchen-traditional-momos-and-thukpa",
+                        "tibetan-butter-tea",
+                        "tibetan-butter-tea-and-tingmo-bakery-lane",
+                        "tingmo-bakery-lane",
                         "traditional-momos"
                 ]
         },
@@ -756,7 +902,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "dharamkot-village",
                         "dharamkot-yoga",
                         "dharamkot-yoga-and-meditation-village",
-                        "meditation-village"
+                        "meditation-village",
+                        "stupas",
+                        "tashi-jong-buddhist-craft-community",
+                        "tashi-jong-buddhist-craft-community-and-stupas"
                 ]
         },
         "goa:chapora-fort-hilltop-viewpoint": {
@@ -796,8 +945,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "backwaters",
                         "divar-island",
+                        "divar-island-serene-paddy",
+                        "divar-island-serene-paddy-and-village-circuit",
                         "divar-island-village-ferry",
-                        "divar-island-village-ferry-and-backwaters"
+                        "divar-island-village-ferry-and-backwaters",
+                        "village-circuit"
                 ]
         },
         "goa:ashwem-beach-casuarina-pines": {
@@ -809,8 +961,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "arambol-sweet-water-lagoon",
+                        "arambol-sweet-water-lagoon-and-banyan-tree-trail",
                         "ashwem-beach",
-                        "ashwem-beach-casuarina-pines"
+                        "ashwem-beach-casuarina-pines",
+                        "banyan-tree-trail"
                 ]
         },
         "goa:anjuna-flea-and-night-art-market": {
@@ -851,7 +1006,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "artjuna-cafe",
-                        "artjuna-lifestyle-garden-cafe"
+                        "artjuna-garden-cafe",
+                        "artjuna-garden-cafe-and-lifestyle-sanctuary",
+                        "artjuna-lifestyle-garden-cafe",
+                        "lifestyle-sanctuary"
                 ]
         },
         "goa:vinayak-family-restaurant-authentic-goan-fish-thali": {
@@ -864,8 +1022,70 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "authentic-goan-fish-thali",
+                        "authentic-goan-thali",
                         "vinayak-family-restaurant",
-                        "vinayak-family-restaurant-authentic-goan-fish-thali"
+                        "vinayak-family-restaurant-authentic-goan-fish-thali",
+                        "vinayak-family-restaurant-authentic-goan-thali"
+                ]
+        },
+        "goa:basilica-of-bom-jesus-unesco-world-heritage": {
+                "place_name": "Basilica of Bom Jesus (UNESCO World Heritage)",
+                "image_url": "/images/places/goa/basilica-bom-jesus.webp",
+                "visual_description": "Consecrated in 1605, this masterpiece of Baroque architecture holds the mortal remains of St. Francis Xavier inside a silver casket atop an ornate ...",
+                "category": "Culture & Heritage",
+                "semantic_theme": "church",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "basilica-bom-jesus",
+                        "basilica-of-bom-jesus",
+                        "basilica-of-bom-jesus-unesco-world-heritage",
+                        "unesco-world-heritage"
+                ]
+        },
+        "goa:palolem-crescent-beach-and-butterfly-island": {
+                "place_name": "Palolem Crescent Beach & Butterfly Island",
+                "image_url": "/images/places/goa/palolem-beach.webp",
+                "visual_description": "A tranquil 1.6 km semi-circular crescent bay lined with coconut palms and gentle shallow waters, with wooden boats taking travelers to secluded But...",
+                "category": "Must Visit",
+                "semantic_theme": "beach",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "butterfly-island",
+                        "palolem-beach",
+                        "palolem-crescent-beach",
+                        "palolem-crescent-beach-and-butterfly-island"
+                ]
+        },
+        "goa:fort-aguada-and-1864-portuguese-lighthouse": {
+                "place_name": "Fort Aguada & 1864 Portuguese Lighthouse",
+                "image_url": "/images/places/goa/aguada-fort.webp",
+                "visual_description": "A 17th-century Portuguese fortress commanding the mouth of the Mandovi River, housing a 4-tiered freshwater cistern and ancient oil lighthouse.",
+                "category": "Must Visit",
+                "semantic_theme": "heritage",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "1864-portuguese-lighthouse",
+                        "aguada-fort",
+                        "fort-aguada",
+                        "fort-aguada-and-1864-portuguese-lighthouse"
+                ]
+        },
+        "goa:anjuna-rocky-beach-cove-and-curlies-point": {
+                "place_name": "Anjuna Rocky Beach Cove & Curlies Point",
+                "image_url": "/images/places/goa/anjuna-beach-cove.webp",
+                "visual_description": "A dramatic red-laterite rocky cove fringed by coconut palms, renowned since the 1960s for bohemian sunset gatherings and psychedelic trance heritage.",
+                "category": "Nature & Viewpoints",
+                "semantic_theme": "beach",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "anjuna-beach-cove",
+                        "anjuna-rocky-beach-cove",
+                        "anjuna-rocky-beach-cove-and-curlies-point",
+                        "curlies-point"
                 ]
         },
         "jaipur:nahargarh-fort-sunset-ridge": {
@@ -890,8 +1110,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "galta-ji",
+                        "galta-ji-the-sacred-monkey-temple-and-kunds",
+                        "kunds",
                         "panna-meena-ka-kund-stepwell",
-                        "panna-meena-kund"
+                        "panna-meena-kund",
+                        "the-sacred-monkey-temple"
                 ]
         },
         "jaipur:jaipur-city-palace-and-chandra-mahal": {
@@ -903,12 +1127,13 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "albert-hall-state-museum",
+                        "albert-hall-state-museum-indo-saracenic",
                         "chandra-mahal",
                         "city-palace",
                         "city-palace-jaipur",
                         "city-palace-of-jaipur",
-                        "city-palace-of-udaipur",
-                        "city-palace-udaipur",
+                        "indo-saracenic",
                         "jaipur-city-palace",
                         "jaipur-city-palace-and-chandra-mahal"
                 ]
@@ -925,7 +1150,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "laxmi-misthan-bhandar",
                         "laxmi-misthan-bhandar-lmb-1727",
                         "lmb-1727",
-                        "lmb-sweets"
+                        "lmb-sweets",
+                        "original-pyaaz-kachori",
+                        "rawat-mishthan-bhandar",
+                        "rawat-mishthan-bhandar-original-pyaaz-kachori"
                 ]
         },
         "jaipur:anokhi-museum-of-hand-printing": {
@@ -938,7 +1166,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "anokhi-museum",
-                        "anokhi-museum-of-hand-printing"
+                        "anokhi-museum-of-hand-printing",
+                        "jawahar-circle-garden",
+                        "patrika-gate",
+                        "patrika-gate-and-jawahar-circle-garden"
                 ]
         },
         "jaipur:tapri-central-rooftop-tea-lounge": {
@@ -950,8 +1181,24 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "hawa-mahal-eye-level-terrace",
                         "tapri-central",
-                        "tapri-central-rooftop-tea-lounge"
+                        "tapri-central-rooftop-tea-lounge",
+                        "wind-view-cafe",
+                        "wind-view-cafe-hawa-mahal-eye-level-terrace"
+                ]
+        },
+        "jaipur:jantar-mantar-unesco-astronomical-observatory": {
+                "place_name": "Jantar Mantar UNESCO Astronomical Observatory",
+                "image_url": "/images/places/jaipur/jantar-mantar.webp",
+                "visual_description": "Completed in 1734 by Maharaja Sawai Jai Singh II, this UNESCO World Heritage site features nineteen architectural astronomical instruments, includi...",
+                "category": "Culture & Heritage",
+                "semantic_theme": "nature",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "jantar-mantar",
+                        "jantar-mantar-unesco-astronomical-observatory"
                 ]
         },
         "jaisalmer:jaisalmer-golden-living-fort-sonar-qila": {
@@ -963,9 +1210,13 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "bada-bagh",
+                        "bada-bagh-royal-cenotaphs-and-desert-windmills",
+                        "desert-windmills",
                         "jaisalmer-fort",
                         "jaisalmer-golden-living-fort",
                         "jaisalmer-golden-living-fort-sonar-qila",
+                        "royal-cenotaphs",
                         "sonar-qila"
                 ]
         },
@@ -979,7 +1230,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "patwon-ki-haveli",
-                        "patwon-ki-haveli-filigree-architecture"
+                        "patwon-ki-haveli-filigree-architecture",
+                        "sage-vyas-sandstone-cenotaph",
+                        "vyas-chhatri",
+                        "vyas-chhatri-sage-vyas-sandstone-cenotaph"
                 ]
         },
         "jaisalmer:sam-sand-dunes-and-thar-desert-safari": {
@@ -991,6 +1245,13 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "desert-national-park",
+                        "desert-national-park-great-indian-bustard-safari",
+                        "great-indian-bustard-safari",
+                        "khuri-village",
+                        "khuri-village-quiet-sand-dunes-and-mud-homestays",
+                        "mud-homestays",
+                        "quiet-sand-dunes",
                         "sam-sand-dunes",
                         "sam-sand-dunes-and-thar-desert-safari",
                         "thar-desert-safari"
@@ -1008,7 +1269,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "chattris",
                         "gadisar-lake",
                         "gadisar-lake-ghats",
-                        "gadisar-lake-ghats-and-chattris"
+                        "gadisar-lake-ghats-and-chattris",
+                        "tanot-mata-temple",
+                        "tanot-mata-temple-the-miraculous-indo-pak-border-shrine",
+                        "the-miraculous-indo-pak-border-shrine"
                 ]
         },
         "jaisalmer:kuldhara-abandoned-ghost-village": {
@@ -1036,6 +1300,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "jain-temples",
                         "jain-temples-fort",
                         "jaisalmer-fort-seven-jain-temples",
+                        "kalpavriksha-wish-tree",
+                        "lodurva-ancient-capital",
+                        "lodurva-ancient-capital-and-kalpavriksha-wish-tree",
                         "seven-jain-temples"
                 ]
         },
@@ -1049,6 +1316,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "authentic-laal-maas",
+                        "surya-kishore-authentic-dal-baati-churma",
                         "the-trio-restaurant",
                         "the-trio-rooftop",
                         "the-trio-rooftop-authentic-laal-maas"
@@ -1063,6 +1331,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "desert-cultural-centre",
+                        "desert-cultural-centre-and-folk-puppetry-museum",
+                        "folk-puppetry-museum",
                         "moti-mahal",
                         "salim-singh-ki-haveli",
                         "salim-singh-ki-haveli-moti-mahal"
@@ -1077,6 +1348,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "mukteshwar-dham-350-year-hilltop-shiva-temple",
                         "neem-karoli-baba-ashram",
                         "neem-karoli-baba-sacred-ashram",
                         "neem-karoli-baba-sacred-ashram-and-temple"
@@ -1091,9 +1363,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "apricot-research-orchards",
                         "bhowali-fruit-market",
                         "bhowali-fruit-market-and-tea-terraces",
                         "bhowali-fruit-orchards",
+                        "chaubatia-apple",
+                        "chaubatia-apple-and-apricot-research-orchards",
                         "tea-terraces"
                 ]
         },
@@ -1109,6 +1384,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "golu-devta-ghorakhal",
                         "golu-devta-temple-ghorakhal",
                         "golu-devta-temple-ghorakhal-temple-of-bells",
+                        "karkotak-nag-mandir-hilltop-crest",
                         "temple-of-bells"
                 ]
         },
@@ -1124,7 +1400,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "bhimtal-island-lake",
                         "bhimtal-lake",
                         "bhimtal-lake-and-central-aquarium-island",
-                        "central-aquarium-island"
+                        "central-aquarium-island",
+                        "chauli-ki-jali",
+                        "chauli-ki-jali-vertical-mountain-ridge-and-sunset-crag",
+                        "sunset-crag",
+                        "vertical-mountain-ridge"
                 ]
         },
         "kainchi-dham:sattal-seven-interconnected-freshwater-lakes": {
@@ -1136,6 +1416,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "hidimba-parvat-pine-forest-trail",
+                        "himalayan-birding-sanctuary",
+                        "pangot-oak-forest",
+                        "pangot-oak-forest-and-himalayan-birding-sanctuary",
                         "sattal-interconnected-lakes",
                         "sattal-seven-interconnected-freshwater-lakes"
                 ]
@@ -1149,6 +1433,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kumaoni-heritage-tea-room",
+                        "kumaoni-heritage-tea-room-and-mountain-jams",
+                        "mountain-jams",
                         "subhash-dhaba",
                         "subhash-dhaba-bhowali",
                         "subhash-dhaba-traditional-kumaoni-ras-bhaat",
@@ -1164,10 +1451,13 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kamal-tal",
+                        "kamal-tal-the-secluded-lotus-lake-of-naukuchiatal",
                         "naukuchiatal",
                         "naukuchiatal-lake",
                         "naukuchiatal-nine-cornered-lake",
-                        "nine-cornered-lake"
+                        "nine-cornered-lake",
+                        "the-secluded-lotus-lake-of-naukuchiatal"
                 ]
         },
         "kainchi-dham:shyamkhet-organic-tea-garden-walk": {
@@ -1192,8 +1482,20 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "600m",
+                        "ancient-deodar-enclave",
                         "chalal-pine-trail",
-                        "chalal-riverside-pine-trail"
+                        "chalal-riverside-pine-trail",
+                        "chojh-riverside-pebble-beach",
+                        "chojh-riverside-pebble-beach-and-suspension-bridge",
+                        "kheerganga-natural-sulphur-pool",
+                        "kheerganga-natural-sulphur-pool-and-meadow",
+                        "meadow",
+                        "pulga-fairy-forest",
+                        "pulga-fairy-forest-ancient-deodar-enclave",
+                        "rasol-high-alpine-village-trail",
+                        "rasol-high-alpine-village-trail-2-600m",
+                        "suspension-bridge"
                 ]
         },
         "kasol:manikaran-sahib-gurudwara-and-hot-springs": {
@@ -1219,8 +1521,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kalga-village",
+                        "kalga-village-and-terraced-apple-orchards",
+                        "terraced-apple-orchards",
                         "tosh-village",
-                        "tosh-village-apple-orchard-ridge"
+                        "tosh-village-apple-orchard-ridge",
+                        "tulga-rustic-wooden-hamlet"
                 ]
         },
         "kasol:moon-dance-cafe-and-german-bakery": {
@@ -1265,7 +1571,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "evergreen-cafe",
                         "evergreen-cafe-and-garden-lounge",
-                        "garden-lounge"
+                        "garden-lounge",
+                        "jim-morrison-wooden-terrace",
+                        "jim-morrison-wooden-terrace-and-shakshuka-cafe",
+                        "shakshuka-cafe"
                 ]
         },
         "kasol:kasol-nature-park-pine-walk": {
@@ -1291,8 +1600,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "magic-valley-glacial-meadow",
                         "malana-village-ancient-approach-trail",
-                        "malana-village-gate"
+                        "malana-village-gate",
+                        "waichin-valley",
+                        "waichin-valley-magic-valley-glacial-meadow"
                 ]
         },
         "lansdowne:tip-in-top-tiffin-top-snow-crest-ridge": {
@@ -1304,7 +1616,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "santoshi-mata-temple",
+                        "santoshi-mata-temple-sunset-peak-crest",
                         "snow-crest-ridge",
+                        "sunset-peak-crest",
                         "tiffin-top",
                         "tip-in-top",
                         "tip-in-top-tiffin-top-snow-crest-ridge",
@@ -1322,6 +1637,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "bhulla-tal-lake",
                         "bhulla-tal-lake-and-pine-promenade",
+                        "kanvashram-historic-sanctuary-on-malini-river",
                         "pine-promenade"
                 ]
         },
@@ -1334,10 +1650,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "1896-heritage-archive",
                         "1936",
                         "st-johns-catholic-church",
                         "st-johns-catholic-church-1936",
-                        "st-johns-church-1936"
+                        "st-johns-church-1936",
+                        "st-marys-anglican-church",
+                        "st-marys-anglican-church-1896-heritage-archive",
+                        "tarkeshwar-mahadev-giant-deodar-sanctuary"
                 ]
         },
         "lansdowne:darwan-singh-regimental-museum": {
@@ -1350,7 +1670,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "darwan-singh-regimental-museum",
-                        "garhwal-rifles-museum"
+                        "garhwal-rifles-museum",
+                        "kaleshwar-mahadev-500-year-sage-meditation-cave"
                 ]
         },
         "lansdowne:bhim-pakora-balancing-stone-wonder": {
@@ -1363,7 +1684,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "bhim-pakora-balancing-stone-wonder",
-                        "bhim-pakora-stones"
+                        "bhim-pakora-stones",
+                        "sadar-bazaar-cantonment-heritage-lane"
                 ]
         },
         "lansdowne:hawaghar-pine-forest-ridge-promenade": {
@@ -1375,8 +1697,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "deriyakhal-oak",
+                        "deriyakhal-oak-and-rhododendron-birding-trail",
                         "hawaghar-pine-forest-ridge-promenade",
-                        "hawaghar-pine-walk"
+                        "hawaghar-pine-walk",
+                        "rhododendron-birding-trail"
                 ]
         },
         "lansdowne:lansdowne-hills-colonial-cafe-and-bakery": {
@@ -1389,9 +1714,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "bakery",
+                        "ginger-tea",
                         "lansdowne-hills-colonial-cafe",
                         "lansdowne-hills-colonial-cafe-and-bakery",
                         "lansdowne-tripund-cafe",
+                        "mayur-cafe-steaming-momos",
+                        "mayur-cafe-steaming-momos-and-ginger-tea",
                         "tripund-cafe"
                 ]
         },
@@ -1461,9 +1789,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "hemis-monastery",
+                        "hemis-monastery-and-sacred-museum",
                         "lalas-art-cafe",
+                        "lalas-art-cafe-in-old-town-leh",
                         "lalas-art-cafe-restored-heritage-labrang",
-                        "restored-heritage-labrang"
+                        "restored-heritage-labrang",
+                        "sacred-museum",
+                        "shanti-stupa-panoramic-sunset-terrace"
                 ]
         },
         "leh:gesmo-restaurant-and-german-bakery-since-1989": {
@@ -1475,13 +1808,19 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "bon-appetit-organic-garden-dining",
                         "devraj-coffee",
                         "devraj-coffee-and-german-bakery",
                         "devraj-coffee-german-bakery",
+                        "fort-road",
                         "german-bakery",
                         "german-bakery-tapovan",
                         "gesmo-restaurant",
+                        "gesmo-restaurant-and-german-bakery-fort-road",
                         "gesmo-restaurant-and-german-bakery-since-1989",
+                        "hunder-sand-dunes",
+                        "nubra-valley",
+                        "nubra-valley-and-hunder-sand-dunes",
                         "since-1989"
                 ]
         },
@@ -1494,11 +1833,18 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "359m",
                         "cultural-museum",
                         "hall-of-fame",
                         "hall-of-fame-leh",
                         "hall-of-fame-military",
-                        "hall-of-fame-military-and-cultural-museum"
+                        "hall-of-fame-military-and-cultural-museum",
+                        "indus",
+                        "khardung-la-high-mountain-pass",
+                        "khardung-la-high-mountain-pass-5-359m",
+                        "sangam",
+                        "sangam-indus-and-zanskar-river-confluence",
+                        "zanskar-river-confluence"
                 ]
         },
         "manali:hadimba-devi-cedar-forest-temple": {
@@ -1512,7 +1858,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "hadimba-devi-cedar-forest-temple",
                         "hadimba-devi-temple",
-                        "hadimba-temple"
+                        "hadimba-temple",
+                        "historic-shrine-of-sage-manu",
+                        "manu-temple",
+                        "manu-temple-historic-shrine-of-sage-manu"
                 ]
         },
         "manali:cafe-1947-riverside-stone-cafe": {
@@ -1529,6 +1878,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "cafe-1947-riverside-stone-cafe",
                         "cafe-1947-riverside-stone-caf\u00e9",
                         "caf\u00e9-1947",
+                        "lazy-dog-lounge-riverside-deck",
                         "riverside-stone-cafe"
                 ]
         },
@@ -1541,9 +1891,15 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "atal-tunnel-north-portal",
+                        "atal-tunnel-north-portal-and-sissu-waterfall",
+                        "beas-river-nature-park",
+                        "beas-river-nature-park-and-deodar-walk",
+                        "deodar-walk",
                         "jogini-falls",
                         "jogini-waterfall",
-                        "jogini-waterfall-pine-trail"
+                        "jogini-waterfall-pine-trail",
+                        "sissu-waterfall"
                 ]
         },
         "manali:old-manali-village-and-manu-temple": {
@@ -1555,7 +1911,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kath-kuni-royal-palace",
                         "manu-temple",
+                        "naggar-castle",
+                        "naggar-castle-kath-kuni-royal-palace",
                         "old-manali-village",
                         "old-manali-village-and-manu-temple",
                         "old-village"
@@ -1575,7 +1934,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "drifters-cafe-and-acoustic-inn",
                         "drifters-inn",
                         "drifters-inn-and-wooden-loft",
-                        "drifters-inn-wooden-loft"
+                        "drifters-inn-wooden-loft",
+                        "dylans-toasted",
+                        "dylans-toasted-and-roasted-coffee-house",
+                        "roasted-coffee-house"
                 ]
         },
         "manali:solang-valley-alpine-adventure-grounds": {
@@ -1587,6 +1949,15 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "alpine-gateway",
+                        "alpine-snow-line",
+                        "gulaba-meadows",
+                        "gulaba-meadows-and-alpine-snow-line",
+                        "hampta-valley-ridge",
+                        "rohtang-pass-snow-crest",
+                        "rohtang-pass-snow-crest-and-alpine-gateway",
+                        "sethan-igloo-village",
+                        "sethan-igloo-village-and-hampta-valley-ridge",
                         "solang-valley",
                         "solang-valley-alpine-adventure-grounds"
                 ]
@@ -1616,6 +1987,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "asian-kitchen",
+                        "chopsticks-tibetan",
+                        "chopsticks-tibetan-and-asian-kitchen",
                         "johnsons-cafe",
                         "johnsons-cafe-trout-bar",
                         "the-johnsons-cafe",
@@ -1645,6 +2019,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "giriraj-sacred-parikrama-path",
+                        "govardhan-hill",
+                        "govardhan-hill-giriraj-sacred-parikrama-path",
+                        "potra-kund-sacred-stepped-stepwell",
                         "shri-krishna-janmabhoomi",
                         "shri-krishna-janmabhoomi-temple-complex"
                 ]
@@ -1658,8 +2036,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kusum-sarovar-18th-century-sandstone-reservoir",
                         "prem-mandir-italian-carrara-marble-temple",
-                        "prem-mandir-vrindavan"
+                        "prem-mandir-vrindavan",
+                        "vrindavan-chandrodaya-mandir-cultural-park"
                 ]
         },
         "mathura-vrindavan:iskcon-sri-krishna-balaram-temple": {
@@ -1684,6 +2064,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "keshi-ghat-stone-palace",
+                        "keshi-ghat-stone-palace-and-riverfront-sunset",
+                        "radha-kund",
+                        "radha-kund-and-shyam-kund-sacred-twin-lakes",
+                        "riverfront-sunset",
+                        "shyam-kund-sacred-twin-lakes",
                         "vishram-ghat-aarti",
                         "vishram-ghat-evening-yamuna-maha-aarti"
                 ]
@@ -1712,6 +2098,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "brijwasi-mithai-wala",
                         "brijwasi-mithai-wala-original-mathura-peda",
+                        "chappan-bhog-malai-rabri",
+                        "chappan-bhog-malai-rabri-and-khurchan-store",
+                        "khurchan-store",
                         "original-mathura-peda"
                 ]
         },
@@ -1724,6 +2113,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "barsana-shri-radha-rani-temple",
+                        "barsana-shri-radha-rani-temple-ladli-ji-palace",
+                        "ladli-ji-palace",
                         "radha-raman-ancient-self-manifested-deity",
                         "radha-raman-temple"
                 ]
@@ -1737,7 +2129,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "bada-taal",
+                        "bada-taal-the-greater-sacred-wetland-lake",
                         "boating",
+                        "the-greater-sacred-wetland-lake",
                         "tikkar-taal-lakes",
                         "tikkar-taal-twin-lakes",
                         "tikkar-taal-twin-lakes-and-boating"
@@ -1752,6 +2147,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "bhuru-singh-deota-cliff-sanctuary",
                         "morni-fort-17th-century-ramparts",
                         "morni-fort-heritage"
                 ]
@@ -1767,8 +2163,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "bird-trail",
                         "herbal-nature-trail",
+                        "kalesar-wildlife-sanctuary",
+                        "kalesar-wildlife-sanctuary-and-sal-canopy",
                         "morni-shivalik-herbal-forest",
-                        "morni-shivalik-herbal-forest-and-bird-trail"
+                        "morni-shivalik-herbal-forest-and-bird-trail",
+                        "sal-canopy"
                 ]
         },
         "morni-hills:adventure-park-tikkar-taal-zip-and-obstacle-course": {
@@ -1784,6 +2183,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "adventure-park-tikkar-taal",
                         "adventure-park-tikkar-taal-zip-and-obstacle-course",
                         "obstacle-course",
+                        "saketi-shivalik-prehistoric-fossil-park",
                         "zip"
                 ]
         },
@@ -1796,8 +2196,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "ghaggar-river-pebble-banks",
+                        "ghaggar-river-pebble-banks-and-shallows",
                         "gurudwara-nada-sahib",
-                        "gurudwara-nada-sahib-en-route"
+                        "gurudwara-nada-sahib-en-route",
+                        "shallows"
                 ]
         },
         "morni-hills:pheasant-breeding-centre-berwala": {
@@ -1810,6 +2213,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "berwala-pheasant-breeding",
+                        "morni-pine-canopy-treehouse-platform",
                         "pheasant-breeding-centre-berwala"
                 ]
         },
@@ -1822,6 +2226,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "morni-forest-wild-multifloral-honey-apiary",
                         "mountain-quail-resort-dhaba",
                         "mountain-quail-terrace-dhaba"
                 ]
@@ -1835,6 +2240,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "mandhana-high-pine-crest-trail",
                         "shivalik-viewpoint-crest",
                         "shivalik-viewpoint-crest-and-sunset-ridge",
                         "sunset-ridge"
@@ -1849,9 +2255,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "anamudi-peak-base",
+                        "anamudi-peak-base-and-shola-forest-edge",
                         "eravikulam-national-park",
                         "eravikulam-national-park-rajamalai",
-                        "rajamalai"
+                        "rajamalai",
+                        "shola-forest-edge"
                 ]
         },
         "munnar:mattupetty-dam-and-speedboating-basin": {
@@ -1878,9 +2287,15 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "eastend-chai-bazaar",
+                        "eastend-chai-bazaar-and-plantation-tasting",
                         "factory-processing",
                         "kdhp-tea-museum",
                         "kdhp-tea-museum-and-factory-processing",
+                        "marayoor-sandalwood-forest",
+                        "marayoor-sandalwood-forest-and-megalithic-dolmens",
+                        "megalithic-dolmens",
+                        "plantation-tasting",
                         "tata-tea-museum"
                 ]
         },
@@ -1893,6 +2308,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "chinnar-wildlife-sanctuary",
+                        "chinnar-wildlife-sanctuary-and-thorny-scrub-trail",
+                        "thorny-scrub-trail",
                         "top-station-viewpoint",
                         "top-station-western-ghats-cloud-viewpoint"
                 ]
@@ -1907,7 +2325,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "attukad-waterfalls",
-                        "attukad-waterfalls-jungle-trail"
+                        "attukad-waterfalls-jungle-trail",
+                        "lakkom-cascading-waterfalls"
                 ]
         },
         "munnar:pothamedu-viewpoint-sunset-over-tea-valleys": {
@@ -1919,6 +2338,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "bison-valley-viewpoint",
+                        "lockhart-gap",
+                        "lockhart-gap-and-bison-valley-viewpoint",
                         "pothamedu-viewpoint",
                         "pothamedu-viewpoint-sunset-over-tea-valleys",
                         "sunset-over-tea-valleys"
@@ -1936,7 +2358,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "beef-fry",
                         "kerala-parotta",
                         "rapsy-restaurant",
-                        "rapsy-restaurant-kerala-parotta-and-beef-fry"
+                        "rapsy-restaurant-kerala-parotta-and-beef-fry",
+                        "saravana-bhavan-munnar-town"
                 ]
         },
         "munnar:kundala-lake-and-shikara-boating": {
@@ -1954,6 +2377,21 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "shikara-boating"
                 ]
         },
+        "munnar:kolukkumalai-tea-estate-worlds-highest": {
+                "place_name": "Kolukkumalai Tea Estate (World's Highest)",
+                "image_url": "/images/places/munnar/kolukkumalai-tea.webp",
+                "visual_description": "Perched at an altitude of 7,900 ft (2,400m), Kolukkumalai is the highest organic orthodox tea plantation in the world, reached via a thrilling 4x4 ...",
+                "category": "Must Visit",
+                "semantic_theme": "nature",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "kolukkumalai-tea",
+                        "kolukkumalai-tea-estate",
+                        "kolukkumalai-tea-estate-worlds-highest",
+                        "worlds-highest"
+                ]
+        },
         "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba": {
                 "place_name": "Amrik Sukhdev (Legendary 24/7 Paratha Dhaba)",
                 "image_url": "/images/places/murthal/amrik-sukhdev-dhaba.webp",
@@ -1967,7 +2405,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "amrik-sukhdev",
                         "amrik-sukhdev-dhaba",
                         "amrik-sukhdev-legendary-24-7-paratha-dhaba",
-                        "legendary-24"
+                        "legendary-24",
+                        "pure-desi-ghee-tandoor",
+                        "shiva-tourist-dhaba",
+                        "shiva-tourist-dhaba-pure-desi-ghee-tandoor",
+                        "sonipat-yamuna-riverfront-sand-banks"
                 ]
         },
         "murthal:haveli-murthal-punjabi-cultural-theme-village": {
@@ -1979,6 +2421,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "chokhi-dhani-sonepat-heritage-cultural-fair",
                         "haveli-murthal",
                         "haveli-murthal-punjabi",
                         "haveli-murthal-punjabi-cultural-theme-village",
@@ -2008,9 +2451,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "heeng-aloo",
                         "pahalwan-dhaba",
                         "pahalwan-dhaba-murthal",
-                        "pahalwan-dhaba-pure-desi-ghee-roasters"
+                        "pahalwan-dhaba-pure-desi-ghee-roasters",
+                        "pahalwan-khasta-dal-kachori",
+                        "pahalwan-khasta-dal-kachori-and-heeng-aloo"
                 ]
         },
         "murthal:mojoland-multi-theme-adventure-park": {
@@ -2035,6 +2481,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "haryana-tourism-ethnic-craft-village",
+                        "haryana-tourism-ethnic-craft-village-and-loom",
+                        "loom",
                         "mannat-haveli",
                         "mannat-haveli-grand-highway-palace",
                         "mannat-haveli-murthal"
@@ -2050,7 +2499,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "1522-pathan-architecture",
+                        "badkhalsa-memorial",
+                        "badkhalsa-memorial-and-sikh-heritage-museum",
                         "khwaja-khizr-tomb",
+                        "sikh-heritage-museum",
                         "tomb-of-khwaja-khizr",
                         "tomb-of-khwaja-khizr-1522-pathan-architecture"
                 ]
@@ -2067,7 +2519,24 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "dhingra-sweets",
                         "dhingra-sweets-and-pure-milk-kadhai",
                         "dhingra-sweets-milk-bar",
-                        "pure-milk-kadhai"
+                        "farm-fresh-kadhai-milk",
+                        "farm-fresh-kadhai-milk-and-rabri-counter",
+                        "pure-milk-kadhai",
+                        "rabri-counter"
+                ]
+        },
+        "murthal:murthal-rural-canal-lanes-and-yellow-mustard-fields": {
+                "place_name": "Murthal Rural Canal Lanes & Yellow Mustard Fields",
+                "image_url": "/images/places/murthal/hero.webp",
+                "visual_description": "Rustic farm lanes branching off the highway along irrigation canals, lined with eucalyptus trees and endless blooming yellow mustard fields in winter.",
+                "category": "Nature & Viewpoints",
+                "semantic_theme": "nature",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "murthal-rural-canal-lanes",
+                        "murthal-rural-canal-lanes-and-yellow-mustard-fields",
+                        "yellow-mustard-fields"
                 ]
         },
         "mussoorie:char-dukan-and-st-pauls-church": {
@@ -2141,6 +2610,57 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "kempty-falls-mountain-cascades"
                 ]
         },
+        "mussoorie:char-dukan-heritage-cafe-lane-landour": {
+                "place_name": "Char Dukan Heritage Cafe Lane (Landour)",
+                "image_url": "/images/places/mussoorie/char-dukan-prakash-store.jpg",
+                "visual_description": "A historic cluster of four quaint wooden shops in Landour operating since colonial times, famous for ginger lemon honey tea, cheese omelettes, and ...",
+                "category": "Caf\u00e9s & Bakery",
+                "semantic_theme": "cafe",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "1928",
+                        "char-dukan-heritage-cafe-lane",
+                        "char-dukan-heritage-cafe-lane-landour",
+                        "char-dukan-prakash-store",
+                        "emilys-tea-room",
+                        "handmade-cheese-deli",
+                        "landour",
+                        "prakash-store",
+                        "prakash-store-and-handmade-cheese-deli-1928",
+                        "rokeby-manor",
+                        "rokeby-manor-and-emilys-tea-room"
+                ]
+        },
+        "mussoorie:company-garden-and-artificial-falls": {
+                "place_name": "Company Garden & Artificial Falls",
+                "image_url": "/images/places/mussoorie/company-garden.webp",
+                "visual_description": "A historic municipal botanical garden laid out in the 19th century with vibrant dahlias, an amusement lake, and a cascading artificial rock waterfall.",
+                "category": "Nature & Viewpoints",
+                "semantic_theme": "waterfall",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "artificial-falls",
+                        "company-garden",
+                        "company-garden-and-artificial-falls"
+                ]
+        },
+        "mussoorie:pari-tibba-hill-of-the-fairies-pine-trail": {
+                "place_name": "Pari Tibba (Hill of the Fairies Pine Trail)",
+                "image_url": "/images/places/mussoorie/pari-tibba-fairies-hill.webp",
+                "visual_description": "A lightning-struck pine hill south of Woodstock School famous in Ruskin Bond ghost stories, featuring silver oak woods and silent ridge viewpoints.",
+                "category": "Adventure & Treks",
+                "semantic_theme": "nature",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "hill-of-the-fairies-pine-trail",
+                        "pari-tibba",
+                        "pari-tibba-fairies-hill",
+                        "pari-tibba-hill-of-the-fairies-pine-trail"
+                ]
+        },
         "neemrana:neemrana-fort-palace-15th-century-ramparts": {
                 "place_name": "Neemrana Fort-Palace 15th-Century Ramparts",
                 "image_url": "/images/places/neemrana/neemrana-fort-palace.webp",
@@ -2150,9 +2670,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "19th-century-hilltop-citadel",
                         "fort-palace",
                         "neemrana-fort-palace",
-                        "neemrana-fort-palace-15th-century-ramparts"
+                        "neemrana-fort-palace-15th-century-ramparts",
+                        "tijara-fort-palace",
+                        "tijara-fort-palace-19th-century-hilltop-citadel"
                 ]
         },
         "neemrana:flying-fox-aerial-zipline-tour": {
@@ -2165,7 +2688,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "flying-fox-aerial-zipline-tour",
-                        "flying-fox-zipline"
+                        "flying-fox-zipline",
+                        "nazara-open-air-medieval-amphitheatre"
                 ]
         },
         "neemrana:ancient-9-story-stepwell-neemrana-baori": {
@@ -2179,8 +2703,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "ancient-9-story-stepwell",
                         "ancient-9-story-stepwell-neemrana-baori",
+                        "mothooka-ancient-copper-archaeology-site",
                         "neemrana-baori",
                         "neemrana-stepwell-baori",
+                        "shyam-sarovar-subterranean-baori-oasis",
                         "stepwell-baori"
                 ]
         },
@@ -2193,6 +2719,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "karni-mata-hilltop-staircase-shrine",
                         "kesroli-14th-century-hill-fort-en-route",
                         "kesroli-hill-fort"
                 ]
@@ -2222,7 +2749,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "highway-king-dhaba",
-                        "highway-king-nh-48-express-dhaba"
+                        "highway-king-nh-48-express-dhaba",
+                        "kotputli-traditional-terracotta-pottery-street"
                 ]
         },
         "neemrana:baba-khetanath-hilltop-ashram-and-ridge": {
@@ -2234,9 +2762,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "aravalli-quartzite-canyon",
+                        "aravalli-quartzite-canyon-and-scrub-trail",
                         "baba-khetanath-ashram",
                         "baba-khetanath-hilltop-ashram",
-                        "baba-khetanath-hilltop-ashram-and-ridge"
+                        "baba-khetanath-hilltop-ashram-and-ridge",
+                        "scrub-trail"
                 ]
         },
         "neemrana:siliserh-lake-gateway-en-route": {
@@ -2248,6 +2779,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "old-alwar-byroad-blooming-mustard-lane",
                         "siliserh-en-route",
                         "siliserh-en-route-neemrana",
                         "siliserh-lake-gateway-en-route"
@@ -2279,7 +2811,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "beatles-ashram",
                         "beatles-ashram-chaurasi-kutia",
+                        "beatles-ashram-chaurasi-kutia-maharishi-mahesh-yogi",
                         "chaurasi-kutia",
+                        "chaurasi-kutia-maharishi-mahesh-yogi",
                         "the-beatles-ashram"
                 ]
         },
@@ -2292,10 +2826,13 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "limestone-caves",
                         "neer-garh",
                         "neer-garh-cascading-waterfall",
                         "neer-garh-waterfall",
-                        "neer-waterfall"
+                        "neer-waterfall",
+                        "patna-cascading-waterfall",
+                        "patna-cascading-waterfall-and-limestone-caves"
                 ]
         },
         "rishikesh:shivpuri-white-water-river-rafting": {
@@ -2338,7 +2875,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "gufa",
                         "vashistha-cave",
                         "vashistha-cave-gufa",
-                        "vashistha-gufa"
+                        "vashistha-cave-vashistha-gufa-meditation-sanctuary",
+                        "vashistha-gufa",
+                        "vashistha-gufa-meditation-sanctuary"
                 ]
         },
         "rishikesh:devraj-coffee-and-german-bakery": {
@@ -2352,6 +2891,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "devraj-coffee",
                         "devraj-coffee-and-german-bakery",
+                        "devraj-coffee-corner",
+                        "devraj-coffee-corner-and-german-bakery-tapovan",
                         "devraj-coffee-german-bakery",
                         "german-bakery",
                         "german-bakery-tapovan"
@@ -2371,6 +2912,64 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "ram-jhula-suspension-bridge-promenade"
                 ]
         },
+        "rishikesh:kunjapuri-devi-sunrise-temple-ridge-1-645m": {
+                "place_name": "Kunjapuri Devi Sunrise Temple Ridge (1,645m)",
+                "image_url": "/images/places/rishikesh/triveni-ghat.webp",
+                "visual_description": "Perched on a high Himalayan foothill crest, this sacred Shaktipeeth offers a 360-degree sunrise spectacle of Chaukhamba, Swargarohini, and Bandarpo...",
+                "category": "Must Visit",
+                "semantic_theme": "spiritual",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "645m",
+                        "kunjapuri-devi-sunrise-temple-ridge",
+                        "kunjapuri-devi-sunrise-temple-ridge-1-645m",
+                        "triveni-ghat"
+                ]
+        },
+        "rishikesh:little-buddha-cafe-treehouse-lounge": {
+                "place_name": "Little Buddha Cafe Treehouse Lounge",
+                "image_url": "/images/places/rishikesh/little-buddha-cafe.webp",
+                "visual_description": "A treehouse-style bamboo cafe overlooking the turquoise waters of the Ganga, famous for Israeli shakshuka, fresh fruit lassis, momos, and acoustic ...",
+                "category": "Caf\u00e9s & Bakery",
+                "semantic_theme": "cafe",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "little-buddha-cafe",
+                        "little-buddha-cafe-treehouse-lounge"
+                ]
+        },
+        "rishikesh:kunjapuri-devi-sunrise-temple-crest-1-665m": {
+                "place_name": "Kunjapuri Devi Sunrise Temple Crest (1,665m)",
+                "image_url": "/images/places/rishikesh/kunjapuri-devi-sunrise-crest.webp",
+                "visual_description": "A sacred Shakti Peeth temple perched atop a mountain ridge 25 km north of Rishikesh offering sunrise panoramas of Bandarpoonch, Swargarohini, and C...",
+                "category": "Nature & Viewpoints",
+                "semantic_theme": "spiritual",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "665m",
+                        "kunjapuri-devi-sunrise-crest",
+                        "kunjapuri-devi-sunrise-temple-crest",
+                        "kunjapuri-devi-sunrise-temple-crest-1-665m"
+                ]
+        },
+        "rishikesh:rajaji-national-park-chilla-elephant-safari-gate": {
+                "place_name": "Rajaji National Park (Chilla Elephant Safari Gate)",
+                "image_url": "/images/places/rishikesh/rajaji-national-park-chilla.webp",
+                "visual_description": "An 820 sq km tiger and elephant reserve spanning the Shivalik foothills on the southern banks of the Ganga, famous for wild elephant herds and leop...",
+                "category": "Adventure & Treks",
+                "semantic_theme": "nature",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "chilla-elephant-safari-gate",
+                        "rajaji-national-park",
+                        "rajaji-national-park-chilla",
+                        "rajaji-national-park-chilla-elephant-safari-gate"
+                ]
+        },
         "sariska-bhangarh:sariska-tiger-reserve-jungle-safari": {
                 "place_name": "Sariska Tiger Reserve Jungle Safari",
                 "image_url": "/images/places/sariska-bhangarh/sariska-tiger-reserve.webp",
@@ -2380,8 +2979,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "deoli-lake",
+                        "deoli-lake-and-tiger-watering-hole",
                         "sariska-tiger-reserve",
-                        "sariska-tiger-reserve-jungle-safari"
+                        "sariska-tiger-reserve-jungle-safari",
+                        "tiger-watering-hole"
                 ]
         },
         "sariska-bhangarh:bhangarh-fort-legendary-medieval-ruins": {
@@ -2393,10 +2995,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "ajabgarh-fort",
+                        "ajabgarh-fort-and-reservoir-the-twin-of-bhangarh",
                         "bhangarh-fort",
                         "bhangarh-fort-legendary-medieval-ruins",
                         "bhangarh-fort-ruins",
-                        "legendary-medieval-ruins"
+                        "legendary-medieval-ruins",
+                        "reservoir",
+                        "the-twin-of-bhangarh"
                 ]
         },
         "sariska-bhangarh:kankwari-fort-hilltop-fortress": {
@@ -2409,7 +3015,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "kankwari-fort",
-                        "kankwari-fort-hilltop-fortress"
+                        "kankwari-fort-hilltop-fortress",
+                        "mansa-devi-hilltop-cliff-lookout"
                 ]
         },
         "sariska-bhangarh:pandupol-hanuman-temple-and-natural-water-chasm": {
@@ -2421,6 +3028,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "forest-oasis",
+                        "natni-ka-bara-stone-weir",
+                        "natni-ka-bara-stone-weir-and-forest-oasis",
                         "natural-water-chasm",
                         "pandupol-hanuman-temple",
                         "pandupol-hanuman-temple-and-natural-water-chasm"
@@ -2436,9 +3046,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "6th-century",
+                        "ancient-bargujar-citadel",
                         "neelkanth-ancient-temple-complex",
                         "neelkanth-ancient-temple-complex-6th-century",
-                        "neelkanth-temple-sariska"
+                        "neelkanth-temple-sariska",
+                        "rajgarh-hill-fort",
+                        "rajgarh-hill-fort-ancient-bargujar-citadel"
                 ]
         },
         "sariska-bhangarh:bhartrihari-temple-and-sacred-kund": {
@@ -2453,7 +3066,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "bhartrihari-temple",
                         "bhartrihari-temple-and-sacred-kund",
                         "bhartrihari-temple-kund",
-                        "sacred-kund"
+                        "narayani-mata-natural-spring-sanctuary",
+                        "sacred-kund",
+                        "talvriksha-arjuna-tree",
+                        "talvriksha-arjuna-tree-and-thermal-kunds",
+                        "thermal-kunds"
                 ]
         },
         "sariska-bhangarh:the-sariska-palace-royal-french-courtyards": {
@@ -2465,6 +3082,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kushalgarh-colonial-teak-forest-bungalow",
                         "sariska-palace-courtyard",
                         "the-sariska-palace-royal-french-courtyards"
                 ]
@@ -2492,6 +3110,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "11th-century-fort-monastery",
+                        "asias-highest",
+                        "chicham-suspension-bridge",
+                        "chicham-suspension-bridge-asias-highest",
                         "key-gompa",
                         "key-gompa-11th-century-fort-monastery",
                         "key-monastery"
@@ -2506,10 +3127,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "500-year-old-natural-mummy",
                         "cliffside-fortress",
+                        "dhankar-glacial-lake-alpine-tarn",
                         "dhankar-gompa",
                         "dhankar-gompa-and-cliffside-fortress",
-                        "dhankar-monastery"
+                        "dhankar-monastery",
+                        "gue-monastery",
+                        "gue-monastery-and-500-year-old-natural-mummy"
                 ]
         },
         "spiti:hikkim-worlds-highest-post-office": {
@@ -2536,10 +3161,14 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "551m",
                         "chandra-taal",
                         "chandratal",
                         "chandratal-crescent-moon-lake",
-                        "crescent-moon-lake"
+                        "crescent-moon-lake",
+                        "gateway-to-spiti-at-4",
+                        "kunzum-pass",
+                        "kunzum-pass-gateway-to-spiti-at-4-551m"
                 ]
         },
         "spiti:langza-giant-buddha-and-marine-fossil-village": {
@@ -2554,7 +3183,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "langza-buddha",
                         "langza-giant-buddha",
                         "langza-giant-buddha-and-marine-fossil-village",
-                        "marine-fossil-village"
+                        "marine-fossil-village",
+                        "tashigang",
+                        "tashigang-worlds-highest-polling-station",
+                        "worlds-highest-polling-station"
                 ]
         },
         "spiti:komic-worlds-highest-motor-connected-village": {
@@ -2566,9 +3198,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kibber-village",
+                        "kibber-village-and-wildlife-sanctuary",
                         "komic",
                         "komic-village",
                         "komic-worlds-highest-motor-connected-village",
+                        "wildlife-sanctuary",
                         "worlds-highest-motor-connected-village"
                 ]
         },
@@ -2582,9 +3217,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "mudh-village",
+                        "mudh-village-terminal-hamlet-of-pin-valley",
                         "pin-valley-national-park",
                         "pin-valley-national-park-and-mudh-village",
-                        "pin-valley-park"
+                        "pin-valley-park",
+                        "terminal-hamlet-of-pin-valley"
                 ]
         },
         "spiti:cafe-deyzor-and-travelers-lounge": {
@@ -2598,7 +3235,39 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "cafe-deyzor",
                         "cafe-deyzor-and-travelers-lounge",
+                        "slow-travel-lounge",
+                        "the-himalayan-cafe",
+                        "the-himalayan-cafe-and-slow-travel-lounge",
                         "travelers-lounge"
+                ]
+        },
+        "spiti:tabo-monastery-the-ajanta-of-the-himalayas": {
+                "place_name": "Tabo Monastery (The Ajanta of the Himalayas)",
+                "image_url": "/images/places/spiti/tabo-monastery.webp",
+                "visual_description": "Founded in 996 CE, Tabo is a UNESCO World Heritage tentative site housing priceless thousand-year-old Buddhist clay statues, thangkas, and pristine...",
+                "category": "Culture & Heritage",
+                "semantic_theme": "monastery",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "tabo-monastery",
+                        "tabo-monastery-the-ajanta-of-the-himalayas",
+                        "the-ajanta-of-the-himalayas"
+                ]
+        },
+        "spiti:kaza-old-town-and-central-himalayan-bazaar": {
+                "place_name": "Kaza Old Town & Central Himalayan Bazaar",
+                "image_url": "/images/places/spiti/kaza.webp",
+                "visual_description": "The administrative and social hub of Spiti, where travelers and locals gather to purchase warm yak wool shawls, sea buckthorn concentrates, and han...",
+                "category": "Markets & Craft",
+                "semantic_theme": "shopping",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "central-himalayan-bazaar",
+                        "kaza",
+                        "kaza-old-town",
+                        "kaza-old-town-and-central-himalayan-bazaar"
                 ]
         },
         "tungnath-chandrashila:chopta-alpine-meadows-mini-switzerland": {
@@ -2610,9 +3279,12 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "baniyakund-high-alpine-meadows",
+                        "baniyakund-high-alpine-meadows-and-eco-camps",
                         "chopta-alpine-meadows",
                         "chopta-alpine-meadows-mini-switzerland",
                         "chopta-meadows-bugyal",
+                        "eco-camps",
                         "mini-switzerland"
                 ]
         },
@@ -2626,7 +3298,8 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "deoria-tal-lake",
-                        "deoria-tal-sacred-reflection-lake"
+                        "deoria-tal-sacred-reflection-lake",
+                        "madhyamaheshwar-valley-circuit-base"
                 ]
         },
         "tungnath-chandrashila:rohida-oak-and-rhododendron-forest-walk": {
@@ -2638,6 +3311,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "kanchula-korak-musk-deer-sanctuary",
                         "rhododendron-forest-walk",
                         "rohida-forest-trail",
                         "rohida-oak",
@@ -2653,8 +3327,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "ansuya-devi-jungle-waterfall",
+                        "ansuya-devi-jungle-waterfall-and-hermitage-trail",
                         "dugalbitta-eco-camp-glade",
-                        "dugalbitta-eco-glade"
+                        "dugalbitta-eco-glade",
+                        "hermitage-trail"
                 ]
         },
         "tungnath-chandrashila:ukhimath-omkareshwar-winter-temple": {
@@ -2666,8 +3343,11 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "makkumath-temple",
+                        "makkumath-temple-winter-abode-of-lord-tungnath",
                         "ukhimath-omkareshwar",
-                        "ukhimath-omkareshwar-winter-temple"
+                        "ukhimath-omkareshwar-winter-temple",
+                        "winter-abode-of-lord-tungnath"
                 ]
         },
         "tungnath-chandrashila:sari-village-apple-terraces-and-homestay-walk": {
@@ -2679,6 +3359,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "chopta-alpine-shepherd-encampments",
                         "homestay-walk",
                         "sari-village-apple-terraces",
                         "sari-village-apple-terraces-and-homestay-walk",
@@ -2712,12 +3393,15 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "fateh-sagar-lake",
+                        "fateh-sagar-lake-and-nehru-island-park",
                         "island-cruise",
                         "lake-pichola",
                         "lake-pichola-boat-ride",
                         "lake-pichola-ghats",
                         "lake-pichola-ghats-and-island-cruise",
                         "lake-pichola-sunset-boat-voyage",
+                        "nehru-island-park",
                         "pichola-boat-ride",
                         "pichola-cruise"
                 ]
@@ -2731,11 +3415,18 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "1651-ce-indo-aryan-shrine",
                         "bagore",
                         "bagore-haveli",
                         "bagore-ki-haveli",
                         "bagore-ki-haveli-and-dharohar-dance",
-                        "dharohar-dance"
+                        "crafts-complex",
+                        "dharohar-dance",
+                        "jagdish-temple",
+                        "jagdish-temple-1651-ce-indo-aryan-shrine",
+                        "rural-arts",
+                        "shilpgram",
+                        "shilpgram-rural-arts-and-crafts-complex"
                 ]
         },
         "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat": {
@@ -2751,7 +3442,20 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "ambrai-ghat",
                         "ambrai-ghat-sunset-promenade",
                         "ambrai-ghat-sunset-promenade-manjhi-ghat",
-                        "manjhi-ghat"
+                        "doodh-talai-lake",
+                        "doodh-talai-lake-and-ropeway-to-karni-mata",
+                        "lake-pichola",
+                        "lake-pichola-boat-ride",
+                        "lake-pichola-ghats",
+                        "lake-pichola-ghats-and-island-cruise",
+                        "lake-pichola-rooftop-dining",
+                        "lake-pichola-sunset-boat-voyage",
+                        "manjhi-ghat",
+                        "pichola-boat-ride",
+                        "pichola-cruise",
+                        "ropeway-to-karni-mata",
+                        "upre-by-1559-ad",
+                        "upre-by-1559-ad-lake-pichola-rooftop-dining"
                 ]
         },
         "udaipur:saheliyon-ki-bari-garden-of-maidens": {
@@ -2763,7 +3467,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "ahar-royal-cenotaphs",
+                        "ahar-royal-cenotaphs-mahasatyas-of-mewar",
                         "garden-of-maidens",
+                        "mahasatyas-of-mewar",
                         "saheliyon",
                         "saheliyon-bari",
                         "saheliyon-ki-bari",
@@ -2800,7 +3507,10 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "jheels-coffee",
                         "jheels-ginger-coffee",
                         "jheels-ginger-coffee-bar",
-                        "jheels-ginger-coffee-bar-and-bakery"
+                        "jheels-ginger-coffee-bar-and-bakery",
+                        "millets-of-mewar",
+                        "millets-of-mewar-pioneering-healthy-rajasthani-kitchen",
+                        "pioneering-healthy-rajasthani-kitchen"
                 ]
         },
         "udaipur:natraj-dining-hall-unlimited-mewari-thali": {
@@ -2816,6 +3526,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                         "natraj-dining-hall",
                         "natraj-dining-hall-unlimited-mewari-thali",
                         "natraj-thali",
+                        "paliwal-kachori-old-city-breakfast-stand",
                         "unlimited-mewari-thali"
                 ]
         },
@@ -2868,7 +3579,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "blue-lassi-shop",
+                        "blue-lassi-shop-historic-1925-hand-churned-lassi",
                         "blue-lassi-shop-historic-churn-since-1925",
+                        "historic-1925-hand-churned-lassi",
                         "historic-churn-since-1925"
                 ]
         },
@@ -2898,7 +3611,9 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "aliases": [
                         "manikarnika-ghat",
                         "manikarnika-ghat-the-eternal-flame",
-                        "the-eternal-flame"
+                        "manikarnika-ghat-the-sacred-mahashmashana",
+                        "the-eternal-flame",
+                        "the-sacred-mahashmashana"
                 ]
         },
         "varanasi:ramnagar-fort-and-vintage-royal-museum": {
@@ -2911,6 +3626,7 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source": "vanvas_curated",
                 "aliases": [
                         "ramnagar-fort",
+                        "ramnagar-fort-across-the-sacred-ganga",
                         "ramnagar-fort-and-vintage-royal-museum",
                         "vintage-royal-museum"
                 ]
@@ -2924,10 +3640,71 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "source_type": "editorial_artwork",
                 "source": "vanvas_curated",
                 "aliases": [
+                        "godowlia-chowk",
+                        "kashi-chat-bhandar",
+                        "kashi-chat-bhandar-godowlia-chowk",
                         "kashi-tea-stall",
                         "laxmi-tea-stall",
                         "laxmi-tea-stall-and-malaiyo-hub",
                         "malaiyo-hub"
+                ]
+        },
+        "varanasi:scindia-ghat-and-the-leaning-shiva-temple": {
+                "place_name": "Scindia Ghat & The Leaning Shiva Temple",
+                "image_url": "/images/places/varanasi/assi-ghat.webp",
+                "visual_description": "A quiet, architecturally fascinating ghat featuring the Ratneshwar Mahadev Temple, which tilted dramatically 9 degrees into the Ganga during constr...",
+                "category": "Hidden Gems",
+                "semantic_theme": "spiritual",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "assi-ghat",
+                        "scindia-ghat",
+                        "scindia-ghat-and-the-leaning-shiva-temple",
+                        "the-leaning-shiva-temple"
+                ]
+        },
+        "varanasi:tulsi-manas-white-marble-temple": {
+                "place_name": "Tulsi Manas White Marble Temple",
+                "image_url": "/images/places/varanasi/tulsi-manas-temple.webp",
+                "visual_description": "A pristine white marble temple built at the site where Goswami Tulsidas composed the Ramcharitmanas, with the entire epic engraved upon marble walls.",
+                "category": "Culture & Heritage",
+                "semantic_theme": "spiritual",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "tulsi-manas-temple",
+                        "tulsi-manas-white-marble-temple"
+                ]
+        },
+        "varanasi:sankat-mochan-hanuman-temple-and-besan-laddoos": {
+                "place_name": "Sankat Mochan Hanuman Temple & Besan Laddoos",
+                "image_url": "/images/places/varanasi/sankat-mochan-temple.webp",
+                "visual_description": "A sacred shrine founded by Tulsidas in the 16th century dedicated to Lord Hanuman, world-famous for pure desi ghee besan laddoos and peaceful gardens.",
+                "category": "Culture & Heritage",
+                "semantic_theme": "spiritual",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "besan-laddoos",
+                        "sankat-mochan-hanuman-temple",
+                        "sankat-mochan-hanuman-temple-and-besan-laddoos",
+                        "sankat-mochan-temple"
+                ]
+        },
+        "varanasi:chet-singh-fort-and-river-ramparts": {
+                "place_name": "Chet Singh Fort & River Ramparts",
+                "image_url": "/images/places/varanasi/chet-singh-fort-ghat.webp",
+                "visual_description": "A fortified 18th-century palace built by Maharaja Chet Singh overlooking the Ganga where the historic battle against Warren Hastings took place.",
+                "category": "Culture & Heritage",
+                "semantic_theme": "heritage",
+                "source_type": "editorial_artwork",
+                "source": "vanvas_curated",
+                "aliases": [
+                        "chet-singh-fort",
+                        "chet-singh-fort-and-river-ramparts",
+                        "chet-singh-fort-ghat",
+                        "river-ramparts"
                 ]
         },
         "delhi:qutub-minar": {
@@ -5637,6 +6414,25 @@ class CuratedArtworkProvider(ArtworkProvider):
         "agra:panchhi-petha-store": "agra:panchhi-petha-original-sadar-bazaar",
         "agra:akbars-great-tomb-at-sikandra": "agra:akbars-great-tomb-at-sikandra",
         "agra:akbar-tomb-sikandra": "agra:akbars-great-tomb-at-sikandra",
+        "agra:chini-ka-rauza-persian-glazed-tile-tomb": "agra:chini-ka-rauza-persian-glazed-tile-tomb",
+        "agra:hero": "agra:chini-ka-rauza-persian-glazed-tile-tomb",
+        "agra:chini-ka-rauza": "agra:chini-ka-rauza-persian-glazed-tile-tomb",
+        "agra:persian-glazed-tile-tomb": "agra:chini-ka-rauza-persian-glazed-tile-tomb",
+        "agra:mariam-uz-zamani-tomb-empress-jodha-bai": "agra:akbars-great-tomb-at-sikandra",
+        "agra:empress-jodha-bai": "agra:akbars-great-tomb-at-sikandra",
+        "agra:mariam-uz-zamani-tomb": "agra:akbars-great-tomb-at-sikandra",
+        "agra:kinari-bazaar-heritage-zardozi-and-spice-market": "agra:panchhi-petha-original-sadar-bazaar",
+        "agra:kinari-bazaar-heritage-zardozi": "agra:panchhi-petha-original-sadar-bazaar",
+        "agra:spice-market": "agra:panchhi-petha-original-sadar-bazaar",
+        "agra:soor-sarovar-bird-sanctuary-and-keetham-lake": "agra:mehtab-bagh-moonlight-river-gardens",
+        "agra:keetham-lake": "agra:mehtab-bagh-moonlight-river-gardens",
+        "agra:soor-sarovar-bird-sanctuary": "agra:mehtab-bagh-moonlight-river-gardens",
+        "agra:taj-nature-walk-forest-ridge-trail": "agra:taj-mahal-white-marble-monument",
+        "agra:aram-bagh-babur-1528-charbagh-garden": "agra:fatehpur-sikri-imperial-capital-city",
+        "agra:aram-bagh": "agra:fatehpur-sikri-imperial-capital-city",
+        "agra:babur-1528-charbagh-garden": "agra:fatehpur-sikri-imperial-capital-city",
+        "agra:dasaprakash-heritage-south-indian-dining": "agra:shankar-mithai-bhandar-bedmi-puri-and-jalebi",
+        "agra:korai-tribal-craft-village-en-route-fatehpur": "agra:fatehpur-sikri-imperial-capital-city",
         "alwar-siliserh:siliserh-lake-palace-and-royal-boat-club": "alwar-siliserh:siliserh-lake-palace-and-royal-boat-club",
         "alwar-siliserh:siliserh-lake-palace": "alwar-siliserh:siliserh-lake-palace-and-royal-boat-club",
         "alwar-siliserh:royal-boat-club": "alwar-siliserh:siliserh-lake-palace-and-royal-boat-club",
@@ -5648,10 +6444,10 @@ class CuratedArtworkProvider(ArtworkProvider):
         "alwar-siliserh:alwar-city-palace": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
         "alwar-siliserh:alwar-siliserh-city-palace": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
         "alwar-siliserh:city-palace": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
+        "alwar-siliserh:city-palace-alwar": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
         "alwar-siliserh:city-palace-alwar-siliserh": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
+        "alwar-siliserh:city-palace-of-alwar": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
         "alwar-siliserh:city-palace-of-alwar-siliserh": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
-        "alwar-siliserh:city-palace-of-udaipur": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
-        "alwar-siliserh:city-palace-udaipur": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
         "alwar-siliserh:vinay-vilas-mahal": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
         "alwar-siliserh:moosi-maharani-ki-chhatri-cenotaph": "alwar-siliserh:moosi-maharani-ki-chhatri-cenotaph",
         "alwar-siliserh:moosi-maharani-chhatri": "alwar-siliserh:moosi-maharani-ki-chhatri-cenotaph",
@@ -5671,6 +6467,27 @@ class CuratedArtworkProvider(ArtworkProvider):
         "alwar-siliserh:fateh-jung-gumbad": "alwar-siliserh:fateh-jung-ka-gumbad-1647-tomb",
         "alwar-siliserh:1647-tomb": "alwar-siliserh:fateh-jung-ka-gumbad-1647-tomb",
         "alwar-siliserh:fateh-jung-ka-gumbad": "alwar-siliserh:fateh-jung-ka-gumbad-1647-tomb",
+        "alwar-siliserh:sagar-water-kund-and-royal-bathing-stepped-ghats": "alwar-siliserh:moosi-maharani-ki-chhatri-cenotaph",
+        "alwar-siliserh:royal-bathing-stepped-ghats": "alwar-siliserh:moosi-maharani-ki-chhatri-cenotaph",
+        "alwar-siliserh:sagar-water-kund": "alwar-siliserh:moosi-maharani-ki-chhatri-cenotaph",
+        "alwar-siliserh:purjan-vihar-company-garden-british-oasis": "alwar-siliserh:purjan-vihar-company-garden-british-oasis",
+        "alwar-siliserh:hero": "alwar-siliserh:purjan-vihar-company-garden-british-oasis",
+        "alwar-siliserh:company-garden-british-oasis": "alwar-siliserh:purjan-vihar-company-garden-british-oasis",
+        "alwar-siliserh:purjan-vihar": "alwar-siliserh:purjan-vihar-company-garden-british-oasis",
+        "alwar-siliserh:tijara-atishaya-kshetra-jain-tirtha": "alwar-siliserh:alwar-city-palace-vinay-vilas-mahal",
+        "alwar-siliserh:talvriksha-sacred-springs-and-mandavya-hermitage": "alwar-siliserh:siliserh-lake-palace-and-royal-boat-club",
+        "alwar-siliserh:mandavya-hermitage": "alwar-siliserh:siliserh-lake-palace-and-royal-boat-club",
+        "alwar-siliserh:talvriksha-sacred-springs": "alwar-siliserh:siliserh-lake-palace-and-royal-boat-club",
+        "alwar-siliserh:vijay-mandir-palace-and-sita-ram-temple": "alwar-siliserh:bala-quila-alwar-hilltop-fort",
+        "alwar-siliserh:sita-ram-temple": "alwar-siliserh:bala-quila-alwar-hilltop-fort",
+        "alwar-siliserh:vijay-mandir-palace": "alwar-siliserh:bala-quila-alwar-hilltop-fort",
+        "alwar-siliserh:neelkanth-mahadev-ancient-hilltop-sanctuary": "alwar-siliserh:government-museum-royal-armor-and-manuscripts",
+        "alwar-siliserh:hope-circus-heritage-market-and-clock-tower": "alwar-siliserh:baba-thakur-das-and-sons-origin-of-alwar-kalakand",
+        "alwar-siliserh:clock-tower": "alwar-siliserh:baba-thakur-das-and-sons-origin-of-alwar-kalakand",
+        "alwar-siliserh:hope-circus-heritage-market": "alwar-siliserh:baba-thakur-das-and-sons-origin-of-alwar-kalakand",
+        "alwar-siliserh:kalakand-gali-mawa-artisans-street": "alwar-siliserh:baba-thakur-das-and-sons-origin-of-alwar-kalakand",
+        "alwar-siliserh:kalakand-gali": "alwar-siliserh:baba-thakur-das-and-sons-origin-of-alwar-kalakand",
+        "alwar-siliserh:mawa-artisans-street": "alwar-siliserh:baba-thakur-das-and-sons-origin-of-alwar-kalakand",
         "chandigarh:rock-garden-of-chandigarh-nek-chands-fantasy": "chandigarh:rock-garden-of-chandigarh-nek-chands-fantasy",
         "chandigarh:rock-garden-chandigarh": "chandigarh:rock-garden-of-chandigarh-nek-chands-fantasy",
         "chandigarh:nek-chands-fantasy": "chandigarh:rock-garden-of-chandigarh-nek-chands-fantasy",
@@ -5701,6 +6518,25 @@ class CuratedArtworkProvider(ArtworkProvider):
         "chandigarh:pal-dhaba": "chandigarh:pal-dhaba-legendary-butter-chicken-and-keema",
         "chandigarh:sector-10-tree-lined-boulevard-cycling-route": "chandigarh:sector-10-tree-lined-boulevard-cycling-route",
         "chandigarh:boulevard-cycling-trail": "chandigarh:sector-10-tree-lined-boulevard-cycling-route",
+        "chandigarh:japanese-garden-sector-31-zen-sanctuary": "chandigarh:zakir-hussain-rose-garden",
+        "chandigarh:terraced-garden-and-musical-water-cascade": "chandigarh:zakir-hussain-rose-garden",
+        "chandigarh:musical-water-cascade": "chandigarh:zakir-hussain-rose-garden",
+        "chandigarh:terraced-garden": "chandigarh:zakir-hussain-rose-garden",
+        "chandigarh:government-museum-and-art-gallery-sector-10": "chandigarh:le-corbusier-capitol-complex-unesco-heritage",
+        "chandigarh:art-gallery-sector-10": "chandigarh:le-corbusier-capitol-complex-unesco-heritage",
+        "chandigarh:government-museum": "chandigarh:le-corbusier-capitol-complex-unesco-heritage",
+        "chandigarh:national-cactus-and-succulent-botanical-garden": "chandigarh:sector-10-tree-lined-boulevard-cycling-route",
+        "chandigarh:open-hand-monument-symbol-of-peace-and-giving": "chandigarh:le-corbusier-capitol-complex-unesco-heritage",
+        "chandigarh:giving": "chandigarh:le-corbusier-capitol-complex-unesco-heritage",
+        "chandigarh:open-hand-monument": "chandigarh:le-corbusier-capitol-complex-unesco-heritage",
+        "chandigarh:symbol-of-peace": "chandigarh:le-corbusier-capitol-complex-unesco-heritage",
+        "chandigarh:yadavindra-gardens-pinjore-17th-century-mughal-terraces": "chandigarh:sukhna-lake-promenade-and-shivalik-views",
+        "chandigarh:17th-century-mughal-terraces": "chandigarh:sukhna-lake-promenade-and-shivalik-views",
+        "chandigarh:yadavindra-gardens-pinjore": "chandigarh:sukhna-lake-promenade-and-shivalik-views",
+        "chandigarh:sindhi-sweets-sector-17-chole-bhature-hub": "chandigarh:sector-17-open-plaza-and-pedestrian-promenade",
+        "chandigarh:timber-trail-mountain-cable-car-shivalik-gorge": "chandigarh:sector-10-tree-lined-boulevard-cycling-route",
+        "chandigarh:shivalik-gorge": "chandigarh:sector-10-tree-lined-boulevard-cycling-route",
+        "chandigarh:timber-trail-mountain-cable-car": "chandigarh:sector-10-tree-lined-boulevard-cycling-route",
         "damdama-sohna:damdama-lake-natural-boating-basin": "damdama-sohna:damdama-lake-natural-boating-basin",
         "damdama-sohna:damdama-lake-boating": "damdama-sohna:damdama-lake-natural-boating-basin",
         "damdama-sohna:sohna-sulphur-hot-springs-and-ancient-shiva-kund": "damdama-sohna:sohna-sulphur-hot-springs-and-ancient-shiva-kund",
@@ -5722,6 +6558,24 @@ class CuratedArtworkProvider(ArtworkProvider):
         "damdama-sohna:dawat-aravalli-dhaba": "damdama-sohna:dawat-e-khas-aravalli-highway-dhaba",
         "damdama-sohna:saras-tourist-resort-damdama-promenade": "damdama-sohna:saras-tourist-resort-damdama-promenade",
         "damdama-sohna:saras-lake-promenade": "damdama-sohna:saras-tourist-resort-damdama-promenade",
+        "damdama-sohna:camp-mustang-aravalli-obstacle-base": "damdama-sohna:botanix-nature-adventure-park-and-organic-farm",
+        "damdama-sohna:badkhal-aravalli-ridge-mountain-drive": "damdama-sohna:aravalli-bio-diversity-ridge-nature-trails",
+        "damdama-sohna:lost-lake-hidden-aravalli-water-reservoir": "damdama-sohna:damdama-lake-natural-boating-basin",
+        "damdama-sohna:hidden-aravalli-water-reservoir": "damdama-sohna:damdama-lake-natural-boating-basin",
+        "damdama-sohna:lost-lake": "damdama-sohna:damdama-lake-natural-boating-basin",
+        "damdama-sohna:bhondsi-nature-park-and-bhuvneshwari-devi-grove": "damdama-sohna:aravalli-bio-diversity-ridge-nature-trails",
+        "damdama-sohna:bhondsi-nature-park": "damdama-sohna:aravalli-bio-diversity-ridge-nature-trails",
+        "damdama-sohna:bhuvneshwari-devi-grove": "damdama-sohna:aravalli-bio-diversity-ridge-nature-trails",
+        "damdama-sohna:aravalli-hills-footprint-and-golf-glades": "damdama-sohna:saras-tourist-resort-damdama-promenade",
+        "damdama-sohna:aravalli-hills-footprint": "damdama-sohna:saras-tourist-resort-damdama-promenade",
+        "damdama-sohna:golf-glades": "damdama-sohna:saras-tourist-resort-damdama-promenade",
+        "damdama-sohna:historic-sohna-vintage-car-circuit-trail": "damdama-sohna:sohna-hilltop-fort-ruins-and-viewpoint",
+        "damdama-sohna:mangar-bani-sacred-forest-and-wildlife-corridor": "damdama-sohna:aravalli-bio-diversity-ridge-nature-trails",
+        "damdama-sohna:mangar-bani-sacred-forest": "damdama-sohna:aravalli-bio-diversity-ridge-nature-trails",
+        "damdama-sohna:wildlife-corridor": "damdama-sohna:aravalli-bio-diversity-ridge-nature-trails",
+        "damdama-sohna:tau-devi-lal-botanical-park-and-butterfly-garden": "damdama-sohna:saras-tourist-resort-damdama-promenade",
+        "damdama-sohna:butterfly-garden": "damdama-sohna:saras-tourist-resort-damdama-promenade",
+        "damdama-sohna:tau-devi-lal-botanical-park": "damdama-sohna:saras-tourist-resort-damdama-promenade",
         "dehradun:robbers-cave-guchhupani-limestone-gorge": "dehradun:robbers-cave-guchhupani-limestone-gorge",
         "dehradun:robbers-cave": "dehradun:robbers-cave-guchhupani-limestone-gorge",
         "dehradun:guchhupani-limestone-gorge": "dehradun:robbers-cave-guchhupani-limestone-gorge",
@@ -5745,6 +6599,32 @@ class CuratedArtworkProvider(ArtworkProvider):
         "dehradun:malsi-deer-park-dehradun-zoo": "dehradun:malsi-deer-park-dehradun-zoo",
         "dehradun:malsi-deer-park": "dehradun:malsi-deer-park-dehradun-zoo",
         "dehradun:dehradun-zoo": "dehradun:malsi-deer-park-dehradun-zoo",
+        "dehradun:paltan-bazaar-and-1953-ghanta-ghar-clock-tower": "dehradun:paltan-bazaar-and-1953-ghanta-ghar-clock-tower",
+        "dehradun:hero": "dehradun:paltan-bazaar-and-1953-ghanta-ghar-clock-tower",
+        "dehradun:1953-ghanta-ghar-clock-tower": "dehradun:paltan-bazaar-and-1953-ghanta-ghar-clock-tower",
+        "dehradun:paltan-bazaar": "dehradun:paltan-bazaar-and-1953-ghanta-ghar-clock-tower",
+        "dehradun:khalanga-war-memorial-british-tribute-to-gurkha-bravery": "dehradun:forest-research-institute-colonial-colonnades",
+        "dehradun:british-tribute-to-gurkha-bravery": "dehradun:forest-research-institute-colonial-colonnades",
+        "dehradun:khalanga-war-memorial": "dehradun:forest-research-institute-colonial-colonnades",
+        "dehradun:shikhar-fall-woodland-cascade-and-stream": "dehradun:sahastradhara-thousandfold-sulphur-springs",
+        "dehradun:shikhar-fall-woodland-cascade": "dehradun:sahastradhara-thousandfold-sulphur-springs",
+        "dehradun:stream": "dehradun:sahastradhara-thousandfold-sulphur-springs",
+        "dehradun:lachhiwala-nature-park-and-stream-pools": "dehradun:malsi-deer-park-dehradun-zoo",
+        "dehradun:lachhiwala-nature-park": "dehradun:malsi-deer-park-dehradun-zoo",
+        "dehradun:stream-pools": "dehradun:malsi-deer-park-dehradun-zoo",
+        "dehradun:maldevta-pebble-riverbed-and-camping-meadows": "dehradun:robbers-cave-guchhupani-limestone-gorge",
+        "dehradun:camping-meadows": "dehradun:robbers-cave-guchhupani-limestone-gorge",
+        "dehradun:maldevta-pebble-riverbed": "dehradun:robbers-cave-guchhupani-limestone-gorge",
+        "dehradun:kumar-sweets-and-confectioners-kumaoni-bal-mithai": "dehradun:elloras-melting-moments-since-1953",
+        "dehradun:confectioners": "dehradun:elloras-melting-moments-since-1953",
+        "dehradun:kumaoni-bal-mithai": "dehradun:elloras-melting-moments-since-1953",
+        "dehradun:kumar-sweets": "dehradun:elloras-melting-moments-since-1953",
+        "dehradun:kalsi-ashokan-rock-edict-3rd-century-bce": "dehradun:mindrolling-monastery-and-great-stupa",
+        "dehradun:3rd-century-bce": "dehradun:mindrolling-monastery-and-great-stupa",
+        "dehradun:kalsi-ashokan-rock-edict": "dehradun:mindrolling-monastery-and-great-stupa",
+        "dehradun:asan-barrage-bird-sanctuary-and-wetland-reserve": "dehradun:sahastradhara-thousandfold-sulphur-springs",
+        "dehradun:asan-barrage-bird-sanctuary": "dehradun:sahastradhara-thousandfold-sulphur-springs",
+        "dehradun:wetland-reserve": "dehradun:sahastradhara-thousandfold-sulphur-springs",
         "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
         "dharamshala:tsuglagkhang-temple": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
         "dharamshala:dalai-lama-temple": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
@@ -5773,6 +6653,31 @@ class CuratedArtworkProvider(ArtworkProvider):
         "dharamshala:dharamkot-village": "dharamshala:dharamkot-yoga-and-meditation-village",
         "dharamshala:dharamkot-yoga": "dharamshala:dharamkot-yoga-and-meditation-village",
         "dharamshala:meditation-village": "dharamshala:dharamkot-yoga-and-meditation-village",
+        "dharamshala:kangra-fort-ancient-4th-century-bce-citadel": "dharamshala:norbulingka-institute-of-tibetan-arts",
+        "dharamshala:ancient-4th-century-bce-citadel": "dharamshala:norbulingka-institute-of-tibetan-arts",
+        "dharamshala:kangra-fort": "dharamshala:norbulingka-institute-of-tibetan-arts",
+        "dharamshala:gyuto-monastery-tantric-chanting-and-karmapa-seat": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
+        "dharamshala:gyuto-monastery": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
+        "dharamshala:karmapa-seat": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
+        "dharamshala:tantric-chanting": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
+        "dharamshala:naddi-village-dhauladhar-sunset-crest": "dharamshala:naddi-village-dhauladhar-sunset-crest",
+        "dharamshala:triund-trek": "dharamshala:triund-trek",
+        "dharamshala:kareri-glacial-lake-trailhead-ghera-base": "dharamshala:kareri-glacial-lake-trailhead-ghera-base",
+        "dharamshala:bhagsunag-waterfall": "dharamshala:bhagsunag-waterfall",
+        "dharamshala:ghera-base": "dharamshala:kareri-glacial-lake-trailhead-ghera-base",
+        "dharamshala:kareri-glacial-lake-trailhead": "dharamshala:kareri-glacial-lake-trailhead-ghera-base",
+        "dharamshala:dal-lake-dharamshala-and-sacred-deodar-groves": "dharamshala:st-john-in-the-wilderness-church-1852",
+        "dharamshala:dal-lake-dharamshala": "dharamshala:st-john-in-the-wilderness-church-1852",
+        "dharamshala:sacred-deodar-groves": "dharamshala:st-john-in-the-wilderness-church-1852",
+        "dharamshala:tibetan-butter-tea-and-tingmo-bakery-lane": "dharamshala:tibet-kitchen-traditional-momos-and-thukpa",
+        "dharamshala:tibetan-butter-tea": "dharamshala:tibet-kitchen-traditional-momos-and-thukpa",
+        "dharamshala:tingmo-bakery-lane": "dharamshala:tibet-kitchen-traditional-momos-and-thukpa",
+        "dharamshala:masroor-monolithic-rock-cut-temples-8th-century": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
+        "dharamshala:8th-century": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
+        "dharamshala:masroor-monolithic-rock-cut-temples": "dharamshala:tsuglagkhang-complex-and-dalai-lama-temple",
+        "dharamshala:tashi-jong-buddhist-craft-community-and-stupas": "dharamshala:dharamkot-yoga-and-meditation-village",
+        "dharamshala:stupas": "dharamshala:dharamkot-yoga-and-meditation-village",
+        "dharamshala:tashi-jong-buddhist-craft-community": "dharamshala:dharamkot-yoga-and-meditation-village",
         "goa:chapora-fort-hilltop-viewpoint": "goa:chapora-fort-hilltop-viewpoint",
         "goa:chapora-fort": "goa:chapora-fort-hilltop-viewpoint",
         "goa:fontainhas-heritage-latin-quarter": "goa:fontainhas-heritage-latin-quarter",
@@ -5794,6 +6699,33 @@ class CuratedArtworkProvider(ArtworkProvider):
         "goa:vinayak-family-restaurant-authentic-goan-fish-thali": "goa:vinayak-family-restaurant-authentic-goan-fish-thali",
         "goa:vinayak-family-restaurant": "goa:vinayak-family-restaurant-authentic-goan-fish-thali",
         "goa:authentic-goan-fish-thali": "goa:vinayak-family-restaurant-authentic-goan-fish-thali",
+        "goa:basilica-of-bom-jesus-unesco-world-heritage": "goa:basilica-of-bom-jesus-unesco-world-heritage",
+        "goa:basilica-bom-jesus": "goa:basilica-of-bom-jesus-unesco-world-heritage",
+        "goa:basilica-of-bom-jesus": "goa:basilica-of-bom-jesus-unesco-world-heritage",
+        "goa:unesco-world-heritage": "goa:basilica-of-bom-jesus-unesco-world-heritage",
+        "goa:arambol-sweet-water-lagoon-and-banyan-tree-trail": "goa:ashwem-beach-casuarina-pines",
+        "goa:arambol-sweet-water-lagoon": "goa:ashwem-beach-casuarina-pines",
+        "goa:banyan-tree-trail": "goa:ashwem-beach-casuarina-pines",
+        "goa:divar-island-serene-paddy-and-village-circuit": "goa:divar-island-village-ferry-and-backwaters",
+        "goa:divar-island-serene-paddy": "goa:divar-island-village-ferry-and-backwaters",
+        "goa:village-circuit": "goa:divar-island-village-ferry-and-backwaters",
+        "goa:palolem-crescent-beach-and-butterfly-island": "goa:palolem-crescent-beach-and-butterfly-island",
+        "goa:palolem-beach": "goa:palolem-crescent-beach-and-butterfly-island",
+        "goa:butterfly-island": "goa:palolem-crescent-beach-and-butterfly-island",
+        "goa:palolem-crescent-beach": "goa:palolem-crescent-beach-and-butterfly-island",
+        "goa:artjuna-garden-cafe-and-lifestyle-sanctuary": "goa:artjuna-lifestyle-garden-cafe",
+        "goa:artjuna-garden-cafe": "goa:artjuna-lifestyle-garden-cafe",
+        "goa:lifestyle-sanctuary": "goa:artjuna-lifestyle-garden-cafe",
+        "goa:vinayak-family-restaurant-authentic-goan-thali": "goa:vinayak-family-restaurant-authentic-goan-fish-thali",
+        "goa:authentic-goan-thali": "goa:vinayak-family-restaurant-authentic-goan-fish-thali",
+        "goa:fort-aguada-and-1864-portuguese-lighthouse": "goa:fort-aguada-and-1864-portuguese-lighthouse",
+        "goa:aguada-fort": "goa:fort-aguada-and-1864-portuguese-lighthouse",
+        "goa:1864-portuguese-lighthouse": "goa:fort-aguada-and-1864-portuguese-lighthouse",
+        "goa:fort-aguada": "goa:fort-aguada-and-1864-portuguese-lighthouse",
+        "goa:anjuna-rocky-beach-cove-and-curlies-point": "goa:anjuna-rocky-beach-cove-and-curlies-point",
+        "goa:anjuna-beach-cove": "goa:anjuna-rocky-beach-cove-and-curlies-point",
+        "goa:anjuna-rocky-beach-cove": "goa:anjuna-rocky-beach-cove-and-curlies-point",
+        "goa:curlies-point": "goa:anjuna-rocky-beach-cove-and-curlies-point",
         "jaipur:amber-fort-and-sheesh-mahal": "jaipur:amber-fort",
         "jaipur:amber-fort": "jaipur:amber-fort",
         "jaipur:sheesh-mahal": "jaipur:amber-fort-and-sheesh-mahal",
@@ -5809,8 +6741,6 @@ class CuratedArtworkProvider(ArtworkProvider):
         "jaipur:chandra-mahal": "jaipur:jaipur-city-palace-and-chandra-mahal",
         "jaipur:city-palace": "jaipur:jaipur-city-palace-and-chandra-mahal",
         "jaipur:city-palace-of-jaipur": "jaipur:jaipur-city-palace-and-chandra-mahal",
-        "jaipur:city-palace-of-udaipur": "jaipur:jaipur-city-palace-and-chandra-mahal",
-        "jaipur:city-palace-udaipur": "jaipur:jaipur-city-palace-and-chandra-mahal",
         "jaipur:jaipur-city-palace": "jaipur:jaipur-city-palace-and-chandra-mahal",
         "jaipur:laxmi-misthan-bhandar-lmb-1727": "jaipur:laxmi-misthan-bhandar-lmb-1727",
         "jaipur:lmb-sweets": "jaipur:laxmi-misthan-bhandar-lmb-1727",
@@ -5820,6 +6750,30 @@ class CuratedArtworkProvider(ArtworkProvider):
         "jaipur:anokhi-museum": "jaipur:anokhi-museum-of-hand-printing",
         "jaipur:tapri-central-rooftop-tea-lounge": "jaipur:tapri-central-rooftop-tea-lounge",
         "jaipur:tapri-central": "jaipur:tapri-central-rooftop-tea-lounge",
+        "jaipur:jantar-mantar-unesco-astronomical-observatory": "jaipur:jantar-mantar-unesco-astronomical-observatory",
+        "jaipur:jantar-mantar": "jaipur:jantar-mantar-unesco-astronomical-observatory",
+        "jaipur:jaigarh-fort-and-jaivana-royal-cannon": "jaipur:amber-fort-and-sheesh-mahal",
+        "jaipur:jaigarh-fort": "jaipur:amber-fort-and-sheesh-mahal",
+        "jaipur:jaivana-royal-cannon": "jaipur:amber-fort-and-sheesh-mahal",
+        "jaipur:jal-mahal-the-floating-water-palace": "jaipur:hawa-mahal-palace-of-winds",
+        "jaipur:jal-mahal": "jaipur:hawa-mahal-palace-of-winds",
+        "jaipur:the-floating-water-palace": "jaipur:hawa-mahal-palace-of-winds",
+        "jaipur:galta-ji-the-sacred-monkey-temple-and-kunds": "jaipur:panna-meena-ka-kund-stepwell",
+        "jaipur:galta-ji": "jaipur:panna-meena-ka-kund-stepwell",
+        "jaipur:kunds": "jaipur:panna-meena-ka-kund-stepwell",
+        "jaipur:the-sacred-monkey-temple": "jaipur:panna-meena-ka-kund-stepwell",
+        "jaipur:albert-hall-state-museum-indo-saracenic": "jaipur:jaipur-city-palace-and-chandra-mahal",
+        "jaipur:albert-hall-state-museum": "jaipur:jaipur-city-palace-and-chandra-mahal",
+        "jaipur:indo-saracenic": "jaipur:jaipur-city-palace-and-chandra-mahal",
+        "jaipur:patrika-gate-and-jawahar-circle-garden": "jaipur:anokhi-museum-of-hand-printing",
+        "jaipur:jawahar-circle-garden": "jaipur:anokhi-museum-of-hand-printing",
+        "jaipur:patrika-gate": "jaipur:anokhi-museum-of-hand-printing",
+        "jaipur:rawat-mishthan-bhandar-original-pyaaz-kachori": "jaipur:laxmi-misthan-bhandar-lmb-1727",
+        "jaipur:original-pyaaz-kachori": "jaipur:laxmi-misthan-bhandar-lmb-1727",
+        "jaipur:rawat-mishthan-bhandar": "jaipur:laxmi-misthan-bhandar-lmb-1727",
+        "jaipur:wind-view-cafe-hawa-mahal-eye-level-terrace": "jaipur:tapri-central-rooftop-tea-lounge",
+        "jaipur:hawa-mahal-eye-level-terrace": "jaipur:tapri-central-rooftop-tea-lounge",
+        "jaipur:wind-view-cafe": "jaipur:tapri-central-rooftop-tea-lounge",
         "jaisalmer:jaisalmer-golden-living-fort-sonar-qila": "jaisalmer:jaisalmer-golden-living-fort-sonar-qila",
         "jaisalmer:jaisalmer-fort": "jaisalmer:jaisalmer-golden-living-fort-sonar-qila",
         "jaisalmer:jaisalmer-golden-living-fort": "jaisalmer:jaisalmer-golden-living-fort-sonar-qila",
@@ -5846,6 +6800,30 @@ class CuratedArtworkProvider(ArtworkProvider):
         "jaisalmer:salim-singh-ki-haveli-moti-mahal": "jaisalmer:salim-singh-ki-haveli-moti-mahal",
         "jaisalmer:salim-singh-ki-haveli": "jaisalmer:salim-singh-ki-haveli-moti-mahal",
         "jaisalmer:moti-mahal": "jaisalmer:salim-singh-ki-haveli-moti-mahal",
+        "jaisalmer:bada-bagh-royal-cenotaphs-and-desert-windmills": "jaisalmer:jaisalmer-golden-living-fort-sonar-qila",
+        "jaisalmer:bada-bagh": "jaisalmer:jaisalmer-golden-living-fort-sonar-qila",
+        "jaisalmer:desert-windmills": "jaisalmer:jaisalmer-golden-living-fort-sonar-qila",
+        "jaisalmer:royal-cenotaphs": "jaisalmer:jaisalmer-golden-living-fort-sonar-qila",
+        "jaisalmer:khuri-village-quiet-sand-dunes-and-mud-homestays": "jaisalmer:sam-sand-dunes-and-thar-desert-safari",
+        "jaisalmer:khuri-village": "jaisalmer:sam-sand-dunes-and-thar-desert-safari",
+        "jaisalmer:mud-homestays": "jaisalmer:sam-sand-dunes-and-thar-desert-safari",
+        "jaisalmer:quiet-sand-dunes": "jaisalmer:sam-sand-dunes-and-thar-desert-safari",
+        "jaisalmer:tanot-mata-temple-the-miraculous-indo-pak-border-shrine": "jaisalmer:gadisar-lake-ghats-and-chattris",
+        "jaisalmer:tanot-mata-temple": "jaisalmer:gadisar-lake-ghats-and-chattris",
+        "jaisalmer:the-miraculous-indo-pak-border-shrine": "jaisalmer:gadisar-lake-ghats-and-chattris",
+        "jaisalmer:desert-national-park-great-indian-bustard-safari": "jaisalmer:sam-sand-dunes-and-thar-desert-safari",
+        "jaisalmer:desert-national-park": "jaisalmer:sam-sand-dunes-and-thar-desert-safari",
+        "jaisalmer:great-indian-bustard-safari": "jaisalmer:sam-sand-dunes-and-thar-desert-safari",
+        "jaisalmer:lodurva-ancient-capital-and-kalpavriksha-wish-tree": "jaisalmer:jaisalmer-fort-seven-jain-temples",
+        "jaisalmer:kalpavriksha-wish-tree": "jaisalmer:jaisalmer-fort-seven-jain-temples",
+        "jaisalmer:lodurva-ancient-capital": "jaisalmer:jaisalmer-fort-seven-jain-temples",
+        "jaisalmer:vyas-chhatri-sage-vyas-sandstone-cenotaph": "jaisalmer:patwon-ki-haveli-filigree-architecture",
+        "jaisalmer:sage-vyas-sandstone-cenotaph": "jaisalmer:patwon-ki-haveli-filigree-architecture",
+        "jaisalmer:vyas-chhatri": "jaisalmer:patwon-ki-haveli-filigree-architecture",
+        "jaisalmer:surya-kishore-authentic-dal-baati-churma": "jaisalmer:the-trio-rooftop-authentic-laal-maas",
+        "jaisalmer:desert-cultural-centre-and-folk-puppetry-museum": "jaisalmer:salim-singh-ki-haveli-moti-mahal",
+        "jaisalmer:desert-cultural-centre": "jaisalmer:salim-singh-ki-haveli-moti-mahal",
+        "jaisalmer:folk-puppetry-museum": "jaisalmer:salim-singh-ki-haveli-moti-mahal",
         "kainchi-dham:neem-karoli-baba-sacred-ashram-and-temple": "kainchi-dham:neem-karoli-baba-sacred-ashram-and-temple",
         "kainchi-dham:neem-karoli-baba-ashram": "kainchi-dham:neem-karoli-baba-sacred-ashram-and-temple",
         "kainchi-dham:neem-karoli-baba-sacred-ashram": "kainchi-dham:neem-karoli-baba-sacred-ashram-and-temple",
@@ -5873,6 +6851,25 @@ class CuratedArtworkProvider(ArtworkProvider):
         "kainchi-dham:nine-cornered-lake": "kainchi-dham:naukuchiatal-nine-cornered-lake",
         "kainchi-dham:shyamkhet-organic-tea-garden-walk": "kainchi-dham:shyamkhet-organic-tea-garden-walk",
         "kainchi-dham:shyamkhet-tea-estate": "kainchi-dham:shyamkhet-organic-tea-garden-walk",
+        "kainchi-dham:pangot-oak-forest-and-himalayan-birding-sanctuary": "kainchi-dham:sattal-seven-interconnected-freshwater-lakes",
+        "kainchi-dham:himalayan-birding-sanctuary": "kainchi-dham:sattal-seven-interconnected-freshwater-lakes",
+        "kainchi-dham:pangot-oak-forest": "kainchi-dham:sattal-seven-interconnected-freshwater-lakes",
+        "kainchi-dham:mukteshwar-dham-350-year-hilltop-shiva-temple": "kainchi-dham:neem-karoli-baba-sacred-ashram-and-temple",
+        "kainchi-dham:chauli-ki-jali-vertical-mountain-ridge-and-sunset-crag": "kainchi-dham:bhimtal-lake-and-central-aquarium-island",
+        "kainchi-dham:chauli-ki-jali": "kainchi-dham:bhimtal-lake-and-central-aquarium-island",
+        "kainchi-dham:sunset-crag": "kainchi-dham:bhimtal-lake-and-central-aquarium-island",
+        "kainchi-dham:vertical-mountain-ridge": "kainchi-dham:bhimtal-lake-and-central-aquarium-island",
+        "kainchi-dham:hidimba-parvat-pine-forest-trail": "kainchi-dham:sattal-seven-interconnected-freshwater-lakes",
+        "kainchi-dham:chaubatia-apple-and-apricot-research-orchards": "kainchi-dham:bhowali-fruit-market-and-tea-terraces",
+        "kainchi-dham:apricot-research-orchards": "kainchi-dham:bhowali-fruit-market-and-tea-terraces",
+        "kainchi-dham:chaubatia-apple": "kainchi-dham:bhowali-fruit-market-and-tea-terraces",
+        "kainchi-dham:karkotak-nag-mandir-hilltop-crest": "kainchi-dham:golu-devta-temple-ghorakhal-temple-of-bells",
+        "kainchi-dham:kamal-tal-the-secluded-lotus-lake-of-naukuchiatal": "kainchi-dham:naukuchiatal-nine-cornered-lake",
+        "kainchi-dham:kamal-tal": "kainchi-dham:naukuchiatal-nine-cornered-lake",
+        "kainchi-dham:the-secluded-lotus-lake-of-naukuchiatal": "kainchi-dham:naukuchiatal-nine-cornered-lake",
+        "kainchi-dham:kumaoni-heritage-tea-room-and-mountain-jams": "kainchi-dham:subhash-dhaba-traditional-kumaoni-ras-bhaat",
+        "kainchi-dham:kumaoni-heritage-tea-room": "kainchi-dham:subhash-dhaba-traditional-kumaoni-ras-bhaat",
+        "kainchi-dham:mountain-jams": "kainchi-dham:subhash-dhaba-traditional-kumaoni-ras-bhaat",
         "kasol:chalal-riverside-pine-trail": "kasol:chalal-riverside-pine-trail",
         "kasol:chalal-pine-trail": "kasol:chalal-riverside-pine-trail",
         "kasol:manikaran-sahib-gurudwara-and-hot-springs": "kasol:manikaran-sahib-gurudwara-and-hot-springs",
@@ -5897,6 +6894,28 @@ class CuratedArtworkProvider(ArtworkProvider):
         "kasol:nature-park": "kasol:kasol-nature-park-pine-walk",
         "kasol:malana-village-ancient-approach-trail": "kasol:malana-village-ancient-approach-trail",
         "kasol:malana-village-gate": "kasol:malana-village-ancient-approach-trail",
+        "kasol:kheerganga-natural-sulphur-pool-and-meadow": "kasol:chalal-riverside-pine-trail",
+        "kasol:kheerganga-natural-sulphur-pool": "kasol:chalal-riverside-pine-trail",
+        "kasol:meadow": "kasol:chalal-riverside-pine-trail",
+        "kasol:pulga-fairy-forest-ancient-deodar-enclave": "kasol:chalal-riverside-pine-trail",
+        "kasol:ancient-deodar-enclave": "kasol:chalal-riverside-pine-trail",
+        "kasol:pulga-fairy-forest": "kasol:chalal-riverside-pine-trail",
+        "kasol:kalga-village-and-terraced-apple-orchards": "kasol:tosh-village-apple-orchard-ridge",
+        "kasol:kalga-village": "kasol:tosh-village-apple-orchard-ridge",
+        "kasol:terraced-apple-orchards": "kasol:tosh-village-apple-orchard-ridge",
+        "kasol:tulga-rustic-wooden-hamlet": "kasol:tosh-village-apple-orchard-ridge",
+        "kasol:rasol-high-alpine-village-trail-2-600m": "kasol:chalal-riverside-pine-trail",
+        "kasol:600m": "kasol:chalal-riverside-pine-trail",
+        "kasol:rasol-high-alpine-village-trail": "kasol:chalal-riverside-pine-trail",
+        "kasol:chojh-riverside-pebble-beach-and-suspension-bridge": "kasol:chalal-riverside-pine-trail",
+        "kasol:chojh-riverside-pebble-beach": "kasol:chalal-riverside-pine-trail",
+        "kasol:suspension-bridge": "kasol:chalal-riverside-pine-trail",
+        "kasol:jim-morrison-wooden-terrace-and-shakshuka-cafe": "kasol:evergreen-cafe-and-garden-lounge",
+        "kasol:jim-morrison-wooden-terrace": "kasol:evergreen-cafe-and-garden-lounge",
+        "kasol:shakshuka-cafe": "kasol:evergreen-cafe-and-garden-lounge",
+        "kasol:waichin-valley-magic-valley-glacial-meadow": "kasol:malana-village-ancient-approach-trail",
+        "kasol:magic-valley-glacial-meadow": "kasol:malana-village-ancient-approach-trail",
+        "kasol:waichin-valley": "kasol:malana-village-ancient-approach-trail",
         "lansdowne:tip-in-top-tiffin-top-snow-crest-ridge": "lansdowne:tip-in-top-tiffin-top-snow-crest-ridge",
         "lansdowne:tip-in-top-viewpoint": "lansdowne:tip-in-top-tiffin-top-snow-crest-ridge",
         "lansdowne:snow-crest-ridge": "lansdowne:tip-in-top-tiffin-top-snow-crest-ridge",
@@ -5922,6 +6941,22 @@ class CuratedArtworkProvider(ArtworkProvider):
         "lansdowne:tripund-cafe": "lansdowne:lansdowne-hills-colonial-cafe-and-bakery",
         "lansdowne:kalagarh-tiger-reserve-northern-gate": "lansdowne:kalagarh-tiger-reserve-northern-gate",
         "lansdowne:kalagarh-tiger-gateway": "lansdowne:kalagarh-tiger-reserve-northern-gate",
+        "lansdowne:tarkeshwar-mahadev-giant-deodar-sanctuary": "lansdowne:st-johns-catholic-church-1936",
+        "lansdowne:st-marys-anglican-church-1896-heritage-archive": "lansdowne:st-johns-catholic-church-1936",
+        "lansdowne:1896-heritage-archive": "lansdowne:st-johns-catholic-church-1936",
+        "lansdowne:st-marys-anglican-church": "lansdowne:st-johns-catholic-church-1936",
+        "lansdowne:kaleshwar-mahadev-500-year-sage-meditation-cave": "lansdowne:darwan-singh-regimental-museum",
+        "lansdowne:santoshi-mata-temple-sunset-peak-crest": "lansdowne:tip-in-top-tiffin-top-snow-crest-ridge",
+        "lansdowne:santoshi-mata-temple": "lansdowne:tip-in-top-tiffin-top-snow-crest-ridge",
+        "lansdowne:sunset-peak-crest": "lansdowne:tip-in-top-tiffin-top-snow-crest-ridge",
+        "lansdowne:deriyakhal-oak-and-rhododendron-birding-trail": "lansdowne:hawaghar-pine-forest-ridge-promenade",
+        "lansdowne:deriyakhal-oak": "lansdowne:hawaghar-pine-forest-ridge-promenade",
+        "lansdowne:rhododendron-birding-trail": "lansdowne:hawaghar-pine-forest-ridge-promenade",
+        "lansdowne:kanvashram-historic-sanctuary-on-malini-river": "lansdowne:bhulla-tal-lake-and-pine-promenade",
+        "lansdowne:mayur-cafe-steaming-momos-and-ginger-tea": "lansdowne:lansdowne-hills-colonial-cafe-and-bakery",
+        "lansdowne:ginger-tea": "lansdowne:lansdowne-hills-colonial-cafe-and-bakery",
+        "lansdowne:mayur-cafe-steaming-momos": "lansdowne:lansdowne-hills-colonial-cafe-and-bakery",
+        "lansdowne:sadar-bazaar-cantonment-heritage-lane": "lansdowne:bhim-pakora-balancing-stone-wonder",
         "leh:leh-palace-17th-century-fortress": "leh:leh-palace",
         "leh:leh-palace": "leh:leh-palace",
         "leh:shanti-stupa-white-peace-pagoda": "leh:shanti-stupa-white-peace-pagoda",
@@ -5935,7 +6970,7 @@ class CuratedArtworkProvider(ArtworkProvider):
         "leh:confluence-of-indus-and-zanskar-rivers-sangam": "leh:confluence-of-indus-and-zanskar-rivers-sangam",
         "leh:sangam-confluence": "leh:confluence-of-indus-and-zanskar-rivers-sangam",
         "leh:confluence-of-indus": "leh:confluence-of-indus-and-zanskar-rivers-sangam",
-        "leh:sangam": "leh:confluence-of-indus-and-zanskar-rivers-sangam",
+        "leh:sangam": "leh:hall-of-fame-military-and-cultural-museum",
         "leh:zanskar-rivers": "leh:confluence-of-indus-and-zanskar-rivers-sangam",
         "leh:lalas-art-cafe-restored-heritage-labrang": "leh:lalas-art-cafe-restored-heritage-labrang",
         "leh:lalas-art-cafe": "leh:lalas-art-cafe-restored-heritage-labrang",
@@ -5953,6 +6988,23 @@ class CuratedArtworkProvider(ArtworkProvider):
         "leh:cultural-museum": "leh:hall-of-fame-military-and-cultural-museum",
         "leh:hall-of-fame": "leh:hall-of-fame-military-and-cultural-museum",
         "leh:hall-of-fame-military": "leh:hall-of-fame-military-and-cultural-museum",
+        "leh:khardung-la-high-mountain-pass-5-359m": "leh:hall-of-fame-military-and-cultural-museum",
+        "leh:359m": "leh:hall-of-fame-military-and-cultural-museum",
+        "leh:khardung-la-high-mountain-pass": "leh:hall-of-fame-military-and-cultural-museum",
+        "leh:nubra-valley-and-hunder-sand-dunes": "leh:gesmo-restaurant-and-german-bakery-since-1989",
+        "leh:hunder-sand-dunes": "leh:gesmo-restaurant-and-german-bakery-since-1989",
+        "leh:nubra-valley": "leh:gesmo-restaurant-and-german-bakery-since-1989",
+        "leh:hemis-monastery-and-sacred-museum": "leh:lalas-art-cafe-restored-heritage-labrang",
+        "leh:hemis-monastery": "leh:lalas-art-cafe-restored-heritage-labrang",
+        "leh:sacred-museum": "leh:lalas-art-cafe-restored-heritage-labrang",
+        "leh:sangam-indus-and-zanskar-river-confluence": "leh:hall-of-fame-military-and-cultural-museum",
+        "leh:indus": "leh:hall-of-fame-military-and-cultural-museum",
+        "leh:zanskar-river-confluence": "leh:hall-of-fame-military-and-cultural-museum",
+        "leh:shanti-stupa-panoramic-sunset-terrace": "leh:lalas-art-cafe-restored-heritage-labrang",
+        "leh:gesmo-restaurant-and-german-bakery-fort-road": "leh:gesmo-restaurant-and-german-bakery-since-1989",
+        "leh:fort-road": "leh:gesmo-restaurant-and-german-bakery-since-1989",
+        "leh:lalas-art-cafe-in-old-town-leh": "leh:lalas-art-cafe-restored-heritage-labrang",
+        "leh:bon-appetit-organic-garden-dining": "leh:gesmo-restaurant-and-german-bakery-since-1989",
         "manali:hadimba-devi-cedar-forest-temple": "manali:hadimba-devi-cedar-forest-temple",
         "manali:hadimba-temple": "manali:hadimba-devi-cedar-forest-temple",
         "manali:hadimba-devi-temple": "manali:hadimba-devi-cedar-forest-temple",
@@ -5967,7 +7019,7 @@ class CuratedArtworkProvider(ArtworkProvider):
         "manali:jogini-falls": "manali:jogini-waterfall-pine-trail",
         "manali:old-manali-village-and-manu-temple": "manali:old-manali-village-and-manu-temple",
         "manali:old-manali-village": "manali:old-manali-village-and-manu-temple",
-        "manali:manu-temple": "manali:old-manali-village-and-manu-temple",
+        "manali:manu-temple": "manali:hadimba-devi-cedar-forest-temple",
         "manali:old-village": "manali:old-manali-village-and-manu-temple",
         "manali:drifters-cafe-and-acoustic-inn": "manali:drifters-cafe-and-acoustic-inn",
         "manali:drifters-cafe": "manali:drifters-cafe-and-acoustic-inn",
@@ -5987,6 +7039,33 @@ class CuratedArtworkProvider(ArtworkProvider):
         "manali:johnsons-cafe-trout-bar": "manali:the-johnsons-cafe-and-trout-bar",
         "manali:the-johnsons-cafe": "manali:the-johnsons-cafe-and-trout-bar",
         "manali:trout-bar": "manali:the-johnsons-cafe-and-trout-bar",
+        "manali:naggar-castle-kath-kuni-royal-palace": "manali:old-manali-village-and-manu-temple",
+        "manali:kath-kuni-royal-palace": "manali:old-manali-village-and-manu-temple",
+        "manali:naggar-castle": "manali:old-manali-village-and-manu-temple",
+        "manali:rohtang-pass-snow-crest-and-alpine-gateway": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:alpine-gateway": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:rohtang-pass-snow-crest": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:atal-tunnel-north-portal-and-sissu-waterfall": "manali:jogini-waterfall-pine-trail",
+        "manali:atal-tunnel-north-portal": "manali:jogini-waterfall-pine-trail",
+        "manali:sissu-waterfall": "manali:jogini-waterfall-pine-trail",
+        "manali:manu-temple-historic-shrine-of-sage-manu": "manali:hadimba-devi-cedar-forest-temple",
+        "manali:historic-shrine-of-sage-manu": "manali:hadimba-devi-cedar-forest-temple",
+        "manali:sethan-igloo-village-and-hampta-valley-ridge": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:hampta-valley-ridge": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:sethan-igloo-village": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:beas-river-nature-park-and-deodar-walk": "manali:jogini-waterfall-pine-trail",
+        "manali:beas-river-nature-park": "manali:jogini-waterfall-pine-trail",
+        "manali:deodar-walk": "manali:jogini-waterfall-pine-trail",
+        "manali:lazy-dog-lounge-riverside-deck": "manali:cafe-1947-riverside-stone-cafe",
+        "manali:dylans-toasted-and-roasted-coffee-house": "manali:drifters-cafe-and-acoustic-inn",
+        "manali:dylans-toasted": "manali:drifters-cafe-and-acoustic-inn",
+        "manali:roasted-coffee-house": "manali:drifters-cafe-and-acoustic-inn",
+        "manali:gulaba-meadows-and-alpine-snow-line": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:alpine-snow-line": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:gulaba-meadows": "manali:solang-valley-alpine-adventure-grounds",
+        "manali:chopsticks-tibetan-and-asian-kitchen": "manali:the-johnsons-cafe-and-trout-bar",
+        "manali:asian-kitchen": "manali:the-johnsons-cafe-and-trout-bar",
+        "manali:chopsticks-tibetan": "manali:the-johnsons-cafe-and-trout-bar",
         "mathura-vrindavan:bankey-bihari-temple-vrindavan": "mathura-vrindavan:bankey-bihari-temple-vrindavan",
         "mathura-vrindavan:bankey-bihari-temple": "mathura-vrindavan:bankey-bihari-temple-vrindavan",
         "mathura-vrindavan:shri-krishna-janmabhoomi-temple-complex": "mathura-vrindavan:shri-krishna-janmabhoomi-temple-complex",
@@ -6004,6 +7083,24 @@ class CuratedArtworkProvider(ArtworkProvider):
         "mathura-vrindavan:original-mathura-peda": "mathura-vrindavan:brijwasi-mithai-wala-original-mathura-peda",
         "mathura-vrindavan:radha-raman-ancient-self-manifested-deity": "mathura-vrindavan:radha-raman-ancient-self-manifested-deity",
         "mathura-vrindavan:radha-raman-temple": "mathura-vrindavan:radha-raman-ancient-self-manifested-deity",
+        "mathura-vrindavan:kusum-sarovar-18th-century-sandstone-reservoir": "mathura-vrindavan:prem-mandir-italian-carrara-marble-temple",
+        "mathura-vrindavan:govardhan-hill-giriraj-sacred-parikrama-path": "mathura-vrindavan:shri-krishna-janmabhoomi-temple-complex",
+        "mathura-vrindavan:giriraj-sacred-parikrama-path": "mathura-vrindavan:shri-krishna-janmabhoomi-temple-complex",
+        "mathura-vrindavan:govardhan-hill": "mathura-vrindavan:shri-krishna-janmabhoomi-temple-complex",
+        "mathura-vrindavan:barsana-shri-radha-rani-temple-ladli-ji-palace": "mathura-vrindavan:radha-raman-ancient-self-manifested-deity",
+        "mathura-vrindavan:barsana-shri-radha-rani-temple": "mathura-vrindavan:radha-raman-ancient-self-manifested-deity",
+        "mathura-vrindavan:ladli-ji-palace": "mathura-vrindavan:radha-raman-ancient-self-manifested-deity",
+        "mathura-vrindavan:radha-kund-and-shyam-kund-sacred-twin-lakes": "mathura-vrindavan:vishram-ghat-evening-yamuna-maha-aarti",
+        "mathura-vrindavan:radha-kund": "mathura-vrindavan:vishram-ghat-evening-yamuna-maha-aarti",
+        "mathura-vrindavan:shyam-kund-sacred-twin-lakes": "mathura-vrindavan:vishram-ghat-evening-yamuna-maha-aarti",
+        "mathura-vrindavan:potra-kund-sacred-stepped-stepwell": "mathura-vrindavan:shri-krishna-janmabhoomi-temple-complex",
+        "mathura-vrindavan:keshi-ghat-stone-palace-and-riverfront-sunset": "mathura-vrindavan:vishram-ghat-evening-yamuna-maha-aarti",
+        "mathura-vrindavan:keshi-ghat-stone-palace": "mathura-vrindavan:vishram-ghat-evening-yamuna-maha-aarti",
+        "mathura-vrindavan:riverfront-sunset": "mathura-vrindavan:vishram-ghat-evening-yamuna-maha-aarti",
+        "mathura-vrindavan:vrindavan-chandrodaya-mandir-cultural-park": "mathura-vrindavan:prem-mandir-italian-carrara-marble-temple",
+        "mathura-vrindavan:chappan-bhog-malai-rabri-and-khurchan-store": "mathura-vrindavan:brijwasi-mithai-wala-original-mathura-peda",
+        "mathura-vrindavan:chappan-bhog-malai-rabri": "mathura-vrindavan:brijwasi-mithai-wala-original-mathura-peda",
+        "mathura-vrindavan:khurchan-store": "mathura-vrindavan:brijwasi-mithai-wala-original-mathura-peda",
         "morni-hills:tikkar-taal-twin-lakes-and-boating": "morni-hills:tikkar-taal-twin-lakes-and-boating",
         "morni-hills:tikkar-taal-lakes": "morni-hills:tikkar-taal-twin-lakes-and-boating",
         "morni-hills:boating": "morni-hills:tikkar-taal-twin-lakes-and-boating",
@@ -6028,6 +7125,20 @@ class CuratedArtworkProvider(ArtworkProvider):
         "morni-hills:shivalik-viewpoint-crest-and-sunset-ridge": "morni-hills:shivalik-viewpoint-crest-and-sunset-ridge",
         "morni-hills:shivalik-viewpoint-crest": "morni-hills:shivalik-viewpoint-crest-and-sunset-ridge",
         "morni-hills:sunset-ridge": "morni-hills:shivalik-viewpoint-crest-and-sunset-ridge",
+        "morni-hills:kalesar-wildlife-sanctuary-and-sal-canopy": "morni-hills:morni-shivalik-herbal-forest-and-bird-trail",
+        "morni-hills:kalesar-wildlife-sanctuary": "morni-hills:morni-shivalik-herbal-forest-and-bird-trail",
+        "morni-hills:sal-canopy": "morni-hills:morni-shivalik-herbal-forest-and-bird-trail",
+        "morni-hills:mandhana-high-pine-crest-trail": "morni-hills:shivalik-viewpoint-crest-and-sunset-ridge",
+        "morni-hills:bada-taal-the-greater-sacred-wetland-lake": "morni-hills:tikkar-taal-twin-lakes-and-boating",
+        "morni-hills:bada-taal": "morni-hills:tikkar-taal-twin-lakes-and-boating",
+        "morni-hills:the-greater-sacred-wetland-lake": "morni-hills:tikkar-taal-twin-lakes-and-boating",
+        "morni-hills:bhuru-singh-deota-cliff-sanctuary": "morni-hills:morni-fort-17th-century-ramparts",
+        "morni-hills:saketi-shivalik-prehistoric-fossil-park": "morni-hills:adventure-park-tikkar-taal-zip-and-obstacle-course",
+        "morni-hills:morni-pine-canopy-treehouse-platform": "morni-hills:pheasant-breeding-centre-berwala",
+        "morni-hills:morni-forest-wild-multifloral-honey-apiary": "morni-hills:mountain-quail-terrace-dhaba",
+        "morni-hills:ghaggar-river-pebble-banks-and-shallows": "morni-hills:gurudwara-nada-sahib-en-route",
+        "morni-hills:ghaggar-river-pebble-banks": "morni-hills:gurudwara-nada-sahib-en-route",
+        "morni-hills:shallows": "morni-hills:gurudwara-nada-sahib-en-route",
         "munnar:eravikulam-national-park-rajamalai": "munnar:eravikulam-national-park-rajamalai",
         "munnar:eravikulam-national-park": "munnar:eravikulam-national-park-rajamalai",
         "munnar:rajamalai": "munnar:eravikulam-national-park-rajamalai",
@@ -6054,6 +7165,27 @@ class CuratedArtworkProvider(ArtworkProvider):
         "munnar:kundala-lake-dam": "munnar:kundala-lake-and-shikara-boating",
         "munnar:kundala-lake": "munnar:kundala-lake-and-shikara-boating",
         "munnar:shikara-boating": "munnar:kundala-lake-and-shikara-boating",
+        "munnar:kolukkumalai-tea-estate-worlds-highest": "munnar:kolukkumalai-tea-estate-worlds-highest",
+        "munnar:kolukkumalai-tea": "munnar:kolukkumalai-tea-estate-worlds-highest",
+        "munnar:kolukkumalai-tea-estate": "munnar:kolukkumalai-tea-estate-worlds-highest",
+        "munnar:worlds-highest": "munnar:kolukkumalai-tea-estate-worlds-highest",
+        "munnar:lockhart-gap-and-bison-valley-viewpoint": "munnar:pothamedu-viewpoint-sunset-over-tea-valleys",
+        "munnar:bison-valley-viewpoint": "munnar:pothamedu-viewpoint-sunset-over-tea-valleys",
+        "munnar:lockhart-gap": "munnar:pothamedu-viewpoint-sunset-over-tea-valleys",
+        "munnar:anamudi-peak-base-and-shola-forest-edge": "munnar:eravikulam-national-park-rajamalai",
+        "munnar:anamudi-peak-base": "munnar:eravikulam-national-park-rajamalai",
+        "munnar:shola-forest-edge": "munnar:eravikulam-national-park-rajamalai",
+        "munnar:marayoor-sandalwood-forest-and-megalithic-dolmens": "munnar:kdhp-tea-museum-and-factory-processing",
+        "munnar:marayoor-sandalwood-forest": "munnar:kdhp-tea-museum-and-factory-processing",
+        "munnar:megalithic-dolmens": "munnar:kdhp-tea-museum-and-factory-processing",
+        "munnar:chinnar-wildlife-sanctuary-and-thorny-scrub-trail": "munnar:top-station-western-ghats-cloud-viewpoint",
+        "munnar:chinnar-wildlife-sanctuary": "munnar:top-station-western-ghats-cloud-viewpoint",
+        "munnar:thorny-scrub-trail": "munnar:top-station-western-ghats-cloud-viewpoint",
+        "munnar:lakkom-cascading-waterfalls": "munnar:attukad-waterfalls-jungle-trail",
+        "munnar:saravana-bhavan-munnar-town": "munnar:rapsy-restaurant-kerala-parotta-and-beef-fry",
+        "munnar:eastend-chai-bazaar-and-plantation-tasting": "munnar:kdhp-tea-museum-and-factory-processing",
+        "munnar:eastend-chai-bazaar": "munnar:kdhp-tea-museum-and-factory-processing",
+        "munnar:plantation-tasting": "munnar:kdhp-tea-museum-and-factory-processing",
         "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba": "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba",
         "murthal:amrik-sukhdev-dhaba": "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba",
         "murthal:7-paratha-dhaba": "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba",
@@ -6082,13 +7214,34 @@ class CuratedArtworkProvider(ArtworkProvider):
         "murthal:dhingra-sweets-milk-bar": "murthal:dhingra-sweets-and-pure-milk-kadhai",
         "murthal:dhingra-sweets": "murthal:dhingra-sweets-and-pure-milk-kadhai",
         "murthal:pure-milk-kadhai": "murthal:dhingra-sweets-and-pure-milk-kadhai",
+        "murthal:shiva-tourist-dhaba-pure-desi-ghee-tandoor": "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba",
+        "murthal:pure-desi-ghee-tandoor": "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba",
+        "murthal:shiva-tourist-dhaba": "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba",
+        "murthal:chokhi-dhani-sonepat-heritage-cultural-fair": "murthal:haveli-murthal-punjabi-cultural-theme-village",
+        "murthal:badkhalsa-memorial-and-sikh-heritage-museum": "murthal:tomb-of-khwaja-khizr-1522-pathan-architecture",
+        "murthal:badkhalsa-memorial": "murthal:tomb-of-khwaja-khizr-1522-pathan-architecture",
+        "murthal:sikh-heritage-museum": "murthal:tomb-of-khwaja-khizr-1522-pathan-architecture",
+        "murthal:haryana-tourism-ethnic-craft-village-and-loom": "murthal:mannat-haveli-grand-highway-palace",
+        "murthal:haryana-tourism-ethnic-craft-village": "murthal:mannat-haveli-grand-highway-palace",
+        "murthal:loom": "murthal:mannat-haveli-grand-highway-palace",
+        "murthal:murthal-rural-canal-lanes-and-yellow-mustard-fields": "murthal:murthal-rural-canal-lanes-and-yellow-mustard-fields",
+        "murthal:hero": "murthal:murthal-rural-canal-lanes-and-yellow-mustard-fields",
+        "murthal:murthal-rural-canal-lanes": "murthal:murthal-rural-canal-lanes-and-yellow-mustard-fields",
+        "murthal:yellow-mustard-fields": "murthal:murthal-rural-canal-lanes-and-yellow-mustard-fields",
+        "murthal:farm-fresh-kadhai-milk-and-rabri-counter": "murthal:dhingra-sweets-and-pure-milk-kadhai",
+        "murthal:farm-fresh-kadhai-milk": "murthal:dhingra-sweets-and-pure-milk-kadhai",
+        "murthal:rabri-counter": "murthal:dhingra-sweets-and-pure-milk-kadhai",
+        "murthal:sonipat-yamuna-riverfront-sand-banks": "murthal:amrik-sukhdev-legendary-24-7-paratha-dhaba",
+        "murthal:pahalwan-khasta-dal-kachori-and-heeng-aloo": "murthal:pahalwan-dhaba-pure-desi-ghee-roasters",
+        "murthal:heeng-aloo": "murthal:pahalwan-dhaba-pure-desi-ghee-roasters",
+        "murthal:pahalwan-khasta-dal-kachori": "murthal:pahalwan-dhaba-pure-desi-ghee-roasters",
         "mussoorie:landour-bakehouse-and-sisters-bazaar": "mussoorie:landour-bakehouse",
         "mussoorie:landour-bakehouse": "mussoorie:landour-bakehouse",
         "mussoorie:sisters-bazaar": "mussoorie:landour-bakehouse-and-sisters-bazaar",
         "mussoorie:lal-tibba-scenic-viewpoint": "mussoorie:lal-tibba",
         "mussoorie:lal-tibba": "mussoorie:lal-tibba",
         "mussoorie:char-dukan-and-st-pauls-church": "mussoorie:char-dukan-and-st-pauls-church",
-        "mussoorie:char-dukan-prakash-store": "mussoorie:char-dukan-and-st-pauls-church",
+        "mussoorie:char-dukan-prakash-store": "mussoorie:char-dukan-heritage-cafe-lane-landour",
         "mussoorie:char-dukan": "mussoorie:char-dukan-and-st-pauls-church",
         "mussoorie:st-pauls-church": "mussoorie:st-pauls-church",
         "mussoorie:sir-george-everest-peak-and-heritage-house": "mussoorie:sir-george-everest-peak-and-heritage-house",
@@ -6105,6 +7258,30 @@ class CuratedArtworkProvider(ArtworkProvider):
         "mussoorie:gun-hill-historical-viewpoint": "mussoorie:gun-hill-historical-viewpoint-and-cable-car",
         "mussoorie:kempty-falls-mountain-cascades": "mussoorie:kempty-falls-mountain-cascades",
         "mussoorie:kempty-falls-cascades": "mussoorie:kempty-falls",
+        "mussoorie:char-dukan-heritage-cafe-lane-landour": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:char-dukan-heritage-cafe-lane": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:landour": "mussoorie:landour",
+        "mussoorie:pari-tibba-witches-hill-pine-ridge-trail": "mussoorie:pari-tibba-witches-hill-pine-ridge-trail",
+        "mussoorie:clouds-end": "mussoorie:clouds-end",
+        "mussoorie:pari-tibba": "mussoorie:pari-tibba-hill-of-the-fairies-pine-trail",
+        "mussoorie:pine-ridge-trail": "mussoorie:pari-tibba-witches-hill-pine-ridge-trail",
+        "mussoorie:witches-hill": "mussoorie:pari-tibba-witches-hill-pine-ridge-trail",
+        "mussoorie:clouds-end-virgin-oak-sanctuary": "mussoorie:pari-tibba-witches-hill-pine-ridge-trail",
+        "mussoorie:rokeby-manor-and-emilys-tea-room": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:emilys-tea-room": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:rokeby-manor": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:jharipani-cascading-waterfall-trail": "mussoorie:jharipani-cascading-waterfall-trail",
+        "mussoorie:kempty-falls": "mussoorie:kempty-falls",
+        "mussoorie:prakash-store-and-handmade-cheese-deli-1928": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:1928": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:handmade-cheese-deli": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:prakash-store": "mussoorie:char-dukan-heritage-cafe-lane-landour",
+        "mussoorie:company-garden-and-artificial-falls": "mussoorie:company-garden-and-artificial-falls",
+        "mussoorie:company-garden": "mussoorie:company-garden-and-artificial-falls",
+        "mussoorie:artificial-falls": "mussoorie:company-garden-and-artificial-falls",
+        "mussoorie:pari-tibba-hill-of-the-fairies-pine-trail": "mussoorie:pari-tibba-hill-of-the-fairies-pine-trail",
+        "mussoorie:pari-tibba-fairies-hill": "mussoorie:pari-tibba-hill-of-the-fairies-pine-trail",
+        "mussoorie:hill-of-the-fairies-pine-trail": "mussoorie:pari-tibba-hill-of-the-fairies-pine-trail",
         "neemrana:neemrana-fort-palace-15th-century-ramparts": "neemrana:neemrana-fort-palace-15th-century-ramparts",
         "neemrana:neemrana-fort-palace": "neemrana:neemrana-fort-palace-15th-century-ramparts",
         "neemrana:fort-palace": "neemrana:neemrana-fort-palace-15th-century-ramparts",
@@ -6129,6 +7306,18 @@ class CuratedArtworkProvider(ArtworkProvider):
         "neemrana:siliserh-lake-gateway-en-route": "neemrana:siliserh-lake-gateway-en-route",
         "neemrana:siliserh-en-route-neemrana": "neemrana:siliserh-lake-gateway-en-route",
         "neemrana:siliserh-en-route": "neemrana:siliserh-lake-gateway-en-route",
+        "neemrana:tijara-fort-palace-19th-century-hilltop-citadel": "neemrana:neemrana-fort-palace-15th-century-ramparts",
+        "neemrana:19th-century-hilltop-citadel": "neemrana:neemrana-fort-palace-15th-century-ramparts",
+        "neemrana:tijara-fort-palace": "neemrana:neemrana-fort-palace-15th-century-ramparts",
+        "neemrana:aravalli-quartzite-canyon-and-scrub-trail": "neemrana:baba-khetanath-hilltop-ashram-and-ridge",
+        "neemrana:aravalli-quartzite-canyon": "neemrana:baba-khetanath-hilltop-ashram-and-ridge",
+        "neemrana:scrub-trail": "neemrana:baba-khetanath-hilltop-ashram-and-ridge",
+        "neemrana:mothooka-ancient-copper-archaeology-site": "neemrana:ancient-9-story-stepwell-neemrana-baori",
+        "neemrana:kotputli-traditional-terracotta-pottery-street": "neemrana:highway-king-nh-48-express-dhaba",
+        "neemrana:nazara-open-air-medieval-amphitheatre": "neemrana:flying-fox-aerial-zipline-tour",
+        "neemrana:shyam-sarovar-subterranean-baori-oasis": "neemrana:ancient-9-story-stepwell-neemrana-baori",
+        "neemrana:karni-mata-hilltop-staircase-shrine": "neemrana:kesroli-14th-century-hill-fort-en-route",
+        "neemrana:old-alwar-byroad-blooming-mustard-lane": "neemrana:siliserh-lake-gateway-en-route",
         "rishikesh:parmarth-niketan-ganga-aarti": "rishikesh:parmarth-niketan-ganga-aarti",
         "rishikesh:parmarth-niketan-aarti": "rishikesh:parmarth-niketan-ganga-aarti",
         "rishikesh:parmarth-aarti": "rishikesh:parmarth-niketan-ganga-aarti",
@@ -6146,7 +7335,7 @@ class CuratedArtworkProvider(ArtworkProvider):
         "rishikesh:shivpuri-rafting": "rishikesh:shivpuri-rafting",
         "rishikesh:triveni-ghat-evening-maha-aarti": "rishikesh:triveni-ghat-evening-maha-aarti",
         "rishikesh:triveni-ghat-aarti": "rishikesh:triveni-ghat-evening-maha-aarti",
-        "rishikesh:triveni-ghat": "rishikesh:triveni-ghat-evening-maha-aarti",
+        "rishikesh:triveni-ghat": "rishikesh:kunjapuri-devi-sunrise-temple-ridge-1-645m",
         "rishikesh:vashistha-cave-gufa": "rishikesh:vashistha-cave-gufa",
         "rishikesh:vashistha-cave": "rishikesh:vashistha-cave-gufa",
         "rishikesh:gufa": "rishikesh:vashistha-cave-gufa",
@@ -6159,6 +7348,28 @@ class CuratedArtworkProvider(ArtworkProvider):
         "rishikesh:ram-jhula-suspension-bridge-promenade": "rishikesh:ram-jhula-suspension-bridge-promenade",
         "rishikesh:ram-jhula-promenade": "rishikesh:ram-jhula-suspension-bridge-promenade",
         "rishikesh:ram-jhula": "rishikesh:ram-jhula-suspension-bridge-promenade",
+        "rishikesh:beatles-ashram-chaurasi-kutia-maharishi-mahesh-yogi": "rishikesh:beatles-ashram-chaurasi-kutia",
+        "rishikesh:chaurasi-kutia-maharishi-mahesh-yogi": "rishikesh:beatles-ashram-chaurasi-kutia",
+        "rishikesh:kunjapuri-devi-sunrise-temple-ridge-1-645m": "rishikesh:kunjapuri-devi-sunrise-temple-ridge-1-645m",
+        "rishikesh:645m": "rishikesh:kunjapuri-devi-sunrise-temple-ridge-1-645m",
+        "rishikesh:kunjapuri-devi-sunrise-temple-ridge": "rishikesh:kunjapuri-devi-sunrise-temple-ridge-1-645m",
+        "rishikesh:vashistha-cave-vashistha-gufa-meditation-sanctuary": "rishikesh:vashistha-cave-gufa",
+        "rishikesh:vashistha-gufa-meditation-sanctuary": "rishikesh:vashistha-cave-gufa",
+        "rishikesh:patna-cascading-waterfall-and-limestone-caves": "rishikesh:neer-garh-cascading-waterfall",
+        "rishikesh:limestone-caves": "rishikesh:neer-garh-cascading-waterfall",
+        "rishikesh:patna-cascading-waterfall": "rishikesh:neer-garh-cascading-waterfall",
+        "rishikesh:little-buddha-cafe-treehouse-lounge": "rishikesh:little-buddha-cafe-treehouse-lounge",
+        "rishikesh:little-buddha-cafe": "rishikesh:little-buddha-cafe-treehouse-lounge",
+        "rishikesh:devraj-coffee-corner-and-german-bakery-tapovan": "rishikesh:devraj-coffee-and-german-bakery",
+        "rishikesh:devraj-coffee-corner": "rishikesh:devraj-coffee-and-german-bakery",
+        "rishikesh:kunjapuri-devi-sunrise-temple-crest-1-665m": "rishikesh:kunjapuri-devi-sunrise-temple-crest-1-665m",
+        "rishikesh:kunjapuri-devi-sunrise-crest": "rishikesh:kunjapuri-devi-sunrise-temple-crest-1-665m",
+        "rishikesh:665m": "rishikesh:kunjapuri-devi-sunrise-temple-crest-1-665m",
+        "rishikesh:kunjapuri-devi-sunrise-temple-crest": "rishikesh:kunjapuri-devi-sunrise-temple-crest-1-665m",
+        "rishikesh:rajaji-national-park-chilla-elephant-safari-gate": "rishikesh:rajaji-national-park-chilla-elephant-safari-gate",
+        "rishikesh:rajaji-national-park-chilla": "rishikesh:rajaji-national-park-chilla-elephant-safari-gate",
+        "rishikesh:chilla-elephant-safari-gate": "rishikesh:rajaji-national-park-chilla-elephant-safari-gate",
+        "rishikesh:rajaji-national-park": "rishikesh:rajaji-national-park-chilla-elephant-safari-gate",
         "sariska-bhangarh:sariska-tiger-reserve-jungle-safari": "sariska-bhangarh:sariska-tiger-reserve-jungle-safari",
         "sariska-bhangarh:sariska-tiger-reserve": "sariska-bhangarh:sariska-tiger-reserve-jungle-safari",
         "sariska-bhangarh:bhangarh-fort-legendary-medieval-ruins": "sariska-bhangarh:bhangarh-fort-legendary-medieval-ruins",
@@ -6182,6 +7393,25 @@ class CuratedArtworkProvider(ArtworkProvider):
         "sariska-bhangarh:sariska-palace-courtyard": "sariska-bhangarh:the-sariska-palace-royal-french-courtyards",
         "sariska-bhangarh:gola-ka-baas-traditional-rajasthani-dhaba": "sariska-bhangarh:gola-ka-baas-traditional-rajasthani-dhaba",
         "sariska-bhangarh:gola-ka-baas-dhaba": "sariska-bhangarh:gola-ka-baas-traditional-rajasthani-dhaba",
+        "sariska-bhangarh:ajabgarh-fort-and-reservoir-the-twin-of-bhangarh": "sariska-bhangarh:bhangarh-fort-legendary-medieval-ruins",
+        "sariska-bhangarh:ajabgarh-fort": "sariska-bhangarh:bhangarh-fort-legendary-medieval-ruins",
+        "sariska-bhangarh:reservoir": "sariska-bhangarh:bhangarh-fort-legendary-medieval-ruins",
+        "sariska-bhangarh:the-twin-of-bhangarh": "sariska-bhangarh:bhangarh-fort-legendary-medieval-ruins",
+        "sariska-bhangarh:natni-ka-bara-stone-weir-and-forest-oasis": "sariska-bhangarh:pandupol-hanuman-temple-and-natural-water-chasm",
+        "sariska-bhangarh:forest-oasis": "sariska-bhangarh:pandupol-hanuman-temple-and-natural-water-chasm",
+        "sariska-bhangarh:natni-ka-bara-stone-weir": "sariska-bhangarh:pandupol-hanuman-temple-and-natural-water-chasm",
+        "sariska-bhangarh:narayani-mata-natural-spring-sanctuary": "sariska-bhangarh:bhartrihari-temple-and-sacred-kund",
+        "sariska-bhangarh:talvriksha-arjuna-tree-and-thermal-kunds": "sariska-bhangarh:bhartrihari-temple-and-sacred-kund",
+        "sariska-bhangarh:talvriksha-arjuna-tree": "sariska-bhangarh:bhartrihari-temple-and-sacred-kund",
+        "sariska-bhangarh:thermal-kunds": "sariska-bhangarh:bhartrihari-temple-and-sacred-kund",
+        "sariska-bhangarh:kushalgarh-colonial-teak-forest-bungalow": "sariska-bhangarh:the-sariska-palace-royal-french-courtyards",
+        "sariska-bhangarh:mansa-devi-hilltop-cliff-lookout": "sariska-bhangarh:kankwari-fort-hilltop-fortress",
+        "sariska-bhangarh:deoli-lake-and-tiger-watering-hole": "sariska-bhangarh:sariska-tiger-reserve-jungle-safari",
+        "sariska-bhangarh:deoli-lake": "sariska-bhangarh:sariska-tiger-reserve-jungle-safari",
+        "sariska-bhangarh:tiger-watering-hole": "sariska-bhangarh:sariska-tiger-reserve-jungle-safari",
+        "sariska-bhangarh:rajgarh-hill-fort-ancient-bargujar-citadel": "sariska-bhangarh:neelkanth-ancient-temple-complex-6th-century",
+        "sariska-bhangarh:ancient-bargujar-citadel": "sariska-bhangarh:neelkanth-ancient-temple-complex-6th-century",
+        "sariska-bhangarh:rajgarh-hill-fort": "sariska-bhangarh:neelkanth-ancient-temple-complex-6th-century",
         "spiti:key-gompa-11th-century-fort-monastery": "spiti:key-gompa-11th-century-fort-monastery",
         "spiti:key-monastery": "spiti:key-gompa-11th-century-fort-monastery",
         "spiti:11th-century-fort-monastery": "spiti:key-gompa-11th-century-fort-monastery",
@@ -6213,6 +7443,35 @@ class CuratedArtworkProvider(ArtworkProvider):
         "spiti:cafe-deyzor-and-travelers-lounge": "spiti:cafe-deyzor-and-travelers-lounge",
         "spiti:cafe-deyzor": "spiti:cafe-deyzor-and-travelers-lounge",
         "spiti:travelers-lounge": "spiti:cafe-deyzor-and-travelers-lounge",
+        "spiti:chicham-suspension-bridge-asias-highest": "spiti:key-gompa-11th-century-fort-monastery",
+        "spiti:asias-highest": "spiti:key-gompa-11th-century-fort-monastery",
+        "spiti:chicham-suspension-bridge": "spiti:key-gompa-11th-century-fort-monastery",
+        "spiti:kibber-village-and-wildlife-sanctuary": "spiti:komic-worlds-highest-motor-connected-village",
+        "spiti:kibber-village": "spiti:komic-worlds-highest-motor-connected-village",
+        "spiti:wildlife-sanctuary": "spiti:komic-worlds-highest-motor-connected-village",
+        "spiti:tabo-monastery-the-ajanta-of-the-himalayas": "spiti:tabo-monastery-the-ajanta-of-the-himalayas",
+        "spiti:tabo-monastery": "spiti:tabo-monastery-the-ajanta-of-the-himalayas",
+        "spiti:the-ajanta-of-the-himalayas": "spiti:tabo-monastery-the-ajanta-of-the-himalayas",
+        "spiti:dhankar-glacial-lake-alpine-tarn": "spiti:dhankar-gompa-and-cliffside-fortress",
+        "spiti:tashigang-worlds-highest-polling-station": "spiti:langza-giant-buddha-and-marine-fossil-village",
+        "spiti:tashigang": "spiti:langza-giant-buddha-and-marine-fossil-village",
+        "spiti:worlds-highest-polling-station": "spiti:langza-giant-buddha-and-marine-fossil-village",
+        "spiti:gue-monastery-and-500-year-old-natural-mummy": "spiti:dhankar-gompa-and-cliffside-fortress",
+        "spiti:500-year-old-natural-mummy": "spiti:dhankar-gompa-and-cliffside-fortress",
+        "spiti:gue-monastery": "spiti:dhankar-gompa-and-cliffside-fortress",
+        "spiti:kaza-old-town-and-central-himalayan-bazaar": "spiti:kaza-old-town-and-central-himalayan-bazaar",
+        "spiti:kaza": "spiti:kaza-old-town-and-central-himalayan-bazaar",
+        "spiti:central-himalayan-bazaar": "spiti:kaza-old-town-and-central-himalayan-bazaar",
+        "spiti:kaza-old-town": "spiti:kaza-old-town-and-central-himalayan-bazaar",
+        "spiti:kunzum-pass-gateway-to-spiti-at-4-551m": "spiti:chandratal-crescent-moon-lake",
+        "spiti:551m": "spiti:chandratal-crescent-moon-lake",
+        "spiti:gateway-to-spiti-at-4": "spiti:chandratal-crescent-moon-lake",
+        "spiti:kunzum-pass": "spiti:chandratal-crescent-moon-lake",
+        "spiti:mudh-village-terminal-hamlet-of-pin-valley": "spiti:pin-valley-national-park-and-mudh-village",
+        "spiti:terminal-hamlet-of-pin-valley": "spiti:pin-valley-national-park-and-mudh-village",
+        "spiti:the-himalayan-cafe-and-slow-travel-lounge": "spiti:cafe-deyzor-and-travelers-lounge",
+        "spiti:slow-travel-lounge": "spiti:cafe-deyzor-and-travelers-lounge",
+        "spiti:the-himalayan-cafe": "spiti:cafe-deyzor-and-travelers-lounge",
         "tungnath-chandrashila:tungnath-worlds-highest-shiva-shrine": "tungnath-chandrashila:tungnath-worlds-highest-shiva-shrine",
         "tungnath-chandrashila:tungnath-temple": "tungnath-chandrashila:tungnath-temple",
         "tungnath-chandrashila:tungnath": "tungnath-chandrashila:tungnath-temple",
@@ -6239,6 +7498,25 @@ class CuratedArtworkProvider(ArtworkProvider):
         "tungnath-chandrashila:sari-village-base": "tungnath-chandrashila:sari-village-apple-terraces-and-homestay-walk",
         "tungnath-chandrashila:homestay-walk": "tungnath-chandrashila:sari-village-apple-terraces-and-homestay-walk",
         "tungnath-chandrashila:sari-village-apple-terraces": "tungnath-chandrashila:sari-village-apple-terraces-and-homestay-walk",
+        "tungnath-chandrashila:kanchula-korak-musk-deer-sanctuary": "tungnath-chandrashila:rohida-oak-and-rhododendron-forest-walk",
+        "tungnath-chandrashila:makkumath-temple-winter-abode-of-lord-tungnath": "tungnath-chandrashila:ukhimath-omkareshwar-winter-temple",
+        "tungnath-chandrashila:makkumath-temple": "tungnath-chandrashila:ukhimath-omkareshwar-winter-temple",
+        "tungnath-chandrashila:winter-abode-of-lord-tungnath": "tungnath-chandrashila:ukhimath-omkareshwar-winter-temple",
+        "tungnath-chandrashila:baniyakund-high-alpine-meadows-and-eco-camps": "tungnath-chandrashila:chopta-alpine-meadows-mini-switzerland",
+        "tungnath-chandrashila:baniyakund-high-alpine-meadows": "tungnath-chandrashila:chopta-alpine-meadows-mini-switzerland",
+        "tungnath-chandrashila:eco-camps": "tungnath-chandrashila:chopta-alpine-meadows-mini-switzerland",
+        "tungnath-chandrashila:ravan-shila-the-cliff-of-penance-at-3-800m": "tungnath-chandrashila:chandrashila-4-000m-peak-summit",
+        "tungnath-chandrashila:800m": "tungnath-chandrashila:chandrashila-4-000m-peak-summit",
+        "tungnath-chandrashila:ravan-shila": "tungnath-chandrashila:chandrashila-4-000m-peak-summit",
+        "tungnath-chandrashila:the-cliff-of-penance-at-3": "tungnath-chandrashila:chandrashila-4-000m-peak-summit",
+        "tungnath-chandrashila:kalpeshwar-fifth-kedar-sacred-hair-temple": "tungnath-chandrashila:tungnath-worlds-highest-shiva-shrine",
+        "tungnath-chandrashila:kalpeshwar-fifth-kedar": "tungnath-chandrashila:tungnath-worlds-highest-shiva-shrine",
+        "tungnath-chandrashila:sacred-hair-temple": "tungnath-chandrashila:tungnath-worlds-highest-shiva-shrine",
+        "tungnath-chandrashila:madhyamaheshwar-valley-circuit-base": "tungnath-chandrashila:deoria-tal-sacred-reflection-lake",
+        "tungnath-chandrashila:ansuya-devi-jungle-waterfall-and-hermitage-trail": "tungnath-chandrashila:dugalbitta-eco-camp-glade",
+        "tungnath-chandrashila:ansuya-devi-jungle-waterfall": "tungnath-chandrashila:dugalbitta-eco-camp-glade",
+        "tungnath-chandrashila:hermitage-trail": "tungnath-chandrashila:dugalbitta-eco-camp-glade",
+        "tungnath-chandrashila:chopta-alpine-shepherd-encampments": "tungnath-chandrashila:sari-village-apple-terraces-and-homestay-walk",
         "udaipur:city-palace-complex-and-zenana-mahal": "udaipur:city-palace-complex-and-zenana-mahal",
         "udaipur:city-palace-udaipur": "udaipur:city-palace-complex-and-zenana-mahal",
         "udaipur:city-palace": "udaipur:city-palace-complex-and-zenana-mahal",
@@ -6246,14 +7524,14 @@ class CuratedArtworkProvider(ArtworkProvider):
         "udaipur:city-palace-of-udaipur": "udaipur:city-palace-complex-and-zenana-mahal",
         "udaipur:udaipur-city-palace": "udaipur:city-palace-complex-and-zenana-mahal",
         "udaipur:zenana-mahal": "udaipur:city-palace-complex-and-zenana-mahal",
-        "udaipur:lake-pichola-ghats-and-island-cruise": "udaipur:lake-pichola-ghats-and-island-cruise",
-        "udaipur:lake-pichola-boat-ride": "udaipur:lake-pichola-ghats-and-island-cruise",
+        "udaipur:lake-pichola-ghats-and-island-cruise": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:lake-pichola-boat-ride": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
         "udaipur:island-cruise": "udaipur:lake-pichola-ghats-and-island-cruise",
-        "udaipur:lake-pichola": "udaipur:lake-pichola-ghats-and-island-cruise",
-        "udaipur:lake-pichola-ghats": "udaipur:lake-pichola-ghats-and-island-cruise",
-        "udaipur:lake-pichola-sunset-boat-voyage": "udaipur:lake-pichola-ghats-and-island-cruise",
-        "udaipur:pichola-boat-ride": "udaipur:lake-pichola-ghats-and-island-cruise",
-        "udaipur:pichola-cruise": "udaipur:lake-pichola-ghats-and-island-cruise",
+        "udaipur:lake-pichola": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:lake-pichola-ghats": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:lake-pichola-sunset-boat-voyage": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:pichola-boat-ride": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:pichola-cruise": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
         "udaipur:bagore-ki-haveli-and-dharohar-dance": "udaipur:bagore-ki-haveli-and-dharohar-dance",
         "udaipur:bagore-ki-haveli": "udaipur:bagore-ki-haveli-and-dharohar-dance",
         "udaipur:bagore": "udaipur:bagore-ki-haveli-and-dharohar-dance",
@@ -6285,6 +7563,29 @@ class CuratedArtworkProvider(ArtworkProvider):
         "udaipur:natraj": "udaipur:natraj-dining-hall-unlimited-mewari-thali",
         "udaipur:natraj-thali": "udaipur:natraj-dining-hall-unlimited-mewari-thali",
         "udaipur:unlimited-mewari-thali": "udaipur:natraj-dining-hall-unlimited-mewari-thali",
+        "udaipur:jagdish-temple-1651-ce-indo-aryan-shrine": "udaipur:bagore-ki-haveli-and-dharohar-dance",
+        "udaipur:1651-ce-indo-aryan-shrine": "udaipur:bagore-ki-haveli-and-dharohar-dance",
+        "udaipur:jagdish-temple": "udaipur:bagore-ki-haveli-and-dharohar-dance",
+        "udaipur:fateh-sagar-lake-and-nehru-island-park": "udaipur:lake-pichola-ghats-and-island-cruise",
+        "udaipur:fateh-sagar-lake": "udaipur:lake-pichola-ghats-and-island-cruise",
+        "udaipur:nehru-island-park": "udaipur:lake-pichola-ghats-and-island-cruise",
+        "udaipur:ahar-royal-cenotaphs-mahasatyas-of-mewar": "udaipur:saheliyon-ki-bari-garden-of-maidens",
+        "udaipur:ahar-royal-cenotaphs": "udaipur:saheliyon-ki-bari-garden-of-maidens",
+        "udaipur:mahasatyas-of-mewar": "udaipur:saheliyon-ki-bari-garden-of-maidens",
+        "udaipur:shilpgram-rural-arts-and-crafts-complex": "udaipur:bagore-ki-haveli-and-dharohar-dance",
+        "udaipur:crafts-complex": "udaipur:bagore-ki-haveli-and-dharohar-dance",
+        "udaipur:rural-arts": "udaipur:bagore-ki-haveli-and-dharohar-dance",
+        "udaipur:shilpgram": "udaipur:bagore-ki-haveli-and-dharohar-dance",
+        "udaipur:doodh-talai-lake-and-ropeway-to-karni-mata": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:doodh-talai-lake": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:ropeway-to-karni-mata": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:upre-by-1559-ad-lake-pichola-rooftop-dining": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:lake-pichola-rooftop-dining": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:upre-by-1559-ad": "udaipur:ambrai-ghat-sunset-promenade-manjhi-ghat",
+        "udaipur:millets-of-mewar-pioneering-healthy-rajasthani-kitchen": "udaipur:jheels-ginger-coffee-bar-and-bakery",
+        "udaipur:millets-of-mewar": "udaipur:jheels-ginger-coffee-bar-and-bakery",
+        "udaipur:pioneering-healthy-rajasthani-kitchen": "udaipur:jheels-ginger-coffee-bar-and-bakery",
+        "udaipur:paliwal-kachori-old-city-breakfast-stand": "udaipur:natraj-dining-hall-unlimited-mewari-thali",
         "varanasi:dashashwamedh-ghat-evening-maha-aarti": "varanasi:dashashwamedh-ghat-evening-maha-aarti",
         "varanasi:dashashwamedh-ghat-aarti": "varanasi:dashashwamedh-ghat-evening-maha-aarti",
         "varanasi:assi-ghat-subah-e-banaras-morning-ceremony": "varanasi:assi-ghat-subah-e-banaras-morning-ceremony",
@@ -6308,6 +7609,28 @@ class CuratedArtworkProvider(ArtworkProvider):
         "varanasi:kashi-tea-stall": "varanasi:laxmi-tea-stall-and-malaiyo-hub",
         "varanasi:laxmi-tea-stall": "varanasi:laxmi-tea-stall-and-malaiyo-hub",
         "varanasi:malaiyo-hub": "varanasi:laxmi-tea-stall-and-malaiyo-hub",
+        "varanasi:manikarnika-ghat-the-sacred-mahashmashana": "varanasi:manikarnika-ghat-the-eternal-flame",
+        "varanasi:the-sacred-mahashmashana": "varanasi:manikarnika-ghat-the-eternal-flame",
+        "varanasi:scindia-ghat-and-the-leaning-shiva-temple": "varanasi:scindia-ghat-and-the-leaning-shiva-temple",
+        "varanasi:assi-ghat": "varanasi:scindia-ghat-and-the-leaning-shiva-temple",
+        "varanasi:scindia-ghat": "varanasi:scindia-ghat-and-the-leaning-shiva-temple",
+        "varanasi:the-leaning-shiva-temple": "varanasi:scindia-ghat-and-the-leaning-shiva-temple",
+        "varanasi:ramnagar-fort-across-the-sacred-ganga": "varanasi:ramnagar-fort-and-vintage-royal-museum",
+        "varanasi:blue-lassi-shop-historic-1925-hand-churned-lassi": "varanasi:blue-lassi-shop-historic-churn-since-1925",
+        "varanasi:historic-1925-hand-churned-lassi": "varanasi:blue-lassi-shop-historic-churn-since-1925",
+        "varanasi:kashi-chat-bhandar-godowlia-chowk": "varanasi:laxmi-tea-stall-and-malaiyo-hub",
+        "varanasi:godowlia-chowk": "varanasi:laxmi-tea-stall-and-malaiyo-hub",
+        "varanasi:kashi-chat-bhandar": "varanasi:laxmi-tea-stall-and-malaiyo-hub",
+        "varanasi:tulsi-manas-white-marble-temple": "varanasi:tulsi-manas-white-marble-temple",
+        "varanasi:tulsi-manas-temple": "varanasi:tulsi-manas-white-marble-temple",
+        "varanasi:sankat-mochan-hanuman-temple-and-besan-laddoos": "varanasi:sankat-mochan-hanuman-temple-and-besan-laddoos",
+        "varanasi:sankat-mochan-temple": "varanasi:sankat-mochan-hanuman-temple-and-besan-laddoos",
+        "varanasi:besan-laddoos": "varanasi:sankat-mochan-hanuman-temple-and-besan-laddoos",
+        "varanasi:sankat-mochan-hanuman-temple": "varanasi:sankat-mochan-hanuman-temple-and-besan-laddoos",
+        "varanasi:chet-singh-fort-and-river-ramparts": "varanasi:chet-singh-fort-and-river-ramparts",
+        "varanasi:chet-singh-fort-ghat": "varanasi:chet-singh-fort-and-river-ramparts",
+        "varanasi:chet-singh-fort": "varanasi:chet-singh-fort-and-river-ramparts",
+        "varanasi:river-ramparts": "varanasi:chet-singh-fort-and-river-ramparts",
         "delhi:qutub-minar": "delhi:qutub-minar",
         "delhi:qutub": "delhi:qutub-minar",
         "delhi:qutb-minar": "delhi:qutub-minar",
@@ -6325,7 +7648,6 @@ class CuratedArtworkProvider(ArtworkProvider):
         "amritsar:harmandir-sahib": "amritsar:golden-temple",
         "mussoorie:landour-bakehouse-sisters-bazaar": "mussoorie:landour-bakehouse",
         "mussoorie:lal-tibba-viewpoint": "mussoorie:lal-tibba",
-        "mussoorie:kempty-falls": "mussoorie:kempty-falls",
         "mussoorie:kempty": "mussoorie:kempty-falls",
         "mussoorie:gun-hill": "mussoorie:gun-hill",
         "mussoorie:gun-hill-viewpoint": "mussoorie:gun-hill",
@@ -6338,21 +7660,17 @@ class CuratedArtworkProvider(ArtworkProvider):
         "mussoorie:george-everest": "mussoorie:george-everest",
         "mussoorie:sir-george-everest-house": "mussoorie:george-everest",
         "mussoorie:george-everest-house": "mussoorie:george-everest",
-        "mussoorie:clouds-end": "mussoorie:clouds-end",
         "mussoorie:clouds-end-heritage": "mussoorie:clouds-end",
-        "mussoorie:landour": "mussoorie:landour",
         "mussoorie:landour-cantonment-ridge": "mussoorie:landour",
         "mussoorie:landour-ridge": "mussoorie:landour",
         "mussoorie:st-paul-church": "mussoorie:st-pauls-church",
         "mussoorie:st-pauls-church-landour": "mussoorie:st-pauls-church",
-        "dharamshala:bhagsunag-waterfall": "dharamshala:bhagsunag-waterfall",
         "dharamshala:bhagsunag-waterfall-and-shiva-cafe": "dharamshala:bhagsunag-waterfall",
         "dharamshala:bhagsunag": "dharamshala:bhagsunag-waterfall",
         "dharamshala:namgyal-monastery": "dharamshala:namgyal-monastery",
         "dharamshala:namgyal": "dharamshala:namgyal-monastery",
         "dharamshala:namgyal-monastery-and-tsuglagkhang-complex": "dharamshala:namgyal-monastery",
         "dharamshala:namgyal-monastery-tsuglagkhang-complex": "dharamshala:namgyal-monastery",
-        "dharamshala:triund-trek": "dharamshala:triund-trek",
         "dharamshala:triund": "dharamshala:triund-trek",
         "dharamshala:triund-high-ridge-himalayan-trek": "dharamshala:triund-trek",
         "dharamshala:triund-trail": "dharamshala:triund-trek",
