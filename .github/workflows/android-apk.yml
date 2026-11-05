@@ -5,7 +5,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'frontend/**'
+      - 'mobile/**'
+      - 'packages/**'
       - '.github/workflows/android-apk.yml'
 
 permissions:
@@ -22,9 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'npm'
-          cache-dependency-path: ./frontend/package-lock.json
+          node-version: 20
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
@@ -35,22 +34,30 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Install Frontend Dependencies
-        working-directory: ./frontend
-        run: npm ci
+      - name: Build Shared Package
+        working-directory: ./packages/shared
+        run: |
+          npm install
+          npx tsc
 
-      - name: Build Web Application
-        working-directory: ./frontend
-        run: npm run build
-        env:
-          NEXT_PUBLIC_API_URL: https://vanvas-api.onrender.com
+      - name: Install Mobile Dependencies
+        working-directory: ./mobile
+        run: npm install
 
-      - name: Capacitor Sync Android
-        working-directory: ./frontend
-        run: npx cap sync android
+      - name: Mobile TypeScript Typecheck
+        working-directory: ./mobile
+        run: npx tsc --noEmit
+
+      - name: Mobile Expo Diagnostics
+        working-directory: ./mobile
+        run: npx expo config
+
+      - name: Prebuild Android from Expo
+        working-directory: ./mobile
+        run: npx expo prebuild --platform android --clean --no-install
 
       - name: Configure Android SDK & Gradle Wrapper
-        working-directory: ./frontend/android
+        working-directory: ./mobile/android
         run: |
           tr -d '\r' < gradlew > gradlew.tmp && mv gradlew.tmp gradlew
           chmod +x gradlew
@@ -63,7 +70,7 @@ jobs:
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "build-tools;34.0.0" || true
 
       - name: Build Debug APK
-        working-directory: ./frontend/android
+        working-directory: ./mobile/android
         run: |
           set -euo pipefail
           echo "=== Java and Android SDK Diagnostics ==="
@@ -85,7 +92,7 @@ jobs:
 
       - name: Prepare Debug APK Artifact & Checksum
         id: prep-debug-apk
-        working-directory: ./frontend/android
+        working-directory: ./mobile/android
         run: |
           set -euo pipefail
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
@@ -125,7 +132,7 @@ jobs:
 
       - name: Build Signed Release APK (If Keystore Available)
         if: steps.check-secrets.outputs.has_release_keys == 'true'
-        working-directory: ./frontend/android
+        working-directory: ./mobile/android
         run: |
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           KEYSTORE_PATH="${RUNNER_TEMP}/vanvas-release-upload.jks"
@@ -147,7 +154,6 @@ jobs:
             sha256sum "${SIGNED_APK}" > "${SIGNED_APK}.sha256"
           fi
           
-          # Clean up temporary keystore file
           rm -f "${KEYSTORE_PATH}"
 
       - name: Upload Debug APK Artifact
@@ -155,8 +161,8 @@ jobs:
         with:
           name: VANVAS-Android-${{ github.sha }}-debug
           path: |
-            frontend/android/**/VANVAS-Android-*-debug.apk
-            frontend/android/**/VANVAS-Android-*-debug.apk.sha256
+            mobile/android/**/VANVAS-Android-*-debug.apk
+            mobile/android/**/VANVAS-Android-*-debug.apk.sha256
           retention-days: 30
 
       - name: Upload Signed Release APK Artifact (If Built)
@@ -165,8 +171,8 @@ jobs:
         with:
           name: VANVAS-Android-${{ github.sha }}-release-signed
           path: |
-            frontend/android/app/build/outputs/apk/release/VANVAS-Android-*-release-signed.apk
-            frontend/android/app/build/outputs/apk/release/VANVAS-Android-*-release-signed.apk.sha256
+            mobile/android/app/build/outputs/apk/release/VANVAS-Android-*-release-signed.apk
+            mobile/android/app/build/outputs/apk/release/VANVAS-Android-*-release-signed.apk.sha256
           retention-days: 30
 
       - name: Generate Build Summary
