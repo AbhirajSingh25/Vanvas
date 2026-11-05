@@ -23,7 +23,8 @@ class CuratedCreativeArtProvider(CreativeArtProvider):
         "rishikesh": "/images/destinations/rishikesh/illustration.jpg",
         "kasol": "/images/destinations/kasol/illustration.jpg",
         "dharamshala": "/images/destinations/dharamshala/illustration.jpg",
-        "mcleodganj": "/images/destinations/dharamshala/illustration.jpg",
+        "mcleodganj": "/images/destinations/mcleodganj/illustration.jpg",
+        "mcleod-ganj": "/images/destinations/mcleodganj/illustration.jpg",
         "goa": "/images/destinations/goa/illustration.jpg",
         "jaipur": "/images/destinations/jaipur/illustration.jpg",
         "udaipur": "/images/destinations/udaipur/illustration.jpg",
@@ -69,6 +70,10 @@ class CuratedCreativeArtProvider(CreativeArtProvider):
             f"atmospheric depth, sophisticated gouache and screen-print texture, elegant and mature, no text, no watermark."
         )
 
+        visual_kind = "editorial_illustration" if is_curated else "terrain_fallback"
+        validation_status = "verified" if is_curated else "biome_fallback"
+        badge_label = "VANVAS PLACE ARTWORK" if is_curated else "DESTINATION CATEGORY ART"
+
         return {
             "success": True,
             "provider": "curated",
@@ -79,13 +84,14 @@ class CuratedCreativeArtProvider(CreativeArtProvider):
             "public_url": asset_url,
             "is_curated": is_curated,
             "visual_role": visual_role,
-            "visual_kind": "editorial_illustration",
+            "visual_kind": visual_kind,
             "is_illustrative": True,
             "terrain_type": terrain_type,
             "aspect_ratio": aspect_ratio,
             "prompt_blueprint": prompt_blueprint,
             "prompt_used": prompt_blueprint,
-            "validation_status": "verified"
+            "validation_status": validation_status,
+            "badge_label": badge_label
         }
 
 
@@ -388,9 +394,43 @@ class OpenAICreativeArtProvider(CreativeArtProvider):
 
         # 1. Graceful check for API key
         if not self.api_key or not self.api_key.strip():
-            logger.warning("OPENAI_API_KEY is not configured. Falling back to curated asset.")
+            logger.warning("OPENAI_API_KEY is not configured. Falling back to curated or terrain asset.")
+            is_curated = curated_info.get("is_curated", False)
             return {
                 "success": False,
+                "provider": "openai",
+                "model": self.model,
+                "destination": destination_name,
+                "slug": safe_slug,
+                "visual_role": visual_role,
+                "visual_kind": "editorial_illustration" if is_curated else "terrain_fallback",
+                "is_illustrative": True,
+                "terrain_type": terrain_type,
+                "asset_url": fallback_url,
+                "public_url": fallback_url,
+                "error": "OPENAI_API_KEY is not configured",
+                "validation_status": "fallback",
+                "badge_label": "VANVAS PLACE ARTWORK" if is_curated else "DESTINATION CATEGORY ART",
+                "is_curated": is_curated,
+                "aspect_ratio": aspect_ratio,
+                "prompt_blueprint": prompt,
+                "prompt_used": prompt
+            }
+
+        # 2. Check disk cache for previously generated/promoted asset
+        dest_dir = self._resolve_output_directory() / safe_slug
+        img_format = self.image_format.lower()
+        out_filename = f"{visual_role}.generated.{img_format}"
+        out_file_path = dest_dir / out_filename
+        promo_filename = f"{visual_role}.{img_format}"
+        promo_path = dest_dir / promo_filename
+
+        target_cached = promo_path if promo_path.exists() else (out_file_path if out_file_path.exists() else None)
+        if target_cached and target_cached.stat().st_size > 1000:
+            public_url = f"/images/destinations/{safe_slug}/{target_cached.name}"
+            logger.info(f"Using cached destination artwork for {destination_name}: {public_url}")
+            return {
+                "success": True,
                 "provider": "openai",
                 "model": self.model,
                 "destination": destination_name,
@@ -399,14 +439,15 @@ class OpenAICreativeArtProvider(CreativeArtProvider):
                 "visual_kind": "editorial_illustration",
                 "is_illustrative": True,
                 "terrain_type": terrain_type,
-                "asset_url": fallback_url,
-                "public_url": fallback_url,
-                "error": "OPENAI_API_KEY is not configured",
-                "validation_status": "fallback",
-                "is_curated": curated_info.get("is_curated", False),
+                "output_path": str(target_cached),
+                "public_url": public_url,
+                "asset_url": public_url,
+                "prompt_used": prompt,
                 "aspect_ratio": aspect_ratio,
-                "prompt_blueprint": prompt,
-                "prompt_used": prompt
+                "validation_status": "verified",
+                "badge_label": "VANVAS PLACE ARTWORK",
+                "is_curated": False,
+                "is_cached": True
             }
 
         # 2. Call OpenAI Images API

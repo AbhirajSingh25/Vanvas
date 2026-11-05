@@ -3,6 +3,11 @@ from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.database.session import SessionLocal
 from app.models.models import Destination, Place
+from app.seed.seed_data import seed_database
+
+@pytest.fixture(scope="module", autouse=True)
+def setup_db():
+    seed_database()
 
 @pytest.mark.asyncio
 async def test_mussoorie_has_verified_landmarks_and_no_ghat_leakage():

@@ -115,7 +115,7 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
     Readiness probe verifying essential runtime dependencies:
     - Database connectivity
     - No critical startup/seeding error
-    - Canonical destination inventory valid (>=26 destinations, >=208 places, >=104 hotels, >=53 rentals)
+    - Canonical destination inventory valid (>=26 destinations, >=420 places, >=104 hotels, >=53 rentals)
     Returns HTTP 200 when ready, HTTP 503 if any requirement is unfulfilled.
     """
     startup_err = getattr(app.state, "startup_error", None)
@@ -146,7 +146,7 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
         rentals_count = db.query(RentalOption).count()
 
         # Check canonical baseline
-        if canonical_dest_count < 26 or places_count < 208 or hotels_count < 104 or rentals_count < 53:
+        if canonical_dest_count < 26 or places_count < 420 or hotels_count < 104 or rentals_count < 53:
             response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
             return {
                 "status": "not_ready",
@@ -159,7 +159,7 @@ def readiness_check(response: Response, db: Session = Depends(get_db)):
                     "places": places_count,
                     "hotels": hotels_count,
                     "rentals": rentals_count,
-                    "expected": {"canonical_destinations": 26, "places": 208, "hotels": 104, "rentals": 53}
+                    "expected": {"canonical_destinations": 26, "places": 420, "hotels": 104, "rentals": 53}
                 },
                 "service": "vanvas-core-api",
                 "version": settings.VERSION,

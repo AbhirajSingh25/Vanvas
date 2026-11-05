@@ -89,3 +89,4 @@ Every asset served through the VANVAS API and UI includes its provenance badge:
 - **Live Photo:** Retrieved dynamically from live verified POI providers.
 - **Editorial Art:** Category or regional visual backdrop.
 No synthetic or generic image is ever presented as a verified photograph.
+

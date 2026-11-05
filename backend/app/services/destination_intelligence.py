@@ -325,7 +325,52 @@ class DestinationIntelligenceService:
         weather_task = asyncio.create_task(fetch_weather())
         images, forecasts = await asyncio.gather(images_task, weather_task)
 
-        hero_image = images[0] if images else "/images/destinations/fallbacks/himalayan.jpg"
+        terrain_type = (
+            "high_altitude" if altitude > 3000
+            else ("mountain" if altitude > 1200
+            else ("desert" if any(k in state.lower() for k in ["rajasthan", "gujarat"])
+            else ("coastal" if any(k in state.lower() for k in ["goa", "kerala", "tamil nadu", "andhra"])
+            else "forested_hills")))
+        )
+
+        visual_kind = "verified_photo"
+        is_real_photo = True
+        badge_label = "LIVE DESTINATION PHOTO"
+        validation_status = "verified"
+
+        if images:
+            hero_image = images[0]
+            hero_photo = images[0]
+            hero_artwork = None
+        else:
+            try:
+                creative_art = ProviderFactory.get_creative_art_provider()
+                art_res = await asyncio.wait_for(
+                    creative_art.generate_destination_art(
+                        destination_name=name,
+                        slug=slug,
+                        terrain_type=terrain_type,
+                        state=state,
+                        elevation_meters=altitude
+                    ),
+                    timeout=2.0
+                )
+                hero_image = art_res.get("public_url") or "/images/destinations/fallbacks/himalayan.jpg"
+                visual_kind = art_res.get("visual_kind", "terrain_fallback")
+                is_real_photo = False
+                badge_label = art_res.get("badge_label", "DESTINATION CATEGORY ART")
+                validation_status = art_res.get("validation_status", "biome_fallback")
+                hero_photo = None
+                hero_artwork = hero_image
+            except Exception as e:
+                logger.warning(f"Failed to generate destination art for {name}: {e}")
+                hero_image = "/images/destinations/fallbacks/himalayan.jpg"
+                visual_kind = "terrain_fallback"
+                is_real_photo = False
+                badge_label = "DESTINATION CATEGORY ART"
+                validation_status = "biome_fallback"
+                hero_photo = None
+                hero_artwork = hero_image
 
         # Honest dynamic tagline & description
         tagline = f"Live travel discovery and verified local points of interest in {name}."
@@ -383,6 +428,13 @@ class DestinationIntelligenceService:
             "tagline": tagline,
             "description": desc,
             "hero_image": hero_image,
+            "hero_photo": hero_photo,
+            "hero_artwork": hero_artwork,
+            "illustration": hero_artwork or hero_image,
+            "visual_kind": visual_kind,
+            "is_real_photo": is_real_photo,
+            "badge_label": badge_label,
+            "validation_status": validation_status,
             "latitude": lat,
             "longitude": lng,
             "altitude_meters": altitude,

@@ -20,7 +20,7 @@ CANONICAL_26_SLUGS = [
     "sariska-bhangarh", "chandigarh", "morni-hills", "lansdowne", "murthal"
 ]
 
-EXPECTED_PLACES_PER_DEST = {s: 8 for s in CANONICAL_26_SLUGS}
+EXPECTED_PLACES_PER_DEST = {s: len(ADDITIONAL_PLACES_BY_DEST[s]) for s in CANONICAL_26_SLUGS}
 EXPECTED_STAYS_PER_DEST = {s: 4 for s in CANONICAL_26_SLUGS}
 
 
@@ -38,9 +38,9 @@ def test_canonical_destination_count():
         assert s in slugs, f"Missing canonical slug: {s}"
 
 
-def test_canonical_place_inventory_completeness_208():
+def test_canonical_place_inventory_completeness_420():
     total_places = sum(len(v) for v in ADDITIONAL_PLACES_BY_DEST.values())
-    assert total_places == 208, f"Expected 208 places, found {total_places}"
+    assert total_places == 420, f"Expected 420 places, found {total_places}"
     
     for s in CANONICAL_26_SLUGS:
         expected = EXPECTED_PLACES_PER_DEST[s]

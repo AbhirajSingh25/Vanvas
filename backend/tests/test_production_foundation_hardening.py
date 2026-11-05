@@ -56,16 +56,21 @@ def setup_db():
 
 
 def test_canonical_inventory_counts():
-    """Phase 3: Verify 26 destinations, 208 places, 104 hotels, 53 rentals."""
+    """Phase 3: Verify 26 destinations, 420 places, 104 hotels, 53 rentals."""
     assert len(CANONICAL_26_DESTINATIONS) == 26
     
     total_places = sum(len(v) for v in ADDITIONAL_PLACES_BY_DEST.values())
     total_hotels = sum(len(v) for v in ADDITIONAL_HOTELS_BY_DEST.values())
     total_rentals = sum(len(v) for v in ADDITIONAL_RENTALS_BY_DEST.values())
     
-    assert total_places == 208, f"Expected 208 places, got {total_places}"
+    assert total_places == 420, f"Expected 420 places, got {total_places}"
     assert total_hotels == 104, f"Expected 104 hotels, got {total_hotels}"
     assert total_rentals == 53, f"Expected 53 rentals, got {total_rentals}"
+    
+    for s in CANONICAL_26_DESTINATIONS:
+        slug = s["slug"]
+        cnt = len(ADDITIONAL_PLACES_BY_DEST.get(slug, []))
+        assert cnt in (16, 18), f"Destination {slug} expected 16 or 18 places, got {cnt}"
 
 
 def test_database_seeding_is_idempotent():
@@ -79,7 +84,7 @@ def test_database_seeding_is_idempotent():
     rentals_count = db.query(RentalOption).count()
     
     assert dest_count == 26
-    assert places_count == 208
+    assert places_count == 420
     assert hotels_count == 104
     assert rentals_count == 53
     db.close()
@@ -93,7 +98,7 @@ def test_readiness_probe():
     assert data["status"] == "ready"
     assert data["database"] == "connected"
     assert data["inventory"]["destinations"] >= 26
-    assert data["inventory"]["places"] >= 208
+    assert data["inventory"]["places"] >= 420
     assert data["inventory"]["hotels"] >= 104
     assert data["inventory"]["rentals"] >= 53
 

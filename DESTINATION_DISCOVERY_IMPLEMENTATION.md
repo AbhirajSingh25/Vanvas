@@ -121,3 +121,4 @@ For destinations outside the 26 canonical seeds:
   - Uses `resolveImageUrl` for static asset loading from Vercel domain.
   - Renders zone and distance pills (`Immediate Town • 2.4 km`).
   - Haptic feedback on tap and dedicated **"Plan"** action linking to native planning tabs.
+

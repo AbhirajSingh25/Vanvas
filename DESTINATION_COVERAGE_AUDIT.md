@@ -72,3 +72,4 @@ For dynamically requested destinations not present in the canonical 26-destinati
 2. **Live Hotels Discovery:** `LiveHotelsProvider.search_hotels()` retrieves live accommodation, ensuring dynamic destinations never render empty stay sections.
 3. **Live Rentals Discovery:** `LiveRentalsProvider.search_rentals()` retrieves local mobility options and motorcycle/scooter rentals.
 4. **Visual Art Generation:** If verified exact photography is unavailable, the `CreativeArtProvider` synthesizes or resolves a terrain-appropriate editorial artwork based on elevation and biome.
+

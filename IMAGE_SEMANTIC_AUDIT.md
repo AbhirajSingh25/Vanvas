@@ -64,3 +64,4 @@ All mobile components (`PlaceCard`, `DestinationDetailScreen`, hero headers) wra
 - **Storage Provider:** Supported across `Supabase Storage`, `Cloudinary`, and `AWS S3 / Cloudflare R2` via `StorageService`.
 - **Integrity Validation:** When users upload profile photos or media, the backend converts formats to optimized WebP, sanitizes filenames to prevent path traversal, and returns absolute durable URLs.
 - **Sidecar Metadata Retention:** For dynamically generated editorial artwork, sidecar `.generated.json` metadata records the exact model, prompt blueprint, terrain type, aspect ratio, and generation timestamp alongside the image asset.
+

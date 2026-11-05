@@ -16,7 +16,7 @@ GENERIC_WORDS = {
     "himalayan", "apple", "orchard", "loft", "lodge", "camp", "camps", "villa", "villas", "inn", "house",
     "hub", "fleet", "rentals", "rental", "scooters", "scooter", "bike", "bikes", "motorcycle", "self-drive",
     "drift", "acoustic", "hill", "hills", "view", "views", "pine", "cedar", "beach", "coast", "coastline",
-    "cove", "ridge", "estate", "residency", "stay", "stays", "traveler", "circle", "square"
+    "cove", "ridge", "estate", "residency", "stay", "stays", "traveler", "circle", "square", "kaza", "manali", "spiti", "leh", "jaipur", "goa", "udaipur", "munnar", "kasol", "rishikesh", "dharamshala", "agra", "varanasi", "dehradun", "mussoorie", "murthal", "lansdowne", "alwar", "sariska", "bhangarh", "neemrana", "mathura", "vrindavan", "chandigarh"
 }
 
 import unicodedata
@@ -8065,6 +8065,31 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "metadata": item
             }
 
+        # PRIORITY 2.5: Verified Local Asset File on Disk
+        if existing_image_url and existing_image_url.startswith("/images/places/") and not any(k in existing_image_url for k in ["/categories/", "/fallbacks/", "/universal/"]):
+            badge = "VANVAS PLACE ARTWORK"
+            return {
+                "url": existing_image_url,
+                "fallback_url": safe_fallback,
+                "source": source or "vanvas_curated",
+                "source_type": "editorial_artwork",
+                "provenance": "exact_place",
+                "semantic_category": theme,
+                "exactness": "exact",
+                "attribution": "VANVAS Verified Editorial Asset",
+                "alt_text": f"{place_name} in {destination_name}",
+                "badge_label": badge,
+                "artwork_key": f"exact:{dest_norm}:{place_norm}",
+                "image_url": existing_image_url,
+                "tier": "exact_place",
+                "place_name": place_name,
+                "destination": destination_name,
+                "category": category,
+                "is_real_photo": False,
+                "badge": badge,
+                "visual_description": f"Verified editorial asset for {place_name}."
+            }
+
         # PRIORITY 3: Destination-Scoped Alias Matching against PLACE_ARTWORK_REGISTRY
         best_exact_match = None
         for reg_key, item in self.PLACE_ARTWORK_REGISTRY.items():
@@ -8303,6 +8328,31 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "badge": "VANVAS PLACE ARTWORK",
                 "visual_description": item.get("visual_description"),
                 "metadata": item
+            }
+
+        # PRIORITY 2.5: Verified Local Property Asset on Disk
+        if existing_image_url and existing_image_url.startswith("/images/places/") and "/stays/" in existing_image_url and not any(k in existing_image_url for k in ["/categories/", "/fallbacks/", "/universal/"]):
+            badge = "VANVAS PLACE ARTWORK"
+            return {
+                "url": existing_image_url,
+                "fallback_url": dest_stay_fallback,
+                "source": source or "vanvas_curated",
+                "source_type": "editorial_artwork",
+                "provenance": "exact_place",
+                "semantic_category": "stay",
+                "exactness": "exact",
+                "attribution": "VANVAS Verified Property Asset",
+                "alt_text": f"{property_name} in {destination_name}",
+                "badge_label": badge,
+                "artwork_key": f"stay:exact:{dest_norm}:{hotel_norm}",
+                "image_url": existing_image_url,
+                "tier": "exact_place",
+                "place_name": property_name,
+                "destination": destination_name,
+                "category": "Stays & Sanctuaries",
+                "is_real_photo": False,
+                "badge": badge,
+                "visual_description": f"Verified property artwork for {property_name}."
             }
 
         # PRIORITY 3: Destination-Scoped Alias Matching against HOTEL_ARTWORK_REGISTRY

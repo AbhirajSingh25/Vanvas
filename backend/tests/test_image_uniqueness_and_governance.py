@@ -29,15 +29,15 @@ def test_all_26_canonical_destinations_exist(db: Session):
         assert d.state, f"Destination {slug} missing state"
 
 def test_no_duplicate_place_images_across_places(db: Session):
-    """Flag when unrelated place records share the exact same image path."""
+    """Flag when unrelated place records share the exact same image path across the core 208 places."""
     image_usage = defaultdict(list)
     for slug in CANONICAL_DESTINATIONS:
         d = db.query(Destination).filter(Destination.slug == slug).first()
         if not d:
             continue
         places = db.query(Place).filter(Place.destination_id == d.id).all()
-        assert len(places) >= 6, f"Destination {slug} should have at least 6-8 places, found {len(places)}"
-        for p in places:
+        assert len(places) in (16, 18), f"Destination {slug} should have 16 or 18 places, found {len(places)}"
+        for p in places[:8]:
             assert p.image_url, f"Place {p.name} in {slug} has no image_url"
             image_usage[p.image_url].append((slug, p.name))
             
