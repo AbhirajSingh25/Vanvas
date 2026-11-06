@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Playfair_Display, Noto_Serif_Devanagari } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -19,26 +19,45 @@ import { UpdateNotificationBanner } from "@/components/version/UpdateNotificatio
 import { ErrorBoundary } from "@/components/monitoring/ErrorBoundary";
 import { Analytics } from "@vercel/analytics/next";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
+const plusJakartaSans = localFont({
+  src: [
+    {
+      path: "../public/fonts/PlusJakartaSans-Variable.woff2",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/PlusJakartaSans-Italic-Variable.woff2",
+      style: "italic",
+    },
+  ],
   variable: "--font-sans",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
+const playfairDisplay = localFont({
+  src: [
+    {
+      path: "../public/fonts/PlayfairDisplay-Variable.woff2",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/PlayfairDisplay-Italic-Variable.woff2",
+      style: "italic",
+    },
+  ],
   variable: "--font-serif",
   display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
 });
 
-const notoSerifDevanagari = Noto_Serif_Devanagari({
-  subsets: ["devanagari", "latin"],
+const notoSerifDevanagari = localFont({
+  src: [
+    {
+      path: "../public/fonts/NotoSerifDevanagari-Variable.woff2",
+      style: "normal",
+    },
+  ],
   variable: "--font-devanagari",
   display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const viewport: Viewport = {
