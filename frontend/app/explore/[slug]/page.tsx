@@ -9,6 +9,7 @@ import {
   Phone, Navigation, MessageCircle, Globe, Users, X, Home, Building2, CheckCircle2,
   Utensils, Info, Footprints, Flame, Camera, Sunrise, Map as MapIcon, ChevronRight,
   Route, Shield, ArrowDown, Search, ChevronDown, ChevronUp
+, Columns
 } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -23,6 +24,8 @@ import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 import { DestinationReelsCarousel } from "@/components/destinations/DestinationReelsCarousel";
+import { SynchronizedTwoRowCarousel } from "@/components/ui/SynchronizedTwoRowCarousel";
+import { FeaturedPlaceCard, FeaturedStayCard, FeaturedVehicleCard } from "@/components/destinations/DestinationFeaturedCard";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
 import { getCanonicalHindiName, findCanonicalDestination } from "@/lib/canonicalDestinations";
@@ -287,7 +290,7 @@ export default function DestinationDetailPage() {
 
   // In-Destination Search & Geographical Accordions
   const [inDestSearch, setInDestSearch] = useState<string>("");
-  const [placesViewMode, setPlacesViewMode] = useState<"zones" | "grid">("zones");
+  const [placesViewMode, setPlacesViewMode] = useState<"carousel" | "zones" | "grid">("carousel");
   const [accordionsOpen, setAccordionsOpen] = useState<{ zone1: boolean; zone2: boolean; zone3: boolean }>({
     zone1: true,
     zone2: true,
@@ -1549,6 +1552,19 @@ export default function DestinationDetailPage() {
                 <div className="p-1 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] flex items-center gap-1 text-xs font-mono">
                   <button
                     type="button"
+                    onClick={() => setPlacesViewMode("carousel")}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      placesViewMode === "carousel"
+                        ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
+                        : "text-[#7B4D36] hover:bg-[#EFE5D2]"
+                    }`}
+                    title="View as synchronized two-row carousel"
+                  >
+                    <Columns className="w-3.5 h-3.5" />
+                    <span>Two-Row Carousel</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setPlacesViewMode("zones")}
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       placesViewMode === "zones"
@@ -1634,8 +1650,53 @@ export default function DestinationDetailPage() {
               ))}
             </div>
 
-            {/* VIEW MODE 1: GEOGRAPHICAL ACCORDIONS */}
-            {placesViewMode === "zones" ? (
+            {/* VIEW MODES: CAROUSEL vs GEOGRAPHICAL ACCORDIONS vs FLAT GRID */}
+            {placesViewMode === "carousel" ? (
+              <div className="space-y-6">
+                {(() => {
+                  const featuredPlace = filteredPlaces.find((p) => p.is_must_visit || Boolean((p as any).is_featured)) || filteredPlaces[0];
+                  const remainingPlaces = featuredPlace ? filteredPlaces.filter((p) => p.id !== featuredPlace.id) : filteredPlaces;
+
+                  return (
+                    <div className="space-y-6">
+                      {featuredPlace && (
+                        <FeaturedPlaceCard
+                          place={featuredPlace}
+                          destinationName={destination.name}
+                          onExplore={(p) => {
+                            setSelectedPlace(p);
+                            setModalOpen(true);
+                          }}
+                          onPlan={(p) => {
+                            router.push(`/plan?destination=${encodeURIComponent(destination.slug)}&place=${encodeURIComponent(p.id)}`);
+                          }}
+                        />
+                      )}
+
+                      <SynchronizedTwoRowCarousel
+                        items={remainingPlaces}
+                        title={`Curated Sanctuaries & Landmarks (${remainingPlaces.length})`}
+                        subtitle="Swipe across verified Himalayan trails, monasteries, and viewpoints in synchronized rows"
+                        eyebrow="SYNCHRONIZED TWO-ROW DISCOVERY"
+                        columnWidthClass="w-[82vw] sm:w-[320px] lg:w-[350px]"
+                        keyExtractor={(p) => p.id}
+                        renderItem={(p) => (
+                          <PlaceCard
+                            key={p.id}
+                            place={p}
+                            destinationName={destination.name}
+                            onSelect={(selected) => {
+                              setSelectedPlace(selected);
+                              setModalOpen(true);
+                            }}
+                          />
+                        )}
+                      />
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : placesViewMode === "zones" ? (
               <div className="space-y-6">
                 {/* ZONE 1: AROUND TOWN / IMMEDIATE AREA (<= 3 km) */}
                 <div className="rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] overflow-hidden shadow-2xs transition-all">
@@ -1964,7 +2025,7 @@ export default function DestinationDetailPage() {
               </div>
             </div>
 
-            {/* Stays Grid with Normalized Image Frame & Preview Limitation */}
+            {/* Stays Synchronized Two-Row Carousel with Featured Property */}
             {staysLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
@@ -1977,8 +2038,28 @@ export default function DestinationDetailPage() {
               </div>
             ) : hotels.length > 0 ? (
               <div className="space-y-6">
-                <div className={getCatalogueGridClass(hotels.length, false)}>
-                  {hotels.slice(0, 3).map((h) => {
+                {hotels[0] && (
+                  <FeaturedStayCard
+                    hotel={hotels[0]}
+                    destinationName={destination.name}
+                    onSelect={(h) => {
+                      setSelectedStayForModal(h);
+                      setStayModalOpen(true);
+                    }}
+                    onBook={(h) => {
+                      handleStartBooking(h);
+                    }}
+                  />
+                )}
+
+                <SynchronizedTwoRowCarousel
+                  items={hotels.slice(1)}
+                  title={`Remaining Stays & Retreats (${hotels.length - 1})`}
+                  subtitle="Browse verified mountain homestays, hostels, and camps in synchronized rows"
+                  eyebrow="SYNCHRONIZED TWO-ROW STAYS"
+                  columnWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
+                  keyExtractor={(h) => h.id}
+                  renderItem={(h) => {
                     const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
                     const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
                     const stayVisual = resolveHotelArtwork(h.name, destination.name, h.hotel_style || h.accommodation_type, h.image_url, h.is_live, h.source);
@@ -1987,9 +2068,8 @@ export default function DestinationDetailPage() {
                     const availState = isLiveStay ? (h.availability_state || "AVAILABLE") : (h.availability_state === "AVAILABLE" ? "UPON INQUIRY" : (h.availability_state || "UPON INQUIRY"));
 
                     return (
-                      <div key={h.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
-                        <div className="space-y-3">
-                          {/* Visual Header with Normalized Aspect Ratio */}
+                      <div key={h.id} className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] dark:bg-[#15231F] border-2 border-[#E5D5BA] dark:border-[#2C3B34] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3 flex flex-col justify-between h-full">
+                        <div className="space-y-2.5">
                           <div
                             onClick={() => {
                               setSelectedStayForModal(h);
@@ -2003,129 +2083,54 @@ export default function DestinationDetailPage() {
                               alt={`${h.name} in ${destination.name}`}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
-                            {/* Top Badges */}
-                            <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
-                              <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                            <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1">
+                              <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
                                 {badgeLabel}
                               </span>
-
-                              <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-xs ${
-                                availState === "AVAILABLE"
-                                  ? "bg-emerald-600 text-white"
-                                  : "bg-[#0F2924]/80 backdrop-blur-xs text-[#FAF4E8] border border-white/15"
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase font-bold tracking-wider shadow-xs ${
+                                availState === "AVAILABLE" ? "bg-emerald-600 text-white" : "bg-[#0F2924]/80 text-[#FAF4E8]"
                               }`}>
                                 {availState}
                               </span>
                             </div>
-
-                            {/* Bottom Category Tag */}
-                            <div className="absolute bottom-2.5 left-2.5">
-                              <span className="px-2 py-0.5 rounded-md bg-[#0F2924]/85 backdrop-blur-xs text-[#FAF4E8] text-[10px] font-medium border border-white/10">
-                                {h.accommodation_type || h.hotel_style || "Stay Sanctuary"}
-                              </span>
-                            </div>
                           </div>
 
-                          {/* Content Details */}
                           <div>
-                            <div className="flex items-start justify-between gap-2">
-                              <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{h.name}</h4>
+                            <div className="flex items-start justify-between gap-1.5">
+                              <h4 className="font-serif font-bold text-sm sm:text-base text-[#173B32] dark:text-[#FAF7F0] leading-snug line-clamp-1">{h.name}</h4>
                               <span className={`font-bold text-xs shrink-0 ${isPriceVerified ? "text-[#B65E3C]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
                                 {displayPrice}
                               </span>
                             </div>
-                            <p className="text-[11px] text-[#7B4D36] mt-1 line-clamp-1">
+                            <p className="text-[11px] text-[#7B4D36] dark:text-[#C5A898] mt-0.5 line-clamp-1">
                               {h.address}
-                              {typeof h.distance_km === "number" && ` • ${h.distance_km} km away`}
                             </p>
-
-                            {/* Verified Tags */}
-                            {h.traveller_tags && h.traveller_tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {h.traveller_tags.slice(0, 3).map((tag) => (
-                                  <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-[#EFE5D2] text-[#7B4D36] border border-[#E5D5BA]">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </div>
 
-                        {/* Action Toolbar */}
-                        <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs text-[#536B52] gap-2">
+                        <div className="pt-2 border-t border-[#E5D5BA]/60 dark:border-[#2C3B34] flex items-center gap-2">
                           <button
+                            type="button"
                             onClick={() => {
                               setSelectedStayForModal(h);
                               setStayModalOpen(true);
                             }}
-                            className="px-2.5 py-1.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] font-semibold text-xs hover:bg-[#EFE5D2] hover:border-[#173B32] transition-colors cursor-pointer"
+                            className="flex-1 py-1.5 px-2 rounded-xl bg-[#FAF4E8] dark:bg-[#1C2E27] border border-[#E5D5BA] dark:border-[#2C3B34] text-[#173B32] dark:text-[#FAF7F0] text-xs font-semibold hover:bg-[#EFE5D2] transition-colors"
                           >
-                            View Property
+                            Details
                           </button>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {h.latitude && h.longitude && (
-                              <a
-                                href={`https://www.google.com/maps/dir/?api=1&destination=${h.latitude},${h.longitude}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#B65E3C] transition-colors"
-                                title="Get directions"
-                              >
-                                <MapPin className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-
-                            {h.phone && (
-                              <a
-                                href={`tel:${h.phone}`}
-                                className="p-1.5 rounded-lg bg-[#FAF7F0] border border-[#E5D5BA] text-[#173B32] hover:text-emerald-700 hover:border-emerald-700 transition-colors"
-                                title={`Call ${h.phone}`}
-                              >
-                                <Phone className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-
-                            {h.availability_state === "UNAVAILABLE" ? (
-                              <span className="px-3 py-1.5 bg-neutral-200 text-neutral-600 rounded-xl font-bold text-[11px] uppercase tracking-wider">
-                                Unavailable
-                              </span>
-                            ) : (
-                              <button
-                                onClick={() => handleStartBooking(h)}
-                                className="px-3 py-1.5 bg-[#173B32] hover:bg-[#B65E3C] text-[#EFE5D2] rounded-xl font-bold text-xs transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
-                              >
-                                <span>Book Stay</span>
-                                <ArrowRight className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleStartBooking(h)}
+                            className="flex-1 py-1.5 px-2 rounded-xl bg-[#173B32] hover:bg-[#0F2924] text-[#FAF4E8] text-xs font-bold transition-colors shadow-2xs"
+                          >
+                            Reserve
+                          </button>
                         </div>
                       </div>
                     );
-                  })}
-                </div>
-
-                {/* Explore All Stays CTA */}
-                <div className="p-5 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="space-y-0.5 text-center sm:text-left">
-                    <h4 className="font-serif font-bold text-base text-[#173B32]">
-                      Discover All Stays in {destination.name}
-                    </h4>
-                    <p className="text-xs text-[#7B4D36]">
-                      View all {hotels.length} verified sanctuaries, filter by style or traveller profile, and compare direct booking rates.
-                    </p>
-                  </div>
-                  <Link
-                    href={`/explore/${destination.slug || slug}/stays`}
-                    className="px-5 py-3 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-md shrink-0 cursor-pointer"
-                  >
-                    <BedDouble className="w-4 h-4 text-[#EFE5D2]" />
-                    <span>See All {hotels.length} Stays</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
+                  }}
+                />
               </div>
             ) : (
               <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
@@ -2308,174 +2313,81 @@ export default function DestinationDetailPage() {
                 ))}
               </div>
             ) : rentals.length > 0 ? (
-              <div className={getCatalogueGridClass(rentals.length, false)}>
-                {rentals.map((r) => {
-                  const vStatus = r.data_state || r.verification_status || "VERIFIED";
-                  const isLiveProvider = vStatus === "LIVE" || vStatus === "LIVE_PROVIDER";
-                  const isVerified = vStatus === "VERIFIED";
-                  const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
+              <div className="space-y-6">
+                {rentals[0] && (
+                  <FeaturedVehicleCard
+                    rental={rentals[0]}
+                    destinationName={destination.name}
+                    onSelect={(r) => {
+                      setSelectedRentalForModal(r);
+                      setRentalModalOpen(true);
+                    }}
+                  />
+                )}
 
-                  const dirLink = r.action_links?.find((l) => l.type === "directions")?.url ||
-                    (r.latitude && r.longitude ? `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}` : null);
-                  const phoneLink = r.action_links?.find((l) => l.type === "phone")?.url || (r.phone ? `tel:${r.phone}` : null);
-                  const waLink = r.action_links?.find((l) => l.type === "whatsapp")?.url ||
-                    (r.whatsapp ? `https://wa.me/${r.whatsapp.replace(/[^\d]/g, "")}` : null);
-                  const webLink = r.website || r.source_url || (r.action_links?.find((l) => l.type === "website")?.url);
-
-                  return (
-                    <div key={r.id} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
-                      <div className="space-y-3">
-                        <div
-                          onClick={() => {
-                            setSelectedRentalForModal(r);
-                            setRentalModalOpen(true);
-                          }}
-                          className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group"
-                        >
-                          <VehicleArtwork
-                            type={r.vehicle_type}
-                            name={r.vehicle_name}
-                            destination={destination.name}
-                            context={{
-                              destination: destination.name,
-                              state: destination.state,
-                              region: destination.region,
+                <SynchronizedTwoRowCarousel
+                  items={rentals.slice(1)}
+                  title={`Expedition Fleet & Rentals (${rentals.length - 1})`}
+                  subtitle="High-clearance SUVs, adventure motorcycles, and local scooters in synchronized rows"
+                  eyebrow="SYNCHRONIZED TWO-ROW FLEET"
+                  columnWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
+                  keyExtractor={(r) => r.id}
+                  renderItem={(r) => {
+                    const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
+                    return (
+                      <div key={r.id} className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] dark:bg-[#15231F] border-2 border-[#E5D5BA] dark:border-[#2C3B34] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3 flex flex-col justify-between h-full">
+                        <div className="space-y-2.5">
+                          <div
+                            onClick={() => {
+                              setSelectedRentalForModal(r);
+                              setRentalModalOpen(true);
                             }}
-                            imageUrl={r.image_url}
-                            alt={r.vehicle_name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
-                            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs ${
-                              isLiveProvider 
-                                ? "bg-emerald-700 text-white" 
-                                : isVerified 
-                                ? "bg-[#173B32] text-[#EFE5D2]"
-                                : "bg-[#7B4D36] text-[#FAF7F0]"
-                            }`}>
-                              {isLiveProvider ? "LIVE PROVIDER" : isVerified ? "VERIFIED FLEET" : "CURATED"}
-                            </span>
-                            {r.source_provider && (
-                              <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-medium bg-[#20211D]/80 text-[#FAF7F0] backdrop-blur-xs">
-                                {r.source_provider}
+                            className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-[#E5D5BA] cursor-pointer group"
+                          >
+                            <VehicleArtwork
+                              type={r.vehicle_type}
+                              name={r.vehicle_name}
+                              destination={destination.name}
+                              imageUrl={r.image_url}
+                              alt={r.vehicle_name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute top-2 left-2 flex items-center gap-1">
+                              <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#173B32] text-[#EFE5D2] shadow-xs">
+                                {r.vehicle_type || "Rental"}
                               </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <h4 className="font-serif font-bold text-base text-[#173B32] leading-snug">{r.vehicle_name}</h4>
-                              <p className="text-[11px] font-medium text-[#7B4D36]">
-                                {r.provider_name}
-                              </p>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <span className={`font-bold text-sm block ${hasPrice ? "text-[#173B32]" : "text-[#7B4D36]/80 text-[11px] font-mono"}`}>
-                                {hasPrice ? `₹${r.price_per_day}/day` : "Price on enquiry"}
-                              </span>
-                              {r.price_per_hour ? (
-                                <span className="text-[10px] font-mono text-[#7B4D36] block">
-                                  ₹{r.price_per_hour}/hr
-                                </span>
-                              ) : null}
                             </div>
                           </div>
 
-                          {r.deposit_amount ? (
-                            <p className="text-[11px] text-[#7B4D36]">
-                              Deposit: <span className="font-semibold text-[#173B32]">₹{r.deposit_amount}</span>
+                          <div>
+                            <div className="flex items-start justify-between gap-1.5">
+                              <h4 className="font-serif font-bold text-sm sm:text-base text-[#173B32] dark:text-[#FAF7F0] leading-snug line-clamp-1">{r.vehicle_name}</h4>
+                              <span className="font-bold text-xs shrink-0 text-[#B65E3C]">
+                                {hasPrice ? `₹${r.price_per_day}/day` : "Inquire"}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-[#7B4D36] dark:text-[#C5A898] mt-0.5">
+                              {r.provider_name || "Verified Local Fleet"} • {r.location || "Central Hub"}
                             </p>
-                          ) : null}
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-[#E5D5BA]/60 dark:border-[#2C3B34] flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedRentalForModal(r);
+                              setRentalModalOpen(true);
+                            }}
+                            className="w-full py-1.5 px-3 rounded-xl bg-[#FAF4E8] dark:bg-[#1C2E27] border border-[#E5D5BA] dark:border-[#2C3B34] text-[#173B32] dark:text-[#FAF7F0] text-xs font-semibold text-center hover:bg-[#EFE5D2] transition-colors"
+                          >
+                            Rental Terms &amp; Book
+                          </button>
                         </div>
                       </div>
-
-                      <div className="space-y-3 pt-2">
-                        <div className="p-2.5 rounded-xl bg-[#EFE5D2] text-xs font-medium text-[#173B32] flex items-center justify-between gap-2">
-                          <span className="line-clamp-1 flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
-                            <span className="truncate">{r.location || "Regional Hub"}</span>
-                          </span>
-                          <span className="text-[11px] text-[#7B4D36] shrink-0 flex items-center gap-1">
-                            <Clock className="w-3 h-3 shrink-0" />
-                            <span>{r.opening_hours || "08:00 AM - 08:00 PM"}</span>
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            setSelectedRentalForModal(r);
-                            setRentalModalOpen(true);
-                          }}
-                          className="w-full py-1.5 px-3 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] hover:bg-[#EFE5D2] hover:border-[#173B32]/40 text-[#173B32] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Info className="w-3.5 h-3.5 text-[#B65E3C]" />
-                          <span>Rental Terms &amp; Verified Details</span>
-                        </button>
-
-                        {/* Action Links */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                          {phoneLink ? (
-                            <a
-                              href={phoneLink}
-                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
-                            >
-                              <Phone className="w-3.5 h-3.5 text-[#173B32]" />
-                              <span>Call</span>
-                            </a>
-                          ) : null}
-
-                          {waLink ? (
-                            <a
-                              href={waLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-2xs"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                              <span>WhatsApp</span>
-                            </a>
-                          ) : null}
-
-                          {webLink ? (
-                            <a
-                              href={webLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#FAF7F0] border border-[#173B32]/30 text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] transition-colors"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5 text-[#173B32]" />
-                              <span>Website</span>
-                            </a>
-                          ) : null}
-
-                          {dirLink ? (
-                            <a
-                              href={dirLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
-                            >
-                              <Navigation className="w-3.5 h-3.5" />
-                              <span>Directions</span>
-                            </a>
-                          ) : (
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#173B32] text-[#FAF4E8] text-xs font-bold hover:bg-[#0F2924] transition-colors shadow-2xs"
-                            >
-                              <Navigation className="w-3.5 h-3.5" />
-                              <span>Directions</span>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  }}
+                />
               </div>
             ) : (
               <div className="p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] text-center space-y-2">
@@ -2546,11 +2458,15 @@ export default function DestinationDetailPage() {
               </div>
             </div>
 
-            {/* Signature Dishes Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {foodGuide.signature_dishes
-                .filter((d) => selectedDietary === "All" || d.dietary.toLowerCase() === selectedDietary.toLowerCase())
-                .map((dish, idx) => (
+            {/* Signature Dishes Synchronized Two-Row Carousel */}
+            <SynchronizedTwoRowCarousel
+              items={foodGuide.signature_dishes.filter((d) => selectedDietary === "All" || d.dietary.toLowerCase() === selectedDietary.toLowerCase())}
+              title={`Signature Gastronomy & Delicacies (${foodGuide.signature_dishes.length})`}
+              subtitle="Regional flavours, traditional recipes, and local lore in synchronized discovery rows"
+              eyebrow="SIGNATURE FLAVOURS TRACK"
+              columnWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
+              keyExtractor={(dish, idx) => `dish-${idx}`}
+              renderItem={(dish, idx) => (
                   <div key={idx} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
@@ -2604,8 +2520,8 @@ export default function DestinationDetailPage() {
                       <span className="font-bold text-[#B65E3C]">~₹{dish.typical_price_inr}</span>
                     </div>
                   </div>
-                ))}
-            </div>
+              )}
+            />
 
             {/* Verified Dining Spots from Database */}
             {foodGuide.dining_spots && foodGuide.dining_spots.length > 0 && (

@@ -94,3 +94,4 @@ def test_all_visual_stories_poster_images_exist_on_disk():
         clean_path = poster.lstrip("/")
         full_path = os.path.join(FRONTEND_PUBLIC, clean_path)
         assert os.path.exists(full_path), f"Reels poster not found on disk: {poster} (checked {full_path})"
+
