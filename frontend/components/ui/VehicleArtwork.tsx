@@ -510,6 +510,21 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
       label: "Suzuki Access 125 Ghat Approach",
       category: "automatic_scooter",
     },
+    motorcycle: {
+      src: "/images/vehicles/varanasi_bhu_bullet.jpg",
+      label: "Royal Enfield Bullet 350 BHU Edition",
+      category: "classic_bullet",
+    },
+    bicycle: {
+      src: "/images/vehicles/varanasi_city_cycle.jpg",
+      label: "Hero Sprint Ghat Cruiser Cycle",
+      category: "mountain_bike",
+    },
+    car: {
+      src: "/images/vehicles/varanasi_ghat_car.jpg",
+      label: "Toyota Innova Crysta Heritage Cab",
+      category: "car",
+    },
     default: {
       src: "/images/vehicles/varanasi_ghat_approach_scooter.webp",
       label: "Ather 450X Ghats Cruiser",
@@ -548,6 +563,77 @@ export function isGenericArtwork(url?: string | null): boolean {
   if (!url || typeof url !== "string") return true;
   const lower = url.toLowerCase();
   return GENERIC_VEHICLE_PATTERNS.some((p) => lower.includes(p));
+}
+
+/**
+ * Strict vehicle image validation.
+ * Rejects place artwork, hotels, homestays, restaurants, and ghats from being rendered as vehicles.
+ */
+export function isValidVehicleImageUrl(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  const lower = url.toLowerCase().trim();
+  if (!lower) return false;
+
+  const forbiddenPatterns = [
+    "/places/",
+    "/destinations/",
+    "/artworks/",
+    "/stays/",
+    "/reels/",
+    "/categories/",
+    "ghat",
+    "temple",
+    "monastery",
+    "fort",
+    "palace",
+    "stupa",
+    "bridge",
+    "bazaar",
+    "lake",
+    "waterfall",
+    "hotel",
+    "homestay",
+    "resort",
+    "haveli",
+    "camp",
+    "cottage",
+    "food",
+    "dish",
+    "cuisine",
+    "restaurant",
+    "viewpoint",
+    "trail",
+    "pass",
+  ];
+  if (forbiddenPatterns.some((pattern) => lower.includes(pattern))) {
+    return false;
+  }
+
+  if (isGenericArtwork(lower)) {
+    return false;
+  }
+
+  if (lower.startsWith("/images/vehicles/") || lower.startsWith("images/vehicles/")) {
+    return true;
+  }
+
+  const validVehicleTokens = [
+    "scooter",
+    "motorcycle",
+    "bullet",
+    "enfield",
+    "activa",
+    "bike",
+    "cycle",
+    "bicycle",
+    "car",
+    "ev",
+    "thar",
+    "gypsy",
+    "innova",
+    "himalayan",
+  ];
+  return validVehicleTokens.some((token) => lower.includes(token));
 }
 
 /**
@@ -710,6 +796,50 @@ export function resolveVehicleArtwork(
 
   // 1. Destination-Matched Explicit Resolution (Absolute Destination Priority)
   if (destFleet) {
+    if (destKey === "varanasi") {
+      if (isBicycle) {
+        return destFleet.bicycle || {
+          src: "/images/vehicles/varanasi_city_cycle.jpg",
+          label: "Hero Sprint Ghat Cruiser Cycle",
+          category: "mountain_bike",
+        };
+      }
+      if (combined.includes("activa") || combined.includes("assi")) {
+        return {
+          src: "/images/vehicles/varanasi_assi_scooter.webp",
+          label: "Honda Activa 6G Assi Ghat Edition",
+          category: "automatic_scooter",
+        };
+      }
+      if (isElectric || combined.includes("ather")) {
+        return {
+          src: "/images/vehicles/varanasi_ghat_approach_scooter.webp",
+          label: "Ather 450X Ghats Cruiser",
+          category: "electric_scooter",
+        };
+      }
+      if (combined.includes("access") || combined.includes("oldcity")) {
+        return {
+          src: "/images/vehicles/varanasi_oldcity_scooter.webp",
+          label: "Suzuki Access 125 Old City",
+          category: "automatic_scooter",
+        };
+      }
+      if (isClassicBullet || combined.includes("bullet") || combined.includes("enfield")) {
+        return destFleet.motorcycle || {
+          src: "/images/vehicles/varanasi_bhu_bullet.jpg",
+          label: "Royal Enfield Bullet 350 BHU Edition",
+          category: "classic_bullet",
+        };
+      }
+      if (isCar) {
+        return destFleet.car || {
+          src: "/images/vehicles/varanasi_ghat_car.jpg",
+          label: "Toyota Innova Crysta Heritage Cab",
+          category: "car",
+        };
+      }
+    }
     if (isScooter && destFleet.scooter) return destFleet.scooter;
     if (isAdventure && destFleet.adventure) return destFleet.adventure;
     if (isBicycle && destFleet.bicycle) return destFleet.bicycle;
@@ -783,12 +913,12 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
   // Artwork resolved for the destination has absolute priority over generic/regional fallbacks.
   let finalSrc = artwork.src;
   
-  // Custom explicit destination-specific imageUrl from backend only if not a generic fallback
+  // Custom explicit destination-specific imageUrl from backend only if verified legitimate vehicle imagery
   if (
     imageUrl &&
     typeof imageUrl === "string" &&
     imageUrl.length > 0 &&
-    !isGenericArtwork(imageUrl)
+    isValidVehicleImageUrl(imageUrl)
   ) {
     finalSrc = imageUrl;
   }

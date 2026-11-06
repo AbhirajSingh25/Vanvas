@@ -237,15 +237,22 @@ export const DestinationReelsCarousel: React.FC<DestinationReelsCarouselProps> =
 
           {/* Controls: Sound toggle & carousel pagination buttons */}
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setIsMuted((prev) => !prev)}
-              aria-label={isMuted ? "Unmute video audio" : "Mute video audio"}
-              className="px-3 py-1.5 rounded-full bg-[#FAF4E8] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#173B32] transition-colors flex items-center gap-1.5 text-xs font-mono font-bold shadow-2xs"
-            >
-              {isMuted ? <VolumeX className="w-3.5 h-3.5 text-[#7B4D36]" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-700" />}
-              <span>{isMuted ? "Sound Off" : "Sound On"}</span>
-            </button>
+            {reels.some((r) => r.videoUrl && r.videoUrl.endsWith(".mp4")) ? (
+              <button
+                type="button"
+                onClick={() => setIsMuted((prev) => !prev)}
+                aria-label={isMuted ? "Unmute video audio" : "Mute video audio"}
+                className="px-3 py-1.5 rounded-full bg-[#FAF4E8] border border-[#E5D5BA] text-[#173B32] hover:text-[#B65E3C] hover:border-[#173B32] transition-colors flex items-center gap-1.5 text-xs font-mono font-bold shadow-2xs"
+              >
+                {isMuted ? <VolumeX className="w-3.5 h-3.5 text-[#7B4D36]" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-700" />}
+                <span>{isMuted ? "Sound Off" : "Sound On"}</span>
+              </button>
+            ) : (
+              <span className="px-3 py-1.5 rounded-full bg-[#FAF4E8] border border-[#E5D5BA] text-[#173B32] flex items-center gap-1.5 text-xs font-mono font-bold shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>Editorial Stories</span>
+              </span>
+            )}
 
             <div className="hidden sm:flex items-center gap-1">
               <button
@@ -301,34 +308,49 @@ export const DestinationReelsCarousel: React.FC<DestinationReelsCarouselProps> =
                     : "w-[250px] sm:w-[280px] h-[450px] sm:h-[510px] scale-95 opacity-75 hover:opacity-90 hover:scale-[0.97]"
                 }`}
               >
-                {/* 9:16 Video Player */}
-                <video
-                  ref={(el) => { videoRefs.current[idx] = el; }}
-                  src={reel.videoUrl}
-                  poster={reel.posterUrl}
-                  playsInline
-                  muted={isMuted}
-                  loop
-                  preload="metadata"
-                  className="w-full h-full object-cover bg-[#0F2924]"
-                />
-
-                {/* Poster fallback image if video hasn't loaded */}
-                <div className="absolute inset-0 pointer-events-none -z-10">
-                  <VanvasImage
-                    src={reel.posterUrl}
-                    alt={reel.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                {/* 9:16 Media: Video Player or Rich Visual Story Poster */}
+                {Boolean(reel.videoUrl && reel.videoUrl.endsWith(".mp4")) ? (
+                  <>
+                    <video
+                      ref={(el) => { videoRefs.current[idx] = el; }}
+                      src={reel.videoUrl}
+                      poster={reel.posterUrl}
+                      playsInline
+                      muted={isMuted}
+                      loop
+                      preload="metadata"
+                      className="w-full h-full object-cover bg-[#0F2924]"
+                    />
+                    <div className="absolute inset-0 pointer-events-none -z-10">
+                      <VanvasImage
+                        src={reel.posterUrl}
+                        alt={reel.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full relative overflow-hidden bg-[#0F2924]">
+                    <VanvasImage
+                      src={reel.posterUrl}
+                      alt={reel.title}
+                      className={`w-full h-full object-cover transition-transform duration-700 ${
+                        isActive ? "scale-105" : "hover:scale-105"
+                      }`}
+                    />
+                  </div>
+                )}
 
                 {/* Subtle Cinematic Vignette */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F2924] via-transparent to-black/30 pointer-events-none" />
 
                 {/* Top Overlay: Experience tag & Save bookmark */}
                 <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2 z-10">
-                  <span className="px-2.5 py-1 rounded-full bg-[#0F2924]/80 backdrop-blur-md text-[#EFE5D2] text-[10px] font-mono font-bold uppercase tracking-wider border border-white/10">
-                    {reel.experienceType}
+                  <span className="px-2.5 py-1 rounded-full bg-[#0F2924]/80 backdrop-blur-md text-[#EFE5D2] text-[10px] font-mono font-bold uppercase tracking-wider border border-white/10 flex items-center gap-1">
+                    {Boolean(reel.videoUrl && reel.videoUrl.endsWith(".mp4")) ? null : (
+                      <Sparkles className="w-2.5 h-2.5 text-[#B49252]" />
+                    )}
+                    <span>{reel.experienceType}</span>
                   </span>
 
                   <button
@@ -345,17 +367,21 @@ export const DestinationReelsCarousel: React.FC<DestinationReelsCarouselProps> =
                   </button>
                 </div>
 
-                {/* Non-active Card Play Indicator */}
+                {/* Non-active Card Indicator */}
                 {!isActive && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="w-12 h-12 rounded-full bg-[#0F2924]/80 backdrop-blur-md text-[#FAF7F0] flex items-center justify-center border border-white/20 shadow-lg">
-                      <Play className="w-5 h-5 ml-0.5 fill-current opacity-90" />
+                      {Boolean(reel.videoUrl && reel.videoUrl.endsWith(".mp4")) ? (
+                        <Play className="w-5 h-5 ml-0.5 fill-current opacity-90" />
+                      ) : (
+                        <Route className="w-5 h-5 text-[#FAF7F0] opacity-90" />
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Tap to Play Affordance if Autoplay was blocked */}
-                {isActive && autoplayBlocked && (
+                {/* Tap to Play Affordance if Autoplay was blocked (video only) */}
+                {isActive && Boolean(reel.videoUrl && reel.videoUrl.endsWith(".mp4")) && autoplayBlocked && (
                   <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-xs">
                     <button
                       type="button"

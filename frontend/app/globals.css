@@ -305,6 +305,27 @@ html.dark .text-\[\#B49252\] {
   color: #D4A855 !important;
 }
 
+/* Muted & subtle typography remapped for WCAG AA in Night Camp */
+html.dark .text-\[\#5A6560\],
+html.dark span.text-\[\#5A6560\],
+html.dark p.text-\[\#5A6560\],
+html.dark div.text-\[\#5A6560\] {
+  color: #B4C8C0 !important;
+}
+
+html.dark .text-\[\#7A8580\],
+html.dark span.text-\[\#7A8580\],
+html.dark p.text-\[\#7A8580\],
+html.dark div.text-\[\#7A8580\] {
+  color: #9DB3AB !important;
+}
+
+html.dark .text-\[\#3B3A36\],
+html.dark .text-\[\#4A5550\],
+html.dark .text-\[\#2D5A43\] {
+  color: #ECEAE4 !important;
+}
+
 /* Form controls in Night Camp */
 html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea,
