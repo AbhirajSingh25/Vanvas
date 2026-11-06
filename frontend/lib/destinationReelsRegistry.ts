@@ -362,7 +362,7 @@ export const DESTINATION_REELS_REGISTRY: Record<string, DestinationReel[]> = {
       title: "Key Monastery & High Ridge Sanctuaries",
       subtitle: "1,000-year-old whitewashed gompa perched on a dramatic conical peak above the meandering Spiti river.",
       videoUrl: "",
-      posterUrl: "/images/places/spiti/key_monastery.webp",
+      posterUrl: "/images/places/spiti/key-monastery.webp",
       creator: "VANVAS Alpine Scouts",
       creatorHandle: "@vanvas_spiti",
       sourceType: "licensed_editorial",

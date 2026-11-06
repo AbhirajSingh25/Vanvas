@@ -173,43 +173,7 @@ export const DestinationReelsCarousel: React.FC<DestinationReelsCarouselProps> =
   };
 
   if (!reels.length) {
-    // Honest, truthful presentation when no verified playable clips exist for destination
-    return (
-      <section className={`py-6 sm:py-8 border-y border-[#E5D5BA]/60 bg-[#FAF7F0]/60 ${className}`}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
-            <div>
-              <span className="text-[11px] font-mono uppercase tracking-widest text-[#B65E3C] font-bold block mb-1">
-                Visual Discovery
-              </span>
-              <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32]">
-                See It. Plan It.
-              </h2>
-              <p className="text-xs sm:text-sm text-[#7B4D36] font-medium mt-1">
-                Short films from {destinationName}, with routes you can turn into a trip.
-              </p>
-            </div>
-            <span className="self-start sm:self-auto px-3 py-1 rounded-full bg-[#E5D5BA]/50 text-[#7B4D36] text-[11px] font-mono font-bold">
-              Field footage in production
-            </span>
-          </div>
-
-          <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-            <div className="w-14 h-14 rounded-2xl bg-[#E5D5BA] flex items-center justify-center shrink-0 text-[#173B32]">
-              <Play className="w-6 h-6 opacity-60" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-serif font-bold text-base text-[#173B32]">
-                Verified Discovery Clips Coming Soon for {destinationName}
-              </h3>
-              <p className="text-xs text-[#7B4D36] max-w-xl leading-relaxed">
-                We only show authentic, license-cleared 9:16 field video captured directly on location. Explore our verified trails, stays, and mobility options below while our camera crew captures this valley.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
+    return null;
   }
 
   return (
