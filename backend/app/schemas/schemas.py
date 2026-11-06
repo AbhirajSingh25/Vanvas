@@ -258,6 +258,20 @@ class PlaceResponse(PlaceBase):
     id: str
     is_saved: Optional[bool] = False
     match_score: Optional[float] = None
+    destination_name: Optional[str] = None
+    destination_slug: Optional[str] = None
+    distance_from_center_km: Optional[float] = None
+    travel_time_from_center_mins: Optional[int] = None
+    best_time_to_visit: Optional[str] = None
+    estimated_duration: Optional[str] = None
+    entry_fee_details: Optional[str] = None
+    historical_significance: Optional[str] = None
+    photography_spots: Optional[str] = None
+    popular_experiences: Optional[List[str]] = None
+    practical_tips: Optional[str] = None
+    nearby_attractions: Optional[List[Dict[str, Any]]] = None
+    nearby_food: Optional[List[Dict[str, Any]]] = None
+    nearby_stays: Optional[List[Dict[str, Any]]] = None
 
     class Config:
         from_attributes = True
@@ -2186,3 +2200,69 @@ class MemoryPersonalizationContextResponse(BaseModel):
     preferences_summary: List[str] = []
     active_preferences_map: Dict[str, str] = {}
     explanations: List[str] = []
+
+
+# =====================================================================
+# Phase 5 & 6: Mobility Access Plan & Destination Culinary Intelligence
+# =====================================================================
+
+class PickupHub(BaseModel):
+    hub_name: str
+    hub_type: str
+    distance_km: int
+    typical_drive_hours: float
+    recommended_for: str
+    advantage: str
+
+
+class VehicleRecommendation(BaseModel):
+    category: str
+    model: str
+    terrain_suitability: str
+    suitability_rating: int
+    ground_clearance_mm: int
+    estimated_daily_inr: int
+    estimated_deposit_inr: int
+    image_url: str
+    advisory: str
+
+
+class FuelLogistics(BaseModel):
+    critical_fuel_points: List[str]
+    jerry_can_recommended: bool
+    recommended_fuel_range_km: int
+    oxygen_and_altitude_gear: Optional[str] = None
+
+
+class MobilityAccessPlan(BaseModel):
+    destination_slug: str
+    destination_name: str
+    origin: Optional[str] = None
+    approach_summary: str
+    recommended_pickup_hubs: List[PickupHub]
+    remote_rental_advisory: Optional[str] = None
+    syndicate_rules: Optional[str] = None
+    fuel_and_logistics: FuelLogistics
+    vehicle_recommendations: List[VehicleRecommendation]
+    verified_fleet: List[RentalOptionResponse] = []
+
+
+class CulinaryExperience(BaseModel):
+    dish_name: str
+    hindi_name: Optional[str] = None
+    category: str
+    dietary: str
+    flavor_profile: str
+    origin_story: str
+    typical_price_inr: int
+    best_places_to_try: List[Dict[str, str]] = []
+    image_url: Optional[str] = None
+
+
+class DestinationCulinaryGuide(BaseModel):
+    destination_slug: str
+    destination_name: str
+    food_culture_summary: str
+    signature_dishes: List[CulinaryExperience] = []
+    dining_spots: List[PlaceResponse] = []
+    food_etiquette: Optional[str] = None

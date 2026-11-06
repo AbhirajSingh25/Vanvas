@@ -6,7 +6,8 @@ from app.models.models import Destination, Place, Hotel, RentalOption, WeatherSn
 from app.schemas.schemas import (
     DestinationResponse, PlaceResponse, HotelResponse, RentalOptionResponse,
     DestinationResearchRequest, DestinationResearchResponse,
-    SoloDestinationIntelligenceResponse, DestinationRecommendationResponse
+    SoloDestinationIntelligenceResponse, DestinationRecommendationResponse,
+    DestinationCulinaryGuide
 )
 from app.providers.provider_factory import ProviderFactory
 from app.services.destination_intelligence import DestinationIntelligenceService
@@ -1119,3 +1120,16 @@ async def get_destination_recommendations(
     )
 
 
+
+
+@router.get("/{slug}/food", response_model=DestinationCulinaryGuide)
+async def get_destination_food_guide(
+    slug: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get authentic destination food & culinary intelligence:
+    signature dishes, dietary attributes, price benchmarks, and verified dining spots.
+    """
+    from app.services.culinary_service import CulinaryService
+    return await CulinaryService.get_destination_culinary_guide(db=db, destination_slug=slug)

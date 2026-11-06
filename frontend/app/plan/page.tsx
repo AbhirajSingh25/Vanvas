@@ -244,6 +244,48 @@ function PlanWizard() {
   const [transportOptions, setTransportOptions] = useState<TransportOption[]>([]);
   const [loadingTransport, setLoadingTransport] = useState<boolean>(false);
 
+  // Pre-populate settings from Traveller Profile & DNA
+  useEffect(() => {
+    if (user?.preferences) {
+      const p = user.preferences;
+      if (!urlCompanion && p.companion_style) {
+        const comp = p.companion_style.toLowerCase();
+        if (comp.includes("solo")) {
+          setCompanionType("Solo");
+          setTravellersCount(1);
+        } else if (comp.includes("couple")) {
+          setCompanionType("Couple");
+          setTravellersCount(2);
+        } else if (comp.includes("family")) {
+          setCompanionType("Family");
+          setTravellersCount(4);
+        } else if (comp.includes("friend")) {
+          setCompanionType("Friends");
+          setTravellersCount(3);
+        }
+      }
+      if (!urlBudget && p.preferred_travel_style) {
+        const style = p.preferred_travel_style.toLowerCase();
+        if (style.includes("budget") || style.includes("backpack")) {
+          setTravelStyle("Budget");
+        } else if (style.includes("luxury") || style.includes("comfort")) {
+          setTravelStyle("Luxury");
+        } else {
+          setTravelStyle("Balanced");
+        }
+      }
+      if (!urlTransport && p.transport_preference) {
+        setSelectedTransportMode(p.transport_preference);
+      }
+      if (p.interests) {
+        const interestList = p.interests.split(",").map((s: string) => s.trim()).filter(Boolean);
+        if (interestList.length > 0) {
+          setSelectedVibes((prev) => Array.from(new Set([...prev, ...interestList])));
+        }
+      }
+    }
+  }, [user, urlCompanion, urlBudget, urlTransport]);
+
   // Step 7: Auth Modal / Inline Auth State (for guests)
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [authEmail, setAuthEmail] = useState("");

@@ -171,6 +171,44 @@ export interface Place {
   business_status?: string;
   action_links?: ActionLink[];
   data_state?: "LIVE" | "VERIFIED" | "CURATED" | "STALE" | "UNAVAILABLE" | string;
+  destination_name?: string;
+  destination_slug?: string;
+  distance_from_center_km?: number;
+  travel_time_from_center_mins?: number;
+  best_time_to_visit?: string;
+  estimated_duration?: string;
+  entry_fee_details?: string;
+  historical_significance?: string;
+  photography_spots?: string;
+  popular_experiences?: string[];
+  practical_tips?: string;
+  nearby_attractions?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    image_url?: string;
+    distance_km?: number;
+    why_vanvas_recommends?: string;
+  }>;
+  nearby_food?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    image_url?: string;
+    distance_km?: number;
+    why_vanvas_recommends?: string;
+  }>;
+  nearby_stays?: Array<{
+    id: string;
+    name: string;
+    address?: string;
+    image_url?: string;
+    price_per_night?: number;
+    rating?: number;
+    distance_km?: number;
+  }>;
   trust_source?: string;
   last_verified_at?: string;
   menu_url?: string | null;
@@ -260,6 +298,44 @@ export interface Hotel {
   distance_km?: number;
   action_links?: ActionLink[];
   data_state?: "LIVE" | "VERIFIED" | "CURATED" | "STALE" | "UNAVAILABLE" | string;
+  destination_name?: string;
+  destination_slug?: string;
+  distance_from_center_km?: number;
+  travel_time_from_center_mins?: number;
+  best_time_to_visit?: string;
+  estimated_duration?: string;
+  entry_fee_details?: string;
+  historical_significance?: string;
+  photography_spots?: string;
+  popular_experiences?: string[];
+  practical_tips?: string;
+  nearby_attractions?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    image_url?: string;
+    distance_km?: number;
+    why_vanvas_recommends?: string;
+  }>;
+  nearby_food?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    image_url?: string;
+    distance_km?: number;
+    why_vanvas_recommends?: string;
+  }>;
+  nearby_stays?: Array<{
+    id: string;
+    name: string;
+    address?: string;
+    image_url?: string;
+    price_per_night?: number;
+    rating?: number;
+    distance_km?: number;
+  }>;
   trust_source?: string;
   last_verified_at?: string;
 }
@@ -299,6 +375,44 @@ export interface RentalOption {
   distance_km?: number;
   action_links?: ActionLink[];
   data_state?: "LIVE" | "VERIFIED" | "CURATED" | "STALE" | "UNAVAILABLE" | string;
+  destination_name?: string;
+  destination_slug?: string;
+  distance_from_center_km?: number;
+  travel_time_from_center_mins?: number;
+  best_time_to_visit?: string;
+  estimated_duration?: string;
+  entry_fee_details?: string;
+  historical_significance?: string;
+  photography_spots?: string;
+  popular_experiences?: string[];
+  practical_tips?: string;
+  nearby_attractions?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    image_url?: string;
+    distance_km?: number;
+    why_vanvas_recommends?: string;
+  }>;
+  nearby_food?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category?: string;
+    image_url?: string;
+    distance_km?: number;
+    why_vanvas_recommends?: string;
+  }>;
+  nearby_stays?: Array<{
+    id: string;
+    name: string;
+    address?: string;
+    image_url?: string;
+    price_per_night?: number;
+    rating?: number;
+    distance_km?: number;
+  }>;
   trust_source?: string;
   last_verified_at?: string;
 }
@@ -1767,4 +1881,71 @@ export interface TravellerMemoryExport {
   learning_paused: boolean;
   memories: TravellerMemory[];
   observations: MemoryObservation[];
+}
+
+
+// =====================================================================
+// Phase 5 & 6: Mobility Access Plan & Destination Culinary Intelligence
+// =====================================================================
+
+export interface PickupHub {
+  hub_name: string;
+  hub_type: string;
+  distance_km: number;
+  typical_drive_hours: number;
+  recommended_for: string;
+  advantage: string;
+}
+
+export interface VehicleRecommendation {
+  category: string;
+  model: string;
+  terrain_suitability: string;
+  suitability_rating: number;
+  ground_clearance_mm: number;
+  estimated_daily_inr: number;
+  estimated_deposit_inr: number;
+  image_url: string;
+  advisory: string;
+}
+
+export interface FuelLogistics {
+  critical_fuel_points: string[];
+  jerry_can_recommended: boolean;
+  recommended_fuel_range_km: number;
+  oxygen_and_altitude_gear?: string | null;
+}
+
+export interface MobilityAccessPlan {
+  destination_slug: string;
+  destination_name: string;
+  origin?: string | null;
+  approach_summary: string;
+  recommended_pickup_hubs: PickupHub[];
+  remote_rental_advisory?: string | null;
+  syndicate_rules?: string | null;
+  fuel_and_logistics: FuelLogistics;
+  vehicle_recommendations: VehicleRecommendation[];
+  verified_fleet: RentalOption[];
+}
+
+export interface CulinaryExperience {
+  dish_name: string;
+  hindi_name?: string | null;
+  category: string;
+  dietary: string;
+  flavor_profile: string;
+  origin_story: string;
+  typical_price_inr: number;
+  best_places_to_try: Array<{ name: string; address: string }>;
+  image_url?: string | null;
+}
+
+export interface DestinationCulinaryGuide {
+  destination_slug: string;
+  destination_name: string;
+  food_culture_summary: string;
+  signature_dishes: CulinaryExperience[];
+  dining_spots: Place[];
+  food_etiquette?: string | null;
 }

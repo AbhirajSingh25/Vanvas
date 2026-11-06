@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, MapPin, Sparkles, ArrowRight, Loader2, AlertCircle, X } from "lucide-react";
+import { Search, MapPin, Sparkles, ArrowRight, Loader2, AlertCircle, X, Coffee, Utensils, Bike, Home, Landmark, Compass } from "lucide-react";
 import { api } from "@/lib/api";
 import {
   resolveCanonicalDestination,
@@ -26,6 +26,13 @@ export interface SearchResultItem {
   matched_alias?: string;
   source?: string;
   is_curated?: boolean;
+  type?: string;
+  place_type?: string;
+  badge?: string;
+  category?: string;
+  destination_slug?: string;
+  destination_name?: string;
+  dietary?: string;
 }
 
 interface DestinationSearchBarProps {
@@ -228,6 +235,30 @@ export const DestinationSearchBar: React.FC<DestinationSearchBarProps> = ({
     setQuery("");
     setSelectedIndex(-1);
 
+    const isLandmark = item.type === "landmark" || item.place_type === "landmark";
+    const isPlace = item.type === "place" || item.place_type === "place";
+    const isCategory = item.type === "category" || item.place_type === "category";
+    const targetDestSlug = (item.destination_slug || item.canonical_slug || item.slug || "").replace(/^(dyn|dest)-/, "");
+    const placeSlug = item.slug;
+
+    if (onSelect) {
+      onSelect(item);
+      return;
+    }
+
+    if (isLandmark || isPlace) {
+      // Direct navigation to destination page focused on the landmark
+      router.push(`/explore/${targetDestSlug}?place=${encodeURIComponent(placeSlug)}`);
+      return;
+    }
+
+    if (isCategory) {
+      const catKey = (item.category || "").toLowerCase();
+      const filterParam = catKey.includes("caf") ? "cafes" : (catKey.includes("food") ? "food" : (catKey.includes("mobility") ? "mobility" : (catKey.includes("stay") ? "stays" : "attractions")));
+      router.push(`/explore/${targetDestSlug}?filter=${filterParam}`);
+      return;
+    }
+
     const canonicalSlug = (item.canonical_slug || item.slug || "").replace(/^(dyn|dest)-/, "");
     const destId = item.id || item.destination_id || (item.is_curated !== false ? `dest-${canonicalSlug}` : `dyn-${canonicalSlug}`);
     const destName = item.name || canonicalSlug;
@@ -252,17 +283,6 @@ export const DestinationSearchBar: React.FC<DestinationSearchBarProps> = ({
       }
     }
 
-    if (onSelect) {
-      onSelect({
-        ...item,
-        id: destId,
-        slug: canonicalSlug,
-        canonical_slug: canonicalSlug,
-      });
-      return;
-    }
-
-    // Default primary journey: Navigate to trip planner with canonical parameters
     if (navigationTarget === "plan") {
       const params = new URLSearchParams({
         dest: canonicalSlug,
@@ -450,7 +470,19 @@ export const DestinationSearchBar: React.FC<DestinationSearchBarProps> = ({
                           isSelected ? "bg-[#B65E3C] text-[#EFE5D2] scale-105" : "bg-[#E5D5BA] text-[#173B32]"
                         }`}
                       >
-                        <MapPin className="w-4 h-4" />
+                        {item.type === "landmark" ? (
+                          <Landmark className="w-4 h-4" />
+                        ) : item.badge === "FOOD" ? (
+                          <Utensils className="w-4 h-4" />
+                        ) : item.badge === "RENTAL" ? (
+                          <Bike className="w-4 h-4" />
+                        ) : item.badge === "STAY" ? (
+                          <Home className="w-4 h-4" />
+                        ) : item.type === "category" ? (
+                          <Compass className="w-4 h-4" />
+                        ) : (
+                          <MapPin className="w-4 h-4" />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -477,6 +509,23 @@ export const DestinationSearchBar: React.FC<DestinationSearchBarProps> = ({
                               aka {item.matched_alias}
                             </span>
                           )}
+                          {item.badge && item.badge !== "DESTINATION" && (
+                            <span
+                              className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
+                                item.badge === "LANDMARK"
+                                  ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                  : item.badge === "FOOD"
+                                  ? "bg-orange-100 text-orange-900 border border-orange-300"
+                                  : item.badge === "RENTAL"
+                                  ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                                  : item.badge === "STAY"
+                                  ? "bg-purple-100 text-purple-900 border border-purple-300"
+                                  : "bg-blue-100 text-blue-900 border border-blue-300"
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          )}
                         </div>
                         <p
                           className={`text-[11px] mt-0.5 font-light truncate ${
@@ -495,7 +544,13 @@ export const DestinationSearchBar: React.FC<DestinationSearchBarProps> = ({
                           isSelected ? "text-[#B49252]" : "text-[#B65E3C] opacity-80"
                         }`}
                       >
-                        {navigationTarget === "plan" ? "Plan Trip" : "Explore"}
+                        {item.type === "landmark"
+                          ? "View Place"
+                          : item.type === "category" || item.badge === "FOOD" || item.badge === "RENTAL"
+                          ? "Discover"
+                          : navigationTarget === "plan"
+                          ? "Plan Trip"
+                          : "Explore"}
                       </span>
                       <ArrowRight
                         className={`w-3.5 h-3.5 ${

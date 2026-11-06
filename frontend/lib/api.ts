@@ -16,7 +16,8 @@ import {
   ActionApplyResponse, TripRevision, CurrentStateResponse,
   TravelSignal, TravelInsight, ReplanProposal, TripIntelligenceSummary,
   TravellerMemory, MemoryObservation, TravellerMemorySettings,
-  MemoryPersonalizationContext, TravellerMemoryExport
+  MemoryPersonalizationContext, TravellerMemoryExport,
+  MobilityAccessPlan, DestinationCulinaryGuide
 } from "@/types";
 import { storageAdapter } from "./storage";
 
@@ -795,6 +796,16 @@ export const api = {
     if (adults && adults > 1) params.append("adults", String(adults));
     if (children && children > 0) params.append("children", String(children));
     return fetchApi(`/hotels?${params.toString()}`);
+  },
+
+  async getMobilityAccessPlan(destination: string, origin?: string): Promise<MobilityAccessPlan> {
+    const params = new URLSearchParams({ destination });
+    if (origin) params.append("origin", origin);
+    return fetchApi(`/mobility/access-plan?${params.toString()}`);
+  },
+
+  async getDestinationFoodGuide(slug: string): Promise<DestinationCulinaryGuide> {
+    return fetchApi(`/destinations/${slug}/food`);
   },
 
   async getRentals(destId: string, vehicleType?: string): Promise<RentalOption[]> {

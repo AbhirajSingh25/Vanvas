@@ -705,3 +705,276 @@ class MobilityService:
         db.commit()
         db.refresh(veh)
         return veh
+
+
+    @classmethod
+    async def get_mobility_access_plan(
+        cls,
+        db: Session,
+        destination_slug_or_id: str,
+        origin: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Generate a comprehensive, truthful MobilityAccessPlan for a destination:
+        Pickup hubs, mountain route advisories, syndicate rules, fuel logistics,
+        vehicle recommendations, and verified fleet listings.
+        """
+        clean_slug = (destination_slug_or_id or "").strip().lower()
+        if clean_slug.startswith("dest-"):
+            clean_slug = clean_slug[5:]
+
+        dest = db.query(Destination).filter(
+            (Destination.slug == clean_slug) |
+            (Destination.id == f"dest-{clean_slug}") |
+            (Destination.id == clean_slug)
+        ).first()
+
+        dest_name = dest.name if dest else clean_slug.replace("-", " ").title()
+
+        # Destination-specific mobility intelligence dossiers
+        if clean_slug == "spiti":
+            approach_summary = "Spiti Valley is an extreme high-altitude cold desert surrounded by Rohtang (3,980m), Kunzum Pass (4,590m), and Malling Nullah. Commercial rental operators do NOT maintain depots inside Kaza; 98% of riders and drivers pick up from Manali, Shimla, or Chandigarh."
+            pickup_hubs = [
+                {
+                    "hub_name": "Manali (Old Manali / Mall Road)",
+                    "hub_type": "Primary Mountain Gateway",
+                    "distance_km": 200,
+                    "typical_drive_hours": 7.0,
+                    "recommended_for": "Summer & Autumn expeditions (June–October) via Atal Tunnel & Kunzum Pass.",
+                    "advantage": "Largest Royal Enfield and 4x4 fleet availability; direct mechanic support."
+                },
+                {
+                    "hub_name": "Shimla (Reckong Peo / Kinnaur Route)",
+                    "hub_type": "All-Weather Southern Gateway",
+                    "distance_km": 420,
+                    "typical_drive_hours": 15.0,
+                    "recommended_for": "Year-round access & gradual altitude acclimatization via NH-5.",
+                    "advantage": "Gentle elevation gain; open even in winter when Kunzum Pass is snowbound."
+                },
+                {
+                    "hub_name": "Chandigarh Airport (IXC)",
+                    "hub_type": "Major Transit Hub",
+                    "distance_km": 520,
+                    "typical_drive_hours": 17.0,
+                    "recommended_for": "Fly-in travellers wanting unified road trip transport from sea level.",
+                    "advantage": "Lowest daily rental rates, automatic self-drive SUV fleets available."
+                }
+            ]
+            remote_advisory = "Do not expect to find commercial rental motorcycles or self-drive cars in Kaza. Kaza mechanics provide puncture repair and basic Royal Enfield maintenance, but zero one-way drop depots exist in the valley."
+            syndicate_rules = "Private rental self-drive vehicles (black plate with yellow numbers) are permitted across Spiti. However, outside commercial yellow-plate tourist taxis cannot do local sightseeing in Spiti villages (Komic, Langza, Hikkim) due to Spiti Taxi Union regulations."
+            fuel_logistics = {
+                "critical_fuel_points": [
+                    "Tandi (Lahaul): LAST reliable fuel station before Kaza (185 km high mountain stretch with zero pumps)",
+                    "Kaza: World's highest retail fuel outlet (Indian Oil, 3,740m) - check winter diesel availability",
+                    "Powari (Kinnaur): Last major pump on the Shimla route before entering lower Spiti"
+                ],
+                "jerry_can_recommended": True,
+                "recommended_fuel_range_km": 350,
+                "oxygen_and_altitude_gear": "Carry portable medical oxygen canisters (Oxy99) and Diamox when crossing Kunzum Pass (4,590m)."
+            }
+            vehicle_recs = [
+                {
+                    "category": "Adventure Motorcycle",
+                    "model": "Royal Enfield Himalayan 450",
+                    "terrain_suitability": "HIGH PASSES & RIVER CROSSINGS",
+                    "suitability_rating": 5,
+                    "ground_clearance_mm": 230,
+                    "estimated_daily_inr": 1800,
+                    "estimated_deposit_inr": 10000,
+                    "image_url": "/images/vehicles/himalayan_450.webp",
+                    "advisory": "Sherpa 450 EFI engine prevents altitude power lag. Excellent standing ergonomics for river crossings at Chhatru & Batal."
+                },
+                {
+                    "category": "4x4 Expedition Vehicle",
+                    "model": "Mahindra Thar 4x4 / Scorpio-N 4x4",
+                    "terrain_suitability": "RUGGED VALLEY EXPEDITION",
+                    "suitability_rating": 5,
+                    "ground_clearance_mm": 226,
+                    "estimated_daily_inr": 4500,
+                    "estimated_deposit_inr": 20000,
+                    "image_url": "/images/vehicles/thar_4x4.webp",
+                    "advisory": "Low-range 4L gearbox essential for loose scree on Kunzum Pass and flooded nullahs during afternoon snow melt."
+                },
+                {
+                    "category": "Cruiser Motorcycle",
+                    "model": "Royal Enfield Classic 350",
+                    "terrain_suitability": "PAVED VALLEY HIGHWAYS",
+                    "suitability_rating": 4,
+                    "ground_clearance_mm": 170,
+                    "estimated_daily_inr": 1400,
+                    "estimated_deposit_inr": 8000,
+                    "image_url": "/images/vehicles/classic_350.webp",
+                    "advisory": "Sturdy steel chassis and torquey low-end engine. Ride cautiously over rocky stretches around Losar."
+                }
+            ]
+        elif clean_slug == "leh":
+            approach_summary = "Ladakh sits at 3,500m+ elevation. Access roads from Manali (NH-3) and Srinagar (NH-1) are open only May to October. Leh airport operates year-round."
+            pickup_hubs = [
+                {
+                    "hub_name": "Leh City (Fort Road / Changspa)",
+                    "hub_type": "Primary Internal Circuit Hub",
+                    "distance_km": 0,
+                    "typical_drive_hours": 0.0,
+                    "recommended_for": "All internal circuits (Nubra Valley, Pangong Tso, Tso Moriri, Hanle).",
+                    "advantage": "Complies fully with Ladakh Motorcycle & Taxi Union rules."
+                },
+                {
+                    "hub_name": "Manali (Kullu Gateway)",
+                    "hub_type": "Trans-Himalayan Highway Roadhead",
+                    "distance_km": 430,
+                    "typical_drive_hours": 16.0,
+                    "recommended_for": "Epic 2-day pass journey over Baralacha La (4,890m) and Tanglang La (5,328m).",
+                    "advantage": "One of the world's greatest motorcycling routes."
+                }
+            ]
+            remote_advisory = "CRITICAL: Outside commercial rental motorcycles (rented in Manali or Delhi) are strictly prohibited by the Leh Two-Wheeler Association from being used for internal Ladakh sightseeing (Pangong, Khardung La, Nubra). Outside vehicles must be parked in Leh."
+            syndicate_rules = "Ladakh Taxi Union mandates that only local Leh-registered commercial cabs can carry tourists across Khardung La, Chang La, Nubra, and Pangong."
+            fuel_logistics = {
+                "critical_fuel_points": [
+                    "Karu: Last fuel pump towards Pangong Tso and Chang La",
+                    "Diskit: Sole fuel pump in Nubra Valley",
+                    "Upshi: Last petrol station when driving from Leh towards Manali (no fuel for 365 km until Tandi!)"
+                ],
+                "jerry_can_recommended": True,
+                "recommended_fuel_range_km": 400,
+                "oxygen_and_altitude_gear": "Mandatory 48-hour rest upon arrival in Leh before driving across Khardung La (5,359m)."
+            }
+            vehicle_recs = [
+                {
+                    "category": "Adventure Motorcycle",
+                    "model": "Royal Enfield Himalayan 450",
+                    "terrain_suitability": "EXTREME HIGH PASSES",
+                    "suitability_rating": 5,
+                    "ground_clearance_mm": 230,
+                    "estimated_daily_inr": 2000,
+                    "estimated_deposit_inr": 12000,
+                    "image_url": "/images/vehicles/himalayan_450.webp",
+                    "advisory": "Proven Himalayan altitude platform for Khardung La and Chang La ascents."
+                },
+                {
+                    "category": "4x4 Expedition Vehicle",
+                    "model": "Toyota Fortuner 4x4 / Isuzu D-Max",
+                    "terrain_suitability": "ALL TERRAIN & RIVER BEDS",
+                    "suitability_rating": 5,
+                    "ground_clearance_mm": 225,
+                    "estimated_daily_inr": 5500,
+                    "estimated_deposit_inr": 25000,
+                    "image_url": "/images/vehicles/fortuner_4x4.webp",
+                    "advisory": "High comfort and dependable 4WD for Shyok river route and Changthang wilderness."
+                }
+            ]
+        elif clean_slug == "goa":
+            approach_summary = "Goa is best explored on two-wheelers and self-drive open jeeps across coastal highways and rural Latin Quarter backroads."
+            pickup_hubs = [
+                {
+                    "hub_name": "Panaji & Old Goa",
+                    "hub_type": "Heritage & Central Hub",
+                    "distance_km": 0,
+                    "typical_drive_hours": 0.0,
+                    "recommended_for": "Exploring Fontainhas, churches, and river islands (Divar/Chorão).",
+                    "advantage": "Central transit connecting North and South Goa."
+                },
+                {
+                    "hub_name": "North Goa (Calangute / Anjuna)",
+                    "hub_type": "Coastal Beach Hub",
+                    "distance_km": 15,
+                    "typical_drive_hours": 0.5,
+                    "recommended_for": "Beach hopping, cafes, and coastal night markets.",
+                    "advantage": "Highest density of scooter and bike rental operators."
+                },
+                {
+                    "hub_name": "Mopa Airport (GOX) / Dabolim (GOI)",
+                    "hub_type": "Airport Terminals",
+                    "distance_km": 30,
+                    "typical_drive_hours": 0.8,
+                    "recommended_for": "Instant airport vehicle handover upon arrival.",
+                    "advantage": "Direct self-drive car pickups without taxi negotiation."
+                }
+            ]
+            remote_advisory = "Always check that the rental vehicle has valid black-and-yellow commercial self-drive plates (BSV). White-plate private vehicle rentals are illegal and subject to heavy traffic police fines."
+            syndicate_rules = "Helmets are strictly mandatory for both rider and pillion across all national highways and Mandovi bridges with active AI camera challans."
+            fuel_logistics = {
+                "critical_fuel_points": ["Fuel pumps are abundant along NH-66 and coastal bypasses."],
+                "jerry_can_recommended": False,
+                "recommended_fuel_range_km": 150,
+                "oxygen_and_altitude_gear": None
+            }
+            vehicle_recs = [
+                {
+                    "category": "Automatic Scooter",
+                    "model": "Honda Activa 125 / TVS Jupiter",
+                    "terrain_suitability": "COASTAL & TOWN LANES",
+                    "suitability_rating": 5,
+                    "ground_clearance_mm": 160,
+                    "estimated_daily_inr": 450,
+                    "estimated_deposit_inr": 2000,
+                    "image_url": "/images/vehicles/activa_125.webp",
+                    "advisory": "Easiest way to navigate narrow village lanes and beach parking."
+                },
+                {
+                    "category": "Open Top Vehicle",
+                    "model": "Mahindra Thar Convertible",
+                    "terrain_suitability": "SCENIC COASTAL CRUISING",
+                    "suitability_rating": 4,
+                    "ground_clearance_mm": 226,
+                    "estimated_daily_inr": 3500,
+                    "estimated_deposit_inr": 15000,
+                    "image_url": "/images/vehicles/thar_4x4.webp",
+                    "advisory": "Iconic Goa coastal cruiser; reserve in advance during peak season (Nov-Jan)."
+                }
+            ]
+        else:
+            # General Mountain / Heritage / Cultural Indian destination plan
+            is_himalayan = (dest and (dest.altitude_meters or 0) > 1200) or clean_slug in ["manali", "kasol", "dharamshala", "mussoorie", "munnar", "tungnath-chandrashila", "munsiyari", "rishikesh"]
+            approach_summary = f"{dest_name} transit logistics: verified rental fleets, pickup hubs, route conditions, and local transport advisories."
+            pickup_hubs = [
+                {
+                    "hub_name": f"{dest_name} City Center",
+                    "hub_type": "Local Core Hub",
+                    "distance_km": 0,
+                    "typical_drive_hours": 0.0,
+                    "recommended_for": "Direct local exploration.",
+                    "advantage": "Immediate pickup and drop within town."
+                }
+            ]
+            remote_advisory = "Always ensure self-drive vehicles carry original commercial permits, RC, and pollution certificates."
+            syndicate_rules = "Check local municipal parking rules and taxi union zones before parking near monument gates or hill-station mall roads."
+            fuel_logistics = {
+                "critical_fuel_points": [f"Central fuel stations available within {dest_name} perimeter."],
+                "jerry_can_recommended": bool(is_himalayan),
+                "recommended_fuel_range_km": 250 if is_himalayan else 150,
+                "oxygen_and_altitude_gear": "Carry light warm layers for evening temperature drops." if is_himalayan else None
+            }
+            vehicle_recs = [
+                {
+                    "category": "All-Round Two Wheeler",
+                    "model": "Royal Enfield Classic 350 / Himalayan" if is_himalayan else "Honda Activa 125",
+                    "terrain_suitability": "MOUNTAIN ROADS & CIRCUITS" if is_himalayan else "CITY STREETS & MONUMENTS",
+                    "suitability_rating": 5,
+                    "ground_clearance_mm": 170 if is_himalayan else 160,
+                    "estimated_daily_inr": 1400 if is_himalayan else 500,
+                    "estimated_deposit_inr": 5000 if is_himalayan else 2000,
+                    "image_url": "/images/vehicles/classic_350.webp" if is_himalayan else "/images/vehicles/activa_125.webp",
+                    "advisory": "Reliable daily commuter with ample power for local inclines."
+                }
+            ]
+
+        # Fetch verified fleet for destination
+        fleet = await cls.get_mobility_listings(
+            db=db,
+            destination_slug_or_id=clean_slug,
+            radius_km=30.0
+        )
+
+        return {
+            "destination_slug": clean_slug,
+            "destination_name": dest_name,
+            "origin": origin,
+            "approach_summary": approach_summary,
+            "recommended_pickup_hubs": pickup_hubs,
+            "remote_rental_advisory": remote_advisory,
+            "syndicate_rules": syndicate_rules,
+            "fuel_and_logistics": fuel_logistics,
+            "vehicle_recommendations": vehicle_recs,
+            "verified_fleet": fleet
+        }

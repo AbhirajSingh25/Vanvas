@@ -7,13 +7,31 @@ from app.models.models import MobilityProvider, MobilityVehicle, Destination, Us
 from app.schemas.schemas import (
     MobilityListingResponse, MobilityProviderResponse, MobilityVehicleResponse,
     MobilityProviderCreate, MobilityProviderClaim, MobilityVehicleCreate,
-    ActionLink, RentalOptionResponse
+    ActionLink, RentalOptionResponse, MobilityAccessPlan
 )
 from app.services.mobility_service import MobilityService
 from app.services.action_link_generator import ActionLinkGenerator
 from app.api.deps import get_current_user
 
 router = APIRouter()
+
+@router.get("/access-plan", response_model=MobilityAccessPlan)
+async def get_mobility_access_plan(
+    destination: str = Query(..., description="Destination slug or ID, e.g. spiti, leh, manali"),
+    origin: Optional[str] = Query(None, description="Optional starting city, e.g. Delhi, Chandigarh"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get comprehensive, truthful mobility access plan for a destination:
+    approach logistics, pickup hubs, terrain clearance, syndicate restrictions,
+    fuel stops, vehicle recommendations, and verified fleet.
+    """
+    plan = await MobilityService.get_mobility_access_plan(
+        db=db,
+        destination_slug_or_id=destination,
+        origin=origin
+    )
+    return plan
 
 @router.get("/near", response_model=List[RentalOptionResponse])
 @router.get("/rentals", response_model=List[RentalOptionResponse])

@@ -464,6 +464,97 @@ SEED_DESTINATIONS: List[Dict[str, Any]] = [
         "timezone": "Asia/Kolkata",
         "type": "city",
         "slug": "ayodhya",
+    },
+    {
+        "name": "Ujjain",
+        "hindi_name": "उज्जैन",
+        "state": "Madhya Pradesh",
+        "country": "India",
+        "region": "Malwa Plateau",
+        "lat": 23.1765,
+        "lng": 75.7885,
+        "altitude_meters": 494,
+        "timezone": "Asia/Kolkata",
+        "type": "city",
+        "slug": "ujjain",
+    },
+    {
+        "name": "Munsiyari",
+        "hindi_name": "मुनस्यारी",
+        "state": "Uttarakhand",
+        "country": "India",
+        "region": "Kumaon Himalayas",
+        "lat": 30.0667,
+        "lng": 80.2333,
+        "altitude_meters": 2200,
+        "timezone": "Asia/Kolkata",
+        "type": "town",
+        "slug": "munsiyari",
+    },
+    {
+        "name": "Tirthan Valley",
+        "hindi_name": "तीर्थन घाटी",
+        "state": "Himachal Pradesh",
+        "country": "India",
+        "region": "Great Himalayan National Park",
+        "lat": 31.6370,
+        "lng": 77.3450,
+        "altitude_meters": 1600,
+        "timezone": "Asia/Kolkata",
+        "type": "valley",
+        "slug": "tirthan-valley",
+    },
+    {
+        "name": "Zanskar",
+        "hindi_name": "जांस्कर",
+        "state": "Ladakh",
+        "country": "India",
+        "region": "Trans-Himalayan Valley",
+        "lat": 33.4862,
+        "lng": 76.8837,
+        "altitude_meters": 3600,
+        "timezone": "Asia/Kolkata",
+        "type": "valley",
+        "slug": "zanskar",
+    },
+    {
+        "name": "Chitkul",
+        "hindi_name": "चितकुल",
+        "state": "Himachal Pradesh",
+        "country": "India",
+        "region": "Baspa Valley, Kinnaur",
+        "lat": 31.3533,
+        "lng": 78.4356,
+        "altitude_meters": 3450,
+        "timezone": "Asia/Kolkata",
+        "type": "village",
+        "slug": "chitkul",
+    },
+    {
+        "name": "Landour",
+        "hindi_name": "लैंडौर",
+        "state": "Uttarakhand",
+        "country": "India",
+        "region": "Garhwal Foothills",
+        "lat": 30.4578,
+        "lng": 78.0934,
+        "altitude_meters": 2290,
+        "timezone": "Asia/Kolkata",
+        "type": "cantonment",
+        "slug": "landour",
+    },
+    {
+        "name": "Paris",
+        "hindi_name": "पेरिस",
+        "state": "Île-de-France",
+        "country": "France",
+        "region": "Europe",
+        "lat": 48.8566,
+        "lng": 2.3522,
+        "altitude_meters": 35,
+        "timezone": "Europe/Paris",
+        "type": "capital",
+        "slug": "paris",
     }
 ]
 
@@ -476,7 +567,9 @@ from app.services.provider_health_tracker import health_tracker
 APPROVED_CURATED_SLUGS = {
     "manali", "rishikesh", "kasol", "dharamshala", "goa",
     "jaipur", "mussoorie", "udaipur", "varanasi", "leh", "spiti", "munnar",
-    "tungnath-chandrashila"
+    "agra", "alwar-siliserh", "chandigarh", "damdama-sohna", "dehradun",
+    "jaisalmer", "kainchi-dham", "lansdowne", "mathura-vrindavan",
+    "morni-hills", "murthal", "neemrana", "sariska-bhangarh", "tungnath-chandrashila"
 }
 
 DESTINATION_ALIASES: Dict[str, str] = {
@@ -656,14 +749,14 @@ class LiveGeocodingProvider(GeocodingProvider):
 
         matched.extend(exact_seeds + prefix_seeds + sub_seeds)
 
-        if len(matched) >= limit:
+        if exact_seeds or len(matched) >= limit:
             geo_cache.set(cache_key, matched[:limit], ttl_seconds=600)
             return matched[:limit]
 
         # 2. Query Photon Komoot API with multi-result ranking (built specifically for fast autocomplete)
         try:
             url = f"https://photon.komoot.io/api/?q={httpx.URL(clean_q)}&limit={max(limit, 6)}"
-            async with httpx.AsyncClient(timeout=1.5, headers=self.headers) as client:
+            async with httpx.AsyncClient(timeout=2.5, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
                     data = res.json()
@@ -763,7 +856,7 @@ class LiveGeocodingProvider(GeocodingProvider):
         # 2. Photon Komoot Fast Geocoder with multi-result city ranking
         try:
             url = f"https://photon.komoot.io/api/?q={httpx.URL(clean_q)}&limit=6"
-            async with httpx.AsyncClient(timeout=2.5, headers=self.headers) as client:
+            async with httpx.AsyncClient(timeout=6.0, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
                     data = res.json()
@@ -821,7 +914,7 @@ class LiveGeocodingProvider(GeocodingProvider):
         try:
             await _acquire_nominatim_slot()
             url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(clean_q)}&format=json&addressdetails=1&limit=6"
-            async with httpx.AsyncClient(timeout=3.5, headers=self.headers) as client:
+            async with httpx.AsyncClient(timeout=6.0, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
                     data = res.json()

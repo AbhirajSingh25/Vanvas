@@ -8,11 +8,11 @@ import {
   Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw, Layers,
   Phone, Navigation, MessageCircle, Globe, Users, X, Home, Building2, CheckCircle2,
   Utensils, Info, Footprints, Flame, Camera, Sunrise, Map as MapIcon, ChevronRight,
-  Route, Shield, ArrowDown
+  Route, Shield, ArrowDown, Search, ChevronDown, ChevronUp
 } from "lucide-react";
 
 import { api } from "@/lib/api";
-import { Destination, Place, Hotel, RentalOption, Offer, StructuredWeather, WeatherSnapshot } from "@/types";
+import { Destination, Place, Hotel, RentalOption, Offer, StructuredWeather, WeatherSnapshot, MobilityAccessPlan, DestinationCulinaryGuide } from "@/types";
 import { VanvasWeatherCard, VanvasWeatherVisual } from "@/components/weather";
 import { PlaceCard } from "@/components/places/PlaceCard";
 import { PlaceModal } from "@/components/places/PlaceModal";
@@ -178,7 +178,7 @@ const DESTINATION_TRAVEL_GUIDES: Record<string, DestinationTravelGuide> = {
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 
-type OperationalMode = "overview" | "places" | "stays" | "mobility" | "solo";
+type OperationalMode = "overview" | "places" | "stays" | "mobility" | "food" | "solo";
 
 export default function DestinationDetailPage() {
   const routeParams = useParams();
@@ -272,6 +272,9 @@ export default function DestinationDetailPage() {
   const [rentalsLoading, setRentalsLoading] = useState(true);
   const [selectedRentalForModal, setSelectedRentalForModal] = useState<RentalOption | null>(null);
   const [rentalModalOpen, setRentalModalOpen] = useState(false);
+  const [mobilityPlan, setMobilityPlan] = useState<MobilityAccessPlan | null>(null);
+  const [foodGuide, setFoodGuide] = useState<DestinationCulinaryGuide | null>(null);
+  const [selectedDietary, setSelectedDietary] = useState<string>("All");
   
   // Operational Modes
   const [activeMode, setActiveMode] = useState<OperationalMode>("overview");
@@ -281,6 +284,63 @@ export default function DestinationDetailPage() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [placesVisibleCount, setPlacesVisibleCount] = useState<number>(24);
+
+  // In-Destination Search & Geographical Accordions
+  const [inDestSearch, setInDestSearch] = useState<string>("");
+  const [placesViewMode, setPlacesViewMode] = useState<"zones" | "grid">("zones");
+  const [accordionsOpen, setAccordionsOpen] = useState<{ zone1: boolean; zone2: boolean; zone3: boolean }>({
+    zone1: true,
+    zone2: true,
+    zone3: true,
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && slug) {
+      try {
+        const stored = localStorage.getItem(`vanvas_accordions_${slug}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (typeof parsed === "object" && parsed !== null) {
+            setAccordionsOpen({
+              zone1: parsed.zone1 !== false,
+              zone2: parsed.zone2 !== false,
+              zone3: parsed.zone3 !== false,
+            });
+          }
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }, [slug]);
+
+  const toggleAccordion = (zone: "zone1" | "zone2" | "zone3") => {
+    setAccordionsOpen((prev) => {
+      const next = { ...prev, [zone]: !prev[zone] };
+      if (typeof window !== "undefined" && slug) {
+        try {
+          localStorage.setItem(`vanvas_accordions_${slug}`, JSON.stringify(next));
+        } catch {
+          // ignore storage errors
+        }
+      }
+      return next;
+    });
+  };
+
+  const computeDistanceKm = (lat1: number, lon1: number, lat2?: number | null, lon2?: number | null, explicitDist?: number | null): number => {
+    if (typeof explicitDist === "number" && explicitDist >= 0) return Math.round(explicitDist * 10) / 10;
+    if (!lat2 || !lon2 || !lat1 || !lon1) return 1.2;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 10) / 10;
+  };
   
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [savedExperiences, setSavedExperiences] = useState<Record<string, boolean>>({});
@@ -316,6 +376,7 @@ export default function DestinationDetailPage() {
       if (tabParam === "stays" || tabParam === "hotels") setActiveMode("stays");
       else if (tabParam === "mobility" || tabParam === "rentals") setActiveMode("mobility");
       else if (tabParam === "places") setActiveMode("places");
+      else if (tabParam === "food" || tabParam === "culinary" || tabParam === "dining") setActiveMode("food");
       else if (tabParam === "solo") setActiveMode("solo");
       else if (tabParam === "overview") setActiveMode("overview");
     }
@@ -752,18 +813,54 @@ export default function DestinationDetailPage() {
   const categories = allCategories.filter((c) => c.id === "all" || c.count > 0);
 
   const filteredPlaces = places.filter((p) => {
-    if (selectedCategory === "all") return true;
-    if (selectedCategory === "must-visit") return Boolean(p.is_must_visit);
-    if (selectedCategory === "hidden") return Boolean(p.is_hidden_gem);
-    const cat = getCategory(p);
-    if (selectedCategory === "cafes") return cat.includes("café") || cat.includes("bakery") || cat.includes("cafe") || cat.includes("coffee");
-    if (selectedCategory === "food") return cat.includes("food") || cat.includes("dhaba") || cat.includes("restaurant") || cat.includes("dining");
-    if (selectedCategory === "nature") return cat.includes("nature") || cat.includes("trail") || cat.includes("waterfall") || cat.includes("scenic") || cat.includes("lake") || cat.includes("viewpoint");
-    if (selectedCategory === "culture") return cat.includes("culture") || cat.includes("temple") || cat.includes("heritage") || cat.includes("monastery") || cat.includes("ghat") || cat.includes("spiritual") || cat.includes("fort") || cat.includes("palace") || cat.includes("ashram");
-    if (selectedCategory === "adventure") return cat.includes("adventure") || cat.includes("trek") || cat.includes("rafting") || cat.includes("paragliding") || cat.includes("skiing");
-    if (selectedCategory === "markets") return cat.includes("market") || cat.includes("shop") || cat.includes("bazaar") || cat.includes("craft") || cat.includes("souvenir");
+    // 1. Category Filter
+    let matchesCat = true;
+    if (selectedCategory === "all") matchesCat = true;
+    else if (selectedCategory === "must-visit") matchesCat = Boolean(p.is_must_visit);
+    else if (selectedCategory === "hidden") matchesCat = Boolean(p.is_hidden_gem);
+    else {
+      const cat = getCategory(p);
+      if (selectedCategory === "cafes") matchesCat = cat.includes("café") || cat.includes("bakery") || cat.includes("cafe") || cat.includes("coffee");
+      else if (selectedCategory === "food") matchesCat = cat.includes("food") || cat.includes("dhaba") || cat.includes("restaurant") || cat.includes("dining");
+      else if (selectedCategory === "nature") matchesCat = cat.includes("nature") || cat.includes("trail") || cat.includes("waterfall") || cat.includes("scenic") || cat.includes("lake") || cat.includes("viewpoint");
+      else if (selectedCategory === "culture") matchesCat = cat.includes("culture") || cat.includes("temple") || cat.includes("heritage") || cat.includes("monastery") || cat.includes("ghat") || cat.includes("spiritual") || cat.includes("fort") || cat.includes("palace") || cat.includes("ashram");
+      else if (selectedCategory === "adventure") matchesCat = cat.includes("adventure") || cat.includes("trek") || cat.includes("rafting") || cat.includes("paragliding") || cat.includes("skiing");
+      else if (selectedCategory === "markets") matchesCat = cat.includes("market") || cat.includes("shop") || cat.includes("bazaar") || cat.includes("craft") || cat.includes("souvenir");
+    }
+    if (!matchesCat) return false;
+
+    // 2. In-Destination Real-time Search
+    if (inDestSearch.trim()) {
+      const q = inDestSearch.toLowerCase().trim();
+      const n = (p.name || "").toLowerCase();
+      const c = (p.category || "").toLowerCase();
+      const sc = (p.subcategory || "").toLowerCase();
+      const d = (p.description || "").toLowerCase();
+      const t = (p.tags || "").toLowerCase();
+      const pt = (p.practical_tips || "").toLowerCase();
+      const why = (p.why_vanvas_recommends || "").toLowerCase();
+      const hist = (p.historical_significance || "").toLowerCase();
+      return n.includes(q) || c.includes(q) || sc.includes(q) || d.includes(q) || t.includes(q) || pt.includes(q) || why.includes(q) || hist.includes(q);
+    }
     return true;
   });
+
+  const destLat = destination?.latitude || 0;
+  const destLng = destination?.longitude || 0;
+
+  const placesWithDist = filteredPlaces.map((p) => {
+    const dist = computeDistanceKm(destLat, destLng, p.latitude, p.longitude, p.distance_from_center_km || p.distance_km);
+    return { place: p, distance: dist };
+  });
+
+  const zone1Places = placesWithDist.filter((item) => item.distance <= 3.0).map((i) => i.place);
+  const zone2Places = placesWithDist.filter((item) => item.distance > 3.0 && item.distance <= 15.0).map((i) => i.place);
+  const zone3Places = placesWithDist.filter((item) => item.distance > 15.0).map((i) => i.place);
+
+  const isSearching = inDestSearch.trim().length > 0;
+  const isZone1Open = isSearching ? zone1Places.length > 0 : accordionsOpen.zone1;
+  const isZone2Open = isSearching ? zone2Places.length > 0 : accordionsOpen.zone2;
+  const isZone3Open = isSearching ? zone3Places.length > 0 : accordionsOpen.zone3;
 
   const normKey = slug.toLowerCase().replace(/[^a-z0-9]/g, "");
   const matchedMetaKey = Object.keys(destMetadata).find((k) => normKey.includes(k.replace(/[^a-z0-9]/g, "")));
@@ -1135,6 +1232,7 @@ export default function DestinationDetailPage() {
                   { id: "places", label: "Curated Places", devanagari: "पड़ाव", icon: Sparkles, count: places.length },
                   { id: "stays", label: "Stays & Sanctuaries", devanagari: "आशियाना", icon: BedDouble, count: hotels.length },
                   { id: "mobility", label: mobilityLabel, devanagari: "सवारी", icon: Bike, count: rentals.length },
+                  { id: "food", label: "Food & Flavours", devanagari: "खान-पान", icon: Utensils, count: foodGuide?.signature_dishes?.length },
                 ];
               })().map((mode) => {
                 const Icon = mode.icon;
@@ -1433,21 +1531,84 @@ export default function DestinationDetailPage() {
           </div>
         )}
 
-        {/* MODE: CURATED PLACES (Progressive Discovery) */}
+        {/* MODE: CURATED PLACES (Geographical Zones & In-Destination Discovery) */}
         {(activeMode === "places" || activeMode === "overview") && isCurated && places.length > 0 && (
           <div className="space-y-6 pt-4 border-t-2 border-[#E5D5BA] animate-fadeIn">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5D5BA] pb-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
-                  चुनिंदा पड़ाव • Curated Sanctuaries
+                  चुनिंदा पड़ाव • Curated Sanctuaries &amp; Topography
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
                   Curated Trails, Cafés &amp; Local Landmarks ({filteredPlaces.length})
                 </h3>
               </div>
-              <span className="text-xs font-mono text-[#7B4D36]">
-                Showing {Math.min(placesVisibleCount, filteredPlaces.length)} of {filteredPlaces.length} places
-              </span>
+              
+              {/* View Switcher: Geographic Zones vs Catalogue Grid */}
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] flex items-center gap-1 text-xs font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setPlacesViewMode("zones")}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      placesViewMode === "zones"
+                        ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
+                        : "text-[#7B4D36] hover:bg-[#EFE5D2]"
+                    }`}
+                    title="View organized into geographical circuits"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                    <span>Geographic Zones</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPlacesViewMode("grid")}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      placesViewMode === "grid"
+                        ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
+                        : "text-[#7B4D36] hover:bg-[#EFE5D2]"
+                    }`}
+                    title="View as a continuous catalogue grid"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Catalogue Grid</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* In-Destination Search Input Bar */}
+            <div className="p-3 sm:p-4 rounded-2xl bg-[#FAF7F0] border-2 border-[#E5D5BA] focus-within:border-[#173B32] shadow-2xs transition-all space-y-2">
+              <div className="flex items-center gap-3">
+                <Search className="w-4 h-4 text-[#B65E3C] shrink-0" />
+                <input
+                  type="text"
+                  value={inDestSearch}
+                  onChange={(e) => {
+                    setInDestSearch(e.target.value);
+                    setPlacesVisibleCount(24);
+                  }}
+                  placeholder={`Search places, temples, cafes, trails in ${destination.name}...`}
+                  className="w-full bg-transparent text-sm text-[#173B32] placeholder-[#7B4D36]/60 font-sans font-medium focus:outline-none"
+                  aria-label={`Search in ${destination.name}`}
+                />
+                {inDestSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setInDestSearch("")}
+                    className="p-1 rounded-full hover:bg-[#E5D5BA] text-[#7B4D36] transition-colors cursor-pointer"
+                    aria-label="Clear in-destination search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {inDestSearch.trim() && (
+                <div className="flex items-center justify-between pt-1 border-t border-[#E5D5BA]/60 text-[11px] font-mono text-[#7B4D36]">
+                  <span>Filtering &ldquo;{inDestSearch}&rdquo; across {destination.name}</span>
+                  <span className="font-bold text-[#B65E3C]">{filteredPlaces.length} sanctuaries matched</span>
+                </div>
+              )}
             </div>
 
             {/* Category Filter Pills */}
@@ -1473,32 +1634,243 @@ export default function DestinationDetailPage() {
               ))}
             </div>
 
-            {/* Places Grid with Normalized Frames */}
-            <div className={getCatalogueGridClass(filteredPlaces.length, false)}>
-              {filteredPlaces.slice(0, placesVisibleCount).map((place) => (
-                <PlaceCard
-                  key={place.id}
-                  place={place}
-                  destinationName={destination.name}
-                  onSelect={(p) => {
-                    setSelectedPlace(p);
-                    setModalOpen(true);
-                  }}
-                />
-              ))}
-            </div>
+            {/* VIEW MODE 1: GEOGRAPHICAL ACCORDIONS */}
+            {placesViewMode === "zones" ? (
+              <div className="space-y-6">
+                {/* ZONE 1: AROUND TOWN / IMMEDIATE AREA (<= 3 km) */}
+                <div className="rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] overflow-hidden shadow-2xs transition-all">
+                  <button
+                    type="button"
+                    onClick={() => toggleAccordion("zone1")}
+                    className="w-full p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left bg-[#FAF7F0] hover:bg-[#F5EEDB] transition-colors cursor-pointer"
+                    aria-expanded={isZone1Open}
+                    aria-controls="zone-1-content"
+                  >
+                    <div className="flex items-start sm:items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center justify-center shrink-0 text-[#173B32]">
+                        <Footprints className="w-5 h-5 text-[#B65E3C]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-devanagari text-xs text-[#B49252] font-bold">कस्बा व मुख्य क्षेत्र</span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] text-[9.5px] font-mono font-bold uppercase tracking-wider">
+                            Within 3 km
+                          </span>
+                        </div>
+                        <h4 className="font-serif font-black text-lg text-[#173B32]">
+                          Around Town &amp; Immediate Area
+                        </h4>
+                        <p className="text-xs text-[#7B4D36] font-sans mt-0.5">
+                          Walkable on foot or quick auto ride · Core heritage quarter &amp; markets
+                        </p>
+                      </div>
+                    </div>
 
-            {/* Progressive Discovery: Load More Button */}
-            {filteredPlaces.length > placesVisibleCount && (
-              <div className="pt-6 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setPlacesVisibleCount((prev) => prev + 6)}
-                  className="px-6 py-3 rounded-2xl bg-[#FAF7F0] hover:bg-[#E5D5BA] border-2 border-[#E5D5BA] hover:border-[#173B32] text-[#173B32] font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-                >
-                  <ArrowDown className="w-4 h-4 text-[#B65E3C]" />
-                  <span>Show More Places ({filteredPlaces.length - placesVisibleCount} Remaining)</span>
-                </button>
+                    <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                      <span className="px-3 py-1 rounded-xl bg-[#EFE5D2] text-[#173B32] text-xs font-mono font-bold">
+                        {zone1Places.length} {zone1Places.length === 1 ? "place" : "places"}
+                      </span>
+                      <div className={`p-1.5 rounded-full bg-[#EFE5D2] text-[#173B32] transition-transform duration-300 ${isZone1Open ? "rotate-180" : ""}`}>
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </button>
+
+                  <div
+                    id="zone-1-content"
+                    role="region"
+                    className={`transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+                      isZone1Open ? "max-h-[8000px] opacity-100 p-4 sm:p-6 border-t border-[#E5D5BA]" : "max-h-0 opacity-0 overflow-hidden"
+                    }`}
+                  >
+                    {zone1Places.length > 0 ? (
+                      <div className={getCatalogueGridClass(zone1Places.length, false)}>
+                        {zone1Places.map((place) => (
+                          <PlaceCard
+                            key={place.id}
+                            place={place}
+                            destinationName={destination.name}
+                            onSelect={(p) => {
+                              setSelectedPlace(p);
+                              setModalOpen(true);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-xs font-mono text-[#7B4D36]/80 bg-[#EFE5D2]/40 rounded-2xl border border-dashed border-[#E5D5BA]">
+                        No sanctuaries in the immediate town area match the current filters.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ZONE 2: NEARBY CIRCUIT & VALLEY ENCLAVES (3 km - 15 km) */}
+                <div className="rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] overflow-hidden shadow-2xs transition-all">
+                  <button
+                    type="button"
+                    onClick={() => toggleAccordion("zone2")}
+                    className="w-full p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left bg-[#FAF7F0] hover:bg-[#F5EEDB] transition-colors cursor-pointer"
+                    aria-expanded={isZone2Open}
+                    aria-controls="zone-2-content"
+                  >
+                    <div className="flex items-start sm:items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center justify-center shrink-0 text-[#173B32]">
+                        <Bike className="w-5 h-5 text-[#B65E3C]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-devanagari text-xs text-[#B49252] font-bold">आसपास की वादियां व परिक्रमा</span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#B65E3C] text-white text-[9.5px] font-mono font-bold uppercase tracking-wider">
+                            3 km – 15 km
+                          </span>
+                        </div>
+                        <h4 className="font-serif font-black text-lg text-[#173B32]">
+                          Nearby Circuit &amp; Valley Enclaves
+                        </h4>
+                        <p className="text-xs text-[#7B4D36] font-sans mt-0.5">
+                          Short excursion · Ideal for bike rental, scooter, or local taxi
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                      <span className="px-3 py-1 rounded-xl bg-[#EFE5D2] text-[#173B32] text-xs font-mono font-bold">
+                        {zone2Places.length} {zone2Places.length === 1 ? "place" : "places"}
+                      </span>
+                      <div className={`p-1.5 rounded-full bg-[#EFE5D2] text-[#173B32] transition-transform duration-300 ${isZone2Open ? "rotate-180" : ""}`}>
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </button>
+
+                  <div
+                    id="zone-2-content"
+                    role="region"
+                    className={`transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+                      isZone2Open ? "max-h-[8000px] opacity-100 p-4 sm:p-6 border-t border-[#E5D5BA]" : "max-h-0 opacity-0 overflow-hidden"
+                    }`}
+                  >
+                    {zone2Places.length > 0 ? (
+                      <div className={getCatalogueGridClass(zone2Places.length, false)}>
+                        {zone2Places.map((place) => (
+                          <PlaceCard
+                            key={place.id}
+                            place={place}
+                            destinationName={destination.name}
+                            onSelect={(p) => {
+                              setSelectedPlace(p);
+                              setModalOpen(true);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-xs font-mono text-[#7B4D36]/80 bg-[#EFE5D2]/40 rounded-2xl border border-dashed border-[#E5D5BA]">
+                        No sanctuaries in the valley enclave circuit match the current filters.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ZONE 3: REGIONAL DAY TRIPS & HIGH PASSES (> 15 km) */}
+                <div className="rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] overflow-hidden shadow-2xs transition-all">
+                  <button
+                    type="button"
+                    onClick={() => toggleAccordion("zone3")}
+                    className="w-full p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left bg-[#FAF7F0] hover:bg-[#F5EEDB] transition-colors cursor-pointer"
+                    aria-expanded={isZone3Open}
+                    aria-controls="zone-3-content"
+                  >
+                    <div className="flex items-start sm:items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#EFE5D2] border border-[#E5D5BA] flex items-center justify-center shrink-0 text-[#173B32]">
+                        <Mountain className="w-5 h-5 text-[#B65E3C]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-devanagari text-xs text-[#B49252] font-bold">दूरस्थ दर्रे व दिवस यात्राएं</span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#7B4D36] text-[#FAF7F0] text-[9.5px] font-mono font-bold uppercase tracking-wider">
+                            15+ km away
+                          </span>
+                        </div>
+                        <h4 className="font-serif font-black text-lg text-[#173B32]">
+                          Regional Day Trips &amp; High Passes
+                        </h4>
+                        <p className="text-xs text-[#7B4D36] font-sans mt-0.5">
+                          Full-day scenic excursion · 4x4 or adventure motorcycle recommended
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                      <span className="px-3 py-1 rounded-xl bg-[#EFE5D2] text-[#173B32] text-xs font-mono font-bold">
+                        {zone3Places.length} {zone3Places.length === 1 ? "place" : "places"}
+                      </span>
+                      <div className={`p-1.5 rounded-full bg-[#EFE5D2] text-[#173B32] transition-transform duration-300 ${isZone3Open ? "rotate-180" : ""}`}>
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </button>
+
+                  <div
+                    id="zone-3-content"
+                    role="region"
+                    className={`transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+                      isZone3Open ? "max-h-[8000px] opacity-100 p-4 sm:p-6 border-t border-[#E5D5BA]" : "max-h-0 opacity-0 overflow-hidden"
+                    }`}
+                  >
+                    {zone3Places.length > 0 ? (
+                      <div className={getCatalogueGridClass(zone3Places.length, false)}>
+                        {zone3Places.map((place) => (
+                          <PlaceCard
+                            key={place.id}
+                            place={place}
+                            destinationName={destination.name}
+                            onSelect={(p) => {
+                              setSelectedPlace(p);
+                              setModalOpen(true);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-xs font-mono text-[#7B4D36]/80 bg-[#EFE5D2]/40 rounded-2xl border border-dashed border-[#E5D5BA]">
+                        No regional day trips or high pass sanctuaries match the current filters.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* VIEW MODE 2: FLAT CATALOGUE GRID */
+              <div className="space-y-6">
+                <div className={getCatalogueGridClass(filteredPlaces.length, false)}>
+                  {filteredPlaces.slice(0, placesVisibleCount).map((place) => (
+                    <PlaceCard
+                      key={place.id}
+                      place={place}
+                      destinationName={destination.name}
+                      onSelect={(p) => {
+                        setSelectedPlace(p);
+                        setModalOpen(true);
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Progressive Discovery: Load More Button */}
+                {filteredPlaces.length > placesVisibleCount && (
+                  <div className="pt-6 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setPlacesVisibleCount((prev) => prev + 6)}
+                      className="px-6 py-3 rounded-2xl bg-[#FAF7F0] hover:bg-[#E5D5BA] border-2 border-[#E5D5BA] hover:border-[#173B32] text-[#173B32] font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                    >
+                      <ArrowDown className="w-4 h-4 text-[#B65E3C]" />
+                      <span>Show More Places ({filteredPlaces.length - placesVisibleCount} Remaining)</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1797,6 +2169,134 @@ export default function DestinationDetailPage() {
               </span>
             </div>
 
+            {/* Comprehensive Mobility Access Plan & Logistical Guidance */}
+            {mobilityPlan && (
+              <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xs space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-md bg-[#173B32] text-[#EFE5D2] text-[10px] font-mono font-bold uppercase tracking-wider">
+                      TRANSIT BLUEPRINT
+                    </span>
+                    <span className="text-xs font-mono text-[#B65E3C] font-bold">
+                      MOBILITY ACCESS PLAN · {destination.name.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-sm font-serif text-[#20211D]/90 leading-relaxed max-w-4xl">
+                    {mobilityPlan.approach_summary}
+                  </p>
+                </div>
+
+                {/* Pickup Gateways & Approach Hubs */}
+                {mobilityPlan.recommended_pickup_hubs && mobilityPlan.recommended_pickup_hubs.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#7B4D36] flex items-center gap-2">
+                      <Navigation className="w-3.5 h-3.5 text-[#B65E3C]" />
+                      <span>Recommended Pickup Hubs &amp; Roadheads</span>
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {mobilityPlan.recommended_pickup_hubs.map((hub, idx) => (
+                        <div key={idx} className="p-4 rounded-2xl bg-[#EFE5D2]/70 border border-[#E5D5BA] space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold text-xs text-[#173B32] leading-snug">{hub.hub_name}</span>
+                            <span className="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold bg-[#FAF7F0] text-[#7B4D36] border border-[#E5D5BA] shrink-0">
+                              {hub.distance_km === 0 ? "In-Destination" : `${hub.distance_km} km`}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#20211D]/80 leading-relaxed">{hub.recommended_for}</p>
+                          <div className="pt-2 border-t border-[#E5D5BA]/60 text-[10px] font-mono text-[#B65E3C] font-semibold">
+                            ✦ {hub.advantage}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Route Advisories: Remote Depots, Syndicates & Fuel Stations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  {mobilityPlan.remote_rental_advisory && (
+                    <div className="p-4 rounded-2xl bg-[#FAF4E8] border border-[#E5D5BA] space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-[#B65E3C] uppercase tracking-wider">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Remote Depot Reality</span>
+                      </div>
+                      <p className="text-xs text-[#20211D]/85 leading-relaxed font-serif">
+                        {mobilityPlan.remote_rental_advisory}
+                      </p>
+                    </div>
+                  )}
+
+                  {mobilityPlan.syndicate_rules && (
+                    <div className="p-4 rounded-2xl bg-[#FAF4E8] border border-[#E5D5BA] space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-[#173B32] uppercase tracking-wider">
+                        <Shield className="w-3.5 h-3.5 text-[#B65E3C]" />
+                        <span>Union Regulations &amp; Permits</span>
+                      </div>
+                      <p className="text-xs text-[#20211D]/85 leading-relaxed font-serif">
+                        {mobilityPlan.syndicate_rules}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Fuel & Expedition Supply Logistics */}
+                {mobilityPlan.fuel_and_logistics && mobilityPlan.fuel_and_logistics.critical_fuel_points.length > 0 && (
+                  <div className="p-4 rounded-2xl bg-[#173B32] text-[#EFE5D2] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#B49252] uppercase tracking-wider">
+                        <Fuel className="w-4 h-4" />
+                        <span>Critical Fuel Outlets &amp; Logistics</span>
+                      </div>
+                      {mobilityPlan.fuel_and_logistics.jerry_can_recommended && (
+                        <span className="px-2 py-0.5 rounded bg-[#B65E3C] text-white text-[10px] font-mono font-bold uppercase">
+                          Jerry Can Recommended
+                        </span>
+                      )}
+                    </div>
+                    <ul className="space-y-1 text-xs text-[#EFE5D2]/90 font-serif">
+                      {mobilityPlan.fuel_and_logistics.critical_fuel_points.map((pt, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-[#B49252] font-bold">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {mobilityPlan.fuel_and_logistics.oxygen_and_altitude_gear && (
+                      <p className="text-[11px] font-mono text-[#B49252] pt-1">
+                        ⚕ Note: {mobilityPlan.fuel_and_logistics.oxygen_and_altitude_gear}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Route-Appropriate Vehicle Recommendations */}
+                {mobilityPlan.vehicle_recommendations && mobilityPlan.vehicle_recommendations.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#7B4D36]">
+                      Tested Route Vehicle Platforms
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {mobilityPlan.vehicle_recommendations.map((v, i) => (
+                        <div key={i} className="p-4 rounded-2xl bg-[#EFE5D2]/60 border border-[#E5D5BA] space-y-2 flex flex-col justify-between">
+                          <div className="space-y-1">
+                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-[#173B32] text-[#EFE5D2]">
+                              {v.terrain_suitability}
+                            </span>
+                            <h5 className="font-serif font-black text-sm text-[#173B32] pt-1">{v.model}</h5>
+                            <p className="text-[11px] text-[#20211D]/80 leading-relaxed font-serif">{v.advisory}</p>
+                          </div>
+                          <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-xs font-mono">
+                            <span className="text-[#7B4D36]">~₹{v.estimated_daily_inr}/day</span>
+                            <span className="text-[10px] text-[#7B4D36]/80">{v.ground_clearance_mm}mm clearance</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {rentalsLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
@@ -1984,6 +2484,154 @@ export default function DestinationDetailPage() {
                 <p className="text-xs text-[#7B4D36] max-w-md mx-auto">
                   Scooter and motorcycle rentals operate out of central valley hubs and local provider stands.
                 </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MODE: FOOD & CULINARY INTELLIGENCE */}
+        {(activeMode === "food" || activeMode === "overview") && foodGuide && (
+          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA] animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] pb-4 gap-3">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                  खान-पान • Authentic Culinary Heritage
+                </span>
+                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
+                  <Utensils className="w-6 h-6 text-[#B65E3C]" />
+                  <span>
+                    Flavours &amp; Dining Sanctuaries ({foodGuide.signature_dishes.length} Dishes)
+                  </span>
+                </h3>
+              </div>
+              <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]">
+                Culinary Intelligence
+              </span>
+            </div>
+
+            {/* Food Culture Overview & Etiquette */}
+            <div className="p-6 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xs space-y-4">
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C]">
+                  LOCAL GASTRONOMY TRADITIONS
+                </span>
+                <p className="text-sm font-serif text-[#20211D]/90 leading-relaxed">
+                  {foodGuide.food_culture_summary}
+                </p>
+              </div>
+
+              {foodGuide.food_etiquette && (
+                <div className="p-3.5 rounded-2xl bg-[#EFE5D2]/70 border border-[#E5D5BA] flex items-start gap-2.5 text-xs font-serif text-[#7B4D36]">
+                  <Coffee className="w-4 h-4 text-[#B65E3C] shrink-0 mt-0.5" />
+                  <span>{foodGuide.food_etiquette}</span>
+                </div>
+              )}
+
+              {/* Dietary Filter Pills */}
+              <div className="flex items-center gap-2 pt-2 border-t border-[#E5D5BA]/60 overflow-x-auto no-scrollbar">
+                {["All", "Vegetarian", "Non-Vegetarian", "Vegan"].map((diet) => (
+                  <button
+                    key={diet}
+                    type="button"
+                    onClick={() => setSelectedDietary(diet)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      selectedDietary === diet
+                        ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
+                        : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]"
+                    }`}
+                  >
+                    {diet}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Signature Dishes Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {foodGuide.signature_dishes
+                .filter((d) => selectedDietary === "All" || d.dietary.toLowerCase() === selectedDietary.toLowerCase())
+                .map((dish, idx) => (
+                  <div key={idx} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B65E3C] block">
+                            {dish.category}
+                          </span>
+                          <h4 className="font-serif font-black text-lg text-[#173B32] leading-snug">
+                            {dish.dish_name}
+                          </h4>
+                          {dish.hindi_name && (
+                            <span className="font-devanagari text-xs text-[#B49252] font-semibold">
+                              {dish.hindi_name}
+                            </span>
+                          )}
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[9.5px] font-mono font-bold shrink-0 ${
+                          dish.dietary === "Vegetarian" || dish.dietary === "Vegan"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-amber-100 text-amber-900 border border-amber-300"
+                        }`}>
+                          {dish.dietary}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-[#20211D]/85 leading-relaxed font-serif">
+                        {dish.flavor_profile}
+                      </p>
+
+                      <div className="p-3 rounded-2xl bg-[#EFE5D2]/60 border border-[#E5D5BA] space-y-1">
+                        <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">Origin Lore</span>
+                        <p className="text-[11px] text-[#7B4D36] font-serif leading-relaxed">{dish.origin_story}</p>
+                      </div>
+
+                      {dish.best_places_to_try && dish.best_places_to_try.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          <span className="text-[10px] font-mono font-bold uppercase text-[#7B4D36]">Where to Try</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {dish.best_places_to_try.map((p, i) => (
+                              <span key={i} className="px-2 py-0.5 rounded bg-[#EFE5D2] text-[#173B32] text-[10px] font-sans font-medium border border-[#E5D5BA]">
+                                📍 {p.name} ({p.address})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-3 border-t border-[#E5D5BA] flex items-center justify-between text-xs font-mono">
+                      <span className="text-[#7B4D36]">Typical benchmark:</span>
+                      <span className="font-bold text-[#B65E3C]">~₹{dish.typical_price_inr}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Verified Dining Spots from Database */}
+            {foodGuide.dining_spots && foodGuide.dining_spots.length > 0 && (
+              <div className="space-y-3 pt-4">
+                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#7B4D36] flex items-center gap-2">
+                  <Utensils className="w-3.5 h-3.5 text-[#B65E3C]" />
+                  <span>Curated Cafés, Dhabas &amp; Bakeries in {destination.name}</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {foodGuide.dining_spots.slice(0, 4).map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        setSelectedPlace(p);
+                        setModalOpen(true);
+                      }}
+                      className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] hover:border-[#173B32] cursor-pointer transition-all space-y-2 shadow-2xs hover:shadow-md"
+                    >
+                      <span className="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold uppercase bg-[#EFE5D2] text-[#7B4D36]">
+                        {p.category || "Dining Spot"}
+                      </span>
+                      <h5 className="font-serif font-bold text-sm text-[#173B32] line-clamp-1">{p.name}</h5>
+                      <p className="text-[11px] text-[#7B4D36] line-clamp-2">{p.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

@@ -77,11 +77,12 @@ class DestinationIntelligenceService:
     @staticmethod
     async def search_destinations_autocomplete(query: str, limit: int = 6, db: Optional[Session] = None) -> List[Dict[str, Any]]:
         """
-        Fast, resilient autocomplete search:
-        1. Resolves aliases instantly (e.g. 'Banaras' -> Varanasi, 'Chopta' -> Tungnath-Chandrashila).
-        2. Matches in-memory Canonical Destinations and active database destinations.
-        3. If matches < limit, queries Photon geocoder with a strict 1.5s timeout.
-        Guarantees sub-10ms response for known destinations and never leaves a hanging spinner.
+        Fast, intelligent Universal Travel Discovery search:
+        1. Classifies search intent: destination, famous landmark, category + location, food, mobility.
+        2. Injects exact landmark matches (Key Monastery, Chicham Bridge, Hawa Mahal, Taj Mahal, Tungnath, Pangong Tso).
+        3. Injects category matches (Cafés in Landour, Bike rental in Spiti, Vegetarian food in Jaipur).
+        4. Resolves Indian aliases & canonical destinations instantly (sub-10ms).
+        5. Dynamically geocodes unseeded/arbitrary destinations (Ujjain, Munsiyari, Chitkul, Paris) with robust fallbacks.
         """
         clean_raw = DestinationIntelligenceService._clean_query(query)
         if not clean_raw:
@@ -105,7 +106,9 @@ class DestinationIntelligenceService:
             altitude_meters: int = 1000,
             hero_image: Optional[str] = None,
             is_curated: bool = True,
-            matched_alias: Optional[str] = None
+            matched_alias: Optional[str] = None,
+            result_type: str = "destination",
+            badge: str = "DESTINATION"
         ) -> Dict[str, Any]:
             disp_parts = [name]
             if matched_alias and matched_alias.lower() != name.lower():
@@ -130,8 +133,9 @@ class DestinationIntelligenceService:
                 "longitude": round(lng, 4),
                 "lat": round(lat, 4),
                 "lng": round(lng, 4),
-                "place_type": "city",
-                "type": "city",
+                "place_type": result_type,
+                "type": result_type,
+                "badge": badge,
                 "altitude_meters": altitude_meters,
                 "hindi_name": hindi_name,
                 "hero_image": hero_image,
@@ -141,13 +145,17 @@ class DestinationIntelligenceService:
                 "is_dynamic": not is_curated
             }
 
+        # 0. Search Intent Classification (Landmark & Category Discovery)
+        from app.services.intent_router import SearchIntentRouter
+        from app.seed.canonical_dataset import ADDITIONAL_PLACES_BY_DEST
         from app.services.destination_aliases import resolve_alias_to_slug, DESTINATION_ALIASES
+        intent = SearchIntentRouter.classify_intent(clean_raw)
 
-        # 1. Check exact or prefix alias match
+        # 1. Check exact or prefix alias match (e.g. "banaras" -> Varanasi, "chopta" -> Tungnath-Chandrashila)
+        # Only when not intercepted as an explicit physical landmark (e.g. "Key Monastery", "Taj Mahal")
         alias_res = resolve_alias_to_slug(clean_raw)
-        if alias_res:
+        if alias_res and not (intent["intent"] == "place" and intent.get("extracted_place")):
             target_slug, alias_display = alias_res
-            # Find in Canonical 26
             canon = next((d for d in CANONICAL_26_DESTINATIONS if d["slug"] == target_slug), None)
             if canon and canon["slug"] not in seen_slugs:
                 results.append(format_result(
@@ -166,6 +174,127 @@ class DestinationIntelligenceService:
                     matched_alias=alias_display
                 ))
                 seen_slugs.add(canon["slug"])
+
+        # 0A. Famous Landmark Interception (e.g. "Key Monastery", "Chicham Bridge", "Hawa Mahal", "Taj Mahal", "Pangong Tso")
+        if intent["intent"] == "place" and intent.get("extracted_place"):
+            landmark_dest_slug = intent.get("destination_slug", "spiti")
+            landmark_place_slug = intent.get("place_slug", "place")
+            landmark_name = intent["extracted_place"]
+            landmark_dest_name = intent.get("extracted_location", "Destination")
+            results.append({
+                "id": f"place-{landmark_dest_slug}-{landmark_place_slug}",
+                "destination_id": f"dest-{landmark_dest_slug}",
+                "canonical_slug": landmark_dest_slug,
+                "slug": landmark_place_slug,
+                "name": landmark_name,
+                "city": landmark_dest_name,
+                "display_name": f"{landmark_name} • {landmark_dest_name}",
+                "state": landmark_dest_name,
+                "country": "India",
+                "region": landmark_dest_name,
+                "latitude": 0.0,
+                "longitude": 0.0,
+                "lat": 0.0,
+                "lng": 0.0,
+                "place_type": "landmark",
+                "type": "landmark",
+                "badge": "LANDMARK",
+                "category": intent.get("category", "Must Visit"),
+                "destination_slug": landmark_dest_slug,
+                "destination_name": landmark_dest_name,
+                "hero_image": intent.get("image_url") or f"/images/places/{landmark_dest_slug}/{landmark_place_slug}.webp",
+                "why_vanvas_recommends": intent.get("why_vanvas_recommends", ""),
+                "is_curated": True,
+                "is_dynamic": False
+            })
+            seen_slugs.add(f"landmark-{landmark_place_slug}")
+
+        # 0B. Category + Location Interception (e.g. "Cafés in Landour", "Bike rental in Spiti", "Vegetarian food in Jaipur")
+        elif (intent.get("sub_intent") == "category_search" or intent.get("is_category_search") or intent["intent"] == "category_search") and intent.get("extracted_location"):
+            cat_dest_slug = intent.get("destination_slug")
+            cat_dest_name = intent.get("extracted_location")
+            cat_name = intent.get("category", "Attractions")
+            dietary = intent.get("dietary")
+            is_mobility = cat_name == "Mobility"
+            is_food = "Food" in cat_name or dietary is not None
+            badge_label = "RENTAL" if is_mobility else ("FOOD" if is_food else ("STAY" if cat_name == "Stays" else "CATEGORY"))
+            disp_title = f"{dietary + ' ' if dietary else ''}{cat_name} in {cat_dest_name}"
+
+            results.append({
+                "id": f"cat-{cat_dest_slug or 'all'}-{intent.get('extracted_category')}",
+                "destination_id": f"dest-{cat_dest_slug}" if cat_dest_slug else None,
+                "canonical_slug": cat_dest_slug,
+                "slug": cat_dest_slug or "all",
+                "name": disp_title,
+                "city": cat_dest_name,
+                "display_name": disp_title,
+                "state": cat_dest_name,
+                "country": "India",
+                "region": cat_dest_name,
+                "latitude": 0.0,
+                "longitude": 0.0,
+                "lat": 0.0,
+                "lng": 0.0,
+                "place_type": "category",
+                "type": "category",
+                "badge": badge_label,
+                "category": cat_name,
+                "dietary": dietary,
+                "destination_slug": cat_dest_slug,
+                "destination_name": cat_dest_name,
+                "is_curated": True,
+                "is_dynamic": False
+            })
+
+            # Add matching places from that destination
+            if cat_dest_slug and cat_dest_slug in ADDITIONAL_PLACES_BY_DEST:
+                for p in ADDITIONAL_PLACES_BY_DEST[cat_dest_slug]:
+                    p_cat = p.get("category", "")
+                    p_tags = p.get("tags", "").lower()
+                    p_name = p.get("name", "")
+                    match = False
+                    if is_mobility and ("mobility" in p_cat.lower() or "rental" in p_tags or "bike" in p_name.lower()):
+                        match = True
+                    elif is_food and ("food" in p_cat.lower() or "cafe" in p_cat.lower() or "restaurant" in p_cat.lower() or "dining" in p_tags or "bakery" in p_cat.lower()):
+                        if dietary and dietary.lower() == "vegetarian":
+                            match = ("veg" in p_tags or "vegetarian" in p_tags or "mithai" in p_tags or "pure veg" in p_tags or "dhaba" in p_tags or "sweets" in p_tags)
+                        else:
+                            match = True
+                    elif "caf" in cat_name.lower() and ("caf" in p_cat.lower() or "bakery" in p_cat.lower() or "tea" in p_tags):
+                        match = True
+                    elif cat_name in p_cat:
+                        match = True
+
+                    if match:
+                        results.append({
+                            "id": f"place-{cat_dest_slug}-{p['slug']}",
+                            "destination_id": f"dest-{cat_dest_slug}",
+                            "canonical_slug": cat_dest_slug,
+                            "slug": p["slug"],
+                            "name": p_name,
+                            "city": cat_dest_name,
+                            "display_name": f"{p_name} ({cat_dest_name})",
+                            "state": cat_dest_name,
+                            "country": "India",
+                            "region": cat_dest_name,
+                            "latitude": p.get("latitude", 0.0),
+                            "longitude": p.get("longitude", 0.0),
+                            "lat": p.get("latitude", 0.0),
+                            "lng": p.get("longitude", 0.0),
+                            "place_type": "place",
+                            "type": "place",
+                            "badge": badge_label,
+                            "category": p_cat,
+                            "destination_slug": cat_dest_slug,
+                            "destination_name": cat_dest_name,
+                            "hero_image": p.get("image_url"),
+                            "is_curated": True,
+                            "is_dynamic": False
+                        })
+                        if len(results) >= limit:
+                            break
+
+# 1. Alias match processed in Step 0
 
         # 2. Match against Canonical 26 Destinations
         for cd in CANONICAL_26_DESTINATIONS:
@@ -198,6 +327,39 @@ class DestinationIntelligenceService:
                     is_curated=True
                 ))
                 seen_slugs.add(cd["slug"])
+
+        # 2.5 Match against Curated SEED_DESTINATIONS (e.g. Ujjain, Munsiyari, Tirthan Valley, Zanskar, Chitkul, etc.)
+        from app.providers.geocoding_provider import SEED_DESTINATIONS
+        for sd in SEED_DESTINATIONS:
+            sd_name = sd["name"].lower()
+            sd_slug = sd["slug"].lower()
+            sd_hindi = (sd.get("hindi_name") or "").lower()
+            sd_state = (sd.get("state") or "").lower()
+
+            is_match = (
+                clean_q == sd_slug or
+                clean_q == sd_name or
+                sd_name.startswith(clean_q) or
+                sd_slug.startswith(clean_q) or
+                (len(clean_q) >= 3 and (clean_q in sd_name or clean_q in sd_hindi or clean_q in sd_state or clean_q in sd_slug))
+            )
+
+            if is_match and sd["slug"] not in seen_slugs:
+                results.append(format_result(
+                    dest_id=f"dest-{sd['slug']}",
+                    name=sd["name"],
+                    slug=sd["slug"],
+                    state=sd.get("state", "India"),
+                    country=sd.get("country", "India"),
+                    region=sd.get("region", ""),
+                    lat=sd.get("lat", 0.0),
+                    lng=sd.get("lng", 0.0),
+                    hindi_name=sd.get("hindi_name"),
+                    altitude_meters=sd.get("altitude_meters", 1000),
+                    hero_image=None,
+                    is_curated=True
+                ))
+                seen_slugs.add(sd["slug"])
 
         # 3. Match against Database Destinations (if db provided)
         if db and len(results) < limit:
@@ -233,18 +395,20 @@ class DestinationIntelligenceService:
             except Exception as e:
                 logger.warning(f"Database destination search error: {e}")
 
-        # 4. If NO results found locally (unseeded / arbitrary destination), query live geocoder with strict 1.5s timeout
-        if len(results) == 0:
+        # 4. If NO results found locally (unseeded / arbitrary destination), query geocoder with 6.0s timeout
+        if len(results) == 0 or (len(results) < limit and not alias_res and not any(r.get("is_curated") for r in results)):
             try:
                 geocoder = ProviderFactory.get_geocoding_provider()
-                geo_results = await asyncio.wait_for(geocoder.autocomplete(clean_raw, limit=limit), timeout=1.5)
+                geo_results = await asyncio.wait_for(geocoder.autocomplete(clean_raw, limit=limit), timeout=2.5)
                 for gr in (geo_results or []):
                     gr_slug = gr.get("canonical_slug") or gr.get("slug") or gr["name"].lower().replace(" ", "-")
                     if gr_slug not in seen_slugs and gr["name"].lower() not in [r["name"].lower() for r in results]:
+                        gr["type"] = "destination"
+                        gr["badge"] = "DESTINATION"
                         results.append(gr)
                         seen_slugs.add(gr_slug)
             except asyncio.TimeoutError:
-                logger.info(f"Geocoding autocomplete timed out after 1.5s for '{clean_raw}', returning local matches")
+                logger.info(f"Geocoding autocomplete timed out after 2.5s for '{clean_raw}', returning local matches")
             except Exception as e:
                 logger.warning(f"Geocoding autocomplete fallback failed: {e}")
 

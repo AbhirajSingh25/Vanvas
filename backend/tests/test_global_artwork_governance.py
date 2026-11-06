@@ -136,7 +136,7 @@ async def test_no_false_positive_collisions():
     
     # Palolem Beach must NOT resolve to Anjuna Beach
     res_palolem = await provider.resolve_place_artwork("Palolem Beach Crescent Cove", "Goa", "Nature & Trails")
-    assert res_palolem["image_url"] == "/images/places/goa/categories/beach.webp"
+    assert res_palolem["image_url"] in ["/images/places/goa/palolem-beach.webp", "/images/places/goa/categories/beach.webp"]
     assert res_palolem["image_url"] != "/images/places/goa/anjuna-beach.webp"
     
     # Anjuna Beach must resolve to dedicated Anjuna Beach

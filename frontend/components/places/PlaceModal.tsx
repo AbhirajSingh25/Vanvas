@@ -6,7 +6,7 @@ import {
   Star, Clock, MapPin, Sparkles, ExternalLink, Bookmark, X, PlusCircle, 
   Phone, MessageSquare, Flag, Send, AlertTriangle, ShieldCheck, Navigation,
   Compass, Globe
-} from "lucide-react";
+, Share2, Copy, Check, Camera, Compass as CompassIcon, ShieldAlert, Utensils as UtensilsIcon, BedDouble } from "lucide-react";
 import { Place, Review, ReviewAggregate } from "@/types";
 import { TravelStamp } from "@/components/ui/TravelStamp";
 import { VanvasImage } from "@/components/ui/VanvasImage";
@@ -56,6 +56,19 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
   const [reportDetails, setReportDetails] = useState<string>("");
   const [submittingReport, setSubmittingReport] = useState<boolean>(false);
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
+  const [copiedShare, setCopiedShare] = useState<boolean>(false);
+
+  const handleShare = () => {
+    if (!place) return;
+    const shareUrl = typeof window !== "undefined" 
+      ? `${window.location.origin}/explore/${resolvedSlug}?place=${encodeURIComponent(place.slug || place.name)}`
+      : "";
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(shareUrl);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2500);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -235,6 +248,24 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
             <button
               type="button"
+              onClick={handleShare}
+              className="p-2 rounded-xl border border-[#E5D5BA] bg-white hover:bg-[#FAF7F0] text-[#173B32] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Share Place Link"
+            >
+              {copiedShare ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-bold">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-[#7B4D36]" />
+                  <span>Share</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
               onClick={handleToggleBookmark}
               disabled={savingBookmark}
               aria-label={isSaved ? "Saved to collection" : "Save to travel collection"}
@@ -390,6 +421,72 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
             )}
           </div>
 
+          {/* 20-Point Place Intelligence Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            {/* Best Time to Visit */}
+            <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#7B4D36] block">
+                उत्तम समय • Best Time
+              </span>
+              <p className="text-[#173B32] font-semibold text-[11px] leading-snug">
+                {place.best_time_to_visit || "Early morning (06:30 - 10:00) or golden sunset hours"}
+              </p>
+            </div>
+
+            {/* Estimated Duration */}
+            <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#7B4D36] block">
+                समय • Duration
+              </span>
+              <p className="text-[#173B32] font-semibold text-[11px] leading-snug">
+                {place.estimated_duration || `${place.recommended_duration_mins || 60} mins`}
+              </p>
+            </div>
+
+            {/* Entry Fee & Permits */}
+            <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#7B4D36] block">
+                शुल्क • Entry & Permits
+              </span>
+              <p className="text-[#173B32] font-semibold text-[11px] leading-snug">
+                {place.entry_fee_details || (place.approx_cost && place.approx_cost > 0 ? `₹${place.approx_cost}` : "Free Admission")}
+              </p>
+            </div>
+
+            {/* Distance & Travel Time */}
+            <div className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#7B4D36] block">
+                दूरी • From Center
+              </span>
+              <p className="text-[#173B32] font-semibold text-[11px] leading-snug font-mono">
+                {typeof place.distance_from_center_km === "number"
+                  ? `${place.distance_from_center_km} km (~${place.travel_time_from_center_mins || 20}m)`
+                  : typeof place.distance_km === "number"
+                  ? `${place.distance_km} km`
+                  : "Valley Center"}
+              </p>
+            </div>
+          </div>
+
+          {/* Geographical Coordinates Bar */}
+          {place.latitude && place.longitude ? (
+            <div className="p-2.5 rounded-xl bg-[#E5D5BA]/40 border border-[#E5D5BA] flex items-center justify-between text-xs text-[#173B32]">
+              <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                <Navigation className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>GPS: {place.latitude.toFixed(4)}°N, {place.longitude.toFixed(4)}°E</span>
+              </div>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-mono font-bold text-[#B65E3C] hover:underline flex items-center gap-1"
+              >
+                <span>Google Maps</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
+          ) : null}
+
           {/* Description */}
           <div className="space-y-1.5">
             <h4 className="font-bold text-xs uppercase tracking-widest text-[#7B4D36]">
@@ -415,6 +512,120 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
               <p className="text-xs text-[#173B32] leading-relaxed italic font-serif">
                 &ldquo;{place.why_vanvas_recommends}&rdquo;
               </p>
+            </div>
+          )}
+
+          {/* Historical & Cultural Significance */}
+          {place.historical_significance && (
+            <div className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-[#173B32] uppercase tracking-wider">
+                <CompassIcon className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>ऐतिहासिक महत्व • Cultural Significance</span>
+              </div>
+              <p className="text-xs text-[#20211D]/80 leading-relaxed font-light">
+                {place.historical_significance}
+              </p>
+            </div>
+          )}
+
+          {/* Photography Spots & Visual Highlights */}
+          {place.photography_spots && (
+            <div className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-[#7B4D36] uppercase tracking-wider">
+                <Camera className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>फोटोग्राफी दृश्य • Photography Highlights</span>
+              </div>
+              <p className="text-xs text-[#20211D]/80 leading-relaxed font-light">
+                {place.photography_spots}
+              </p>
+            </div>
+          )}
+
+          {/* Practical & Safety Notes */}
+          {place.practical_tips && (
+            <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-amber-900 uppercase tracking-wider">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                <span>महत्वपूर्ण सुझाव • Practical & Safety Tips</span>
+              </div>
+              <p className="text-xs text-amber-900/90 leading-relaxed font-light">
+                {place.practical_tips}
+              </p>
+            </div>
+          )}
+
+          {/* Nearby Logical Pairings / Attractions */}
+          {place.nearby_attractions && place.nearby_attractions.length > 0 && (
+            <div className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-2.5">
+              <span className="text-xs font-bold text-[#173B32] uppercase tracking-wider block">
+                आस-पास के मुख्य आकर्षण • Nearby Logical Pairings
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {place.nearby_attractions.map((na) => (
+                  <Link
+                    key={na.id}
+                    href={`/explore/${resolvedSlug}?place=${encodeURIComponent(na.slug)}`}
+                    onClick={onClose}
+                    className="p-2.5 rounded-xl bg-[#EFE5D2]/70 hover:bg-[#E5D5BA] border border-[#E5D5BA] transition-all text-xs flex flex-col justify-between"
+                  >
+                    <span className="font-serif font-bold text-[#173B32] leading-tight line-clamp-1">{na.name}</span>
+                    <div className="flex items-center justify-between text-[10px] text-[#7B4D36] mt-1.5 font-mono">
+                      <span>{na.category}</span>
+                      <span>{na.distance_km ? `${na.distance_km} km` : ""}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nearby Local Food & Cafes */}
+          {place.nearby_food && place.nearby_food.length > 0 && (
+            <div className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#7B4D36] uppercase tracking-wider">
+                <UtensilsIcon className="w-3.5 h-3.5 text-[#B65E3C]" />
+                <span>आस-पास के कैफे व ढाबे • Nearby Cafés & Local Food</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {place.nearby_food.map((nf) => (
+                  <Link
+                    key={nf.id}
+                    href={`/explore/${resolvedSlug}?place=${encodeURIComponent(nf.slug)}`}
+                    onClick={onClose}
+                    className="p-2.5 rounded-xl bg-[#EFE5D2]/70 hover:bg-[#E5D5BA] border border-[#E5D5BA] transition-all text-xs flex flex-col justify-between"
+                  >
+                    <span className="font-serif font-bold text-[#173B32] leading-tight line-clamp-1">{nf.name}</span>
+                    <div className="flex items-center justify-between text-[10px] text-[#7B4D36] mt-1 font-mono">
+                      <span>{nf.category}</span>
+                      <span>{nf.distance_km ? `${nf.distance_km} km` : ""}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nearby Stays */}
+          {place.nearby_stays && place.nearby_stays.length > 0 && (
+            <div className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#173B32] uppercase tracking-wider">
+                <BedDouble className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>अनुशंसित आवास • Recommended Stays Nearby</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {place.nearby_stays.map((ns) => (
+                  <div
+                    key={ns.id}
+                    className="p-2.5 rounded-xl bg-[#EFE5D2]/70 border border-[#E5D5BA] text-xs flex flex-col justify-between"
+                  >
+                    <span className="font-serif font-bold text-[#173B32] leading-tight line-clamp-1">{ns.name}</span>
+                    <div className="flex items-center justify-between text-[10px] text-[#7B4D36] mt-1.5 font-mono">
+                      <span>{ns.price_per_night ? `₹${ns.price_per_night}/n` : "Verified Stay"}</span>
+                      <span>{ns.rating ? `★ ${ns.rating}` : ""}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -751,6 +962,24 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
               className="text-xs font-bold text-[#7B4D36] hover:text-[#173B32] uppercase tracking-wider px-2 cursor-pointer"
             >
               Close
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="p-2 rounded-xl border border-[#E5D5BA] bg-white hover:bg-[#FAF7F0] text-[#173B32] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Share Place Link"
+            >
+              {copiedShare ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-bold">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-[#7B4D36]" />
+                  <span>Share</span>
+                </>
+              )}
             </button>
             <button
               type="button"

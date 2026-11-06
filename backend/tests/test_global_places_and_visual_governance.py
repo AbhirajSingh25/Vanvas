@@ -20,11 +20,21 @@ def setup_db():
 
 def test_curated_live_separation():
     """Verify curated inventory and live discovery are architecturally separated."""
+    import math
+    def haversine_km(lat1, lon1, lat2, lon2):
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+        return 6371.0 * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
     db: Session = SessionLocal()
     kasol = db.query(Destination).filter(Destination.slug == "kasol").first()
     assert kasol is not None
-    curated_places = db.query(Place).filter(Place.destination_id == kasol.id).all()
-    assert len(curated_places) >= 4
+    curated_in_radius = [
+        p for p in db.query(Place).filter(Place.is_active == True).all()
+        if haversine_km(kasol.latitude, kasol.longitude, p.latitude, p.longitude) <= 25
+    ]
+    assert len(curated_in_radius) >= 4
     db.close()
 
     mock_live_discovered = [
@@ -55,15 +65,15 @@ def test_curated_live_separation():
         mock_get.return_value = [mock_live_discovered[1]] # only returns unique non-curated
 
         # 1. Normal nearby returns curated + unique live
-        res_all = client.get(f"/api/v1/places/nearby?lat={kasol.latitude}&lng={kasol.longitude}&radius_km=15&live_only=false")
+        res_all = client.get(f"/api/v1/places/nearby?lat={kasol.latitude}&lng={kasol.longitude}&radius_km=25&live_only=false")
         assert res_all.status_code == 200
         all_places = res_all.json()
-        assert len(all_places) == len(curated_places) + 1
+        assert len(all_places) == len(curated_in_radius) + 1
         all_names = [p["name"] for p in all_places]
         assert "Kasol Himalayan Trout Cafe" in all_names
 
         # 2. Live-only nearby returns strictly unique discovered places, excluding all curated places
-        res_live = client.get(f"/api/v1/places/nearby?lat={kasol.latitude}&lng={kasol.longitude}&radius_km=15&live_only=true")
+        res_live = client.get(f"/api/v1/places/nearby?lat={kasol.latitude}&lng={kasol.longitude}&radius_km=25&live_only=true")
         assert res_live.status_code == 200
         live_places = res_live.json()
         assert len(live_places) == 1

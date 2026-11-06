@@ -940,7 +940,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                     'closing_time': '18:00',
                     'description': 'The peaceful red sandstone garden tomb of Emperor Akbar’s Rajput queen '
                                    'Mariam-uz-Zamani, originally built by Sikandar Lodi in 1495.',
-                    'image_url': '/images/places/agra/akbar-tomb-sikandra.webp',
+                    'image_url': '/images/places/agra/mariams-tomb-sikandra.webp',
                     'is_hidden_gem': True,
                     'is_indoor': False,
                     'is_must_visit': False,
@@ -962,7 +962,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                     'closing_time': '21:00',
                     'description': 'A vibrant maze of medieval alleys behind Jama Masjid packed with artisan marble '
                                    'inlay carvers, gold zardozi embroiderers, and spice merchants.',
-                    'image_url': '/images/places/agra/panchhi-petha-store.webp',
+                    'image_url': '/images/places/agra/kinari-bazaar-crafts.webp',
                     'is_hidden_gem': False,
                     'is_indoor': False,
                     'is_must_visit': True,
@@ -984,7 +984,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                     'closing_time': '18:00',
                     'description': 'A 4 sq km wetland bird sanctuary and Keetham Lake housing over 165 species of '
                                    'migratory waterfowl and the Wildlife SOS sloth bear conservation centre.',
-                    'image_url': '/images/places/agra/mehtab-bagh.webp',
+                    'image_url': '/images/places/agra/soor-sarovar-lake.webp',
                     'is_hidden_gem': True,
                     'is_indoor': False,
                     'is_must_visit': False,
@@ -1006,7 +1006,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                     'closing_time': '18:30',
                     'description': 'A 70-hectare woodland reserve with elevated timber watchtowers offering secluded '
                                    'vistas of the Taj Mahal dome through native dhau trees.',
-                    'image_url': '/images/places/agra/taj-mahal.webp',
+                    'image_url': '/images/places/agra/taj-nature-walk-ridge.webp',
                     'is_hidden_gem': True,
                     'is_indoor': False,
                     'is_must_visit': False,
@@ -1028,7 +1028,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                     'closing_time': '18:00',
                     'description': 'The oldest surviving Mughal garden in India built by first emperor Babur in 1528, '
                                    'using three stepped water terraces fed by the Yamuna.',
-                    'image_url': '/images/places/agra/fatehpur-sikri.webp',
+                    'image_url': '/images/places/agra/ram-bagh-gardens.webp',
                     'is_hidden_gem': True,
                     'is_indoor': False,
                     'is_must_visit': False,
@@ -1050,7 +1050,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                     'closing_time': '22:30',
                     'description': 'A historic cantonment restaurant operating since the 1950s famous for crisp ghee '
                                    'roast dosas, idlis, and signature fresh ice cream sundaes.',
-                    'image_url': '/images/places/agra/shankar-mithai-bedmi.webp',
+                    'image_url': '/images/places/agra/dasaprakash-agra-cantt.webp',
                     'is_hidden_gem': False,
                     'is_indoor': True,
                     'is_must_visit': False,
@@ -1072,7 +1072,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                     'closing_time': '17:30',
                     'description': 'A rural settlement of the Qalandar community showcasing traditional mud huts, folk '
                                    'songs, and rustic craft life away from the highway.',
-                    'image_url': '/images/places/agra/fatehpur-sikri.webp',
+                    'image_url': '/images/places/agra/korai-rural-village.webp',
                     'is_hidden_gem': True,
                     'is_indoor': False,
                     'is_must_visit': False,
@@ -1273,7 +1273,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                               'closing_time': '19:30',
                               'description': 'An 1813 sacred step-reservoir behind the City Palace enclosed by twelve '
                                              'arched chhatris reflecting in emerald water beneath Bala Quila.',
-                              'image_url': '/images/places/alwar-siliserh/moosi-maharani-chhatri.webp',
+                              'image_url': '/images/places/alwar-siliserh/sagar-water-reservoir.webp',
                               'is_hidden_gem': False,
                               'is_indoor': False,
                               'is_must_visit': True,
@@ -1318,7 +1318,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                               'closing_time': '21:00',
                               'description': 'A revered Jain pilgrimage shrine established in 1956 following the '
                                              'miraculous subterranean discovery of the idol of Bhagwan Chandraprabhu.',
-                              'image_url': '/images/places/alwar-siliserh/alwar-city-palace.webp',
+                              'image_url': '/images/places/alwar-siliserh/tijara-jain-temple.webp',
                               'is_hidden_gem': True,
                               'is_indoor': True,
                               'is_must_visit': False,
@@ -1341,7 +1341,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                               'description': 'A scenic pilgrimage spot nestled between rocky hills where hot and cold '
                                              'natural sulphur water springs flow side-by-side under ancient palm '
                                              'trees.',
-                              'image_url': '/images/places/alwar-siliserh/siliserh-lake-palace.webp',
+                              'image_url': '/images/places/alwar-siliserh/talvriksha-hot-springs.webp',
                               'is_hidden_gem': True,
                               'is_indoor': False,
                               'is_must_visit': False,
@@ -1364,7 +1364,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                               'description': 'A sprawling 105-room royal palace built in 1918 by Maharaja Jai Singh '
                                              'designed in the silhouette of a grand ship overlooking a scenic lake '
                                              'reservoir.',
-                              'image_url': '/images/places/alwar-siliserh/bala-quila-alwar-fort.webp',
+                              'image_url': '/images/places/alwar-siliserh/vijay-mandir-palace.webp',
                               'is_hidden_gem': True,
                               'is_indoor': False,
                               'is_must_visit': False,
@@ -1386,7 +1386,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                               'closing_time': '18:00',
                               'description': 'An ancient stone temple located high in the Rajgarh hill range boasting '
                                              'ornate pillars, carved apsaras, and natural mountain breezes.',
-                              'image_url': '/images/places/alwar-siliserh/government-museum-alwar.webp',
+                              'image_url': '/images/places/alwar-siliserh/neelkanth-mahadev-alwar.webp',
                               'is_hidden_gem': True,
                               'is_indoor': False,
                               'is_must_visit': False,
@@ -1409,7 +1409,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                               'description': 'The historic circular roundabout pavilion built in 1937 to commemorate '
                                              'Lady Hope, surrounded by traditional bangle makers, silversmiths, and '
                                              'sweet shops.',
-                              'image_url': '/images/places/alwar-siliserh/baba-thakur-das-kalakand.webp',
+                              'image_url': '/images/places/alwar-siliserh/hope-circus-bazaar.webp',
                               'is_hidden_gem': False,
                               'is_indoor': False,
                               'is_must_visit': True,
@@ -1431,7 +1431,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                               'closing_time': '22:00',
                               'description': 'A narrow alley near Sarafa Bazaar lined with copper pans bubbling with '
                                              'fresh buffalo milk being turned into Alwar’s world-renowned fudge.',
-                              'image_url': '/images/places/alwar-siliserh/baba-thakur-das-kalakand.webp',
+                              'image_url': '/images/places/alwar-siliserh/kalakand-gali-food.webp',
                               'is_hidden_gem': False,
                               'is_indoor': False,
                               'is_must_visit': True,
@@ -1630,7 +1630,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                           'closing_time': '21:00',
                           'description': 'A 13-acre themed Japanese garden featuring traditional pagodas, Zen rock '
                                          'gardens, koi ponds, a meditation hut, and an illuminated underground tunnel.',
-                          'image_url': '/images/places/chandigarh/rose-garden-chandigarh.webp',
+                          'image_url': '/images/places/chandigarh/japanese-garden-sec31.webp',
                           'is_hidden_gem': True,
                           'is_indoor': False,
                           'is_must_visit': False,
@@ -1652,7 +1652,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                           'closing_time': '20:30',
                           'description': 'A 10-acre landscaped park in Sector 33 famous for illuminated musical '
                                          'fountains, annual chrysanthemum shows, and stepped flower terraces.',
-                          'image_url': '/images/places/chandigarh/rose-garden-chandigarh.webp',
+                          'image_url': '/images/places/chandigarh/terraced-garden-sec33.webp',
                           'is_hidden_gem': False,
                           'is_indoor': False,
                           'is_must_visit': False,
@@ -1674,7 +1674,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                           'closing_time': '16:30',
                           'description': 'Designed by Le Corbusier, housing an exceptional collection of ancient '
                                          'Gandhara sculptures, Pahari miniature paintings, and modern Indian art.',
-                          'image_url': '/images/places/chandigarh/capitol-complex-unesco.webp',
+                          'image_url': '/images/places/chandigarh/government-museum-sec10.webp',
                           'is_hidden_gem': False,
                           'is_indoor': True,
                           'is_must_visit': True,
@@ -1696,7 +1696,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                           'closing_time': '18:00',
                           'description': 'A 7-acre botanical conservatory holding over 3,500 species of rare, '
                                          'endangered desert cacti and succulents from across four continents.',
-                          'image_url': '/images/places/chandigarh/boulevard-cycling-trail.webp',
+                          'image_url': '/images/places/chandigarh/cactus-garden-panchkula.webp',
                           'is_hidden_gem': True,
                           'is_indoor': False,
                           'is_must_visit': False,
@@ -1718,7 +1718,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                           'closing_time': '17:30',
                           'description': 'A 28-meter tall rotating metal hand sculpture designed by Le Corbusier as '
                                          'the official symbol of Chandigarh: open to give and open to receive.',
-                          'image_url': '/images/places/chandigarh/capitol-complex-unesco.webp',
+                          'image_url': '/images/places/chandigarh/open-hand-monument.webp',
                           'is_hidden_gem': False,
                           'is_indoor': False,
                           'is_must_visit': True,
@@ -1740,7 +1740,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                           'closing_time': '21:30',
                           'description': 'A 100-acre 17th-century stepped terraced Mughal garden with central water '
                                          'canals, illuminated fountains, and Sheesh Mahal water pavilions.',
-                          'image_url': '/images/places/chandigarh/sukhna-lake-promenade.webp',
+                          'image_url': '/images/places/chandigarh/pinjore-yadavindra-gardens.webp',
                           'is_hidden_gem': False,
                           'is_indoor': False,
                           'is_must_visit': True,
@@ -1762,7 +1762,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                           'closing_time': '22:00',
                           'description': 'An iconic Chandigarh culinary institution operating since 1976 famed for '
                                          'puffed bhatures, pindi chole, and fresh rasmalai in rose syrup.',
-                          'image_url': '/images/places/chandigarh/sector-17-plaza.webp',
+                          'image_url': '/images/places/chandigarh/sindhi-sweets-sec17.webp',
                           'is_hidden_gem': False,
                           'is_indoor': True,
                           'is_must_visit': True,
@@ -1784,7 +1784,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                           'closing_time': '17:30',
                           'description': 'A thrilling 1.8 km cable car ropeway soaring 1,500 feet across a dramatic '
                                          'Shivalik mountain canyon connecting two mountain peaks.',
-                          'image_url': '/images/places/chandigarh/boulevard-cycling-trail.webp',
+                          'image_url': '/images/places/chandigarh/timber-trail-ropeway-base.webp',
                           'is_hidden_gem': False,
                           'is_indoor': False,
                           'is_must_visit': False,
@@ -1984,7 +1984,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                              'closing_time': '18:00',
                              'description': 'An outdoor adventure enclave set in the Aravalli valleys offering rock '
                                             'climbing, commando nets, obstacle trails, and night star-gazing.',
-                             'image_url': '/images/places/damdama-sohna/botanix-nature-resort-camp.webp',
+                             'image_url': '/images/places/damdama-sohna/camp-mustang-adventure.webp',
                              'is_hidden_gem': True,
                              'is_indoor': False,
                              'is_must_visit': False,
@@ -2006,7 +2006,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                              'closing_time': '18:30',
                              'description': 'A winding, elevated country drive along the rocky spine of the Aravallis '
                                             'passing rustic stone quarry pools and acacia scrub ridges.',
-                             'image_url': '/images/places/damdama-sohna/aravalli-bio-trails.webp',
+                             'image_url': '/images/places/damdama-sohna/badkhal-ridge-lake-drive.webp',
                              'is_hidden_gem': True,
                              'is_indoor': False,
                              'is_must_visit': False,
@@ -2028,7 +2028,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                              'closing_time': '17:30',
                              'description': 'A secluded blue-water stone quarry lake tucked behind the ridge, reached '
                                             'via a 3 km scrubland trek popular with adventure hikers.',
-                             'image_url': '/images/places/damdama-sohna/damdama-lake-boating.webp',
+                             'image_url': '/images/places/damdama-sohna/lost-lake-damdama-trail.webp',
                              'is_hidden_gem': True,
                              'is_indoor': False,
                              'is_must_visit': True,
@@ -2050,7 +2050,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                              'closing_time': '18:00',
                              'description': 'A 450-acre protected ecological park on the Aravalli range featuring '
                                             'herbal trails, bird hides, natural lakes, and serene meditation rocks.',
-                             'image_url': '/images/places/damdama-sohna/aravalli-bio-trails.webp',
+                             'image_url': '/images/places/damdama-sohna/bhondsi-eco-park.webp',
                              'is_hidden_gem': True,
                              'is_indoor': False,
                              'is_must_visit': False,
@@ -2072,7 +2072,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                              'closing_time': '18:30',
                              'description': 'Expansive undulating green fairways framed by the jagged rocky slopes of '
                                             'the Aravallis, offering morning fresh air walks.',
-                             'image_url': '/images/places/damdama-sohna/saras-lake-promenade.webp',
+                             'image_url': '/images/places/damdama-sohna/aravalli-golf-greens.webp',
                              'is_hidden_gem': False,
                              'is_indoor': False,
                              'is_must_visit': False,
@@ -2094,7 +2094,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                              'closing_time': '19:00',
                              'description': 'The legendary trail of the annual Vintage Car Rally that has traversed '
                                             'these hill roads since 1964, terminating at the hot springs plateau.',
-                             'image_url': '/images/places/damdama-sohna/sohna-hilltop-fort-ruins.webp',
+                             'image_url': '/images/places/damdama-sohna/sohna-car-rally-trail.webp',
                              'is_hidden_gem': True,
                              'is_indoor': False,
                              'is_must_visit': False,
@@ -2117,7 +2117,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                              'description': 'A virgin sacred grove protected for centuries by local Gujjar clans, '
                                             'representing the last surviving patch of original primary Aravalli '
                                             'forest.',
-                             'image_url': '/images/places/damdama-sohna/aravalli-bio-trails.webp',
+                             'image_url': '/images/places/damdama-sohna/leopold-aravalli-sanctuary.webp',
                              'is_hidden_gem': True,
                              'is_indoor': False,
                              'is_must_visit': True,
@@ -2139,7 +2139,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                              'closing_time': '20:00',
                              'description': 'A 22-acre botanical sanctuary featuring blooming medicinal herb '
                                             'collections, jogging tracks, and specialized butterfly habitats.',
-                             'image_url': '/images/places/damdama-sohna/saras-lake-promenade.webp',
+                             'image_url': '/images/places/damdama-sohna/tau-devi-lal-bio-park.webp',
                              'is_hidden_gem': False,
                              'is_indoor': False,
                              'is_must_visit': False,
@@ -2359,7 +2359,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '18:00',
                         'description': 'The unique 1814 war memorial erected by the British East India Company to '
                                        'honour their enemy Balbhadra Thapa and his brave Gurkha defenders.',
-                        'image_url': '/images/places/dehradun/forest-research-institute.webp',
+                        'image_url': '/images/places/dehradun/khalanga-war-memorial.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -2381,7 +2381,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '17:30',
                         'description': 'A secluded natural waterfall hidden in the hills near Kairwaan village reached '
                                        'by a rocky stream bed walk through dense oak and ferns.',
-                        'image_url': '/images/places/dehradun/sahastradhara-springs.webp',
+                        'image_url': '/images/places/dehradun/shikhar-fall-trail.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -2403,7 +2403,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '17:00',
                         'description': 'A forest reserve on the banks of the Song River featuring natural stream-fed '
                                        'swimming pools shaded by magnificent virgin sal tree forests.',
-                        'image_url': '/images/places/dehradun/malsi-deer-park.webp',
+                        'image_url': '/images/places/dehradun/lachhiwala-nature-park.webp',
                         'is_hidden_gem': False,
                         'is_indoor': False,
                         'is_must_visit': True,
@@ -2425,7 +2425,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '19:00',
                         'description': 'A picturesque mountain river valley flanked by limestone cliffs and rolling '
                                        'fields, ideal for river wading, birding, and paragliding flights.',
-                        'image_url': '/images/places/dehradun/robbers-cave.webp',
+                        'image_url': '/images/places/dehradun/maldevta-riverside-meadows.webp',
                         'is_hidden_gem': False,
                         'is_indoor': False,
                         'is_must_visit': True,
@@ -2447,7 +2447,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '22:00',
                         'description': 'Dehradun’s celebrated heritage sweet maker since 1950 famous for brown roasted '
                                        'mawa bal mithai coated with sugar balls, singori, and rasgullas.',
-                        'image_url': '/images/places/dehradun/elloras-bakery.webp',
+                        'image_url': '/images/places/dehradun/kumar-sweets-legend.webp',
                         'is_hidden_gem': False,
                         'is_indoor': True,
                         'is_must_visit': True,
@@ -2469,7 +2469,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '17:30',
                         'description': 'A monumental quartz rock inscribed in Brahmi script in Prakrit by Emperor '
                                        'Ashoka in 250 BCE outlining his edicts of non-violence and ethical conduct.',
-                        'image_url': '/images/places/dehradun/mindrolling-monastery.webp',
+                        'image_url': '/images/places/dehradun/kalsi-ashoka-rock-edict.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -2491,7 +2491,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '18:00',
                         'description': 'A scenic reservoir at the confluence of the Asan and Yamuna rivers, hosting '
                                        'over 53 species of migratory waterfowl including Brahminy ducks and pochards.',
-                        'image_url': '/images/places/dehradun/sahastradhara-springs.webp',
+                        'image_url': '/images/places/dehradun/asani-barrage-wetland.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -2690,7 +2690,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'description': 'The oldest surviving fort in the Himalayas built by the Katoch dynasty, '
                                           'featuring massive multi-tiered stone gateways, Jain shrines, and river '
                                           'gorge ramparts.',
-                           'image_url': '/images/places/dharamshala/norbulingka-institute.webp',
+                           'image_url': '/images/places/dharamshala/kangra-fort.webp',
                            'is_hidden_gem': False,
                            'is_indoor': False,
                            'is_must_visit': True,
@@ -2713,7 +2713,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'description': 'A renowned Tibetan monastery specializing in Tantric Buddhist meditation '
                                           'and deep throat-singing choral chanting, backed by the snowy Dhauladhar '
                                           'crest.',
-                           'image_url': '/images/places/dharamshala/tsuglagkhang-temple.webp',
+                           'image_url': '/images/places/dharamshala/gyuto-monastery.webp',
                            'is_hidden_gem': False,
                            'is_indoor': True,
                            'is_must_visit': True,
@@ -2781,7 +2781,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '19:00',
                            'description': 'A sacred small high-altitude lake ringed by ancient Himalayan deodar trees, '
                                           'revered for an annual September fair dedicated to Lord Shiva.',
-                           'image_url': '/images/places/dharamshala/st-john-wilderness.webp',
+                           'image_url': '/images/places/dharamshala/dal-lake-dharamshala.webp',
                            'is_hidden_gem': False,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -2804,7 +2804,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'description': 'A charming row of traditional morning Tibetan kitchens near the monastery '
                                           'preparing warm salted po cha (yak butter tea), steamed tingmo bread, and '
                                           'khapse.',
-                           'image_url': '/images/places/dharamshala/tibet-kitchen.webp',
+                           'image_url': '/images/places/dharamshala/tibetan-butter-tea.webp',
                            'is_hidden_gem': False,
                            'is_indoor': True,
                            'is_must_visit': True,
@@ -2826,7 +2826,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '18:00',
                            'description': 'The Himalayan Ellora: a complex of 15 monolithic rock-hewn temples carved '
                                           'out of a single sandstone outcrop with reflecting water pools.',
-                           'image_url': '/images/places/dharamshala/tsuglagkhang-temple.webp',
+                           'image_url': '/images/places/dharamshala/masroor-rock-temples.webp',
                            'is_hidden_gem': True,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -2848,7 +2848,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '18:00',
                            'description': 'A peaceful Tibetan refugee settlement and Drukpa Kagyu monastery renowned '
                                           'for intricate carpet weaving, woodblock printing, and sacred cham dances.',
-                           'image_url': '/images/places/dharamshala/dharamkot-village.webp',
+                           'image_url': '/images/places/dharamshala/tashi-jong-monastery.webp',
                            'is_hidden_gem': True,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -3070,7 +3070,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'description': 'A fresh spring-water lagoon tucked just meters from the crashing waves of Kalacha '
                                   'Beach, fed by natural mountain streams with gentle jungle walking paths leading to '
                                   'the sacred Banyan Tree.',
-                   'image_url': '/images/places/goa/ashwem-beach.webp',
+                   'image_url': '/images/places/goa/arambol-sweet-lake.webp',
                    'is_hidden_gem': True,
                    'is_indoor': False,
                    'is_must_visit': False,
@@ -3090,22 +3090,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'approx_cost': 0.0,
                    'category': 'Hidden Gems',
                    'closing_time': '23:59',
-                   'description': 'An idyllic river island reached by local ferry from Ribandar or Old Goa, completely '
-                                  'preserved from modern commercial tourism with sweeping emerald paddy fields and '
-                                  'historic baroque churches.',
-                   'image_url': '/images/places/goa/divar-island.webp',
+                   'description': 'Restored 1551 CE Portuguese bastion perched atop the Mandovi river mouth offering '
+                                  'panoramic views of Panaji and the Arabian Sea.preserved from modern commercial '
+                                  'tourism with sweeping emerald paddy fields and historic baroque churches.',
+                   'image_url': '/images/places/goa/reis-magos-fort.webp',
                    'is_hidden_gem': True,
                    'is_indoor': False,
                    'is_must_visit': False,
                    'latitude': 15.52,
                    'longitude': 73.91,
-                   'name': 'Divar Island Serene Paddy & Village Circuit',
+                   'name': 'Reis Magos Fort & Mandovi Estuary',
                    'opening_time': '00:00',
                    'price_level': 'Free',
                    'rating': 4.8,
                    'recommended_duration_mins': 150,
                    'review_count': 940,
-                   'slug': 'divar-island-goa',
+                   'slug': 'reis-magos-fort',
                    'tags': 'Island,Ferry,Slow Travel,Paddy Fields,Divar',
                    'why_vanvas_recommends': 'Rent a bicycle or light scooter and glide through sleepy villages where '
                                             'life moves to the slow rhythm of church bells and river tides.'},
@@ -3136,22 +3136,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'approx_cost': 450.0,
                    'category': 'Cafés & Bakery',
                    'closing_time': '22:30',
-                   'description': 'Set inside a lush Portuguese garden estate in Anjuna, this open-air lifestyle cafe '
-                                  'serves Mediterranean tahini bowls, freshly baked sourdough, artisanal coffee, and '
-                                  'smoothie bowls.',
-                   'image_url': '/images/places/goa/artjuna-cafe.webp',
+                   'description': 'Open-air bamboo dining terrace nestled in Anjuna paddies, celebrated for wood-fired '
+                                  'artisan sourdough pizzas and espresso.serves Mediterranean tahini bowls, freshly '
+                                  'baked sourdough, artisanal coffee, and smoothie bowls.',
+                   'image_url': '/images/places/goa/baba-au-rhum-cafe.webp',
                    'is_hidden_gem': False,
                    'is_indoor': False,
                    'is_must_visit': False,
                    'latitude': 15.584,
                    'longitude': 73.746,
-                   'name': 'Artjuna Garden Cafe & Lifestyle Sanctuary',
+                   'name': 'Baba Au Rhum French Bamboo Garden',
                    'opening_time': '07:30',
                    'price_level': '₹₹',
                    'rating': 4.8,
                    'recommended_duration_mins': 75,
                    'review_count': 2800,
-                   'slug': 'artjuna-garden-cafe',
+                   'slug': 'baba-au-rhum-cafe',
                    'tags': 'Garden Cafe,Sourdough,Tahini,Anjuna,Artjuna',
                    'why_vanvas_recommends': 'Shaded mango trees, open-air library, boutique jewelry craft store, and '
                                             'the favorite gathering spot for slow travelers and writers in North Goa.'},
@@ -3159,22 +3159,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'approx_cost': 250.0,
                    'category': 'Local Food',
                    'closing_time': '22:30',
-                   'description': 'An unassuming family restaurant in the boutique village of Assagao, celebrated '
-                                  'among locals for authentic Goan fish thalis, rava-fried kingfish, and spicy prawn '
-                                  'balchão.',
-                   'image_url': '/images/places/goa/vinayak-family-restaurant.webp',
+                   'description': 'Restored Portuguese heritage courtyard in Assagao serving authentic peninsular and '
+                                  'coastal specialties.among locals for authentic Goan fish thalis, rava-fried '
+                                  'kingfish, and spicy prawn balchão.',
+                   'image_url': '/images/places/goa/gunpowder-assagao.webp',
                    'is_hidden_gem': False,
                    'is_indoor': True,
                    'is_must_visit': False,
                    'latitude': 15.592,
                    'longitude': 73.774,
-                   'name': 'Vinayak Family Restaurant (Authentic Goan Thali)',
+                   'name': 'Gunpowder Assagao Heritage Peninsular Dining',
                    'opening_time': '12:30',
                    'price_level': '₹',
                    'rating': 4.8,
                    'recommended_duration_mins': 45,
                    'review_count': 3400,
-                   'slug': 'vinayak-restaurant-goa',
+                   'slug': 'gunpowder-assagao',
                    'tags': 'Fish Thali,Goan Food,Assagao,Local Food,Vinayak',
                    'why_vanvas_recommends': 'Pure, unpretentious, home-style Goan coastal cooking with fresh catches '
                                             'from the morning fish market.'},
@@ -3429,7 +3429,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'Built in 1726 by Jai Singh II to protect the Amber Fort complex, this rugged '
                                      "military fortress houses 'Jaivana', once the world's largest cannon on wheels, "
                                      'and extensive underground water harvesting reservoirs.',
-                      'image_url': '/images/places/jaipur/amber-fort.webp',
+                      'image_url': '/images/places/jaipur/jaigarh-fort.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -3452,7 +3452,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'A stunning 18th-century Rajput-style palace made of red sandstone, floating in '
                                      'the center of Man Sagar Lake with four submerged lower levels and a magnificent '
                                      'terrace garden.',
-                      'image_url': '/images/places/jaipur/hawa-mahal.webp',
+                      'image_url': '/images/places/jaipur/jal-mahal.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': True,
@@ -3475,7 +3475,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'An ancient prehistoric Hindu pilgrimage complex tucked inside a narrow mountain '
                                      'gorge, featuring natural freshwater springs feeding seven sacred stone bathing '
                                      'kunds.',
-                      'image_url': '/images/places/jaipur/panna-meena-kund.webp',
+                      'image_url': '/images/places/jaipur/galta-ji-temple.webp',
                       'is_hidden_gem': True,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -3499,7 +3499,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'The oldest museum in Rajasthan, housed in a breathtaking Indo-Saracenic building '
                                      'designed by Sir Samuel Swinton Jacob, exhibiting rare miniature paintings, '
                                      'carpets, metal crafts, and an Egyptian mummy.',
-                      'image_url': '/images/places/jaipur/city-palace-jaipur.webp',
+                      'image_url': '/images/places/jaipur/albert-hall-museum.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': False,
@@ -3522,7 +3522,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'A magnificent hand-painted monumental gateway celebrating the art, architectural '
                                      'history, and culture of every region of Rajasthan through vibrant hand-painted '
                                      'murals and carved pillars.',
-                      'image_url': '/images/places/jaipur/anokhi-museum.webp',
+                      'image_url': '/images/places/jaipur/patrika-gate.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -3544,7 +3544,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '22:00',
                       'description': "The undisputed home of Rajasthan's most famous Pyaaz Kachori (spiced onion "
                                      'pastry), fried crisp and served with sweet tamarind and spicy mint chutneys.',
-                      'image_url': '/images/places/jaipur/lmb-sweets.webp',
+                      'image_url': '/images/places/jaipur/rawat-mishthan-bhandar.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': False,
@@ -3566,7 +3566,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '21:00',
                       'description': 'A rooftop terrace cafe directly facing the intricate pink sandstone facade of '
                                      'Hawa Mahal, offering eye-level views of the 953 jharokha honeycomb windows.',
-                      'image_url': '/images/places/jaipur/tapri-central.webp',
+                      'image_url': '/images/places/jaipur/wind-view-cafe.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -3764,7 +3764,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '18:30',
                          'description': 'A striking desert ridge populated by carved golden sandstone cenotaphs of the '
                                         'Maharawals of Jaisalmer, framed against modern wind turbines.',
-                         'image_url': '/images/places/jaisalmer/jaisalmer-fort.webp',
+                         'image_url': '/images/places/jaisalmer/bada-bagh-chhatris.webp',
                          'is_hidden_gem': False,
                          'is_indoor': False,
                          'is_must_visit': True,
@@ -3786,7 +3786,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '22:00',
                          'description': 'A peaceful desert village 45 km south of Jaisalmer with pristine sand dunes '
                                         'untouched by commercial noise, mud huts, and traditional folk campfires.',
-                         'image_url': '/images/places/jaisalmer/sam-sand-dunes.webp',
+                         'image_url': '/images/places/jaisalmer/khuri-desert-sand-dunes.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -3808,7 +3808,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '20:00',
                          'description': 'A sacred desert temple 120 km northwest of Jaisalmer near the Pakistan '
                                         'border, celebrated for surviving hundreds of unexploded enemy bombs in 1965.',
-                         'image_url': '/images/places/jaisalmer/gadisar-lake.webp',
+                         'image_url': '/images/places/jaisalmer/tanot-mata-temple.webp',
                          'is_hidden_gem': False,
                          'is_indoor': False,
                          'is_must_visit': True,
@@ -3830,7 +3830,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '17:00',
                          'description': 'A 3,162 sq km fragile desert ecosystem sanctuary conserving the critically '
                                         'endangered Great Indian Bustard, desert foxes, and chinkara gazelles.',
-                         'image_url': '/images/places/jaisalmer/sam-sand-dunes.webp',
+                         'image_url': '/images/places/jaisalmer/desert-national-park-safari.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -3852,7 +3852,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '18:00',
                          'description': 'The 10th-century medieval capital of the Bhati Rajputs featuring yellow '
                                         'sandstone temples, ornate Torana arches, and a copper wish-fulfilling tree.',
-                         'image_url': '/images/places/jaisalmer/jain-temples-fort.webp',
+                         'image_url': '/images/places/jaisalmer/lodurva-jain-temple.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -3874,7 +3874,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '19:00',
                          'description': 'A cluster of golden sandstone cenotaphs dedicated to Sage Vyas (author of the '
                                         'Mahabharata) situated atop a hillock catching sunset over the fort.',
-                         'image_url': '/images/places/jaisalmer/patwon-ki-haveli.webp',
+                         'image_url': '/images/places/jaisalmer/vyas-chhatri-sunset-point.webp',
                          'is_hidden_gem': False,
                          'is_indoor': False,
                          'is_must_visit': True,
@@ -3896,7 +3896,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '22:00',
                          'description': 'A family-run heritage rooftop within the fort ramparts serving wood-fired '
                                         'baatis crushed in pure desi ghee, panchkuta, and ker sangri.',
-                         'image_url': '/images/places/jaisalmer/the-trio-restaurant.webp',
+                         'image_url': '/images/places/jaisalmer/surya-kishore-rooftop.webp',
                          'is_hidden_gem': False,
                          'is_indoor': True,
                          'is_must_visit': True,
@@ -3918,7 +3918,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '20:30',
                          'description': 'A treasure trove of Thar desert heritage housing ancient textiles, folk '
                                         'musical instruments, coins, and live evening Rajasthani puppet shows.',
-                         'image_url': '/images/places/jaisalmer/salim-singh-ki-haveli.webp',
+                         'image_url': '/images/places/jaisalmer/desert-cultural-centre-museum.webp',
                          'is_hidden_gem': False,
                          'is_indoor': True,
                          'is_must_visit': False,
@@ -4116,7 +4116,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                             'closing_time': '18:30',
                             'description': 'A tranquil mountain village enveloped by dense ban-oak and rhododendron '
                                            'forests, globally renowned for sightings of cheer pheasants and minivets.',
-                            'image_url': '/images/places/kainchi-dham/sattal-interconnected-lakes.webp',
+                            'image_url': '/images/places/kainchi-dham/pangot-birding-sanctuary.webp',
                             'is_hidden_gem': False,
                             'is_indoor': False,
                             'is_must_visit': True,
@@ -4138,7 +4138,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                             'closing_time': '19:30',
                             'description': 'A 350-year-old stone temple perched at 2,286m on the highest ridge in '
                                            'Kumaon, offering a sweeping 180-degree view of Trishul and Nanda Devi.',
-                            'image_url': '/images/places/kainchi-dham/neem-karoli-baba-ashram.webp',
+                            'image_url': '/images/places/kainchi-dham/mukteshwar-dham-shiva-temple.webp',
                             'is_hidden_gem': False,
                             'is_indoor': False,
                             'is_must_visit': True,
@@ -4160,7 +4160,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                             'closing_time': '18:30',
                             'description': 'A dramatic vertical rocky cliff behind Mukteshwar temple overlooking the '
                                            'valleys of Kumaon, renowned for rock climbing, zipline, and sunsets.',
-                            'image_url': '/images/places/kainchi-dham/bhimtal-island-lake.webp',
+                            'image_url': '/images/places/kainchi-dham/chauli-ki-jali-cliffs.webp',
                             'is_hidden_gem': False,
                             'is_indoor': False,
                             'is_must_visit': True,
@@ -4182,7 +4182,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                             'closing_time': '17:30',
                             'description': 'A gentle forested hike leading up to a serene monk hermitage through '
                                            'fragrant Himalayan pine woods, offering aerial views of Sattal lakes.',
-                            'image_url': '/images/places/kainchi-dham/sattal-interconnected-lakes.webp',
+                            'image_url': '/images/places/kainchi-dham/hidimba-parvat-trek.webp',
                             'is_hidden_gem': True,
                             'is_indoor': False,
                             'is_must_visit': False,
@@ -4204,7 +4204,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                             'closing_time': '17:00',
                             'description': 'A 265-acre sprawling government horticultural research garden cultivating '
                                            'over 30 varieties of apples, plums, and walnuts with views of Nanda Devi.',
-                            'image_url': '/images/places/kainchi-dham/bhowali-fruit-orchards.webp',
+                            'image_url': '/images/places/kainchi-dham/ranikhet-chaubatia-orchards.webp',
                             'is_hidden_gem': False,
                             'is_indoor': False,
                             'is_must_visit': False,
@@ -4227,7 +4227,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                             'description': 'An ancient snake deity shrine situated atop Karkotak hill, offering an '
                                            'aerial 360-degree bird’s-eye perspective over Bhimtal lake and surrounding '
                                            'ridges.',
-                            'image_url': '/images/places/kainchi-dham/golu-devta-ghorakhal.webp',
+                            'image_url': '/images/places/kainchi-dham/karkotak-nag-mandir.webp',
                             'is_hidden_gem': True,
                             'is_indoor': False,
                             'is_must_visit': False,
@@ -4250,7 +4250,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                             'description': 'A tranquil freshwater cove adjoined to Naukuchiatal that bursts into '
                                            'thousands of vibrant pink water lilies and lotus blooms during warmer '
                                            'months.',
-                            'image_url': '/images/places/kainchi-dham/naukuchiatal-lake.webp',
+                            'image_url': '/images/places/kainchi-dham/kamal-tal-lotus-lake.webp',
                             'is_hidden_gem': True,
                             'is_indoor': False,
                             'is_must_visit': False,
@@ -4272,7 +4272,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                             'closing_time': '20:30',
                             'description': 'A rustic wooden tea room on the Kainchi highway serving organic ginger '
                                            'green tea, apricot preserves, mountain honey pancakes, and bal mithai.',
-                            'image_url': '/images/places/kainchi-dham/subhash-dhaba-bhowali.webp',
+                            'image_url': '/images/places/kainchi-dham/kumaoni-heritage-cafe-bhowali.webp',
                             'is_hidden_gem': False,
                             'is_indoor': True,
                             'is_must_visit': True,
@@ -4470,7 +4470,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '18:30',
                      'description': 'A high alpine clearing at 2,960m at the end of a 12 km trek through Parvati '
                                     'valley, famous for natural hot thermal baths overlooking snow ridges.',
-                     'image_url': '/images/places/kasol/chalal-pine-trail.webp',
+                     'image_url': '/images/places/kasol/kheerganga-trail.webp',
                      'is_hidden_gem': False,
                      'is_indoor': False,
                      'is_must_visit': True,
@@ -4492,7 +4492,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '18:30',
                      'description': 'An ancient moss-covered deodar forest behind the traditional wooden village of '
                                     'Pulga, filled with fallen tree bridges, wild mushrooms, and wooden huts.',
-                     'image_url': '/images/places/kasol/chalal-pine-trail.webp',
+                     'image_url': '/images/places/kasol/pulga-fairy-forest.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': True,
@@ -4514,7 +4514,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '19:00',
                      'description': 'A vehicle-free mountain settlement situated on a sunny plateau surrounded by '
                                     'apple orchards, rustic wooden chalets, and views of Tosh river.',
-                     'image_url': '/images/places/kasol/tosh-village.webp',
+                     'image_url': '/images/places/kasol/kalga-village.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': True,
@@ -4536,7 +4536,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '18:00',
                      'description': 'The quietest of the trio of villages (Kalga, Pulga, Tulga) preserving classical '
                                     'Kathkuni dry-stone and timber architecture and slow pastoral life.',
-                     'image_url': '/images/places/kasol/tosh-village.webp',
+                     'image_url': '/images/places/kasol/tulga-hamlet.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': False,
@@ -4558,7 +4558,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '16:00',
                      'description': 'A steep 4-hour mountain trek from Chalal winding up 1,000 vertical meters through '
                                     'pine woods to an ancient isolated wooden village.',
-                     'image_url': '/images/places/kasol/chalal-pine-trail.webp',
+                     'image_url': '/images/places/kasol/rasol-trail.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': False,
@@ -4580,7 +4580,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '20:00',
                      'description': 'A hidden village just across the Parvati River from Kasol accessed by a swaying '
                                     'iron suspension bridge, with sandy river banks and quiet cafes.',
-                     'image_url': '/images/places/kasol/chalal-pine-trail.webp',
+                     'image_url': '/images/places/kasol/chojh-bridge.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': False,
@@ -4602,7 +4602,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '23:00',
                      'description': 'A legendary hilltop wooden cafe in Kasol requiring a short forest climb, known '
                                     'for floor seating, rock vinyl playlists, and Middle Eastern platters.',
-                     'image_url': '/images/places/kasol/evergreen-cafe.webp',
+                     'image_url': '/images/places/kasol/jim-morrison-cafe.webp',
                      'is_hidden_gem': False,
                      'is_indoor': True,
                      'is_must_visit': True,
@@ -4624,7 +4624,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '16:00',
                      'description': 'An alpine valley situated high above the Malana dam at 2,700m offering '
                                     'uninterrupted, jaw-dropping vistas of the Animal Pass and glacier peaks.',
-                     'image_url': '/images/places/kasol/malana-village-gate.webp',
+                     'image_url': '/images/places/kasol/waichin-valley.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': False,
@@ -4822,7 +4822,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '18:30',
                          'description': 'An ancient Shiva shrine 38 km from Lansdowne nestled within a dense virgin '
                                         'forest of thousand-year-old towering deodars and brass bells.',
-                         'image_url': '/images/places/lansdowne/st-johns-church-1936.webp',
+                         'image_url': '/images/places/lansdowne/tarkeshwar-mahadev-temple.webp',
                          'is_hidden_gem': False,
                          'is_indoor': False,
                          'is_must_visit': True,
@@ -4845,7 +4845,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'description': 'A Victorian stone chapel built in 1896 by Colonel A.H.B. Hume, beautifully '
                                         'preserved as an audio-visual museum documenting Lansdowne’s cantonment '
                                         'origins.',
-                         'image_url': '/images/places/lansdowne/st-johns-church-1936.webp',
+                         'image_url': '/images/places/lansdowne/st-marys-church-1896.webp',
                          'is_hidden_gem': True,
                          'is_indoor': True,
                          'is_must_visit': False,
@@ -4867,7 +4867,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '19:30',
                          'description': 'The oldest temple in Lansdowne where local shepherds once worshipped Shiva, '
                                         'serving as a peaceful meditation sanctuary for centuries of ascetics.',
-                         'image_url': '/images/places/lansdowne/garhwal-rifles-museum.webp',
+                         'image_url': '/images/places/lansdowne/kaleshwar-mahadev-temple.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -4889,7 +4889,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '19:00',
                          'description': 'A small hilltop shrine located past Tip-in-Top offering an unobstructed '
                                         'vantage point to watch sunsets dissolve into the lower Shivalik and plains.',
-                         'image_url': '/images/places/lansdowne/tip-in-top-viewpoint.webp',
+                         'image_url': '/images/places/lansdowne/santoshi-mata-temple-sunset.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -4911,7 +4911,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '18:00',
                          'description': 'A serene woodland hiking path through moss-covered oak trees where blue '
                                         'whistling thrushes, woodpeckers, and barking deer are frequently seen.',
-                         'image_url': '/images/places/lansdowne/hawaghar-pine-walk.webp',
+                         'image_url': '/images/places/lansdowne/deriyakhal-oak-forest-trail.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -4933,7 +4933,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '18:00',
                          'description': 'The ancient Vedic hermitage on the river Malini where sage Kanva raised '
                                         'Shakuntala and where Emperor Bharata (namesake of India) spent his childhood.',
-                         'image_url': '/images/places/lansdowne/bhulla-tal-lake.webp',
+                         'image_url': '/images/places/lansdowne/kanvashram-historic-sanctuary.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -4955,7 +4955,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '21:30',
                          'description': 'A cozy wooden eatery on Mall Road loved by generations of travellers for '
                                         'juicy steamed chicken and vegetable momos, thukpa, and adrak chai.',
-                         'image_url': '/images/places/lansdowne/lansdowne-tripund-cafe.webp',
+                         'image_url': '/images/places/lansdowne/mayur-cafe-mall-road.webp',
                          'is_hidden_gem': False,
                          'is_indoor': True,
                          'is_must_visit': True,
@@ -4977,7 +4977,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '21:00',
                          'description': 'A quaint 19th-century hill cantonment lane featuring wooden general stores, '
                                         'locally hand-knitted woolen caps, pine crafts, and bakeries.',
-                         'image_url': '/images/places/lansdowne/bhim-pakora-stones.webp',
+                         'image_url': '/images/places/lansdowne/sadar-bazaar-wooden-curios.webp',
                          'is_hidden_gem': False,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -5174,7 +5174,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'closing_time': '17:00',
                    'description': 'The world-famous gateway mountain pass connecting Leh to the Nubra and Shyok '
                                   'valleys, situated at an altitude of 5,359m (17,582 ft) amidst snow cornices.',
-                   'image_url': '/images/places/leh/hall-of-fame-leh.webp',
+                   'image_url': '/images/places/leh/khardung-la.webp',
                    'is_hidden_gem': False,
                    'is_indoor': False,
                    'is_must_visit': True,
@@ -5196,7 +5196,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'closing_time': '19:00',
                    'description': 'A surreal cold desert valley of white sand dunes surrounded by barren snow peaks, '
                                   'famous for the double-humped Bactrian camels of the ancient Silk Route.',
-                   'image_url': '/images/places/leh/gesmo-restaurant.webp',
+                   'image_url': '/images/places/leh/nubra-hunder-sand-dunes.webp',
                    'is_hidden_gem': False,
                    'is_indoor': False,
                    'is_must_visit': True,
@@ -5218,7 +5218,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'closing_time': '18:00',
                    'description': 'The largest, wealthiest, and most culturally prominent Drukpa Kagyu monastery in '
                                   'Ladakh, home to a world-class underground museum of ancient tantric thangkas.',
-                   'image_url': '/images/places/leh/lalas-art-cafe.webp',
+                   'image_url': '/images/places/leh/hemis-monastery.webp',
                    'is_hidden_gem': False,
                    'is_indoor': True,
                    'is_must_visit': False,
@@ -5238,21 +5238,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'approx_cost': 0.0,
                    'category': 'Nature & Trails',
                    'closing_time': '23:59',
-                   'description': 'The dramatic meeting point of two great rivers: the emerald-green Indus and the '
-                                  'rushing mud-tinted Zanskar, carving through sheer canyon walls.',
-                   'image_url': '/images/places/leh/hall-of-fame-leh.webp',
+                   'description': 'Famous optical illusion hill on the Leh-Kargil highway where stationary vehicles '
+                                  'appear to roll uphill.rushing mud-tinted Zanskar, carving through sheer canyon '
+                                  'walls.',
+                   'image_url': '/images/places/leh/magnetic-hill.webp',
                    'is_hidden_gem': False,
                    'is_indoor': False,
                    'is_must_visit': True,
                    'latitude': 34.165,
                    'longitude': 77.332,
-                   'name': 'Sangam (Indus & Zanskar River Confluence)',
+                   'name': 'Magnetic Hill Gravity Defying Ridge',
                    'opening_time': '00:00',
                    'price_level': 'Free',
                    'rating': 4.8,
                    'recommended_duration_mins': 45,
                    'review_count': 2400,
-                   'slug': 'sangam-indus-zanskar',
+                   'slug': 'magnetic-hill',
                    'tags': 'River Confluence,Sangam,Indus,Zanskar,Nature & Trails',
                    'why_vanvas_recommends': 'A visual spectacle of contrasting water currents and the launch site for '
                                             'Grade III white-water rafting runs into the Indus.'},
@@ -5260,22 +5261,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'approx_cost': 0.0,
                    'category': 'Must Visit',
                    'closing_time': '21:00',
-                   'description': 'A magnificent white-domed Buddhist chorten built in 1991 by Japanese monks to '
-                                  'promote world peace, perched atop a steep hill overlooking Leh town and Namgyal '
-                                  'Tsemo.',
-                   'image_url': '/images/places/leh/lalas-art-cafe.webp',
+                   'description': 'Historic mud and stone fortress built by General Zorawar Singh in 1836, overlooking '
+                                  'Old Leh town.promote world peace, perched atop a steep hill overlooking Leh town '
+                                  'and Namgyal Tsemo.',
+                   'image_url': '/images/places/leh/zorawar-fort.webp',
                    'is_hidden_gem': False,
                    'is_indoor': False,
                    'is_must_visit': True,
                    'latitude': 34.1725,
                    'longitude': 77.5794,
-                   'name': 'Shanti Stupa Panoramic Sunset Terrace',
+                   'name': 'General Zorawar Fort & Military Museum',
                    'opening_time': '05:00',
                    'price_level': 'Free',
                    'rating': 4.9,
                    'recommended_duration_mins': 60,
                    'review_count': 3800,
-                   'slug': 'shanti-stupa-leh',
+                   'slug': 'zorawar-fort',
                    'tags': 'Stupa,Peace,Sunset Viewpoint,Must Visit,Shanti Stupa',
                    'why_vanvas_recommends': 'The golden hour sunset over the Stok Kangri mountain range from the '
                                             'circular meditation terrace is an unforgettable Ladakh memory.'},
@@ -5285,19 +5286,19 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'closing_time': '22:00',
                    'description': "Leh's oldest bakery and traveler restaurant operating since 1989, legendary for "
                                   'hearty yak cheese pizzas, freshly baked apple crumble, and ginger lemon honey tea.',
-                   'image_url': '/images/places/leh/gesmo-restaurant.webp',
+                   'image_url': '/images/places/leh/lamayuru-moonland.webp',
                    'is_hidden_gem': False,
                    'is_indoor': True,
                    'is_must_visit': False,
                    'latitude': 34.1645,
                    'longitude': 77.585,
-                   'name': 'Gesmo Restaurant & German Bakery (Fort Road)',
+                   'name': 'Lamayuru Moonland & Ancient Monastery',
                    'opening_time': '07:30',
                    'price_level': '₹₹',
                    'rating': 4.8,
                    'recommended_duration_mins': 60,
                    'review_count': 2200,
-                   'slug': 'gesmo-restaurant-leh',
+                   'slug': 'lamayuru-moonland',
                    'tags': 'Bakery,Yak Cheese,Apple Crumble,Fort Road,Gesmo',
                    'why_vanvas_recommends': 'A welcoming gathering point on Fort Road where expedition climbers and '
                                             'backpackers swap acclimatization tips over warm pastries.'},
@@ -5305,10 +5306,10 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'approx_cost': 300.0,
                    'category': 'Cafés & Bakery',
                    'closing_time': '20:00',
-                   'description': 'Housed in a restored 19th-century mud-brick Ladakhi building beneath Leh Palace, '
-                                  'this artistic cafe features traditional timber beams, local photo exhibits, and '
-                                  'rooftop seating.',
-                   'image_url': '/images/places/leh/lalas-art-cafe.webp',
+                   'description': 'UNESCO-recognized ancient monastic complex on the banks of the Indus, celebrated '
+                                  'for preserved Kashmiri-style Buddhist wall frescoes.this artistic cafe features '
+                                  'traditional timber beams, local photo exhibits, and rooftop seating.',
+                   'image_url': '/images/places/leh/alchi-monastery.webp',
                    'is_hidden_gem': True,
                    'is_indoor': True,
                    'is_must_visit': False,
@@ -5320,7 +5321,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'rating': 4.8,
                    'recommended_duration_mins': 45,
                    'review_count': 920,
-                   'slug': 'lalas-art-cafe-leh',
+                   'slug': 'alchi-monastery',
                    'tags': 'Old Town,Art Cafe,Heritage Architecture,Coffee,Lalas',
                    'why_vanvas_recommends': 'Escape into the quiet alleys of Old Town Leh; enjoy artisanal coffee and '
                                             'khambir bread while admiring historic vernacular architecture.'},
@@ -5331,7 +5332,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                    'description': 'Designed by French architects using raw rammed-earth and black slate, this '
                                   'fine-dining sanctuary sits in a quiet apple garden with floor-to-ceiling glass '
                                   'looking toward Stok Kangri.',
-                   'image_url': '/images/places/leh/gesmo-restaurant.webp',
+                   'image_url': '/images/places/leh/bon-appetit-leh.webp',
                    'is_hidden_gem': True,
                    'is_indoor': True,
                    'is_must_visit': False,
@@ -5528,7 +5529,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'A magnificent 15th-century wood-and-stone castle built by Raja Sidh Singh, '
                                      'showcasing earthquake-resistant Kath-Kuni architecture with sweeping views of '
                                      'the Beas Valley.',
-                      'image_url': '/images/places/manali/old-manali-village.webp',
+                      'image_url': '/images/places/manali/naggar-castle.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': True,
@@ -5551,7 +5552,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'At an elevation of 3,978m (13,050 ft), Rohtang Pass connects the lush Kullu '
                                      'Valley to the stark arid mountains of Lahaul and Spiti, offering breathtaking '
                                      'panoramic vistas of glaciers and peaks.',
-                      'image_url': '/images/places/manali/solang-valley.webp',
+                      'image_url': '/images/places/manali/rohtang-pass.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': True,
@@ -5574,7 +5575,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'Passing through the 9.02 km Atal Tunnel brings you into the dramatic high-desert '
                                      'valley of Lahaul, where the spectacular Sissu Waterfall drops 50 meters into the '
                                      'Chandra River.',
-                      'image_url': '/images/places/manali/jogini-waterfall.webp',
+                      'image_url': '/images/places/manali/atal-tunnel-sissu.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': True,
@@ -5597,7 +5598,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'Perched on the top ridge of Old Manali, this ancient pagoda-style temple is '
                                      'believed to be the only temple dedicated to Sage Manu, who saved humanity from '
                                      'the mythological deluge.',
-                      'image_url': '/images/places/manali/hadimba-temple.webp',
+                      'image_url': '/images/places/manali/manu-temple.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': False,
@@ -5619,7 +5620,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '18:00',
                       'description': 'A quiet Buddhist village perched at 2,700m inhabited by the Khampa tribe, famous '
                                      'for winter igloo stays, bouldering, and the gateway to Hampta Pass.',
-                      'image_url': '/images/places/manali/solang-valley.webp',
+                      'image_url': '/images/places/manali/sethan-igloo-village.webp',
                       'is_hidden_gem': True,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -5641,7 +5642,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '18:30',
                       'description': 'A protected forested sanctuary along the rushing waters of the Manalsu and Beas '
                                      'rivers, with towering centuries-old deodars and natural pebble stone banks.',
-                      'image_url': '/images/places/manali/jogini-waterfall.webp',
+                      'image_url': '/images/places/manali/beas-river-park.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -5663,7 +5664,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '23:00',
                       'description': "Old Manali's iconic riverside lounge featuring a sunlit wooden deck over the "
                                      'rushing Manalsu river, craft beverages, grilled trout, and acoustic music.',
-                      'image_url': '/images/places/manali/cafe-1947.webp',
+                      'image_url': '/images/places/manali/lazy-dog-lounge.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': False,
@@ -5685,7 +5686,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '21:00',
                       'description': "Serving travelers since 2005, Dylan's is famous for fresh-roasted Arabica "
                                      'coffee, gooey homemade cinnamon rolls, and chocolate chip cookies.',
-                      'image_url': '/images/places/manali/drifters-cafe.webp',
+                      'image_url': '/images/places/manali/dylans-cafe.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': False,
@@ -5707,7 +5708,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '17:30',
                       'description': 'Picturesque high alpine meadows situated along the Rohtang road, surrounded by '
                                      'cascading streams and blooming rhododendron wildflowers in summer.',
-                      'image_url': '/images/places/manali/solang-valley.webp',
+                      'image_url': '/images/places/manali/gulaba-meadows.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -5729,7 +5730,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '22:30',
                       'description': 'A beloved Mall Road establishment serving steaming Tibetan thukpa, hand-folded '
                                      'momos, gyathuk, and local fruit wines for over three decades.',
-                      'image_url': '/images/places/manali/johnsons-cafe.webp',
+                      'image_url': '/images/places/manali/chopsticks-manali.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': False,
@@ -5931,7 +5932,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                  'description': 'A magnificent 450-foot long carved sandstone water palace and tiered '
                                                 'ghats built in 1764 by Maharaja Jawahar Singh in memory of Raja Suraj '
                                                 'Mal.',
-                                 'image_url': '/images/places/mathura-vrindavan/prem-mandir-vrindavan.webp',
+                                 'image_url': '/images/places/mathura-vrindavan/kusum-sarovar-govardhan.webp',
                                  'is_hidden_gem': False,
                                  'is_indoor': False,
                                  'is_must_visit': True,
@@ -5954,7 +5955,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                  'description': 'The sacred 21 km circumambulation route around Mount Govardhan, which '
                                                 'Lord Krishna lifted on his little finger to shelter the villagers '
                                                 'from Indra’s storm.',
-                                 'image_url': '/images/places/mathura-vrindavan/shri-krishna-janmabhoomi.webp',
+                                 'image_url': '/images/places/mathura-vrindavan/govardhan-hill-parikrama.webp',
                                  'is_hidden_gem': False,
                                  'is_indoor': False,
                                  'is_must_visit': True,
@@ -5977,7 +5978,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                  'description': 'A grand hilltop fortress-palace dedicated to Shri Radha perched atop '
                                                 'Bhanugarh peak, world-famous as the home of the exuberant Lathmar '
                                                 'Holi.',
-                                 'image_url': '/images/places/mathura-vrindavan/radha-raman-temple.webp',
+                                 'image_url': '/images/places/mathura-vrindavan/barsana-shri-radha-rani-temple.webp',
                                  'is_hidden_gem': False,
                                  'is_indoor': False,
                                  'is_must_visit': True,
@@ -6000,7 +6001,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                  'description': 'Two adjoining holy lakes considered the most sacred bathing water in '
                                                 'the Vaishnava tradition, created by Radha and Krishna during the '
                                                 'slaying of Aristasura.',
-                                 'image_url': '/images/places/mathura-vrindavan/vishram-ghat-aarti.webp',
+                                 'image_url': '/images/places/mathura-vrindavan/radha-kund-shyam-kund.webp',
                                  'is_hidden_gem': False,
                                  'is_indoor': False,
                                  'is_must_visit': True,
@@ -6022,7 +6023,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                  'closing_time': '19:30',
                                  'description': 'A massive red sandstone stepped water reservoir near Janmabhoomi '
                                                 'where Mother Devaki washed the baby garments of infant Krishna.',
-                                 'image_url': '/images/places/mathura-vrindavan/shri-krishna-janmabhoomi.webp',
+                                 'image_url': '/images/places/mathura-vrindavan/potra-kund-mathura.webp',
                                  'is_hidden_gem': True,
                                  'is_indoor': False,
                                  'is_must_visit': False,
@@ -6045,7 +6046,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                  'description': 'The most imposing ghat in Vrindavan featuring continuous arched stone '
                                                 'jharokhas and towers where Krishna bathed after subduing the horse '
                                                 'demon Keshi.',
-                                 'image_url': '/images/places/mathura-vrindavan/vishram-ghat-aarti.webp',
+                                 'image_url': '/images/places/mathura-vrindavan/keshi-ghat-yamuna-sunset.webp',
                                  'is_hidden_gem': False,
                                  'is_indoor': False,
                                  'is_must_visit': True,
@@ -6068,7 +6069,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                  'description': 'The monumental spiritual and architectural park featuring heritage '
                                                 'gardens, laser presentations, and traditional Braj heritage '
                                                 'pavilions.',
-                                 'image_url': '/images/places/mathura-vrindavan/prem-mandir-vrindavan.webp',
+                                 'image_url': '/images/places/mathura-vrindavan/chandrodaya-mandir-lookout.webp',
                                  'is_hidden_gem': False,
                                  'is_indoor': False,
                                  'is_must_visit': False,
@@ -6090,7 +6091,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                  'closing_time': '22:30',
                                  'description': 'A renowned traditional confectioner in Mathura preparing rich buffalo '
                                                 'milk khurchan, layered malai rabri, crisp kachoris, and badam milk.',
-                                 'image_url': '/images/places/mathura-vrindavan/brijwasi-mithai-wala.webp',
+                                 'image_url': '/images/places/mathura-vrindavan/brij-chappan-bhog-sweets.webp',
                                  'is_hidden_gem': False,
                                  'is_indoor': True,
                                  'is_must_visit': True,
@@ -6288,7 +6289,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '17:00',
                            'description': 'A 13,000-acre dense sal forest reserve bordering the Shivaliks where wild '
                                           'leopards, barking deer, sambar, and grey hornbills roam freely.',
-                           'image_url': '/images/places/morni-hills/herbal-nature-trail.webp',
+                           'image_url': '/images/places/morni-hills/kalesar-national-park-border.webp',
                            'is_hidden_gem': False,
                            'is_indoor': False,
                            'is_must_visit': True,
@@ -6310,7 +6311,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '18:00',
                            'description': 'A breezy walking trail along the narrow ridge connecting Morni to Mandhana '
                                           'village, offering views down into Himachal valleys on both sides.',
-                           'image_url': '/images/places/morni-hills/shivalik-viewpoint-crest.webp',
+                           'image_url': '/images/places/morni-hills/mandhana-pine-ridge-trail.webp',
                            'is_hidden_gem': True,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -6332,7 +6333,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '18:30',
                            'description': 'The larger of the twin Tikkar lakes revered as a sacred body of water, '
                                           'flanked by lush green reeds, water lilies, and wandering egrets.',
-                           'image_url': '/images/places/morni-hills/tikkar-taal-lakes.webp',
+                           'image_url': '/images/places/morni-hills/bada-taal-lotus-wetland.webp',
                            'is_hidden_gem': True,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -6354,7 +6355,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '18:00',
                            'description': 'A historic tribal hill shrine dedicated to the legendary protector deity of '
                                           'the Morni hills, overlooking the seasonal river ravine.',
-                           'image_url': '/images/places/morni-hills/morni-fort-heritage.webp',
+                           'image_url': '/images/places/morni-hills/bhurusingh-deota-temple.webp',
                            'is_hidden_gem': True,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -6377,7 +6378,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'description': 'A 2.5-million-year-old prehistoric mammalian fossil park showcasing '
                                           'life-size fiberglass reconstructions of sabre-toothed tigers and giant '
                                           'elephants.',
-                           'image_url': '/images/places/morni-hills/adventure-park-tikkar.webp',
+                           'image_url': '/images/places/morni-hills/shivalik-fossil-park-saketi.webp',
                            'is_hidden_gem': True,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -6399,7 +6400,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '18:00',
                            'description': 'An elevated wooden timber watchtower built among chir pine treetops '
                                           'offering aerial binoculars views over the Shivalik bird corridors.',
-                           'image_url': '/images/places/morni-hills/berwala-pheasant-breeding.webp',
+                           'image_url': '/images/places/morni-hills/morni-tree-house-lookout.webp',
                            'is_hidden_gem': True,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -6421,7 +6422,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '18:30',
                            'description': 'An eco-apiary and processing outlet producing raw, unprocessed wild floral '
                                           'honey gathered from Shivalik acacia and eucalyptus blossoms.',
-                           'image_url': '/images/places/morni-hills/mountain-quail-resort-dhaba.webp',
+                           'image_url': '/images/places/morni-hills/haryana-agro-honey-center.webp',
                            'is_hidden_gem': False,
                            'is_indoor': True,
                            'is_must_visit': False,
@@ -6443,7 +6444,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'closing_time': '18:30',
                            'description': 'Clean, broad stone riverbeds where the Ghaggar emerges from the hills, '
                                           'perfect for water wading, skipping stones, and quiet family picnics.',
-                           'image_url': '/images/places/morni-hills/gurudwara-nada-sahib.webp',
+                           'image_url': '/images/places/morni-hills/ghaggar-river-pebble-banks.webp',
                            'is_hidden_gem': False,
                            'is_indoor': False,
                            'is_must_visit': False,
@@ -6665,7 +6666,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'A natural heart-shaped gap between two mist-shrouded mountain ridges offering '
                                      'sweeping aerial views of lush green tea slopes and the fertile Bison Valley '
                                      'below.',
-                      'image_url': '/images/places/munnar/pothamedu-viewpoint.webp',
+                      'image_url': '/images/places/munnar/lockhart-gap.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -6688,7 +6689,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'Rising to 2,695m (8,842 ft), Anamudi is the highest peak in South India and the '
                                      "Western Ghats, resembling an elephant's forehead amidst montane shola-grassland "
                                      'ecosystems.',
-                      'image_url': '/images/places/munnar/eravikulam-national-park.webp',
+                      'image_url': '/images/places/munnar/anamudi-peak-base.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': True,
@@ -6711,7 +6712,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'The only natural sandalwood forest in Kerala, surrounded by ancient Neolithic '
                                      'burial dolmens (Muniyaras) dating back thousands of years and traditional '
                                      'sugarcane jaggery boiling sheds.',
-                      'image_url': '/images/places/munnar/tata-tea-museum.webp',
+                      'image_url': '/images/places/munnar/marayoor-sandalwood-forest.webp',
                       'is_hidden_gem': True,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -6734,7 +6735,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'description': 'A rain-shadow wildlife sanctuary in the Western Ghats known for the endangered '
                                      'Grizzled Giant Squirrel, wild elephants, Indian star tortoises, and guided '
                                      'riverbank eco-walks.',
-                      'image_url': '/images/places/munnar/top-station-viewpoint.webp',
+                      'image_url': '/images/places/munnar/chinnar-wildlife-sanctuary.webp',
                       'is_hidden_gem': True,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -6756,7 +6757,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '17:00',
                       'description': 'Originating from the Eravikulam plateau, this crystal-clear stream tumbles down '
                                      'granite boulders into a serene emerald pool framed by dense bamboo groves.',
-                      'image_url': '/images/places/munnar/attukad-waterfalls.webp',
+                      'image_url': '/images/places/munnar/lakkom-waterfalls.webp',
                       'is_hidden_gem': False,
                       'is_indoor': False,
                       'is_must_visit': False,
@@ -6778,7 +6779,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '22:00',
                       'description': 'The bustling morning hub of Munnar town serving crispy golden ghee roast dosas, '
                                      'fluffy idlis, piping hot sambar, and authentic South Indian filter coffee.',
-                      'image_url': '/images/places/munnar/rapsy-restaurant.webp',
+                      'image_url': '/images/places/munnar/saravana-bhavan-munnar.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': False,
@@ -6800,7 +6801,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                       'closing_time': '21:30',
                       'description': 'An artisanal tea tasting lounge showcasing single-estate orthodox teas, green '
                                      'tea infusions, fresh cardamom cookies, and banana fritters.',
-                      'image_url': '/images/places/munnar/tata-tea-museum.webp',
+                      'image_url': '/images/places/munnar/eastend-chai-bazaar.webp',
                       'is_hidden_gem': False,
                       'is_indoor': True,
                       'is_must_visit': False,
@@ -6998,7 +6999,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'closing_time': '23:59',
                        'description': 'A favourite local highway stop operating traditional earthen ovens that use '
                                       '100% pure desi ghee for their crispy stuffed gobi and paneer parathas.',
-                       'image_url': '/images/places/murthal/amrik-sukhdev-dhaba.webp',
+                       'image_url': '/images/places/murthal/shiva-dhaba-pure-desi-ghee.webp',
                        'is_hidden_gem': False,
                        'is_indoor': True,
                        'is_must_visit': True,
@@ -7020,7 +7021,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'closing_time': '23:00',
                        'description': 'An evening cultural destination showcasing Rajasthani folk dance, puppet shows, '
                                       'camel rides, pottery wheels, and authentic chaupal dining.',
-                       'image_url': '/images/places/murthal/haveli-murthal-punjabi.webp',
+                       'image_url': '/images/places/murthal/chokhi-dhani-sonipat-village.webp',
                        'is_hidden_gem': False,
                        'is_indoor': False,
                        'is_must_visit': True,
@@ -7042,7 +7043,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'closing_time': '18:00',
                        'description': 'A commemorative national memorial dedicated to Bhai Kushal Singh (Bhai Jaita '
                                       'Ji) who carried the severed sacred head of Guru Tegh Bahadur from Delhi.',
-                       'image_url': '/images/places/murthal/khwaja-khizr-tomb.webp',
+                       'image_url': '/images/places/murthal/badkhalsa-memorial-museum.webp',
                        'is_hidden_gem': True,
                        'is_indoor': True,
                        'is_must_visit': False,
@@ -7064,7 +7065,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'closing_time': '20:00',
                        'description': 'A state craft emporium showcasing traditional Haryanvi durrie weaving, '
                                       'terracotta pottery wheels, folk wooden toys, and brass artefacts.',
-                       'image_url': '/images/places/murthal/mannat-haveli-murthal.webp',
+                       'image_url': '/images/places/murthal/haryana-tourism-ethnic-hub.webp',
                        'is_hidden_gem': True,
                        'is_indoor': False,
                        'is_must_visit': False,
@@ -7108,7 +7109,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'closing_time': '02:00',
                        'description': 'Giant wide iron cauldrons continuously simmering saffron-spiced milk with '
                                       'almonds and pistachios, served boiling hot in earthenware kulhads.',
-                       'image_url': '/images/places/murthal/dhingra-sweets-milk-bar.webp',
+                       'image_url': '/images/places/murthal/sukhdev-farm-fresh-milk-counter.webp',
                        'is_hidden_gem': False,
                        'is_indoor': False,
                        'is_must_visit': True,
@@ -7130,7 +7131,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'closing_time': '18:30',
                        'description': 'A wide expanse of quiet sandy riverbeds 12 km east of Murthal where local '
                                       'wooden boats operate and watermelon farmers tend seasonal fields.',
-                       'image_url': '/images/places/murthal/amrik-sukhdev-dhaba.webp',
+                       'image_url': '/images/places/murthal/yamuna-river-ghats-sonipat.webp',
                        'is_hidden_gem': True,
                        'is_indoor': False,
                        'is_must_visit': False,
@@ -7152,7 +7153,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'closing_time': '21:00',
                        'description': 'Flaky, deep-fried urad dal kachoris crushed into bowls of hot, spicy asafoetida '
                                       'potato curry with sweet tamarind and green coriander chutneys.',
-                       'image_url': '/images/places/murthal/pahalwan-dhaba-murthal.webp',
+                       'image_url': '/images/places/murthal/pehalwan-kachori-subzi-corner.webp',
                        'is_hidden_gem': False,
                        'is_indoor': False,
                        'is_must_visit': True,
@@ -7218,7 +7219,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '21:00',
                          'description': "A quiet cluster of four historic stalls next to the 1839 St. Paul's Anglican "
                                         'Church serving ginger lemon honey tea and cheese omelettes.',
-                         'image_url': '/images/places/mussoorie/char-dukan-prakash-store.webp',
+                         'image_url': '/images/places/mussoorie/st-pauls-church.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -7351,7 +7352,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'description': 'A historic cluster of four quaint wooden shops in Landour operating since '
                                         'colonial times, famous for ginger lemon honey tea, cheese omelettes, and '
                                         'cinnamon pancakes under towering deodars.',
-                         'image_url': '/images/places/mussoorie/char-dukan-prakash-store.jpg',
+                         'image_url': '/images/places/mussoorie/char-dukan-prakash-store.webp',
                          'is_hidden_gem': False,
                          'is_indoor': False,
                          'is_must_visit': True,
@@ -7374,7 +7375,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'description': "An enchanting, secluded pine-and-oak hill trail made famous in Ruskin Bond's "
                                         'ghost stories, prone to lightning strikes and rich in rare Himalayan '
                                         'birdlife.',
-                         'image_url': '/images/places/mussoorie/clouds-end.webp',
+                         'image_url': '/images/places/mussoorie/pari-tibba-fairies-hill.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -7420,7 +7421,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'closing_time': '22:00',
                          'description': 'An 1840 stone manor with wooden beams, rustic stone fireplaces, and an '
                                         'elegant dining room serving colonial stews, mustard chicken, and herbal teas.',
-                         'image_url': '/images/places/mussoorie/char-dukan-prakash-store.jpg',
+                         'image_url': '/images/places/mussoorie/rokeby-manor.webp',
                          'is_hidden_gem': False,
                          'is_indoor': True,
                          'is_must_visit': False,
@@ -7465,7 +7466,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'description': 'A legendary family-run store operating since 1928, famous for authentic '
                                         'homemade peanut butter, cheddar cheese, gooseberry jams, and apricot '
                                         'preserves.',
-                         'image_url': '/images/places/mussoorie/char-dukan-prakash-store.jpg',
+                         'image_url': '/images/places/mussoorie/prakash-store.webp',
                          'is_hidden_gem': True,
                          'is_indoor': True,
                          'is_must_visit': False,
@@ -7508,21 +7509,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'approx_cost': 0.0,
                          'category': 'Adventure & Treks',
                          'closing_time': '18:00',
-                         'description': 'A lightning-struck pine hill south of Woodstock School famous in Ruskin Bond '
-                                        'ghost stories, featuring silver oak woods and silent ridge viewpoints.',
-                         'image_url': '/images/places/mussoorie/pari-tibba-fairies-hill.webp',
+                         'description': 'Vibrant colonial-era ridge promenade connecting Library and Picture Palace, '
+                                        'lined with cafes and wooden crafts.ghost stories, featuring silver oak woods '
+                                        'and silent ridge viewpoints.',
+                         'image_url': '/images/places/mussoorie/mall-road.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
                          'latitude': 30.4522,
                          'longitude': 78.0955,
-                         'name': 'Pari Tibba (Hill of the Fairies Pine Trail)',
+                         'name': 'The Mall Road Mussoorie and Kulri Bazaar',
                          'opening_time': '06:00',
                          'price_level': 'Free',
                          'rating': 4.7,
                          'recommended_duration_mins': 120,
                          'review_count': 1400,
-                         'slug': 'pari-tibba-fairies-hill',
+                         'slug': 'mussoorie-mall-road',
                          'tags': 'Pari Tibba,Ruskin Bond,Pine Trail,Forest,Ghost Stories',
                          'why_vanvas_recommends': 'The eerie, romantic charm of wandering among twisted oak branches '
                                                   'wrapped in mountain folklore.'}],
@@ -7706,7 +7708,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '18:00',
                         'description': 'A dramatic 19th-century Rajput palace fortress perched atop an Aravalli crest '
                                        'with sunken sunken amphitheatre gardens and royal pavilions.',
-                        'image_url': '/images/places/neemrana/neemrana-fort-palace.webp',
+                        'image_url': '/images/places/neemrana/tijara-fort-palace-heritage.webp',
                         'is_hidden_gem': False,
                         'is_indoor': False,
                         'is_must_visit': True,
@@ -7728,7 +7730,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '17:30',
                         'description': 'A rugged dry-canyon hike behind Neemrana village winding through red quartzite '
                                        'boulders and thorny dhau trees inhabited by peacocks and neelgai.',
-                        'image_url': '/images/places/neemrana/baba-khetanath-ashram.webp',
+                        'image_url': '/images/places/neemrana/aravalli-hidden-gorge-trek.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -7750,7 +7752,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '17:00',
                         'description': 'An ancient proto-historic copper smelting and mining archaeological site '
                                        'dating back to the Ganeshwar-Jodhpura cultural complex.',
-                        'image_url': '/images/places/neemrana/neemrana-stepwell-baori.webp',
+                        'image_url': '/images/places/neemrana/mothooka-ancient-copper-mines.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -7772,7 +7774,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '20:30',
                         'description': 'A lively artisan hamlet on the highway where hundreds of traditional potter '
                                        'families craft unglazed terracotta urns, planters, and wind chimes.',
-                        'image_url': '/images/places/neemrana/highway-king-dhaba.webp',
+                        'image_url': '/images/places/neemrana/kotputli-earthen-pottery-lane.webp',
                         'is_hidden_gem': False,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -7794,7 +7796,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '21:30',
                         'description': 'A tiered stone open-air theatre carved into the upper fortress battlements '
                                        'hosting evening Rajasthani Kalbelia dances and folk sufi music.',
-                        'image_url': '/images/places/neemrana/flying-fox-zipline.webp',
+                        'image_url': '/images/places/neemrana/neemrana-rooftop-amphitheatre.webp',
                         'is_hidden_gem': False,
                         'is_indoor': False,
                         'is_must_visit': True,
@@ -7816,7 +7818,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '18:30',
                         'description': 'A historic water stepwell and shaded stone colonnade near the village bazaar '
                                        'built to catch monsoon runoff from the surrounding rocky ridges.',
-                        'image_url': '/images/places/neemrana/neemrana-stepwell-baori.webp',
+                        'image_url': '/images/places/neemrana/shyam-sarovar-kund.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -7838,7 +7840,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '19:00',
                         'description': 'A revered shrine perched on a rocky crag reached by 250 white stone steps, '
                                        'commanding 360-degree vistas of the Neemrana valley and highway corridor.',
-                        'image_url': '/images/places/neemrana/kesroli-hill-fort.webp',
+                        'image_url': '/images/places/neemrana/karni-mata-shrine-neemrana.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -7860,7 +7862,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'closing_time': '18:30',
                         'description': 'A quiet country road winding between ancient Aravalli hillocks through '
                                        'blooming yellow mustard fields and traditional camel cart trails.',
-                        'image_url': '/images/places/neemrana/siliserh-en-route-neemrana.webp',
+                        'image_url': '/images/places/neemrana/old-alwar-road-sarson-fields.webp',
                         'is_hidden_gem': False,
                         'is_indoor': False,
                         'is_must_visit': True,
@@ -8056,22 +8058,23 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'approx_cost': 150.0,
                          'category': 'Must Visit',
                          'closing_time': '16:30',
-                         'description': 'The legendary 1968 retreat where The Beatles stayed and composed over 40 '
-                                        'songs, including the White Album. Features 84 stone meditation caves covered '
-                                        'in vibrant street art inside Rajaji Forest.',
-                         'image_url': '/images/places/rishikesh/beatles-ashram.webp',
+                         'description': 'Historic spiritual enclave on the eastern bank of the Ganga, established by '
+                                        'Swami Vishudhanand, renowned for tranquil meditation kutiyas and evening '
+                                        'chanting.songs, including the White Album. Features 84 stone meditation caves '
+                                        'covered in vibrant street art inside Rajaji Forest.',
+                         'image_url': '/images/places/rishikesh/swarg-ashram.webp',
                          'is_hidden_gem': False,
                          'is_indoor': False,
                          'is_must_visit': True,
                          'latitude': 30.114,
                          'longitude': 78.314,
-                         'name': 'Beatles Ashram (Chaurasi Kutia Maharishi Mahesh Yogi)',
+                         'name': 'Swarg Ashram & Sacred Kutiyas',
                          'opening_time': '09:00',
                          'price_level': '₹',
                          'rating': 4.8,
                          'recommended_duration_mins': 120,
                          'review_count': 3200,
-                         'slug': 'beatles-ashram-chaurasi-kutia',
+                         'slug': 'swarg-ashram-kutiyas',
                          'tags': 'Beatles,Meditation Caves,Rajaji Forest,Must Visit,Chaurasi Kutia',
                          'why_vanvas_recommends': 'Surreal historical sanctuary of meditation caves, peaceful forest '
                                                   'paths, and the Beatles Cathedral art hall.'},
@@ -8103,22 +8106,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'approx_cost': 0.0,
                          'category': 'Hidden Gems',
                          'closing_time': '17:00',
-                         'description': 'An ancient natural cave carved into solid rock on the silent white-sand bank '
-                                        'of the Ganga, where Sage Vashistha meditated. Inside is deep silence lit only '
-                                        'by a single oil lamp.',
-                         'image_url': '/images/places/rishikesh/vashistha-cave.webp',
+                         'description': 'Pristine white sand beach corridor along the jade-green waters of the upper '
+                                        'Ganga, flanked by steep Himalayan ridges.of the Ganga, where Sage Vashistha '
+                                        'meditated. Inside is deep silence lit only by a single oil lamp.',
+                         'image_url': '/images/places/rishikesh/kaudiyala-white-sands.webp',
                          'is_hidden_gem': True,
                          'is_indoor': True,
                          'is_must_visit': False,
                          'latitude': 30.138,
                          'longitude': 78.435,
-                         'name': 'Vashistha Cave (Vashistha Gufa Meditation Sanctuary)',
+                         'name': 'Kaudiyala White Sand River Bank',
                          'opening_time': '09:00',
                          'price_level': 'Free',
                          'rating': 4.9,
                          'recommended_duration_mins': 60,
                          'review_count': 1450,
-                         'slug': 'vashistha-cave-gufa',
+                         'slug': 'kaudiyala-white-sands',
                          'tags': 'Cave,Meditation,Sacred Gufa,White Sand,Vashistha',
                          'why_vanvas_recommends': 'Absolute silence and natural cool air; sit inside the cavern for '
                                                   'meditation, then step outside onto an untouched white sand river '
@@ -8130,7 +8133,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'description': 'A secluded limestone waterfall hidden inside deep Rajaji foothill forest, '
                                         'featuring natural calcified dripstone caves behind the cascading curtains of '
                                         'water.',
-                         'image_url': '/images/places/rishikesh/neer-garh-waterfall.webp',
+                         'image_url': '/images/places/rishikesh/patna-waterfall.webp',
                          'is_hidden_gem': True,
                          'is_indoor': False,
                          'is_must_visit': False,
@@ -8173,22 +8176,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                          'approx_cost': 300.0,
                          'category': 'Cafés & Bakery',
                          'closing_time': '22:00',
-                         'description': 'Overlooking the historic suspension bridge, this heritage bakery serves '
-                                        'freshly baked apple strudel, yak cheese croissants, French press coffee, and '
-                                        'herbal infusions.',
-                         'image_url': '/images/places/rishikesh/german-bakery-tapovan.webp',
+                         'description': 'Panoramic rooftop restaurant overlooking the river bend at Swarg Ashram, '
+                                        'serving regional Indian delicacies.freshly baked apple strudel, yak cheese '
+                                        'croissants, French press coffee, and herbal infusions.',
+                         'image_url': '/images/places/rishikesh/sitting-elephant-restaurant.webp',
                          'is_hidden_gem': False,
                          'is_indoor': True,
                          'is_must_visit': False,
                          'latitude': 30.126,
                          'longitude': 78.326,
-                         'name': 'Devraj Coffee Corner & German Bakery Tapovan',
+                         'name': 'The Sitting Elephant Rooftop Dining',
                          'opening_time': '07:30',
                          'price_level': '₹₹',
                          'rating': 4.8,
                          'recommended_duration_mins': 45,
                          'review_count': 2100,
-                         'slug': 'devraj-german-bakery',
+                         'slug': 'sitting-elephant-restaurant',
                          'tags': 'Bakery,Coffee,Strudel,River View,Tapovan',
                          'why_vanvas_recommends': 'Prime morning people-watching terrace where rafters glide past '
                                                   'below and morning river mists rise into the hills.'},
@@ -8422,7 +8425,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                 'description': 'Built in 1635 by Ajab Singh Rajawat, this dramatic fortified hill '
                                                'citadel overlooks a scenic green water dam surrounded by mythological '
                                                'tales.',
-                                'image_url': '/images/places/sariska-bhangarh/bhangarh-fort-ruins.webp',
+                                'image_url': '/images/places/sariska-bhangarh/ajabgarh-fort-and-dam.webp',
                                 'is_hidden_gem': True,
                                 'is_indoor': False,
                                 'is_must_visit': True,
@@ -8444,7 +8447,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                 'closing_time': '18:30',
                                 'description': 'A historic water weir on the Ruparel river flanked by dense jungle, '
                                                'attracting spotted chital, wild boars, and colourful pied kingfishers.',
-                                'image_url': '/images/places/sariska-bhangarh/pandupol-hanuman-temple.webp',
+                                'image_url': '/images/places/sariska-bhangarh/natni-ka-bara-weir.webp',
                                 'is_hidden_gem': True,
                                 'is_indoor': False,
                                 'is_must_visit': False,
@@ -8467,7 +8470,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                 'description': 'A sacred shrine on the edge of Sariska National Park where hot natural '
                                                'spring water emerges from under the temple, holy to the Sain '
                                                'community.',
-                                'image_url': '/images/places/sariska-bhangarh/bhartrihari-temple-kund.webp',
+                                'image_url': '/images/places/sariska-bhangarh/narayani-mata-sacred-spring.webp',
                                 'is_hidden_gem': True,
                                 'is_indoor': False,
                                 'is_must_visit': False,
@@ -8490,7 +8493,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                 'description': 'An ancient spring hermitage where Arjuna of the Mahabharata took '
                                                'shelter, celebrated for twin hot and cold natural sulphur water '
                                                'reservoirs.',
-                                'image_url': '/images/places/sariska-bhangarh/bhartrihari-temple-kund.webp',
+                                'image_url': '/images/places/sariska-bhangarh/talvriksha-holy-springs-sanctuary.webp',
                                 'is_hidden_gem': True,
                                 'is_indoor': False,
                                 'is_must_visit': False,
@@ -8512,7 +8515,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                 'closing_time': '17:30',
                                 'description': 'A historic 19th-century British hunting lodge situated on the primary '
                                                'tiger movement corridor within Sariska, shaded by massive teak trees.',
-                                'image_url': '/images/places/sariska-bhangarh/sariska-palace-courtyard.webp',
+                                'image_url': '/images/places/sariska-bhangarh/kushalgarh-forest-rest-house.webp',
                                 'is_hidden_gem': True,
                                 'is_indoor': False,
                                 'is_must_visit': False,
@@ -8535,7 +8538,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                 'description': 'A steep stone-stairway ascent up an isolated mountain spur near '
                                                'Sariska gate offering breathtaking views of the surrounding tiger '
                                                'reserve ravines.',
-                                'image_url': '/images/places/sariska-bhangarh/kankwari-fort.webp',
+                                'image_url': '/images/places/sariska-bhangarh/mansa-devi-hill-climb.webp',
                                 'is_hidden_gem': True,
                                 'is_indoor': False,
                                 'is_must_visit': False,
@@ -8558,7 +8561,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                 'description': 'A natural waterhole in the southern reaches of Sariska that serves as '
                                                'the premier drinking station for Bengal tigers, leopards, and herds of '
                                                'sambar.',
-                                'image_url': '/images/places/sariska-bhangarh/sariska-tiger-reserve.webp',
+                                'image_url': '/images/places/sariska-bhangarh/deoli-lake-waterhole.webp',
                                 'is_hidden_gem': False,
                                 'is_indoor': False,
                                 'is_must_visit': True,
@@ -8580,7 +8583,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                 'closing_time': '18:00',
                                 'description': 'A crumbling 18th-century palace fortification built atop a granite '
                                                'crag guarding the southern mountain pass connecting Alwar to Dausa.',
-                                'image_url': '/images/places/sariska-bhangarh/neelkanth-temple-sariska.webp',
+                                'image_url': '/images/places/sariska-bhangarh/rajgarh-fort-palace-ruins.webp',
                                 'is_hidden_gem': True,
                                 'is_indoor': False,
                                 'is_must_visit': False,
@@ -8779,7 +8782,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'description': 'Perched at an astonishing 4,145m (13,596 ft), Chicham Bridge spans a dramatic '
                                     '1,000-foot deep vertical canyon, connecting Kibber to the remote high village of '
                                     'Chicham.',
-                     'image_url': '/images/places/spiti/key-monastery.webp',
+                     'image_url': '/images/places/spiti/chicham-bridge.webp',
                      'is_hidden_gem': False,
                      'is_indoor': False,
                      'is_must_visit': True,
@@ -8802,7 +8805,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'description': 'One of the highest continuously inhabited settlements in the world at 4,270m, '
                                     'Kibber features traditional whitewashed stone houses and serves as the primary '
                                     'basecamp for rare Snow Leopard winter expeditions.',
-                     'image_url': '/images/places/spiti/komic-village.webp',
+                     'image_url': '/images/places/spiti/kibber-village.webp',
                      'is_hidden_gem': False,
                      'is_indoor': False,
                      'is_must_visit': False,
@@ -8849,7 +8852,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'description': 'A high-altitude glacial tarn at 4,270m reached via a steep 1.5-hour scree trail '
                                     'from Dhankar Monastery, offering crystal reflections of surrounding snow-dusted '
                                     'jagged crags.',
-                     'image_url': '/images/places/spiti/dhankar-monastery.webp',
+                     'image_url': '/images/places/spiti/dhankar-lake.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': False,
@@ -8873,7 +8876,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'description': 'At an elevation of 4,650m (15,256 ft), Tashigang is officially recognized as the '
                                     "world's highest voting station, offering staggering panoramic vistas toward the "
                                     'Tibetan border.',
-                     'image_url': '/images/places/spiti/langza-buddha.webp',
+                     'image_url': '/images/places/spiti/tashigang.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': False,
@@ -8896,7 +8899,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'description': 'Preserved inside a climate-controlled glass chamber sits the remarkably intact '
                                     '500-year-old natural mummy of Tibetan Buddhist monk Sangha Tenzin, preserved in a '
                                     'seated meditation posture with skin and teeth intact.',
-                     'image_url': '/images/places/spiti/dhankar-monastery.webp',
+                     'image_url': '/images/places/spiti/gue-monastery.webp',
                      'is_hidden_gem': True,
                      'is_indoor': True,
                      'is_must_visit': True,
@@ -8942,7 +8945,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'description': 'The dramatic high mountain pass connecting Lahaul and Spiti at 4,551m (14,931 '
                                     'ft), marked by 15 colorful Buddhist stupas and sweeping vistas of the Bara-Shigri '
                                     'glacier.',
-                     'image_url': '/images/places/spiti/chandra-taal.webp',
+                     'image_url': '/images/places/spiti/kunzum-pass.webp',
                      'is_hidden_gem': False,
                      'is_indoor': False,
                      'is_must_visit': True,
@@ -8964,7 +8967,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '20:00',
                      'description': 'Situated at 3,810m, Mudh is the last motorable settlement in Pin Valley, flanked '
                                     'by vertical red-and-ochre geological formations and barley fields.',
-                     'image_url': '/images/places/spiti/pin-valley-park.webp',
+                     'image_url': '/images/places/spiti/mudh-village.webp',
                      'is_hidden_gem': True,
                      'is_indoor': False,
                      'is_must_visit': False,
@@ -8987,7 +8990,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                      'closing_time': '21:30',
                      'description': 'A cozy wood-clad travelers retreat in central Kaza serving freshly brewed '
                                     'espresso, authentic woodfired crust pizzas, and organic sea buckthorn tea.',
-                     'image_url': '/images/places/spiti/cafe-deyzor.webp',
+                     'image_url': '/images/places/spiti/himalayan-cafe-spiti.webp',
                      'is_hidden_gem': False,
                      'is_indoor': True,
                      'is_must_visit': False,
@@ -9191,7 +9194,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                      'description': 'A 9.6 sq km high-altitude sanctuary at 2,600m dedicated to '
                                                     'breeding the endangered Himalayan musk deer amidst dense oak and '
                                                     'rhododendron forest.',
-                                     'image_url': '/images/places/tungnath-chandrashila/rohida-forest-trail.webp',
+                                     'image_url': '/images/places/tungnath-chandrashila/kanchula-korak-musk-deer-sanctuary.webp',
                                      'is_hidden_gem': False,
                                      'is_indoor': False,
                                      'is_must_visit': True,
@@ -9214,7 +9217,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                      'description': 'The historic wooden and stone village temple where the symbolic '
                                                     'deity of Lord Tungnath is brought down in a grand procession when '
                                                     'high cliffs are snowbound.',
-                                     'image_url': '/images/places/tungnath-chandrashila/ukhimath-omkareshwar.webp',
+                                     'image_url': '/images/places/tungnath-chandrashila/makku-math-winter-tungnath.webp',
                                      'is_hidden_gem': True,
                                      'is_indoor': False,
                                      'is_must_visit': False,
@@ -9237,7 +9240,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                      'description': 'A sweeping grassy alpine basin 4 km before Chopta surrounded by '
                                                     'deodar forest, popular for luxury eco-camps and unobstructed '
                                                     'star-gazing.',
-                                     'image_url': '/images/places/tungnath-chandrashila/chopta-meadows-bugyal.webp',
+                                     'image_url': '/images/places/tungnath-chandrashila/baniyakund-high-meadows.webp',
                                      'is_hidden_gem': False,
                                      'is_indoor': False,
                                      'is_must_visit': True,
@@ -9260,7 +9263,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                      'description': 'A sheer rocky ledge above Tungnath where King Ravana performed '
                                                     'rigorous penance to please Lord Shiva, commanding dizzying '
                                                     'vertical drops.',
-                                     'image_url': '/images/places/tungnath-chandrashila/chandrashila-summit.webp',
+                                     'image_url': '/images/places/tungnath-chandrashila/ravan-shila-cliff.webp',
                                      'is_hidden_gem': True,
                                      'is_indoor': False,
                                      'is_must_visit': True,
@@ -9283,7 +9286,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                      'description': 'The fifth and only Panch Kedar shrine open throughout all twelve '
                                                     'months, situated inside a natural cave where Shiva’s matted locks '
                                                     '(Jata) are worshipped.',
-                                     'image_url': '/images/places/tungnath-chandrashila/tungnath-temple.webp',
+                                     'image_url': '/images/places/tungnath-chandrashila/kalpeshwar-cave-temple.webp',
                                      'is_hidden_gem': True,
                                      'is_indoor': False,
                                      'is_must_visit': False,
@@ -9306,7 +9309,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                      'description': 'The second Panch Kedar trail base in Ransi village where the holy '
                                                     'naval (nabhi) of Lord Shiva is worshipped in a high alpine bowl '
                                                     'beneath Chaukhamba.',
-                                     'image_url': '/images/places/tungnath-chandrashila/deoria-tal-lake.webp',
+                                     'image_url': '/images/places/tungnath-chandrashila/madhyamaheshwar-base-circuit.webp',
                                      'is_hidden_gem': True,
                                      'is_indoor': False,
                                      'is_must_visit': False,
@@ -9329,7 +9332,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                      'description': 'A 5 km forest trek through dense oak woods to the cave shrine of '
                                                     'Devi Ansuya, featuring a majestic 30-meter waterfall tumbling '
                                                     'over limestone cliffs.',
-                                     'image_url': '/images/places/tungnath-chandrashila/dugalbitta-eco-glade.webp',
+                                     'image_url': '/images/places/tungnath-chandrashila/ansuya-devi-waterfall-trail.webp',
                                      'is_hidden_gem': True,
                                      'is_indoor': False,
                                      'is_must_visit': False,
@@ -9352,7 +9355,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                                      'description': 'Traditional summer dry-stone and slate-roof huts (chhani) built '
                                                     'by Garhwali shepherds who graze their sheep and goats on the high '
                                                     'bugyals.',
-                                     'image_url': '/images/places/tungnath-chandrashila/sari-village-base.webp',
+                                     'image_url': '/images/places/tungnath-chandrashila/chopta-shepherds-stone-huts.webp',
                                      'is_hidden_gem': True,
                                      'is_indoor': False,
                                      'is_must_visit': False,
@@ -9551,7 +9554,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'description': 'Constructed by Maharana Jagat Singh in 1651, this three-tiered stone temple '
                                       'rises 79 feet on carved pillars, showcasing extraordinary sculptures of '
                                       'horsemen, elephants, and celestial dancers.',
-                       'image_url': '/images/places/udaipur/bagore-ki-haveli.webp',
+                       'image_url': '/images/places/udaipur/jagdish-temple.webp',
                        'is_hidden_gem': False,
                        'is_indoor': True,
                        'is_must_visit': True,
@@ -9574,7 +9577,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'description': 'An artificial freshwater lake framed by the rolling Aravalli mountains on three '
                                       'sides, featuring three scenic islands including Nehru Park with its botanical '
                                       'gardens and solar observatory.',
-                       'image_url': '/images/places/udaipur/lake-pichola-boat-ride.webp',
+                       'image_url': '/images/places/udaipur/fateh-sagar-lake.webp',
                        'is_hidden_gem': False,
                        'is_indoor': False,
                        'is_must_visit': True,
@@ -9597,7 +9600,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'description': 'A hauntingly serene archaeological field containing over 250 carved marble and '
                                       'white sandstone chhatris (cenotaphs) built over 400 years to honor the '
                                       'Maharanas of Mewar.',
-                       'image_url': '/images/places/udaipur/saheliyon-ki-bari.webp',
+                       'image_url': '/images/places/udaipur/ahar-cenotaphs.webp',
                        'is_hidden_gem': True,
                        'is_indoor': False,
                        'is_must_visit': False,
@@ -9620,7 +9623,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'description': 'A 70-acre living ethnographic museum featuring 26 authentic regional village '
                                       'huts from Rajasthan, Gujarat, Goa, and Maharashtra, with master artisans '
                                       'demonstrating pottery, weaving, and folk crafts.',
-                       'image_url': '/images/places/udaipur/bagore-ki-haveli.webp',
+                       'image_url': '/images/places/udaipur/shilpgram-crafts.webp',
                        'is_hidden_gem': False,
                        'is_indoor': False,
                        'is_must_visit': False,
@@ -9643,7 +9646,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'description': 'A small picturesque lake adjacent to Lake Pichola with rock gardens, musical '
                                       'fountains, and an aerial ropeway gondola leading up to the Machla Magra hill '
                                       'temple.',
-                       'image_url': '/images/places/udaipur/ambrai-ghat.webp',
+                       'image_url': '/images/places/udaipur/doodh-talai-lake.webp',
                        'is_hidden_gem': False,
                        'is_indoor': False,
                        'is_must_visit': False,
@@ -9666,7 +9669,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'description': 'An open-air terrace restaurant right on the edge of Lake Pichola, offering '
                                       'private white-draped cabanas with unmatched panoramic vistas of the illuminated '
                                       'City Palace and Jag Mandir.',
-                       'image_url': '/images/places/udaipur/ambrai-ghat.webp',
+                       'image_url': '/images/places/udaipur/upre-rooftop-dining.webp',
                        'is_hidden_gem': False,
                        'is_indoor': False,
                        'is_must_visit': False,
@@ -9689,7 +9692,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'description': "Udaipur's pioneering dedicated health cafe reviving ancient Indian "
                                       'super-grains: bajra, ragi, and jowar thalis, gluten-free rotis, raw salads, and '
                                       'vegan curries.',
-                       'image_url': '/images/places/udaipur/jheels-ginger-coffee.webp',
+                       'image_url': '/images/places/udaipur/millets-of-mewar.webp',
                        'is_hidden_gem': True,
                        'is_indoor': True,
                        'is_must_visit': False,
@@ -9712,7 +9715,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                        'description': 'A legendary old city standing counter that has served golden, piping hot dal '
                                       'kachoris and crisp jalebis to morning templegoers and travelers since the '
                                       '1970s.',
-                       'image_url': '/images/places/udaipur/natraj-dining-hall.webp',
+                       'image_url': '/images/places/udaipur/paliwal-kachori.webp',
                        'is_hidden_gem': True,
                        'is_indoor': False,
                        'is_must_visit': False,
@@ -9908,22 +9911,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'approx_cost': 0.0,
                         'category': 'Culture & Heritage',
                         'closing_time': '23:59',
-                        'description': 'The primary cremation ghat of Hinduism where sacred funeral pyres have burned '
-                                       'without interruption for thousands of years, embodying Moksha (liberation from '
-                                       'the cycle of rebirth).',
-                        'image_url': '/images/places/varanasi/manikarnika-ghat.webp',
+                        'description': 'One of the two historic cremation ghats on the sacred Ganga, named after King '
+                                       'Harishchandra who served here.without interruption for thousands of years, '
+                                       'embodying Moksha (liberation from the cycle of rebirth).',
+                        'image_url': '/images/places/varanasi/harishchandra-ghat.webp',
                         'is_hidden_gem': False,
                         'is_indoor': False,
                         'is_must_visit': True,
                         'latitude': 25.3108,
                         'longitude': 83.0142,
-                        'name': 'Manikarnika Ghat (The Sacred Mahashmashana)',
+                        'name': 'Harishchandra Ghat & Silent Sacred Pyres',
                         'opening_time': '00:00',
                         'price_level': 'Free',
                         'rating': 4.8,
                         'recommended_duration_mins': 60,
                         'review_count': 3100,
-                        'slug': 'manikarnika-ghat-kashi',
+                        'slug': 'harishchandra-ghat',
                         'tags': 'Moksha,Sacred Ghat,Heritage,Philosophy,Manikarnika',
                         'why_vanvas_recommends': 'A humbling, deeply philosophical encounter with the impermanence of '
                                                  'mortal life; maintain silence and respectful distance without '
@@ -9935,7 +9938,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'description': 'A quiet, architecturally fascinating ghat featuring the Ratneshwar Mahadev '
                                        'Temple, which tilted dramatically 9 degrees into the Ganga during construction '
                                        'around 1830 and sits partially submerged in the river.',
-                        'image_url': '/images/places/varanasi/assi-ghat.webp',
+                        'image_url': '/images/places/varanasi/scindia-ghat-leaning-temple.webp',
                         'is_hidden_gem': True,
                         'is_indoor': False,
                         'is_must_visit': False,
@@ -9955,22 +9958,23 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'approx_cost': 50.0,
                         'category': 'Culture & Heritage',
                         'closing_time': '17:00',
-                        'description': 'An 18th-century cream-colored Chunar sandstone fortress residence of the Kashi '
-                                       'Naresh (Maharaja of Banaras), housing a vintage museum of royal palanquins, '
-                                       'ivory carvings, and astronomical clocks.',
-                        'image_url': '/images/places/varanasi/ramnagar-fort.webp',
+                        'description': 'Prestigious museum inside Banaras Hindu University campus housing rare '
+                                       '12th-century sculptures and miniature paintings.Naresh (Maharaja of Banaras), '
+                                       'housing a vintage museum of royal palanquins, ivory carvings, and astronomical '
+                                       'clocks.',
+                        'image_url': '/images/places/varanasi/bharat-kala-bhavan.webp',
                         'is_hidden_gem': False,
                         'is_indoor': True,
                         'is_must_visit': False,
                         'latitude': 25.267,
                         'longitude': 83.025,
-                        'name': 'Ramnagar Fort across the Sacred Ganga',
+                        'name': 'Bharat Kala Bhavan Archeological Museum',
                         'opening_time': '10:00',
                         'price_level': '₹',
                         'rating': 4.7,
                         'recommended_duration_mins': 90,
                         'review_count': 2100,
-                        'slug': 'ramnagar-fort-museum',
+                        'slug': 'bharat-kala-bhavan',
                         'tags': 'Fort,Museum,Royalty,Chunar Sandstone,Ramnagar',
                         'why_vanvas_recommends': 'Crossing the Ganga pontoon bridge to the fort offers quiet river '
                                                  'perspectives and the famous Ramnagar lassi served in terracotta '
@@ -9979,22 +9983,22 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'approx_cost': 100.0,
                         'category': 'Local Food',
                         'closing_time': '22:00',
-                        'description': 'A world-famous tiny blue-walled shop in a narrow alley churn-mixing over 70 '
-                                       'varieties of thick creamy curd lassi topped with fresh pomegranate, mango, dry '
-                                       'fruits, and thick rabri.',
-                        'image_url': '/images/places/varanasi/blue-lassi-shop.webp',
+                        'description': 'Legendary street food stall in Godowlia known for authentic Banarasi Tamatar '
+                                       'Chaat served in clay purwas.varieties of thick creamy curd lassi topped with '
+                                       'fresh pomegranate, mango, dry fruits, and thick rabri.',
+                        'image_url': '/images/places/varanasi/deena-chaat-bhandar.webp',
                         'is_hidden_gem': False,
                         'is_indoor': True,
                         'is_must_visit': False,
                         'latitude': 25.3115,
                         'longitude': 83.013,
-                        'name': 'Blue Lassi Shop (Historic 1925 Hand-Churned Lassi)',
+                        'name': 'Deena Chaat Bhandar (Tamatar Chaat & Gulab Jamun)',
                         'opening_time': '08:00',
                         'price_level': '₹',
                         'rating': 4.8,
                         'recommended_duration_mins': 30,
                         'review_count': 3800,
-                        'slug': 'blue-lassi-shop-kashi',
+                        'slug': 'deena-chaat-bhandar',
                         'tags': 'Lassi,Kulhad,Street Food,Historic,Blue Lassi',
                         'why_vanvas_recommends': 'Hand-churned with traditional wooden madhani and served in '
                                                  'earthenware kulhads, walls papered with passport photos of travelers '
@@ -10006,7 +10010,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                         'description': "Varanasi's most celebrated chaat house, famous for its signature Tamatar Chaat "
                                        '(pureed spiced tomatoes and mawa served bubbling hot in kulhad), palak patta '
                                        'chaat, and dahi bhallas.',
-                        'image_url': '/images/places/varanasi/kashi-tea-stall.webp',
+                        'image_url': '/images/places/varanasi/kashi-chat-bhandar.webp',
                         'is_hidden_gem': False,
                         'is_indoor': True,
                         'is_must_visit': False,
@@ -11403,7 +11407,7 @@ ADDITIONAL_HOTELS_BY_DEST = {   'agra': [   {   'address': 'Taj East Gate Road, 
                         'check_in_time': '02:00 PM',
                         'check_out_time': '12:00 PM',
                         'hotel_style': '18th-Century Ghat Palace',
-                        'image_url': '/images/places/varanasi/stays/brijrama-palace-heritage-grand.webp',
+                        'image_url': '/images/places/varanasi/stays/brijrama-palace.webp',
                         'latitude': 25.305,
                         'longitude': 83.011,
                         'name': 'BrijRama Palace Heritage Grand',
