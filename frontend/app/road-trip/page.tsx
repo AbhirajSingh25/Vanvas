@@ -48,8 +48,10 @@ function RoadTripCockpit() {
 
   // Progressive Step State: 1 to 7, plus Review (8) & Result View
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [origin, setOrigin] = useState<string>("Delhi");
-  const [destination, setDestination] = useState<string>("Manali");
+  const urlOrigin = searchParams?.get("origin") || "";
+  const urlDest = searchParams?.get("dest") || searchParams?.get("destination") || "";
+  const [origin, setOrigin] = useState<string>(urlOrigin || "Delhi");
+  const [destination, setDestination] = useState<string>(urlDest || "Manali");
   const [startDate, setStartDate] = useState<string>(() => {
     const today = new Date();
     const day = today.getDay();

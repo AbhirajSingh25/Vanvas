@@ -197,3 +197,89 @@ def test_newly_generated_authentic_artwork_assets_exist():
         assert os.path.exists(full_path), f"Asset {rel_path} must exist on disk"
         size = os.path.getsize(full_path)
         assert size > 100000, f"Asset {rel_path} size ({size} bytes) must be > 100KB"
+
+
+def test_spiti_vehicle_and_stay_image_separation():
+    """Verify Spiti vehicles and stays have distinct high-res assets with zero hash collision."""
+    spiti_vehicle_assets = [
+        "images/vehicles/himalayan_450.webp",
+        "images/vehicles/thar_4x4.webp",
+        "images/vehicles/classic_350.webp",
+        "images/vehicles/spiti_arid_adventure_bike.webp",
+    ]
+    spiti_stay_assets = [
+        "images/places/spiti/stays/hotel-deyzor-kaza.webp",
+        "images/places/spiti/stays/spiti-valley-eco-lodge.webp",
+        "images/places/spiti/stays/dekit-norbu-homestay-kaza.webp",
+        "images/places/spiti/stays/zostel-spiti-kaza.webp",
+        "images/places/spiti/categories/stay.webp",
+    ]
+
+    all_assets = spiti_vehicle_assets + spiti_stay_assets
+    hashes = {}
+    for rel_path in all_assets:
+        full_path = os.path.join(FRONTEND_PUBLIC, rel_path)
+        assert os.path.exists(full_path), f"Asset {rel_path} must exist"
+        size = os.path.getsize(full_path)
+        assert size > 100000, f"Asset {rel_path} must be > 100KB, got {size}"
+        with open(full_path, "rb") as f:
+            h = hashlib.sha256(f.read()).hexdigest()
+        assert h not in hashes, f"Duplicate asset collision between {rel_path} and {hashes.get(h)}"
+        hashes[h] = rel_path
+
+
+def test_spiti_road_trip_corridor_integrity():
+    """Verify Delhi-to-Spiti corridor does not drift to Manali corridor."""
+    from app.services.road_trip_service import CORRIDOR_WAYPOINTS, INDIAN_CITIES_COORDS
+    assert "delhi-spiti" in CORRIDOR_WAYPOINTS, "delhi-spiti must be an explicit corridor"
+    assert "spiti valley" in INDIAN_CITIES_COORDS or "spiti" in INDIAN_CITIES_COORDS
+    assert "kaza" in INDIAN_CITIES_COORDS
+
+    spiti_stops = [stop[0] for stop in CORRIDOR_WAYPOINTS["delhi-spiti"]]
+    assert any("Kaza" in s for s in spiti_stops), "Kaza must be in Spiti corridor waypoints"
+    assert any("Tabo" in s for s in spiti_stops), "Tabo must be in Spiti corridor waypoints"
+
+
+def test_search_dropdown_accessibility_and_overflow():
+    """Verify Plan wizard and Compact wizard do not clip search dropdowns and include keyboard nav."""
+    plan_path = os.path.join(FRONTEND_APP, "plan", "page.tsx")
+    compact_path = os.path.join(FRONTEND_COMPONENTS, "plan", "CompactPlanWizard.tsx")
+
+    with open(plan_path, "r", encoding="utf-8") as f:
+        plan_content = f.read()
+    with open(compact_path, "r", encoding="utf-8") as f:
+        compact_content = f.read()
+
+    # Outer container must be overflow-visible
+    assert "overflow-visible" in plan_content, "Plan wizard container must use overflow-visible"
+    assert "overflow-visible" in compact_content, "Compact wizard container must use overflow-visible"
+
+    # Both must have keyboard navigation (ArrowDown, ArrowUp, Enter, Escape)
+    for kw in ['ArrowDown', 'ArrowUp', 'Escape', 'listbox', 'option']:
+        assert kw in plan_content, f"Plan wizard missing keyboard/a11y token: {kw}"
+        assert kw in compact_content, f"Compact wizard missing keyboard/a11y token: {kw}"
+
+
+def test_spiti_motorcycle_gateway_guidance():
+    """Verify Spiti motorcycle guidance and gateway hubs in plan and explore."""
+    plan_path = os.path.join(FRONTEND_APP, "plan", "page.tsx")
+    with open(plan_path, "r", encoding="utf-8") as f:
+        plan_content = f.read()
+
+    assert "Spiti Motorcycle Logistics — Gateway Required" in plan_content
+    assert "Kaza has no local commercial motorcycle rental depots" in plan_content
+    assert "Manali Hub" in plan_content
+    assert "Shimla Hub" in plan_content
+    assert "Chandigarh Hub" in plan_content
+
+
+def test_dark_mode_contrast_tokens():
+    """Verify globals.css contains WCAG AA compliant dark mode contrast tokens."""
+    css_path = os.path.join(FRONTEND_APP, "globals.css")
+    with open(css_path, "r", encoding="utf-8") as f:
+        css_content = f.read()
+
+    assert "#244738" in css_content, "Selected chip dark mode background #244738 required"
+    assert "#16241E" in css_content, "Dark mode card/dropdown background #16241E required"
+    assert "#FAF7F0" in css_content, "High contrast text token #FAF7F0 required"
+    assert "#ECEAE4" in css_content, "Readable body text token #ECEAE4 required"

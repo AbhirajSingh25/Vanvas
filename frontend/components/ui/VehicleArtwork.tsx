@@ -452,12 +452,17 @@ const DESTINATION_VEHICLE_REGISTRY: Record<
   // Spiti
   "spiti": {
     adventure: {
-      src: "/images/vehicles/spiti_arid_adventure_bike.webp",
+      src: "/images/vehicles/himalayan_450.webp",
       label: "Royal Enfield Himalayan 450 High Pass Tourer",
       category: "adventure_motorcycle",
     },
+    car: {
+      src: "/images/vehicles/thar_4x4.webp",
+      label: "Mahindra Thar 4x4 Expedition Hardtop",
+      category: "car",
+    },
     default: {
-      src: "/images/vehicles/spiti_arid_adventure_bike.webp",
+      src: "/images/vehicles/himalayan_450.webp",
       label: "Royal Enfield Himalayan 450 High Pass Tourer",
       category: "adventure_motorcycle",
     },

@@ -171,6 +171,19 @@ export const CompactPlanWizard: React.FC<CompactPlanWizardProps> = ({
     currentStep <= 2 ? 1 : currentStep === 3 ? 2 : currentStep <= 5 ? 3 : currentStep === 6 ? 4 : 5;
 
   const [expandedOptionId, setExpandedOptionId] = useState<string | null>(null);
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const [searchActiveIndex, setSearchActiveIndex] = useState(-1);
+  const searchDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const goToCompactPhase = (phase: number, dir: "next" | "prev" = "next") => {
     const targetStep = phase === 1 ? 1 : phase === 2 ? 3 : phase === 3 ? 4 : phase === 4 ? 6 : 7;
@@ -187,7 +200,7 @@ export const CompactPlanWizard: React.FC<CompactPlanWizardProps> = ({
   const destVisual = resolveDestinationAsset(selectedDestObject?.slug || selectedDestId);
 
   return (
-    <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 p-4 sm:p-6">
+    <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl shadow-xl relative overflow-visible transition-all duration-300 p-4 sm:p-6">
       {/* Top 5-Phase Stepper & Navigation Header */}
       <div className="border-b border-[#E5D5BA] pb-3.5 mb-5 space-y-2.5">
         <div className="flex items-center justify-between">
@@ -344,42 +357,92 @@ export const CompactPlanWizard: React.FC<CompactPlanWizardProps> = ({
                 <span>To (Sanctuary Destination)</span>
               </label>
 
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search destination: Manali, Rishikesh, Goa, Jaipur, Leh..."
-                  className="w-full pl-8 pr-8 py-2.5 bg-[#FAF7F0] border border-[#E5D5BA] focus:border-[#173B32] rounded-xl text-xs font-bold text-[#173B32] focus:outline-none"
-                />
-                <Search className="w-3.5 h-3.5 text-[#7B4D36] absolute left-2.5 top-3 pointer-events-none" />
-                {(isSearching || isResolving) && (
-                  <Loader2 className="w-3.5 h-3.5 text-[#B65E3C] animate-spin absolute right-2.5 top-3 pointer-events-none" />
+              <div className="relative" ref={searchDropdownRef}>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchDropdownOpen(true);
+                    }}
+                    onFocus={() => {
+                      if (searchResults.length > 0) setIsSearchDropdownOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        if (searchResults.length > 0) {
+                          setIsSearchDropdownOpen(true);
+                          setSearchActiveIndex((prev) => (prev + 1) % searchResults.length);
+                        }
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        if (searchResults.length > 0) {
+                          setIsSearchDropdownOpen(true);
+                          setSearchActiveIndex((prev) => (prev <= 0 ? searchResults.length - 1 : prev - 1));
+                        }
+                      } else if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (searchActiveIndex >= 0 && searchActiveIndex < searchResults.length) {
+                          handleSelectDestination(searchResults[searchActiveIndex], false);
+                          setIsSearchDropdownOpen(false);
+                        } else if (searchQuery.trim()) {
+                          handleSelectDestination(searchQuery.trim(), false);
+                          setIsSearchDropdownOpen(false);
+                        }
+                      } else if (e.key === "Escape") {
+                        setIsSearchDropdownOpen(false);
+                      }
+                    }}
+                    placeholder="Search destination: Spiti, Manali, Rishikesh, Goa, Jaipur, Leh..."
+                    className="w-full pl-8 pr-8 py-2.5 bg-[#FAF7F0] dark:bg-[#16241E] border border-[#E5D5BA] dark:border-[#385848] focus:border-[#173B32] dark:focus:border-[#4E8267] rounded-xl text-xs font-bold text-[#173B32] dark:text-[#FAF7F0] focus:outline-none"
+                  />
+                  <Search className="w-3.5 h-3.5 text-[#7B4D36] dark:text-[#E2B79A] absolute left-2.5 top-3 pointer-events-none" />
+                  {(isSearching || isResolving) && (
+                    <Loader2 className="w-3.5 h-3.5 text-[#B65E3C] animate-spin absolute right-2.5 top-3 pointer-events-none" />
+                  )}
+                </div>
+
+                {/* Autocomplete Dropdown with High Elevation and Accessible Focus */}
+                {isSearchDropdownOpen && searchResults.length > 0 && (
+                  <div 
+                    role="listbox"
+                    aria-label="Destination suggestions"
+                    className="absolute top-full left-0 right-0 mt-1 z-50 border-2 border-[#E5D5BA] dark:border-[#385848] bg-white dark:bg-[#16241E] rounded-xl shadow-2xl divide-y divide-[#E5D5BA] dark:divide-[#244738] max-h-52 overflow-y-auto animate-fadeIn"
+                  >
+                    {searchResults.map((item, idx) => {
+                      const isFocused = idx === searchActiveIndex;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          role="option"
+                          aria-selected={isFocused}
+                          onClick={() => {
+                            handleSelectDestination(item, false);
+                            setIsSearchDropdownOpen(false);
+                          }}
+                          className={`w-full text-left p-2.5 flex items-center justify-between transition-colors cursor-pointer ${
+                            isFocused
+                              ? "bg-[#FAF4E8] dark:bg-[#244738] text-[#173B32] dark:text-[#FAF7F0]"
+                              : "hover:bg-[#FAF7F0] dark:hover:bg-[#1E332A] text-[#173B32] dark:text-[#ECEAE4]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
+                            <span>{item.name}</span>
+                            <span className="text-[10px] text-[#7B4D36] dark:text-[#C5D0C3] font-normal">
+                              {[item.state, item.country].filter(Boolean).join(", ")}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono text-[#B65E3C]">Select →</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-
-              {/* Autocomplete Dropdown */}
-              {searchResults.length > 0 && (
-                <div className="border border-[#E5D5BA] bg-white rounded-xl shadow-lg divide-y divide-[#E5D5BA] max-h-48 overflow-y-auto animate-fadeIn">
-                  {searchResults.map((item, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSelectDestination(item, false)}
-                      className="w-full text-left p-2.5 flex items-center justify-between hover:bg-[#FAF7F0] text-xs font-bold text-[#173B32] transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3 h-3 text-[#B65E3C] shrink-0" />
-                        <span>{item.name}</span>
-                        <span className="text-[10px] text-[#7B4D36] font-normal">
-                          {[item.state, item.country].filter(Boolean).join(", ")}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-[#B65E3C]">Select →</span>
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {resolveError && (
                 <p className="text-[10px] text-rose-700 bg-rose-50 p-1.5 rounded-lg border border-rose-200">

@@ -487,6 +487,21 @@ export const PlaceModal: React.FC<PlaceModalProps> = ({
             </div>
           ) : null}
 
+          {/* Spiti Valley Mobility & Gateway Advisory */}
+          {(destinationSlug?.includes("spiti") || destinationName?.toLowerCase().includes("spiti") || place.destination_id?.toLowerCase().includes("spiti")) && (
+            <div className="p-3 rounded-xl bg-[#FAF4E8] dark:bg-[#1A2C27] border border-[#B49252]/40 flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-[#B65E3C] shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-mono font-bold uppercase text-[#173B32] dark:text-[#FAF7F0] block">
+                  Spiti Mobility Note: No Kaza Depots
+                </span>
+                <p className="text-[11px] text-[#7B4D36] dark:text-[#D8DED5] leading-relaxed">
+                  Kaza has no commercial motorcycle rental depots. Rent and stage two-wheelers and 4x4s at Manali, Shimla, or Chandigarh gateway hubs.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Description */}
           <div className="space-y-1.5">
             <h4 className="font-bold text-xs uppercase tracking-widest text-[#7B4D36]">

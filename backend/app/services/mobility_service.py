@@ -461,9 +461,13 @@ class MobilityService:
 
         # 6. Spiti
         if any(k in dest_str for k in ["spiti", "kaza"]):
-            if is_adv or is_bullet:
-                return "/images/vehicles/spiti_arid_adventure_bike.jpg"
-            return "/images/vehicles/spiti_arid_adventure_bike.jpg"
+            if is_adv:
+                return "/images/vehicles/himalayan_450.webp"
+            if is_bullet:
+                return "/images/vehicles/classic_350.webp"
+            if is_car:
+                return "/images/vehicles/thar_4x4.webp"
+            return "/images/vehicles/himalayan_450.webp"
 
         # 7. Mussoorie / Landour
         if any(k in dest_str for k in ["mussoorie", "landour"]):

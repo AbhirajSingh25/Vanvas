@@ -267,6 +267,21 @@ export default function PlaceDetailPage() {
           </div>
         )}
 
+        {/* Spiti Valley Mobility & Gateway Advisory */}
+        {(destName.toLowerCase().includes("spiti") || place.destination_id?.toLowerCase().includes("spiti")) && (
+          <div className="p-4 rounded-2xl bg-[#FAF4E8] dark:bg-[#1A2C27] border-2 border-[#B49252]/50 flex items-start gap-3 shadow-xs">
+            <AlertCircle className="w-5 h-5 text-[#B65E3C] dark:text-[#E2B79A] shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="text-xs font-serif font-black text-[#173B32] dark:text-[#FAF7F0] uppercase tracking-wide">
+                Spiti Valley Mobility Logistics — Gateway Required
+              </h4>
+              <p className="text-xs text-[#7B4D36] dark:text-[#D8DED5] leading-relaxed">
+                <strong>No local motorcycle rentals in Kaza:</strong> Kaza has no commercial rental depots. All self-drive motorcycles and 4x4s must be secured at Manali, Shimla, or Chandigarh gateway hubs before ascending into the trans-Himalayan high passes.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Description & Field Notes */}
         <div className="p-6 rounded-3xl bg-[#EFE5D2] dark:bg-[#15231F] border border-[#E5D5BA] dark:border-[#2C3B34] space-y-3">
           <h2 className="font-serif font-black text-lg text-[#173B32] dark:text-[#FAF7F0]">

@@ -34,6 +34,8 @@ INDIAN_CITIES_COORDS = {
     "nainital": (29.3803, 79.4636),
     "kasol": (32.0100, 77.3150),
     "spiti": (32.2461, 78.0349),
+    "spiti valley": (32.2461, 78.0349),
+    "kaza": (32.2270, 78.0720),
     "leh": (34.1526, 77.5771),
     "mumbai": (19.0760, 72.8777),
     "pune": (18.5204, 73.8567),
@@ -67,6 +69,13 @@ CORRIDOR_WAYPOINTS: Dict[str, List[Tuple[str, float, float]]] = {
         ("Jaipur", 26.9124, 75.7873),
         ("Udaipur", 24.5854, 73.7125),
         ("Mumbai", 19.0760, 72.8777),
+    ],
+    "delhi-spiti": [
+        ("Chandigarh Gateway", 30.7333, 76.7794),
+        ("Shimla / Kinnaur Corridor", 31.1048, 77.1734),
+        ("Reckong Peo Halt", 31.5390, 78.2750),
+        ("Tabo Lower Spiti", 32.0931, 78.3794),
+        ("Kaza Central Hub", 32.2270, 78.0720),
     ],
     "delhi-manali": [
         ("Chandigarh", 30.7333, 76.7794),
@@ -107,7 +116,9 @@ class RoadTripService:
     def get_corridor_name(orig: str, dest: str) -> str:
         o = orig.lower()
         d = dest.lower()
-        if ("delhi" in o and "goa" in d) or ("goa" in o and "delhi" in d):
+        if ("delhi" in o and ("spiti" in d or "kaza" in d)) or (("spiti" in o or "kaza" in o) and "delhi" in d):
+            return "Himalayan Trans-Valley Circuit (Delhi → Shimla / Kinnaur Gateway → Spiti Valley)"
+        elif ("delhi" in o and "goa" in d) or ("goa" in o and "delhi" in d):
             return "NH48 Western Express Corridor (Delhi → Jaipur → Udaipur → Mumbai → Goa)"
         elif ("delhi" in o and ("manali" in d or "shimla" in d or "leh" in d)) or (("manali" in o or "leh" in o) and "delhi" in d):
             return "NH44 / NH21 Himalayan Gateway (Delhi → Chandigarh → Kullu → Manali)"
@@ -129,7 +140,9 @@ class RoadTripService:
     def get_corridor_key(orig: str, dest: str) -> Optional[str]:
         o = orig.lower()
         d = dest.lower()
-        if "delhi" in o and "goa" in d:
+        if "delhi" in o and ("spiti" in d or "kaza" in d):
+            return "delhi-spiti"
+        elif "delhi" in o and "goa" in d:
             return "delhi-goa"
         elif "delhi" in o and "manali" in d:
             return "delhi-manali"

@@ -1182,3 +1182,93 @@ html[data-density="compact"] .compact-clamp-2,
     scroll-behavior: auto !important;
   }
 }
+
+/* ===================================================
+   VANVAS WCAG AA Dark Mode Strict Accessibility Tokens
+   =================================================== */
+html.dark {
+  --chip-bg-selected: #244738;
+  --chip-text-selected: #FAF7F0;
+  --chip-border-selected: #4E8267;
+  --chip-bg-unselected: #16241E;
+  --chip-text-unselected: #ECEAE4;
+  --chip-border-unselected: rgba(216, 222, 213, 0.28);
+}
+
+/* Ensure all buttons, chips, and interactive pills have compliant contrast in dark mode */
+html.dark button.interactive-pill,
+html.dark .interactive-pill {
+  border-color: rgba(216, 222, 213, 0.28) !important;
+}
+
+/* Selected state overrides in dark mode */
+html.dark .bg-\[\#173B32\],
+html.dark [class*="bg-[#173B32]"] {
+  background-color: #244738 !important;
+  color: #FAF7F0 !important;
+  border-color: #4E8267 !important;
+}
+
+/* Unselected chips in dark mode */
+html.dark .bg-white\/80,
+html.dark .bg-white\/70,
+html.dark .bg-white\/90 {
+  background-color: #16241E !important;
+  color: #ECEAE4 !important;
+  border-color: rgba(216, 222, 213, 0.28) !important;
+}
+
+/* Fix dark text on dark surfaces */
+html.dark .text-\[\#0F2924\] {
+  color: #FAF7F0 !important;
+}
+
+/* Badge colors in dark mode */
+html.dark .bg-\[\#B49252\] {
+  background-color: #C49A45 !important;
+  color: #0A100D !important;
+}
+
+html.dark .bg-\[\#EFE5D2\] {
+  background-color: #1D2E26 !important;
+  color: #ECEAE4 !important;
+  border-color: rgba(216, 222, 213, 0.2) !important;
+}
+
+html.dark .bg-\[\#FAF7F0\] {
+  background-color: #111A16 !important;
+  color: #ECEAE4 !important;
+}
+
+html.dark .bg-\[\#FAF4E8\] {
+  background-color: #0D1512 !important;
+}
+
+/* Muted text in dark mode must meet 4.5:1 ratio */
+html.dark .text-\[\#7B4D36\],
+html.dark [class*="text-[#7B4D36]"] {
+  color: #E2B79A !important;
+}
+
+html.dark .text-\[\#B65E3C\],
+html.dark [class*="text-[#B65E3C]"] {
+  color: #F08058 !important;
+}
+
+html.dark .text-\[\#173B32\],
+html.dark [class*="text-[#173B32]"] {
+  color: #ECEAE4 !important;
+}
+
+html.dark .text-\[\#20211D\],
+html.dark [class*="text-[#20211D]"] {
+  color: #ECEAE4 !important;
+}
+
+/* Search autocomplete dropdown in dark mode */
+html.dark [data-testid="search-dropdown"],
+html.dark .search-dropdown-menu {
+  background-color: #16241E !important;
+  border-color: rgba(216, 222, 213, 0.28) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.8) !important;
+}

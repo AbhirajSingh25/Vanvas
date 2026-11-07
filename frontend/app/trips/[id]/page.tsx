@@ -957,18 +957,30 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                       {trip.transport_mode?.toLowerCase().includes("flight") && <Plane className="w-3.5 h-3.5 text-[#B65E3C]" />}
                       {trip.transport_mode?.toLowerCase().includes("road") && <Car className="w-3.5 h-3.5 text-[#B65E3C]" />}
                       {trip.transport_mode?.toLowerCase().includes("cab") && <CarTaxiFront className="w-3.5 h-3.5 text-[#B65E3C]" />}
-                      <span>{parsedTransport?.operator_name || (trip.transport_mode?.toLowerCase().includes("road") ? "Self-Drive Expressway" : "Curated Transit")}</span>
+                      {(trip.transport_mode?.toLowerCase().includes("bike") || trip.transport_mode?.toLowerCase().includes("motorcycle")) && <Bike className="w-3.5 h-3.5 text-[#B65E3C]" />}
+                      <span>{parsedTransport?.operator_name || (trip.transport_mode?.toLowerCase().includes("road") ? "Self-Drive Expressway" : (trip.transport_mode?.toLowerCase().includes("bike") || trip.transport_mode?.toLowerCase().includes("motorcycle")) ? "Expedition Motorcycle Rental" : "Curated Transit")}</span>
                       <span className="text-[9px] bg-[#173B32] text-[#EFE5D2] px-1.5 py-0.5 rounded font-bold uppercase">
                         {parsedTransport?.data_state || "CURATED"}
                       </span>
                     </div>
                     <div className="text-[11px] text-[#7B4D36]">
-                      {parsedTransport?.departure_location && parsedTransport?.arrival_location
-                        ? `${parsedTransport.departure_location} → ${parsedTransport.arrival_location}`
-                        : trip.transport_mode?.toLowerCase().includes("road")
-                        ? "05:30 Early Departure Window recommended for mountain daylight"
-                        : "Direct corridor transit"}
+                      {parsedTransport?.pickup_hub ? (
+                        <span className="font-semibold text-amber-900">
+                          Gateway Staging: {parsedTransport.pickup_hub} Hub (No commercial depots in Kaza) → {parsedTransport.arrival_location || "Spiti Valley"}
+                        </span>
+                      ) : parsedTransport?.departure_location && parsedTransport?.arrival_location ? (
+                        `${parsedTransport.departure_location} → ${parsedTransport.arrival_location}`
+                      ) : trip.transport_mode?.toLowerCase().includes("road") ? (
+                        "05:30 Early Departure Window recommended for mountain daylight"
+                      ) : (
+                        "Direct corridor transit"
+                      )}
                     </div>
+                    {parsedTransport?.disclaimer && (
+                      <div className="text-[10px] text-[#B65E3C] font-mono mt-0.5">
+                        {parsedTransport.disclaimer}
+                      </div>
+                    )}
                   </div>
                   <div className="text-left sm:text-right shrink-0">
                     <div className="font-mono font-bold text-[#173B32]">

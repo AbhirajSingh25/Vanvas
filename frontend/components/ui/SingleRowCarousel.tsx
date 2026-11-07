@@ -267,3 +267,4 @@ export function SingleRowCarousel<T>({
     </div>
   );
 }
+

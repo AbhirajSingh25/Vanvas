@@ -55,8 +55,8 @@ def get_user_trips(
             id=t.id,
             title=t.title,
             destination_id=t.destination_id,
-            destination_name=t.destination.name if t.destination else "Himalayan Journey",
-            destination_slug=t.destination.slug if t.destination else "manali",
+            destination_name=t.destination.name if t.destination else (t.destination_id.replace("dest-", "").replace("dyn-", "").replace("-", " ").title() if t.destination_id else "Expedition"),
+            destination_slug=t.destination.slug if t.destination else (t.destination_id.replace("dest-", "").replace("dyn-", "") if t.destination_id else "india"),
             hero_image=t.destination.hero_image if t.destination else None,
             start_date=t.start_date,
             end_date=t.end_date,
@@ -81,13 +81,20 @@ async def create_trip(
     try:
         raw_dest_id = trip_in.destination_id.strip()
         clean_slug = DestinationIntelligenceService._clean_query(raw_dest_id).lower().replace(" ", "-")
+        from app.services.destination_aliases import DESTINATION_ALIASES
+        canonical_slug = DESTINATION_ALIASES.get(clean_slug, DESTINATION_ALIASES.get(raw_dest_id.lower(), clean_slug))
 
         destination = db.query(Destination).filter(
             (Destination.id == raw_dest_id) |
+            (Destination.id == f"dest-{canonical_slug}") |
             (Destination.id == f"dest-{clean_slug}") |
+            (Destination.id == f"dyn-{canonical_slug}") |
             (Destination.id == f"dyn-{clean_slug}") |
+            (Destination.slug == canonical_slug) |
             (Destination.slug == clean_slug) |
-            (Destination.name.ilike(clean_slug.replace("-", " ")))
+            (Destination.name.ilike(clean_slug.replace("-", " "))) |
+            (Destination.name.ilike(canonical_slug.replace("-", " "))) |
+            (Destination.name.ilike(f"%{canonical_slug}%"))
         ).first()
 
         if not destination:
@@ -398,8 +405,8 @@ def preview_trip_invite(
     return TripInvitePreviewResponse(
         trip_id=trip.id,
         title=trip.title,
-        destination_name=trip.destination.name if trip.destination else "Himalayas",
-        destination_slug=trip.destination.slug if trip.destination else "manali",
+        destination_name=trip.destination.name if trip.destination else (trip.destination_id.replace("dest-", "").replace("dyn-", "").replace("-", " ").title() if trip.destination_id else "Expedition"),
+        destination_slug=trip.destination.slug if trip.destination else (trip.destination_id.replace("dest-", "").replace("dyn-", "") if trip.destination_id else "india"),
         destination_hero_image=trip.destination.hero_image if trip.destination else None,
         state=trip.destination.state if trip.destination else "Himachal Pradesh",
         region=trip.destination.region if trip.destination else "Himalayan Valley",

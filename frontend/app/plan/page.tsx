@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Sparkles, MapPin, Calendar, Wallet, Users, Compass, Check,
   ArrowRight, ArrowLeft, Search, Loader2, RefreshCw, AlertCircle,
-  Bus, Train, Plane, Car, CarTaxiFront, ExternalLink, Navigation,
+  Bus, Train, Plane, Car, CarTaxiFront, Bike, Shield, ExternalLink, Navigation,
   ShieldCheck, Clock, Moon, Sun, ArrowUpRight, Lock, User as UserIcon
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -55,7 +55,7 @@ function PlanWizard() {
   const searchParams = useSearchParams();
   const rawInitial = searchParams?.get("dest") || searchParams?.get("destination") || "";
   const resolvedCanonical = rawInitial ? resolveCanonicalDestination(rawInitial) : undefined;
-  const initialDest = resolvedCanonical ? resolvedCanonical.slug : (rawInitial.replace(/^(dyn|dest)-/, "").trim() || "manali");
+  const initialDest = resolvedCanonical ? resolvedCanonical.slug : (rawInitial.replace(/^(dyn|dest)-/, "").trim());
   const [hasExplicitDest, setHasExplicitDest] = useState<boolean>(Boolean(rawInitial));
   const urlPlace = searchParams?.get("place") || searchParams?.get("place_name") || "";
   const urlOrigin = searchParams?.get("origin") || "";
@@ -145,13 +145,30 @@ function PlanWizard() {
   // Step 2: Destination Resolution State
   const [destinations, setDestinations] = useState<Destination[]>(CANONICAL_DESTINATIONS);
   const [loadingDestinations, setLoadingDestinations] = useState(true);
-  const [selectedDestId, setSelectedDestId] = useState<string>(resolvedCanonical ? resolvedCanonical.id : initialDest);
+  const [selectedDestId, setSelectedDestId] = useState<string>(resolvedCanonical ? resolvedCanonical.id : (initialDest ? `dest-${initialDest}` : ""));
   const [selectedDestObject, setSelectedDestObject] = useState<Destination | any | null>(resolvedCanonical || null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
+
+  // Spiti Gateway & Search Dropdown Accessible State
+  const [spitiGatewayHub, setSpitiGatewayHub] = useState<"Manali" | "Shimla" | "Chandigarh">("Manali");
+  const searchDropdownRef = React.useRef<HTMLDivElement>(null);
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const [searchActiveIndex, setSearchActiveIndex] = useState(-1);
+
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Restore pending plan destination from localStorage if not provided in searchParams
   useEffect(() => {
@@ -350,10 +367,13 @@ function PlanWizard() {
       try {
         const res = await api.searchDestinations(searchQuery, 6, abortController.signal);
         setSearchResults(res || []);
+        setIsSearchDropdownOpen((res || []).length > 0);
+        setSearchActiveIndex(-1);
       } catch (err: any) {
         if (err.name !== "AbortError") {
           console.error("Destination search error:", err);
         }
+        setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
@@ -367,7 +387,7 @@ function PlanWizard() {
   // Load transport options when reaching Step 6 or when origin/dest/mode changes
   useEffect(() => {
     if ((currentStep === 6 || currentStep === 7) && originCity) {
-      const destTarget = selectedDestObject?.slug || selectedDestId || "manali";
+      const destTarget = selectedDestObject?.slug || (selectedDestId ? selectedDestId.replace(/^(dyn|dest)-/, "") : "spiti");
       setLoadingTransport(true);
       api.getTransportOptions(destTarget, originCity.trim(), selectedTransportMode)
         .then((opts) => {
@@ -580,22 +600,47 @@ function PlanWizard() {
         interests: tripInterests,
         origin_city: originCity.trim(),
         transport_mode: selectedTransportMode.toLowerCase().replace(" ", "_"),
-        transport_details: selectedTransportOption ? {
-          id: selectedTransportOption.id,
-          operator_name: selectedTransportOption.operator_name,
-          transport_type: selectedTransportOption.transport_type,
-          departure_time: selectedTransportOption.departure_time,
-          arrival_time: selectedTransportOption.arrival_time,
-          duration_hours: selectedTransportOption.duration_hours,
-          price: selectedTransportOption.price,
-          departure_location: selectedTransportOption.departure_location,
-          arrival_location: selectedTransportOption.arrival_location,
-          booking_url: selectedTransportOption.booking_url,
-          booking_label: selectedTransportOption.booking_label,
-          recommendation_badge: selectedTransportOption.recommendation_badge,
-          data_state: selectedTransportOption.data_state,
-          disclaimer: selectedTransportOption.disclaimer,
-        } : undefined,
+        transport_details: (() => {
+          const isMotorcycle = selectedTransportMode.toLowerCase().includes("bike") || selectedTransportMode.toLowerCase().includes("motorcycle");
+          const isSpiti = String(selectedDestObject?.slug || selectedDestId).toLowerCase().includes("spiti");
+          if (isMotorcycle) {
+            return {
+              id: `transport-moto-${isSpiti ? spitiGatewayHub.toLowerCase() : "standard"}`,
+              operator_name: isSpiti ? `${spitiGatewayHub} Expedition Motorcycle Depot` : "Mountain Adventure Moto Rentals",
+              transport_type: "motorcycle",
+              pickup_hub: isSpiti ? spitiGatewayHub : originCity.trim(),
+              departure_time: "06:00",
+              arrival_time: isSpiti && spitiGatewayHub === "Manali" ? "16:30" : "18:00",
+              duration_hours: isSpiti && spitiGatewayHub === "Manali" ? 10.5 : 12.0,
+              price: 2500,
+              departure_location: isSpiti ? `${spitiGatewayHub} Gateway Hub` : `${originCity.trim()} Depot`,
+              arrival_location: selectedDestObject?.name || cleanTarget,
+              recommendation_badge: isSpiti ? "Gateway Expedition" : "Adventure Fleet",
+              data_state: "CURATED",
+              disclaimer: isSpiti ? `No commercial bike depots in Kaza. Vehicle staged from ${spitiGatewayHub} hub.` : "Valid motorcycle license and security deposit required.",
+              notes: isSpiti ? `Motorcycle expedition staged from ${spitiGatewayHub} hub into Spiti Valley.` : "Standard adventure bike self-drive.",
+            };
+          }
+          if (selectedTransportOption) {
+            return {
+              id: selectedTransportOption.id,
+              operator_name: selectedTransportOption.operator_name,
+              transport_type: selectedTransportOption.transport_type,
+              departure_time: selectedTransportOption.departure_time,
+              arrival_time: selectedTransportOption.arrival_time,
+              duration_hours: selectedTransportOption.duration_hours,
+              price: selectedTransportOption.price,
+              departure_location: selectedTransportOption.departure_location,
+              arrival_location: selectedTransportOption.arrival_location,
+              booking_url: selectedTransportOption.booking_url,
+              booking_label: selectedTransportOption.booking_label,
+              recommendation_badge: selectedTransportOption.recommendation_badge,
+              data_state: selectedTransportOption.data_state,
+              disclaimer: selectedTransportOption.disclaimer,
+            };
+          }
+          return undefined;
+        })(),
         planning_mode: daysCount === 1 ? "one_day" : daysCount === 2 ? "weekend" : "multi_day",
       });
 
@@ -836,7 +881,7 @@ function PlanWizard() {
             openAskVanvas={openAskVanvas}
           />
         ) : (
-          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 p-5 sm:p-8">
+          <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl shadow-xl relative overflow-visible transition-all duration-300 p-5 sm:p-8">
             {/* Top Progress & Navigation Header */}
           <div className="border-b border-[#E5D5BA] pb-4 mb-5 sm:mb-6 space-y-3">
             <div className="flex items-center justify-between">
@@ -1102,47 +1147,91 @@ function PlanWizard() {
                 })}
               </div>
 
-              {/* Search Bar with Autocomplete */}
-              <div className="relative pt-2">
+              {/* Search Bar with Autocomplete & Keyboard Navigation */}
+              <div className="relative pt-2" ref={searchDropdownRef}>
                 <div className="relative flex items-center">
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchDropdownOpen(true);
+                    }}
+                    onFocus={() => {
+                      if (searchResults.length > 0) setIsSearchDropdownOpen(true);
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && searchQuery.trim()) {
+                      if (e.key === "ArrowDown") {
                         e.preventDefault();
-                        handleSelectDestination(searchQuery.trim());
+                        if (searchResults.length > 0) {
+                          setIsSearchDropdownOpen(true);
+                          setSearchActiveIndex((prev) => (prev + 1) % searchResults.length);
+                        }
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        if (searchResults.length > 0) {
+                          setIsSearchDropdownOpen(true);
+                          setSearchActiveIndex((prev) => (prev <= 0 ? searchResults.length - 1 : prev - 1));
+                        }
+                      } else if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (searchActiveIndex >= 0 && searchActiveIndex < searchResults.length) {
+                          handleSelectDestination(searchResults[searchActiveIndex]);
+                          setIsSearchDropdownOpen(false);
+                        } else if (searchQuery.trim()) {
+                          handleSelectDestination(searchQuery.trim());
+                          setIsSearchDropdownOpen(false);
+                        }
+                      } else if (e.key === "Escape") {
+                        setIsSearchDropdownOpen(false);
                       }
                     }}
-                    placeholder="Or search any destination: Munnar, Leh, Ooty, Hampi..."
-                    className="w-full pl-9 pr-9 py-2.5 bg-white border-2 border-[#E5D5BA] rounded-2xl text-xs font-medium text-[#20211D] placeholder:text-[#7B4D36]/60 focus:outline-none focus:border-[#173B32] transition-colors"
+                    placeholder="Or search any destination: Spiti, Munnar, Leh, Ooty, Hampi..."
+                    className="w-full pl-9 pr-9 py-2.5 bg-white dark:bg-[#16241E] border-2 border-[#E5D5BA] dark:border-[#385848] rounded-2xl text-xs font-medium text-[#20211D] dark:text-[#FAF7F0] placeholder:text-[#7B4D36]/60 dark:placeholder:text-[#FAF7F0]/40 focus:outline-none focus:border-[#173B32] dark:focus:border-[#4E8267] transition-colors"
                   />
-                  <Search className="w-4 h-4 text-[#7B4D36] absolute left-3 pointer-events-none" />
+                  <Search className="w-4 h-4 text-[#7B4D36] dark:text-[#E2B79A] absolute left-3 pointer-events-none" />
                   {(isSearching || isResolving) && (
                     <Loader2 className="w-4 h-4 text-[#B65E3C] animate-spin absolute right-3 pointer-events-none" />
                   )}
                 </div>
 
-                {searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border-2 border-[#E5D5BA] rounded-2xl shadow-xl overflow-hidden divide-y divide-[#E5D5BA] max-h-52 overflow-y-auto animate-vanvas-scale">
-                    {searchResults.map((item, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleSelectDestination(item)}
-                        className="w-full text-left p-3 flex items-center justify-between hover:bg-[#EFE5D2] text-[#173B32] text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-3.5 h-3.5 text-[#B65E3C]" />
-                          <span>{item.name}</span>
-                          <span className="text-[10px] text-[#7B4D36] font-normal">
-                            {[item.state, item.country].filter(Boolean).join(", ")}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-mono text-[#B65E3C]">Select →</span>
-                      </button>
-                    ))}
+                {isSearchDropdownOpen && searchResults.length > 0 && (
+                  <div 
+                    role="listbox"
+                    aria-label="Destination suggestions"
+                    className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white dark:bg-[#16241E] border-2 border-[#E5D5BA] dark:border-[#385848] rounded-2xl shadow-2xl overflow-hidden divide-y divide-[#E5D5BA] dark:divide-[#244738] max-h-60 overflow-y-auto animate-vanvas-scale"
+                  >
+                    {searchResults.map((item, idx) => {
+                      const isFocused = idx === searchActiveIndex;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          role="option"
+                          aria-selected={isFocused}
+                          onClick={() => {
+                            handleSelectDestination(item);
+                            setIsSearchDropdownOpen(false);
+                          }}
+                          className={`w-full text-left p-3.5 flex items-center justify-between transition-colors cursor-pointer ${
+                            isFocused
+                              ? "bg-[#EFE5D2] dark:bg-[#244738] text-[#173B32] dark:text-[#FAF7F0]"
+                              : "hover:bg-[#FAF4E8] dark:hover:bg-[#1E332A] text-[#173B32] dark:text-[#ECEAE4]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <MapPin className="w-4 h-4 text-[#B65E3C] dark:text-[#E2B79A] shrink-0" />
+                            <div>
+                              <span className="font-bold text-xs block">{item.name}</span>
+                              <span className="text-[10px] text-[#7B4D36] dark:text-[#C5D0C3] font-normal">
+                                {[item.state, item.country].filter(Boolean).join(", ")}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold text-[#B65E3C] dark:text-[#E2B79A]">Select →</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1414,6 +1503,7 @@ function PlanWizard() {
                     { mode: "Flight", label: "FLIGHT", icon: Plane, desc: "Direct / Connecting" },
                     { mode: "Road Trip", label: "ROAD TRIP", icon: Car, desc: "Self-drive / Scenic stops" },
                     { mode: "Cab", label: "CAB / TRANSFER", icon: CarTaxiFront, desc: "Private door-to-door" },
+                    { mode: "Motorcycle", label: "MOTORCYCLE", icon: Bike, desc: "Adventure bike / Expedition rental" },
                   ].map((m) => {
                     const Icon = m.icon;
                     const isSelected = selectedTransportMode.toLowerCase().replace(" ", "") === m.mode.toLowerCase().replace(" ", "");
@@ -1439,8 +1529,94 @@ function PlanWizard() {
                 </div>
               </div>
 
-              {/* Road Trip Specific Departure Guidance Card */}
-              {selectedTransportMode.toLowerCase().includes("road") ? (
+              {/* Motorcycle & Spiti Logistics Intelligence Card */}
+              {(selectedTransportMode.toLowerCase().includes("bike") || selectedTransportMode.toLowerCase().includes("motorcycle")) ? (
+                <div className="p-4 bg-[#FAF7F0] dark:bg-[#16241E] border-2 border-[#B49252] rounded-2xl space-y-3.5 shadow-sm">
+                  <div className="flex items-start gap-2.5">
+                    <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 shrink-0">
+                      <AlertCircle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-serif font-black text-[#173B32] dark:text-[#FAF7F0] uppercase tracking-wide">
+                        {String(selectedDestObject?.slug || selectedDestId).toLowerCase().includes("spiti")
+                          ? "Spiti Motorcycle Logistics — Gateway Required"
+                          : "Adventure Motorcycle Route Guidance"}
+                      </h3>
+                      <p className="text-[11px] text-[#7B4D36] dark:text-[#ECEAE4] mt-0.5 leading-relaxed">
+                        {String(selectedDestObject?.slug || selectedDestId).toLowerCase().includes("spiti") ? (
+                          <>
+                            <strong>Crucial Notice:</strong> Kaza has no local commercial motorcycle rental depots. All motorcycle expeditions must rent and stage their vehicle from a designated gateway hub before riding into Spiti Valley.
+                          </>
+                        ) : (
+                          "High-altitude mountain passes require reliable adventure machinery, certified helmets, waterproof luggage systems, and daylight riding schedules."
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {String(selectedDestObject?.slug || selectedDestId).toLowerCase().includes("spiti") && (
+                    <div className="space-y-1.5 pt-1 border-t border-[#E5D5BA] dark:border-[#244738]">
+                      <label className="text-[10px] font-mono font-bold uppercase text-[#7B4D36] dark:text-[#C5D0C3] tracking-wider block">
+                        Select Gateway Pickup Hub:
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {[
+                          {
+                            hub: "Manali",
+                            title: "Manali Hub",
+                            route: "Manali → Rohtang/Atal → Kunzum → Kaza",
+                            specs: "~200 km · 8-10 hrs ride",
+                            badge: "Most Direct (Jun–Oct)",
+                            note: "Pass permits mandatory. Rugged trans-Himalayan pass ascent."
+                          },
+                          {
+                            hub: "Shimla",
+                            title: "Shimla Hub",
+                            route: "Shimla → Kinnaur (NH-5) → Tabo → Kaza",
+                            specs: "~420 km · 2-day staged ride",
+                            badge: "Safer Acclimatization",
+                            note: "Gradual altitude gain, open longer, stunning Kinnaur gorge landscape."
+                          },
+                          {
+                            hub: "Chandigarh",
+                            title: "Chandigarh Hub",
+                            route: "Chandigarh → Shimla/Manali gateway staging",
+                            specs: "~500+ km expedition",
+                            badge: "Full Transit Hub",
+                            note: "Airport/rail access, highest rental inventory, longer transit."
+                          },
+                        ].map((g) => {
+                          const isSelected = spitiGatewayHub === g.hub;
+                          return (
+                            <button
+                              key={g.hub}
+                              type="button"
+                              onClick={() => setSpitiGatewayHub(g.hub as "Manali" | "Shimla" | "Chandigarh")}
+                              className={`p-3 rounded-xl text-left border-2 transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-[#173B32] text-[#EFE5D2] border-[#173B32] dark:bg-[#244738] dark:border-[#4E8267] shadow-sm"
+                                  : "bg-white dark:bg-[#1E332A] text-[#173B32] dark:text-[#ECEAE4] border-[#E5D5BA] dark:border-[#385848] hover:border-[#173B32]"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-serif font-black text-xs">{g.title}</span>
+                                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                                  isSelected ? "bg-[#B49252] text-[#173B32]" : "bg-[#FAF4E8] dark:bg-[#16241E] text-[#B65E3C] dark:text-[#E2B79A]"
+                                }`}>
+                                  {g.badge}
+                                </span>
+                              </div>
+                              <div className="text-[10px] font-mono opacity-90">{g.route}</div>
+                              <div className="text-[10px] font-bold mt-1 text-[#B49252]">{g.specs}</div>
+                              <div className="text-[9px] mt-1 opacity-75 leading-tight">{g.note}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : selectedTransportMode.toLowerCase().includes("road") ? (
                 <div className="p-4 bg-white border-2 border-[#173B32]/30 rounded-2xl space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-serif font-black text-[#173B32]">
