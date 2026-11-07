@@ -8,8 +8,8 @@ import {
   Calendar, Sun, Coffee, Trees, Fuel, AlertCircle, RefreshCw, Layers,
   Phone, Navigation, MessageCircle, Globe, Users, X, Home, Building2, CheckCircle2,
   Utensils, Info, Footprints, Flame, Camera, Sunrise, Map as MapIcon, ChevronRight,
-  Route, Shield, ArrowDown, Search, ChevronDown, ChevronUp
-, Columns
+  Route, Shield, ArrowDown, Search, ChevronDown, ChevronUp, SlidersHorizontal,
+  Columns
 } from "lucide-react";
 
 import { api } from "@/lib/api";
@@ -40,7 +40,18 @@ import {
 import { useDensity } from "@/context/DensityContext";
 import { recordRecentDestination } from "@/lib/recentDestinations";
 import { useAskVanvas } from "@/context/AskVanvasContext";
-import { CompactPlaceCard, CompactStayCard, CompactRentalCard, CompactTrekStrip } from "@/components/compact";
+import {
+  CompactPlaceCard,
+  CompactStayCard,
+  CompactRentalCard,
+  CompactTrekStrip,
+  ExperienceCompactCard,
+  ExperienceItem,
+  FieldIntelligenceCard,
+  FieldIntelligenceItem,
+  FoodCompactCard
+} from "@/components/compact";
+import { StayFilterDrawer } from "@/components/stays/StayFilterDrawer";
 import { CheckoutModal } from "@/components/booking/CheckoutModal";
 import { BookingConfirmationModal } from "@/components/booking/BookingConfirmationModal";
 import { DestinationDetailSkeleton, CardSkeleton } from "@/components/ui/ParchmentSkeleton";
@@ -237,6 +248,7 @@ export default function DestinationDetailPage() {
   const [selectedStayType, setSelectedStayType] = useState<string>("All");
   const [selectedStayForModal, setSelectedStayForModal] = useState<Hotel | null>(null);
   const [stayModalOpen, setStayModalOpen] = useState(false);
+  const [isStayFilterDrawerOpen, setIsStayFilterDrawerOpen] = useState(false);
   
   // Real Transaction & Checkout Modals
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -942,7 +954,7 @@ export default function DestinationDetailPage() {
   const regionType = profile.terrainType;
 
   return (
-    <div className="min-h-screen bg-[#EFE5D2] pb-28">
+    <div className="min-h-screen bg-[#EFE5D2] dark:bg-[#0C1512] pb-28 transition-colors duration-300">
       {isCompact ? (
         /* ======================================================== */
         /* COMPACT MODE: FIELD GUIDE / EXPLORER'S HANDBOOK LAYOUT    */
@@ -1473,65 +1485,79 @@ export default function DestinationDetailPage() {
               })()}
             </div>
 
-            {/* VANVAS METEOROLOGICAL COCKPIT */}
+            {/* VANVAS METEOROLOGICAL COCKPIT (COMPACT 3.0) */}
             <VanvasWeatherCard
               destinationName={destination.name}
               structuredWeather={currentWeather}
               weatherSnapshots={weather}
-              isCompact={false}
+              isCompact={true}
             />
-            {/* Contextual Experience Bridges: Trek Mode & One-Day Escape */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-              {/* Contextual Trek CTA */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-[#111A16] text-[#EFE5D2] border-2 border-[#2C3E35] flex flex-col justify-between space-y-6 shadow-xl">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E05A2B] text-white text-[10px] font-mono font-bold uppercase">
-                      HIGH ALTITUDE TRAILS
-                    </span>
-                    <span className="text-[11px] font-mono text-[#B49252]">TOP-LEVEL EXPEDITION DESK</span>
-                  </div>
-                  <h3 className="text-2xl font-serif font-black text-white">
-                    Trek This Region
-                  </h3>
-                  <p className="text-xs text-[#A6BAAE] font-serif leading-relaxed">
-                    Access dedicated topographic route comparisons, elevation graphs, gear planners, and live trail cockpit for trails around {destination.name}.
-                  </p>
-                </div>
-                <Link
-                  href={`/treks?destination=${destination.slug || slug}`}
-                  className="px-6 py-3.5 rounded-2xl bg-[#E05A2B] hover:bg-[#C8491D] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
-                >
-                  <Mountain className="w-4 h-4" />
-                  <span>Launch Trek Mode →</span>
-                </Link>
-              </div>
 
-              {/* Contextual One-Day Escape CTA */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-[#FAF4E8] border-2 border-[#E5D5BA] flex flex-col justify-between space-y-6 shadow-md">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#B65E3C] text-white text-[10px] font-mono font-bold uppercase">
-                      SPONTANEOUS ROAD TRIP
-                    </span>
-                    <span className="text-[11px] font-mono text-[#7B4D36]">WE HAVE 1 DAY. LET&apos;S GO.</span>
-                  </div>
-                  <h3 className="text-2xl font-serif font-black text-[#173B32]">
-                    Plan a 1-Day Escape
-                  </h3>
-                  <p className="text-xs text-[#7B4D36] font-serif leading-relaxed">
-                    Generate instant group road trips, split fuel & meal costs with friends, discover vehicle rentals, and view timeline boards starting from {destination.name}.
-                  </p>
-                </div>
-                <Link
-                  href={`/one-day?from=${destination.slug || slug}`}
-                  className="px-6 py-3.5 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
-                >
-                  <Clock className="w-4 h-4 text-[#B49252]" />
-                  <span>Plan 1-Day Road Trip →</span>
-                </Link>
-              </div>
-            </div>
+            {/* Travel Experiences Single-Row Carousel (P3) */}
+            {(() => {
+              const destinationExperiences: ExperienceItem[] = [
+                {
+                  id: "trek-mode",
+                  title: `Trek Around ${destination.name}`,
+                  eyebrow: "HIGH ALTITUDE TRAILS",
+                  tagline: "Top-level Expedition Desk",
+                  description: `Access dedicated topographic route comparisons, elevation graphs, gear planners, and live trail cockpit for trails around ${destination.name}.`,
+                  href: `/treks?destination=${encodeURIComponent(destination.slug || slug)}`,
+                  ctaText: "Launch Trek Mode →",
+                  iconName: "mountain",
+                  theme: "forest",
+                  badge: "EXPEDITION",
+                },
+                {
+                  id: "one-day-escape",
+                  title: "Plan a 1-Day Escape",
+                  eyebrow: "SPONTANEOUS ROAD TRIP",
+                  tagline: "We have 1 day. Let's go.",
+                  description: `Generate instant group road trips, split fuel & meal costs with friends, discover vehicle rentals, and view timeline boards starting from ${destination.name}.`,
+                  href: `/one-day?from=${encodeURIComponent(destination.slug || slug)}`,
+                  ctaText: "Plan 1-Day Road Trip →",
+                  iconName: "clock",
+                  theme: "terracotta",
+                  badge: "ROAD TRIP",
+                },
+                {
+                  id: "solo-mode",
+                  title: "Solo Sanctuary Mode",
+                  eyebrow: "MINDFUL SOLITUDE",
+                  tagline: "Safe solo pacing & community",
+                  description: `Introspective trail circuits, verified solo-friendly sanctuaries, quiet reading spots, and mindful travel routes around ${destination.name}.`,
+                  href: `/plan?destination=${encodeURIComponent(destination.slug || slug)}&mode=solo`,
+                  ctaText: "Explore Solo Mode →",
+                  iconName: "compass",
+                  theme: "amber",
+                  badge: "SOLO READY",
+                },
+                {
+                  id: "custom-planner",
+                  title: "Bespoke Multi-Day Route",
+                  eyebrow: "CUSTOM ITINERARY",
+                  tagline: "Smart acclimatization & stops",
+                  description: `Curate personalized day-by-day journeys with real-time transit logistics, weather buffers, and offline packing checklists.`,
+                  href: `/plan?destination=${encodeURIComponent(destination.slug || slug)}`,
+                  ctaText: "Open Trip Planner →",
+                  iconName: "shield",
+                  theme: "slate",
+                  badge: "AI PLANNER",
+                },
+              ];
+
+              return (
+                <SingleRowCarousel
+                  items={destinationExperiences}
+                  title="Travel Experiences & Expeditions"
+                  subtitle={`Specialised modes for day trips, mountain treks, and solo explorations in ${destination.name}`}
+                  eyebrow="EXPERIENCE DESK"
+                  itemWidthClass="w-[84vw] sm:w-[320px] lg:w-[350px]"
+                  keyExtractor={(exp) => exp.id}
+                  renderItem={(exp) => <ExperienceCompactCard key={exp.id} experience={exp} />}
+                />
+              );
+            })()}
           </div>
         )}
 
@@ -1628,74 +1654,83 @@ export default function DestinationDetailPage() {
               )}
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setSelectedCategory(cat.id);
-                    setPlacesVisibleCount(24);
-                  }}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
-                    selectedCategory === cat.id
-                      ? "bg-[#173B32] text-[#EFE5D2] shadow-sm border-2 border-[#173B32]"
-                      : "bg-[#FAF7F0] text-[#20211D]/80 border border-[#E5D5BA] hover:bg-[#E5D5BA]"
-                  }`}
-                >
-                  <span>{cat.label}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedCategory === cat.id ? "bg-[#B49252] text-[#0F2924]" : "bg-[#EFE5D2] text-[#7B4D36]"}`}>
-                    {cat.count}
-                  </span>
-                </button>
-              ))}
+            {/* Compact Category Navigation Bar (P1) */}
+            <div className="sticky top-14 z-20 bg-[#FAF7F0]/95 dark:bg-[#0F1A16]/95 backdrop-blur-md py-2.5 -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-[#E5D5BA]/60 dark:border-[#2C3B34]">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setPlacesVisibleCount(24);
+                    }}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                      selectedCategory === cat.id
+                        ? "bg-[#173B32] text-[#EFE5D2] dark:bg-[#B49252] dark:text-[#0F2924] shadow-xs border border-[#173B32] dark:border-[#B49252]"
+                        : "bg-[#FAF7F0] dark:bg-[#1C2E27] text-[#20211D]/80 dark:text-[#EAE6DF] border border-[#E5D5BA] dark:border-[#2C3B34] hover:bg-[#E5D5BA] dark:hover:bg-[#253D34]"
+                    }`}
+                  >
+                    <span>{cat.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      selectedCategory === cat.id
+                        ? "bg-[#B49252] text-[#0F2924] dark:bg-[#0F2924] dark:text-[#FAF7F0]"
+                        : "bg-[#EFE5D2] dark:bg-[#253D34] text-[#7B4D36] dark:text-[#C5A898]"
+                    }`}>
+                      {cat.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* VIEW MODES: CAROUSEL vs GEOGRAPHICAL ACCORDIONS vs FLAT GRID */}
             {placesViewMode === "carousel" ? (
               <div className="space-y-6">
-                {(() => {
-                  const featuredPlace = filteredPlaces.find((p) => p.is_must_visit || Boolean((p as any).is_featured)) || filteredPlaces[0];
-                  const remainingPlaces = featuredPlace ? filteredPlaces.filter((p) => p.id !== featuredPlace.id) : filteredPlaces;
-
-                  return (
-                    <div className="space-y-6">
-                      {featuredPlace && (
-                        <FeaturedPlaceCard
-                          place={featuredPlace}
-                          destinationName={destination.name}
-                          onExplore={(p) => {
-                            setSelectedPlace(p);
-                            setModalOpen(true);
-                          }}
-                          onPlan={(p) => {
-                            router.push(`/plan?destination=${encodeURIComponent(destination.slug)}&place=${encodeURIComponent(p.id)}`);
-                          }}
-                        />
-                      )}
-
-                      <SynchronizedTwoRowCarousel
-                        items={remainingPlaces}
-                        title={`Curated Sanctuaries & Landmarks (${remainingPlaces.length})`}
-                        subtitle="Swipe across verified Himalayan trails, monasteries, and viewpoints in synchronized rows"
-                        eyebrow="SYNCHRONIZED TWO-ROW DISCOVERY"
-                        columnWidthClass="w-[82vw] sm:w-[320px] lg:w-[350px]"
-                        keyExtractor={(p) => p.id}
-                        renderItem={(p) => (
-                          <PlaceCard
-                            key={p.id}
-                            place={p}
-                            destinationName={destination.name}
-                            onSelect={(selected) => {
-                              setSelectedPlace(selected);
-                              setModalOpen(true);
-                            }}
-                          />
-                        )}
+                {/* Mobile: Pure Single-Row Carousel (P0) */}
+                <div className="block sm:hidden">
+                  <SingleRowCarousel
+                    items={filteredPlaces}
+                    title={`Curated Sanctuaries & Landmarks (${filteredPlaces.length})`}
+                    subtitle="Swipe across verified trails, monasteries, and viewpoints in a compact single row"
+                    eyebrow="SINGLE-ROW DISCOVERY"
+                    itemWidthClass="w-[84vw]"
+                    keyExtractor={(p) => p.id}
+                    renderItem={(p) => (
+                      <PlaceCard
+                        key={p.id}
+                        place={p}
+                        destinationName={destination.name}
+                        onSelect={(selected) => {
+                          setSelectedPlace(selected);
+                          setModalOpen(true);
+                        }}
                       />
-                    </div>
-                  );
-                })()}
+                    )}
+                  />
+                </div>
+
+                {/* Desktop: Synchronized Two-Row Carousel */}
+                <div className="hidden sm:block">
+                  <SynchronizedTwoRowCarousel
+                    items={filteredPlaces}
+                    title={`Curated Sanctuaries & Landmarks (${filteredPlaces.length})`}
+                    subtitle="Swipe across verified Himalayan trails, monasteries, and viewpoints in synchronized rows"
+                    eyebrow="SYNCHRONIZED TWO-ROW DISCOVERY"
+                    columnWidthClass="sm:w-[320px] lg:w-[350px]"
+                    keyExtractor={(p) => p.id}
+                    renderItem={(p) => (
+                      <PlaceCard
+                        key={p.id}
+                        place={p}
+                        destinationName={destination.name}
+                        onSelect={(selected) => {
+                          setSelectedPlace(selected);
+                          setModalOpen(true);
+                        }}
+                      />
+                    )}
+                  />
+                </div>
               </div>
             ) : placesViewMode === "zones" ? (
               <div className="space-y-6">
@@ -1938,95 +1973,84 @@ export default function DestinationDetailPage() {
           </div>
         )}
 
-        {/* MODE: STAYS & SANCTUARIES */}
+        {/* MODE: STAYS & SANCTUARIES (COMPACT 3.0) */}
         {(activeMode === "stays" || activeMode === "overview") && (
-          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA] animate-fadeIn">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] pb-4 gap-3">
+          <div className="space-y-6 pt-6 border-t-2 border-[#E5D5BA] dark:border-[#2C3B34] animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E5D5BA] dark:border-[#2C3B34] pb-4 gap-3">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C]">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#B65E3C] dark:text-[#E28C68]">
                   आशियाना • Verified Stays &amp; Sanctuaries
                 </span>
-                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] flex items-center gap-2 mt-0.5">
-                  <BedDouble className="w-6 h-6 text-[#B65E3C]" />
+                <h3 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] dark:text-[#FAF7F0] flex items-center gap-2 mt-0.5">
+                  <BedDouble className="w-6 h-6 text-[#B65E3C] dark:text-[#E28C68]" />
                   <span>
                     Stays &amp; Sanctuaries {!staysLoading && `(${hotels.length})`}
                   </span>
                 </h3>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36] flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                  <span>Sanctuary Accommodations</span>
-                </span>
+
+              {/* Compact Filter Controls (P2) */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {selectedTravellerProfile !== "All" && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-[#173B32] text-[#EFE5D2] dark:bg-[#B49252] dark:text-[#0F2924] flex items-center gap-1">
+                    <span>{selectedTravellerProfile}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleTravellerProfileChange("All")}
+                      className="hover:text-amber-300 ml-0.5"
+                      aria-label="Remove traveller profile filter"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {selectedStayType !== "All" && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-[#B65E3C] text-white dark:bg-[#E28C68] dark:text-[#111A16] flex items-center gap-1">
+                    <span>{selectedStayType}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleStayTypeChange("All")}
+                      className="hover:text-black ml-0.5"
+                      aria-label="Remove stay type filter"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsStayFilterDrawerOpen(true)}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-[#FAF7F0] dark:bg-[#1C2E27] hover:bg-[#EFE5D2] dark:hover:bg-[#253D34] text-[#173B32] dark:text-[#FAF7F0] border-2 border-[#E5D5BA] dark:border-[#2C3B34] flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#B65E3C]" />
+                  <span>Filter ⚙</span>
+                  {(selectedTravellerProfile !== "All" || selectedStayType !== "All") && (
+                    <span className="w-2 h-2 rounded-full bg-[#B65E3C] ml-0.5 animate-pulse" />
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* Traveller & Accommodation Style Filter Bar */}
-            <div className="space-y-3 bg-[#FAF7F0] p-4 rounded-2xl border border-[#E5D5BA]">
-              {/* Traveller Profiles */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs text-[#7B4D36]">
-                  <span className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                    <Users className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    <span>Traveller Profile</span>
-                  </span>
-                  <span className="text-[10px] font-mono opacity-70">
-                    {selectedTravellerProfile === "All" ? "All Profiles" : `${selectedTravellerProfile} Verified`}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {TRAVELLER_PROFILES.map((profile) => {
-                    const isActive = selectedTravellerProfile === profile;
-                    return (
-                      <button
-                        key={profile}
-                        onClick={() => handleTravellerProfileChange(profile)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                          isActive
-                            ? "bg-[#173B32] text-[#EFE5D2] shadow-xs scale-[1.02]"
-                            : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]/80"
-                        }`}
-                      >
-                        {profile}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            {/* Native Bottom Sheet / Drawer for Stays Filters */}
+            <StayFilterDrawer
+              isOpen={isStayFilterDrawerOpen}
+              onClose={() => setIsStayFilterDrawerOpen(false)}
+              selectedTravellerProfile={selectedTravellerProfile}
+              onTravellerProfileChange={handleTravellerProfileChange}
+              selectedStayType={selectedStayType}
+              onStayTypeChange={handleStayTypeChange}
+              travellerProfiles={TRAVELLER_PROFILES}
+              accommodationTypes={ACCOMMODATION_TYPES}
+              totalStaysCount={hotels.length}
+              filteredCount={hotels.length}
+              onResetFilters={() => {
+                handleTravellerProfileChange("All");
+                handleStayTypeChange("All");
+              }}
+            />
 
-              {/* Accommodation Preferences */}
-              <div className="space-y-1.5 pt-2 border-t border-[#E5D5BA]/60">
-                <div className="flex items-center justify-between text-xs text-[#7B4D36]">
-                  <span className="font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                    <Building2 className="w-3.5 h-3.5 text-[#B65E3C]" />
-                    <span>Accommodation Style</span>
-                  </span>
-                  <span className="text-[10px] font-mono opacity-70">
-                    {selectedStayType === "All" ? "All Styles" : selectedStayType}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {ACCOMMODATION_TYPES.map((type) => {
-                    const isActive = selectedStayType === type;
-                    return (
-                      <button
-                        key={type}
-                        onClick={() => handleStayTypeChange(type)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                          isActive
-                            ? "bg-[#B65E3C] text-[#FAF4E8] shadow-xs scale-[1.02]"
-                            : "bg-white/80 hover:bg-white text-[#7B4D36] border border-[#E5D5BA]/80"
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Stays Synchronized Two-Row Carousel with Featured Property */}
+            {/* Stays Single-Row Carousel (P0) */}
             {staysLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
@@ -2039,33 +2063,19 @@ export default function DestinationDetailPage() {
               </div>
             ) : hotels.length > 0 ? (
               <div className="space-y-6">
-                {hotels[0] && (
-                  <FeaturedStayCard
-                    hotel={hotels[0]}
-                    destinationName={destination.name}
-                    onSelect={(h) => {
-                      setSelectedStayForModal(h);
-                      setStayModalOpen(true);
-                    }}
-                    onBook={(h) => {
-                      handleStartBooking(h);
-                    }}
-                  />
-                )}
-
                 <SingleRowCarousel
-                  items={hotels.slice(1)}
-                  title={`Remaining Stays & Retreats (${hotels.length - 1})`}
+                  items={hotels}
+                  title={`Remaining Stays & Retreats (${hotels.length})`}
                   subtitle="Browse verified mountain homestays, hostels, and camps in a single horizontal row"
                   eyebrow="CURATED STAYS ROW"
                   itemWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
                   keyExtractor={(h) => h.id}
-                  renderItem={(h) => {
+                  renderItem={(h, idx) => {
                     const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
                     const isPriceVerified = h.price_verified !== false && typeof h.price_per_night === "number" && h.price_per_night > 0;
                     const stayVisual = resolveHotelArtwork(h.name, destination.name, h.hotel_style || h.accommodation_type, h.image_url, h.is_live, h.source);
                     const displayPrice = h.price_formatted || (isPriceVerified ? `₹${h.price_per_night}/night` : "Rate upon inquiry");
-                    const badgeLabel = isLiveStay ? (h.badge || "VERIFIED LIVE STAY") : "CURATED STAY";
+                    const badgeLabel = idx === 0 ? "✦ TOP CURATED STAY" : isLiveStay ? (h.badge || "VERIFIED LIVE STAY") : "CURATED STAY";
                     const availState = isLiveStay ? (h.availability_state || "AVAILABLE") : (h.availability_state === "AVAILABLE" ? "UPON INQUIRY" : (h.availability_state || "UPON INQUIRY"));
 
                     return (
@@ -2315,25 +2325,14 @@ export default function DestinationDetailPage() {
               </div>
             ) : rentals.length > 0 ? (
               <div className="space-y-6">
-                {rentals[0] && (
-                  <FeaturedVehicleCard
-                    rental={rentals[0]}
-                    destinationName={destination.name}
-                    onSelect={(r) => {
-                      setSelectedRentalForModal(r);
-                      setRentalModalOpen(true);
-                    }}
-                  />
-                )}
-
                 <SingleRowCarousel
-                  items={rentals.slice(1)}
-                  title={`Expedition Fleet & Rentals (${rentals.length - 1})`}
-                  subtitle="High-clearance SUVs, adventure motorcycles, and local scooters in a single horizontal row"
+                  items={rentals}
+                  title={`Expedition Fleet & Rentals (${rentals.length})`}
+                  subtitle="High-clearance SUVs, adventure motorcycles, and local transit in a single horizontal row"
                   eyebrow="MOBILITY FLEET ROW"
                   itemWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
                   keyExtractor={(r) => r.id}
-                  renderItem={(r) => {
+                  renderItem={(r, idx) => {
                     const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
                     return (
                       <div key={r.id} className="p-4 sm:p-5 rounded-3xl bg-[#FAF7F0] dark:bg-[#15231F] border-2 border-[#E5D5BA] dark:border-[#2C3B34] hover:border-[#173B32]/40 shadow-2xs hover:shadow-lg transition-all space-y-3 flex flex-col justify-between h-full">
@@ -2524,31 +2523,27 @@ export default function DestinationDetailPage() {
               )}
             />
 
-            {/* Verified Dining Spots from Database */}
+            {/* Verified Dining Spots from Database (Single-Row Track) */}
             {foodGuide.dining_spots && foodGuide.dining_spots.length > 0 && (
               <div className="space-y-3 pt-4">
-                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#7B4D36] flex items-center gap-2">
-                  <Utensils className="w-3.5 h-3.5 text-[#B65E3C]" />
-                  <span>Curated Cafés, Dhabas &amp; Bakeries in {destination.name}</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {foodGuide.dining_spots.slice(0, 4).map((p) => (
-                    <div
+                <SingleRowCarousel
+                  items={foodGuide.dining_spots}
+                  title={`Curated Cafés, Dhabas & Bakeries in ${destination.name} (${foodGuide.dining_spots.length})`}
+                  subtitle="Verified local eateries, mountain bakeries, and traditional kitchens"
+                  eyebrow="LOCAL DINING SPOTS"
+                  itemWidthClass="w-[78vw] sm:w-[280px] lg:w-[300px]"
+                  keyExtractor={(p) => p.id}
+                  renderItem={(p) => (
+                    <FoodCompactCard
                       key={p.id}
-                      onClick={() => {
+                      diningSpot={p}
+                      onSelect={() => {
                         setSelectedPlace(p);
                         setModalOpen(true);
                       }}
-                      className="p-4 rounded-2xl bg-[#FAF7F0] border border-[#E5D5BA] hover:border-[#173B32] cursor-pointer transition-all space-y-2 shadow-2xs hover:shadow-md"
-                    >
-                      <span className="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold uppercase bg-[#EFE5D2] text-[#7B4D36]">
-                        {p.category || "Dining Spot"}
-                      </span>
-                      <h5 className="font-serif font-bold text-sm text-[#173B32] line-clamp-1">{p.name}</h5>
-                      <p className="text-[11px] text-[#7B4D36] line-clamp-2">{p.description}</p>
-                    </div>
-                  ))}
-                </div>
+                    />
+                  )}
+                />
               </div>
             )}
           </div>
@@ -2591,119 +2586,61 @@ export default function DestinationDetailPage() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Module 1: Seasonality & Timing */}
-                <div
-                  onClick={() => setExpandedGuide("seasonality")}
-                  className="p-5 rounded-2xl bg-[#EFE5D2] hover:bg-[#EAE0CB] border border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between space-y-4 cursor-pointer group shadow-2xs hover:shadow-md"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
-                        <Sun className="w-4 h-4 text-[#B65E3C]" />
-                        <span>Seasonality &amp; Timing</span>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#B65E3C] group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                    <ul className="space-y-2 text-xs text-[#20211D]/85">
-                      {seasonalityPoints.slice(0, 3).map((pt, i) => (
-                        <li key={i} className="flex items-start gap-2 leading-relaxed">
-                          <span className="text-[#B65E3C] font-bold mt-0.5">•</span>
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-[10px] font-mono text-[#7B4D36]">
-                    <span>Peak: <strong>{destination.best_time_to_visit || "Year-Round"}</strong></span>
-                    <span className="text-[#B65E3C] font-bold group-hover:underline">Expand Guide →</span>
-                  </div>
-                </div>
+              {/* Essential Field Intelligence Carousel (P5) */}
+              {(() => {
+                const fieldIntelligenceList: FieldIntelligenceItem[] = [
+                  {
+                    id: "seasonality",
+                    title: "Seasonality & Timing",
+                    points: seasonalityPoints.slice(0, 3),
+                    footerKey: "Peak",
+                    footerValue: destination.best_time_to_visit || "Year-Round",
+                    iconName: "sun",
+                  },
+                  {
+                    id: "clothing",
+                    title: "Packing & Clothing",
+                    points: clothingPoints.slice(0, 3),
+                    footerKey: "Layers",
+                    footerValue: "Seasonal Pack",
+                    iconName: "mountain",
+                  },
+                  {
+                    id: "transport",
+                    title: "Transport & Transit",
+                    points: transportPoints.slice(0, 3),
+                    footerKey: "Mobility",
+                    footerValue: "Walk & Local Transit",
+                    iconName: "navigation",
+                  },
+                  {
+                    id: "etiquette",
+                    title: "Etiquette & Tips",
+                    points: etiquettePoints.slice(0, 3),
+                    footerKey: "Sanctuary",
+                    footerValue: "Zero Plastic",
+                    iconName: "globe",
+                  },
+                ];
 
-                {/* Module 2: Packing & Clothing */}
-                <div
-                  onClick={() => setExpandedGuide("clothing")}
-                  className="p-5 rounded-2xl bg-[#EFE5D2] hover:bg-[#EAE0CB] border border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between space-y-4 cursor-pointer group shadow-2xs hover:shadow-md"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
-                        <Mountain className="w-4 h-4 text-[#B65E3C]" />
-                        <span>Packing &amp; Clothing</span>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#B65E3C] group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                    <ul className="space-y-2 text-xs text-[#20211D]/85">
-                      {clothingPoints.slice(0, 3).map((pt, i) => (
-                        <li key={i} className="flex items-start gap-2 leading-relaxed">
-                          <span className="text-[#B65E3C] font-bold mt-0.5">•</span>
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-[10px] font-mono text-[#7B4D36]">
-                    <span>Layers: <strong>Seasonal Pack</strong></span>
-                    <span className="text-[#B65E3C] font-bold group-hover:underline">Expand Guide →</span>
-                  </div>
-                </div>
-
-                {/* Module 3: Transport & Transit */}
-                <div
-                  onClick={() => setExpandedGuide("transport")}
-                  className="p-5 rounded-2xl bg-[#EFE5D2] hover:bg-[#EAE0CB] border border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between space-y-4 cursor-pointer group shadow-2xs hover:shadow-md"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
-                        <Navigation className="w-4 h-4 text-[#B65E3C]" />
-                        <span>Transport &amp; Transit</span>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#B65E3C] group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                    <ul className="space-y-2 text-xs text-[#20211D]/85">
-                      {transportPoints.slice(0, 3).map((pt, i) => (
-                        <li key={i} className="flex items-start gap-2 leading-relaxed">
-                          <span className="text-[#B65E3C] font-bold mt-0.5">•</span>
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-[10px] font-mono text-[#7B4D36]">
-                    <span>Mobility: <strong>Walk &amp; Local Transit</strong></span>
-                    <span className="text-[#B65E3C] font-bold group-hover:underline">Expand Guide →</span>
-                  </div>
-                </div>
-
-                {/* Module 4: Etiquette & Local Tips */}
-                <div
-                  onClick={() => setExpandedGuide("etiquette")}
-                  className="p-5 rounded-2xl bg-[#EFE5D2] hover:bg-[#EAE0CB] border border-[#E5D5BA] hover:border-[#173B32] transition-all flex flex-col justify-between space-y-4 cursor-pointer group shadow-2xs hover:shadow-md"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#173B32]">
-                        <Globe className="w-4 h-4 text-[#B65E3C]" />
-                        <span>Etiquette &amp; Tips</span>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-[#B65E3C] group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                    <ul className="space-y-2 text-xs text-[#20211D]/85">
-                      {etiquettePoints.slice(0, 3).map((pt, i) => (
-                        <li key={i} className="flex items-start gap-2 leading-relaxed">
-                          <span className="text-[#B65E3C] font-bold mt-0.5">•</span>
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="pt-2 border-t border-[#E5D5BA]/60 flex items-center justify-between text-[10px] font-mono text-[#7B4D36]">
-                    <span>Sanctuary: <strong>Zero Plastic</strong></span>
-                    <span className="text-[#B65E3C] font-bold group-hover:underline">Expand Guide →</span>
-                  </div>
-                </div>
-              </div>
+                return (
+                  <SingleRowCarousel
+                    items={fieldIntelligenceList}
+                    title={`Essential Field Intelligence for ${destination.name}`}
+                    subtitle="Scan seasonality, packing gear, approach logistics, and local etiquette"
+                    eyebrow="EXPEDITION GUIDE"
+                    itemWidthClass="w-[84vw] sm:w-[320px] lg:w-[340px]"
+                    keyExtractor={(item) => item.id}
+                    renderItem={(item) => (
+                      <FieldIntelligenceCard
+                        key={item.id}
+                        item={item}
+                        onExpand={(id) => setExpandedGuide(id)}
+                      />
+                    )}
+                  />
+                );
+              })()}
 
               {/* Detailed Expanded Field Guide Modal */}
               {expandedGuide && (

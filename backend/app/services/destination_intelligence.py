@@ -399,7 +399,7 @@ class DestinationIntelligenceService:
         if len(results) == 0 or (len(results) < limit and not alias_res and not any(r.get("is_curated") for r in results)):
             try:
                 geocoder = ProviderFactory.get_geocoding_provider()
-                geo_results = await asyncio.wait_for(geocoder.autocomplete(clean_raw, limit=limit), timeout=2.5)
+                geo_results = await asyncio.wait_for(geocoder.autocomplete(clean_raw, limit=limit), timeout=1.2)
                 for gr in (geo_results or []):
                     gr_slug = gr.get("canonical_slug") or gr.get("slug") or gr["name"].lower().replace(" ", "-")
                     if gr_slug not in seen_slugs and gr["name"].lower() not in [r["name"].lower() for r in results]:

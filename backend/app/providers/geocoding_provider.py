@@ -756,7 +756,7 @@ class LiveGeocodingProvider(GeocodingProvider):
         # 2. Query Photon Komoot API with multi-result ranking (built specifically for fast autocomplete)
         try:
             url = f"https://photon.komoot.io/api/?q={httpx.URL(clean_q)}&limit={max(limit, 6)}"
-            async with httpx.AsyncClient(timeout=2.5, headers=self.headers) as client:
+            async with httpx.AsyncClient(timeout=1.2, headers=self.headers) as client:
                 res = await client.get(url)
                 if res.status_code == 200:
                     data = res.json()

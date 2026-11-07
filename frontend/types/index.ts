@@ -1941,6 +1941,8 @@ export interface CulinaryExperience {
   image_url?: string | null;
 }
 
+export type SignatureDish = CulinaryExperience;
+
 export interface DestinationCulinaryGuide {
   destination_slug: string;
   destination_name: string;
