@@ -1570,8 +1570,11 @@ export default function DestinationDetailPage() {
                   चुनिंदा पड़ाव • Curated Sanctuaries &amp; Topography
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#173B32]">
-                  Curated Trails, Cafés &amp; Local Landmarks ({filteredPlaces.length})
+                  Curated Sanctuaries &amp; Landmarks ({filteredPlaces.length})
                 </h3>
+                <p className="text-xs sm:text-sm text-[#7B4D36] dark:text-[#C5A898] font-medium mt-1">
+                  Hand-picked trails, ancient sanctums, ridge viewpoints, and local cafes in {destination.name}.
+                </p>
               </div>
               
               {/* View Switcher: Geographic Zones vs Catalogue Grid */}
@@ -1690,6 +1693,8 @@ export default function DestinationDetailPage() {
                 <div className="block sm:hidden">
                   <SingleRowCarousel
                     items={filteredPlaces}
+                    hideHeader
+                    showNavigationControls
                     title={`Curated Sanctuaries & Landmarks (${filteredPlaces.length})`}
                     subtitle="Swipe across verified trails, monasteries, and viewpoints in a compact single row"
                     eyebrow="SINGLE-ROW DISCOVERY"
@@ -1713,6 +1718,8 @@ export default function DestinationDetailPage() {
                 <div className="hidden sm:block">
                   <SynchronizedTwoRowCarousel
                     items={filteredPlaces}
+                    hideHeader
+                    showNavigationControls
                     title={`Curated Sanctuaries & Landmarks (${filteredPlaces.length})`}
                     subtitle="Swipe across verified Himalayan trails, monasteries, and viewpoints in synchronized rows"
                     eyebrow="SYNCHRONIZED TWO-ROW DISCOVERY"
@@ -2179,6 +2186,9 @@ export default function DestinationDetailPage() {
                     Approach Transit &amp; Fleet {!rentalsLoading && `(${rentals.length})`}
                   </span>
                 </h3>
+                <p className="text-xs sm:text-sm text-[#7B4D36] dark:text-[#C5A898] font-medium mt-1">
+                  Verified Approach Transit &amp; Fleet: expedition fleet &amp; rentals with locally available high-clearance SUVs, adventure motorcycles, and mountain transit.
+                </p>
               </div>
               <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase bg-[#FAF7F0] border border-[#E5D5BA] text-[#7B4D36]">
                 Verified Mobility Fleet
@@ -2327,6 +2337,8 @@ export default function DestinationDetailPage() {
               <div className="space-y-6">
                 <SingleRowCarousel
                   items={rentals}
+                  hideHeader
+                  showNavigationControls
                   title={`Expedition Fleet & Rentals (${rentals.length})`}
                   subtitle="High-clearance SUVs, adventure motorcycles, and local transit in a single horizontal row"
                   eyebrow="MOBILITY FLEET ROW"
@@ -2626,6 +2638,8 @@ export default function DestinationDetailPage() {
                 return (
                   <SingleRowCarousel
                     items={fieldIntelligenceList}
+                    hideHeader
+                    showNavigationControls
                     title={`Essential Field Intelligence for ${destination.name}`}
                     subtitle="Scan seasonality, packing gear, approach logistics, and local etiquette"
                     eyebrow="EXPEDITION GUIDE"

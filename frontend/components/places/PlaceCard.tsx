@@ -67,12 +67,12 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
           if (onSelect) onSelect(place);
         }
       }}
-      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press cursor-pointer flex flex-col relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 ${
+      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press cursor-pointer flex flex-col justify-between h-full relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 min-w-0 w-full ${
         isCompact ? "card-compact" : ""
       }`}
     >
-      {/* Image Container */}
-      <div className={`relative w-full overflow-hidden bg-[#E5D5BA] ${isCompact ? "h-36 sm:h-40" : "h-52 sm:h-56"}`}>
+      {/* Image Container - Standardized Aspect Ratio */}
+      <div className={`relative w-full overflow-hidden bg-[#E5D5BA] shrink-0 ${isCompact ? "aspect-[16/9]" : "aspect-[16/10]"}`}>
         <VanvasImage
           src={visualRes.imageUrl}
           fallbackSrc={visualRes.fallbackUrl}
@@ -152,15 +152,15 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
       </div>
 
       {/* Body */}
-      <div className={`flex-1 flex flex-col justify-between ${isCompact ? "p-3 sm:p-3.5 space-y-2" : "p-5 space-y-3.5"}`}>
-        <div>
-          <h3 className={`font-serif text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug ${
-            isCompact ? "text-base font-bold" : "text-lg font-black"
+      <div className={`flex-1 flex flex-col justify-between min-w-0 w-full ${isCompact ? "p-3 sm:p-3.5 space-y-2" : "p-4 sm:p-5 space-y-3"}`}>
+        <div className="min-w-0 w-full">
+          <h3 className={`font-serif text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug truncate min-w-0 ${
+            isCompact ? "text-base font-bold" : "text-base sm:text-lg font-black"
           }`}>
             {place.name}
           </h3>
-          <p className={`text-[#20211D]/75 leading-relaxed font-light ${
-            isCompact ? "text-[11px] mt-1 line-clamp-1" : "text-xs mt-1.5 line-clamp-2"
+          <p className={`text-[#20211D]/75 leading-relaxed font-light min-w-0 line-clamp-2 ${
+            isCompact ? "text-[11px] mt-1" : "text-xs mt-1.5"
           }`}>
             {place.description || "Authentic destination landmark."}
           </p>

@@ -17,6 +17,8 @@ export interface SingleRowCarouselProps<T> {
   itemWidthClass?: string;
   ariaLabel?: string;
   emptyMessage?: string;
+  hideHeader?: boolean;
+  showNavigationControls?: boolean;
 }
 
 export function SingleRowCarousel<T>({
@@ -33,6 +35,8 @@ export function SingleRowCarousel<T>({
   itemWidthClass = "w-[80vw] sm:w-[320px] lg:w-[360px]",
   ariaLabel = "Single Row Discovery Carousel",
   emptyMessage = "No items available in this category.",
+  hideHeader = false,
+  showNavigationControls = false,
 }: SingleRowCarouselProps<T>) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -99,7 +103,7 @@ export function SingleRowCarousel<T>({
   return (
     <div className={`space-y-6 ${className}`} aria-label={ariaLabel}>
       {/* Section Header */}
-      {(title || eyebrow || filterOptions) && (
+      {!hideHeader && (title || eyebrow || filterOptions) && (
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E5D5BA]/70 dark:border-[#2C3B34] pb-4">
           <div>
             {eyebrow && (
@@ -187,6 +191,30 @@ export function SingleRowCarousel<T>({
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* Compact Navigation when outer header is used */}
+      {hideHeader && showNavigationControls && !isExpandedView && totalItems > 1 && (
+        <div className="flex items-center justify-end gap-1.5 -mb-2">
+          <button
+            type="button"
+            onClick={() => scrollByDirection("left")}
+            disabled={!canScrollLeft}
+            aria-label="Scroll carousel left"
+            className="p-1.5 rounded-full bg-[#FAF4E8] dark:bg-[#1C2E27] border border-[#E5D5BA] dark:border-[#2C3B34] text-[#173B32] dark:text-[#FAF7F0] hover:border-[#173B32] disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollByDirection("right")}
+            disabled={!canScrollRight}
+            aria-label="Scroll carousel right"
+            className="p-1.5 rounded-full bg-[#FAF4E8] dark:bg-[#1C2E27] border border-[#E5D5BA] dark:border-[#2C3B34] text-[#173B32] dark:text-[#FAF7F0] hover:border-[#173B32] disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
