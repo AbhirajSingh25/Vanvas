@@ -85,7 +85,7 @@ export const DestinationReelsCarousel: React.FC<DestinationReelsCarouselProps> =
     }
   };
 
-  // Observe section visibility within viewport: pause video if off-screen
+  // Observe section visibility within viewport: pause video if off-screen or tab blurred
   useEffect(() => {
     const section = containerRef.current;
     if (!section) return;
@@ -93,13 +93,30 @@ export const DestinationReelsCarousel: React.FC<DestinationReelsCarouselProps> =
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        setIsSectionVisible(entry.isIntersecting && entry.intersectionRatio >= 0.25);
+        setIsSectionVisible(entry.isIntersecting && entry.intersectionRatio >= 0.25 && document.visibilityState === "visible");
       },
       { threshold: [0, 0.25, 0.5, 1.0] }
     );
 
+    const handleDocVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        setIsSectionVisible(false);
+        videoRefs.current.forEach((v) => v?.pause());
+      } else {
+        const entry = section.getBoundingClientRect();
+        const isInView = entry.top < window.innerHeight && entry.bottom > 0;
+        setIsSectionVisible(isInView);
+      }
+    };
+
     observer.observe(section);
-    return () => observer.disconnect();
+    document.addEventListener("visibilitychange", handleDocVisibility);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", handleDocVisibility);
+      videoRefs.current.forEach((v) => v?.pause());
+    };
   }, []);
 
   // Update playback state whenever activeIndex or isSectionVisible changes
@@ -234,9 +251,11 @@ export const DestinationReelsCarousel: React.FC<DestinationReelsCarouselProps> =
     return null;
   }
 
+  const hasRealVideos = reels.some((r) => Boolean(r.videoUrl && r.videoUrl.endsWith(".mp4")));
+
   return (
     <section
-      aria-label="Destination Video Discovery Carousel"
+      aria-label={hasRealVideos ? "Destination Video Discovery Carousel" : "Destination Editorial Visual Stories"}
       className={`py-8 sm:py-10 border-y border-[#E5D5BA]/80 dark:border-[#2C3B34] bg-[#FAF7F0] dark:bg-[#121E1A] ${className}`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -244,22 +263,24 @@ export const DestinationReelsCarousel: React.FC<DestinationReelsCarouselProps> =
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-[#B65E3C] animate-pulse" />
+              <span className={`w-2 h-2 rounded-full ${hasRealVideos ? "bg-[#B65E3C] animate-pulse" : "bg-[#B49252]"}`} />
               <span className="text-[11px] font-mono uppercase tracking-widest text-[#B65E3C] dark:text-[#E28C68] font-black">
-                See It. Plan It.
+                {hasRealVideos ? "See It. Plan It. • Destination Video Reels" : "Field Archives • Editorial Visual Stories"}
               </span>
             </div>
             <h2 className="font-serif font-black text-2xl sm:text-3xl text-[#173B32] dark:text-[#FAF7F0]">
-              Short Films &amp; Verified Routes
+              {hasRealVideos ? "Short Films & Verified Routes" : "Editorial Visual Stories & Route Dispatches"}
             </h2>
             <p className="text-xs sm:text-sm text-[#7B4D36] dark:text-[#C5A898] font-medium mt-1">
-              Vertical 9:16 discovery reels from {destinationName}, with real waypoints you can turn into a journey.
+              {hasRealVideos
+                ? `Vertical 9:16 discovery reels from ${destinationName}, with real waypoints you can turn into a journey.`
+                : `Curated photographic journeys and waypoint itineraries from ${destinationName} verified by VANVAS field cartographers.`}
             </p>
           </div>
 
           {/* Controls: Sound toggle & carousel pagination buttons */}
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            {reels.some((r) => r.videoUrl && r.videoUrl.endsWith(".mp4")) ? (
+            {hasRealVideos ? (
               <button
                 type="button"
                 onClick={() => setIsMuted((prev) => !prev)}

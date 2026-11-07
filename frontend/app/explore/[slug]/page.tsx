@@ -25,6 +25,7 @@ import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 import { DestinationReelsCarousel } from "@/components/destinations/DestinationReelsCarousel";
 import { SynchronizedTwoRowCarousel } from "@/components/ui/SynchronizedTwoRowCarousel";
+import { SingleRowCarousel } from "@/components/ui/SingleRowCarousel";
 import { FeaturedPlaceCard, FeaturedStayCard, FeaturedVehicleCard } from "@/components/destinations/DestinationFeaturedCard";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
@@ -2052,12 +2053,12 @@ export default function DestinationDetailPage() {
                   />
                 )}
 
-                <SynchronizedTwoRowCarousel
+                <SingleRowCarousel
                   items={hotels.slice(1)}
                   title={`Remaining Stays & Retreats (${hotels.length - 1})`}
-                  subtitle="Browse verified mountain homestays, hostels, and camps in synchronized rows"
-                  eyebrow="SYNCHRONIZED TWO-ROW STAYS"
-                  columnWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
+                  subtitle="Browse verified mountain homestays, hostels, and camps in a single horizontal row"
+                  eyebrow="CURATED STAYS ROW"
+                  itemWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
                   keyExtractor={(h) => h.id}
                   renderItem={(h) => {
                     const isLiveStay = Boolean(h.is_live && h.source !== "vanvas_curated" && h.trust_source !== "VANVAS_CURATED");
@@ -2325,12 +2326,12 @@ export default function DestinationDetailPage() {
                   />
                 )}
 
-                <SynchronizedTwoRowCarousel
+                <SingleRowCarousel
                   items={rentals.slice(1)}
                   title={`Expedition Fleet & Rentals (${rentals.length - 1})`}
-                  subtitle="High-clearance SUVs, adventure motorcycles, and local scooters in synchronized rows"
-                  eyebrow="SYNCHRONIZED TWO-ROW FLEET"
-                  columnWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
+                  subtitle="High-clearance SUVs, adventure motorcycles, and local scooters in a single horizontal row"
+                  eyebrow="MOBILITY FLEET ROW"
+                  itemWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
                   keyExtractor={(r) => r.id}
                   renderItem={(r) => {
                     const hasPrice = typeof r.price_per_day === "number" && r.price_per_day > 0;
@@ -2459,12 +2460,12 @@ export default function DestinationDetailPage() {
             </div>
 
             {/* Signature Dishes Synchronized Two-Row Carousel */}
-            <SynchronizedTwoRowCarousel
+            <SingleRowCarousel
               items={foodGuide.signature_dishes.filter((d) => selectedDietary === "All" || d.dietary.toLowerCase() === selectedDietary.toLowerCase())}
               title={`Signature Gastronomy & Delicacies (${foodGuide.signature_dishes.length})`}
-              subtitle="Regional flavours, traditional recipes, and local lore in synchronized discovery rows"
+              subtitle="Regional flavours, traditional recipes, and local lore in a single horizontal row"
               eyebrow="SIGNATURE FLAVOURS TRACK"
-              columnWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
+              itemWidthClass="w-[82vw] sm:w-[330px] lg:w-[360px]"
               keyExtractor={(dish, idx) => `dish-${idx}`}
               renderItem={(dish, idx) => (
                   <div key={idx} className="p-5 rounded-3xl bg-[#FAF7F0] border-2 border-[#E5D5BA] shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">

@@ -9,6 +9,8 @@ from app.seed.canonical_dataset import (
 )
 
 FRONTEND_PUBLIC = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "public"))
+FRONTEND_APP = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "app"))
+FRONTEND_COMPONENTS = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "components"))
 
 def test_zero_image_collision_across_all_canonical_places():
     """Verify that every place in canonical_dataset resolves to a distinct, non-colliding image."""
@@ -76,7 +78,7 @@ def test_existing_mp4_reels_exist_and_non_empty():
 
 def test_synchronized_two_row_carousel_component_exists():
     """Verify SynchronizedTwoRowCarousel component is present in frontend components."""
-    comp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "components", "ui", "SynchronizedTwoRowCarousel.tsx"))
+    comp_path = os.path.join(FRONTEND_COMPONENTS, "ui", "SynchronizedTwoRowCarousel.tsx")
     assert os.path.exists(comp_path), "SynchronizedTwoRowCarousel.tsx must exist"
     with open(comp_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -84,12 +86,114 @@ def test_synchronized_two_row_carousel_component_exists():
     assert "pairedColumns" in content
     assert "data-carousel-col" in content
 
+def test_single_row_carousel_component_exists():
+    """Verify SingleRowCarousel component is present and enforces single horizontal track."""
+    comp_path = os.path.join(FRONTEND_COMPONENTS, "ui", "SingleRowCarousel.tsx")
+    assert os.path.exists(comp_path), "SingleRowCarousel.tsx must exist"
+    with open(comp_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "SingleRowCarousel" in content
+    assert "data-carousel-item" in content
+    # SingleRowCarousel must not use pairedColumns
+    assert "pairedColumns" not in content
+
 def test_featured_cards_component_exists():
     """Verify DestinationFeaturedCard component is present in frontend components."""
-    comp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "components", "destinations", "DestinationFeaturedCard.tsx"))
+    comp_path = os.path.join(FRONTEND_COMPONENTS, "destinations", "DestinationFeaturedCard.tsx")
     assert os.path.exists(comp_path), "DestinationFeaturedCard.tsx must exist"
     with open(comp_path, "r", encoding="utf-8") as f:
         content = f.read()
     assert "FeaturedPlaceCard" in content
     assert "FeaturedStayCard" in content
     assert "FeaturedVehicleCard" in content
+
+def test_strict_carousel_layout_rules_on_explore_page():
+    """
+    Enforce Non-Negotiable Layout Invariant:
+    A. FAMOUS PLACES: Two synchronized rows (SynchronizedTwoRowCarousel).
+    B. HOTELS & STAYS: Exactly ONE horizontal row (SingleRowCarousel).
+    C. MOBILITY & RENTALS: Exactly ONE horizontal row (SingleRowCarousel).
+    D. FOOD & RESTAURANTS: Exactly ONE horizontal row (SingleRowCarousel).
+    """
+    explore_page = os.path.join(FRONTEND_APP, "explore", "[slug]", "page.tsx")
+    assert os.path.exists(explore_page), "explore/[slug]/page.tsx must exist"
+    with open(explore_page, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Places must use SynchronizedTwoRowCarousel
+    assert "SynchronizedTwoRowCarousel" in content
+    assert "Curated Sanctuaries & Landmarks" in content
+
+    # Hotels must use SingleRowCarousel
+    assert "SingleRowCarousel" in content
+    assert "Remaining Stays & Retreats" in content
+    assert "CURATED STAYS ROW" in content
+
+    # Rentals must use SingleRowCarousel
+    assert "Expedition Fleet & Rentals" in content
+    assert "MOBILITY FLEET ROW" in content
+
+    # Food must use SingleRowCarousel
+    assert "Signature Gastronomy & Delicacies" in content
+    assert "SIGNATURE FLAVOURS TRACK" in content
+
+def test_strict_carousel_layout_rules_on_place_page():
+    """
+    Enforce Layout Invariant on /places/[id]:
+    - Related places in two-row carousel.
+    - Related food in one-row carousel.
+    - Nearby hotels in one-row carousel.
+    """
+    place_page = os.path.join(FRONTEND_APP, "places", "[id]", "page.tsx")
+    assert os.path.exists(place_page), "places/[id]/page.tsx must exist"
+    with open(place_page, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Attractions: SynchronizedTwoRowCarousel
+    assert "<SynchronizedTwoRowCarousel" in content
+    # Food & Stays: SingleRowCarousel
+    assert "<SingleRowCarousel" in content
+    assert "Where to Eat & Drink Nearby" in content
+    assert "Verified Stays & Retreats Nearby" in content
+
+def test_reels_single_active_video_and_visual_stories_fallback():
+    """
+    Verify DestinationReelsCarousel behavior:
+    1. Pauses non-active videos.
+    2. Respects document visibility / blur.
+    3. Distinctly labels real videos as Video Reel and fallbacks as Visual Story.
+    """
+    reels_path = os.path.join(FRONTEND_COMPONENTS, "destinations", "DestinationReelsCarousel.tsx")
+    assert os.path.exists(reels_path), "DestinationReelsCarousel.tsx must exist"
+    with open(reels_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "video.pause()" in content
+    assert "visibilitychange" in content
+    assert "Video Reel" in content
+    assert "Visual Story" in content
+    assert "hasRealVideos" in content
+
+def test_newly_generated_authentic_artwork_assets_exist():
+    """Verify all newly generated painterly assets are present, high-res, and > 100KB."""
+    new_assets = [
+        "images/places/jaipur/hawa-mahal.webp",
+        "images/places/jaipur/amber-fort.webp",
+        "images/places/udaipur/city-palace-udaipur.webp",
+        "images/places/dharamshala/hpca-stadium.webp",
+        "images/places/dharamshala/kareri-lake-trek-base.webp",
+        "images/places/dharamshala/naddi-sunset-viewpoint.webp",
+        "images/places/manali/hadimba-temple.webp",
+        "images/places/manali/rohtang-pass.webp",
+        "images/places/leh/thiksey-monastery.webp",
+        "images/places/leh/pangong-tso.webp",
+        "images/places/leh/shanti-stupa.webp",
+        "images/places/mussoorie/char-dukan-prakash-store.webp",
+        "images/places/tungnath-chandrashila/chandrashila-summit.webp",
+    ]
+
+    for rel_path in new_assets:
+        full_path = os.path.join(FRONTEND_PUBLIC, rel_path)
+        assert os.path.exists(full_path), f"Asset {rel_path} must exist on disk"
+        size = os.path.getsize(full_path)
+        assert size > 100000, f"Asset {rel_path} size ({size} bytes) must be > 100KB"

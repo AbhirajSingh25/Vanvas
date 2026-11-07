@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
 import { SynchronizedTwoRowCarousel } from "@/components/ui/SynchronizedTwoRowCarousel";
+import { SingleRowCarousel } from "@/components/ui/SingleRowCarousel";
 
 export default function PlaceDetailPage() {
   const params = useParams();
@@ -372,15 +373,15 @@ export default function PlaceDetailPage() {
           </div>
         )}
 
-        {/* SYNCHRONIZED TWO-ROW CAROUSEL: Nearby Food & Cafes */}
+        {/* SINGLE-ROW CAROUSEL: Nearby Food & Cafes */}
         {place.nearby_food && place.nearby_food.length > 0 && (
           <div className="pt-4 border-t border-[#E5D5BA]/80 dark:border-[#2C3B34]">
-            <SynchronizedTwoRowCarousel
+            <SingleRowCarousel
               items={place.nearby_food}
               title="Where to Eat & Drink Nearby"
               subtitle={`Verified cafes and eateries located near ${place.name}`}
               eyebrow="CULINARY SPOTS"
-              columnWidthClass="w-[78vw] sm:w-[300px] lg:w-[320px]"
+              itemWidthClass="w-[78vw] sm:w-[300px] lg:w-[320px]"
               keyExtractor={(nf) => nf.id}
               renderItem={(nf) => {
                 const foodVisual = resolvePlaceArtwork(nf.name, destName, "Cafes & Food");
@@ -417,15 +418,15 @@ export default function PlaceDetailPage() {
           </div>
         )}
 
-        {/* SYNCHRONIZED TWO-ROW CAROUSEL: Nearby Stays */}
+        {/* SINGLE-ROW CAROUSEL: Nearby Stays */}
         {place.nearby_stays && place.nearby_stays.length > 0 && (
           <div className="pt-4 border-t border-[#E5D5BA]/80 dark:border-[#2C3B34]">
-            <SynchronizedTwoRowCarousel
+            <SingleRowCarousel
               items={place.nearby_stays}
               title="Verified Stays & Retreats Nearby"
               subtitle={`Authentic homestays, hotels, and camps close to ${place.name}`}
               eyebrow="ACCOMMODATION"
-              columnWidthClass="w-[78vw] sm:w-[300px] lg:w-[320px]"
+              itemWidthClass="w-[78vw] sm:w-[300px] lg:w-[320px]"
               keyExtractor={(ns) => ns.id}
               renderItem={(ns) => {
                 const stayVisual = resolveHotelArtwork(ns.name, destName, "Homestay");

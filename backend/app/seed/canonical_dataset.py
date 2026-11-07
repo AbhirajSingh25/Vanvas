@@ -2736,7 +2736,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'description': 'A tranquil hilltop hamlet 3 km past Dal Lake offering the closest '
                                           'road-accessible panoramic view of the sheer granite face of the Dhauladhar '
                                           'range.',
-                           'image_url': '/images/places/dharamshala/triund-trek.webp',
+                           'image_url': '/images/places/dharamshala/naddi-sunset-viewpoint.webp',
                            'is_hidden_gem': False,
                            'is_indoor': False,
                            'is_must_visit': True,
@@ -2759,7 +2759,7 @@ ADDITIONAL_PLACES_BY_DEST = {   'agra': [   {   'address': 'Dharmapuri, Forest C
                            'description': 'The starting base for the scenic trek to crystal-clear Kareri Lake at '
                                           '2,934m, traversing pine woods and Nyund river crossings along granite '
                                           'slabs.',
-                           'image_url': '/images/places/dharamshala/bhagsunag-waterfall.webp',
+                           'image_url': '/images/places/dharamshala/kareri-lake-trek-base.webp',
                            'is_hidden_gem': True,
                            'is_indoor': False,
                            'is_must_visit': False,

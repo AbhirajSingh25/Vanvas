@@ -1312,6 +1312,47 @@ export const EXACT_PLACE_REGISTRY: Record<string, ExactPlaceEntry> = {
       "tashi-jong-monastery"
     ]
   },
+  "dharamshala:naddi-village-dhauladhar-sunset-crest": {
+    imageUrl: "/images/places/dharamshala/naddi-sunset-viewpoint.webp",
+    visualDescription: "Golden sunset vista from Naddi village ridge over Kangra Valley with glowing Dhauladhar peaks, framed by pine trees.",
+    category: "Nature & Viewpoints",
+    semanticTheme: "viewpoint",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "naddi-sunset-viewpoint",
+      "naddi-village-dhauladhar-sunset-crest",
+      "naddi-viewpoint",
+      "naddi"
+    ]
+  },
+  "dharamshala:kareri-glacial-lake-trailhead-ghera-base": {
+    imageUrl: "/images/places/dharamshala/kareri-lake-trek-base.webp",
+    visualDescription: "High-altitude glacial lake at 2,934m reflecting the towering snow-dusted Dhauladhar range with alpine meadows and shepherd huts.",
+    category: "Adventure & Treks",
+    semanticTheme: "trek",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "kareri-lake-trek-base",
+      "kareri-glacial-lake-trailhead-ghera-base",
+      "kareri-lake",
+      "ghera-base"
+    ]
+  },
+  "dharamshala:hpca-stadium": {
+    imageUrl: "/images/places/dharamshala/hpca-stadium.webp",
+    visualDescription: "Scenic cricket stadium with Tibetan red-and-gold pagoda pavilions against the snow-capped Dhauladhar mountains.",
+    category: "Must Visit",
+    semanticTheme: "heritage",
+    sourceType: "editorial_artwork",
+    source: "vanvas_curated",
+    aliases: [
+      "hpca-stadium",
+      "hpca-cricket-stadium",
+      "dharamshala-cricket-stadium"
+    ]
+  },
   "goa:chapora-fort-hilltop-viewpoint": {
     imageUrl: "/images/places/goa/chapora-fort.webp",
     visualDescription: "Historic red laterite fort overlooking the dramatic confluence of Chapora River and the Arabian Sea with vast ocean vistas.",
