@@ -38,9 +38,12 @@ export function getApiBaseUrl(): string {
     return normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
   }
 
-  // 2. Browser runtime: use relative path so requests route seamlessly
-  // through Next.js rewrites to the verified Render backend in both production and local dev
+  // 2. Browser runtime: use relative path for production rewrites,
+  // or direct local API in local browser environments
   if (typeof window !== "undefined") {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return LOCAL_API_DEFAULT;
+    }
     return "/api/v1";
   }
 
