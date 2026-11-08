@@ -30,6 +30,7 @@ import { FeaturedPlaceCard, FeaturedStayCard, FeaturedVehicleCard } from "@/comp
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
 import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
 import { getCanonicalHindiName, findCanonicalDestination } from "@/lib/canonicalDestinations";
+import { getCanonicalDestinationData } from "@/lib/canonicalRegistryData";
 import {
   DESTINATION_TREK_REGISTRY,
   DEFAULT_NON_TREK_NOTICE,
@@ -203,11 +204,13 @@ export default function DestinationDetailPage() {
   const { isCompact } = useDensity();
   const { openAskVanvas, setTravelContext } = useAskVanvas();
 
+  // Instant canonical pre-seeding: eliminates cold-start and backend hang blocker screens
+  const initialCanonical = slug ? getCanonicalDestinationData(slug) : null;
   const [mounted, setMounted] = useState(false);
-  const [destination, setDestination] = useState<Destination | null>(null);
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [weather, setWeather] = useState<WeatherSnapshot[]>([]);
-  const [currentWeather, setCurrentWeather] = useState<StructuredWeather | null>(null);
+  const [destination, setDestination] = useState<Destination | null>(initialCanonical ? initialCanonical.destination : null);
+  const [places, setPlaces] = useState<Place[]>(initialCanonical ? initialCanonical.places : []);
+  const [weather, setWeather] = useState<WeatherSnapshot[]>(initialCanonical ? initialCanonical.weather : []);
+  const [currentWeather, setCurrentWeather] = useState<StructuredWeather | null>(initialCanonical?.current_weather || null);
 
   // Sync Destination context to Ask VANVAS and record in recent destinations
   useEffect(() => {
@@ -239,11 +242,11 @@ export default function DestinationDetailPage() {
   }, [destination, slug, setTravelContext]);
   
   // Independent Section Data & Loading States
-  const [destLoading, setDestLoading] = useState(true);
+  const [destLoading, setDestLoading] = useState<boolean>(!initialCanonical);
   const [loadError, setLoadError] = useState<string | null>(null);
   
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [staysLoading, setStaysLoading] = useState(true);
+  const [hotels, setHotels] = useState<Hotel[]>(initialCanonical ? initialCanonical.hotels : []);
+  const [staysLoading, setStaysLoading] = useState<boolean>(!initialCanonical);
   const [selectedTravellerProfile, setSelectedTravellerProfile] = useState<string>("All");
   const [selectedStayType, setSelectedStayType] = useState<string>("All");
   const [selectedStayForModal, setSelectedStayForModal] = useState<Hotel | null>(null);
@@ -284,8 +287,8 @@ export default function DestinationDetailPage() {
     setCheckoutModalOpen(true);
   };
 
-  const [rentals, setRentals] = useState<RentalOption[]>([]);
-  const [rentalsLoading, setRentalsLoading] = useState(true);
+  const [rentals, setRentals] = useState<RentalOption[]>(initialCanonical ? initialCanonical.rentals : []);
+  const [rentalsLoading, setRentalsLoading] = useState<boolean>(!initialCanonical);
   const [selectedRentalForModal, setSelectedRentalForModal] = useState<RentalOption | null>(null);
   const [rentalModalOpen, setRentalModalOpen] = useState(false);
   const [mobilityPlan, setMobilityPlan] = useState<MobilityAccessPlan | null>(null);
@@ -513,23 +516,44 @@ export default function DestinationDetailPage() {
   };
 
   const fetchDestination = () => {
-    setDestLoading(true);
-    setLoadError(null);
-    setStaysLoading(true);
-    setRentalsLoading(true);
-
-    const abortTimeout = setTimeout(() => {
+    const canonicalPkg = getCanonicalDestinationData(slug);
+    if (canonicalPkg) {
+      setDestination((prev) => prev || canonicalPkg.destination);
+      setPlaces((prev) => (prev && prev.length > 0 ? prev : canonicalPkg.places));
+      setHotels((prev) => (prev && prev.length > 0 ? prev : canonicalPkg.hotels));
+      setRentals((prev) => (prev && prev.length > 0 ? prev : canonicalPkg.rentals));
+      setWeather((prev) => (prev && prev.length > 0 ? prev : canonicalPkg.weather));
+      if (canonicalPkg.current_weather) {
+        setCurrentWeather((prev) => prev || canonicalPkg.current_weather!);
+      }
       setDestLoading(false);
-      setLoadError("Connection timed out. The Himalayan intelligence layer took too long to respond. Tap retry to reconnect.");
       setStaysLoading(false);
       setRentalsLoading(false);
-    }, 45000);
+      setLoadError(null);
+    } else {
+      setDestLoading(true);
+      setLoadError(null);
+      setStaysLoading(true);
+      setRentalsLoading(true);
+    }
+
+    const abortTimeout = setTimeout(() => {
+      if (!destination && !canonicalPkg) {
+        setDestLoading(false);
+        setLoadError("Connection timed out. The Himalayan intelligence layer took too long to respond. Tap retry to reconnect.");
+        setStaysLoading(false);
+        setRentalsLoading(false);
+      }
+    }, 8000);
 
     api.getDestinationDetail(slug)
       .then((data) => {
         clearTimeout(abortTimeout);
         if (!data || !data.destination) {
-          throw new Error("404: Sanctuary not found in index");
+          if (!canonicalPkg && !destination) {
+            throw new Error("404: Sanctuary not found in index");
+          }
+          return;
         }
         const canon = findCanonicalDestination(slug);
         const resolvedDest = canon ? {
@@ -543,240 +567,30 @@ export default function DestinationDetailPage() {
           best_time_to_visit: canon.best_time_to_visit || data.destination.best_time_to_visit,
         } : data.destination;
         setDestination(resolvedDest);
-        setPlaces(data.places || []);
-        setWeather(data.weather || []);
+        if (data.places && data.places.length > 0) setPlaces(data.places);
+        if (data.weather && data.weather.length > 0) setWeather(data.weather);
         if (data.current_weather) {
           setCurrentWeather(data.current_weather);
-        } else {
-          api.getDestinationWeather(slug)
-            .then((w) => {
-              if (w) {
-                setCurrentWeather(w);
-                if (w.daily && w.daily.length > 0) setWeather(w.daily);
-              }
-            })
-            .catch(() => {});
         }
-        setDestLoading(false);
-
-        const destId = data.destination.id || slug;
-
-        // Progressive Background Fetches
-        // 1. Stays
         if (data.hotels && data.hotels.length > 0) {
           setHotels(data.hotels);
-          setStaysLoading(false);
-        } else {
-          api.getHotels(destId)
-            .then((loadedStays) => setHotels(loadedStays || []))
-            .catch(() => setHotels([]))
-            .finally(() => setStaysLoading(false));
         }
-
-        // 2. Rentals
         if (data.rentals && data.rentals.length > 0) {
           setRentals(data.rentals);
-          setRentalsLoading(false);
-        } else {
-          api.getRentals(destId)
-            .then((loadedR) => setRentals(loadedR || []))
-            .catch(() => setRentals([]))
-            .finally(() => setRentalsLoading(false));
         }
+        setDestLoading(false);
+        setStaysLoading(false);
+        setRentalsLoading(false);
       })
       .catch((err) => {
         clearTimeout(abortTimeout);
-        console.warn("Destination API remote fetch failed, falling back to canonical sanctuary registry:", err);
-        const canon = findCanonicalDestination(slug);
-        if (canon) {
-          setDestination({
-            id: canon.id,
-            name: canon.name,
-            slug: canon.slug,
-            state: canon.state,
-            region: canon.region,
-            tagline: canon.tagline,
-            description: canon.description,
-            latitude: canon.latitude,
-            longitude: canon.longitude,
-            altitude_meters: canon.altitude_meters,
-            best_time_to_visit: canon.best_time_to_visit,
-            weather_type: canon.weather_type,
-            is_featured: canon.is_featured,
-            is_curated: canon.is_curated,
-            places_count: 8,
-          });
-
-          // Seed verified canonical places for Kainchi Dham and others
-          if (canon.slug === "kainchi-dham") {
-            setPlaces([
-              {
-                id: "kainchi-ashram",
-                destination_id: canon.id,
-                slug: "neem-karoli-baba-kainchi-ashram",
-                name: "Neem Karoli Baba Kainchi Ashram",
-                category: "Spiritual",
-                rating: 4.9,
-                review_count: 4820,
-                description: "Sacred sanctuary established by Neem Karoli Baba in 1962 along the sparkling mountain stream. World-renowned for peace, selfless service, and continuous Hanuman Chalisa chanting.",
-                latitude: 29.4239,
-                longitude: 79.5165,
-                address: "NH-109, Kainchi, Nainital District, Uttarakhand",
-                is_must_visit: true,
-                is_hidden_gem: false,
-                is_indoor: false,
-                tags: "Spiritual, Ashram, Neem Karoli Baba, Meditation, Temple",
-                why_vanvas_recommends: "Sacred riverside chanting and immense spiritual calm in morning mountain mist.",
-                recommended_duration_mins: 180,
-                price_level: "Free Entry",
-                source: "vanvas_curated",
-              },
-              {
-                id: "kainchi-riverbed",
-                destination_id: canon.id,
-                slug: "kshipra-mountain-stream",
-                name: "Kshipra Mountain Stream & Meditation Ghat",
-                category: "Nature",
-                rating: 4.8,
-                review_count: 1420,
-                description: "Pristine clear mountain river flowing alongside the ashram beneath towering Kumaoni deodar and pine hills.",
-                latitude: 29.4245,
-                longitude: 79.5170,
-                address: "Behind Kainchi Ashram, NH-109",
-                is_must_visit: true,
-                is_hidden_gem: false,
-                is_indoor: false,
-                tags: "River, Nature, Meditation, Peaceful",
-                why_vanvas_recommends: "Sit on the stone steps beside the rushing stream to meditate in silence.",
-                recommended_duration_mins: 90,
-                price_level: "Free",
-                source: "vanvas_curated",
-              },
-              {
-                id: "bhowali-fruit-market",
-                destination_id: canon.id,
-                slug: "bhowali-orchards",
-                name: "Bhowali Apple & Apricot Orchards",
-                category: "Markets",
-                rating: 4.7,
-                review_count: 2150,
-                description: "Famed fruit basket of Kumaon located 9 km from Kainchi, with rolling orchards of apples, plums, apricots, and wild buransh squash.",
-                latitude: 29.3800,
-                longitude: 79.5200,
-                address: "Bhowali-Almora Junction, Bhowali",
-                is_must_visit: false,
-                is_hidden_gem: true,
-                is_indoor: false,
-                tags: "Fruit Market, Orchards, Kumaoni Produce, Shopping",
-                why_vanvas_recommends: "Farm-fresh mountain fruit and organic buransh squash straight from local farmers.",
-                recommended_duration_mins: 90,
-                price_level: "₹₹",
-                source: "vanvas_curated",
-              },
-              {
-                id: "golu-devta-ghorakhal-place",
-                destination_id: canon.id,
-                slug: "golu-devta-temple-ghorakhal",
-                name: "Golu Devta Temple (Temple of 10,000 Bells)",
-                category: "Culture",
-                rating: 4.9,
-                review_count: 3600,
-                description: "Ancient shrine of the God of Justice adorned with thousands of solid brass bells and handwritten petitions overlooking the Bhimtal valley.",
-                latitude: 29.3950,
-                longitude: 79.4880,
-                address: "Ghorakhal, Near Bhowali, Nainital",
-                is_must_visit: true,
-                is_hidden_gem: false,
-                is_indoor: false,
-                tags: "Temple, Brass Bells, Heritage, Kumaoni Culture",
-                why_vanvas_recommends: "The acoustic chime of thousands of temple bells overlooking the pine valley is unforgettable.",
-                recommended_duration_mins: 90,
-                price_level: "Free",
-                source: "vanvas_curated",
-              }
-            ]);
-            setRentals([
-              {
-                id: "kainchi-scooter-1",
-                destination_id: canon.id,
-                vehicle_name: "Honda Activa 6G (Bhowali-Kainchi Fleet)",
-                vehicle_type: "Scooter",
-                price_per_day: 650,
-                provider_name: "Kumaon Valley Wheels",
-                location: "Bhowali Taxi Stand (8km from Kainchi)",
-                latitude: 29.3800,
-                longitude: 79.5200,
-                image_url: "/images/vehicles/kainchi_bhowali_scooter.webp",
-                rating: 4.8,
-              },
-              {
-                id: "kainchi-bike-1",
-                destination_id: canon.id,
-                vehicle_name: "Royal Enfield Classic 350",
-                vehicle_type: "Motorcycle",
-                price_per_day: 1400,
-                provider_name: "Nainital Moto Expedition",
-                location: "Kathgodam Junction & Bhowali",
-                latitude: 29.3800,
-                longitude: 79.5200,
-                image_url: "/images/vehicles/kainchi_kumaon_bike.webp",
-                rating: 4.9,
-              },
-            ]);
-            setHotels([
-              {
-                id: "stay-bara-bungalow",
-                destination_id: canon.id,
-                name: "Bara Bungalow Gethia 1898 Heritage",
-                accommodation_type: "Heritage Boutique",
-                rating: 4.9,
-                price_per_night: 6800,
-                address: "Gethia, Near Bhowali, Nainital",
-                latitude: 29.3650,
-                longitude: 79.5050,
-                image_url: "/images/places/kainchi-dham/stays/bara-bungalow-gethia-1898-heritage.webp",
-              },
-              {
-                id: "stay-rosefinch",
-                destination_id: canon.id,
-                name: "The Rosefinch Sarovar Portico",
-                accommodation_type: "Lakeside Resort",
-                rating: 4.8,
-                price_per_night: 4200,
-                address: "Bhimtal Lake Road, Nainital",
-                latitude: 29.3500,
-                longitude: 79.5500,
-                image_url: "/images/places/kainchi-dham/stays/rosefinch-sarovar-portico.webp",
-              },
-            ]);
-            setCurrentWeather({
-              temperature: 19,
-              condition: "Crisp Valley Sun",
-              humidity: 52,
-              windSpeed: 8,
-              is_available: true,
-              location: "Kainchi Dham",
-              daily: [
-                { date: "2026-10-17", temp_c: 19, temperature_max: 19, temperature_min: 11, condition: "Sunny", is_rain: false, humidity: 52, wind_kph: 8, precipitation_prob: 0 },
-                { date: "2026-10-18", temp_c: 20, temperature_max: 20, temperature_min: 12, condition: "Clear", is_rain: false, humidity: 50, wind_kph: 7, precipitation_prob: 0 },
-                { date: "2026-10-19", temp_c: 18, temperature_max: 18, temperature_min: 10, condition: "Misty", is_rain: false, humidity: 60, wind_kph: 9, precipitation_prob: 10 },
-                { date: "2026-10-20", temp_c: 17, temperature_max: 17, temperature_min: 9, condition: "Partly Cloudy", is_rain: false, humidity: 55, wind_kph: 8, precipitation_prob: 15 },
-                { date: "2026-10-21", temp_c: 18, temperature_max: 18, temperature_min: 10, condition: "Sunny", is_rain: false, humidity: 48, wind_kph: 8, precipitation_prob: 5 },
-              ],
-            });
-          } else {
-            setPlaces([]);
-          }
-
-          setDestLoading(false);
-          setStaysLoading(false);
-          setRentalsLoading(false);
-        } else {
+        console.warn("Destination API live sync notice:", err);
+        if (!canonicalPkg && !destination) {
           setLoadError(err.message || "Failed to load destination");
-          setDestLoading(false);
-          setStaysLoading(false);
-          setRentalsLoading(false);
         }
+        setDestLoading(false);
+        setStaysLoading(false);
+        setRentalsLoading(false);
       });
   };
 
@@ -802,6 +616,19 @@ export default function DestinationDetailPage() {
 
   useEffect(() => {
     setMounted(true);
+    const canonicalPkg = getCanonicalDestinationData(slug);
+    if (canonicalPkg) {
+      setDestination(canonicalPkg.destination);
+      setPlaces(canonicalPkg.places);
+      setHotels(canonicalPkg.hotels);
+      setRentals(canonicalPkg.rentals);
+      setWeather(canonicalPkg.weather);
+      if (canonicalPkg.current_weather) setCurrentWeather(canonicalPkg.current_weather);
+      setDestLoading(false);
+      setStaysLoading(false);
+      setRentalsLoading(false);
+      setLoadError(null);
+    }
     fetchDestination();
   }, [slug]);
 

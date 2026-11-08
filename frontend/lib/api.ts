@@ -355,11 +355,28 @@ export const api = {
     if (featuredOnly) params.append("featured_only", "true");
     if (search) params.append("search", search);
     const qs = params.toString();
-    const res = await fetchApi<Destination[]>(qs ? `/destinations?${qs}` : "/destinations", { signal });
-    if (res && res.length > 0) {
-      setCached(cacheKey, res, 180000);
+
+    try {
+      const res = await fetchApi<Destination[]>(qs ? `/destinations?${qs}` : "/destinations", { signal });
+      if (res && res.length > 0) {
+        setCached(cacheKey, res, 180000);
+        return res;
+      }
+    } catch (err) {
+      console.warn("[VANVAS Resilience] Live destinations unreachable, using canonical registry fallback:", err);
     }
-    return res;
+
+    // Canonical Fallback
+    const { CANONICAL_DESTINATIONS } = await import("./canonicalDestinations");
+    let fallback = CANONICAL_DESTINATIONS as unknown as Destination[];
+    if (featuredOnly) {
+      fallback = fallback.filter((d) => d.is_featured !== false);
+    }
+    if (search) {
+      const s = search.toLowerCase();
+      fallback = fallback.filter((d) => (d.name && d.name.toLowerCase().includes(s)) || (d.state && d.state.toLowerCase().includes(s)));
+    }
+    return fallback;
   },
 
   async getDestinationDetail(slugOrId: string, signal?: AbortSignal): Promise<{
@@ -370,16 +387,30 @@ export const api = {
     weather: WeatherSnapshot[];
     current_weather?: StructuredWeather;
     places_count: number;
+    is_canonical_fallback?: boolean;
   }> {
     const cacheKey = `dest_detail:${slugOrId.toLowerCase()}`;
     const cached = getCached<any>(cacheKey);
     if (cached) return cached;
 
-    const res = await fetchApi<any>(`/destinations/${slugOrId}`, { signal });
-    if (res) {
-      setCached(cacheKey, res, 180000);
+    try {
+      const res = await fetchApi<any>(`/destinations/${slugOrId}`, { signal });
+      if (res && res.destination) {
+        setCached(cacheKey, res, 180000);
+        return res;
+      }
+    } catch (err) {
+      console.warn("[VANVAS Resilience] Live destination detail unreachable for", slugOrId, "- resolving canonical fallback package.");
     }
-    return res;
+
+    const { getCanonicalDestinationData } = await import("./canonicalRegistryData");
+    const fallbackPkg = getCanonicalDestinationData(slugOrId);
+    if (fallbackPkg) {
+      setCached(cacheKey, fallbackPkg, 60000);
+      return fallbackPkg as any;
+    }
+
+    throw new Error(`Sanctuary '${slugOrId}' not found in live index or canonical registry`);
   },
 
   async getDestinationWeather(slugOrId: string, signal?: AbortSignal): Promise<StructuredWeather> {
@@ -798,7 +829,15 @@ export const api = {
     if (checkOut) params.append("check_out", checkOut);
     if (adults && adults > 1) params.append("adults", String(adults));
     if (children && children > 0) params.append("children", String(children));
-    return fetchApi(`/hotels?${params.toString()}`);
+    try {
+      return await fetchApi(`/hotels?${params.toString()}`);
+    } catch (err) {
+      console.warn("[VANVAS Resilience] Live hotels unreachable, falling back to canonical data for", destId);
+      const { getCanonicalDestinationData } = await import("./canonicalRegistryData");
+      const pkg = getCanonicalDestinationData(destId);
+      if (pkg && pkg.hotels) return pkg.hotels;
+      return [];
+    }
   },
 
   async getMobilityAccessPlan(destination: string, origin?: string): Promise<MobilityAccessPlan> {
@@ -814,7 +853,15 @@ export const api = {
   async getRentals(destId: string, vehicleType?: string): Promise<RentalOption[]> {
     const params = new URLSearchParams({ destination_id: destId });
     if (vehicleType && vehicleType !== "All") params.append("vehicle_type", vehicleType);
-    return fetchApi(`/rentals?${params.toString()}`);
+    try {
+      return await fetchApi(`/rentals?${params.toString()}`);
+    } catch (err) {
+      console.warn("[VANVAS Resilience] Live rentals unreachable, falling back to canonical data for", destId);
+      const { getCanonicalDestinationData } = await import("./canonicalRegistryData");
+      const pkg = getCanonicalDestinationData(destId);
+      if (pkg && pkg.rentals) return pkg.rentals;
+      return [];
+    }
   },
 
   async getTransport(destId: string, originCity: string, transportType?: string, signal?: AbortSignal): Promise<TransportOption[]> {
