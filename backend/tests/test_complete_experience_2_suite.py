@@ -110,7 +110,7 @@ def test_featured_cards_component_exists():
 def test_strict_carousel_layout_rules_on_explore_page():
     """
     Enforce Non-Negotiable Layout Invariant:
-    A. FAMOUS PLACES: Two synchronized rows (SynchronizedTwoRowCarousel).
+    A. FAMOUS PLACES: Universal single row (SingleRowCarousel on desktop & mobile).
     B. HOTELS & STAYS: Exactly ONE horizontal row (SingleRowCarousel).
     C. MOBILITY & RENTALS: Exactly ONE horizontal row (SingleRowCarousel).
     D. FOOD & RESTAURANTS: Exactly ONE horizontal row (SingleRowCarousel).
@@ -120,12 +120,12 @@ def test_strict_carousel_layout_rules_on_explore_page():
     with open(explore_page, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Places must use SynchronizedTwoRowCarousel
-    assert "SynchronizedTwoRowCarousel" in content
+    # Places must use SingleRowCarousel (universal single row, no two-row carousel)
+    assert "SingleRowCarousel" in content
+    assert "SynchronizedTwoRowCarousel" not in content
     assert "Curated Sanctuaries & Landmarks" in content
 
     # Hotels must use SingleRowCarousel
-    assert "SingleRowCarousel" in content
     assert "Remaining Stays & Retreats" in content
     assert "CURATED STAYS ROW" in content
 
@@ -140,7 +140,7 @@ def test_strict_carousel_layout_rules_on_explore_page():
 def test_strict_carousel_layout_rules_on_place_page():
     """
     Enforce Layout Invariant on /places/[id]:
-    - Related places in two-row carousel.
+    - Related places in single-row carousel.
     - Related food in one-row carousel.
     - Nearby hotels in one-row carousel.
     """
@@ -149,10 +149,9 @@ def test_strict_carousel_layout_rules_on_place_page():
     with open(place_page, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Attractions: SynchronizedTwoRowCarousel
-    assert "<SynchronizedTwoRowCarousel" in content
-    # Food & Stays: SingleRowCarousel
+    # Attractions: SingleRowCarousel (no two-row carousel)
     assert "<SingleRowCarousel" in content
+    assert "<SynchronizedTwoRowCarousel" not in content
     assert "Where to Eat & Drink Nearby" in content
     assert "Verified Stays & Retreats Nearby" in content
 
