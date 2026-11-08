@@ -160,7 +160,8 @@ export const VanvasImage: React.FC<VanvasImageProps> = ({
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
         decoding="async"
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
+        draggable={false}
+        className={`w-full h-full object-cover transition-opacity duration-300 select-none pointer-events-none ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
         style={style}

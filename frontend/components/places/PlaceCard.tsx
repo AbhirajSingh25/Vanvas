@@ -67,7 +67,8 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
           if (onSelect) onSelect(place);
         }
       }}
-      className={`group bg-[#FAF7F0] dark:bg-[#1C2E27] rounded-2xl border border-[#E5D5BA] dark:border-[#2C3B34] hover:border-[#173B32]/60 dark:hover:border-[#B49252]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press cursor-pointer flex flex-col justify-between h-full relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 min-w-0 w-full ${
+      draggable={false}
+      className={`group bg-[#FAF7F0] dark:bg-[#1C2E27] rounded-2xl border border-[#E5D5BA] dark:border-[#2C3B34] hover:border-[#173B32]/60 dark:hover:border-[#B49252]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press cursor-pointer flex flex-col justify-between h-full relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 min-w-0 w-full select-none ${
         isCompact ? "card-compact" : ""
       }`}
     >

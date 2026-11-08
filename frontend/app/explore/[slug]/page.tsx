@@ -1415,10 +1415,11 @@ export default function DestinationDetailPage() {
                         ? "bg-[#173B32] text-[#EFE5D2] shadow-xs"
                         : "text-[#7B4D36] hover:bg-[#EFE5D2]"
                     }`}
-                    title="View as synchronized two-row carousel"
+                    title="View as interactive discovery carousel"
                   >
                     <Columns className="w-3.5 h-3.5" />
-                    <span>Two-Row Carousel</span>
+                    <span className="hidden sm:inline">Two-Row Carousel</span>
+                    <span className="inline sm:hidden">Carousel</span>
                   </button>
                   <button
                     type="button"
