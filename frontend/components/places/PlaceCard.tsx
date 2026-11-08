@@ -103,9 +103,16 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
             <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-teal-800/90 text-teal-100 border border-teal-500 shadow-xs">
               Live Photo
             </span>
-          ) : (
+          ) : visualRes.provenance === "exact_place" ? (
             <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-[#B49252]/90 text-[#0F2924] border border-[#B49252] shadow-xs">
               Editorial Art
+            </span>
+          ) : (
+            <span
+              className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-amber-800/90 text-amber-100 border border-amber-600 shadow-xs"
+              title={visualRes.diagnostics?.fallbackReason || "Awaiting dedicated artwork"}
+            >
+              Category Fallback
             </span>
           )}
         </div>

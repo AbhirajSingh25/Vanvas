@@ -1405,6 +1405,14 @@ export interface ImageContract {
   artworkKey?: string;
   is_real_photo?: boolean;
   badge?: string;
+  diagnostics?: {
+    entityId?: string;
+    requestedImage?: string;
+    resolvedImage: string;
+    fallbackLevel: number;
+    fallbackReason?: string;
+    isUnresolvedFallback?: boolean;
+  };
 }
 
 // ----------------- Solo Traveler Circles Types -----------------

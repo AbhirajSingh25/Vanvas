@@ -9689,7 +9689,16 @@ function buildContract(data: {
   artworkKey?: string;
   visualDescription?: string;
   isRealPhoto?: boolean;
+  diagnostics?: {
+    entityId?: string;
+    requestedImage?: string;
+    resolvedImage: string;
+    fallbackLevel: number;
+    fallbackReason?: string;
+    isUnresolvedFallback?: boolean;
+  };
 }): ImageContract {
+  const isFallback = data.provenance === "universal_fallback" || data.provenance === "regional_fallback" || data.provenance === "destination_category";
   return {
     url: data.url,
     imageUrl: data.url,
@@ -9713,6 +9722,12 @@ function buildContract(data: {
     artworkKey: data.artworkKey,
     is_real_photo: data.isRealPhoto ?? false,
     badge: data.badgeLabel,
+    diagnostics: data.diagnostics || {
+      resolvedImage: data.url,
+      fallbackLevel: isFallback ? 4 : 1,
+      fallbackReason: isFallback ? "Awaiting dedicated exact entity artwork" : "Verified exact visual match",
+      isUnresolvedFallback: isFallback,
+    },
   };
 }
 

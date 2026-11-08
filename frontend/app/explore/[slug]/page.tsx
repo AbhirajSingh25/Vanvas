@@ -24,7 +24,6 @@ import { VanvasMap, VanvasMapMarker } from "@/components/ui/VanvasMap";
 import { VehicleArtwork } from "@/components/ui/VehicleArtwork";
 import { TravelingSoloSection } from "@/components/solo/TravelingSoloSection";
 import { DestinationReelsCarousel } from "@/components/destinations/DestinationReelsCarousel";
-import { SynchronizedTwoRowCarousel } from "@/components/ui/SynchronizedTwoRowCarousel";
 import { SingleRowCarousel } from "@/components/ui/SingleRowCarousel";
 import { FeaturedPlaceCard, FeaturedStayCard, FeaturedVehicleCard } from "@/components/destinations/DestinationFeaturedCard";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
@@ -1418,8 +1417,7 @@ export default function DestinationDetailPage() {
                     title="View as interactive discovery carousel"
                   >
                     <Columns className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Two-Row Carousel</span>
-                    <span className="inline sm:hidden">Carousel</span>
+                    <span>Carousel</span>
                   </button>
                   <button
                     type="button"
@@ -1517,55 +1515,28 @@ export default function DestinationDetailPage() {
             {/* VIEW MODES: CAROUSEL vs GEOGRAPHICAL ACCORDIONS vs FLAT GRID */}
             {placesViewMode === "carousel" ? (
               <div className="space-y-6">
-                {/* Mobile: Pure Single-Row Carousel (P0) */}
-                <div className="block sm:hidden">
-                  <SingleRowCarousel
-                    items={filteredPlaces}
-                    hideHeader
-                    showNavigationControls
-                    title={`Curated Sanctuaries & Landmarks (${filteredPlaces.length})`}
-                    subtitle="Swipe across verified trails, monasteries, and viewpoints in a compact single row"
-                    eyebrow="SINGLE-ROW DISCOVERY"
-                    itemWidthClass="w-[84vw]"
-                    keyExtractor={(p) => p.id}
-                    renderItem={(p) => (
-                      <PlaceCard
-                        key={p.id}
-                        place={p}
-                        destinationName={destination.name}
-                        onSelect={(selected) => {
-                          setSelectedPlace(selected);
-                          setModalOpen(true);
-                        }}
-                      />
-                    )}
-                  />
-                </div>
-
-                {/* Desktop: Synchronized Two-Row Carousel */}
-                <div className="hidden sm:block">
-                  <SynchronizedTwoRowCarousel
-                    items={filteredPlaces}
-                    hideHeader
-                    showNavigationControls
-                    title={`Curated Sanctuaries & Landmarks (${filteredPlaces.length})`}
-                    subtitle="Swipe across verified Himalayan trails, monasteries, and viewpoints in synchronized rows"
-                    eyebrow="SYNCHRONIZED TWO-ROW DISCOVERY"
-                    columnWidthClass="sm:w-[320px] lg:w-[350px]"
-                    keyExtractor={(p) => p.id}
-                    renderItem={(p) => (
-                      <PlaceCard
-                        key={p.id}
-                        place={p}
-                        destinationName={destination.name}
-                        onSelect={(selected) => {
-                          setSelectedPlace(selected);
-                          setModalOpen(true);
-                        }}
-                      />
-                    )}
-                  />
-                </div>
+                {/* Single-Row Carousel for ALL Viewports (Mobile & Desktop) */}
+                <SingleRowCarousel
+                  items={filteredPlaces}
+                  hideHeader
+                  showNavigationControls
+                  title={`Curated Sanctuaries & Landmarks (${filteredPlaces.length})`}
+                  subtitle="Swipe across verified trails, monasteries, and viewpoints in a single horizontal row"
+                  eyebrow="SINGLE-ROW DISCOVERY"
+                  itemWidthClass="w-[84vw] sm:w-[320px] lg:w-[360px]"
+                  keyExtractor={(p) => p.id}
+                  renderItem={(p) => (
+                    <PlaceCard
+                      key={p.id}
+                      place={p}
+                      destinationName={destination.name}
+                      onSelect={(selected) => {
+                        setSelectedPlace(selected);
+                        setModalOpen(true);
+                      }}
+                    />
+                  )}
+                />
               </div>
             ) : placesViewMode === "zones" ? (
               <div className="space-y-6">

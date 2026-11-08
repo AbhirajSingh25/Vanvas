@@ -12,7 +12,6 @@ import { Place } from "@/types";
 import { api } from "@/lib/api";
 import { VanvasImage } from "@/components/ui/VanvasImage";
 import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
-import { SynchronizedTwoRowCarousel } from "@/components/ui/SynchronizedTwoRowCarousel";
 import { SingleRowCarousel } from "@/components/ui/SingleRowCarousel";
 
 export default function PlaceDetailPage() {
@@ -344,15 +343,15 @@ export default function PlaceDetailPage() {
           </div>
         )}
 
-        {/* SYNCHRONIZED TWO-ROW CAROUSEL: Nearby Attractions */}
+        {/* SINGLE-ROW CAROUSEL: Nearby Attractions */}
         {place.nearby_attractions && place.nearby_attractions.length > 0 && (
           <div className="pt-4 border-t border-[#E5D5BA]/80 dark:border-[#2C3B34]">
-            <SynchronizedTwoRowCarousel
+            <SingleRowCarousel
               items={place.nearby_attractions}
               title="Nearby Logical Pairings & Attractions"
               subtitle={`Attractions within easy travel distance from ${place.name}`}
               eyebrow="GEOGRAPHIC CLUSTER"
-              columnWidthClass="w-[78vw] sm:w-[300px] lg:w-[320px]"
+              itemWidthClass="w-[78vw] sm:w-[300px] lg:w-[320px]"
               keyExtractor={(na) => na.id}
               renderItem={(na) => {
                 const naVisual = resolvePlaceArtwork(na.name, destName, na.category || "Must Visit");
