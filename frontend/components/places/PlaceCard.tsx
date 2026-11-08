@@ -67,12 +67,12 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
           if (onSelect) onSelect(place);
         }
       }}
-      className={`group bg-[#FAF7F0] rounded-2xl border border-[#E5D5BA] hover:border-[#173B32]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press cursor-pointer flex flex-col justify-between h-full relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 min-w-0 w-full ${
+      className={`group bg-[#FAF7F0] dark:bg-[#1C2E27] rounded-2xl border border-[#E5D5BA] dark:border-[#2C3B34] hover:border-[#173B32]/60 dark:hover:border-[#B49252]/60 overflow-hidden shadow-xs hover:shadow-xl interactive-card touch-press cursor-pointer flex flex-col justify-between h-full relative focus:outline-none focus:ring-2 focus:ring-[#173B32]/30 min-w-0 w-full ${
         isCompact ? "card-compact" : ""
       }`}
     >
       {/* Image Container - Standardized Aspect Ratio */}
-      <div className={`relative w-full overflow-hidden bg-[#E5D5BA] shrink-0 ${isCompact ? "aspect-[16/9]" : "aspect-[16/10]"}`}>
+      <div className={`relative w-full overflow-hidden bg-[#E5D5BA] dark:bg-[#2C3B34] shrink-0 ${isCompact ? "aspect-[16/9]" : "aspect-[16/10]"}`}>
         <VanvasImage
           src={visualRes.imageUrl}
           fallbackSrc={visualRes.fallbackUrl}
@@ -152,81 +152,82 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
       </div>
 
       {/* Body */}
-      <div className={`flex-1 flex flex-col justify-between min-w-0 w-full ${isCompact ? "p-3 sm:p-3.5 space-y-2" : "p-4 sm:p-5 space-y-3"}`}>
-        <div className="min-w-0 w-full">
-          <h3 className={`font-serif text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-snug truncate min-w-0 ${
-            isCompact ? "text-base font-bold" : "text-base sm:text-lg font-black"
+      <div className={`flex-1 flex flex-col justify-between min-w-0 w-full ${isCompact ? "p-3 sm:p-3.5 space-y-2.5" : "p-4 sm:p-5 space-y-3"}`}>
+        <div className="min-w-0 w-full space-y-1">
+          <h3 className={`font-serif text-[#173B32] dark:text-[#FAF7F0] group-hover:text-[#B65E3C] transition-colors leading-tight truncate min-w-0 ${
+            isCompact ? "text-base font-bold h-5" : "text-base sm:text-lg font-black h-6"
           }`}>
             {place.name}
           </h3>
-          <p className={`text-[#20211D]/75 leading-relaxed font-light min-w-0 line-clamp-2 ${
-            isCompact ? "text-[11px] mt-1" : "text-xs mt-1.5"
+          <p className={`text-[#20211D]/75 dark:text-[#D8DED5]/75 leading-relaxed font-light min-w-0 line-clamp-2 ${
+            isCompact ? "text-[11px] h-8" : "text-xs h-9"
           }`}>
             {place.description || "Authentic destination landmark."}
           </p>
         </div>
 
-        {/* Menu Discovery Banner for Dining/Cafes (In Original Mode) */}
-        {!isCompact && (safeCategory.toLowerCase().includes("food") || safeCategory.toLowerCase().includes("caf") || safeCategory.toLowerCase().includes("restaurant")) && (
-          <div className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg bg-[#EFE5D2]/50 border border-[#E5D5BA]">
-            {place.menu_available && place.menu_url ? (
-              <a
-                href={place.menu_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <span>📜 View Menu</span>
-                <span className="text-[9px] font-mono text-emerald-600">(Official)</span>
-              </a>
-            ) : (
-              <span className="text-[#7B4D36] italic text-[10px]">
-                Menu not published online
-              </span>
-            )}
-            <span className="text-[9px] font-mono text-[#536B52] uppercase font-semibold">
-              {place.data_state || "VERIFIED"}
-            </span>
-          </div>
-        )}
-
-        {/* VANVAS Journal Note (In Original Mode) */}
-        {!isCompact && place.why_vanvas_recommends && (
-          <div className="p-3 rounded-xl bg-[#EFE5D2]/70 border border-[#E5D5BA] text-[11px] text-[#7B4D36] space-y-1">
-            <div className="flex items-center gap-1 font-bold text-[#B65E3C] text-[10px] uppercase tracking-wider">
-              <Sparkles className="w-3 h-3 text-[#B49252]" />
-              <span>VANVAS Travel Note</span>
-            </div>
-            <p className="italic leading-relaxed text-[#20211D]/85 line-clamp-2">
-              &ldquo;{place.why_vanvas_recommends}&rdquo;
-            </p>
-          </div>
-        )}
-
-        {/* Footer Meta */}
-        <div className={`flex items-center justify-between border-t border-[#E5D5BA] text-[#536B52] ${
-          isCompact ? "pt-2 text-[10px]" : "pt-3 text-[11px]"
+        {/* Standardized Travel Note / Field Dispatch Slot (Uniform height prevents any card blowout or shrinking) */}
+        <div className={`rounded-xl border flex flex-col justify-center overflow-hidden shrink-0 ${
+          isCompact
+            ? "h-[46px] p-2 bg-[#EFE5D2]/50 dark:bg-[#172520]/60 border-[#E5D5BA]/70 dark:border-[#2C3B34]"
+            : "h-[58px] p-2.5 bg-[#EFE5D2]/70 dark:bg-[#172520]/80 border-[#E5D5BA] dark:border-[#2C3B34]"
         }`}>
-          <div className="flex items-center gap-1.5">
-            <Clock className={`w-3.5 h-3.5 ${place.is_open_now === true ? "text-emerald-600" : place.is_open_now === false ? "text-[#7B4D36]" : "text-[#B65E3C]"}`} />
+          {place.why_vanvas_recommends ? (
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex items-center gap-1 font-bold text-[#B65E3C] dark:text-[#E28C68] text-[10px] uppercase tracking-wider shrink-0">
+                <Sparkles className="w-3 h-3 text-[#B49252]" />
+                <span className="truncate">VANVAS Travel Note</span>
+              </div>
+              <p className="italic leading-snug text-[#20211D]/85 dark:text-[#FAF7F0]/85 line-clamp-1 text-[11px]">
+                &ldquo;{place.why_vanvas_recommends}&rdquo;
+              </p>
+            </div>
+          ) : (safeCategory.toLowerCase().includes("food") || safeCategory.toLowerCase().includes("caf") || safeCategory.toLowerCase().includes("restaurant")) ? (
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider shrink-0">
+                <span className="truncate">📜 Dining Dispatch</span>
+                <span className="text-[9px] font-mono text-[#536B52] dark:text-[#A8B5A0]">{place.data_state || "VERIFIED"}</span>
+              </div>
+              <p className="leading-snug text-[#20211D]/80 dark:text-[#D8DED5]/80 line-clamp-1 text-[11px]">
+                {place.menu_available && place.menu_url ? "Official menu & seasonal specials available" : "Curated regional culinary & tea stop"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex items-center gap-1 font-bold text-[#536B52] dark:text-[#A8B5A0] text-[10px] uppercase tracking-wider shrink-0">
+                <MapPin className="w-3 h-3 text-[#B49252]" />
+                <span className="truncate">Field Dispatch</span>
+              </div>
+              <p className="italic leading-snug text-[#20211D]/80 dark:text-[#D8DED5]/80 line-clamp-1 text-[11px]">
+                Curated Himalayan landmark in {destinationName || "the region"}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Meta: Strictly Pinned to Bottom */}
+        <div className={`mt-auto flex items-center justify-between border-t border-[#E5D5BA] dark:border-[#2C3B34] text-[#536B52] dark:text-[#A8B5A0] shrink-0 ${
+          isCompact ? "pt-2 text-[10px]" : "pt-2.5 text-[11px]"
+        }`}>
+          <div className="flex items-center gap-1.5 truncate mr-2">
+            <Clock className={`w-3.5 h-3.5 shrink-0 ${place.is_open_now === true ? "text-emerald-600 dark:text-emerald-400" : place.is_open_now === false ? "text-[#7B4D36] dark:text-[#E28C68]" : "text-[#B65E3C] dark:text-[#E28C68]"}`} />
             {place.is_open_now === true ? (
-              <span className="font-bold text-emerald-700 flex items-center gap-1">
+              <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
                 Open Now
               </span>
             ) : place.is_open_now === false ? (
-              <span className="font-semibold text-[#7B4D36]">
+              <span className="font-semibold text-[#7B4D36] dark:text-[#E28C68]">
                 Closed Now
               </span>
             ) : (
-              <span className="text-[#536B52]">
-                {place.opening_time ? `${place.opening_time} - ${place.closing_time || "Close"}` : "Hours not listed"}
+              <span className="text-[#536B52] dark:text-[#A8B5A0] truncate">
+                {place.opening_time ? `${place.opening_time} - ${place.closing_time || "Close"}` : "Hours on arrival"}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={(e) => {
@@ -238,12 +239,12 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                   window.location.href = `/plan?destination=${encodeURIComponent(targetDest)}&place=${encodeURIComponent(place.name)}`;
                 }
               }}
-              className="px-2 py-1 rounded-md bg-[#173B32] hover:bg-[#173B32]/90 text-[#EFE5D2] font-semibold text-[11px] flex items-center gap-1 transition-colors shadow-xs"
+              className="px-2.5 py-1 rounded-md bg-[#173B32] hover:bg-[#173B32]/90 text-[#EFE5D2] font-semibold text-[11px] flex items-center gap-1 transition-colors shadow-2xs"
               title={`Plan a trip visiting ${place.name}`}
             >
               <span>Plan</span>
             </button>
-            <span className="text-[#B65E3C] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
+            <span className="text-[#B65E3C] dark:text-[#E28C68] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
               <span>Explore</span>
               <ArrowRight className="w-3 h-3" />
             </span>
