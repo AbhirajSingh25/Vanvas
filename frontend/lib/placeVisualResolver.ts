@@ -9588,6 +9588,40 @@ const GENERIC_WORDS_SET = new Set([
   "cove", "ridge", "estate", "residency", "stay", "stays", "traveler", "circle", "square"
 ]);
 
+// Explicit registry of unreplaced flat-vector or duplicate assets pending authentic generation
+export const PENDING_ARTWORK_SET = new Set([
+  // Dharamshala flat vectors awaiting quota
+  "/images/places/dharamshala/gyuto-monastery.webp",
+  "/images/places/dharamshala/dal-lake-dharamshala.webp",
+  "/images/places/dharamshala/tibetan-butter-tea.webp",
+  "/images/places/dharamshala/masroor-rock-temples.webp",
+  "/images/places/dharamshala/tashi-jong-monastery.webp",
+  // Kasol flat vectors and valley duplicates awaiting quota
+  "/images/places/kasol/chalal-pine-trail.webp",
+  "/images/places/kasol/grahan-village-trek.webp",
+  "/images/places/kasol/nature-park-kasol.webp",
+  "/images/places/kasol/malana-village-gate.webp",
+  "/images/places/kasol/pulga-fairy-forest.webp",
+  "/images/places/kasol/tulga-hamlet.webp",
+  "/images/places/kasol/rasol-trail.webp",
+  "/images/places/kasol/jim-morrison-cafe.webp",
+  "/images/places/kasol/waichin-valley.webp",
+  // Stays pending property-specific artwork
+  "/images/places/dharamshala/stays/fortune-park-moksha.webp",
+  "/images/places/dharamshala/stays/chonor-house-tibetan-guesthouse.webp",
+  "/images/places/dharamshala/stays/clouds-end-villa-heritage-estate.webp",
+  "/images/places/dharamshala/stays/zostel-dharamkot.webp",
+  "/images/places/kasol/stays/the-himalayan-village.webp",
+  "/images/places/kasol/stays/parvati-kuteer-riverside-wood-cottages.webp",
+  "/images/places/kasol/stays/kasol-heights-resort.webp",
+  "/images/places/kasol/stays/the-hosteller-kasol-riverside.webp",
+  // Rentals pending distinct vehicle artwork
+  "/images/vehicles/kasol_valley_scooter.jpg",
+  "/images/vehicles/kasol_parvati_bullet.jpg",
+  "/images/vehicles/kasol_valley_scooter.webp",
+  "/images/vehicles/kasol_parvati_bullet.webp",
+]);
+
 // Deprecated artwork filter: reject placeholder and vector SVG assets
 export function isDeprecatedArtwork(url?: string): boolean {
   if (!url || typeof url !== "string") return true;
@@ -9596,6 +9630,8 @@ export function isDeprecatedArtwork(url?: string): boolean {
 }
 
 export function isApprovedAsset(url?: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  if (PENDING_ARTWORK_SET.has(url)) return false;
   return !isDeprecatedArtwork(url);
 }
 
@@ -10114,6 +10150,32 @@ export function resolvePlaceArtwork(
 
   // PRIORITY 4: Verified Local Asset on Disk (Exact Place Path)
   if (existingImageUrl && existingImageUrl.startsWith("/images/places/") && !existingImageUrl.includes("/categories/") && !existingImageUrl.includes("/fallbacks/") && !existingImageUrl.includes("/universal/")) {
+    const isPending = PENDING_ARTWORK_SET.has(existingImageUrl);
+    if (isPending) {
+      return buildContract({
+        url: existingImageUrl,
+        fallbackUrl: safeFallback,
+        source: "vanvas_pending",
+        sourceType: "category_photo",
+        provenance: "destination_category",
+        semanticCategory: theme,
+        exactness: "approximate",
+        attribution: "Awaiting Dedicated Artwork Generation (Quota Blocked)",
+        altText: `${placeName} in ${destinationName}`,
+        badgeLabel: "DESTINATION CATEGORY ART",
+        artworkKey: `pending:${destNorm}:${placeNorm}`,
+        visualDescription: `Pending authentic painterly artwork generation for ${placeName}.`,
+        diagnostics: {
+          entityId: `${destNorm}:${placeNorm}`,
+          requestedImage: existingImageUrl,
+          resolvedImage: existingImageUrl,
+          fallbackLevel: 2,
+          fallbackReason: "Awaiting dedicated painterly artwork generation (Model Quota Blocked: 429 RESOURCE_EXHAUSTED)",
+          isUnresolvedFallback: true,
+        },
+      });
+    }
+
     return buildContract({
       url: existingImageUrl,
       fallbackUrl: safeFallback,
@@ -10127,6 +10189,14 @@ export function resolvePlaceArtwork(
       badgeLabel: "VANVAS PLACE ARTWORK",
       artworkKey: `exact:${destNorm}:${placeNorm}`,
       visualDescription: `Verified editorial asset for ${placeName}.`,
+      diagnostics: {
+        entityId: `${destNorm}:${placeNorm}`,
+        requestedImage: existingImageUrl,
+        resolvedImage: existingImageUrl,
+        fallbackLevel: 1,
+        fallbackReason: "Verified exact editorial artwork",
+        isUnresolvedFallback: false,
+      },
     });
   }
 
