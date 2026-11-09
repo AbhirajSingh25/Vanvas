@@ -150,3 +150,20 @@
 - **Files Affected:** `mobile/**`, `packages/shared/**`, `package.json`.
 - **Tests Executed:** Expo configuration and TypeScript compilation checks.
 - **Test Outcomes:** Passed.
+
+---
+
+### [2026-11-09] Autonomous Android Native App Transformation & Play Store Readiness
+- **Objective:** Complete native Android product engineering, Play Store readiness (Target SDK 35), offline SQLite ledger, Dynamic Replanner, Nearby Radar, and Group Circles while strictly freezing the web frontend.
+- **Changes Made:**
+  - Configured Android target SDK to 35 in `build.gradle` and bumped app version to `0.3.0` (versionCode `3`).
+  - Created `mobile/app/nearby.tsx` (Nearby Mountain Radar) with foreground GPS detection, Haversine distance calculations, and offline Himalayan base fallbacks (Kaza, Manali, Dharamshala, Kasol, Leh).
+  - Enhanced `mobile/app/trip/[id].tsx` with Dynamic Replanner ("Running Late", "Weather/Roadblock", "Rest Break", "Skip Stop"), Travel Ledger (offline receipt logging & split in SQLite), and Group Circle native share sheet.
+  - Enhanced `mobile/src/services/db.ts` with `expenses_cache` and `offline_mutation_queue` tables and sync methods.
+  - Linked Nearby Radar directly in Home header and Explore search bar.
+  - Created complete Play Store release documentation suite in `mobile/docs/` (`NATIVE_APP_ARCHITECTURE.md`, `ANDROID_RELEASE_GUIDE.md`, `PLAY_STORE_RELEASE_CHECKLIST.md`, `MOBILE_QA_REPORT.md`, `MOBILE_API_CONTRACTS.md`, `MOBILE_NEXT_STEPS.md`).
+  - Frontend (`frontend/`) strictly preserved and 100% untouched.
+  - Zero artwork generation API calls executed (respecting quota limit).
+- **Files Affected:** `mobile/app.json`, `mobile/package.json`, `mobile/app/(tabs)/index.tsx`, `mobile/app/(tabs)/explore.tsx`, `mobile/app/trip/[id].tsx`, `mobile/app/nearby.tsx`, `mobile/src/services/api.ts`, `mobile/src/services/db.ts`, `mobile/docs/*`.
+- **Tests Executed:** `npm run typecheck` (0 errors), `npx expo-doctor` (18/18 passed), `python scripts/validate_docs.py` (passed).
+- **Test Outcomes:** 100% Passed.

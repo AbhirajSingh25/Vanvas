@@ -82,3 +82,10 @@
 - **Decision:** No commit may be pushed to `main` without passing TypeScript typechecks (`tsc --noEmit` on both mobile and web), Expo Doctor diagnostic health checks, and relevant pytest invariant suites.
 - **Reasoning:** Broken code on `main` immediately triggers automatic Vercel and Render deployments, which can cause production downtime for real users.
 - **Consequences:** Always run local typechecks, expo doctor, and backend tests prior to staging and pushing commits.
+
+---
+
+## 11. Android Native Identity & Play Store Compliance
+- **Decision:** Preserve `ai.vanvas.app` as the canonical Android package identity; raise target SDK to 35 (Android 15+); enforce 100% native UI with zero WebViews.
+- **Reasoning:** Changing established application IDs breaks existing keystore configurations and build integrity. Android 15/API 35 alignment satisfies current Google Play store publishing guidelines while modern photo pickers eliminate obsolete broad storage permissions.
+- **Consequences:** Keep `mobile/` standalone, dual-platform clean, and preserve all SQLite offline capabilities.

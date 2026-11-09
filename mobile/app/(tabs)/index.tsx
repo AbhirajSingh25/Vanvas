@@ -104,6 +104,20 @@ export default function HomeScreen() {
         <Text style={styles.subGreeting}>
           Slow Indian travel, Himalayan pine ridges, and spontaneous trails.
         </Text>
+
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push("/nearby");
+          }}
+          style={styles.radarHeaderPill}
+        >
+          <View style={styles.radarPillLeft}>
+            <Ionicons name="radio" size={16} color={theme.colors.brass} />
+            <Text style={styles.radarPillText}>Nearby Radar: Scan trails, POIs & fuel</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={14} color={theme.colors.brass} />
+        </TouchableOpacity>
       </View>
 
       {/* Active Trip Banner */}
@@ -310,6 +324,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.mist,
     lineHeight: 18,
+  },
+  radarHeaderPill: {
+    marginTop: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.full,
+    borderWidth: 1,
+    borderColor: "rgba(197, 160, 89, 0.35)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  radarPillLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  radarPillText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.colors.parchment,
   },
   activeTripCard: {
     margin: 16,

@@ -114,21 +114,34 @@ export default function ExploreScreen() {
           Curated mountain trails, sacred confluences, and slow destinations.
         </Text>
 
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={theme.colors.foregroundSubtle} />
-          <TextInput
-            placeholder="Search Manali, Rishikesh, Chopta, Kasol..."
-            placeholderTextColor={theme.colors.foregroundSubtle}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={styles.searchInput}
-            clearButtonMode="while-editing"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Ionicons name="close-circle" size={18} color={theme.colors.foregroundSubtle} />
-            </TouchableOpacity>
-          )}
+        <View style={styles.searchRow}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={18} color={theme.colors.foregroundSubtle} />
+            <TextInput
+              placeholder="Search Manali, Rishikesh, Chopta, Kasol..."
+              placeholderTextColor={theme.colors.foregroundSubtle}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.searchInput}
+              clearButtonMode="while-editing"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <Ionicons name="close-circle" size={18} color={theme.colors.foregroundSubtle} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push("/nearby");
+            }}
+            style={styles.radarButton}
+            accessibilityLabel="Open Nearby Mountain Radar"
+          >
+            <Ionicons name="radio" size={18} color={theme.colors.parchment} />
+          </TouchableOpacity>
         </View>
 
         {/* Region Pills */}
@@ -241,7 +254,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 14,
   },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   searchBar: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: theme.colors.parchment,
@@ -249,6 +268,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 44,
     gap: 8,
+  },
+  radarButton: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.forest,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(197, 160, 89, 0.4)",
   },
   searchInput: {
     flex: 1,

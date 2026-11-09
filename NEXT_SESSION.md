@@ -1,13 +1,18 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Commit `1fd8f48` | *Branch:* `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Mobile Native 0.3.0 / Target SDK 35 / Play Store Ready | *Branch:* `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
-- **Core Checkpoint:** Commit `1fd8f48` reconciled runtime artwork, migrated 52 vehicles to `.webp`, added native motorcycle expedition planning, theme persistence, and video focus handling.
+- **Core Checkpoint:** 
+  - Android Native App (`mobile/`) transformed into a standalone, production-ready product with Target SDK 35 (Android 15+), version `0.3.0` (versionCode 3).
+  - Built Nearby Mountain Radar (`mobile/app/nearby.tsx`) with foreground GPS and offline mountain base fallback.
+  - Enhanced Itinerary Detail with Dynamic Replanner, offline SQLite Travel Ledger, and Group Circle native share sheet.
+  - Play Store compliance and architecture documentation created under `mobile/docs/`.
+  - Frontend (`frontend/`) remains 100% frozen and untouched.
 - **Repository Health:** Mobile TypeScript (0 errors), Mobile Expo Doctor (18/18 checks passed), Web TypeScript (0 errors), Shared package builds cleanly, Invariants suite (6/6 passed).
 
 ---
@@ -26,8 +31,13 @@
 
 ## 3. Exact Tasks for the Next Session
 
-### Task A: Execute Pending Artwork Generation Batch (Upon Quota Reset)
-1. Confirm that the image generation quota has reset on November 13, 2026.
+### Task A: Android Preview APK / Production AAB Testing
+1. Execute `eas build --platform android --profile preview` to generate sideloadable Android APK.
+2. Install APK on a physical Android device to test offline SQLite caching, Nearby Radar GPS permission, and Spiti expedition creation.
+3. Review `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md` before final Play Store submission.
+
+### Task B: Execute Pending Artwork Generation Batch (Upon Quota Reset on Nov 13, 2026)
+1. Confirm that the image generation quota has reset.
 2. Run dry-run verification:
    `python scripts/generate_pending_artwork_batch.py`
 3. Execute generation:

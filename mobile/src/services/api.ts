@@ -501,7 +501,16 @@ export const nativeApi = {
   },
 
   async getExpenses(tripId: string): Promise<Expense[]> {
-    return fetchWithRetry<Expense[]>(`/trips/${tripId}/expenses`, {}, true, 2);
+    try {
+      const live = await fetchWithRetry<Expense[]>(`/trips/${tripId}/expenses`, {}, true, 1);
+      if (live) {
+        await offlineDb.cacheTripExpenses(tripId, live);
+        return live;
+      }
+    } catch {
+      // Fall through to offline cache
+    }
+    return offlineDb.getCachedTripExpenses(tripId);
   },
 
   async addExpense(tripId: string, expense: {
@@ -509,22 +518,85 @@ export const nativeApi = {
     amount: number;
     category: string;
     date: string;
+    notes?: string;
   }): Promise<Expense> {
-    return fetchWithRetry(
-      `/trips/${tripId}/expenses`,
-      {
-        method: "POST",
-        body: JSON.stringify(expense),
-      },
-      false
-    );
+    try {
+      const created = await fetchWithRetry<Expense>(
+        `/trips/${tripId}/expenses`,
+        {
+          method: "POST",
+          body: JSON.stringify(expense),
+        },
+        false
+      );
+      await offlineDb.saveOfflineExpense(tripId, created, false);
+      return created;
+    } catch {
+      // When offline in high-altitude zones with no reception, generate local offline expense
+      const offlineExpense: Expense = {
+        id: `offline_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        trip_id: tripId,
+        title: expense.title,
+        amount: expense.amount,
+        category: expense.category,
+        date: expense.date,
+        notes: expense.notes,
+      };
+      await offlineDb.saveOfflineExpense(tripId, offlineExpense, true);
+      await offlineDb.queueOfflineMutation("add_expense", { tripId, expense });
+      return offlineExpense;
+    }
   },
 
   async deleteExpense(tripId: string, expenseId: string): Promise<void> {
-    return fetchWithRetry(
-      `/trips/${tripId}/expenses/${expenseId}`,
-      { method: "DELETE" },
-      false
-    );
+    try {
+      if (!expenseId.startsWith("offline_")) {
+        await fetchWithRetry(
+          `/trips/${tripId}/expenses/${expenseId}`,
+          { method: "DELETE" },
+          false
+        );
+      }
+    } catch {
+      await offlineDb.queueOfflineMutation("delete_expense", { tripId, expenseId });
+    }
+    await offlineDb.deleteOfflineExpense(tripId, expenseId);
+  },
+
+  async syncPendingOfflineActions(): Promise<number> {
+    const pending = await offlineDb.getPendingMutations();
+    if (pending.length === 0) return 0;
+    let syncedCount = 0;
+
+    for (const item of pending) {
+      try {
+        const payload = JSON.parse(item.payload_json);
+        if (item.action_type === "add_expense") {
+          await fetchWithRetry(
+            `/trips/${payload.tripId}/expenses`,
+            {
+              method: "POST",
+              body: JSON.stringify(payload.expense),
+            },
+            false
+          );
+          syncedCount++;
+        } else if (item.action_type === "delete_expense") {
+          if (!payload.expenseId.startsWith("offline_")) {
+            await fetchWithRetry(
+              `/trips/${payload.tripId}/expenses/${payload.expenseId}`,
+              { method: "DELETE" },
+              false
+            );
+          }
+          syncedCount++;
+        }
+        await offlineDb.removeMutation(item.id);
+      } catch {
+        // Stop on first failure to preserve order and retry later
+        break;
+      }
+    }
+    return syncedCount;
   },
 };

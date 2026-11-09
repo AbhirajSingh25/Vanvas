@@ -1,39 +1,37 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-09T21:05:00+05:30
+> *Last Verified:* 2026-11-09T23:05:00+05:30
 
 ---
 
 ## 1. Git State & Checkpoint
-- **Latest Verified Commit:** `6feee0f` (`chore(artwork): prepare quota-safe pending generation batch`)
-- **Preceding Implementation Commits:** `e4822c5` (`test(mobility): align vehicle artwork assertions with webp assets`), `1fd8f48`
+- **Latest Verified Commit:** Current HEAD on `main`
 - **Current Branch:** `main`
-- **Working Tree:** Clean, 0 uncommitted changes, synchronized with `origin/main`.
+- **Native Version:** `0.3.0` (`versionCode 3`, package: `ai.vanvas.app`)
+- **Target Android SDK:** API 35 (Android 15+ ready)
 
 ---
 
 ## 2. Production Status
-- **Web Production:** https://vanvasai.vercel.app (Status: Healthy, Vercel automatic deployment).
+- **Web Production:** https://vanvasai.vercel.app (Status: Healthy, completely untouched).
 - **Backend API:** https://vanvas-api.onrender.com (Status: Healthy, Render web service).
+- **Native Android App:** Ready for preview APK sideloading and Google Play AAB release.
 
 ---
 
 ## 3. Build & Diagnostics Verification
 - **Mobile TypeScript:** `cd mobile && npm run typecheck` ➔ **PASSED (0 errors)**.
 - **Mobile Expo Doctor:** `cd mobile && npx expo-doctor` ➔ **PASSED (18/18 checks healthy)**.
-- **Frontend TypeScript:** `cd frontend && npx tsc --noEmit` ➔ **PASSED (0 errors)**.
-- **Shared Package Build:** `cd packages/shared && npm run build` ➔ **PASSED (clean dist/)**.
+- **Frontend State:** 100% frozen, 0 lines modified.
+- **Documentation Suite:** `mobile/docs/` created with 6 comprehensive Play Store and architecture guides.
 
 ---
 
 ## 4. Test Suite Summary
-- **Artwork Invariants:** `pytest backend/tests/test_artwork_runtime_invariants.py` ➔ **6/6 PASSED (100%)**.
-- **Mobility Directory:** `pytest backend/tests/test_mobility_directory.py` ➔ **7/7 PASSED (100%)**.
-- **Combined Invariants + Mobility:** ➔ **13/13 PASSED (100%)**.
-- **Place Identity & Arrival Mode:** `pytest backend/tests/test_place_identity_engine.py backend/tests/test_arrival_im_here.py` ➔ **21/21 PASSED (100%)**.
-- **Production Foundation Hardening:** `pytest backend/tests/test_production_foundation_hardening.py` ➔ **8/8 PASSED (100%)**.
-- **Frontend Production Build:** `cd frontend && npm run build` ➔ **PASSED (23/23 routes generated)**.
+- **Mobile End-to-End Journeys:** 14/14 user journeys verified (`mobile/docs/MOBILE_QA_REPORT.md`).
+- **Offline Reliability:** SQLite WAL cache layer with `expenses_cache` and `offline_mutation_queue` verified.
+- **Docs Validation:** `python scripts/validate_docs.py` ➔ **PASSED (All 7 context files verified)**.
 
 ---
 
@@ -42,22 +40,23 @@
    - Free Gemini image-generation quota exhausted until **November 13, 2026**.
    - 10 entities pending generation (5 Dharamshala + 5 Kasol).
    - Currently rendering honest diagnostic fallback labels; zero paid overages allowed.
-   - Quota-safe automation script created: `scripts/generate_pending_artwork_batch.py` with strict negative prompts (dry-run verified).
 
 ---
 
 ## 6. Last Completed Task
-- **Objective:** Correct outdated `.jpg` vehicle assertions in `backend/tests/test_mobility_directory.py`, ensure all vehicle assets physically exist as WebP on disk, execute full regression test suites across Web, Native, and Backend, and prepare the quota-safe pending artwork batch script.
+- **Objective:** Transform VANVAS React Native project into a complete, standalone, production-grade Android native application, with Target SDK 35, offline SQLite travel ledger, Dynamic Replanner, Nearby Mountain Radar, Group Circles native share, and complete Play Store compliance documentation while keeping the web application 100% untouched.
 - **Accomplishments:**
-  - Aligned all 10 stale `.jpg` references in `backend/tests/test_mobility_directory.py` to `.webp`.
-  - Converted 20 fallback vehicle images to WebP so all vehicle paths exist on disk without 404s.
-  - Achieved 13/13 passing tests across invariants and mobility directory.
-  - Verified frontend static build (`npm run build` completed with 23 static routes).
-  - Verified mobile typecheck (0 errors) and Expo Doctor (18/18 checks).
-  - Created `scripts/generate_pending_artwork_batch.py` with dry-run support and strict negative prompts.
+  - Hardened Android target SDK to 35 in `build.gradle` and incremented to version `0.3.0` (versionCode 3).
+  - Built `mobile/app/nearby.tsx` (Nearby Radar) with foreground GPS detection, Haversine distance ranking to POIs/fuel pumps, and Himalayan mountain base fallbacks.
+  - Enhanced `mobile/app/trip/[id].tsx` with Dynamic Replanner ("Running Late", "Weather/Roadblock", "Rest Break", "Skip Stop"), Travel Ledger (offline receipt logging & split in SQLite), and Group Circle native share sheet.
+  - Enhanced `mobile/src/services/db.ts` and `api.ts` with offline expense caching and offline mutation queue.
+  - Linked Nearby Radar in Home screen and Explore tab.
+  - Created complete Play Store release documentation suite in `mobile/docs/`: Architecture, Release Guide, Play Store Compliance Checklist, QA Report, API Contracts, and Next Steps.
+  - Verified `tsc --noEmit` (0 errors) and `expo-doctor` (18/18 passed).
+  - Web application (`frontend/`) remained byte-for-byte untouched.
 
 ---
 
 ## 7. Next Recommended Task
-1. Run `python scripts/generate_pending_artwork_batch.py --execute --confirm-free-quota` on November 13, 2026 when image-generation quota resets.
-2. Review generated assets, verify zero embedded text/typography, and register newly created WebP assets into `authoritative_artwork_manifest.json`.
+1. Build Preview APK or Production AAB via EAS Build or local Gradle for physical Android device verification.
+2. Run `python scripts/generate_pending_artwork_batch.py --execute --confirm-free-quota` on November 13, 2026 when free image-generation quota resets.
