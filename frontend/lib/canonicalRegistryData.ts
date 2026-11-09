@@ -509,7 +509,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 10:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/goa_beach_scooter.jpg",
+        "image_url": "/images/vehicles/goa_beach_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -527,7 +527,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 09:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/goa_coastal_bullet.jpg",
+        "image_url": "/images/vehicles/goa_coastal_bullet.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -545,7 +545,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 11:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/goa_coastal_car.jpg",
+        "image_url": "/images/vehicles/goa_coastal_car.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -1103,7 +1103,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "08:00 AM - 09:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/jaipur_hawa_mahal_scooter.jpg",
+        "image_url": "/images/vehicles/jaipur_hawa_mahal_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -1121,7 +1121,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/jaipur_pinkcity_bullet.jpg",
+        "image_url": "/images/vehicles/jaipur_pinkcity_bullet.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -1139,7 +1139,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 11:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/jaipur_amer_car.jpg",
+        "image_url": "/images/vehicles/jaipur_amer_car.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -1697,7 +1697,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "08:00 AM - 09:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/udaipur_pichola_scooter.jpg",
+        "image_url": "/images/vehicles/udaipur_pichola_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -1715,7 +1715,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/udaipur_oldcity_bullet.jpg",
+        "image_url": "/images/vehicles/udaipur_oldcity_bullet.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -1733,7 +1733,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 10:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/udaipur_lakeside_car.jpg",
+        "image_url": "/images/vehicles/udaipur_lakeside_car.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -2222,7 +2222,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "price_per_night": 22000.0,
         "rating": 4.9,
         "amenities": "Private Boat Transfer,Classical Flute Mornings,Ganga View Dining,Spa,WiFi",
-        "image_url": "/images/places/varanasi/stays/brijrama-palace.webp",
+        "image_url": "/images/places/varanasi/stays/brijrama-palace-heritage-grand.webp",
         "booking_url": "https://www.brijhotels.com/brijrama-palace",
         "data_state": "VERIFIED"
     },
@@ -2291,7 +2291,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 09:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/varanasi_ghat_approach_scooter.jpg",
+        "image_url": "/images/vehicles/varanasi_ghat_approach_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -2309,7 +2309,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/varanasi_assi_scooter.jpg",
+        "image_url": "/images/vehicles/varanasi_assi_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -2327,7 +2327,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 09:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/varanasi_oldcity_scooter.jpg",
+        "image_url": "/images/vehicles/varanasi_oldcity_scooter.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -2885,7 +2885,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/mussoorie_landour_scooter.jpg",
+        "image_url": "/images/vehicles/mussoorie_landour_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -2903,7 +2903,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/mussoorie_landour_bullet.jpg",
+        "image_url": "/images/vehicles/mussoorie_landour_bullet.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -2921,7 +2921,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 10:00 PM",
         "rating": 4.7,
-        "image_url": "/images/vehicles/mussoorie_hill_car.jpg",
+        "image_url": "/images/vehicles/mussoorie_hill_car.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -3479,7 +3479,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 09:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/rishikesh_tapovan_scooter.jpg",
+        "image_url": "/images/vehicles/rishikesh_tapovan_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -3497,7 +3497,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:30 AM - 08:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/rishikesh_ganga_bullet.jpg",
+        "image_url": "/images/vehicles/rishikesh_ganga_bullet.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -3515,7 +3515,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 08:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/rishikesh_ganga_mtb.jpg",
+        "image_url": "/images/vehicles/rishikesh_ganga_mtb.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -4121,7 +4121,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/manali_beas_scooter.jpg",
+        "image_url": "/images/vehicles/manali_beas_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -4139,7 +4139,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 09:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/manali_himalayan_adv_bike.jpg",
+        "image_url": "/images/vehicles/manali_himalayan_adv_bike.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -4157,7 +4157,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 09:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/manali_solang_bullet.jpg",
+        "image_url": "/images/vehicles/manali_solang_bullet.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -4715,7 +4715,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "08:00 AM - 08:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/dharamshala_mcleod_scooter.jpg",
+        "image_url": "/images/vehicles/dharamshala_mcleod_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -4733,7 +4733,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.jpg",
+        "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -5291,7 +5291,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/kasol_valley_scooter.jpg",
+        "image_url": "/images/vehicles/kasol_valley_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -5309,7 +5309,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/kasol_parvati_bullet.jpg",
+        "image_url": "/images/vehicles/kasol_parvati_bullet.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -5867,7 +5867,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 09:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/leh_high_altitude_motorcycle.jpg",
+        "image_url": "/images/vehicles/leh_high_altitude_motorcycle.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -5885,7 +5885,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/leh_palace_bullet.jpg",
+        "image_url": "/images/vehicles/leh_palace_bullet.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -7049,7 +7049,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 09:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/jaisalmer_fort_scooter.jpg",
+        "image_url": "/images/vehicles/jaisalmer_fort_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -7067,7 +7067,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/jaisalmer_thar_bullet.jpg",
+        "image_url": "/images/vehicles/jaisalmer_thar_bullet.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -7625,7 +7625,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/kerala_tea_plantation_scooter.jpg",
+        "image_url": "/images/vehicles/kerala_tea_plantation_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -7643,7 +7643,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/kerala_western_ghats_bike.jpg",
+        "image_url": "/images/vehicles/kerala_western_ghats_bike.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -8201,7 +8201,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 09:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/dehradun_rajpur_scooter.jpg",
+        "image_url": "/images/vehicles/dehradun_rajpur_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -8219,7 +8219,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/dehradun_foothills_bike.jpg",
+        "image_url": "/images/vehicles/dehradun_foothills_bike.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -8777,7 +8777,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 07:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/chopta_tungnath_adv_bike.jpg",
+        "image_url": "/images/vehicles/chopta_tungnath_adv_bike.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -8795,7 +8795,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 07:00 PM",
         "rating": 4.7,
-        "image_url": "/images/vehicles/chopta_foothill_scooter.jpg",
+        "image_url": "/images/vehicles/chopta_foothill_scooter.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -9353,7 +9353,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/kainchi_bhowali_scooter.jpg",
+        "image_url": "/images/vehicles/kainchi_bhowali_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -9371,7 +9371,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/kainchi_kumaon_bike.jpg",
+        "image_url": "/images/vehicles/kainchi_kumaon_bike.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -9929,7 +9929,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 09:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/agra_taj_scooter.jpg",
+        "image_url": "/images/vehicles/agra_taj_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -9947,7 +9947,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 10:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/agra_heritage_car.jpg",
+        "image_url": "/images/vehicles/agra_heritage_car.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -10505,7 +10505,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 09:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/vrindavan_braj_scooter.jpg",
+        "image_url": "/images/vehicles/vrindavan_braj_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -10523,7 +10523,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:30 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/mathura_heritage_bullet.jpg",
+        "image_url": "/images/vehicles/mathura_heritage_bullet.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -11081,7 +11081,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "08:00 AM - 08:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/neemrana_fort_bullet.jpg",
+        "image_url": "/images/vehicles/neemrana_fort_bullet.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -11099,7 +11099,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 10:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/neemrana_highway_car.jpg",
+        "image_url": "/images/vehicles/neemrana_highway_car.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -11657,7 +11657,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/damdama_lake_scooter.jpg",
+        "image_url": "/images/vehicles/damdama_lake_scooter.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -12215,7 +12215,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "08:00 AM - 08:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/alwar_siliserh_scooter.jpg",
+        "image_url": "/images/vehicles/alwar_siliserh_scooter.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -12773,7 +12773,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "06:00 AM - 07:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/sariska_safari_adv_bike.jpg",
+        "image_url": "/images/vehicles/sariska_safari_adv_bike.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -13331,7 +13331,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 09:30 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/chandigarh_boulevard_ev.jpg",
+        "image_url": "/images/vehicles/chandigarh_boulevard_ev.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -13889,7 +13889,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/morni_hills_scooter.jpg",
+        "image_url": "/images/vehicles/morni_hills_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -13907,7 +13907,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/morni_shivalik_bike.jpg",
+        "image_url": "/images/vehicles/morni_shivalik_bike.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -14465,7 +14465,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:30 AM - 08:00 PM",
         "rating": 4.8,
-        "image_url": "/images/vehicles/lansdowne_ridge_scooter.jpg",
+        "image_url": "/images/vehicles/lansdowne_ridge_scooter.webp",
         "data_state": "VERIFIED"
     },
       {
@@ -14483,7 +14483,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "07:00 AM - 08:00 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/lansdowne_pine_bullet.jpg",
+        "image_url": "/images/vehicles/lansdowne_pine_bullet.webp",
         "data_state": "VERIFIED"
     }
     ],
@@ -15041,7 +15041,7 @@ export const CANONICAL_REGISTRY_DATA: Record<string, CanonicalDestinationPackage
         "phone": "+91-98160-00000",
         "opening_hours": "00:00 AM - 11:59 PM",
         "rating": 4.9,
-        "image_url": "/images/vehicles/murthal_gt_road_bullet.jpg",
+        "image_url": "/images/vehicles/murthal_gt_road_bullet.webp",
         "data_state": "VERIFIED"
     }
     ],

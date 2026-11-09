@@ -178,7 +178,7 @@ class MobilityService:
                     "hours_available": False,
                     "is_open_now": None,
                     "rating": None,
-                    "image_url": "/images/vehicles/universal_mobility.jpg",
+                    "image_url": "/images/vehicles/universal_mobility.webp",
                     "phone": prov.phone,
                     "whatsapp": prov.whatsapp,
                     "website": prov.website,
@@ -412,52 +412,52 @@ class MobilityService:
         # 1. Goa
         if any(k in dest_str for k in ["goa", "gokarna"]):
             if is_car:
-                return "/images/vehicles/goa_coastal_car.jpg"
+                return "/images/vehicles/goa_coastal_car.webp"
             if is_adv:
-                return "/images/vehicles/coastal_heritage_bike.jpg"
+                return "/images/vehicles/coastal_heritage_bike.webp"
             if is_bullet:
-                return "/images/vehicles/goa_coastal_bullet.jpg"
-            return "/images/vehicles/goa_beach_scooter.jpg"
+                return "/images/vehicles/goa_coastal_bullet.webp"
+            return "/images/vehicles/goa_beach_scooter.webp"
 
         # 2. Jaipur
         if any(k in dest_str for k in ["jaipur", "pink city", "amer"]):
             if is_car:
-                return "/images/vehicles/jaipur_amer_car.jpg"
+                return "/images/vehicles/jaipur_amer_car.webp"
             if is_adv:
-                return "/images/vehicles/rajasthan_desert_bike.jpg"
+                return "/images/vehicles/rajasthan_desert_bike.webp"
             if is_bullet:
-                return "/images/vehicles/jaipur_pinkcity_bullet.jpg"
-            return "/images/vehicles/jaipur_hawa_mahal_scooter.jpg"
+                return "/images/vehicles/jaipur_pinkcity_bullet.webp"
+            return "/images/vehicles/jaipur_hawa_mahal_scooter.webp"
 
         # 3. Udaipur
         if any(k in dest_str for k in ["udaipur", "pichola", "mewar"]):
             if is_car:
-                return "/images/vehicles/udaipur_lakeside_car.jpg"
+                return "/images/vehicles/udaipur_lakeside_car.webp"
             if is_adv:
-                return "/images/vehicles/rajasthan_desert_bike.jpg"
+                return "/images/vehicles/rajasthan_desert_bike.webp"
             if is_bullet:
-                return "/images/vehicles/udaipur_oldcity_bullet.jpg"
-            return "/images/vehicles/udaipur_pichola_scooter.jpg"
+                return "/images/vehicles/udaipur_oldcity_bullet.webp"
+            return "/images/vehicles/udaipur_pichola_scooter.webp"
 
         # 4. Varanasi
         if any(k in dest_str for k in ["varanasi", "kashi", "banaras", "benaras"]):
             if is_car:
-                return "/images/vehicles/varanasi_ghat_car.jpg"
+                return "/images/vehicles/varanasi_ghat_car.webp"
             if is_bicycle:
-                return "/images/vehicles/varanasi_city_cycle.jpg"
+                return "/images/vehicles/varanasi_city_cycle.webp"
             if is_adv:
-                return "/images/vehicles/adventure_motorcycle.jpg"
+                return "/images/vehicles/adventure_motorcycle.webp"
             if is_bullet:
-                return "/images/vehicles/varanasi_bhu_bullet.jpg"
-            return "/images/vehicles/varanasi_ghat_approach_scooter.jpg"
+                return "/images/vehicles/varanasi_bhu_bullet.webp"
+            return "/images/vehicles/varanasi_ghat_approach_scooter.webp"
 
         # 5. Leh
         if any(k in dest_str for k in ["leh", "ladakh"]):
             if is_adv:
-                return "/images/vehicles/leh_high_altitude_motorcycle.jpg"
+                return "/images/vehicles/leh_high_altitude_motorcycle.webp"
             if is_bullet:
-                return "/images/vehicles/leh_palace_bullet.jpg"
-            return "/images/vehicles/leh_palace_bullet.jpg"
+                return "/images/vehicles/leh_palace_bullet.webp"
+            return "/images/vehicles/leh_palace_bullet.webp"
 
         # 6. Spiti
         if any(k in dest_str for k in ["spiti", "kaza"]):
@@ -470,139 +470,139 @@ class MobilityService:
         # 7. Mussoorie / Landour
         if any(k in dest_str for k in ["mussoorie", "landour"]):
             if is_car:
-                return "/images/vehicles/mussoorie_hill_car.jpg"
+                return "/images/vehicles/mussoorie_hill_car.webp"
             if is_bullet or is_adv:
-                return "/images/vehicles/mussoorie_landour_bullet.jpg"
-            return "/images/vehicles/mussoorie_landour_scooter.jpg"
+                return "/images/vehicles/mussoorie_landour_bullet.webp"
+            return "/images/vehicles/mussoorie_landour_scooter.webp"
 
         # 8. Rishikesh
         if any(k in dest_str for k in ["rishikesh", "tapovan"]):
             if is_bicycle:
-                return "/images/vehicles/rishikesh_ganga_mtb.jpg"
+                return "/images/vehicles/rishikesh_ganga_mtb.webp"
             if is_adv:
-                return "/images/vehicles/adventure_motorcycle.jpg"
+                return "/images/vehicles/adventure_motorcycle.webp"
             if is_bullet:
-                return "/images/vehicles/rishikesh_ganga_bullet.jpg"
-            return "/images/vehicles/rishikesh_tapovan_scooter.jpg"
+                return "/images/vehicles/rishikesh_ganga_bullet.webp"
+            return "/images/vehicles/rishikesh_tapovan_scooter.webp"
 
         # 9. Manali
         if any(k in dest_str for k in ["manali", "solang"]):
             if is_adv:
-                return "/images/vehicles/manali_himalayan_adv_bike.jpg"
+                return "/images/vehicles/manali_himalayan_adv_bike.webp"
             if is_bullet:
-                return "/images/vehicles/manali_solang_bullet.jpg"
-            return "/images/vehicles/manali_beas_scooter.jpg"
+                return "/images/vehicles/manali_solang_bullet.webp"
+            return "/images/vehicles/manali_beas_scooter.webp"
 
         # 10. Dharamshala
         if any(k in dest_str for k in ["dharamshala", "mcleod", "bhagsu", "dharamsala"]):
             if is_adv:
-                return "/images/vehicles/himachal_pine_forest_bike.jpg"
+                return "/images/vehicles/himachal_pine_forest_bike.webp"
             if is_bullet:
-                return "/images/vehicles/dharamshala_dhauladhar_bullet.jpg"
-            return "/images/vehicles/dharamshala_mcleod_scooter.jpg"
+                return "/images/vehicles/dharamshala_dhauladhar_bullet.webp"
+            return "/images/vehicles/dharamshala_mcleod_scooter.webp"
 
         # 11. Kasol
         if any(k in dest_str for k in ["kasol", "parvati"]):
             if is_adv:
-                return "/images/vehicles/himachal_pine_forest_bike.jpg"
+                return "/images/vehicles/himachal_pine_forest_bike.webp"
             if is_bullet:
-                return "/images/vehicles/kasol_parvati_bullet.jpg"
-            return "/images/vehicles/kasol_valley_scooter.jpg"
+                return "/images/vehicles/kasol_parvati_bullet.webp"
+            return "/images/vehicles/kasol_valley_scooter.webp"
 
         # 12. Jaisalmer
         if any(k in dest_str for k in ["jaisalmer", "thar", "sam dunes"]):
             if is_adv:
-                return "/images/vehicles/rajasthan_desert_bike.jpg"
+                return "/images/vehicles/rajasthan_desert_bike.webp"
             if is_bullet:
-                return "/images/vehicles/jaisalmer_thar_bullet.jpg"
-            return "/images/vehicles/jaisalmer_fort_scooter.jpg"
+                return "/images/vehicles/jaisalmer_thar_bullet.webp"
+            return "/images/vehicles/jaisalmer_fort_scooter.webp"
 
         # 13. Munnar / Kerala
         if any(k in dest_str for k in ["munnar", "kerala"]):
             if is_bullet or is_adv:
-                return "/images/vehicles/kerala_western_ghats_bike.jpg"
-            return "/images/vehicles/kerala_tea_plantation_scooter.jpg"
+                return "/images/vehicles/kerala_western_ghats_bike.webp"
+            return "/images/vehicles/kerala_tea_plantation_scooter.webp"
 
         # 14. Dehradun
         if any(k in dest_str for k in ["dehradun", "rajpur"]):
             if is_adv:
-                return "/images/vehicles/uttarakhand_forest_bike.jpg"
+                return "/images/vehicles/uttarakhand_forest_bike.webp"
             if is_bullet:
-                return "/images/vehicles/dehradun_foothills_bike.jpg"
-            return "/images/vehicles/dehradun_rajpur_scooter.jpg"
+                return "/images/vehicles/dehradun_foothills_bike.webp"
+            return "/images/vehicles/dehradun_rajpur_scooter.webp"
 
         # 15. Tungnath-Chandrashila / Chopta
         if any(k in dest_str for k in ["tungnath", "chopta", "chandrashila"]):
             if is_adv or is_bullet:
-                return "/images/vehicles/chopta_tungnath_adv_bike.jpg"
-            return "/images/vehicles/chopta_foothill_scooter.jpg"
+                return "/images/vehicles/chopta_tungnath_adv_bike.webp"
+            return "/images/vehicles/chopta_foothill_scooter.webp"
 
         # 16. Kainchi Dham
         if any(k in dest_str for k in ["kainchi", "bhowali", "neem karoli"]):
             if is_bullet or is_adv:
-                return "/images/vehicles/kainchi_kumaon_bike.jpg"
-            return "/images/vehicles/kainchi_bhowali_scooter.jpg"
+                return "/images/vehicles/kainchi_kumaon_bike.webp"
+            return "/images/vehicles/kainchi_bhowali_scooter.webp"
 
         # 17. Agra
         if any(k in dest_str for k in ["agra", "taj"]):
             if is_car:
-                return "/images/vehicles/agra_heritage_car.jpg"
-            return "/images/vehicles/agra_taj_scooter.jpg"
+                return "/images/vehicles/agra_heritage_car.webp"
+            return "/images/vehicles/agra_taj_scooter.webp"
 
         # 18. Mathura & Vrindavan
         if any(k in dest_str for k in ["mathura", "vrindavan", "braj"]):
             if is_bullet or is_adv:
-                return "/images/vehicles/mathura_heritage_bullet.jpg"
-            return "/images/vehicles/vrindavan_braj_scooter.jpg"
+                return "/images/vehicles/mathura_heritage_bullet.webp"
+            return "/images/vehicles/vrindavan_braj_scooter.webp"
 
         # 19. Neemrana
         if any(k in dest_str for k in ["neemrana"]):
             if is_car:
-                return "/images/vehicles/neemrana_highway_car.jpg"
-            return "/images/vehicles/neemrana_fort_bullet.jpg"
+                return "/images/vehicles/neemrana_highway_car.webp"
+            return "/images/vehicles/neemrana_fort_bullet.webp"
 
         # 20. Damdama & Sohna
         if any(k in dest_str for k in ["damdama", "sohna"]):
-            return "/images/vehicles/damdama_lake_scooter.jpg"
+            return "/images/vehicles/damdama_lake_scooter.webp"
 
         # 21. Alwar & Siliserh
         if any(k in dest_str for k in ["alwar", "siliserh"]):
-            return "/images/vehicles/alwar_siliserh_scooter.jpg"
+            return "/images/vehicles/alwar_siliserh_scooter.webp"
 
         # 22. Sariska & Bhangarh
         if any(k in dest_str for k in ["sariska", "bhangarh"]):
-            return "/images/vehicles/sariska_safari_adv_bike.jpg"
+            return "/images/vehicles/sariska_safari_adv_bike.webp"
 
         # 23. Chandigarh
         if any(k in dest_str for k in ["chandigarh"]):
-            return "/images/vehicles/chandigarh_boulevard_ev.jpg"
+            return "/images/vehicles/chandigarh_boulevard_ev.webp"
 
         # 24. Morni Hills
         if any(k in dest_str for k in ["morni"]):
             if is_bullet or is_adv:
-                return "/images/vehicles/morni_shivalik_bike.jpg"
-            return "/images/vehicles/morni_hills_scooter.jpg"
+                return "/images/vehicles/morni_shivalik_bike.webp"
+            return "/images/vehicles/morni_hills_scooter.webp"
 
         # 25. Lansdowne
         if any(k in dest_str for k in ["lansdowne"]):
             if is_bullet or is_adv:
-                return "/images/vehicles/lansdowne_pine_bullet.jpg"
-            return "/images/vehicles/lansdowne_ridge_scooter.jpg"
+                return "/images/vehicles/lansdowne_pine_bullet.webp"
+            return "/images/vehicles/lansdowne_ridge_scooter.webp"
 
         # 26. Murthal
         if any(k in dest_str for k in ["murthal"]):
-            return "/images/vehicles/murthal_gt_road_bullet.jpg"
+            return "/images/vehicles/murthal_gt_road_bullet.webp"
 
         # Default fallbacks
         if is_bicycle:
-            return "/images/vehicles/mountain_bike.jpg"
+            return "/images/vehicles/mountain_bike.webp"
         if is_electric:
-            return "/images/vehicles/electric_scooter.jpg"
+            return "/images/vehicles/electric_scooter.webp"
         if is_adv:
-            return "/images/vehicles/adventure_motorcycle.jpg"
+            return "/images/vehicles/adventure_motorcycle.webp"
         if is_bullet:
-            return "/images/vehicles/classic_bullet.jpg"
-        return "/images/vehicles/automatic_scooter.jpg"
+            return "/images/vehicles/classic_bullet.webp"
+        return "/images/vehicles/automatic_scooter.webp"
 
     @classmethod
     def create_provider(cls, db: Session, payload: MobilityProviderCreate, user: Optional[User] = None) -> MobilityProvider:

@@ -925,7 +925,8 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
     imageUrl.length > 0 &&
     isValidVehicleImageUrl(imageUrl)
   ) {
-    finalSrc = imageUrl;
+    // Never allow older .jpg overrides to silently take precedence over approved .webp assets
+    finalSrc = imageUrl.endsWith(".jpg") ? imageUrl.replace(/\.jpg$/, ".webp") : imageUrl;
   }
 
   if (hasError) {

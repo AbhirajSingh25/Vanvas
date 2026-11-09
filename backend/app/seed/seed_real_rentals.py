@@ -40,7 +40,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.jpg"
+                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -51,7 +51,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 130.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rishikesh_ganga_bullet.jpg"
+                "image_url": "/images/vehicles/rishikesh_ganga_bullet.webp"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -62,7 +62,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 160.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                "image_url": "/images/vehicles/adventure_motorcycle.webp"
             }
         ]
     },
@@ -92,7 +92,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.jpg"
+                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -103,7 +103,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 120.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rishikesh_ganga_bullet.jpg"
+                "image_url": "/images/vehicles/rishikesh_ganga_bullet.webp"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -114,7 +114,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 180.0,
                 "deposit": 2500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                "image_url": "/images/vehicles/adventure_motorcycle.webp"
             }
         ]
     },
@@ -144,7 +144,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.jpg"
+                "image_url": "/images/vehicles/rishikesh_tapovan_scooter.webp"
             }
         ]
     },
@@ -178,7 +178,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.jpg"
+                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.webp"
             },
             {
                 "vehicle_type": "Scooter",
@@ -189,7 +189,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.jpg"
+                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -200,7 +200,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.jpg"
+                "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.webp"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -211,7 +211,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 170.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                "image_url": "/images/vehicles/adventure_motorcycle.webp"
             }
         ]
     },
@@ -240,7 +240,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.jpg"
+                "image_url": "/images/vehicles/dharamshala_mcleod_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -251,7 +251,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.jpg"
+                "image_url": "/images/vehicles/dharamshala_dhauladhar_bullet.webp"
             }
         ]
     },
@@ -284,7 +284,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 80.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/manali_beas_scooter.jpg"
+                "image_url": "/images/vehicles/manali_beas_scooter.webp"
             },
             {
                 "vehicle_type": "Scooter",
@@ -295,7 +295,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 80.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/manali_beas_scooter.jpg"
+                "image_url": "/images/vehicles/manali_beas_scooter.webp"
             }
         ]
     },
@@ -327,7 +327,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/manali_solang_bullet.jpg"
+                "image_url": "/images/vehicles/manali_solang_bullet.webp"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -338,7 +338,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 180.0,
                 "deposit": 2500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                "image_url": "/images/vehicles/adventure_motorcycle.webp"
             }
         ]
     },
@@ -369,7 +369,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/goa_beach_scooter.jpg"
+                "image_url": "/images/vehicles/goa_beach_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -380,7 +380,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 130.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/goa_coastal_bullet.jpg"
+                "image_url": "/images/vehicles/goa_coastal_bullet.webp"
             },
             {
                 "vehicle_type": "Self-Drive Car",
@@ -391,7 +391,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 250.0,
                 "deposit": 3000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/goa_coastal_car.jpg"
+                "image_url": "/images/vehicles/goa_coastal_car.webp"
             },
             {
                 "vehicle_type": "Self-Drive Car",
@@ -402,7 +402,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 450.0,
                 "deposit": 5000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/goa_coastal_car.jpg"
+                "image_url": "/images/vehicles/goa_coastal_car.webp"
             }
         ]
     },
@@ -431,7 +431,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 80.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/goa_beach_scooter.jpg"
+                "image_url": "/images/vehicles/goa_beach_scooter.webp"
             },
             {
                 "vehicle_type": "Scooter",
@@ -442,7 +442,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 70.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/goa_beach_scooter.jpg"
+                "image_url": "/images/vehicles/goa_beach_scooter.webp"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -453,7 +453,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/goa_coastal_bullet.jpg"
+                "image_url": "/images/vehicles/goa_coastal_bullet.webp"
             }
         ]
     },
@@ -486,7 +486,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaipur_hawa_mahal_scooter.jpg"
+                "image_url": "/images/vehicles/jaipur_hawa_mahal_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -497,7 +497,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 130.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaipur_pinkcity_bullet.jpg"
+                "image_url": "/images/vehicles/jaipur_pinkcity_bullet.webp"
             },
             {
                 "vehicle_type": "Self-Drive Car",
@@ -508,7 +508,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 200.0,
                 "deposit": 3000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaipur_amer_car.jpg"
+                "image_url": "/images/vehicles/jaipur_amer_car.webp"
             }
         ]
     },
@@ -537,7 +537,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaipur_hawa_mahal_scooter.jpg"
+                "image_url": "/images/vehicles/jaipur_hawa_mahal_scooter.webp"
             },
             {
                 "vehicle_type": "Cruiser Motorcycle",
@@ -548,7 +548,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 110.0,
                 "deposit": 1500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaipur_pinkcity_bullet.jpg"
+                "image_url": "/images/vehicles/jaipur_pinkcity_bullet.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -559,7 +559,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 135.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaipur_pinkcity_bullet.jpg"
+                "image_url": "/images/vehicles/jaipur_pinkcity_bullet.webp"
             }
         ]
     },
@@ -593,7 +593,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/udaipur_pichola_scooter.jpg"
+                "image_url": "/images/vehicles/udaipur_pichola_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -604,7 +604,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/udaipur_oldcity_bullet.jpg"
+                "image_url": "/images/vehicles/udaipur_oldcity_bullet.webp"
             },
             {
                 "vehicle_type": "Self-Drive Car",
@@ -615,7 +615,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 220.0,
                 "deposit": 3000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/udaipur_lakeside_car.jpg"
+                "image_url": "/images/vehicles/udaipur_lakeside_car.webp"
             }
         ]
     },
@@ -644,7 +644,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/udaipur_pichola_scooter.jpg"
+                "image_url": "/images/vehicles/udaipur_pichola_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -655,7 +655,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/udaipur_oldcity_bullet.jpg"
+                "image_url": "/images/vehicles/udaipur_oldcity_bullet.webp"
             }
         ]
     },
@@ -686,7 +686,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/varanasi_assi_scooter.jpg"
+                "image_url": "/images/vehicles/varanasi_assi_scooter.webp"
             },
             {
                 "vehicle_type": "Scooter",
@@ -697,7 +697,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/varanasi_assi_scooter.jpg"
+                "image_url": "/images/vehicles/varanasi_assi_scooter.webp"
             },
             {
                 "vehicle_type": "Cruiser Motorcycle",
@@ -708,7 +708,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 110.0,
                 "deposit": 1500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/varanasi_bhu_bullet.jpg"
+                "image_url": "/images/vehicles/varanasi_bhu_bullet.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -719,7 +719,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/varanasi_bhu_bullet.jpg"
+                "image_url": "/images/vehicles/varanasi_bhu_bullet.webp"
             }
         ]
     },
@@ -748,7 +748,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 25.0,
                 "deposit": 500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/varanasi_city_cycle.jpg"
+                "image_url": "/images/vehicles/varanasi_city_cycle.webp"
             },
             {
                 "vehicle_type": "Scooter",
@@ -759,7 +759,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/varanasi_assi_scooter.jpg"
+                "image_url": "/images/vehicles/varanasi_assi_scooter.webp"
             }
         ]
     },
@@ -791,7 +791,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 200.0,
                 "deposit": 3000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/leh_high_altitude_motorcycle.jpg"
+                "image_url": "/images/vehicles/leh_high_altitude_motorcycle.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -802,7 +802,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 160.0,
                 "deposit": 2500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/leh_palace_bullet.jpg"
+                "image_url": "/images/vehicles/leh_palace_bullet.webp"
             }
         ]
     },
@@ -833,7 +833,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 220.0,
                 "deposit": 3500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/leh_high_altitude_motorcycle.jpg"
+                "image_url": "/images/vehicles/leh_high_altitude_motorcycle.webp"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -844,7 +844,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/leh_high_altitude_motorcycle.jpg"
+                "image_url": "/images/vehicles/leh_high_altitude_motorcycle.webp"
             }
         ]
     },
@@ -878,7 +878,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 200.0,
                 "deposit": 3000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/spiti_arid_adventure_bike.jpg"
+                "image_url": "/images/vehicles/spiti_arid_adventure_bike.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -889,7 +889,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 170.0,
                 "deposit": 2500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/spiti_arid_adventure_bike.jpg"
+                "image_url": "/images/vehicles/spiti_arid_adventure_bike.webp"
             }
         ]
     },
@@ -918,7 +918,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/spiti_arid_adventure_bike.jpg"
+                "image_url": "/images/vehicles/spiti_arid_adventure_bike.webp"
             }
         ]
     },
@@ -949,7 +949,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 90.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/mussoorie_landour_scooter.jpg"
+                "image_url": "/images/vehicles/mussoorie_landour_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -960,7 +960,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 160.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/mussoorie_landour_bullet.jpg"
+                "image_url": "/images/vehicles/mussoorie_landour_bullet.webp"
             }
         ]
     },
@@ -989,7 +989,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/mussoorie_landour_bullet.jpg"
+                "image_url": "/images/vehicles/mussoorie_landour_bullet.webp"
             }
         ]
     },
@@ -1020,7 +1020,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 90.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/kasol_valley_scooter.jpg"
+                "image_url": "/images/vehicles/kasol_valley_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1031,7 +1031,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/kasol_parvati_bullet.jpg"
+                "image_url": "/images/vehicles/kasol_parvati_bullet.webp"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -1042,7 +1042,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 170.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/adventure_motorcycle.jpg"
+                "image_url": "/images/vehicles/adventure_motorcycle.webp"
             }
         ]
     },
@@ -1073,7 +1073,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaisalmer_fort_scooter.jpg"
+                "image_url": "/images/vehicles/jaisalmer_fort_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1084,7 +1084,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 140.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaisalmer_thar_bullet.jpg"
+                "image_url": "/images/vehicles/jaisalmer_thar_bullet.webp"
             },
             {
                 "vehicle_type": "Adventure Motorcycle",
@@ -1095,7 +1095,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 170.0,
                 "deposit": 2500.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/rajasthan_desert_bike.jpg"
+                "image_url": "/images/vehicles/rajasthan_desert_bike.webp"
             }
         ]
     },
@@ -1124,7 +1124,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 135.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaisalmer_thar_bullet.jpg"
+                "image_url": "/images/vehicles/jaisalmer_thar_bullet.webp"
             },
             {
                 "vehicle_type": "Scooter",
@@ -1135,7 +1135,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 55.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/jaisalmer_fort_scooter.jpg"
+                "image_url": "/images/vehicles/jaisalmer_fort_scooter.webp"
             }
         ]
     },
@@ -1168,7 +1168,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 80.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/kainchi_bhowali_scooter.jpg"
+                "image_url": "/images/vehicles/kainchi_bhowali_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1179,7 +1179,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/kainchi_kumaon_bike.jpg"
+                "image_url": "/images/vehicles/kainchi_kumaon_bike.webp"
             }
         ]
     },
@@ -1210,7 +1210,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 90.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/kerala_tea_plantation_scooter.jpg"
+                "image_url": "/images/vehicles/kerala_tea_plantation_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1221,7 +1221,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 150.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/kerala_western_ghats_bike.jpg"
+                "image_url": "/images/vehicles/kerala_western_ghats_bike.webp"
             }
         ]
     },
@@ -1252,7 +1252,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/dehradun_rajpur_scooter.jpg"
+                "image_url": "/images/vehicles/dehradun_rajpur_scooter.webp"
             },
             {
                 "vehicle_type": "Touring Motorcycle",
@@ -1263,7 +1263,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 130.0,
                 "deposit": 2000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/dehradun_foothills_bike.jpg"
+                "image_url": "/images/vehicles/dehradun_foothills_bike.webp"
             }
         ]
     },
@@ -1294,7 +1294,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 60.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/vrindavan_braj_scooter.jpg"
+                "image_url": "/images/vehicles/vrindavan_braj_scooter.webp"
             },
             {
                 "vehicle_type": "Electric Scooter",
@@ -1305,7 +1305,7 @@ VERIFIED_RENTAL_PROVIDERS = [
                 "hourly_price": 50.0,
                 "deposit": 1000.0,
                 "availability_status": "AVAILABLE",
-                "image_url": "/images/vehicles/vrindavan_braj_scooter.jpg"
+                "image_url": "/images/vehicles/vrindavan_braj_scooter.webp"
             }
         ]
     }

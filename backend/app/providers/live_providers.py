@@ -2202,28 +2202,28 @@ class LiveRentalsProvider(RentalsProvider):
                 if amenity_val == "bicycle_rental" or shop_val == "bicycle" or (("bicycle" in desc_val or "cycle" in desc_val or "mtb" in desc_val) and "motorcycle" not in amenity_val and "motorcycle" not in shop_val and "scooter" not in amenity_val):
                     v_type = "Mountain Bike / Bicycle"
                     v_name = f"{r_name} MTB & Cycle Fleet"
-                    category_artwork = "/images/vehicles/mountain_bike.jpg"
+                    category_artwork = "/images/vehicles/mountain_bike.webp"
                 elif "electric" in desc_val or "ev" in desc_val or "ather" in desc_val or "ola" in desc_val:
                     v_type = "Electric Scooter"
                     v_name = f"{r_name} Smart EV Fleet"
-                    category_artwork = "/images/vehicles/electric_scooter.jpg"
+                    category_artwork = "/images/vehicles/electric_scooter.webp"
                 elif "motorcycle" in amenity_val or "motorcycle" in shop_val or "motor" in desc_val or "biker" in desc_val or "rider" in desc_val or "bullet" in desc_val or "enfield" in desc_val or "himalayan" in desc_val:
                     if "himalayan" in desc_val or "adventure" in desc_val:
                         v_type = "Touring Motorcycle"
                         v_name = f"{r_name} Himalayan Adventure Fleet"
-                        category_artwork = "/images/vehicles/adventure_motorcycle.jpg"
+                        category_artwork = "/images/vehicles/adventure_motorcycle.webp"
                     else:
                         v_type = "Touring Motorcycle"
                         v_name = f"{r_name} Royal Enfield & Motorcycle Fleet"
-                        category_artwork = "/images/vehicles/classic_bullet.jpg"
+                        category_artwork = "/images/vehicles/classic_bullet.webp"
                 elif "scooter" in amenity_val or "scooter" in shop_val or "activa" in desc_val or "scoot" in desc_val:
                     v_type = "Automatic Hill Scooter"
                     v_name = f"{r_name} Automatic Scooter Fleet"
-                    category_artwork = "/images/vehicles/automatic_scooter.jpg"
+                    category_artwork = "/images/vehicles/automatic_scooter.webp"
                 else:
                     v_type = "Scooter & Motorcycle"
                     v_name = f"{r_name} Two-Wheeler Fleet"
-                    category_artwork = "/images/vehicles/universal_mobility.jpg"
+                    category_artwork = "/images/vehicles/universal_mobility.webp"
 
 
 

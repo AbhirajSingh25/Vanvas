@@ -358,6 +358,14 @@ def ensure_database_schema(eng=engine):
                     except Exception:
                         pass
 
+            # Reconcile historical vehicle .jpg paths and BrijRama stay paths to approved .webp assets
+            try:
+                conn.execute(text("UPDATE rental_options SET image_url = REPLACE(image_url, '.jpg', '.webp') WHERE image_url LIKE '%.jpg'"))
+                conn.execute(text("UPDATE mobility_vehicles SET image_url = REPLACE(image_url, '.jpg', '.webp') WHERE image_url LIKE '%.jpg'"))
+                conn.execute(text("UPDATE hotels SET image_url = '/images/places/varanasi/stays/brijrama-palace-heritage-grand.webp' WHERE (LOWER(name) LIKE '%brijrama%' OR LOWER(id) LIKE '%brijrama%') AND (image_url LIKE '%brijrama-palace.webp' OR image_url LIKE '%brijrama-palace.jpg')"))
+            except Exception as e:
+                logger.warning(f"Artwork runtime reconciliation update skipped: {e}")
+
             conn.commit()
         return True
     except OperationalError as oe:

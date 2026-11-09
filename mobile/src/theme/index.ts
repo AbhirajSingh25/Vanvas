@@ -48,3 +48,25 @@ export const theme = {
 };
 
 export type Theme = typeof theme;
+export type ThemeColors = {
+  [K in keyof typeof theme.colors]: typeof theme.colors[K] extends object ? typeof theme.colors[K] : string;
+};
+
+export function getSemanticColors(isDark: boolean): ThemeColors {
+  if (isDark) {
+    return {
+      ...theme.colors,
+      background: theme.colors.dark.background,
+      backgroundSubtle: theme.colors.dark.surface,
+      surface: theme.colors.dark.surface,
+      surfaceElevated: theme.colors.dark.surfaceElevated,
+      foreground: theme.colors.dark.foreground,
+      foregroundMuted: theme.colors.dark.foregroundMuted,
+      border: theme.colors.dark.border,
+      primary: theme.colors.dark.primary,
+    };
+  }
+  return {
+    ...theme.colors,
+  };
+}

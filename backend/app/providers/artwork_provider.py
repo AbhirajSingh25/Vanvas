@@ -6303,7 +6303,7 @@ class CuratedArtworkProvider(ArtworkProvider):
         },
         "varanasi:brijrama-palace": {
                 "place_name": "BrijRama Palace River Heritage",
-                "image_url": "/images/places/varanasi/brijrama-palace.webp",
+                "image_url": "/images/places/varanasi/stays/brijrama-palace-heritage-grand.webp",
                 "visual_description": "BrijRama Palace River Heritage",
                 "category": "Stays & Sanctuaries",
                 "semantic_theme": "stay",
@@ -7874,7 +7874,7 @@ class CuratedArtworkProvider(ArtworkProvider):
         "varanasi:brijrama-palace-heritage-grand": {
                 "place_name": "BrijRama Palace Heritage Grand",
                 "hotel_name": "BrijRama Palace Heritage Grand",
-                "image_url": "/images/places/varanasi/stays/brijrama-palace.webp",
+                "image_url": "/images/places/varanasi/stays/brijrama-palace-heritage-grand.webp",
                 "visual_description": "Verified property artwork for BrijRama Palace Heritage Grand in Varanasi.",
                 "category": "Stays & Sanctuaries",
                 "hotel_style": "18th-Century Ghat Palace",
@@ -10368,9 +10368,37 @@ class CuratedArtworkProvider(ArtworkProvider):
                 "visual_description": f"Verified property artwork for {place_name} in {destination_name}."
             }
 
-        # PRIORITY 2: Curated Exact Place Match (Direct Key Lookup & Alias Map)
+        # PRIORITY 2: Curated Exact Place / Hotel Match (Direct Key Lookup & Alias Map)
         lookup_key = f"{dest_norm}:{place_norm}"
         matched_key = f"{matched_dest}:{place_norm}" if matched_dest else lookup_key
+        
+        # Check Hotel registry first if hotel/stay query
+        if lookup_key in self.HOTEL_ARTWORK_REGISTRY or (lookup_key in self._hotel_alias_map and self._hotel_alias_map[lookup_key] in self.HOTEL_ARTWORK_REGISTRY):
+            h_key = lookup_key if lookup_key in self.HOTEL_ARTWORK_REGISTRY else self._hotel_alias_map[lookup_key]
+            h_item = self.HOTEL_ARTWORK_REGISTRY[h_key]
+            return {
+                "url": h_item["image_url"],
+                "fallback_url": safe_fallback,
+                "source": h_item.get("source", "vanvas_curated"),
+                "source_type": h_item.get("source_type", "editorial_artwork"),
+                "provenance": "exact_place",
+                "semantic_category": "stay",
+                "exactness": "exact",
+                "attribution": h_item.get("attribution", "VANVAS Verified Editorial Asset"),
+                "alt_text": f"{place_name} in {destination_name}",
+                "badge_label": "VANVAS PLACE ARTWORK",
+                "artwork_key": h_key,
+                "image_url": h_item["image_url"],
+                "tier": "exact_place",
+                "place_name": place_name,
+                "destination": destination_name,
+                "category": category,
+                "is_real_photo": False,
+                "badge": "VANVAS PLACE ARTWORK",
+                "visual_description": h_item.get("visual_description"),
+                "metadata": h_item
+            }
+
         target_key = None
         if lookup_key in self.PLACE_ARTWORK_REGISTRY:
             target_key = lookup_key

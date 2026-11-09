@@ -7258,7 +7258,7 @@ export const EXACT_HOTEL_REGISTRY: Record<string, ExactPlaceEntry> = {
     ]
   },
   "varanasi:brijrama-palace-heritage-grand": {
-    imageUrl: "/images/places/varanasi/stays/brijrama-palace.webp",
+    imageUrl: "/images/places/varanasi/stays/brijrama-palace-heritage-grand.webp",
     visualDescription: "Verified property artwork for BrijRama Palace Heritage Grand in Varanasi.",
     category: "Stays & Sanctuaries",
     hotelStyle: "18th-Century Ghat Palace",
@@ -9596,30 +9596,12 @@ export const PENDING_ARTWORK_SET = new Set([
   "/images/places/dharamshala/tibetan-butter-tea.webp",
   "/images/places/dharamshala/masroor-rock-temples.webp",
   "/images/places/dharamshala/tashi-jong-monastery.webp",
-  // Kasol flat vectors and valley duplicates awaiting quota
-  "/images/places/kasol/chalal-pine-trail.webp",
-  "/images/places/kasol/grahan-village-trek.webp",
-  "/images/places/kasol/nature-park-kasol.webp",
-  "/images/places/kasol/malana-village-gate.webp",
+  // Kasol flat vectors awaiting quota
   "/images/places/kasol/pulga-fairy-forest.webp",
   "/images/places/kasol/tulga-hamlet.webp",
   "/images/places/kasol/rasol-trail.webp",
   "/images/places/kasol/jim-morrison-cafe.webp",
   "/images/places/kasol/waichin-valley.webp",
-  // Stays pending property-specific artwork
-  "/images/places/dharamshala/stays/fortune-park-moksha.webp",
-  "/images/places/dharamshala/stays/chonor-house-tibetan-guesthouse.webp",
-  "/images/places/dharamshala/stays/clouds-end-villa-heritage-estate.webp",
-  "/images/places/dharamshala/stays/zostel-dharamkot.webp",
-  "/images/places/kasol/stays/the-himalayan-village.webp",
-  "/images/places/kasol/stays/parvati-kuteer-riverside-wood-cottages.webp",
-  "/images/places/kasol/stays/kasol-heights-resort.webp",
-  "/images/places/kasol/stays/the-hosteller-kasol-riverside.webp",
-  // Rentals pending distinct vehicle artwork
-  "/images/vehicles/kasol_valley_scooter.jpg",
-  "/images/vehicles/kasol_parvati_bullet.jpg",
-  "/images/vehicles/kasol_valley_scooter.webp",
-  "/images/vehicles/kasol_parvati_bullet.webp",
 ]);
 
 // Deprecated artwork filter: reject placeholder and vector SVG assets

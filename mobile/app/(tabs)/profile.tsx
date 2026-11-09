@@ -22,7 +22,7 @@ import { theme } from "../../src/theme";
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, uploadAvatar, refreshProfile } = useAuth();
-  const { density, toggleDensity } = useTheme();
+  const { themeMode, setThemeMode, density, toggleDensity } = useTheme();
   const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
 
   const handlePickAndUploadAvatar = async () => {
@@ -172,6 +172,36 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Preferences</Text>
 
         <View style={styles.card}>
+          <View style={styles.switchRow}>
+            <View style={styles.prefLeft}>
+              <Ionicons name="color-palette-outline" size={18} color={theme.colors.forest} />
+              <View>
+                <Text style={styles.prefLabel}>Appearance Theme</Text>
+                <Text style={styles.subLabel}>System default, Light, or Dark</Text>
+              </View>
+            </View>
+            <View style={styles.themePillsRow}>
+              {(["system", "light", "dark"] as const).map((m) => (
+                <TouchableOpacity
+                  key={m}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setThemeMode(m);
+                  }}
+                  style={[styles.themePill, themeMode === m && styles.themePillActive]}
+                >
+                  <Text
+                    style={[styles.themePillText, themeMode === m && styles.themePillTextActive]}
+                  >
+                    {m === "system" ? "Auto" : m.charAt(0).toUpperCase() + m.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
           <View style={styles.switchRow}>
             <View style={styles.prefLeft}>
               <Ionicons name="grid-outline" size={18} color={theme.colors.forest} />
@@ -395,6 +425,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: theme.colors.error,
+  },
+  themePillsRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  themePill: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  themePillActive: {
+    backgroundColor: theme.colors.forest,
+    borderColor: theme.colors.forest,
+  },
+  themePillText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: theme.colors.foregroundMuted,
+  },
+  themePillTextActive: {
+    color: theme.colors.parchment,
   },
   footer: {
     alignItems: "center",

@@ -85,8 +85,8 @@ export default function DestinationDetailScreen() {
     destination.hero_image ||
     destination.cover_image ||
     destination.image_url ||
-    "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1200&q=80";
-  const heroImage = resolveImageUrl(rawHero) || rawHero;
+    `/images/destinations/${destination.slug || slug || "spiti"}.webp`;
+  const heroImage = resolveImageUrl(rawHero) || resolveImageUrl("/images/destinations/spiti.webp");
 
   return (
     <>
@@ -214,6 +214,14 @@ export default function DestinationDetailScreen() {
             <View>
               {hotels.map((hotel) => (
                 <View key={hotel.id} style={styles.stayCard}>
+                  {hotel.image_url ? (
+                    <Image
+                      source={{ uri: resolveImageUrl(hotel.image_url) }}
+                      style={styles.cardImage}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  ) : null}
                   <Text style={styles.stayName}>{hotel.name}</Text>
                   <Text style={styles.stayStyle}>{hotel.style || "Himalayan Homestay"}</Text>
                   <View style={styles.stayFooter}>
@@ -234,6 +242,14 @@ export default function DestinationDetailScreen() {
             <View>
               {rentals.map((rental) => (
                 <View key={rental.id} style={styles.rentalCard}>
+                  {rental.image_url ? (
+                    <Image
+                      source={{ uri: resolveImageUrl(rental.image_url) }}
+                      style={styles.cardImage}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  ) : null}
                   <View style={styles.rentalTop}>
                     <Text style={styles.rentalType}>{rental.vehicle_type}</Text>
                     <Text style={styles.rentalRate}>₹{rental.daily_rate}/day</Text>
@@ -410,6 +426,13 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     padding: 14,
     marginBottom: 10,
+  },
+  cardImage: {
+    width: "100%",
+    height: 140,
+    borderRadius: theme.radius.sm,
+    marginBottom: 10,
+    backgroundColor: theme.colors.surfaceMuted,
   },
   stayName: {
     fontSize: 15,

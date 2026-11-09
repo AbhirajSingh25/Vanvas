@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Destination } from "@vanvas/shared";
+import { resolveImageUrl } from "../services/api";
 import { theme } from "../theme";
 
 interface DestinationCardProps {
@@ -12,11 +13,13 @@ interface DestinationCardProps {
 }
 
 export function DestinationCard({ destination, onPress, width = 240 }: DestinationCardProps) {
-  const imageUrl =
+  const destSlug = destination.slug || destination.id || "spiti";
+  const rawImage =
     destination.hero_image ||
     destination.cover_image ||
     destination.image_url ||
-    "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80";
+    `/images/destinations/${destSlug}.webp`;
+  const imageUrl = resolveImageUrl(rawImage) || resolveImageUrl("/images/destinations/spiti.webp");
 
   return (
     <TouchableOpacity

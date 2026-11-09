@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   AccessibilityInfo,
   Platform,
+  AppState,
 } from "react-native";
 import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import { Image } from "expo-image";
@@ -30,6 +31,14 @@ export function ReelsCarousel({ reels, isScreenFocused = true }: ReelsCarouselPr
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [reduceMotion, setReduceMotion] = useState<boolean>(false);
+  const [isAppActive, setIsAppActive] = useState<boolean>(true);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      setIsAppActive(nextState === "active");
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
@@ -92,7 +101,7 @@ export function ReelsCarousel({ reels, isScreenFocused = true }: ReelsCarouselPr
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         renderItem={({ item, index }) => {
-          const isFocused = isScreenFocused && focusedIndex === index;
+          const isFocused = isScreenFocused && isAppActive && focusedIndex === index;
           return (
             <View style={[styles.card, { marginRight: SPACING }]}>
               {/* If reduceMotion is on or not focused, show high-res poster only */}

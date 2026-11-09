@@ -394,6 +394,7 @@ export const nativeApi = {
     wake_up_preference: string;
     activity_intensity: string;
     interests: string[];
+    transport_details?: Record<string, any>;
   }): Promise<Trip> {
     const created = await fetchWithRetry<Trip>(
       "/trips",

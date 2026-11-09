@@ -3,6 +3,8 @@ import { Platform } from "react-native";
 
 const TOKEN_KEY = "vanvas_auth_token";
 const USER_KEY = "vanvas_auth_user";
+const THEME_MODE_KEY = "vanvas_theme_mode";
+const DENSITY_KEY = "vanvas_layout_density";
 
 // In-memory fallback for web or when SecureStore is unavailable
 const memoryFallback: Record<string, string> = {};
@@ -88,6 +90,54 @@ export const secureStorage = {
       } catch {
         // ignore
       }
+    }
+  },
+
+  async setThemeMode(mode: "system" | "light" | "dark"): Promise<void> {
+    if (Platform.OS === "web") {
+      memoryFallback[THEME_MODE_KEY] = mode;
+      return;
+    }
+    try {
+      await SecureStore.setItemAsync(THEME_MODE_KEY, mode);
+    } catch {
+      memoryFallback[THEME_MODE_KEY] = mode;
+    }
+  },
+
+  async getThemeMode(): Promise<"system" | "light" | "dark" | null> {
+    if (Platform.OS === "web") {
+      return (memoryFallback[THEME_MODE_KEY] as any) || null;
+    }
+    try {
+      const mode = await SecureStore.getItemAsync(THEME_MODE_KEY);
+      return (mode as any) || null;
+    } catch {
+      return (memoryFallback[THEME_MODE_KEY] as any) || null;
+    }
+  },
+
+  async setLayoutDensity(density: "standard" | "compact"): Promise<void> {
+    if (Platform.OS === "web") {
+      memoryFallback[DENSITY_KEY] = density;
+      return;
+    }
+    try {
+      await SecureStore.setItemAsync(DENSITY_KEY, density);
+    } catch {
+      memoryFallback[DENSITY_KEY] = density;
+    }
+  },
+
+  async getLayoutDensity(): Promise<"standard" | "compact" | null> {
+    if (Platform.OS === "web") {
+      return (memoryFallback[DENSITY_KEY] as any) || null;
+    }
+    try {
+      const d = await SecureStore.getItemAsync(DENSITY_KEY);
+      return (d as any) || null;
+    } catch {
+      return (memoryFallback[DENSITY_KEY] as any) || null;
     }
   },
 };

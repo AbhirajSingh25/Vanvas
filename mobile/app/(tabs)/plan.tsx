@@ -21,8 +21,48 @@ const COMPANIONS = ["Solo", "Couple", "Friends", "Family"];
 const TRAVEL_STYLES = ["Spontaneous", "Balanced", "Structured", "Leisure"];
 const WAKE_UP_TIMES = ["Early Riser (6 AM)", "Moderate (8 AM)", "Slow Morning (10 AM)"];
 const INTENSITIES = ["Relaxed", "Moderate", "High Energy / Adventurous"];
-const TRANSPORT_MODES = ["Train", "Flight", "Bus", "Self Drive"];
+const TRANSPORT_MODES = ["Train", "Flight", "Bus", "Self Drive", "Motorcycle"];
 const INTEREST_OPTIONS = ["Hikes & Nature", "Cafes & Food", "Temples & Culture", "Photography", "Rivers & Lakes"];
+
+interface PickupGateway {
+  id: string;
+  name: string;
+  route: string;
+  distanceKm: number;
+  acclimatization: string;
+  ratePerDay: number;
+  isSeasonal?: boolean;
+  statusNote?: string;
+}
+
+const SPITI_GATEWAYS: PickupGateway[] = [
+  {
+    id: "shimla",
+    name: "Shimla Gateway",
+    route: "Via NH-5 Hindustan-Tibet Highway (Kinnaur Route)",
+    distanceKm: 420,
+    acclimatization: "Gradual altitude gain via Narkanda, Rampur, Kalpa, and Nako (Recommended year-round).",
+    ratePerDay: 1800,
+  },
+  {
+    id: "chandigarh",
+    name: "Chandigarh Gateway",
+    route: "Via Himalayan Expressway & Shimla Bypass",
+    distanceKm: 510,
+    acclimatization: "Convenient airport/railway handover with transit gear inspection.",
+    ratePerDay: 1900,
+  },
+  {
+    id: "manali",
+    name: "Manali Gateway",
+    route: "Via Atal Tunnel & Kunzum Pass (4,590 m)",
+    distanceKm: 200,
+    acclimatization: "Steep altitude jump. Subject to seasonal Kunzum Pass snow clearance (June-October).",
+    ratePerDay: 2000,
+    isSeasonal: true,
+    statusNote: "Seasonal route: Verify pass opening before departure",
+  },
+];
 
 export default function PlanScreen() {
   const router = useRouter();
@@ -39,6 +79,8 @@ export default function PlanScreen() {
   const [wakeUpPreference, setWakeUpPreference] = useState<string>("Moderate (8 AM)");
   const [intensity, setIntensity] = useState<string>("Moderate");
   const [transportMode, setTransportMode] = useState<string>("Train");
+  const [pickupGateway, setPickupGateway] = useState<string>("shimla");
+  const [motorcycleModel, setMotorcycleModel] = useState<string>("Royal Enfield Himalayan 450");
   const [budget, setBudget] = useState<number>(12000);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(["Hikes & Nature", "Cafes & Food"]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -87,6 +129,11 @@ export default function PlanScreen() {
     const startDateStr = tomorrow.toISOString().split("T")[0];
     const endDateStr = endDate.toISOString().split("T")[0];
 
+    const isSpiti =
+      selectedDestination.slug === "spiti" ||
+      selectedDestination.name?.toLowerCase().includes("spiti");
+    const gatewayObj = SPITI_GATEWAYS.find((g) => g.id === pickupGateway) || SPITI_GATEWAYS[0];
+
     try {
       const created = await nativeApi.createTrip({
         destination_id: selectedDestination.id,
@@ -101,6 +148,20 @@ export default function PlanScreen() {
         wake_up_preference: wakeUpPreference,
         activity_intensity: intensity,
         interests: selectedInterests,
+        transport_details:
+          transportMode === "Motorcycle"
+            ? {
+                vehicle_type: "Motorcycle",
+                vehicle_model: motorcycleModel,
+                pickup_gateway: isSpiti ? gatewayObj.name : `${originCity.trim()} Rental Hub`,
+                gateway_route: isSpiti ? gatewayObj.route : `Direct ride from ${originCity.trim()}`,
+                distance_km: isSpiti ? gatewayObj.distanceKm : undefined,
+                estimated_rental_per_day: isSpiti ? gatewayObj.ratePerDay : 1600,
+                regulatory_warning: isSpiti
+                  ? "CRITICAL ADVISORY: Outside commercial rental motorcycles are strictly restricted by the local Spiti/Kaza Taxi and Bike Union for sightseeing within Spiti. You can ride your gateway motorcycle into Kaza, but local places (Kibber, Langza, Hikkim, Pin Valley) require hiring locally registered Spiti bikes or union taxis."
+                  : undefined,
+              }
+            : undefined,
       });
 
       router.replace(`/trip/${created.id}`);
@@ -327,6 +388,83 @@ export default function PlanScreen() {
               ))}
             </View>
 
+            {/* Motorcycle & Spiti Gateway Section */}
+            {transportMode === "Motorcycle" && (
+              <View style={styles.motorcycleSection}>
+                <Text style={styles.fieldLabel}>Expedition Motorcycle</Text>
+                <View style={styles.optionGrid}>
+                  {["Royal Enfield Himalayan 450", "Classic 350 Cruiser", "KTM 390 Adventure"].map((bike) => (
+                    <TouchableOpacity
+                      key={bike}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setMotorcycleModel(bike);
+                      }}
+                      style={[styles.optionPill, motorcycleModel === bike && styles.optionPillActive]}
+                    >
+                      <Text style={[styles.optionText, motorcycleModel === bike && styles.optionTextActive]}>
+                        {bike}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Spiti Gateway Selection */}
+                {(selectedDestination?.slug === "spiti" ||
+                  selectedDestination?.name?.toLowerCase().includes("spiti")) && (
+                  <View style={styles.gatewayCard}>
+                    <View style={styles.gatewayHeader}>
+                      <Ionicons name="map-outline" size={16} color={theme.colors.forest} />
+                      <Text style={styles.gatewayTitle}>Rental Pickup Gateway (Spiti)</Text>
+                    </View>
+                    <Text style={styles.gatewaySubtitle}>
+                      Outside rental bikes from gateways take you to Kaza; select your authorized transit hub:
+                    </Text>
+
+                    {SPITI_GATEWAYS.map((gw) => {
+                      const isSelected = pickupGateway === gw.id;
+                      return (
+                        <TouchableOpacity
+                          key={gw.id}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setPickupGateway(gw.id);
+                          }}
+                          style={[styles.gatewayItem, isSelected && styles.gatewayItemActive]}
+                        >
+                          <View style={styles.gatewayTop}>
+                            <Text style={[styles.gatewayName, isSelected && styles.gatewayNameActive]}>
+                              {gw.name}
+                            </Text>
+                            <Text style={styles.gatewayRate}>₹{gw.ratePerDay}/day</Text>
+                          </View>
+                          <Text style={styles.gatewayRoute}>{gw.route}</Text>
+                          <Text style={styles.gatewayNote}>{gw.acclimatization}</Text>
+                          {gw.isSeasonal && (
+                            <View style={styles.seasonalBadge}>
+                              <Ionicons name="snow-outline" size={12} color="#B45309" />
+                              <Text style={styles.seasonalText}>{gw.statusNote}</Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+
+                    {/* Local Kaza Commercial Rental Warning */}
+                    <View style={styles.warningBox}>
+                      <Ionicons name="warning-outline" size={16} color="#DC2626" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.warningTitle}>Local Kaza Rental Restriction</Text>
+                        <Text style={styles.warningText}>
+                          Outside commercial rental motorcycles (rented in Shimla, Chandigarh, or Manali) are strictly restricted by the local Spiti/Kaza Taxi and Bike Union for sightseeing within Spiti. You can ride your gateway motorcycle into Kaza, but local places (Kibber, Langza, Hikkim, Pin Valley) require hiring locally registered Spiti bikes or union taxis.
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+
             {/* Total Budget */}
             <Text style={styles.fieldLabel}>Total Estimated Budget: ₹{budget.toLocaleString("en-IN")}</Text>
             <View style={styles.stepperRow}>
@@ -376,7 +514,17 @@ export default function PlanScreen() {
               <Text style={styles.summaryLine}>
                 • {selectedDestination?.name} ({durationDays} Days, {selectedDestination?.state})
               </Text>
-              <Text style={styles.summaryLine}>• From {originCity} via {transportMode}</Text>
+              <Text style={styles.summaryLine}>
+                • From {originCity} via {transportMode}
+                {transportMode === "Motorcycle" &&
+                (selectedDestination?.slug === "spiti" ||
+                  selectedDestination?.name?.toLowerCase().includes("spiti"))
+                  ? ` (${SPITI_GATEWAYS.find((g) => g.id === pickupGateway)?.name || "Shimla"})`
+                  : ""}
+              </Text>
+              {transportMode === "Motorcycle" && (
+                <Text style={styles.summaryLine}>• Vehicle: {motorcycleModel}</Text>
+              )}
               <Text style={styles.summaryLine}>• {travellersCount} {companionType} Traveller(s)</Text>
               <Text style={styles.summaryLine}>• {travelStyle} Pace, ₹{budget.toLocaleString("en-IN")} Budget</Text>
             </View>
@@ -689,5 +837,112 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: theme.colors.parchment,
+  },
+  motorcycleSection: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  gatewayCard: {
+    backgroundColor: theme.colors.surfaceElevated,
+    borderRadius: theme.radius.lg,
+    padding: 14,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  gatewayHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  gatewayTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: theme.colors.primaryDark,
+  },
+  gatewaySubtitle: {
+    fontSize: 12,
+    color: theme.colors.foregroundMuted,
+    marginBottom: 10,
+  },
+  gatewayItem: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  gatewayItemActive: {
+    borderColor: theme.colors.forest,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 2,
+  },
+  gatewayTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  gatewayName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: theme.colors.foreground,
+  },
+  gatewayNameActive: {
+    color: theme.colors.forest,
+  },
+  gatewayRate: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: theme.colors.forest,
+  },
+  gatewayRoute: {
+    fontSize: 12,
+    color: theme.colors.foregroundSubtle,
+    marginTop: 2,
+  },
+  gatewayNote: {
+    fontSize: 11,
+    color: theme.colors.foregroundMuted,
+    marginTop: 4,
+    fontStyle: "italic",
+  },
+  seasonalBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FEF3C7",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+    alignSelf: "flex-start",
+    marginTop: 6,
+  },
+  seasonalText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#B45309",
+  },
+  warningBox: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: "#FEF2F2",
+    borderRadius: theme.radius.sm,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+    marginTop: 8,
+  },
+  warningTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#B91C1C",
+    marginBottom: 2,
+  },
+  warningText: {
+    fontSize: 11,
+    color: "#991B1B",
+    lineHeight: 15,
   },
 });

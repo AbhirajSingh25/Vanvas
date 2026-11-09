@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Destination, DestinationReel } from "@vanvas/shared";
@@ -65,6 +66,7 @@ const FEATURED_FIELD_REELS: DestinationReel[] = [
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const isFocused = useIsFocused();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<string>("All");
   const [destinations, setDestinations] = useState<Destination[]>([]);
@@ -170,7 +172,7 @@ export default function ExploreScreen() {
       >
         {/* Field Reels Discovery (Authentic Cinema) */}
         {!searchQuery && (
-          <ReelsCarousel reels={FEATURED_FIELD_REELS} isScreenFocused={true} />
+          <ReelsCarousel reels={FEATURED_FIELD_REELS} isScreenFocused={isFocused} />
         )}
 
         {/* Destinations Grid / List */}

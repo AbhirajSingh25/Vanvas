@@ -220,3 +220,6 @@ export const CANONICAL_HIMALAYAN_TREKS: CanonicalTrekSummary[] = [
     ],
   },
 ];
+
+export * from "./artworkManifest";
+
