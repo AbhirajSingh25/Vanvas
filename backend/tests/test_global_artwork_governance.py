@@ -125,7 +125,7 @@ async def test_stays_never_inherit_landmarks():
         
         # BrijRama Palace River Heritage in Varanasi must resolve to its authentic Varanasi riverside property and never desert/rajasthan
         if "BrijRama" in h.name:
-            assert "brijrama-palace.webp" in img, f"BrijRama Palace received incorrect asset: {img}"
+            assert "brijrama-palace-heritage-grand.webp" in img, f"BrijRama Palace received incorrect asset: {img}"
             assert "rajasthan" not in img.lower() and "jaipur" not in img.lower() and "jaisalmer" not in img.lower()
         elif res["tier"] != "exact_place":
             assert "palace.webp" not in img and "fort.webp" not in img and "monastery.webp" not in img, f"Stay {h.name} received landmark asset: {img}"

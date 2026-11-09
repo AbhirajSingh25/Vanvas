@@ -10372,67 +10372,95 @@ class CuratedArtworkProvider(ArtworkProvider):
         lookup_key = f"{dest_norm}:{place_norm}"
         matched_key = f"{matched_dest}:{place_norm}" if matched_dest else lookup_key
         
-        # Check Hotel registry first if hotel/stay query
-        if lookup_key in self.HOTEL_ARTWORK_REGISTRY or (lookup_key in self._hotel_alias_map and self._hotel_alias_map[lookup_key] in self.HOTEL_ARTWORK_REGISTRY):
-            h_key = lookup_key if lookup_key in self.HOTEL_ARTWORK_REGISTRY else self._hotel_alias_map[lookup_key]
-            h_item = self.HOTEL_ARTWORK_REGISTRY[h_key]
-            return {
-                "url": h_item["image_url"],
-                "fallback_url": safe_fallback,
-                "source": h_item.get("source", "vanvas_curated"),
-                "source_type": h_item.get("source_type", "editorial_artwork"),
-                "provenance": "exact_place",
-                "semantic_category": "stay",
-                "exactness": "exact",
-                "attribution": h_item.get("attribution", "VANVAS Verified Editorial Asset"),
-                "alt_text": f"{place_name} in {destination_name}",
-                "badge_label": "VANVAS PLACE ARTWORK",
-                "artwork_key": h_key,
-                "image_url": h_item["image_url"],
-                "tier": "exact_place",
-                "place_name": place_name,
-                "destination": destination_name,
-                "category": category,
-                "is_real_photo": False,
-                "badge": "VANVAS PLACE ARTWORK",
-                "visual_description": h_item.get("visual_description"),
-                "metadata": h_item
-            }
+        is_food_or_cafe_query = theme in ["cafe", "food"] or any(w in category.lower() for w in ["cafe", "café", "bakery", "food", "dining", "restaurant"])
+        is_stay_query = theme in ["stay", "hostel", "homestay", "resort", "boutique"] or any(w in category.lower() for w in ["stay", "hotel", "resort", "homestay", "sanctuary", "guesthouse", "camp", "villa", "lodge", "accommodation"])
 
-        target_key = None
-        if lookup_key in self.PLACE_ARTWORK_REGISTRY:
-            target_key = lookup_key
-        elif lookup_key in self._alias_map:
-            target_key = self._alias_map[lookup_key]
-        elif matched_key in self.PLACE_ARTWORK_REGISTRY:
-            target_key = matched_key
-        elif matched_key in self._alias_map:
-            target_key = self._alias_map[matched_key]
+        def _try_resolve_hotel():
+            if lookup_key in self.HOTEL_ARTWORK_REGISTRY or (lookup_key in self._hotel_alias_map and self._hotel_alias_map[lookup_key] in self.HOTEL_ARTWORK_REGISTRY):
+                h_key = lookup_key if lookup_key in self.HOTEL_ARTWORK_REGISTRY else self._hotel_alias_map[lookup_key]
+                h_item = self.HOTEL_ARTWORK_REGISTRY[h_key]
+                return {
+                    "url": h_item["image_url"],
+                    "fallback_url": safe_fallback,
+                    "source": h_item.get("source", "vanvas_curated"),
+                    "source_type": h_item.get("source_type", "editorial_artwork"),
+                    "provenance": "exact_place",
+                    "semantic_category": "stay",
+                    "exactness": "exact",
+                    "attribution": h_item.get("attribution", "VANVAS Verified Editorial Asset"),
+                    "alt_text": f"{place_name} in {destination_name}",
+                    "badge_label": "VANVAS PLACE ARTWORK",
+                    "artwork_key": h_key,
+                    "image_url": h_item["image_url"],
+                    "tier": "exact_place",
+                    "place_name": place_name,
+                    "destination": destination_name,
+                    "category": category,
+                    "is_real_photo": False,
+                    "badge": "VANVAS PLACE ARTWORK",
+                    "visual_description": h_item.get("visual_description"),
+                    "metadata": h_item
+                }
+            return None
 
-        if target_key and target_key in self.PLACE_ARTWORK_REGISTRY:
-            item = self.PLACE_ARTWORK_REGISTRY[target_key]
-            return {
-                "url": item["image_url"],
-                "fallback_url": safe_fallback,
-                "source": item.get("source", "vanvas_curated"),
-                "source_type": item.get("source_type", "editorial_artwork"),
-                "provenance": "exact_place",
-                "semantic_category": item.get("semantic_theme", theme),
-                "exactness": "exact",
-                "attribution": item.get("attribution", "VANVAS Verified Editorial Asset"),
-                "alt_text": f"{place_name} in {destination_name}",
-                "badge_label": "VANVAS PLACE ARTWORK",
-                "artwork_key": target_key,
-                "image_url": item["image_url"],
-                "tier": "exact_place",
-                "place_name": place_name,
-                "destination": destination_name,
-                "category": category,
-                "is_real_photo": False,
-                "badge": "VANVAS PLACE ARTWORK",
-                "visual_description": item.get("visual_description"),
-                "metadata": item
-            }
+        def _try_resolve_place():
+            target_key = None
+            if lookup_key in self.PLACE_ARTWORK_REGISTRY:
+                target_key = lookup_key
+            elif lookup_key in self._alias_map:
+                target_key = self._alias_map[lookup_key]
+            elif matched_key in self.PLACE_ARTWORK_REGISTRY:
+                target_key = matched_key
+            elif matched_key in self._alias_map:
+                target_key = self._alias_map[matched_key]
+
+            if target_key and target_key in self.PLACE_ARTWORK_REGISTRY:
+                item = self.PLACE_ARTWORK_REGISTRY[target_key]
+                return {
+                    "url": item["image_url"],
+                    "fallback_url": safe_fallback,
+                    "source": item.get("source", "vanvas_curated"),
+                    "source_type": item.get("source_type", "editorial_artwork"),
+                    "provenance": "exact_place",
+                    "semantic_category": item.get("semantic_theme", theme),
+                    "exactness": "exact",
+                    "attribution": item.get("attribution", "VANVAS Verified Editorial Asset"),
+                    "alt_text": f"{place_name} in {destination_name}",
+                    "badge_label": "VANVAS PLACE ARTWORK",
+                    "artwork_key": target_key,
+                    "image_url": item["image_url"],
+                    "tier": "exact_place",
+                    "place_name": place_name,
+                    "destination": destination_name,
+                    "category": category,
+                    "is_real_photo": False,
+                    "badge": "VANVAS PLACE ARTWORK",
+                    "visual_description": item.get("visual_description"),
+                    "metadata": item
+                }
+            return None
+
+        if is_food_or_cafe_query:
+            res_p = _try_resolve_place()
+            if res_p:
+                return res_p
+            res_h = _try_resolve_hotel()
+            if res_h:
+                return res_h
+        elif is_stay_query:
+            res_h = _try_resolve_hotel()
+            if res_h:
+                return res_h
+            res_p = _try_resolve_place()
+            if res_p:
+                return res_p
+        else:
+            res_p = _try_resolve_place()
+            if res_p:
+                return res_p
+            res_h = _try_resolve_hotel()
+            if res_h:
+                return res_h
 
         # PRIORITY 3: Destination-Scoped Alias Matching against PLACE_ARTWORK_REGISTRY
         is_stay_query = any(w in category.lower() for w in ["stay", "hotel", "resort", "homestay", "sanctuary"])

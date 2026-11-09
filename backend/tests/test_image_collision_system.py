@@ -147,14 +147,25 @@ async def test_04_mobility_artwork_strict_isolation():
 
 @pytest.mark.asyncio
 async def test_05_food_and_cafe_semantics():
-    """Verify cafe with 'Inn' in name or description resolves to cafe, not stay."""
+    """Verify cafe with 'Inn' in name or description resolves to cafe, not stay, and stay resolves to hotel artwork."""
     resolver = PlaceVisualResolverService()
 
-    res = await resolver.resolve_place(
+    # Case A: Café query resolves to place cafe artwork
+    res_cafe = await resolver.resolve_place(
         place_name="Drifters' Café & Acoustic Inn",
         destination_name="Manali",
         category="Cafés & Bakery"
     )
-    assert res["tier"] in ["exact_place", "destination_category"]
-    assert "cafe" in res["image_url"]
-    assert res["semantic_category"] == "cafe"
+    assert res_cafe["tier"] in ["exact_place", "destination_category"]
+    assert res_cafe["image_url"] == "/images/places/manali/drifters-cafe.webp"
+    assert res_cafe["semantic_category"] == "cafe"
+
+    # Case B: Stay query resolves to dedicated hotel stay artwork
+    res_stay = await resolver.resolve_place(
+        place_name="Drifters' Inn & Wooden Loft",
+        destination_name="Manali",
+        category="stay"
+    )
+    assert res_stay["tier"] == "exact_place"
+    assert res_stay["image_url"] == "/images/places/manali/stays/drifters-inn-wooden-loft.webp"
+    assert res_stay["semantic_category"] == "stay"

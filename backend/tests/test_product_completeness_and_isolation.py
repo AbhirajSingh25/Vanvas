@@ -105,7 +105,7 @@ def test_destination_specific_mobility_artwork_resolution():
         destination_name="Manali",
         destination_slug="manali",
     )
-    assert manali_scooter_img == "/images/vehicles/manali_beas_scooter.jpg"
+    assert manali_scooter_img == "/images/vehicles/manali_beas_scooter.webp"
     
     manali_bullet_img = MobilityService.resolve_mobility_artwork(
         vehicle_type="Royal Enfield Himalayan 450",
@@ -113,8 +113,8 @@ def test_destination_specific_mobility_artwork_resolution():
         destination_name="Manali",
         destination_slug="manali",
     )
-    assert manali_bullet_img == "/images/vehicles/manali_himalayan_adv_bike.jpg"
-    assert "himachal_pine_forest_bike.jpg" not in manali_bullet_img
+    assert manali_bullet_img == "/images/vehicles/manali_himalayan_adv_bike.webp"
+    assert "himachal_pine_forest_bike.webp" not in manali_bullet_img
 
     # 2. Rishikesh
     rksh_scooter_img = MobilityService.resolve_mobility_artwork(
@@ -123,7 +123,7 @@ def test_destination_specific_mobility_artwork_resolution():
         destination_name="Rishikesh",
         destination_slug="rishikesh",
     )
-    assert rksh_scooter_img == "/images/vehicles/rishikesh_tapovan_scooter.jpg"
+    assert rksh_scooter_img == "/images/vehicles/rishikesh_tapovan_scooter.webp"
 
     # 3. Kasol
     kasol_scooter_img = MobilityService.resolve_mobility_artwork(
@@ -132,7 +132,7 @@ def test_destination_specific_mobility_artwork_resolution():
         destination_name="Kasol",
         destination_slug="kasol",
     )
-    assert kasol_scooter_img == "/images/vehicles/kasol_valley_scooter.jpg"
+    assert kasol_scooter_img == "/images/vehicles/kasol_valley_scooter.webp"
 
     # 4. Dharamshala
     dhar_scooter_img = MobilityService.resolve_mobility_artwork(
@@ -141,7 +141,7 @@ def test_destination_specific_mobility_artwork_resolution():
         destination_name="Dharamshala",
         destination_slug="dharamshala",
     )
-    assert dhar_scooter_img == "/images/vehicles/dharamshala_mcleod_scooter.jpg"
+    assert dhar_scooter_img == "/images/vehicles/dharamshala_mcleod_scooter.webp"
 
     # 5. Jaisalmer
     jais_scooter_img = MobilityService.resolve_mobility_artwork(
@@ -150,7 +150,7 @@ def test_destination_specific_mobility_artwork_resolution():
         destination_name="Jaisalmer",
         destination_slug="jaisalmer",
     )
-    assert jais_scooter_img == "/images/vehicles/jaisalmer_fort_scooter.jpg"
+    assert jais_scooter_img == "/images/vehicles/jaisalmer_fort_scooter.webp"
 
 
 def test_stays_and_mobility_dual_query_param_contract():
