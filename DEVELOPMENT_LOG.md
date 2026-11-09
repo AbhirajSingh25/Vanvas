@@ -6,7 +6,7 @@
 ---
 
 ### [2026-11-09] Mobility Directory WebP Assertions & Quota-Safe Batch Preparation
-- **Commit:** Pending
+- **Commit:** `e4822c5` & `6feee0f`
 - **Objective:** Correct 10 outdated `.jpg` vehicle assertions in `backend/tests/test_mobility_directory.py`, ensure all vehicle assets physically exist as WebP on disk, execute full regression test suites across Web, Native, and Backend, and prepare the quota-safe pending artwork batch script.
 - **Changes Made:**
   - Corrected all 10 outdated `.jpg` vehicle path expectations in `backend/tests/test_mobility_directory.py` across `test_live_rentals_provider_osm_parsing`, `test_provider_priority_hierarchy`, and `test_vehicle_artwork_category_isolation` to `.webp`.

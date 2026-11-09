@@ -1,7 +1,7 @@
 # VANVAS — Permanent Project Context & Architecture Master
 
 > **Primary Source of Truth for Architecture, System Contracts, and Feature Status**  
-> *Documentation Commit:* `777246b` | *Verified Implementation Checkpoint:* `1fd8f48` | *Branch:* `main` | *Date:* November 9, 2026
+> *Latest Verified Checkpoint:* Commit `6feee0f` | *Preceding Commits:* `e4822c5`, `1fd8f48` | *Branch:* `main` | *Date:* November 9, 2026
 
 ---
 
@@ -244,8 +244,8 @@ VANVAS/
 
 - **Current Branch:** `main`
 - **Remote Origin:** `https://github.com/AbhirajSingh25/Vanvas.git`
-- **Latest Documentation Commit:** `777246b` (`docs: establish permanent AI project context and session continuity`)
-- **Latest Implementation Checkpoint:** `1fd8f48` (`feat(runtime): reconcile artwork runtime mappings, enforce invariants, and complete native app flows`)
+- **HEAD Commit:** `6feee0f` (`chore(artwork): prepare quota-safe pending generation batch`)
+- **Preceding Implementation Checkpoint:** `e4822c5` (`test(mobility): align vehicle artwork assertions with webp assets`)
 - **Status:** Pristine working tree, perfectly synchronized with `origin/main`.
 
 ---
@@ -257,10 +257,9 @@ VANVAS/
    - Pending entities:
      - Dharamshala (5): Gyuto Monastery, Dal Lake Dharamshala, Tibetan Butter Tea & Tingmo Bakery Lane, Masroor Rock-Cut Temples, Tashi Jong Buddhist Craft Community.
      - Kasol (5): Manikaran Sahib, Tosh Village, Moon Dance Café, Evergreen Café, Kheerganga Meadow.
+   - Automation script prepared: `scripts/generate_pending_artwork_batch.py` with strict negative prompts (dry-run verified).
    - *Requirement on quota reset:* Generate clean painterly gouache illustrations with **ZERO embedded text, typography, coordinates, or watermarks**.
-2. **Mobility Directory Test Assertion Update:**
-   - `backend/tests/test_mobility_directory.py`: Lines 171 and 212 still assert legacy vehicle extension `.jpg` instead of the newly standardized `.webp`.
-3. **Pydantic V2 Class-Based Config Warnings:**
+2. **Pydantic V2 Class-Based Config Warnings:**
    - Non-fatal deprecation warnings in `backend/app/schemas/schemas.py` (`PydanticDeprecatedSince20: Support for class-based config is deprecated, use ConfigDict instead`).
 
 ---

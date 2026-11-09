@@ -6,8 +6,8 @@
 ---
 
 ## 1. Git State & Checkpoint
-- **Latest Documentation Commit:** `777246b` (`docs: establish permanent AI project context and session continuity`)
-- **Latest Implementation Checkpoint:** `1fd8f48` (`feat(runtime): reconcile artwork runtime mappings, enforce invariants, and complete native app flows`)
+- **Latest Verified Commit:** `6feee0f` (`chore(artwork): prepare quota-safe pending generation batch`)
+- **Preceding Implementation Commits:** `e4822c5` (`test(mobility): align vehicle artwork assertions with webp assets`), `1fd8f48`
 - **Current Branch:** `main`
 - **Working Tree:** Clean, 0 uncommitted changes, synchronized with `origin/main`.
 
