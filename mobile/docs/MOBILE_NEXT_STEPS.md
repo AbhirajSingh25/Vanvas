@@ -28,3 +28,4 @@
   - Connect Expo Push notifications for high-altitude weather and road status alerts (Rohtang Pass & Kunzum Pass status).
 - **Background Sync Workers:**
   - Implement optional background sync worker using `expo-background-fetch` to update destination weather snapshots while device is charging.
+

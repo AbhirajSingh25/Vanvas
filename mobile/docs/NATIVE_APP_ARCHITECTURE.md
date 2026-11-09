@@ -83,3 +83,4 @@ mobile/app/
   - Verified painterly gouache travel-journal artwork.
   - Bundled local assets with fallback to production CDN.
   - Edge-to-edge layout with Android translucent status bar and immersive navigation.
+

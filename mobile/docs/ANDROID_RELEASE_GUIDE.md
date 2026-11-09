@@ -114,3 +114,4 @@ signingConfigs {
 1. **Internal Testing Track:** Upload `app-release.aab` to verify startup, SQLite schema migration, and foreground location permission flow on at least 2 real devices.
 2. **Closed Testing (Alpha):** Invite core test group to test offline mode, Spiti motorcycle wizard calculations, and travel ledger expense syncing.
 3. **Open Beta / Production Track:** Submit for standard Google Play policy review.
+

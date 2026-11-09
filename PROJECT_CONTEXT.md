@@ -60,7 +60,7 @@ VANVAS/
 │   │   ├── context/         # AuthContext, ThemeContext (persistent dark/light & density)
 │   │   ├── services/        # Native API client (resolveImageUrl), SQLite offline db, SecureStore
 │   │   └── theme/           # Native Theme Tokens & Semantic Colors
-│   └── app.json             # Expo App Manifest (Android Package: com.vanvas.mobile)
+│   └── app.json             # Expo App Manifest (Android Package: ai.vanvas.app)
 │
 ├── packages/
 │   └── shared/              # Dual-Platform Shared Package (@vanvas/shared)
@@ -103,7 +103,7 @@ VANVAS/
 ## 4. Native Mobile Architecture & Navigation (`mobile/`)
 
 - **Framework:** 100% Native React Native via Expo SDK 52, Expo Router 4, Expo Image, React Native Gesture Handler, React Native Reanimated.
-- **Application ID:** `com.vanvas.mobile` (Android v0.2.0, SDK 35).
+- **Application ID:** `ai.vanvas.app` (Android v0.4.0, versionCode 4, Target SDK 36).
 - **Navigation Structure:**
   - Tab Navigator (`(tabs)/_layout.tsx`):
     - `index.tsx` (Home): Personalized recommendations, active trip summary card, search trigger, offline banner.

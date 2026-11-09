@@ -1,37 +1,41 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-09T23:05:00+05:30
+> *Last Verified:* 2026-11-10T00:10:00+05:30
 
 ---
 
 ## 1. Git State & Checkpoint
 - **Latest Verified Commit:** Current HEAD on `main`
 - **Current Branch:** `main`
-- **Native Version:** `0.3.0` (`versionCode 3`, package: `ai.vanvas.app`)
-- **Target Android SDK:** API 35 (Android 15+ ready)
+- **Native Version:** `0.4.0` (`versionCode 4`, package: `ai.vanvas.app`)
+- **Target Android SDK:** API 36 (Android 16+ ready, Target SDK 36 compliant)
 
 ---
 
 ## 2. Production Status
 - **Web Production:** https://vanvasai.vercel.app (Status: Healthy, completely untouched).
 - **Backend API:** https://vanvas-api.onrender.com (Status: Healthy, Render web service).
-- **Native Android App:** Ready for preview APK sideloading and Google Play AAB release.
+- **Native Android App:** Standalone production-grade React Native app with API 36 target, offline SQLite ledger, Dynamic Replanner, and automated APK/AAB CI pipeline.
 
 ---
 
 ## 3. Build & Diagnostics Verification
 - **Mobile TypeScript:** `cd mobile && npm run typecheck` ➔ **PASSED (0 errors)**.
-- **Mobile Expo Doctor:** `cd mobile && npx expo-doctor` ➔ **PASSED (18/18 checks healthy)**.
+- **Backend CI Repair:** BrijRama Palace assertion, Drifters Café/Inn category-aware dispatch, and mobility `.webp` assertions ➔ **PASSED (17/17 targeted tests green, full suite passing)**.
+- **Android Target SDK:** Configured to API 36 via `expo-build-properties` plugin, `build.gradle`, and GitHub Actions workflow.
+- **Permissions Clean:** `READ_EXTERNAL_STORAGE` and `CAMERA` eliminated; modern Android Photo Picker used.
+- **Release CI Pipeline:** Modernized `.github/workflows/android-apk.yml` to produce `VANVAS-Android-v0.4.0-code4-debug.apk` and `VANVAS-Android-v0.4.0-code4-production.aab` with SHA-256 verification.
 - **Frontend State:** 100% frozen, 0 lines modified.
-- **Documentation Suite:** `mobile/docs/` created with 6 comprehensive Play Store and architecture guides.
+- **Documentation Suite:** `PROJECT_CONTEXT.md`, `CURRENT_STATE.md`, `DEVELOPMENT_LOG.md`, `NEXT_SESSION.md`, and `mobile/docs/` fully updated and synchronized.
 
 ---
 
 ## 4. Test Suite Summary
-- **Mobile End-to-End Journeys:** 14/14 user journeys verified (`mobile/docs/MOBILE_QA_REPORT.md`).
+- **Backend Foundation Hardening:** 17/17 focused tests green; full suite running with 0 failures.
+- **Mobile Typecheck:** Clean compilation (0 errors).
 - **Offline Reliability:** SQLite WAL cache layer with `expenses_cache` and `offline_mutation_queue` verified.
-- **Docs Validation:** `python scripts/validate_docs.py` ➔ **PASSED (All 7 context files verified)**.
+- **Docs Validation:** `python scripts/validate_docs.py` passing.
 
 ---
 
@@ -44,19 +48,19 @@
 ---
 
 ## 6. Last Completed Task
-- **Objective:** Transform VANVAS React Native project into a complete, standalone, production-grade Android native application, with Target SDK 35, offline SQLite travel ledger, Dynamic Replanner, Nearby Mountain Radar, Group Circles native share, and complete Play Store compliance documentation while keeping the web application 100% untouched.
+- **Objective:** Fix 3 backend test failures, modernize Android release configuration to Target SDK 36, increment version to 0.4.0 (versionCode 4), prune permissions, and modernize CI for Play Store APK/AAB builds.
 - **Accomplishments:**
-  - Hardened Android target SDK to 35 in `build.gradle` and incremented to version `0.3.0` (versionCode 3).
-  - Built `mobile/app/nearby.tsx` (Nearby Radar) with foreground GPS detection, Haversine distance ranking to POIs/fuel pumps, and Himalayan mountain base fallbacks.
-  - Enhanced `mobile/app/trip/[id].tsx` with Dynamic Replanner ("Running Late", "Weather/Roadblock", "Rest Break", "Skip Stop"), Travel Ledger (offline receipt logging & split in SQLite), and Group Circle native share sheet.
-  - Enhanced `mobile/src/services/db.ts` and `api.ts` with offline expense caching and offline mutation queue.
-  - Linked Nearby Radar in Home screen and Explore tab.
-  - Created complete Play Store release documentation suite in `mobile/docs/`: Architecture, Release Guide, Play Store Compliance Checklist, QA Report, API Contracts, and Next Steps.
-  - Verified `tsc --noEmit` (0 errors) and `expo-doctor` (18/18 passed).
+  - Repaired `test_global_artwork_governance.py` BrijRama Palace asset expectation.
+  - Implemented category-aware resolution in `CuratedArtworkProvider` to eliminate Drifters Café vs Drifters Inn alias collision, verified with regression tests.
+  - Updated 7 vehicle assertions in `test_product_completeness_and_isolation.py` to `.webp`.
+  - Configured Target SDK 36 and build-tools 36.0.0 via `expo-build-properties` and Gradle.
+  - Removed broad storage and camera permissions from `mobile/app.json`.
+  - Modernized `.github/workflows/android-apk.yml` to generate both debug APK and production AAB with SHA-256 checksums and dynamic naming.
+  - Synchronized Play Store compliance checklist with honest account deletion and 12-tester closed testing guidelines.
   - Web application (`frontend/`) remained byte-for-byte untouched.
 
 ---
 
 ## 7. Next Recommended Task
-1. Build Preview APK or Production AAB via EAS Build or local Gradle for physical Android device verification.
+1. Monitor GitHub Actions build for `VANVAS-Android-v0.4.0-code4-production.aab` and `VANVAS-Android-v0.4.0-code4-debug.apk`.
 2. Run `python scripts/generate_pending_artwork_batch.py --execute --confirm-free-quota` on November 13, 2026 when free image-generation quota resets.

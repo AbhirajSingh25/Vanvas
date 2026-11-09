@@ -1,19 +1,20 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Mobile Native 0.3.0 / Target SDK 35 / Play Store Ready | *Branch:* `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Mobile Native 0.4.0 / Target SDK 36 / Play Store Ready | *Branch:* `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
 - **Core Checkpoint:** 
-  - Android Native App (`mobile/`) transformed into a standalone, production-ready product with Target SDK 35 (Android 15+), version `0.3.0` (versionCode 3).
-  - Built Nearby Mountain Radar (`mobile/app/nearby.tsx`) with foreground GPS and offline mountain base fallback.
-  - Enhanced Itinerary Detail with Dynamic Replanner, offline SQLite Travel Ledger, and Group Circle native share sheet.
-  - Play Store compliance and architecture documentation created under `mobile/docs/`.
+  - Android Native App (`mobile/`) updated to Target SDK 36 (Android 16+), version `0.4.0` (versionCode 4).
+  - All 3 backend test failures resolved (BrijRama Palace asset path, Drifters Café/Inn category-aware collision, mobility WebP assertions).
+  - Android permissions cleaned: `READ_EXTERNAL_STORAGE` and `CAMERA` eliminated; modern Android Photo Picker used.
+  - Automated CI workflow `.github/workflows/android-apk.yml` modernized to generate both Debug APK (`VANVAS-Android-v0.4.0-code4-debug.apk`) and Production AAB (`VANVAS-Android-v0.4.0-code4-production.aab`) with SHA-256 checksums and SDK Platform 36.
+  - Play Store compliance documentation synchronized with 12-tester closed testing rule and honest account deletion reporting.
   - Frontend (`frontend/`) remains 100% frozen and untouched.
-- **Repository Health:** Mobile TypeScript (0 errors), Mobile Expo Doctor (18/18 checks passed), Web TypeScript (0 errors), Shared package builds cleanly, Invariants suite (6/6 passed).
+- **Repository Health:** Mobile TypeScript (0 errors), Backend targeted tests (17/17 passed), Shared package builds cleanly, Invariants suite (6/6 passed).
 
 ---
 

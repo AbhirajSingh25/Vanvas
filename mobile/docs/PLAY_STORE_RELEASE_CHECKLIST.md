@@ -2,8 +2,8 @@
 
 **Application Name:** VANVAS  
 **Application ID:** `ai.vanvas.app`  
-**Current Version:** `0.3.0` (versionCode `3`)  
-**Target API Level:** `35` (Android 15+) — Fully Compliant with Google Play 2026 Mandates  
+**Current Version:** `0.4.0` (versionCode `4`)  
+**Target API Level:** `36` (Android 16+) — Fully Compliant with Google Play 2026 Mandates (Target SDK 36 requirement)  
 **Content Rating:** Everyone (PEGI 3 / USK 0)  
 
 ---
@@ -12,12 +12,12 @@
 
 | Item | Requirement | VANVAS Implementation Status | Verification Method |
 |------|-------------|------------------------------|---------------------|
-| **Target API** | Android API 34+ (Targeting API 35) | **PASSED** (Configured to 35 in `build.gradle` and `app.json`) | Inspected `mobile/android/build.gradle` |
+| **Target API** | Android API 36+ (Targeting API 36) | **PASSED** (Configured to 36 in `build.gradle`, `app.json`, and CI workflow) | Inspected `mobile/android/build.gradle` & Expo config |
 | **64-bit Architecture Support** | `arm64-v8a`, `x86_64` included | **PASSED** (`reactNativeArchitectures` in `gradle.properties`) | Config check & APK Analyzer |
 | **New Architecture (TurboModules/Fabric)** | Supported & Tested | **PASSED** (`newArchEnabled=true`) | `app.json` & `gradle.properties` |
 | **Data Safety: Location** | Justify and declare location usage | **PASSED** (Used strictly in foreground for "I'M HERE" and Nearby Radar) | Declared below & in App Manifest |
-| **Data Safety: Photos/Media** | Restricted permission compliance | **PASSED** (Modern Android Photo Picker used; broad storage permissions removed) | Manifest audit |
-| **Account Deletion Path** | In-app deletion + Web URL | **PASSED** (Profile screen account deletion + Web URL support) | Link check: `https://vanvasai.vercel.app/account/delete` |
+| **Data Safety: Photos/Media** | Restricted permission compliance | **PASSED** (Modern Android Photo Picker used via `expo-image-picker`; broad `READ_EXTERNAL_STORAGE` and `CAMERA` permissions completely removed from manifest) | Manifest audit |
+| **Account Deletion Path** | In-app deletion + Web URL | **DOCUMENTED** (In-app deletion functional via mobile profile/auth; external web URL pending standalone deployment outside frozen `frontend/`) | In-app profile actions |
 | **Privacy Policy** | Publicly accessible policy URL | **PASSED** (`https://vanvasai.vercel.app/privacy`) | Verified live web route |
 | **App Bundle Size** | < 150MB initial download | **PASSED** (~45MB AAB with Hermes JS engine) | Hermes bytecode enabled |
 
@@ -35,7 +35,7 @@
 ### B. Photos & Videos
 - **Types Collected:** User-selected photo for profile avatar.
 - **Purpose:** Account customization / User Profile.
-- **Permission:** Managed via modern Android photo picker (`expo-image-picker`), avoiding legacy broad filesystem access permissions.
+- **Permission:** Managed via modern Android photo picker (`expo-image-picker`), avoiding legacy broad filesystem access permissions. Neither `READ_EXTERNAL_STORAGE` nor `CAMERA` is declared or required.
 
 ### C. Personal Information
 - **Types Collected:** Name, Email address.
@@ -65,13 +65,15 @@
 
 ## 4. Release Checklist Prior to Promoting to Production
 
-- [x] Version incremented: `versionCode 3`, `versionName "0.3.0"`.
-- [x] Target SDK set to 35.
+- [x] Version incremented: `versionCode 4`, `versionName "0.4.0"`.
+- [x] Target SDK set to 36 (compliant with Google Play August 31, 2026 Target SDK 36 mandate).
+- [x] Permissions minimized: `READ_EXTERNAL_STORAGE` and `CAMERA` removed.
 - [x] TypeScript validation clean (`0 errors`).
-- [x] Expo Doctor validation clean (`18/18 passed`).
+- [x] Expo Doctor validation clean.
 - [x] Dual-platform integrity verified (`frontend/` completely untouched).
 - [x] Zero artwork generation calls made (respecting quota window).
 - [ ] Sign release AAB with organization production upload keystore.
-- [ ] Submit to Closed Testing track for 14-day 20-tester requirement (for new developer accounts).
+- [ ] Submit to Closed Testing track for 14-day 12-tester continuous testing requirement (for personal developer accounts created after Nov 13, 2023).
 - [ ] Fill Data Safety section using the exact declarations in Section 2.
 - [ ] Publish to Google Play Production.
+

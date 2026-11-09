@@ -66,3 +66,4 @@ The VANVAS Android native application (`mobile/`) has undergone comprehensive en
 
 ## Conclusion
 VANVAS Mobile is verified stable, responsive, offline-resilient, and fully prepared for Android Play Store submission.
+

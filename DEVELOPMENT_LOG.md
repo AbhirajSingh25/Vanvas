@@ -5,6 +5,41 @@
 
 ---
 
+### [2026-11-10] Backend Test Suite Repair, Android Target SDK 36 Modernization & Dual APK/AAB Pipeline
+- **Commit:** Pending
+- **Objective:** Fix the 3 failing backend tests from commit `a840b75`, modernize Android configuration to Target SDK 36 (Android 16+), increment app version to `0.4.0` (versionCode `4`), prune permissions, and modernize CI to produce both debug APK and production AAB bundles.
+- **Changes Made:**
+  - Repaired `backend/tests/test_global_artwork_governance.py`: Updated BrijRama Palace assertion from legacy `brijrama-palace.webp` to canonical verified asset `/images/places/varanasi/stays/brijrama-palace-heritage-grand.webp` while maintaining negative guardrails.
+  - Resolved Drifters Café / Drifters Inn collision in `backend/app/providers/artwork_provider.py`: Refactored lookup logic with category-aware discrimination (`is_food_or_cafe_query` prioritizes `PLACE_ARTWORK_REGISTRY`; `is_stay_query` prioritizes `HOTEL_ARTWORK_REGISTRY`). Added regression test cases in `backend/tests/test_image_collision_system.py`.
+  - Repaired vehicle artwork assertions in `backend/tests/test_product_completeness_and_isolation.py`: Updated 7 `.jpg` assertions to canonical `.webp` paths.
+  - Upgraded Android target SDK to 36 and build-tools to `36.0.0` in `mobile/android/build.gradle` and `mobile/app.json` via `expo-build-properties`.
+  - Incremented version to `0.4.0` and `versionCode` to 4 across `mobile/app.json`, `mobile/package.json`, and Gradle.
+  - Pruned `READ_EXTERNAL_STORAGE` and `CAMERA` permissions from `mobile/app.json` in accordance with modern Android Photo Picker compliance.
+  - Modernized `.github/workflows/android-apk.yml`: Added `bundleRelease` step for production AAB, SHA-256 checksum generation, dynamic naming (`VANVAS-Android-v0.4.0-code4-debug.apk` and `VANVAS-Android-v0.4.0-code4-production.aab`), and Android SDK platform 36 installation.
+  - Corrected `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md` and `PROJECT_CONTEXT.md` to reflect `ai.vanvas.app`, Target SDK 36, honest account deletion documentation, and 12-tester closed testing rules.
+- **Files Affected:**
+  - `backend/app/providers/artwork_provider.py`
+  - `backend/tests/test_global_artwork_governance.py`
+  - `backend/tests/test_image_collision_system.py`
+  - `backend/tests/test_product_completeness_and_isolation.py`
+  - `mobile/app.json`
+  - `mobile/package.json`
+  - `mobile/android/build.gradle`
+  - `mobile/android/app/build.gradle`
+  - `.github/workflows/android-apk.yml`
+  - `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md`
+  - `PROJECT_CONTEXT.md`
+  - `CURRENT_STATE.md`
+  - `NEXT_SESSION.md`
+- **Tests Executed:**
+  - Backend targeted test suite: 17/17 passed (100%).
+  - Backend full test suite: In progress, 0 failures.
+  - Mobile TypeScript: `npx tsc --noEmit` passed (0 errors).
+  - Frontend Freeze: Verified 0 files modified in `frontend/`.
+- **Remaining Issues:** 10 destination artwork entities await image-generation quota reset on November 13, 2026.
+
+---
+
 ### [2026-11-09] Mobility Directory WebP Assertions & Quota-Safe Batch Preparation
 - **Commit:** `e4822c5` & `6feee0f`
 - **Objective:** Correct 10 outdated `.jpg` vehicle assertions in `backend/tests/test_mobility_directory.py`, ensure all vehicle assets physically exist as WebP on disk, execute full regression test suites across Web, Native, and Backend, and prepare the quota-safe pending artwork batch script.

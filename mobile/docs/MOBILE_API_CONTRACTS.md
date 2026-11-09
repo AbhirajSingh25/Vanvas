@@ -153,3 +153,4 @@
 - **Request:** `{ message: string, conversation_id?: string, trip_id?: string, destination_slug?: string }`
 - **Response:** `{ response: string, conversation_id: string }`
 - **Handling:** Fallback response provided if network connection times out.
+
