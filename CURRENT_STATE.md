@@ -6,7 +6,8 @@
 ---
 
 ## 1. Git State & Checkpoint
-- **Latest Verified Commit:** `1fd8f48` (`feat(runtime): reconcile artwork runtime mappings, enforce invariants, and complete native app flows`)
+- **Latest Documentation Commit:** `777246b` (`docs: establish permanent AI project context and session continuity`)
+- **Latest Implementation Checkpoint:** `1fd8f48` (`feat(runtime): reconcile artwork runtime mappings, enforce invariants, and complete native app flows`)
 - **Current Branch:** `main`
 - **Working Tree:** Clean, 0 uncommitted changes, synchronized with `origin/main`.
 
