@@ -1,4 +1,4 @@
-name: VANVAS Android APK Pipeline
+name: VANVAS Android Build Pipeline (APK & AAB)
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-android:
-    name: Build Android APK Artifacts
+    name: Build Android APK & AAB Artifacts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -63,11 +63,11 @@ jobs:
           chmod +x gradlew
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      - name: Setup Android SDK Permissions & Platform 35
+      - name: Setup Android SDK Permissions & Platform 36
         run: |
           sudo chown -R $USER:$USER $ANDROID_HOME
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "build-tools;34.0.0" || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "platforms;android-35" "build-tools;36.0.0" "build-tools;35.0.0" || true
 
       - name: Build Debug APK
         working-directory: ./mobile/android
@@ -95,8 +95,7 @@ jobs:
         working-directory: ./mobile/android
         run: |
           set -euo pipefail
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          APK_NAME="VANVAS-Android-v0.2.0-${SHORT_SHA}-debug.apk"
+          APK_NAME="VANVAS-Android-v0.4.0-code4-debug.apk"
           echo "Locating built APK under app/build/outputs/apk/debug/..."
           APK_SRC=$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -n 1)
           if [ -z "$APK_SRC" ] || [ ! -s "$APK_SRC" ]; then
@@ -120,6 +119,44 @@ jobs:
           echo "sha256=${SHA_VALUE}" >> $GITHUB_OUTPUT
           echo "file_size=${FILE_SIZE}" >> $GITHUB_OUTPUT
           echo "Successfully prepared: ${APK_NAME} (${FILE_SIZE}, SHA-256: ${SHA_VALUE})"
+
+      - name: Build Production Android App Bundle (AAB)
+        working-directory: ./mobile/android
+        run: |
+          set -euo pipefail
+          echo "=== Assembling Production Release AAB ==="
+          bash ./gradlew bundleRelease --stacktrace 2>&1 | tee /tmp/gradle_aab_output.txt
+          echo "=== Generated Bundle Files ==="
+          ls -la app/build/outputs/bundle/release/ || true
+          AAB_SRC=$(find app/build/outputs/bundle/release/ -type f -name "*.aab" | head -n 1)
+          if [ -z "$AAB_SRC" ] || [ ! -s "$AAB_SRC" ]; then
+            echo "ERROR: Non-empty release AAB not found in app/build/outputs/bundle/release/"
+            exit 1
+          fi
+          echo "Successfully built release AAB: $AAB_SRC"
+
+      - name: Prepare Production AAB Artifact & Checksum
+        id: prep-release-aab
+        working-directory: ./mobile/android
+        run: |
+          set -euo pipefail
+          AAB_NAME="VANVAS-Android-v0.4.0-code4-production.aab"
+          AAB_SRC=$(find app/build/outputs/bundle/release/ -type f -name "*.aab" | head -n 1)
+          if [ -z "$AAB_SRC" ] || [ ! -s "$AAB_SRC" ]; then
+            echo "ERROR: No valid non-empty AAB found under app/build/outputs/bundle/release/"
+            exit 1
+          fi
+          echo "Found AAB: $AAB_SRC"
+          AAB_DIR=$(dirname "$AAB_SRC")
+          cp "$AAB_SRC" "${AAB_DIR}/${AAB_NAME}"
+          cd "$AAB_DIR"
+          sha256sum "${AAB_NAME}" > "${AAB_NAME}.sha256"
+          AAB_SHA=$(cat "${AAB_NAME}.sha256" | awk '{print $1}')
+          AAB_SIZE=$(du -h "${AAB_NAME}" | cut -f1)
+          echo "aab_name=${AAB_NAME}" >> $GITHUB_OUTPUT
+          echo "sha256=${AAB_SHA}" >> $GITHUB_OUTPUT
+          echo "file_size=${AAB_SIZE}" >> $GITHUB_OUTPUT
+          echo "Successfully prepared: ${AAB_NAME} (${AAB_SIZE}, SHA-256: ${AAB_SHA})"
 
       - name: Check For Release Signing Secrets
         id: check-secrets
@@ -148,7 +185,7 @@ jobs:
           RELEASE_APK_SRC=$(find app/build -name "*release*.apk" | head -n 1)
           if [ -n "$RELEASE_APK_SRC" ]; then
             RELEASE_DIR=$(dirname "$RELEASE_APK_SRC")
-            SIGNED_APK="VANVAS-Android-v0.2.0-${SHORT_SHA}-release-signed.apk"
+            SIGNED_APK="VANVAS-Android-v0.4.0-code4-release-signed.apk"
             cp "$RELEASE_APK_SRC" "${RELEASE_DIR}/${SIGNED_APK}"
             cd "$RELEASE_DIR"
             sha256sum "${SIGNED_APK}" > "${SIGNED_APK}.sha256"
@@ -159,17 +196,26 @@ jobs:
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: VANVAS-Android-${{ github.sha }}-debug
+          name: VANVAS-Android-v0.4.0-code4-debug
           path: |
             mobile/android/**/VANVAS-Android-*-debug.apk
             mobile/android/**/VANVAS-Android-*-debug.apk.sha256
+          retention-days: 30
+
+      - name: Upload Production AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VANVAS-Android-v0.4.0-code4-production
+          path: |
+            mobile/android/**/VANVAS-Android-*-production.aab
+            mobile/android/**/VANVAS-Android-*-production.aab.sha256
           retention-days: 30
 
       - name: Upload Signed Release APK Artifact (If Built)
         if: steps.check-secrets.outputs.has_release_keys == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: VANVAS-Android-${{ github.sha }}-release-signed
+          name: VANVAS-Android-v0.4.0-code4-release-signed
           path: |
             mobile/android/app/build/outputs/apk/release/VANVAS-Android-*-release-signed.apk
             mobile/android/app/build/outputs/apk/release/VANVAS-Android-*-release-signed.apk.sha256
@@ -177,15 +223,19 @@ jobs:
 
       - name: Generate Build Summary
         run: |
-          echo "## 🚀 VANVAS Android APK Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 VANVAS Android Build Complete (APK & Play Store AAB)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit SHA** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Package ID** | \`ai.vanvas.app\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Version Code** | \`2\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Version Name** | \`0.2.0\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version Code** | \`4\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version Name** | \`0.4.0\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target SDK** | \`36\` (Android 16+) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Debug APK Name** | \`${{ steps.prep-debug-apk.outputs.apk_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Debug APK Size** | \`${{ steps.prep-debug-apk.outputs.file_size }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Debug SHA-256** | \`${{ steps.prep-debug-apk.outputs.sha256 }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Production AAB Name** | \`${{ steps.prep-release-aab.outputs.aab_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Production AAB Size** | \`${{ steps.prep-release-aab.outputs.file_size }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Production SHA-256** | \`${{ steps.prep-release-aab.outputs.sha256 }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Signing Status** | Debug Signed (Default) / Release Signed if secrets present |" >> $GITHUB_STEP_SUMMARY

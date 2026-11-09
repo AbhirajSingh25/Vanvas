@@ -3,7 +3,7 @@
     "name": "VANVAS",
     "slug": "vanvas",
     "scheme": "vanvas",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -23,7 +23,7 @@
     },
     "android": {
       "package": "ai.vanvas.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#17352C",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -33,13 +33,21 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "POST_NOTIFICATIONS",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE"
+        "POST_NOTIFICATIONS"
       ]
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0"
+          }
+        }
+      ],
       [
         "expo-image-picker",
         {
