@@ -169,9 +169,9 @@ async def test_live_rentals_provider_osm_parsing():
         assert "Old Manali" in item1["location"]
         assert item1["verification_status"] == "LIVE_OSM"
         assert item1["image_url"] in [
-            "/images/vehicles/adventure_motorcycle.jpg",
-            "/images/vehicles/classic_bullet.jpg",
-            "/images/vehicles/universal_mobility.jpg"
+            "/images/vehicles/adventure_motorcycle.webp",
+            "/images/vehicles/classic_bullet.webp",
+            "/images/vehicles/universal_mobility.webp"
         ]
 
         # Item 2: Missing phone and website
@@ -180,7 +180,7 @@ async def test_live_rentals_provider_osm_parsing():
         assert item2["website"] is None
         assert item2["price_per_day"] is None
         assert item2["vehicle_type"] == "Mountain Bike / Bicycle"
-        assert item2["image_url"] == "/images/vehicles/mountain_bike.jpg"
+        assert item2["image_url"] == "/images/vehicles/mountain_bike.webp"
 
 
 # -------------------------------------------------------------
@@ -237,7 +237,7 @@ async def test_provider_priority_hierarchy(setup_test_db):
         "latitude": 32.2420,
         "longitude": 77.1900,
         "opening_hours": "Hours not listed",
-        "image_url": "/images/vehicles/universal_mobility.jpg",
+        "image_url": "/images/vehicles/universal_mobility.webp",
         "verification_status": "LIVE_OSM",
         "distance_km": 0.5,
         "action_links": []
@@ -298,23 +298,23 @@ def test_vehicle_artwork_category_isolation():
 
     # 1. Himalayan tourer
     img_himalayan = MobilityService._resolve_category_artwork("Touring Motorcycle", "Royal Enfield Himalayan 450")
-    assert img_himalayan == "/images/vehicles/adventure_motorcycle.jpg"
+    assert img_himalayan == "/images/vehicles/adventure_motorcycle.webp"
 
     # 2. Classic Bullet
     img_bullet = MobilityService._resolve_category_artwork("Classic Motorcycle", "Royal Enfield Bullet 350")
-    assert img_bullet == "/images/vehicles/classic_bullet.jpg"
+    assert img_bullet == "/images/vehicles/classic_bullet.webp"
 
     # 3. Automatic Scooter
     img_scooter = MobilityService._resolve_category_artwork("Scooter", "Honda Activa 6G")
-    assert img_scooter == "/images/vehicles/automatic_scooter.jpg"
+    assert img_scooter == "/images/vehicles/automatic_scooter.webp"
 
     # 4. Electric Scooter
     img_ev = MobilityService._resolve_category_artwork("Electric Scooter", "Ather 450X")
-    assert img_ev == "/images/vehicles/electric_scooter.jpg"
+    assert img_ev == "/images/vehicles/electric_scooter.webp"
 
     # 5. Mountain Bike
     img_mtb = MobilityService._resolve_category_artwork("Mountain Bike", "Trek Marlin MTB")
-    assert img_mtb == "/images/vehicles/mountain_bike.jpg"
+    assert img_mtb == "/images/vehicles/mountain_bike.webp"
 
     # Strict check: NEVER contains stay, monastery, or random non-vehicle category
     forbidden_terms = ["monastery", "hotel", "stay", "trail", "lake", "viewpoint"]

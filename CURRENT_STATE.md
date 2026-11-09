@@ -29,8 +29,11 @@
 
 ## 4. Test Suite Summary
 - **Artwork Invariants:** `pytest backend/tests/test_artwork_runtime_invariants.py` ➔ **6/6 PASSED (100%)**.
+- **Mobility Directory:** `pytest backend/tests/test_mobility_directory.py` ➔ **7/7 PASSED (100%)**.
+- **Combined Invariants + Mobility:** ➔ **13/13 PASSED (100%)**.
 - **Place Identity & Arrival Mode:** `pytest backend/tests/test_place_identity_engine.py backend/tests/test_arrival_im_here.py` ➔ **21/21 PASSED (100%)**.
-- **Mobility Directory:** `pytest backend/tests/test_mobility_directory.py` ➔ **11/13 PASSED** (2 failures due to legacy `.jpg` string assertions in lines 171 & 212 needing update to `.webp`).
+- **Production Foundation Hardening:** `pytest backend/tests/test_production_foundation_hardening.py` ➔ **8/8 PASSED (100%)**.
+- **Frontend Production Build:** `cd frontend && npm run build` ➔ **PASSED (23/23 routes generated)**.
 
 ---
 
@@ -39,51 +42,22 @@
    - Free Gemini image-generation quota exhausted until **November 13, 2026**.
    - 10 entities pending generation (5 Dharamshala + 5 Kasol).
    - Currently rendering honest diagnostic fallback labels; zero paid overages allowed.
-2. **Test Assertion Alignment:**
-   - `backend/tests/test_mobility_directory.py` has 2 lines expecting `.jpg` vehicle assets that were upgraded to `.webp`.
+   - Quota-safe automation script created: `scripts/generate_pending_artwork_batch.py` with strict negative prompts (dry-run verified).
 
 ---
 
 ## 6. Last Completed Task
-- **Objective:** Reconcile generated artwork with runtime consumption, enforce database schema updates, eliminate stale pending entries, and complete native React Native application features.
+- **Objective:** Correct outdated `.jpg` vehicle assertions in `backend/tests/test_mobility_directory.py`, ensure all vehicle assets physically exist as WebP on disk, execute full regression test suites across Web, Native, and Backend, and prepare the quota-safe pending artwork batch script.
 - **Accomplishments:**
-  - Cleared 14 stale pending entries in `placeVisualResolver.ts`.
-  - Upgraded 52 vehicle assets from `.jpg` to `.webp` across seed, service, database migration, and UI.
-  - Built unified authoritative artwork manifest with 729 approved assets.
-  - Added native Motorcycle Expedition mode with Gateway Hub logic in `mobile/app/(tabs)/plan.tsx`.
-  - Added native theme persistence (Light/Dark/Auto) and density settings in `mobile/src/context/ThemeContext.tsx`.
-  - Implemented background and focus pause handling in `mobile/src/components/ReelsCarousel.tsx`.
+  - Aligned all 10 stale `.jpg` references in `backend/tests/test_mobility_directory.py` to `.webp`.
+  - Converted 20 fallback vehicle images to WebP so all vehicle paths exist on disk without 404s.
+  - Achieved 13/13 passing tests across invariants and mobility directory.
+  - Verified frontend static build (`npm run build` completed with 23 static routes).
+  - Verified mobile typecheck (0 errors) and Expo Doctor (18/18 checks).
+  - Created `scripts/generate_pending_artwork_batch.py` with dry-run support and strict negative prompts.
 
 ---
 
-## 7. Files Changed in Commit `1fd8f48`
-1. `backend/app/database/session.py`
-2. `backend/app/providers/artwork_provider.py`
-3. `backend/app/providers/live_providers.py`
-4. `backend/app/seed/authoritative_artwork_manifest.json` *(new)*
-5. `backend/app/seed/canonical_dataset.py`
-6. `backend/app/seed/seed_real_rentals.py`
-7. `backend/app/services/mobility_service.py`
-8. `backend/tests/test_artwork_runtime_invariants.py` *(new)*
-9. `frontend/components/ui/VehicleArtwork.tsx`
-10. `frontend/lib/canonicalRegistryData.ts`
-11. `frontend/lib/placeVisualResolver.ts`
-12. `frontend/public/entity_art_manifest.json`
-13. `mobile/app/(tabs)/explore.tsx`
-14. `mobile/app/(tabs)/plan.tsx`
-15. `mobile/app/(tabs)/profile.tsx`
-16. `mobile/app/destination/[slug].tsx`
-17. `mobile/src/components/DestinationCard.tsx`
-18. `mobile/src/components/ReelsCarousel.tsx`
-19. `mobile/src/context/ThemeContext.tsx`
-20. `mobile/src/services/api.ts`
-21. `mobile/src/services/storage.ts`
-22. `mobile/src/theme/index.ts`
-23. `packages/shared/src/constants/artworkManifest.ts` *(new)*
-24. `packages/shared/src/constants/index.ts`
-
----
-
-## 8. Next Recommended Task
-1. Update lines 171 and 212 of `backend/tests/test_mobility_directory.py` from `.jpg` to `.webp` to achieve 13/13 passing tests.
-2. Prepare automated generation script and strict negative prompts for the November 13 quota reset window for the remaining 10 places.
+## 7. Next Recommended Task
+1. Run `python scripts/generate_pending_artwork_batch.py --execute --confirm-free-quota` on November 13, 2026 when image-generation quota resets.
+2. Review generated assets, verify zero embedded text/typography, and register newly created WebP assets into `authoritative_artwork_manifest.json`.

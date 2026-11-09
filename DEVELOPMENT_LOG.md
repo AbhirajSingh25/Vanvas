@@ -5,6 +5,28 @@
 
 ---
 
+### [2026-11-09] Mobility Directory WebP Assertions & Quota-Safe Batch Preparation
+- **Commit:** Pending
+- **Objective:** Correct 10 outdated `.jpg` vehicle assertions in `backend/tests/test_mobility_directory.py`, ensure all vehicle assets physically exist as WebP on disk, execute full regression test suites across Web, Native, and Backend, and prepare the quota-safe pending artwork batch script.
+- **Changes Made:**
+  - Corrected all 10 outdated `.jpg` vehicle path expectations in `backend/tests/test_mobility_directory.py` across `test_live_rentals_provider_osm_parsing`, `test_provider_priority_hierarchy`, and `test_vehicle_artwork_category_isolation` to `.webp`.
+  - Converted 20 fallback vehicle images in `frontend/public/images/vehicles/` from `.jpg` to `.webp` (preserving `.jpg`), eliminating missing physical asset 404 risks.
+  - Created `scripts/generate_pending_artwork_batch.py` with strict negative prompts, dry-run mode, and quota safety halts for the 10 pending artwork entities.
+- **Files Affected:** `backend/tests/test_mobility_directory.py`, `frontend/public/images/vehicles/*.webp`, `scripts/generate_pending_artwork_batch.py`.
+- **Tests Executed:**
+  - `pytest backend/tests/test_mobility_directory.py`: 7 passed, 0 failed (100%).
+  - `pytest backend/tests/test_artwork_runtime_invariants.py`: 6 passed, 0 failed (100%).
+  - Combined invariants + mobility directory: 13 passed, 0 failed (100%).
+  - `pytest backend/tests/test_place_identity_engine.py backend/tests/test_arrival_im_here.py`: 21 passed, 0 failed (100%).
+  - `pytest backend/tests/test_production_foundation_hardening.py`: 8 passed, 0 failed (100%).
+  - `cd frontend && npm run build`: Passed with 0 errors (all 23 static routes compiled).
+  - `cd mobile && npm run typecheck`: Passed with 0 errors.
+  - `cd mobile && npx expo-doctor`: 18/18 checks passed.
+  - `python scripts/validate_docs.py`: Passed (all context docs valid).
+- **Remaining Issues:** 10 destination artwork entities await image-generation quota reset on November 13, 2026.
+
+---
+
 ### [2026-11-09] Permanent Project Context & Session Continuity System
 - **Commit:** `777246b`
 - **Objective:** Establish a permanent, reliable project context system across 7 core documentation files and an automated validator so future AI sessions resume without losing architectural or domain knowledge.
