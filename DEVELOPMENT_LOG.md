@@ -6,7 +6,7 @@
 ---
 
 ### [2026-11-10] Final Privacy, Backend CI, boto3 Dependency & Play Store Compliance Completion
-- **Commit:** Pending
+- **Commit:** `df29183`
 - **Objective:** Fix backend boto3 dependency failure in GitHub Actions CI, harden remote avatar deletion against false positives and unconfigured storage providers, enforce mandatory password verification on account deletion, build native Profile account deletion and password change UI modals with private SQLite cleanup, and ensure full Play Store compliance.
 - **Changes Made:**
   - Added `boto3>=1.34.0` to `backend/requirements.txt` to resolve `ModuleNotFoundError: No module named 'boto3'` in GitHub Actions CI.
