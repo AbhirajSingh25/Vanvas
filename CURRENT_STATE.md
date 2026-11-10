@@ -6,10 +6,12 @@
 ---
 
 ## 1. Git State & Checkpoint
-- **Latest Verified Commit:** Current HEAD on `main`
+- **Latest Verified Commit:** `01a74ff` (Advancing with Expo 58 Modernization & Release Readiness)
 - **Current Branch:** `main`
 - **Native Version:** `0.4.0` (`versionCode 4`, package: `ai.vanvas.app`)
-- **Target Android SDK:** API 36 (Android 16+ ready, Target SDK 36 compliant)
+- **Runtime Stack:** Expo SDK 58.0.23, React Native 0.88.1, React 19.3.0, Node.js 22.14 LTS
+- **Target Android SDK:** API 36 (Android 16+ ready), compileSdkVersion 37 via `expo-build-properties`
+- **Account Deletion Portal:** `account-deletion-site/` standalone static portal with token in-memory isolation, fully Google Play Data Safety compliant.
 
 ---
 
@@ -48,16 +50,15 @@
 ---
 
 ## 6. Last Completed Task
-- **Objective:** Fix 3 backend test failures, modernize Android release configuration to Target SDK 36, increment version to 0.4.0 (versionCode 4), prune permissions, and modernize CI for Play Store APK/AAB builds.
+- **Objective:** Modernize native application to Expo SDK 58, React Native 0.88.1, and React 19.3.0, verify Android API 36 compilation with compileSdkVersion 37, bulletproof the release signing CI pipeline, cascade account deletion in backend, build standalone account deletion site, and maintain 100% frontend freeze.
 - **Accomplishments:**
-  - Repaired `test_global_artwork_governance.py` BrijRama Palace asset expectation.
-  - Implemented category-aware resolution in `CuratedArtworkProvider` to eliminate Drifters Café vs Drifters Inn alias collision, verified with regression tests.
-  - Updated 7 vehicle assertions in `test_product_completeness_and_isolation.py` to `.webp`.
-  - Configured Target SDK 36 and build-tools 36.0.0 via `expo-build-properties` and Gradle.
-  - Removed broad storage and camera permissions from `mobile/app.json`.
-  - Modernized `.github/workflows/android-apk.yml` to generate both debug APK and production AAB with SHA-256 checksums and dynamic naming.
-  - Synchronized Play Store compliance checklist with honest account deletion and 12-tester closed testing guidelines.
-  - Web application (`frontend/`) remained byte-for-byte untouched.
+  - Modernized `mobile/package.json` to authoritative Expo SDK 58 suite (`expo ~58.0.23`, `react-native 0.88.1`, `react 19.3.0`, `react-native-worklets 0.13.0`, `expo-build-properties ~58.0.12`).
+  - Resolved all React Native 0.88 and TypeScript compatibility issues (`StyleSheet.absoluteFill`, local `ViewToken` compatibility, `expo-router` pathname hooks, `StatusBar` props).
+  - Validated Expo configuration (`npx expo config --type public`) and completed clean prebuild (`npx expo prebuild --platform android --clean --no-install`).
+  - Modernized CI workflows (`.github/workflows/ci.yml` and `android-apk.yml`) to Node.js 22 runtime, Android SDK platform 37/36, release secret check before build, and graceful validation bundle fallback.
+  - Cascaded backend account deletion to clean expense shares, settlements, and storage avatars in `backend/app/api/v1/auth.py` and `models.py`, verified with 22/22 pytest suite.
+  - Built standalone `account-deletion-site/` (HTML/CSS/JS + `vercel.json` + README) ensuring Google Play Data Safety compliance with zero cookie/localStorage storage.
+  - Preserved strict byte-for-byte freeze across `frontend/`.
 
 ---
 

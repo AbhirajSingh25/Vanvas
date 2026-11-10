@@ -1,20 +1,19 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Mobile Native 0.4.0 / Target SDK 36 / Play Store Ready | *Branch:* `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Mobile Native 0.4.0 (Expo SDK 58 / RN 0.88) / Target SDK 36 / Play Store Ready | *Branch:* `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
 - **Core Checkpoint:** 
-  - Android Native App (`mobile/`) updated to Target SDK 36 (Android 16+), version `0.4.0` (versionCode 4).
-  - All 3 backend test failures resolved (BrijRama Palace asset path, Drifters Café/Inn category-aware collision, mobility WebP assertions).
-  - Android permissions cleaned: `READ_EXTERNAL_STORAGE` and `CAMERA` eliminated; modern Android Photo Picker used.
-  - Automated CI workflow `.github/workflows/android-apk.yml` modernized to generate both Debug APK (`VANVAS-Android-v0.4.0-code4-debug.apk`) and Production AAB (`VANVAS-Android-v0.4.0-code4-production.aab`) with SHA-256 checksums and SDK Platform 36.
-  - Play Store compliance documentation synchronized with 12-tester closed testing rule and honest account deletion reporting.
+  - Android Native App (`mobile/`) modernized to Expo SDK 58 (`expo ~58.0.23`), React Native 0.88.1, React 19.3.0, Node.js 22 LTS, and Target SDK 36 with compileSdkVersion 37.
+  - Automated CI workflow `.github/workflows/android-apk.yml` modernized to generate both Debug APK (`VANVAS-Android-v0.4.0-code4-debug.apk`) and Production AAB (`VANVAS-Android-v0.4.0-code4-production.aab`) with SHA-256 checksums, Android SDK 37/36 tools, release keystore injection, and graceful validation bundle fallback.
+  - Standalone Account & Data Deletion Portal created at `account-deletion-site/` satisfying Google Play Data Safety requirements with zero cookie/localStorage exposure and in-memory session isolation.
+  - Backend cascading deletion in `backend/app/api/v1/auth.py` and `backend/app/models/models.py` cleans expense shares, settlements, trips, and invokes `StorageService.delete_profile_photo`.
   - Frontend (`frontend/`) remains 100% frozen and untouched.
-- **Repository Health:** Mobile TypeScript (0 errors), Backend targeted tests (17/17 passed), Shared package builds cleanly, Invariants suite (6/6 passed).
+- **Repository Health:** Mobile TypeScript (0 errors), Backend targeted tests (22/22 passed 100%), Shared package builds cleanly, Invariants suite (6/6 passed).
 
 ---
 

@@ -86,6 +86,15 @@
 ---
 
 ## 11. Android Native Identity & Play Store Compliance
-- **Decision:** Preserve `ai.vanvas.app` as the canonical Android package identity; raise target SDK to 35 (Android 15+); enforce 100% native UI with zero WebViews.
-- **Reasoning:** Changing established application IDs breaks existing keystore configurations and build integrity. Android 15/API 35 alignment satisfies current Google Play store publishing guidelines while modern photo pickers eliminate obsolete broad storage permissions.
+- **Decision:** Preserve `ai.vanvas.app` as the canonical Android package identity; modernize target SDK to 36 (Android 16+ ready) with compileSdkVersion 37 under Expo SDK 58 and React Native 0.88; enforce 100% native UI with zero WebViews.
+- **Reasoning:** Changing established application IDs breaks existing keystore configurations and build integrity. Android 16 (API 36) alignment satisfies and exceeds Google Play store publishing guidelines while modern photo pickers eliminate obsolete broad storage permissions.
 - **Consequences:** Keep `mobile/` standalone, dual-platform clean, and preserve all SQLite offline capabilities.
+
+---
+
+## 12. Account Deletion Governance: Standalone Portal & In-Memory Isolation
+- **Decision:** To fulfill Google Play Data Safety account deletion requirements without modifying the frozen `frontend/` production web app, provide a dedicated standalone static portal at `account-deletion-site/` deployed independently. The portal operates strictly in-memory (zero localStorage, zero cookies) and calls the backend `/api/v1/auth/delete-account` endpoint with password confirmation.
+- **Reasoning:** Google Play requires a publicly accessible web link where users can request full deletion of their account and associated data without installing the app. Modifying `frontend/` was forbidden by the strict freeze directive.
+- **Consequences:**
+  - `account-deletion-site/` is hosted independently or statically mapped.
+  - Backend cascading deletion in `backend/app/api/v1/auth.py` and `backend/app/models/models.py` cascades to expense shares, settlements, trips, and clears stored avatar photos.

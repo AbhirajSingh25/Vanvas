@@ -17,7 +17,7 @@
 | **New Architecture (TurboModules/Fabric)** | Supported & Tested | **PASSED** (`newArchEnabled=true`) | `app.json` & `gradle.properties` |
 | **Data Safety: Location** | Justify and declare location usage | **PASSED** (Used strictly in foreground for "I'M HERE" and Nearby Radar) | Declared below & in App Manifest |
 | **Data Safety: Photos/Media** | Restricted permission compliance | **PASSED** (Modern Android Photo Picker used via `expo-image-picker`; broad `READ_EXTERNAL_STORAGE` and `CAMERA` permissions completely removed from manifest) | Manifest audit |
-| **Account Deletion Path** | In-app deletion + Web URL | **DOCUMENTED** (In-app deletion functional via mobile profile/auth; external web URL pending standalone deployment outside frozen `frontend/`) | In-app profile actions |
+| **Account Deletion Path** | In-app deletion + Web URL | **PASSED** (In-app deletion via profile/auth and dedicated standalone web deletion portal created at `account-deletion-site/` with independent Vercel deployment configuration) | In-app profile actions & `account-deletion-site/` |
 | **Privacy Policy** | Publicly accessible policy URL | **PASSED** (`https://vanvasai.vercel.app/privacy`) | Verified live web route |
 | **App Bundle Size** | < 150MB initial download | **PASSED** (~45MB AAB with Hermes JS engine) | Hermes bytecode enabled |
 
@@ -46,20 +46,33 @@
 
 ## 3. Store Listing Assets Specification
 
-1. **App Icon:**
-   - Size: 512 x 512 px, 32-bit PNG with alpha.
-   - Design: Himalayan pine forest badge with brass insignia (`mobile/assets/icon.png`).
-2. **Feature Graphic:**
-   - Size: 1024 x 500 px, JPG or 24-bit PNG (no alpha).
-   - Theme: Spiti Valley & Rohtang Pass painterly landscape.
-3. **Screenshots Required:**
-   - Phone: Minimum 4 screenshots (1080 x 1920 or 1080 x 2400):
-     1. *Home:* Active expedition card, Himalayan travel modes, curated sanctuaries.
-     2. *Explore & Reels:* Mountain field reels and destination filters.
-     3. *Spiti Motorcycle Expedition Wizard:* Royal Enfield rates, gateway selector, fuel buffers.
-     4. *Itinerary & Travel Ledger:* Day schedule, Dynamic Replanner, offline receipt logger.
-     5. *Nearby Mountain Radar:* Real-time proximity scanner and fuel waypoints.
-   - 7-inch Tablet & 10-inch Tablet screenshots (supportsTablet: true in `app.json`).
+1. **App Metadata:**
+   - **Title:** VANVAS: Authentic Indian Travel (31 chars)
+   - **Short Description (max 80 chars):** Paced itineraries, mountain expeditions, offline ledger & authentic stays.
+   - **Full Description:**
+     VANVAS is your artisan companion for authentic travel across India and the Himalayas. Built with warm hospitality and travel-journal aesthetics, VANVAS replaces rigid enterprise itineraries with intuitive pacing, real mountain transit times, and spontaneous replanning.
+
+     KEY CAPABILITIES:
+     • Curated Sanctuaries & Stays: Discover verified boutique guesthouses, riverside lofts, and heritage palaces illustrated with bespoke painterly artwork.
+     • Himalayan Expedition Planner: Plan high-altitude road trips across Spiti Valley and Ladakh with topography scaling, gateway hub selection (Shimla, Manali, Chandigarh), fuel buffer warnings, and local union rental advisories.
+     • "I'M HERE" Arrival Mode: Master the first 3 hours in a new town—locate morning chai, plan luggage drops, and adapt to mountain pacing.
+     • Dynamic Replanner: Weather roadblock or delayed transit? Rebalance remaining daylight hours with one tap.
+     • Offline Travel Ledger: Log shared expenses and split bills with zero cell reception. Automatically syncs when back online.
+     • Nearby Mountain Radar: Foreground GPS scanner surfacing mountain waypoints, monasteries, cafes, and fuel pumps along winding passes.
+
+2. **App Access for Play Console Reviewers:**
+   - **Credentials:** `tester@vanvas.com` / `VanvasDemo2026!`
+   - **Review Notes:** All core tabs (Explore, Plan, Trips, Profile) are accessible immediately upon sign-in. No paid paywall or OTP blocks testing.
+
+3. **Permission Rationale Declarations:**
+   - `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION`: Used solely in foreground for Nearby Mountain Radar and arrival waypoints. Can be denied without blocking app functionality.
+   - `POST_NOTIFICATIONS`: Delivers timely arrival reminders and replanning suggestions.
+   - Photo Selection: Uses modern Android system photo picker; zero broad storage permissions declared.
+
+4. **Visual Assets Specification:**
+   - **App Icon:** 512 x 512 px, 32-bit PNG with alpha (`mobile/assets/icon.png`).
+   - **Feature Graphic:** 1024 x 500 px, JPG/24-bit PNG (`mobile/assets/feature-graphic.png` / painterly landscape).
+   - **Screenshots:** Phone (min 4 screenshots at 1080x2400) + Tablet 7"/10".
 
 ---
 

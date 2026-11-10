@@ -5,6 +5,49 @@
 
 ---
 
+### [2026-11-10] Native Production Release, Expo SDK 58 Modernization & Standalone Deletion Portal
+- **Commit:** Pending
+- **Objective:** Modernize native application to Expo SDK 58, React Native 0.88.1, and React 19.3.0, verify Android API 36 compilation with compileSdkVersion 37, bulletproof the release signing CI pipeline, cascade account deletion in backend, build standalone account deletion site, and maintain 100% frontend freeze.
+- **Changes Made:**
+  - Modernized `mobile/package.json` to authoritative Expo SDK 58 dependencies (`expo ~58.0.23`, `react-native 0.88.1`, `react 19.3.0`, `react-native-worklets 0.13.0`, `expo-build-properties ~58.0.12`).
+  - Resolved all React Native 0.88 and TypeScript compatibility issues: replaced `StyleSheet.absoluteFillObject` with `StyleSheet.absoluteFill`, added local `ViewToken` compatibility interface in `ReelsCarousel.tsx`, replaced `@react-navigation/native` `useIsFocused` with `expo-router` `usePathname`, and removed unsupported `backgroundColor` prop from `<StatusBar>`.
+  - Configured `expo-build-properties` for compileSdkVersion 37 and targetSdkVersion 36, verified via `npx expo config --type public` and prebuild.
+  - Hardened backend cascading deletion in `backend/app/models/models.py` and `backend/app/api/v1/auth.py` by cascading expense shares, settlement payments, and invoking `StorageService.delete_profile_photo`.
+  - Built standalone `account-deletion-site/` (HTML/CSS/JS + `vercel.json` + README) ensuring Google Play Data Safety compliance with zero cookie/localStorage storage and dedicated token isolation.
+  - Modernized CI workflows (`.github/workflows/ci.yml` and `android-apk.yml`) to Node.js 22 runtime, Android SDK platform 37/36, release secret check before build, and graceful validation bundle fallback.
+- **Files Affected:**
+  - `mobile/package.json`
+  - `mobile/package-lock.json`
+  - `mobile/app.json`
+  - `mobile/app/(tabs)/_layout.tsx`
+  - `mobile/app/(tabs)/explore.tsx`
+  - `mobile/app/(tabs)/profile.tsx`
+  - `mobile/app/_layout.tsx`
+  - `mobile/app/destination/[slug].tsx`
+  - `mobile/app/treks/index.tsx`
+  - `mobile/src/components/DestinationCard.tsx`
+  - `mobile/src/components/ReelsCarousel.tsx`
+  - `account-deletion-site/index.html`
+  - `account-deletion-site/vercel.json`
+  - `account-deletion-site/README.md`
+  - `backend/app/models/models.py`
+  - `backend/app/api/v1/auth.py`
+  - `.github/workflows/ci.yml`
+  - `.github/workflows/android-apk.yml`
+  - `PROJECT_CONTEXT.md`
+  - `CURRENT_STATE.md`
+  - `DEVELOPMENT_LOG.md`
+- **Tests Executed:**
+  - `cd mobile && npm run typecheck`: 0 errors.
+  - `npx expo config --type public`: Clean configuration (SDK 58.0.0, compileSdk 37, targetSdk 36).
+  - `npx expo prebuild --platform android --clean --no-install`: Clean generation.
+  - `cd backend && python -m pytest tests/test_profile_and_settings.py tests/test_global_artwork_governance.py tests/test_image_collision_system.py tests/test_product_completeness_and_isolation.py -v`: 22/22 passed (100%).
+  - `cd packages/shared && npm run build`: 0 errors.
+  - `git diff --name-only frontend/`: 0 files modified (100% frozen).
+- **Remaining Issues:** 10 destination artwork entities await image-generation quota reset on November 13, 2026.
+
+---
+
 ### [2026-11-10] Backend Test Suite Repair, Android Target SDK 36 Modernization & Dual APK/AAB Pipeline
 - **Commit:** Pending
 - **Objective:** Fix the 3 failing backend tests from commit `a840b75`, modernize Android configuration to Target SDK 36 (Android 16+), increment app version to `0.4.0` (versionCode `4`), prune permissions, and modernize CI to produce both debug APK and production AAB bundles.

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Dimensions,
   FlatList,
-  ViewToken,
   TouchableOpacity,
   AccessibilityInfo,
   Platform,
@@ -47,8 +46,8 @@ export function ReelsCarousel({ reels, isScreenFocused = true }: ReelsCarouselPr
   }, []);
 
   const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+    ({ viewableItems }: { viewableItems: Array<{ index?: number | null }> }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index != null) {
         setFocusedIndex(viewableItems[0].index);
       }
     }
@@ -199,7 +198,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(10, 16, 13, 0.4)",
     justifyContent: "space-between",
     padding: 14,

@@ -9,8 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { useIsFocused } from "@react-navigation/native";
+import { useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Destination, DestinationReel } from "@vanvas/shared";
@@ -66,7 +65,8 @@ const FEATURED_FIELD_REELS: DestinationReel[] = [
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const isFocused = useIsFocused();
+  const pathname = usePathname();
+  const isFocused = pathname === "/explore" || pathname.startsWith("/explore");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<string>("All");
   const [destinations, setDestinations] = useState<Destination[]>([]);

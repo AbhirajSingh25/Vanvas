@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.models import (
     User, UserPreference, EmailVerificationToken, EmailVerificationOTP, Trip, SavedPlace, Review, Booking,
-    Itinerary, Expense, ChecklistItem, TravellerMemory, MemoryObservation
+    Itinerary, Expense, ExpenseShare, SettlementPayment, ChecklistItem, TravellerMemory, MemoryObservation
 )
 from app.schemas.schemas import (
     UserCreate, UserLogin, UserResponse, TokenResponse,
@@ -883,7 +883,20 @@ def delete_account(
     user_id = current_user.id
     user_email = current_user.email
 
-    # Cascading delete is configured on relationships (trips, preferences, saved_places, reviews, bookings, conversations)
+    # 1. Clean up uploaded profile avatar asset from storage service if present
+    if current_user.avatar_storage_key:
+        try:
+            StorageService.delete_profile_photo(current_user.avatar_storage_key, db=db)
+        except Exception:
+            pass
+
+    # 2. Clean up expense shares and settlements referencing this user
+    db.query(ExpenseShare).filter(ExpenseShare.user_id == current_user.id).delete(synchronize_session=False)
+    db.query(SettlementPayment).filter(
+        (SettlementPayment.payer_user_id == current_user.id) | (SettlementPayment.receiver_user_id == current_user.id)
+    ).delete(synchronize_session=False)
+
+    # 3. Cascading delete on User model cleans up all owned trips, preferences, saved_places, reviews, bookings, conversations, memories, blobs
     db.delete(current_user)
     db.commit()
 

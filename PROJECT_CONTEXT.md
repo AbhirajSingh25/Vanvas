@@ -1,7 +1,7 @@
 # VANVAS — Permanent Project Context & Architecture Master
 
 > **Primary Source of Truth for Architecture, System Contracts, and Feature Status**  
-> *Latest Verified Checkpoint:* Commit `6feee0f` | *Preceding Commits:* `e4822c5`, `1fd8f48` | *Branch:* `main` | *Date:* November 9, 2026
+> *Latest Verified Checkpoint:* Commit `01a74ff` (Advancing to SDK 58 Release) | *Preceding Commits:* `a840b75`, `6feee0f`, `e4822c5`, `1fd8f48` | *Branch:* `main` | *Date:* November 10, 2026
 
 ---
 
@@ -53,14 +53,19 @@ VANVAS/
 │   ├── public/              # Static Assets, WebP Illustrations, entity_art_manifest.json
 │   └── types/               # TypeScript Data Contracts
 │
-├── mobile/                   # React Native Native App (Expo SDK 52 + Expo Router 4)
+├── mobile/                   # React Native Native App (Expo SDK 58 + Expo Router 58 + React Native 0.88)
 │   ├── app/                 # File-based Navigation ((tabs), auth, destination, road-trip, treks)
 │   ├── src/
 │   │   ├── components/      # DestinationCard, PlaceCard, ReelsCarousel, ConnectionBanner
 │   │   ├── context/         # AuthContext, ThemeContext (persistent dark/light & density)
 │   │   ├── services/        # Native API client (resolveImageUrl), SQLite offline db, SecureStore
 │   │   └── theme/           # Native Theme Tokens & Semantic Colors
-│   └── app.json             # Expo App Manifest (Android Package: ai.vanvas.app)
+│   └── app.json             # Expo App Manifest (ai.vanvas.app, v0.4.0, code 4, Target SDK 36)
+│
+├── account-deletion-site/   # Standalone Account & Data Deletion Portal (Google Play Compliant)
+│   ├── index.html           # Accessible, standalone responsive portal (Zero cookies/localStorage)
+│   ├── vercel.json          # Deployment configuration & security headers
+│   └── README.md            # Architecture & Google Play compliance documentation
 │
 ├── packages/
 │   └── shared/              # Dual-Platform Shared Package (@vanvas/shared)

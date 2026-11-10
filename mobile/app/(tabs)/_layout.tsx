@@ -36,7 +36,7 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass-outline" size={size || 22} color={color} />
+            <Ionicons name="compass-outline" size={size || 22} color={typeof color === "string" ? color : undefined} />
           ),
         }}
       />
@@ -45,7 +45,7 @@ export default function TabsLayout() {
         options={{
           title: "Explore",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="earth-outline" size={size || 22} color={color} />
+            <Ionicons name="earth-outline" size={size || 22} color={typeof color === "string" ? color : undefined} />
           ),
         }}
       />
@@ -54,7 +54,7 @@ export default function TabsLayout() {
         options={{
           title: "Plan",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map-outline" size={size || 22} color={color} />
+            <Ionicons name="map-outline" size={size || 22} color={typeof color === "string" ? color : undefined} />
           ),
         }}
       />
@@ -63,7 +63,7 @@ export default function TabsLayout() {
         options={{
           title: "Trips",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trail-sign-outline" size={size || 22} color={color} />
+            <Ionicons name="trail-sign-outline" size={size || 22} color={typeof color === "string" ? color : undefined} />
           ),
         }}
       />
@@ -72,7 +72,7 @@ export default function TabsLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size || 22} color={color} />
+            <Ionicons name="person-outline" size={size || 22} color={typeof color === "string" ? color : undefined} />
           ),
         }}
       />

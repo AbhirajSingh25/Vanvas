@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Deletion Request — VANVAS</title>
+  <meta name="description" content="Request permanent deletion of your VANVAS account, personal travel data, trips, expenses, and associated records.">
+  <meta name="robots" content="index, follow">
+  <style>
+    :root {
+      --color-primary: #17352C;
+      --color-primary-dark: #0F231D;
+      --color-primary-light: #234E41;
+      --color-gold: #C29B38;
+      --color-gold-hover: #AA8428;
+      --color-bg: #F8F6F0;
+      --color-card: #FFFFFF;
+      --color-text: #1C2421;
+      --color-text-muted: #64748B;
+      --color-border: #E2E8F0;
+      --color-danger: #DC2626;
+      --color-danger-bg: #FEF2F2;
+      --color-danger-border: #FCA5A5;
+      --color-success: #15803D;
+      --color-success-bg: #F0FDF4;
+      --color-success-border: #86EFAC;
+      --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 680px;
+      width: 100%;
+      background: var(--color-card);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(23, 53, 44, 0.08), 0 8px 10px -6px rgba(23, 53, 44, 0.04);
+      border: 1px solid var(--color-border);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+      color: #FFFFFF;
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+
+    .brand-mark {
+      display: inline-block;
+      font-family: var(--font-serif);
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: #FFFFFF;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .brand-subtitle {
+      color: var(--color-gold);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .header-title {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #FFFFFF;
+      margin-top: 0.5rem;
+    }
+
+    .content {
+      padding: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .notice-box {
+      background-color: #F8FAFC;
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      color: var(--color-text);
+    }
+
+    .notice-box ul {
+      margin-left: 1.25rem;
+      margin-top: 0.5rem;
+      color: var(--color-text-muted);
+    }
+
+    .notice-box li {
+      margin-bottom: 0.35rem;
+    }
+
+    .danger-notice {
+      background-color: var(--color-danger-bg);
+      border-color: var(--color-danger-border);
+      color: #991B1B;
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--color-text);
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--color-border);
+      border-radius: 8px;
+      font-size: 1rem;
+      color: var(--color-text);
+      background-color: #FAFAFA;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      background-color: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(23, 53, 44, 0.12);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.85rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      border: none;
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--color-primary-light);
+    }
+
+    .btn-danger {
+      background-color: var(--color-danger);
+      color: #FFFFFF;
+    }
+
+    .btn-danger:hover {
+      background-color: #B91C1C;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .alert {
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+
+    .alert-danger {
+      background-color: var(--color-danger-bg);
+      border: 1px solid var(--color-danger-border);
+      color: #991B1B;
+    }
+
+    .alert-success {
+      background-color: var(--color-success-bg);
+      border: 1px solid var(--color-success-border);
+      color: #166534;
+    }
+
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .step-pill {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .step-pill.active {
+      color: var(--color-primary);
+      border-bottom: 2px solid var(--color-primary);
+      padding-bottom: 0.75rem;
+      margin-bottom: -0.75rem;
+    }
+
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+      color: var(--color-text);
+    }
+
+    .checkbox-container input {
+      margin-top: 0.2rem;
+    }
+
+    .user-badge {
+      background-color: #F1F5F9;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.9rem;
+    }
+
+    .user-badge strong {
+      color: var(--color-primary);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .footer a {
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand-mark">VANVAS</div>
+      <div class="brand-subtitle">The Sorted Club</div>
+      <h1 class="header-title">Account & Data Deletion Portal</h1>
+    </div>
+
+    <div class="content">
+      <div class="step-indicator">
+        <span id="pill-step-1" class="step-pill active">1. Identity Verification</span>
+        <span id="pill-step-2" class="step-pill">2. Confirm Purge</span>
+        <span id="pill-step-3" class="step-pill">3. Complete</span>
+      </div>
+
+      <div id="error-alert" class="alert alert-danger" role="alert"></div>
+      <div id="success-alert" class="alert alert-success" role="alert"></div>
+
+      <!-- STEP 1: AUTHENTICATION -->
+      <div id="step-1" class="step active">
+        <div class="notice-box">
+          <div class="section-title">What happens when you delete your account?</div>
+          <p>Submitting this request will <strong>permanently and irreversibly erase</strong> your entire profile and all personal travel assets from the VANVAS platform:</p>
+          <ul>
+            <li>User profile, email address, password hashes, and session authentication tokens.</li>
+            <li>Custom saved itineraries, day schedules, and travel journals.</li>
+            <li>Dynamic Replanner adjustments, pacing history, and GPS waypoints.</li>
+            <li>Travel Ledger entries, expense receipts, split ledgers, and settlement payments.</li>
+            <li>Uploaded profile photos and customized avatars.</li>
+            <li>Saved destination bookmarks, reviews, and travel circle memberships.</li>
+          </ul>
+        </div>
+
+        <p style="font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 1.25rem;">
+          To prevent unauthorized requests, please authenticate with your existing account credentials.
+        </p>
+
+        <form id="auth-form" onsubmit="handleAuth(event)">
+          <div class="form-group">
+            <label for="email">Account Email Address</label>
+            <input type="email" id="email" required placeholder="you@domain.com" autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label for="password">Account Password</label>
+            <input type="password" id="password" required placeholder="Enter your password" autocomplete="current-password">
+          </div>
+
+          <button type="submit" id="auth-btn" class="btn btn-primary">
+            Verify Identity & Review Data
+          </button>
+        </form>
+      </div>
+
+      <!-- STEP 2: CONFIRMATION -->
+      <div id="step-2" class="step">
+        <div class="user-badge" id="authenticated-user-badge">
+          Verified Account: <strong id="user-display-email"></strong>
+        </div>
+
+        <div class="danger-notice">
+          ⚠️ <strong>WARNING:</strong> This action cannot be undone. Once deleted, your expeditions, travel receipts, and historical data cannot be recovered by our team.
+        </div>
+
+        <div class="form-group">
+          <label for="confirm-password">Re-enter Password to Confirm Final Deletion</label>
+          <input type="password" id="confirm-password" placeholder="Confirm your account password" autocomplete="current-password">
+        </div>
+
+        <label class="checkbox-container">
+          <input type="checkbox" id="confirm-checkbox" onchange="toggleDeleteButton()">
+          <span>I understand that this action is immediate, permanent, and irreversible. All my data will be permanently wiped from the active VANVAS database.</span>
+        </label>
+
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn" style="background-color: #E2E8F0; color: #334155; width: 40%;" onclick="cancelToStep1()">
+            Cancel
+          </button>
+          <button type="button" id="delete-btn" class="btn btn-danger" style="width: 60%;" disabled onclick="executeDeletion()">
+            Permanently Delete Account
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: DELETION COMPLETE -->
+      <div id="step-3" class="step">
+        <div class="notice-box" style="border-left: 4px solid var(--color-success); background-color: var(--color-success-bg);">
+          <div class="section-title" style="color: var(--color-success);">Account Successfully Deleted</div>
+          <p id="deletion-message">Your VANVAS account and all associated personal travel records have been permanently purged from our servers.</p>
+        </div>
+
+        <p style="font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 1.5rem;">
+          Your authentication token has been cleared from browser memory. You may safely close this window or return to the main portal.
+        </p>
+
+        <a href="https://vanvasai.vercel.app" class="btn btn-primary" style="text-decoration: none;">
+          Return to VANVAS Home
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>VANVAS by The Sorted Club &bull; <a href="https://vanvasai.vercel.app/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> &bull; Support: support@vanvas.com</p>
+    <p style="margin-top: 0.25rem;">Compliant with Google Play Store User Data and Account Deletion Policies.</p>
+  </div>
+
+  <script>
+    // State stored strictly in memory - NEVER in localStorage/cookies
+    let sessionState = {
+      accessToken: null,
+      email: null,
+      userId: null
+    };
+
+    const API_BASE = "https://vanvas-api.onrender.com";
+
+    function showError(message) {
+      const err = document.getElementById("error-alert");
+      err.textContent = message;
+      err.style.display = "block";
+      document.getElementById("success-alert").style.display = "none";
+    }
+
+    function clearAlerts() {
+      document.getElementById("error-alert").style.display = "none";
+      document.getElementById("success-alert").style.display = "none";
+    }
+
+    function switchStep(stepNum) {
+      clearAlerts();
+      for (let i = 1; i <= 3; i++) {
+        document.getElementById(`step-${i}`).classList.remove("active");
+        document.getElementById(`pill-step-${i}`).classList.remove("active");
+      }
+      document.getElementById(`step-${stepNum}`).classList.add("active");
+      document.getElementById(`pill-step-${stepNum}`).classList.add("active");
+    }
+
+    async function handleAuth(event) {
+      event.preventDefault();
+      clearAlerts();
+
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      const authBtn = document.getElementById("auth-btn");
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!email || !password) {
+        showError("Please enter both your email address and password.");
+        return;
+      }
+
+      authBtn.disabled = true;
+      authBtn.textContent = "Verifying credentials...";
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Authentication failed. Please verify your credentials.");
+        }
+
+        // Store token in memory only
+        sessionState.accessToken = data.access_token;
+        sessionState.email = email;
+        sessionState.userId = data.user ? data.user.id : null;
+
+        // Populate step 2
+        document.getElementById("user-display-email").textContent = email;
+        document.getElementById("confirm-password").value = password; // Pre-fill with confirmed password for convenience
+        switchStep(2);
+      } catch (err) {
+        showError(err.message || "Unable to connect to the authentication server. Please try again.");
+      } finally {
+        authBtn.disabled = false;
+        authBtn.textContent = "Verify Identity & Review Data";
+      }
+    }
+
+    function toggleDeleteButton() {
+      const isChecked = document.getElementById("confirm-checkbox").checked;
+      document.getElementById("delete-btn").disabled = !isChecked;
+    }
+
+    function cancelToStep1() {
+      // Clear memory tokens on cancel
+      sessionState = { accessToken: null, email: null, userId: null };
+      document.getElementById("password").value = "";
+      document.getElementById("confirm-password").value = "";
+      document.getElementById("confirm-checkbox").checked = false;
+      toggleDeleteButton();
+      switchStep(1);
+    }
+
+    async function executeDeletion() {
+      if (!sessionState.accessToken) {
+        showError("Session expired or missing. Please verify your identity again.");
+        switchStep(1);
+        return;
+      }
+
+      const confirmPass = document.getElementById("confirm-password").value;
+      const deleteBtn = document.getElementById("delete-btn");
+
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "Deleting account...";
+      clearAlerts();
+
+      try {
+        const payload = confirmPass ? { password: confirmPass } : null;
+
+        const response = await fetch(`${API_BASE}/api/v1/auth/account`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${sessionState.accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: payload ? JSON.stringify(payload) : undefined
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Account deletion request failed. Please check your password.");
+        }
+
+        // Deletion successful - purge memory state immediately
+        sessionState = { accessToken: null, email: null, userId: null };
+        document.getElementById("password").value = "";
+        document.getElementById("confirm-password").value = "";
+
+        if (data.message) {
+          document.getElementById("deletion-message").textContent = data.message;
+        }
+
+        switchStep(3);
+      } catch (err) {
+        showError(err.message || "An unexpected error occurred while deleting your account.");
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "Permanently Delete Account";
+      }
+    }
+  </script>
+</body>
+</html>

@@ -36,7 +36,7 @@ class User(Base):
     trips = relationship("Trip", back_populates="creator", cascade="all, delete-orphan")
     memberships = relationship("TripMember", back_populates="user", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="user", cascade="all, delete-orphan")
-    expenses = relationship("Expense", back_populates="user")
+    expenses = relationship("Expense", back_populates="user", cascade="all, delete-orphan")
     saved_places = relationship("SavedPlace", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")

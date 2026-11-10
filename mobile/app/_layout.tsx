@@ -12,7 +12,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <ThemeProvider>
-          <StatusBar style="light" backgroundColor={theme.colors.forestDark} />
+          <StatusBar style="light" />
           <ConnectionBanner />
           <Stack
             screenOptions={{
