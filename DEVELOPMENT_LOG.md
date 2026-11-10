@@ -6,7 +6,7 @@
 ---
 
 ### [2026-11-10] Final Stabilization & Owner Release Handoff: Single-Owner Deletion Teardown & Account-Scoped Offline Isolation
-- **Commit:** Pending
+- **Commit:** `a969a9f`
 - **Objective:** Eliminate duplicate post-deletion cleanup between `api.ts` and `AuthContext.tsx`, ensure robust fail-safe local error recovery where server success never falsely reports local SQLite errors, introduce additive SQLite schema migration adding `user_id` to `expenses_cache` and `offline_mutation_queue`, prevent cross-account offline mutation replay, ensure user-scoped cache erasure, and add automated regression test suite.
 - **Changes Made:**
   - In `mobile/src/services/api.ts`: Refactored `deleteAccount` to strictly call the backend DELETE `/auth/account` endpoint and return the response, removing redundant SecureStore/SQLite cleanup. Scoped `getExpenses`, `addExpense`, `deleteExpense`, and `syncPendingOfflineActions` to `currentUser.id`.

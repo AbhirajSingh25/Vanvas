@@ -6,7 +6,7 @@
 ---
 
 ## 1. Git State & Checkpoint
-- **Latest Verified Commit:** Commit `df29183` on `main`
+- **Latest Verified Commit:** Commit `a969a9f` on `main`
 - **Current Branch:** `main`
 - **Native Version:** `0.4.0` (`versionCode 4`, package: `ai.vanvas.app`)
 - **Runtime Stack:** Expo SDK 58.0.23, React Native 0.88.1, React 19.3.0, Node.js 22.14 LTS
