@@ -1,7 +1,7 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Mobile Native 0.4.0 (Expo SDK 58 / RN 0.88) / Target SDK 36 / Play Store Ready | *Branch:* `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Commit `bd54384` / Mobile Native 0.4.0 (Expo SDK 58 / RN 0.88) / Target SDK 36 / Play Store Ready | *Branch:* `main` | *Working Tree:* Clean
 
 ---
 

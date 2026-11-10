@@ -6,7 +6,7 @@
 ---
 
 ### [2026-11-10] Native Production Release, Expo SDK 58 Modernization & Standalone Deletion Portal
-- **Commit:** Pending
+- **Commit:** `bd54384`
 - **Objective:** Modernize native application to Expo SDK 58, React Native 0.88.1, and React 19.3.0, verify Android API 36 compilation with compileSdkVersion 37, bulletproof the release signing CI pipeline, cascade account deletion in backend, build standalone account deletion site, and maintain 100% frontend freeze.
 - **Changes Made:**
   - Modernized `mobile/package.json` to authoritative Expo SDK 58 dependencies (`expo ~58.0.23`, `react-native 0.88.1`, `react 19.3.0`, `react-native-worklets 0.13.0`, `expo-build-properties ~58.0.12`).
