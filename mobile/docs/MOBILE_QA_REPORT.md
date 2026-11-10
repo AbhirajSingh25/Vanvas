@@ -58,8 +58,8 @@ Release artifacts have been segregated:
   1. Traveler taps **Dynamic Replan** in `trip/[id].tsx`.
   2. Selects *"Mountain Rain / Road Block"*. API replan trigger is dispatched with fallback to local schedule shift.
   3. Traveler taps **Log Expense**: Enters "Chai & Tingmo at Kaza Market", ₹450, Category: Food.
-  4. Expense is immediately persisted into SQLite `expenses_cache` and budget spent amount is updated live without waiting for server response.
-  5. Action is stored in `offline_mutation_queue` to replay on network recovery.
+  4. Expense is immediately persisted into SQLite `expenses_cache` tagged with the traveler's `user_id`, and budget spent amount is updated live without waiting for server response.
+  5. Action is stored in `offline_mutation_queue` tagged with `user_id`. When connection resumes, queue replay strictly syncs mutations matching the authenticated user, preventing cross-account data leaks.
 
 ### Journey 11: Nearby Mountain Radar
 - **Scenario:** Traveler opens Nearby Radar from Home screen or Explore tab.
@@ -75,12 +75,15 @@ Release artifacts have been segregated:
   1. In-app via native modal on Profile tab (`mobile/app/(tabs)/profile.tsx`) or via standalone web portal (`account-deletion-site/index.html`).
   2. In-app modal clearly enumerates data destruction: user profile, custom trips, itineraries, Travel Ledger expenses, solo matches, and uploaded avatar blobs.
   3. Re-entry of current password is strictly enforced (empty, whitespace, or invalid passwords rejected with 400/422). Confirmation checkbox prevents accidental triggers.
-  4. On successful deletion:
-     - SQLite user data is wiped cleanly via `purgeUserAccountData` (trips, cached expenses, offline mutation queue cleared without dropping destination catalogs).
-     - SecureStore auth tokens and active user credentials purged.
+  4. Duplicate deletion submissions during in-flight network requests are strictly blocked.
+  5. Cancelling the deletion modal clears entered password, error banner, and confirmation checkbox.
+  6. Single-owner post-deletion teardown in `AuthContext`:
+     - Once backend confirms deletion, `secureStorage.clearSession()` and React state clearing run in `try/finally`, guaranteeing user session teardown.
+     - Local SQLite purge errors fail open and do not falsely report server rejection after server-side deletion has already succeeded.
+     - `purgeUserAccountData(userId)` purges only the deleted user's trips, trip details, expenses, and mutation queue records, keeping public catalogues and other accounts' data intact.
      - User session redirected to Explore tab with native confirmation alert.
-  5. Backend cascades deletion across all user data tables and purges remote avatars in Cloudinary/S3 without false-positive success reports.
-  6. 22 automated governance tests verify this behavior in `backend/tests/test_account_deletion_governance.py`.
+  7. Backend cascades deletion across all user data tables and purges remote avatars in Cloudinary/S3 without false-positive success reports.
+  8. Verified by 22/22 automated backend governance tests (`test_account_deletion_governance.py`) and 6/6 mobile offline isolation tests (`scripts/test_offline_isolation_and_account_deletion.mjs`).
 
 ---
 

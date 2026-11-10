@@ -90,8 +90,10 @@
 - [x] Expo Doctor validation clean.
 - [x] Dual-platform integrity verified (`frontend/` completely untouched).
 - [x] Zero artwork generation calls made (respecting quota window).
-- [x] Account deletion backend erasure, boto3 dependency & cascading foreign-key cleanup verified (22/22 tests passed).
-- [x] Native in-app account deletion flow implemented with password confirmation, irreversible data warning, and local SQLite/SecureStore private data cleanup (`purgeUserAccountData`).
+- [x] Account deletion backend erasure, boto3 dependency & cascading foreign-key cleanup verified (22/22 tests passed; full backend suite 748/749 passed).
+- [x] Single-ownership post-deletion teardown established in `AuthContext`: server confirmation guarantees session and React state clearing regardless of local SQLite status.
+- [x] Account-scoped offline SQLite storage & migrations: `user_id` added to expenses and mutation queues, blocking cross-account mutation replay (6/6 tests passed).
+- [x] Native in-app account deletion flow implemented with password confirmation, irreversible data warning, cancellation state reset, and duplicate tap protection.
 - [x] Standalone account deletion portal authored in `account-deletion-site/`.
 - [x] Standalone Debug APK generated via CI (`VANVAS-Android-v0.4.0-code4-debug.apk`).
 - [x] Validation AAB generated via CI (`VANVAS-Android-v0.4.0-code4-validation.aab`).

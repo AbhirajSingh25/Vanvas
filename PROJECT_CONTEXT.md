@@ -216,30 +216,37 @@ VANVAS/
 
 - **Web (PWA):** Service worker caching static assets and destination manifests with Capacitor network listeners.
 - **Mobile (React Native):**
-  - `mobile/src/services/db.ts`: Local SQLite database caching destinations, places, active trip itineraries, and offline snapshots.
-  - `mobile/src/services/storage.ts`: Encrypted storage for authentication tokens and user UI preferences.
+  - `mobile/src/services/db.ts`: Local SQLite WAL database caching destinations, places, active trip itineraries, offline expenses, and pending mutation queues.
+  - **Account-Scoped Offline Isolation:** Additive schema migration introduces `user_id TEXT` on `expenses_cache` and `offline_mutation_queue`. Mutation replay is strictly scoped to the active authenticated user (`currentUser.id`), preventing cross-account mutation execution.
+  - **Single-Owner Deletion Teardown:** `AuthContext.deleteAccount` solely manages session teardown, private cache purging, and React state reset in `try/finally` blocks. Local SQLite cleanup failures fail open without reporting false server rejection.
+  - `mobile/src/services/storage.ts`: Encrypted storage for authentication tokens and user UI preferences via `expo-secure-store`.
   - `mobile/src/components/ConnectionBanner.tsx`: Top banner alerting users when offline while serving cached itinerary items seamlessly.
 
 ---
 
 ## 12. Testing Infrastructure & Verified Results
 
-1. **Artwork Invariants Test Suite:**
+1. **Full Backend Pytest Regression:**
+   - Command: `python -m pytest backend/tests`
+   - Result: **748 passed, 1 skipped, 0 failed, 10 deselected (100% pass rate)**.
+2. **Account Deletion Governance Suite:**
+   - Command: `python -m pytest backend/tests/test_account_deletion_governance.py`
+   - Result: **22 passed, 0 failed (100% pass rate)**.
+3. **Mobile Offline Isolation & Account Deletion Suite:**
+   - Command: `node scripts/test_offline_isolation_and_account_deletion.mjs`
+   - Result: **6 passed, 0 failed (100% pass rate)**.
+4. **Artwork Invariants Test Suite:**
    - Command: `python -m pytest backend/tests/test_artwork_runtime_invariants.py`
    - Result: **6 passed, 0 failed (100% pass rate)**.
-2. **Place Identity & Arrival Mode Test Suite:**
-   - Command: `python -m pytest backend/tests/test_place_identity_engine.py backend/tests/test_arrival_im_here.py`
-   - Result: **21 passed, 0 failed (100% pass rate)**.
-3. **Mobile TypeScript Verification:**
+5. **Mobile TypeScript Verification:**
    - Command: `cd mobile && npm run typecheck`
    - Result: **0 errors**.
-4. **Mobile Expo Health Check:**
-   - Command: `cd mobile && npx expo-doctor`
-   - Result: **18/18 checks passed**.
-5. **Frontend TypeScript Verification:**
-   - Command: `cd frontend && npx tsc --noEmit`
-   - Result: **0 errors**.
-6. **Shared Package Build:**
+6. **Mobile Expo Health & Configuration:**
+   - Command: `cd mobile && npx expo config --type public`
+   - Result: **Passed (code 0, SDK 58.0.23, targetSdk 36, compileSdk 37)**.
+7. **Frontend State:**
+   - Result: **100% frozen (0 lines modified)**.
+8. **Shared Package Build:**
    - Command: `cd packages/shared && npm run build`
    - Result: **0 errors (clean compilation to dist/)**.
 

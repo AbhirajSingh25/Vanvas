@@ -5,6 +5,40 @@
 
 ---
 
+### [2026-11-10] Final Stabilization & Owner Release Handoff: Single-Owner Deletion Teardown & Account-Scoped Offline Isolation
+- **Commit:** Pending
+- **Objective:** Eliminate duplicate post-deletion cleanup between `api.ts` and `AuthContext.tsx`, ensure robust fail-safe local error recovery where server success never falsely reports local SQLite errors, introduce additive SQLite schema migration adding `user_id` to `expenses_cache` and `offline_mutation_queue`, prevent cross-account offline mutation replay, ensure user-scoped cache erasure, and add automated regression test suite.
+- **Changes Made:**
+  - In `mobile/src/services/api.ts`: Refactored `deleteAccount` to strictly call the backend DELETE `/auth/account` endpoint and return the response, removing redundant SecureStore/SQLite cleanup. Scoped `getExpenses`, `addExpense`, `deleteExpense`, and `syncPendingOfflineActions` to `currentUser.id`.
+  - In `mobile/src/context/AuthContext.tsx`: Established `AuthContext.deleteAccount` as the single owner of session teardown, private data purge, and React state reset. Wrapped SecureStore and React state clearing in `try/finally` so the user is always logged out upon confirmed server deletion, and encapsulated SQLite purge so local disk errors log a warning without reporting false server rejection.
+  - In `mobile/src/services/db.ts`: Introduced additive schema migration in `initSchema` checking `PRAGMA table_info` and adding `user_id TEXT` to `expenses_cache` and `offline_mutation_queue`. Scoped `cacheTripExpenses`, `getCachedTripExpenses`, `saveOfflineExpense`, `deleteOfflineExpense`, `queueOfflineMutation`, and `getPendingMutations` to `userId`. Updated `purgeUserAccountData(userId)` to delete only the specified user's private records without dropping other accounts' data or public destination catalogues.
+  - In `mobile/app/(tabs)/profile.tsx`: Added duplicate tap guard `if (isDeletingAccount) return;` and implemented `handleCancelDelete` to clear entered password, error banner, and confirmation checkbox on modal dismiss or cancel.
+  - Created automated test suite `scripts/test_offline_isolation_and_account_deletion.mjs` verifying all 6 isolation, migration, and teardown scenarios (100% passing).
+  - Maintained 100% strict freeze on `frontend/` (0 files modified).
+- **Files Affected:**
+  - `mobile/src/services/api.ts`
+  - `mobile/src/context/AuthContext.tsx`
+  - `mobile/src/services/db.ts`
+  - `mobile/app/(tabs)/profile.tsx`
+  - `scripts/test_offline_isolation_and_account_deletion.mjs`
+  - `CURRENT_STATE.md`
+  - `NEXT_SESSION.md`
+  - `PROJECT_CONTEXT.md`
+  - `DEVELOPMENT_LOG.md`
+  - `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md`
+  - `mobile/docs/MOBILE_QA_REPORT.md`
+- **Tests Executed:**
+  - `scripts/test_offline_isolation_and_account_deletion.mjs`: 6/6 passed (100%).
+  - `backend/tests/test_account_deletion_governance.py`: 22/22 passed (100%).
+  - Full backend pytest suite: 748 passed, 1 skipped, 0 failed, 10 deselected (100%).
+  - `cd mobile && npm run typecheck`: 0 errors.
+  - `cd mobile && npx expo config --type public`: Exited code 0.
+  - `cd packages/shared && npm run build`: 0 errors.
+  - `git diff --name-only frontend/`: 0 files modified (100% frozen).
+- **Remaining Issues:** 10 destination artwork entities await image-generation quota reset on November 13, 2026; production AAB signing and public portal deployment remain owner-blocked on credentials.
+
+---
+
 ### [2026-11-10] Final Privacy, Backend CI, boto3 Dependency & Play Store Compliance Completion
 - **Commit:** `df29183`
 - **Objective:** Fix backend boto3 dependency failure in GitHub Actions CI, harden remote avatar deletion against false positives and unconfigured storage providers, enforce mandatory password verification on account deletion, build native Profile account deletion and password change UI modals with private SQLite cleanup, and ensure full Play Store compliance.

@@ -51,6 +51,7 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
     CREATE TABLE IF NOT EXISTS expenses_cache (
       id TEXT PRIMARY KEY,
       trip_id TEXT NOT NULL,
+      user_id TEXT,
       title TEXT NOT NULL,
       amount REAL NOT NULL,
       category TEXT NOT NULL,
@@ -63,11 +64,31 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
 
     CREATE TABLE IF NOT EXISTS offline_mutation_queue (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
       action_type TEXT NOT NULL,
       payload_json TEXT NOT NULL,
       created_at INTEGER NOT NULL
     );
   `);
+
+  // Additive migration: ensure user_id column exists on legacy databases
+  try {
+    const expenseColumns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(expenses_cache)`);
+    if (!expenseColumns.some((col) => col.name === "user_id")) {
+      await db.execAsync(`ALTER TABLE expenses_cache ADD COLUMN user_id TEXT;`);
+    }
+  } catch (err) {
+    console.warn("[offlineDb] Schema migration warning on expenses_cache:", err);
+  }
+
+  try {
+    const queueColumns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(offline_mutation_queue)`);
+    if (!queueColumns.some((col) => col.name === "user_id")) {
+      await db.execAsync(`ALTER TABLE offline_mutation_queue ADD COLUMN user_id TEXT;`);
+    }
+  } catch (err) {
+    console.warn("[offlineDb] Schema migration warning on offline_mutation_queue:", err);
+  }
 }
 
 export const offlineDb = {
@@ -204,7 +225,9 @@ export const offlineDb = {
   async clearUserSessionCache(userId?: string): Promise<void> {
     const db = await getDb();
     if (!db) {
-      memoryKv.clear();
+      if (userId) {
+        memoryKv.delete(`user_trips_${userId}`);
+      }
       return;
     }
     if (userId) {
@@ -220,42 +243,97 @@ export const offlineDb = {
   async purgeUserAccountData(userId?: string): Promise<void> {
     const db = await getDb();
     if (!db) {
-      memoryKv.clear();
+      if (userId) {
+        memoryKv.delete(`user_trips_${userId}`);
+        for (const key of Array.from(memoryKv.keys())) {
+          if (key.startsWith(`trip_detail_${userId}_`) || key.startsWith(`expenses_${userId}_`)) {
+            memoryKv.delete(key);
+          }
+        }
+        const raw = memoryKv.get("offline_mutation_queue");
+        if (raw) {
+          try {
+            const list = JSON.parse(raw);
+            memoryKv.set(
+              "offline_mutation_queue",
+              JSON.stringify(list.filter((m: any) => m.user_id !== userId))
+            );
+          } catch {
+            memoryKv.delete("offline_mutation_queue");
+          }
+        }
+      } else {
+        const dests = memoryKv.get("destinations");
+        const details = Array.from(memoryKv.entries()).filter(([k]) => k.startsWith("dest_detail_"));
+        memoryKv.clear();
+        if (dests) memoryKv.set("destinations", dests);
+        for (const [k, v] of details) memoryKv.set(k, v);
+      }
       return;
     }
+
     await db.withTransactionAsync(async () => {
       if (userId) {
         await db.runAsync(`DELETE FROM user_trips_cache WHERE user_id = ?`, userId);
         await db.runAsync(`DELETE FROM trip_details_cache WHERE user_id = ?`, userId);
+        await db.runAsync(`DELETE FROM expenses_cache WHERE user_id = ?`, userId);
+        await db.runAsync(`DELETE FROM offline_mutation_queue WHERE user_id = ?`, userId);
       } else {
-        await db.runAsync(`DELETE FROM user_trips_cache`);
-        await db.runAsync(`DELETE FROM trip_details_cache`);
+        await db.runAsync(`DELETE FROM user_trips_cache WHERE user_id IS NULL`);
+        await db.runAsync(`DELETE FROM trip_details_cache WHERE user_id IS NULL`);
+        await db.runAsync(`DELETE FROM expenses_cache WHERE user_id IS NULL`);
+        await db.runAsync(`DELETE FROM offline_mutation_queue WHERE user_id IS NULL`);
       }
-      // Clear offline mutation queue to prevent resurrecting deleted user operations
-      await db.runAsync(`DELETE FROM offline_mutation_queue`);
-      // Clear local expenses cache
-      await db.runAsync(`DELETE FROM expenses_cache`);
     });
-    // Clear in-memory keys
-    memoryKv.clear();
+
+    if (userId) {
+      memoryKv.delete(`user_trips_${userId}`);
+      for (const key of Array.from(memoryKv.keys())) {
+        if (key.startsWith(`trip_detail_${userId}_`) || key.startsWith(`expenses_${userId}_`)) {
+          memoryKv.delete(key);
+        }
+      }
+      const raw = memoryKv.get("offline_mutation_queue");
+      if (raw) {
+        try {
+          const list = JSON.parse(raw);
+          memoryKv.set(
+            "offline_mutation_queue",
+            JSON.stringify(list.filter((m: any) => m.user_id !== userId))
+          );
+        } catch {
+          memoryKv.delete("offline_mutation_queue");
+        }
+      }
+    }
   },
 
   // --- Offline Expenses & Travel Ledger ---
-  async cacheTripExpenses(tripId: string, expenses: Expense[]): Promise<void> {
+  async cacheTripExpenses(tripId: string, expenses: Expense[], userId?: string): Promise<void> {
     const now = Date.now();
     const db = await getDb();
     if (!db) {
-      memoryKv.set(`expenses_${tripId}`, JSON.stringify(expenses));
+      const key = userId ? `expenses_${userId}_${tripId}` : `expenses_${tripId}`;
+      memoryKv.set(key, JSON.stringify(expenses));
       return;
     }
     await db.withTransactionAsync(async () => {
-      // Clear previously synced expenses for this trip to avoid duplicates
-      await db.runAsync(`DELETE FROM expenses_cache WHERE trip_id = ? AND sync_status = 'synced'`, tripId);
+      // Clear previously synced expenses for this trip and this user to avoid duplicates
+      if (userId) {
+        await db.runAsync(
+          `DELETE FROM expenses_cache WHERE trip_id = ? AND sync_status = 'synced' AND (user_id = ? OR user_id IS NULL)`,
+          tripId,
+          userId
+        );
+      } else {
+        await db.runAsync(`DELETE FROM expenses_cache WHERE trip_id = ? AND sync_status = 'synced'`, tripId);
+      }
       for (const exp of expenses) {
         await db.runAsync(
-          `INSERT OR REPLACE INTO expenses_cache (id, trip_id, title, amount, category, date, notes, sync_status, data_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'synced', ?, ?)`,
+          `INSERT OR REPLACE INTO expenses_cache (id, trip_id, user_id, title, amount, category, date, notes, sync_status, data_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'synced', ?, ?)`,
           exp.id,
           tripId,
+          userId || null,
           exp.title,
           exp.amount,
           exp.category,
@@ -268,31 +346,39 @@ export const offlineDb = {
     });
   },
 
-  async getCachedTripExpenses(tripId: string): Promise<Expense[]> {
+  async getCachedTripExpenses(tripId: string, userId?: string): Promise<Expense[]> {
     const db = await getDb();
     if (!db) {
-      const raw = memoryKv.get(`expenses_${tripId}`);
+      const key = userId ? `expenses_${userId}_${tripId}` : `expenses_${tripId}`;
+      const raw = memoryKv.get(key) || (!userId ? null : memoryKv.get(`expenses_${tripId}`));
       return raw ? JSON.parse(raw) : [];
     }
-    const rows = await db.getAllAsync<{ data_json: string }>(
-      `SELECT data_json FROM expenses_cache WHERE trip_id = ? ORDER BY date DESC, updated_at DESC`,
-      tripId
-    );
+    let query = `SELECT data_json FROM expenses_cache WHERE trip_id = ?`;
+    const params: any[] = [tripId];
+    if (userId) {
+      query += ` AND (user_id = ? OR user_id IS NULL)`;
+      params.push(userId);
+    }
+    query += ` ORDER BY date DESC, updated_at DESC`;
+    const rows = await db.getAllAsync<{ data_json: string }>(query, ...params);
     return rows.map((r) => JSON.parse(r.data_json));
   },
 
-  async saveOfflineExpense(tripId: string, expense: Expense, isPendingSync = false): Promise<void> {
+  async saveOfflineExpense(tripId: string, expense: Expense, isPendingSync = false, userId?: string): Promise<void> {
     const now = Date.now();
     const db = await getDb();
     if (!db) {
-      const existing = await this.getCachedTripExpenses(tripId);
-      memoryKv.set(`expenses_${tripId}`, JSON.stringify([expense, ...existing]));
+      const key = userId ? `expenses_${userId}_${tripId}` : `expenses_${tripId}`;
+      const raw = memoryKv.get(key);
+      const existing: Expense[] = raw ? JSON.parse(raw) : [];
+      memoryKv.set(key, JSON.stringify([expense, ...existing.filter((e) => e.id !== expense.id)]));
       return;
     }
     await db.runAsync(
-      `INSERT OR REPLACE INTO expenses_cache (id, trip_id, title, amount, category, date, notes, sync_status, data_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT OR REPLACE INTO expenses_cache (id, trip_id, user_id, title, amount, category, date, notes, sync_status, data_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       expense.id,
       tripId,
+      userId || null,
       expense.title,
       expense.amount,
       expense.category,
@@ -304,40 +390,82 @@ export const offlineDb = {
     );
   },
 
-  async deleteOfflineExpense(tripId: string, expenseId: string): Promise<void> {
+  async deleteOfflineExpense(tripId: string, expenseId: string, userId?: string): Promise<void> {
     const db = await getDb();
     if (!db) {
-      const existing = await this.getCachedTripExpenses(tripId);
-      memoryKv.set(`expenses_${tripId}`, JSON.stringify(existing.filter((e) => e.id !== expenseId)));
+      const key = userId ? `expenses_${userId}_${tripId}` : `expenses_${tripId}`;
+      const raw = memoryKv.get(key);
+      if (raw) {
+        const existing: Expense[] = JSON.parse(raw);
+        memoryKv.set(key, JSON.stringify(existing.filter((e) => e.id !== expenseId)));
+      }
       return;
     }
-    await db.runAsync(`DELETE FROM expenses_cache WHERE id = ?`, expenseId);
+    if (userId) {
+      await db.runAsync(`DELETE FROM expenses_cache WHERE id = ? AND (user_id = ? OR user_id IS NULL)`, expenseId, userId);
+    } else {
+      await db.runAsync(`DELETE FROM expenses_cache WHERE id = ?`, expenseId);
+    }
   },
 
   // --- Offline Mutation Queue ---
-  async queueOfflineMutation(actionType: string, payload: any): Promise<void> {
+  async queueOfflineMutation(actionType: string, payload: any, userId?: string): Promise<void> {
     const db = await getDb();
     const now = Date.now();
-    if (!db) return;
+    if (!db) {
+      const raw = memoryKv.get("offline_mutation_queue");
+      const list = raw ? JSON.parse(raw) : [];
+      const nextId = list.length > 0 ? Math.max(...list.map((m: any) => m.id)) + 1 : 1;
+      list.push({
+        id: nextId,
+        user_id: userId || null,
+        action_type: actionType,
+        payload_json: JSON.stringify(payload),
+        created_at: now,
+      });
+      memoryKv.set("offline_mutation_queue", JSON.stringify(list));
+      return;
+    }
     await db.runAsync(
-      `INSERT INTO offline_mutation_queue (action_type, payload_json, created_at) VALUES (?, ?, ?)`,
+      `INSERT INTO offline_mutation_queue (user_id, action_type, payload_json, created_at) VALUES (?, ?, ?, ?)`,
+      userId || null,
       actionType,
       JSON.stringify(payload),
       now
     );
   },
 
-  async getPendingMutations(): Promise<Array<{ id: number; action_type: string; payload_json: string; created_at: number }>> {
+  async getPendingMutations(userId?: string): Promise<Array<{ id: number; user_id?: string | null; action_type: string; payload_json: string; created_at: number }>> {
     const db = await getDb();
-    if (!db) return [];
-    return db.getAllAsync<{ id: number; action_type: string; payload_json: string; created_at: number }>(
+    if (!db) {
+      const raw = memoryKv.get("offline_mutation_queue");
+      const list: Array<{ id: number; user_id?: string | null; action_type: string; payload_json: string; created_at: number }> = raw ? JSON.parse(raw) : [];
+      if (userId) {
+        return list.filter((m) => m.user_id === userId);
+      }
+      return list;
+    }
+    if (userId) {
+      return db.getAllAsync<{ id: number; user_id?: string | null; action_type: string; payload_json: string; created_at: number }>(
+        `SELECT * FROM offline_mutation_queue WHERE user_id = ? ORDER BY created_at ASC`,
+        userId
+      );
+    }
+    return db.getAllAsync<{ id: number; user_id?: string | null; action_type: string; payload_json: string; created_at: number }>(
       `SELECT * FROM offline_mutation_queue ORDER BY created_at ASC`
     );
   },
 
   async removeMutation(id: number): Promise<void> {
     const db = await getDb();
-    if (!db) return;
+    if (!db) {
+      const raw = memoryKv.get("offline_mutation_queue");
+      if (raw) {
+        const list = JSON.parse(raw);
+        memoryKv.set("offline_mutation_queue", JSON.stringify(list.filter((m: any) => m.id !== id)));
+      }
+      return;
+    }
     await db.runAsync(`DELETE FROM offline_mutation_queue WHERE id = ?`, id);
   },
 };

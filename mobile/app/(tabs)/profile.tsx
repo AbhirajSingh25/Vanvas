@@ -121,7 +121,16 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleCancelDelete = () => {
+    if (isDeletingAccount) return;
+    setIsDeleteModalVisible(false);
+    setDeletePassword("");
+    setIsDeleteConfirmed(false);
+    setDeleteError(null);
+  };
+
   const handleExecuteDeleteAccount = async () => {
+    if (isDeletingAccount) return;
     if (!deletePassword.trim()) {
       setDeleteError("Please enter your current password to confirm deletion.");
       return;
@@ -470,9 +479,7 @@ export default function ProfileScreen() {
         visible={isDeleteModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => {
-          if (!isDeletingAccount) setIsDeleteModalVisible(false);
-        }}
+        onRequestClose={handleCancelDelete}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -532,7 +539,7 @@ export default function ProfileScreen() {
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.cancelButton}
-                onPress={() => setIsDeleteModalVisible(false)}
+                onPress={handleCancelDelete}
                 disabled={isDeletingAccount}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>

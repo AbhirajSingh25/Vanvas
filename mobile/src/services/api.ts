@@ -287,7 +287,7 @@ export const nativeApi = {
   },
 
   async deleteAccount(password: string): Promise<{ message: string; user_id: string; status: string }> {
-    const res = await fetchWithRetry<{ message: string; user_id: string; status: string }>(
+    return fetchWithRetry<{ message: string; user_id: string; status: string }>(
       "/auth/account",
       {
         method: "DELETE",
@@ -295,12 +295,6 @@ export const nativeApi = {
       },
       false
     );
-    const current = await secureStorage.getUserData<User>();
-    await secureStorage.clearSession();
-    if (current?.id) {
-      await offlineDb.purgeUserAccountData(current.id);
-    }
-    return res;
   },
 
   // --- Destinations & Offline Cache ---
@@ -533,16 +527,17 @@ export const nativeApi = {
   },
 
   async getExpenses(tripId: string): Promise<Expense[]> {
+    const user = await secureStorage.getUserData<User>();
     try {
       const live = await fetchWithRetry<Expense[]>(`/trips/${tripId}/expenses`, {}, true, 1);
       if (live) {
-        await offlineDb.cacheTripExpenses(tripId, live);
+        await offlineDb.cacheTripExpenses(tripId, live, user?.id);
         return live;
       }
     } catch {
       // Fall through to offline cache
     }
-    return offlineDb.getCachedTripExpenses(tripId);
+    return offlineDb.getCachedTripExpenses(tripId, user?.id);
   },
 
   async addExpense(tripId: string, expense: {
@@ -552,6 +547,7 @@ export const nativeApi = {
     date: string;
     notes?: string;
   }): Promise<Expense> {
+    const user = await secureStorage.getUserData<User>();
     try {
       const created = await fetchWithRetry<Expense>(
         `/trips/${tripId}/expenses`,
@@ -561,7 +557,7 @@ export const nativeApi = {
         },
         false
       );
-      await offlineDb.saveOfflineExpense(tripId, created, false);
+      await offlineDb.saveOfflineExpense(tripId, created, false, user?.id);
       return created;
     } catch {
       // When offline in high-altitude zones with no reception, generate local offline expense
@@ -574,13 +570,14 @@ export const nativeApi = {
         date: expense.date,
         notes: expense.notes,
       };
-      await offlineDb.saveOfflineExpense(tripId, offlineExpense, true);
-      await offlineDb.queueOfflineMutation("add_expense", { tripId, expense });
+      await offlineDb.saveOfflineExpense(tripId, offlineExpense, true, user?.id);
+      await offlineDb.queueOfflineMutation("add_expense", { tripId, expense }, user?.id);
       return offlineExpense;
     }
   },
 
   async deleteExpense(tripId: string, expenseId: string): Promise<void> {
+    const user = await secureStorage.getUserData<User>();
     try {
       if (!expenseId.startsWith("offline_")) {
         await fetchWithRetry(
@@ -590,17 +587,27 @@ export const nativeApi = {
         );
       }
     } catch {
-      await offlineDb.queueOfflineMutation("delete_expense", { tripId, expenseId });
+      await offlineDb.queueOfflineMutation("delete_expense", { tripId, expenseId }, user?.id);
     }
-    await offlineDb.deleteOfflineExpense(tripId, expenseId);
+    await offlineDb.deleteOfflineExpense(tripId, expenseId, user?.id);
   },
 
   async syncPendingOfflineActions(): Promise<number> {
-    const pending = await offlineDb.getPendingMutations();
+    const currentUser = await secureStorage.getUserData<User>();
+    if (!currentUser?.id) {
+      // Never replay offline mutations without an authenticated user session
+      return 0;
+    }
+
+    const pending = await offlineDb.getPendingMutations(currentUser.id);
     if (pending.length === 0) return 0;
     let syncedCount = 0;
 
     for (const item of pending) {
+      // Safety guard: reject mutations not matching the current authenticated user
+      if (item.user_id && item.user_id !== currentUser.id) {
+        continue;
+      }
       try {
         const payload = JSON.parse(item.payload_json);
         if (item.action_type === "add_expense") {
