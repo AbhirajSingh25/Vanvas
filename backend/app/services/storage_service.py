@@ -270,11 +270,103 @@ class StorageService:
             )
 
     @classmethod
+    def _delete_cloudinary(cls, storage_key: str) -> bool:
+        """Deletes asset from Cloudinary via REST API destroying public_id."""
+        cloud_name = settings.CLOUDINARY_CLOUD_NAME
+        api_key = settings.CLOUDINARY_API_KEY
+        api_secret = settings.CLOUDINARY_API_SECRET
+        if not (cloud_name and api_key and api_secret):
+            return True
+
+        timestamp = int(time.time())
+        public_id = storage_key.replace(".webp", "").replace("/", "_")
+        params_to_sign = f"public_id={public_id}&timestamp={timestamp}{api_secret}"
+        signature = hashlib.sha1(params_to_sign.encode("utf-8")).hexdigest()
+
+        data = urllib.parse.urlencode({
+            "public_id": public_id,
+            "timestamp": str(timestamp),
+            "api_key": api_key,
+            "signature": signature
+        }).encode("utf-8")
+
+        url = f"https://api.cloudinary.com/v1_1/{cloud_name}/image/destroy"
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as res:
+                res_data = json.loads(res.read().decode("utf-8"))
+                result = res_data.get("result")
+                if result in ("ok", "not found"):
+                    logger.info(f"Cloudinary asset destroyed for public_id: {public_id}")
+                    return True
+                logger.warning(f"Cloudinary returned non-ok result during destroy: {result}")
+                return True
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return True
+            raise StorageServiceException(
+                code="PROFILE_STORAGE_ERROR",
+                message=f"Cloudinary remote deletion failed: HTTP {e.code}"
+            )
+        except Exception as e:
+            logger.error(f"Cloudinary deletion error: {e}")
+            raise StorageServiceException(
+                code="PROFILE_STORAGE_ERROR",
+                message=f"Cloudinary remote deletion failed: {e}"
+            )
+
+    @classmethod
+    def _delete_s3(cls, storage_key: str) -> bool:
+        """Deletes object from S3 / R2 / MinIO."""
+        if not (settings.S3_BUCKET_NAME and settings.S3_ACCESS_KEY_ID and settings.S3_SECRET_ACCESS_KEY):
+            return True
+        try:
+            import boto3
+            clean_key = Path(storage_key).as_posix().lstrip("/").replace("..", "")
+            session = boto3.session.Session()
+            s3_client = session.client(
+                "s3",
+                region_name=settings.S3_REGION_NAME,
+                endpoint_url=settings.S3_ENDPOINT_URL or None,
+                aws_access_key_id=settings.S3_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
+            )
+            s3_client.delete_object(
+                Bucket=settings.S3_BUCKET_NAME,
+                Key=clean_key
+            )
+            logger.info(f"Deleted S3 object: {clean_key}")
+            return True
+        except Exception as e:
+            err_str = str(e).lower()
+            if "nosuchkey" in err_str or "notfound" in err_str or "404" in err_str:
+                return True
+            logger.error(f"S3 deletion error: {e}")
+            raise StorageServiceException(
+                code="PROFILE_STORAGE_ERROR",
+                message=f"S3 remote deletion failed: {e}"
+            )
+
+    @classmethod
     def delete_profile_photo(cls, storage_key: Optional[str], db: Optional[Any] = None) -> bool:
-        """Deletes avatar from persistent storage and durable database if key exists."""
+        """Deletes avatar from persistent storage, remote providers, and durable database if key exists."""
         if not storage_key:
             return True
         clean_key = Path(storage_key).as_posix().lstrip("/").replace("..", "")
+
+        # 1. Remote cloud asset deletion if configured
+        provider = cls.get_effective_provider()
+        if provider == "cloudinary" and (settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET):
+            cls._delete_cloudinary(clean_key)
+        elif provider == "s3" and (settings.S3_BUCKET_NAME and settings.S3_ACCESS_KEY_ID and settings.S3_SECRET_ACCESS_KEY):
+            cls._delete_s3(clean_key)
+
+        # 2. Local filesystem cache deletion
         try:
             upload_dir = Path(settings.STORAGE_UPLOAD_DIR)
             target_path = upload_dir / clean_key
@@ -284,7 +376,7 @@ class StorageService:
         except Exception as e:
             logger.warning(f"Could not delete local avatar file {storage_key}: {e}")
 
-        # Also purge from durable database store
+        # 3. Purge from durable database store
         try:
             from app.models.models import UserAvatarBlob
             from app.database.session import SessionLocal

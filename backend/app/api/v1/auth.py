@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.models import (
     User, UserPreference, EmailVerificationToken, EmailVerificationOTP, Trip, SavedPlace, Review, Booking,
-    Itinerary, Expense, ExpenseShare, SettlementPayment, ChecklistItem, TravellerMemory, MemoryObservation
+    Itinerary, Expense, ExpenseShare, SettlementPayment, ChecklistItem, TravellerMemory, MemoryObservation,
+    SoloMatch, SoloDirectMessage, TravelerBlock, TravelerReport, ReviewReport,
+    CircleActivityVote, CircleActivity, CircleMessage, TravelCircle, PaymentTransaction, MobilityProvider
 )
 from app.schemas.schemas import (
     UserCreate, UserLogin, UserResponse, TokenResponse,
@@ -883,22 +885,66 @@ def delete_account(
     user_id = current_user.id
     user_email = current_user.email
 
-    # 1. Clean up uploaded profile avatar asset from storage service if present
+    # 1. Clean up uploaded profile avatar asset from storage service (local and remote cloud)
     if current_user.avatar_storage_key:
         try:
             StorageService.delete_profile_photo(current_user.avatar_storage_key, db=db)
-        except Exception:
-            pass
+        except StorageServiceException as e:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Unable to delete cloud avatar assets: {e.message}. Account deletion aborted to prevent orphaned data."
+            )
 
-    # 2. Clean up expense shares and settlements referencing this user
-    db.query(ExpenseShare).filter(ExpenseShare.user_id == current_user.id).delete(synchronize_session=False)
-    db.query(SettlementPayment).filter(
-        (SettlementPayment.payer_user_id == current_user.id) | (SettlementPayment.receiver_user_id == current_user.id)
-    ).delete(synchronize_session=False)
+    try:
+        # 2. Clean up peer-to-peer / non-cascaded referencing records
+        # A. Ledger: Expense shares and settlements
+        db.query(ExpenseShare).filter(ExpenseShare.user_id == user_id).delete(synchronize_session=False)
+        db.query(SettlementPayment).filter(
+            (SettlementPayment.payer_user_id == user_id) | (SettlementPayment.receiver_user_id == user_id)
+        ).delete(synchronize_session=False)
 
-    # 3. Cascading delete on User model cleans up all owned trips, preferences, saved_places, reviews, bookings, conversations, memories, blobs
-    db.delete(current_user)
-    db.commit()
+        # B. Solo matching & direct messaging
+        db.query(SoloMatch).filter(
+            (SoloMatch.sender_user_id == user_id) | (SoloMatch.receiver_user_id == user_id)
+        ).delete(synchronize_session=False)
+        db.query(SoloDirectMessage).filter(
+            (SoloDirectMessage.sender_user_id == user_id) | (SoloDirectMessage.receiver_user_id == user_id)
+        ).delete(synchronize_session=False)
+
+        # C. Moderation blocks and reports
+        db.query(TravelerBlock).filter(
+            (TravelerBlock.blocker_user_id == user_id) | (TravelerBlock.blocked_user_id == user_id)
+        ).delete(synchronize_session=False)
+        db.query(TravelerReport).filter(
+            (TravelerReport.reporter_user_id == user_id) | (TravelerReport.reported_user_id == user_id)
+        ).delete(synchronize_session=False)
+        db.query(ReviewReport).filter(ReviewReport.reporter_user_id == user_id).delete(synchronize_session=False)
+
+        # D. Travel circles & group activities
+        db.query(CircleActivityVote).filter(CircleActivityVote.user_id == user_id).delete(synchronize_session=False)
+        db.query(CircleActivity).filter(CircleActivity.suggested_by_user_id == user_id).delete(synchronize_session=False)
+        # Anonymize circle messages to preserve group chat context for other travelers
+        db.query(CircleMessage).filter(CircleMessage.user_id == user_id).update(
+            {CircleMessage.user_id: None}, synchronize_session=False
+        )
+        # Delete travel circles created by this user
+        db.query(TravelCircle).filter(TravelCircle.creator_user_id == user_id).delete(synchronize_session=False)
+
+        # E. Commercial & Mobility
+        db.query(PaymentTransaction).filter(PaymentTransaction.user_id == user_id).delete(synchronize_session=False)
+        db.query(MobilityProvider).filter(MobilityProvider.owner_user_id == user_id).update(
+            {MobilityProvider.owner_user_id: None}, synchronize_session=False
+        )
+
+        # 3. Cascading delete on User model cleans up all owned trips, preferences, saved_places, reviews, bookings, conversations, memories, blobs
+        db.delete(current_user)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete account due to database error: {str(e)}"
+        )
 
     return {
         "message": f"Account '{user_email}' and all associated personal travel data have been permanently deleted.",

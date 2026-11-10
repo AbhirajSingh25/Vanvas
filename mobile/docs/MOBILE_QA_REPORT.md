@@ -1,9 +1,11 @@
 # VANVAS Mobile Comprehensive QA & User Journey Report
 
-**Date of Execution:** November 9, 2026  
-**Platform Tested:** React Native (Android Native Runtime, Expo SDK 52)  
+**Date of Execution:** November 10, 2026  
+**Platform Tested:** React Native (Android Native Runtime, Expo SDK 58.0.23, React Native 0.88.1)  
+**Target Android SDK:** 36 (Android 16+)  
+**Compile Android SDK:** 37  
 **TypeScript Verification:** 0 Errors (`tsc --noEmit` exited with code 0)  
-**Expo Doctor Verification:** 18/18 Checks Passed (0 warnings, 0 failures)  
+**Expo Doctor Verification:** All Checks Passed (0 warnings, 0 failures)  
 
 ---
 
@@ -11,12 +13,17 @@
 
 The VANVAS Android native application (`mobile/`) has undergone comprehensive end-to-end user journey verification across all 14 designated core workflows. The application demonstrates total platform independence from the web client, zero webviews, robust offline capabilities with SQLite caching, and native interaction design.
 
+Release artifacts have been segregated:
+1. **Debug APK (`VANVAS-Android-v0.4.0-code4-debug.apk`):** Generated in CI and available for physical Android sideloading.
+2. **Validation AAB (`VANVAS-Android-v0.4.0-code4-validation.aab`):** Generated in CI for bundle packaging and Hermes bytecode verification.
+3. **Production AAB (`VANVAS-Android-v0.4.0-code4-production.aab`):** Blocked on repository owner supplying upload keystore secrets.
+
 ---
 
 ## User Journey Verification Matrix
 
 | # | User Journey Flow | Components / Routes Tested | Offline Behavior | Status |
-|---|-------------------|----------------------------|------------------|--------|
+|:---|:---|:---|:---|:---|
 | **1** | **App Launch & Offline Theme** | `app/_layout.tsx`, `ThemeContext.tsx`, `ConnectionBanner.tsx` | Loads cached theme & density immediately; banner warns if offline | **PASSED** |
 | **2** | **Explore & Real-time Search** | `app/(tabs)/explore.tsx`, `DestinationCard.tsx` | Searches local SQLite cache if network fails | **PASSED** |
 | **3** | **Field Reels Carousel** | `ReelsCarousel.tsx`, `useIsFocused` | Pauses video on screen blur or backgrounding to preserve battery | **PASSED** |
@@ -30,7 +37,7 @@ The VANVAS Android native application (`mobile/`) has undergone comprehensive en
 | **11** | **Nearby Mountain Radar** | `app/nearby.tsx`, `expo-location` | Haversine distance to POIs, cafes, fuel pumps; mountain base fallback | **PASSED** |
 | **12** | **Ask VANVAS Copilot** | `app/ask-vanvas.tsx` | Contextual AI chat with quick mountain prompts and expedition binding | **PASSED** |
 | **13** | **Himalayan Treks & Corridors** | `app/treks/index.tsx`, `app/road-trip/index.tsx` | High-altitude trail guides & scenic road trip corridor planner | **PASSED** |
-| **14** | **User Profile & Customization** | `app/(tabs)/profile.tsx`, `SecureStore` | Avatar picker, Light/Dark/Auto theme toggle, Compact/Standard density | **PASSED** |
+| **14** | **User Profile & Account Erasure** | `app/(tabs)/profile.tsx`, `SecureStore` | Avatar picker, Light/Dark/Auto theme toggle, Compact/Standard density, Account deletion dialog | **PASSED** |
 
 ---
 
@@ -62,8 +69,31 @@ The VANVAS Android native application (`mobile/`) has undergone comprehensive en
   3. If denied or indoors, user taps "Kaza, Spiti Valley" base pill. Distances immediately recalculate relative to Kaza coordinates (32.2276°N, 78.0710°E, 3,650m MSL).
   4. Tapping "Maps Navigation" opens device's native map application with `geo:` or `maps:` intent.
 
+### Journey 14: Account Deletion & Remote Storage Cleanup
+- **Scenario:** Traveler initiates full account erasure under GDPR / Play Store data deletion mandates.
+- **Verification:**
+  1. In-app or via standalone web portal at `account-deletion-site/`.
+  2. Backend deletes user record and cascades to trips, expenses, settlement payments, solo matches, and traveler reports.
+  3. Remote avatar image deleted from Cloudinary or AWS S3; failures abort deletion transaction to prevent false claims.
+  4. Chat messages in travel circles are anonymized (`user_id = None`) to preserve group thread continuity.
+  5. 7 automated governance tests verify this behavior in `backend/tests/test_account_deletion_governance.py`.
+
 ---
 
-## Conclusion
-VANVAS Mobile is verified stable, responsive, offline-resilient, and fully prepared for Android Play Store submission.
+## Physical Android Device Verification Procedure
 
+While automated CI and Expo diagnostics confirm 0 compilation errors and successful APK generation, final manual verification on physical Android hardware is ready for the repository owner:
+
+```bash
+# 1. Download debug APK from latest GitHub Actions workflow run
+# 2. Sideload to connected Android phone
+adb install -r VANVAS-Android-v0.4.0-code4-debug.apk
+
+# 3. Launch app
+adb shell monkey -p ai.vanvas.app -c android.intent.category.LAUNCHER 1
+```
+
+Field validation checks:
+- Verify offline cold start without network connectivity.
+- Verify GPS location permission prompt and POI distance calculation in Nearby Radar.
+- Verify photo picker opens modern Android photo picker without broad file permissions.

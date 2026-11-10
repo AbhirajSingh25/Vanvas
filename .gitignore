@@ -38,4 +38,6 @@ scratch/
 # Android artifacts
 *.apk
 *.aab
+*.jks
+*.keystore
 artifacts/

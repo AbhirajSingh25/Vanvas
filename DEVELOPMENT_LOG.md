@@ -5,6 +5,41 @@
 
 ---
 
+### [2026-11-10] Final Release Gate Closure: Production Signing, Account Erasure Governance & Store Handoff
+- **Commit:** `Pending / Current HEAD: d6bf4ba`
+- **Objective:** Complete Play Store production release requirements: implement real remote storage deletion (Cloudinary & S3), comprehensive cascading account erasure, strict release AAB vs validation AAB CI segregation with non-debug certificate verification, keystore git protection, and synchronize release documentation.
+- **Changes Made:**
+  - Implemented `_delete_cloudinary` (REST API destroy) and `_delete_s3` (boto3 delete_object) in `backend/app/services/storage_service.py` to eradicate orphaned cloud assets on account deletion.
+  - Hardened `delete_account` in `backend/app/api/v1/auth.py`: validates password confirmation if provided, cascades or cleans all foreign-key dependencies (`ExpenseShare`, `SettlementPayment`, `SoloMatch`, `SoloDirectMessage`, `TravelerBlock`, `TravelerReport`, `ReviewReport`, `CircleActivityVote`, `CircleActivity`, `TravelCircle`, `PaymentTransaction`), nullifies `MobilityProvider.owner_user_id`, anonymizes `CircleMessage` (`user_id = None`) to preserve group chat context, and safely rolls back transaction on remote storage error (HTTP 502).
+  - Authored comprehensive test suite `backend/tests/test_account_deletion_governance.py` with 7 passing tests (100%).
+  - Added `*.jks` and `*.keystore` to root `.gitignore` to prevent accidental credential leakage.
+  - Re-engineered `.github/workflows/android-apk.yml`: segregated `VANVAS-Android-v0.4.0-code4-validation.aab` from upload-signed `VANVAS-Android-v0.4.0-code4-production.aab`, enforced certificate inspection via `keytool -printcert -jarfile`, and blocked debug signatures.
+  - Updated `mobile/docs/ANDROID_RELEASE_GUIDE.md`, `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md`, and `mobile/docs/MOBILE_QA_REPORT.md` with exact keystore generation commands, PowerShell Base64 conversion, physical device testing instructions, and owner deployment instructions.
+  - Maintained 100% strict freeze on `frontend/` (0 files modified).
+- **Files Affected:**
+  - `backend/app/services/storage_service.py`
+  - `backend/app/api/v1/auth.py`
+  - `backend/tests/test_account_deletion_governance.py`
+  - `.gitignore`
+  - `.github/workflows/android-apk.yml`
+  - `mobile/docs/ANDROID_RELEASE_GUIDE.md`
+  - `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md`
+  - `mobile/docs/MOBILE_QA_REPORT.md`
+  - `CURRENT_STATE.md`
+  - `NEXT_SESSION.md`
+  - `DEVELOPMENT_LOG.md`
+  - `PROJECT_CONTEXT.md`
+- **Tests Executed:**
+  - `backend/tests/test_account_deletion_governance.py`: 7/7 passed (100%).
+  - `backend/tests/test_profile_and_settings.py`: 5/5 passed (100%).
+  - Full backend targeted suite (29 tests): 29/29 passed (100%).
+  - Artwork runtime invariants (`backend/tests/test_artwork_runtime_invariants.py`): 6/6 passed (100%).
+  - `cd mobile && npm run typecheck`: 0 errors.
+  - `git diff --name-only frontend/`: 0 files modified (100% frozen).
+- **Remaining Issues:** 10 destination artwork entities await image-generation quota reset on November 13, 2026.
+
+---
+
 ### [2026-11-10] Native Production Release, Expo SDK 58 Modernization & Standalone Deletion Portal
 - **Commit:** `bd54384`
 - **Objective:** Modernize native application to Expo SDK 58, React Native 0.88.1, and React 19.3.0, verify Android API 36 compilation with compileSdkVersion 37, bulletproof the release signing CI pipeline, cascade account deletion in backend, build standalone account deletion site, and maintain 100% frontend freeze.

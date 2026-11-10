@@ -3,7 +3,10 @@
 **Application Name:** VANVAS  
 **Application ID:** `ai.vanvas.app`  
 **Current Version:** `0.4.0` (versionCode `4`)  
+**Expo SDK:** `58.0.23`  
+**React Native:** `0.88.1`  
 **Target API Level:** `36` (Android 16+) — Fully Compliant with Google Play 2026 Mandates (Target SDK 36 requirement)  
+**Compile SDK:** `37`  
 **Content Rating:** Everyone (PEGI 3 / USK 0)  
 
 ---
@@ -11,15 +14,16 @@
 ## 1. Google Play Console Compliance Matrix
 
 | Item | Requirement | VANVAS Implementation Status | Verification Method |
-|------|-------------|------------------------------|---------------------|
+|:---|:---|:---|:---|
 | **Target API** | Android API 36+ (Targeting API 36) | **PASSED** (Configured to 36 in `build.gradle`, `app.json`, and CI workflow) | Inspected `mobile/android/build.gradle` & Expo config |
 | **64-bit Architecture Support** | `arm64-v8a`, `x86_64` included | **PASSED** (`reactNativeArchitectures` in `gradle.properties`) | Config check & APK Analyzer |
 | **New Architecture (TurboModules/Fabric)** | Supported & Tested | **PASSED** (`newArchEnabled=true`) | `app.json` & `gradle.properties` |
 | **Data Safety: Location** | Justify and declare location usage | **PASSED** (Used strictly in foreground for "I'M HERE" and Nearby Radar) | Declared below & in App Manifest |
 | **Data Safety: Photos/Media** | Restricted permission compliance | **PASSED** (Modern Android Photo Picker used via `expo-image-picker`; broad `READ_EXTERNAL_STORAGE` and `CAMERA` permissions completely removed from manifest) | Manifest audit |
-| **Account Deletion Path** | In-app deletion + Web URL | **PASSED** (In-app deletion via profile/auth and dedicated standalone web deletion portal created at `account-deletion-site/` with independent Vercel deployment configuration) | In-app profile actions & `account-deletion-site/` |
+| **Account Deletion Path** | In-app deletion + Web URL | **CODE COMPLETE & BACKEND TESTED** (In-app deletion via profile/auth and dedicated standalone web deletion portal created at `account-deletion-site/`. Backend cascading deletion verified by 7/7 automated governance tests. Pending Vercel production deployment by repository owner) | Automated tests & `account-deletion-site/` |
 | **Privacy Policy** | Publicly accessible policy URL | **PASSED** (`https://vanvasai.vercel.app/privacy`) | Verified live web route |
 | **App Bundle Size** | < 150MB initial download | **PASSED** (~45MB AAB with Hermes JS engine) | Hermes bytecode enabled |
+| **Production AAB Signing** | Signed with organization upload keystore | **YELLOW / OWNER BLOCKED** (CI produces `VANVAS-Android-v0.4.0-code4-validation.aab` by default. Will automatically sign `VANVAS-Android-v0.4.0-code4-production.aab` upon configuration of the 4 GitHub Secrets) | `.github/workflows/android-apk.yml` step check |
 
 ---
 
@@ -80,13 +84,19 @@
 
 - [x] Version incremented: `versionCode 4`, `versionName "0.4.0"`.
 - [x] Target SDK set to 36 (compliant with Google Play August 31, 2026 Target SDK 36 mandate).
+- [x] Compile SDK set to 37; Expo SDK 58.0.23, React Native 0.88.1.
 - [x] Permissions minimized: `READ_EXTERNAL_STORAGE` and `CAMERA` removed.
 - [x] TypeScript validation clean (`0 errors`).
 - [x] Expo Doctor validation clean.
 - [x] Dual-platform integrity verified (`frontend/` completely untouched).
 - [x] Zero artwork generation calls made (respecting quota window).
-- [ ] Sign release AAB with organization production upload keystore.
-- [ ] Submit to Closed Testing track for 14-day 12-tester continuous testing requirement (for personal developer accounts created after Nov 13, 2023).
+- [x] Account deletion backend erasure & cascading foreign-key cleanup verified (7/7 tests passed).
+- [x] Standalone account deletion portal authored in `account-deletion-site/`.
+- [x] Standalone Debug APK generated via CI (`VANVAS-Android-v0.4.0-code4-debug.apk`).
+- [x] Validation AAB generated via CI (`VANVAS-Android-v0.4.0-code4-validation.aab`).
+- [ ] Add 4 GitHub Secrets to produce signed `VANVAS-Android-v0.4.0-code4-production.aab` (Owner action).
+- [ ] Deploy `account-deletion-site` to Vercel (`cd account-deletion-site && vercel --prod`) (Owner action).
+- [ ] Install Debug APK on physical Android device via ADB for field check (Owner action).
+- [ ] Submit signed production AAB to Closed Testing track for 14-day 12-tester continuous testing requirement.
 - [ ] Fill Data Safety section using the exact declarations in Section 2.
 - [ ] Publish to Google Play Production.
-

@@ -162,59 +162,81 @@ jobs:
                   print("Injected release signingConfig into mobile/android/app/build.gradle")
           EOF
 
-      - name: Build Production Android App Bundle (AAB)
+      - name: Build Signed Production Android App Bundle (AAB)
+        if: steps.check-secrets.outputs.has_release_keys == 'true'
+        id: build-prod-aab
         working-directory: ./mobile/android
         run: |
           set -euo pipefail
-          echo "=== Assembling Production AAB ==="
-          if [ "${{ steps.check-secrets.outputs.has_release_keys }}" = "true" ]; then
-            echo "Building with organization release signing credentials..."
-            bash ./gradlew bundleRelease --stacktrace 2>&1 | tee /tmp/gradle_aab_output.txt
-          else
-            echo "Building validation bundle..."
-            if ! bash ./gradlew bundleRelease --stacktrace 2>&1 | tee /tmp/gradle_aab_output.txt; then
-              echo "bundleRelease failed without production keys; assembling bundleDebug validation bundle..."
-              bash ./gradlew bundleDebug --stacktrace 2>&1 | tee /tmp/gradle_aab_output.txt
-            fi
-          fi
-          echo "=== Generated Bundle Files ==="
-          find app/build/outputs/bundle/ -type f -name "*.aab" || true
-          AAB_SRC=$(find app/build/outputs/bundle/ -type f -name "*.aab" | head -n 1)
-          if [ -z "$AAB_SRC" ] || [ ! -s "$AAB_SRC" ]; then
-            echo "ERROR: Non-empty AAB not found in app/build/outputs/bundle/"
+          echo "=== Assembling Production AAB with Organization Release Signing Credentials ==="
+          bash ./gradlew bundleRelease --stacktrace 2>&1 | tee /tmp/gradle_aab_prod_output.txt
+          
+          RELEASE_AAB_SRC=$(find app/build/outputs/bundle/release -type f -name "*.aab" | head -n 1)
+          if [ -z "$RELEASE_AAB_SRC" ] || [ ! -s "$RELEASE_AAB_SRC" ]; then
+            echo "ERROR: Non-empty release AAB not found in app/build/outputs/bundle/release/"
             exit 1
           fi
-          echo "Successfully produced AAB: $AAB_SRC"
-
-      - name: Prepare Production AAB Artifact & Checksum
-        id: prep-release-aab
-        working-directory: ./mobile/android
-        run: |
-          set -euo pipefail
+          
+          echo "=== Verifying Production Certificate with keytool ==="
+          CERT_INFO=$(keytool -printcert -jarfile "$RELEASE_AAB_SRC" || true)
+          echo "$CERT_INFO"
+          
+          if echo "$CERT_INFO" | grep -qi "CN=Android Debug"; then
+            echo "ERROR: Production AAB is signed with Android Debug certificate! Failing build."
+            exit 1
+          fi
+          
+          FINGERPRINT=$(echo "$CERT_INFO" | grep -E "SHA256:|SHA-256:" | head -n 1 || true)
+          echo "Verified Release Certificate Fingerprint: $FINGERPRINT"
+          
           AAB_NAME="VANVAS-Android-v0.4.0-code4-production.aab"
-          AAB_SRC=$(find app/build/outputs/bundle/ -type f -name "*.aab" | head -n 1)
-          if [ -z "$AAB_SRC" ] || [ ! -s "$AAB_SRC" ]; then
-            echo "ERROR: No valid non-empty AAB found under app/build/outputs/bundle/"
-            exit 1
-          fi
-          echo "Found AAB: $AAB_SRC"
-          AAB_DIR=$(dirname "$AAB_SRC")
-          cp "$AAB_SRC" "${AAB_DIR}/${AAB_NAME}"
+          AAB_DIR=$(dirname "$RELEASE_AAB_SRC")
+          cp "$RELEASE_AAB_SRC" "${AAB_DIR}/${AAB_NAME}"
           cd "$AAB_DIR"
           sha256sum "${AAB_NAME}" > "${AAB_NAME}.sha256"
           AAB_SHA=$(cat "${AAB_NAME}.sha256" | awk '{print $1}')
           AAB_SIZE=$(du -h "${AAB_NAME}" | cut -f1)
+          
           echo "aab_name=${AAB_NAME}" >> $GITHUB_OUTPUT
           echo "sha256=${AAB_SHA}" >> $GITHUB_OUTPUT
           echo "file_size=${AAB_SIZE}" >> $GITHUB_OUTPUT
-          echo "Successfully prepared: ${AAB_NAME} (${AAB_SIZE}, SHA-256: ${AAB_SHA})"
+          echo "fingerprint=${FINGERPRINT}" >> $GITHUB_OUTPUT
+          echo "Successfully generated production AAB: ${AAB_NAME} (${AAB_SIZE}, SHA-256: ${AAB_SHA})"
+
+      - name: Build Validation Android App Bundle (AAB)
+        if: steps.check-secrets.outputs.has_release_keys == 'false'
+        id: build-val-aab
+        working-directory: ./mobile/android
+        run: |
+          set -euo pipefail
+          echo "=== Assembling Validation AAB (Debug-Signed Bundle for Packaging Verification) ==="
+          bash ./gradlew bundleDebug --stacktrace 2>&1 | tee /tmp/gradle_aab_val_output.txt
+          
+          VAL_AAB_SRC=$(find app/build/outputs/bundle/debug -type f -name "*.aab" | head -n 1)
+          if [ -z "$VAL_AAB_SRC" ] || [ ! -s "$VAL_AAB_SRC" ]; then
+            echo "ERROR: Non-empty validation AAB not found in app/build/outputs/bundle/debug/"
+            exit 1
+          fi
+          
+          AAB_NAME="VANVAS-Android-v0.4.0-code4-validation.aab"
+          AAB_DIR=$(dirname "$VAL_AAB_SRC")
+          cp "$VAL_AAB_SRC" "${AAB_DIR}/${AAB_NAME}"
+          cd "$AAB_DIR"
+          sha256sum "${AAB_NAME}" > "${AAB_NAME}.sha256"
+          AAB_SHA=$(cat "${AAB_NAME}.sha256" | awk '{print $1}')
+          AAB_SIZE=$(du -h "${AAB_NAME}" | cut -f1)
+          
+          echo "aab_name=${AAB_NAME}" >> $GITHUB_OUTPUT
+          echo "sha256=${AAB_SHA}" >> $GITHUB_OUTPUT
+          echo "file_size=${AAB_SIZE}" >> $GITHUB_OUTPUT
+          echo "Successfully generated validation AAB: ${AAB_NAME} (${AAB_SIZE}, SHA-256: ${AAB_SHA})"
 
       - name: Build Signed Release APK (If Keystore Available)
         if: steps.check-secrets.outputs.has_release_keys == 'true'
         working-directory: ./mobile/android
         run: |
           bash ./gradlew assembleRelease --stacktrace
-          RELEASE_APK_SRC=$(find app/build -name "*release*.apk" | head -n 1)
+          RELEASE_APK_SRC=$(find app/build/outputs/apk/release -name "*release*.apk" | head -n 1)
           if [ -n "$RELEASE_APK_SRC" ]; then
             RELEASE_DIR=$(dirname "$RELEASE_APK_SRC")
             SIGNED_APK="VANVAS-Android-v0.4.0-code4-release-signed.apk"
@@ -237,13 +259,24 @@ jobs:
             mobile/android/**/VANVAS-Android-*-debug.apk.sha256
           retention-days: 30
 
-      - name: Upload Production AAB Artifact
+      - name: Upload Production AAB Artifact (If Built)
+        if: steps.check-secrets.outputs.has_release_keys == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: VANVAS-Android-v0.4.0-code4-production
           path: |
             mobile/android/**/VANVAS-Android-*-production.aab
             mobile/android/**/VANVAS-Android-*-production.aab.sha256
+          retention-days: 30
+
+      - name: Upload Validation AAB Artifact (If Built)
+        if: steps.check-secrets.outputs.has_release_keys == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: VANVAS-Android-v0.4.0-code4-validation
+          path: |
+            mobile/android/**/VANVAS-Android-*-validation.aab
+            mobile/android/**/VANVAS-Android-*-validation.aab.sha256
           retention-days: 30
 
       - name: Upload Signed Release APK Artifact (If Built)
@@ -270,7 +303,23 @@ jobs:
           echo "| **Debug APK Name** | \`${{ steps.prep-debug-apk.outputs.apk_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Debug APK Size** | \`${{ steps.prep-debug-apk.outputs.file_size }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Debug SHA-256** | \`${{ steps.prep-debug-apk.outputs.sha256 }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Production AAB Name** | \`${{ steps.prep-release-aab.outputs.aab_name }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Production AAB Size** | \`${{ steps.prep-release-aab.outputs.file_size }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Production SHA-256** | \`${{ steps.prep-release-aab.outputs.sha256 }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Signing Status** | Debug Signed (Default) / Release Signed if secrets present |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-secrets.outputs.has_release_keys }}" = "true" ]; then
+            echo "| **Production AAB Name** | \`${{ steps.build-prod-aab.outputs.aab_name }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Production AAB Size** | \`${{ steps.build-prod-aab.outputs.file_size }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Production SHA-256** | \`${{ steps.build-prod-aab.outputs.sha256 }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Release Certificate** | Verified non-debug (\`${{ steps.build-prod-aab.outputs.fingerprint }}\`) |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Production Gate Status** | 🟢 UPLOAD-SIGNED (Ready for Google Play Console upload) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Validation AAB Name** | \`${{ steps.build-val-aab.outputs.aab_name }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Validation AAB Size** | \`${{ steps.build-val-aab.outputs.file_size }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Validation SHA-256** | \`${{ steps.build-val-aab.outputs.sha256 }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Production Gate Status** | 🟡 OWNER BLOCKED (Keystore secrets missing; validation bundle generated) |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "> [!IMPORTANT]" >> $GITHUB_STEP_SUMMARY
+            echo "> **Action Required to Unblock Production Signing:**" >> $GITHUB_STEP_SUMMARY
+            echo "> Set the following 4 secrets in GitHub Repository Settings -> Secrets and variables -> Actions:" >> $GITHUB_STEP_SUMMARY
+            echo "> 1. \`ANDROID_KEYSTORE_BASE64\` (Base64-encoded upload keystore .jks)" >> $GITHUB_STEP_SUMMARY
+            echo "> 2. \`ANDROID_KEYSTORE_PASSWORD\`" >> $GITHUB_STEP_SUMMARY
+            echo "> 3. \`ANDROID_KEY_ALIAS\`" >> $GITHUB_STEP_SUMMARY
+            echo "> 4. \`ANDROID_KEY_PASSWORD\`" >> $GITHUB_STEP_SUMMARY
+          fi
