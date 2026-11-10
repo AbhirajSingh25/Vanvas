@@ -268,7 +268,9 @@ export const nativeApi = {
     }
     const current = await secureStorage.getUserData<User>();
     await secureStorage.clearSession();
-    await offlineDb.clearUserSessionCache(current?.id);
+    if (current?.id) {
+      await offlineDb.clearUserSessionCache(current.id);
+    }
   },
 
   async changePassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<{ message: string }> {
@@ -370,7 +372,10 @@ export const nativeApi = {
   // --- Trips ---
   async getTrips(): Promise<{ trips: TripSummary[]; isCached: boolean }> {
     const user = await secureStorage.getUserData<User>();
-    const userId = user?.id || "anonymous";
+    if (!user?.id) {
+      return { trips: [], isCached: false };
+    }
+    const userId = user.id;
 
     try {
       const live = await fetchWithRetry<TripSummary[]>("/trips", {}, true, 1);
@@ -388,7 +393,11 @@ export const nativeApi = {
 
   async getTrip(tripId: string): Promise<{ trip: Trip; isCached: boolean }> {
     const user = await secureStorage.getUserData<User>();
-    const userId = user?.id || "anonymous";
+    if (!user?.id) {
+      const live = await fetchWithRetry<Trip>(`/trips/${tripId}`, {}, true, 1);
+      return { trip: live, isCached: false };
+    }
+    const userId = user.id;
 
     try {
       const live = await fetchWithRetry<Trip>(`/trips/${tripId}`, {}, true, 1);
@@ -400,7 +409,7 @@ export const nativeApi = {
       // Fallback
     }
 
-    const cached = await offlineDb.getCachedTripDetail(tripId);
+    const cached = await offlineDb.getCachedTripDetail(userId, tripId);
     if (cached) {
       return { trip: cached, isCached: true };
     }
@@ -528,16 +537,20 @@ export const nativeApi = {
 
   async getExpenses(tripId: string): Promise<Expense[]> {
     const user = await secureStorage.getUserData<User>();
+    if (!user?.id) {
+      return [];
+    }
+    const userId = user.id;
     try {
       const live = await fetchWithRetry<Expense[]>(`/trips/${tripId}/expenses`, {}, true, 1);
       if (live) {
-        await offlineDb.cacheTripExpenses(tripId, live, user?.id);
+        await offlineDb.cacheTripExpenses(userId, tripId, live);
         return live;
       }
     } catch {
       // Fall through to offline cache
     }
-    return offlineDb.getCachedTripExpenses(tripId, user?.id);
+    return offlineDb.getCachedTripExpenses(userId, tripId);
   },
 
   async addExpense(tripId: string, expense: {
@@ -548,6 +561,11 @@ export const nativeApi = {
     notes?: string;
   }): Promise<Expense> {
     const user = await secureStorage.getUserData<User>();
+    if (!user?.id) {
+      throw new Error("Authentication required to add expenses.");
+    }
+    const userId = user.id;
+
     try {
       const created = await fetchWithRetry<Expense>(
         `/trips/${tripId}/expenses`,
@@ -557,12 +575,13 @@ export const nativeApi = {
         },
         false
       );
-      await offlineDb.saveOfflineExpense(tripId, created, false, user?.id);
+      await offlineDb.saveOfflineExpense(userId, tripId, created, false);
       return created;
     } catch {
       // When offline in high-altitude zones with no reception, generate local offline expense
+      const offlineId = `offline_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const offlineExpense: Expense = {
-        id: `offline_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        id: offlineId,
         trip_id: tripId,
         title: expense.title,
         amount: expense.amount,
@@ -570,14 +589,26 @@ export const nativeApi = {
         date: expense.date,
         notes: expense.notes,
       };
-      await offlineDb.saveOfflineExpense(tripId, offlineExpense, true, user?.id);
-      await offlineDb.queueOfflineMutation("add_expense", { tripId, expense }, user?.id);
+      await offlineDb.saveOfflineExpense(userId, tripId, offlineExpense, true);
+      await offlineDb.queueOfflineMutation(userId, "add_expense", {
+        tripId,
+        offlineId,
+        expense: {
+          ...expense,
+          receipt_data_json: JSON.stringify({ offline_client_id: offlineId }),
+        },
+      });
       return offlineExpense;
     }
   },
 
   async deleteExpense(tripId: string, expenseId: string): Promise<void> {
     const user = await secureStorage.getUserData<User>();
+    if (!user?.id) {
+      throw new Error("Authentication required to delete expenses.");
+    }
+    const userId = user.id;
+
     try {
       if (!expenseId.startsWith("offline_")) {
         await fetchWithRetry(
@@ -587,14 +618,15 @@ export const nativeApi = {
         );
       }
     } catch {
-      await offlineDb.queueOfflineMutation("delete_expense", { tripId, expenseId }, user?.id);
+      await offlineDb.queueOfflineMutation(userId, "delete_expense", { tripId, expenseId });
     }
-    await offlineDb.deleteOfflineExpense(tripId, expenseId, user?.id);
+    await offlineDb.deleteOfflineExpense(userId, tripId, expenseId);
   },
 
   async syncPendingOfflineActions(): Promise<number> {
     const currentUser = await secureStorage.getUserData<User>();
-    if (!currentUser?.id) {
+    const currentToken = await secureStorage.getToken();
+    if (!currentUser?.id || !currentToken) {
       // Never replay offline mutations without an authenticated user session
       return 0;
     }
@@ -604,6 +636,14 @@ export const nativeApi = {
     let syncedCount = 0;
 
     for (const item of pending) {
+      // Re-verify session before executing each action
+      const activeUser = await secureStorage.getUserData<User>();
+      const activeToken = await secureStorage.getToken();
+      if (!activeUser?.id || activeUser.id !== currentUser.id || !activeToken) {
+        // Session changed or logged out during replay, stop immediately
+        break;
+      }
+
       // Safety guard: reject mutations not matching the current authenticated user
       if (item.user_id && item.user_id !== currentUser.id) {
         continue;
@@ -611,14 +651,52 @@ export const nativeApi = {
       try {
         const payload = JSON.parse(item.payload_json);
         if (item.action_type === "add_expense") {
-          await fetchWithRetry(
-            `/trips/${payload.tripId}/expenses`,
-            {
-              method: "POST",
-              body: JSON.stringify(payload.expense),
-            },
-            false
-          );
+          // Check for existing server expense matching offline_client_id to prevent duplicates on interrupted sync
+          let serverExpense: Expense | null = null;
+          const offlineId = payload.offlineId;
+          try {
+            const existingExpenses = await fetchWithRetry<Expense[]>(
+              `/trips/${payload.tripId}/expenses`,
+              {},
+              true,
+              1
+            );
+            if (Array.isArray(existingExpenses)) {
+              serverExpense = existingExpenses.find((e: any) => {
+                if (offlineId && e.receipt_data_json) {
+                  try {
+                    const parsed = JSON.parse(e.receipt_data_json);
+                    if (parsed.offline_client_id === offlineId) return true;
+                  } catch {}
+                }
+                return (
+                  e.title === payload.expense.title &&
+                  Number(e.amount) === Number(payload.expense.amount) &&
+                  e.date === payload.expense.date
+                );
+              }) || null;
+            }
+          } catch {
+            // If checking fails, proceed to POST
+          }
+
+          if (!serverExpense) {
+            serverExpense = await fetchWithRetry<Expense>(
+              `/trips/${payload.tripId}/expenses`,
+              {
+                method: "POST",
+                body: JSON.stringify(payload.expense),
+              },
+              false
+            );
+          }
+
+          if (serverExpense) {
+            if (offlineId) {
+              await offlineDb.deleteOfflineExpense(currentUser.id, payload.tripId, offlineId);
+            }
+            await offlineDb.saveOfflineExpense(currentUser.id, payload.tripId, serverExpense, false);
+          }
           syncedCount++;
         } else if (item.action_type === "delete_expense") {
           if (!payload.expenseId.startsWith("offline_")) {

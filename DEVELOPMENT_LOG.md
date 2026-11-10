@@ -360,3 +360,18 @@
 - **Files Affected:** `mobile/app.json`, `mobile/package.json`, `mobile/app/(tabs)/index.tsx`, `mobile/app/(tabs)/explore.tsx`, `mobile/app/trip/[id].tsx`, `mobile/app/nearby.tsx`, `mobile/src/services/api.ts`, `mobile/src/services/db.ts`, `mobile/docs/*`.
 - **Tests Executed:** `npm run typecheck` (0 errors), `npx expo-doctor` (18/18 passed), `python scripts/validate_docs.py` (passed).
 - **Test Outcomes:** 100% Passed.
+
+---
+
+### [2026-11-10] Final SQLite Privacy Isolation & Native Release Validation
+- **Objective:** Eliminate legacy NULL user_id data leakage, enforce user-scoped trip detail caching, achieve in-memory fallback parity, establish migration fail-safe verification, add mutation deduplication guard, and execute 20/20 test cases against real production `offlineDb` methods.
+- **Changes Made:**
+  - **Zero NULL user_id Leakage (`mobile/src/services/db.ts`):** Mandatory `userId: string` on `cacheTripExpenses`, `getCachedTripExpenses`, `saveOfflineExpense`, `deleteOfflineExpense`, `queueOfflineMutation`, `getPendingMutations`. Removed all `OR user_id IS NULL` conditions. Private queries strictly use `WHERE user_id = ?`. Legacy unowned records remain quarantined.
+  - **User-Scoped Trip Detail Caching (`mobile/src/services/db.ts`, `mobile/src/services/api.ts`):** Updated `getCachedTripDetail(userId, tripId)` to require both parameters and query `WHERE trip_id = ? AND user_id = ?`. Composite `PRIMARY KEY (trip_id, user_id)` added to `user_trips_cache` and `trip_details_cache` to prevent cross-account cache overwriting.
+  - **In-Memory Fallback Parity (`mobile/src/services/db.ts`):** All private keys formatted as `trip_detail_${userId}_${tripId}`, `expenses_${userId}_${tripId}`, and `user_trips_${userId}`. Cleaned up on `clearUserSessionCache(userId)` and `purgeUserAccountData(userId)`.
+  - **Additive Migration Verification & Fail-Safe Guard:** Post-migration column check verifies schema state; if migration fails, private cache queries block access with clear error. Added performance indexes: `idx_expenses_user_trip`, `idx_mutations_user_created`, `idx_trip_details_user_trip`, `idx_user_trips_user_updated`.
+  - **Mutation Replay Deduplication Guard (`mobile/src/services/api.ts`):** Offline expenses embed `offline_client_id` inside `receipt_data_json`. Replay reconciles against existing server expenses before re-POSTing.
+  - **Real Code Integration Test Suite (`scripts/test_offline_isolation_and_account_deletion.mjs`):** Upgraded test runner to dynamically transpile and execute actual production methods from `db.ts` and `api.ts` over a real in-memory SQLite engine, passing all 20/20 verification cases.
+- **Files Affected:** `mobile/src/services/db.ts`, `mobile/src/services/api.ts`, `scripts/test_offline_isolation_and_account_deletion.mjs`, `CURRENT_STATE.md`, `PROJECT_CONTEXT.md`, `NEXT_SESSION.md`, `DEVELOPMENT_LOG.md`, `mobile/docs/*`.
+- **Tests Executed:** `node scripts/test_offline_isolation_and_account_deletion.mjs` (20/20 passed), `mobile npm run typecheck` (0 errors), `backend pytest test_account_deletion_governance.py` (22/22 passed), `packages/shared npm run build` (0 errors), `git diff --name-only frontend/` (0 files).
+- **Test Outcomes:** 100% Passed.

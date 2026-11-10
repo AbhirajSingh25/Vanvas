@@ -217,8 +217,10 @@ VANVAS/
 - **Web (PWA):** Service worker caching static assets and destination manifests with Capacitor network listeners.
 - **Mobile (React Native):**
   - `mobile/src/services/db.ts`: Local SQLite WAL database caching destinations, places, active trip itineraries, offline expenses, and pending mutation queues.
-  - **Account-Scoped Offline Isolation:** Additive schema migration introduces `user_id TEXT` on `expenses_cache` and `offline_mutation_queue`. Mutation replay is strictly scoped to the active authenticated user (`currentUser.id`), preventing cross-account mutation execution.
+  - **Account-Scoped Offline Isolation & Privacy:** Additive schema migration introduces `user_id TEXT NOT NULL` on `expenses_cache` and `offline_mutation_queue`, composite `PRIMARY KEY (trip_id, user_id)` on `user_trips_cache` and `trip_details_cache`, and performance indexes. All private queries require verified `user_id` with zero `OR user_id IS NULL` leakage. Legacy unowned rows are safely quarantined.
   - **Single-Owner Deletion Teardown:** `AuthContext.deleteAccount` solely manages session teardown, private cache purging, and React state reset in `try/finally` blocks. Local SQLite cleanup failures fail open without reporting false server rejection.
+  - **Mutation Replay Deduplication:** Interrupted expense sync reconciles via `offline_client_id` inside `receipt_data_json` before posting, preventing duplicate expenses on network reconnections.
+  - **In-Memory Fallback Parity:** In-memory keys are strictly user-scoped (`trip_detail_${userId}_${tripId}`, `expenses_${userId}_${tripId}`, `user_trips_${userId}`) with fail-safe migration blocking on verification errors.
   - `mobile/src/services/storage.ts`: Encrypted storage for authentication tokens and user UI preferences via `expo-secure-store`.
   - `mobile/src/components/ConnectionBanner.tsx`: Top banner alerting users when offline while serving cached itinerary items seamlessly.
 
@@ -232,9 +234,9 @@ VANVAS/
 2. **Account Deletion Governance Suite:**
    - Command: `python -m pytest backend/tests/test_account_deletion_governance.py`
    - Result: **22 passed, 0 failed (100% pass rate)**.
-3. **Mobile Offline Isolation & Account Deletion Suite:**
+3. **Mobile Offline Isolation & Reliability Suite:**
    - Command: `node scripts/test_offline_isolation_and_account_deletion.mjs`
-   - Result: **6 passed, 0 failed (100% pass rate)**.
+   - Result: **20 passed, 0 failed (100% pass rate executing actual production `offlineDb` methods)**.
 4. **Artwork Invariants Test Suite:**
    - Command: `python -m pytest backend/tests/test_artwork_runtime_invariants.py`
    - Result: **6 passed, 0 failed (100% pass rate)**.
@@ -256,8 +258,8 @@ VANVAS/
 
 - **Current Branch:** `main`
 - **Remote Origin:** `https://github.com/AbhirajSingh25/Vanvas.git`
-- **HEAD Commit:** `7d81a79` (`feat(release): production signing segregation, account erasure governance & play store documentation sync`)
-- **Preceding Implementation Checkpoint:** `bd54384` (`feat(mobile): modernize to Expo SDK 58, React Native 0.88 & Target SDK 36 release pipeline`)
+- **Starting Checkpoint:** `51880e9` (`docs(context): sync context files to commit a969a9f`)
+- **Preceding Implementation Checkpoint:** `a969a9f` (`feat(mobile): single-owner account deletion teardown and account-scoped offline data isolation`)
 - **Status:** Pristine working tree, perfectly synchronized with `origin/main`.
 
 ---

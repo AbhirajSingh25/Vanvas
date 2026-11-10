@@ -60,13 +60,24 @@ mobile/app/
 
 ### Local SQLite Database (`vanvas_offline.db`)
 - **Engine:** `expo-sqlite` (WAL journal mode)
-- **Tables:**
-  - `destinations_cache`: Full destination catalog snapshot for zero-connectivity discovery.
-  - `destination_details_cache`: Places, stays, and rental fleets cached per slug.
-  - `user_trips_cache`: Trip summaries for instant home & trips rendering.
-  - `trip_details_cache`: Deep itinerary days, schedule items, and waypoint notes.
-  - `expenses_cache`: Travel ledger receipts, amounts, categories, and sync flags.
-  - `offline_mutation_queue`: FIFO queue of offline operations (e.g. expenses logged during mountain passes) synced when connection is restored.
+- **Tables & Account Isolation Contract:**
+  - `destinations_cache`: Full destination catalog snapshot for zero-connectivity discovery (Global public read/write).
+  - `destination_details_cache`: Places, stays, and rental fleets cached per slug (Global public read/write).
+  - `user_trips_cache`: Trip summaries for instant home & trips rendering (`PRIMARY KEY (trip_id, user_id)`).
+  - `trip_details_cache`: Deep itinerary days, schedule items, and waypoint notes (`PRIMARY KEY (trip_id, user_id)`).
+  - `expenses_cache`: Travel ledger receipts, amounts, categories, sync flags, and mandatory `user_id TEXT NOT NULL`.
+  - `offline_mutation_queue`: FIFO queue of offline operations strictly tagged with `user_id TEXT NOT NULL`.
+- **Performance Indexes:**
+  - `idx_expenses_user_trip`: `expenses_cache(user_id, trip_id)`
+  - `idx_mutations_user_created`: `offline_mutation_queue(user_id, created_at)`
+  - `idx_trip_details_user_trip`: `trip_details_cache(user_id, trip_id)`
+  - `idx_user_trips_user_updated`: `user_trips_cache(user_id, updated_at)`
+- **Privacy & Legacy Data Governance:**
+  - **Zero NULL user_id Leakage:** All private queries use exact `WHERE user_id = ?`. Queries never include `OR user_id IS NULL`.
+  - **Quarantine Policy:** Legacy records with unverified or NULL ownership remain in an isolated quarantine; they are never replayed, never displayed to other users, and never deleted during another user's account purge.
+  - **Fail-Safe Migration Guard:** Additive schema migrations run on database initialization with post-migration verification. If migration fails, private cache queries fail-safely throw and block access to prevent unauthenticated data leaks.
+  - **In-Memory Fallback Parity:** In web or fallback mode, keys are strictly scoped by account (`trip_detail_${userId}_${tripId}`, `expenses_${userId}_${tripId}`, `user_trips_${userId}`).
+  - **Replay Deduplication Guard:** Offline expenses embed `offline_client_id` inside `receipt_data_json`. During reconnection replay, mutations check existing server expenses to prevent duplicate creations on interrupted sync.
 
 ---
 
