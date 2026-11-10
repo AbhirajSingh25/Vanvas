@@ -271,6 +271,38 @@ export const nativeApi = {
     await offlineDb.clearUserSessionCache(current?.id);
   },
 
+  async changePassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<{ message: string }> {
+    return fetchWithRetry<{ message: string }>(
+      "/auth/change-password",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        }),
+      },
+      false
+    );
+  },
+
+  async deleteAccount(password: string): Promise<{ message: string; user_id: string; status: string }> {
+    const res = await fetchWithRetry<{ message: string; user_id: string; status: string }>(
+      "/auth/account",
+      {
+        method: "DELETE",
+        body: JSON.stringify({ password }),
+      },
+      false
+    );
+    const current = await secureStorage.getUserData<User>();
+    await secureStorage.clearSession();
+    if (current?.id) {
+      await offlineDb.purgeUserAccountData(current.id);
+    }
+    return res;
+  },
+
   // --- Destinations & Offline Cache ---
   async getDestinations(featuredOnly = false, search = ""): Promise<{ destinations: Destination[]; isCached: boolean }> {
     try {

@@ -72,11 +72,15 @@ Release artifacts have been segregated:
 ### Journey 14: Account Deletion & Remote Storage Cleanup
 - **Scenario:** Traveler initiates full account erasure under GDPR / Play Store data deletion mandates.
 - **Verification:**
-  1. In-app or via standalone web portal at `account-deletion-site/`.
-  2. Backend deletes user record and cascades to trips, expenses, settlement payments, solo matches, and traveler reports.
-  3. Remote avatar image deleted from Cloudinary or AWS S3; failures abort deletion transaction to prevent false claims.
-  4. Chat messages in travel circles are anonymized (`user_id = None`) to preserve group thread continuity.
-  5. 7 automated governance tests verify this behavior in `backend/tests/test_account_deletion_governance.py`.
+  1. In-app via native modal on Profile tab (`mobile/app/(tabs)/profile.tsx`) or via standalone web portal (`account-deletion-site/index.html`).
+  2. In-app modal clearly enumerates data destruction: user profile, custom trips, itineraries, Travel Ledger expenses, solo matches, and uploaded avatar blobs.
+  3. Re-entry of current password is strictly enforced (empty, whitespace, or invalid passwords rejected with 400/422). Confirmation checkbox prevents accidental triggers.
+  4. On successful deletion:
+     - SQLite user data is wiped cleanly via `purgeUserAccountData` (trips, cached expenses, offline mutation queue cleared without dropping destination catalogs).
+     - SecureStore auth tokens and active user credentials purged.
+     - User session redirected to Explore tab with native confirmation alert.
+  5. Backend cascades deletion across all user data tables and purges remote avatars in Cloudinary/S3 without false-positive success reports.
+  6. 22 automated governance tests verify this behavior in `backend/tests/test_account_deletion_governance.py`.
 
 ---
 

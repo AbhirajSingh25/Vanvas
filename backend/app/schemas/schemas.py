@@ -92,7 +92,7 @@ class PasswordChangeRequest(BaseModel):
     confirm_password: str = Field(..., min_length=6)
 
 class AccountDeleteRequest(BaseModel):
-    password: Optional[str] = None
+    password: str = Field(..., min_length=1, description="Account password required for deletion confirmation")
     confirmation: Optional[str] = None
 
 class UserStatsResponse(BaseModel):

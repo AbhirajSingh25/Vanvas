@@ -870,17 +870,22 @@ def export_user_data(
 
 @router.delete("/account")
 def delete_account(
-    payload: Optional[AccountDeleteRequest] = None,
+    payload: AccountDeleteRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # If password is provided, verify it
-    if payload and payload.password:
-        if not verify_password(payload.password, current_user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password confirmation is incorrect."
-            )
+    # Self-service account deletion strictly requires non-empty password confirmation
+    if not payload or not payload.password or not payload.password.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password confirmation is required to delete your account."
+        )
+
+    if not verify_password(payload.password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password confirmation is incorrect."
+        )
 
     user_id = current_user.id
     user_email = current_user.email

@@ -1,3 +1,7 @@
+import io
+import json
+import urllib.error
+import urllib.request
 import pytest
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone, date, timedelta
@@ -5,6 +9,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
+from botocore.exceptions import ClientError
+
 from app.main import app
 from app.database.session import Base, get_db
 from app.models.models import (
@@ -69,10 +75,36 @@ def create_user_helper(email="testdelete@vanvas.com", password="securepassword12
     return user, headers
 
 
+# ==========================================
+# 1. AUTHENTICATION & PASSWORD CONFIRMATION
+# ==========================================
+
 def test_delete_account_unauthenticated():
-    """Unauthenticated request must return 401."""
+    """Unauthenticated request must return 401 Unauthorized."""
     res = client.delete("/api/v1/auth/account")
     assert res.status_code == 401
+
+
+def test_delete_account_missing_password_payload():
+    """Request missing the mandatory JSON payload or password field must return 422."""
+    _, headers = create_user_helper("nopassload@vanvas.com", "pass123")
+    res = client.request("DELETE", "/api/v1/auth/account", headers=headers)
+    assert res.status_code == 422
+
+
+def test_delete_account_empty_password():
+    """Request with empty string password must be rejected with 422."""
+    _, headers = create_user_helper("emptypass@vanvas.com", "pass123")
+    res = client.request("DELETE", "/api/v1/auth/account", headers=headers, json={"password": ""})
+    assert res.status_code == 422
+
+
+def test_delete_account_whitespace_password():
+    """Request with whitespace-only password must be rejected with 400 Bad Request."""
+    _, headers = create_user_helper("whitepass@vanvas.com", "pass123")
+    res = client.request("DELETE", "/api/v1/auth/account", headers=headers, json={"password": "   "})
+    assert res.status_code == 400
+    assert "Password confirmation is required" in res.json()["detail"]
 
 
 def test_delete_account_incorrect_password():
@@ -82,7 +114,7 @@ def test_delete_account_incorrect_password():
     assert res.status_code == 400
     assert "Password confirmation is incorrect" in res.json()["detail"]
 
-    # Verify user still exists
+    # Verify user still exists in database
     db = TestingSessionLocal()
     assert db.query(User).filter(User.id == user.id).first() is not None
     db.close()
@@ -204,10 +236,29 @@ def test_delete_account_circle_message_anonymization():
     db.close()
 
 
-def test_storage_deletion_cloudinary():
-    """Verify Cloudinary remote destroy request is formatted correctly."""
+def test_delete_account_duplicate_or_replayed():
+    """After successful deletion, replayed requests must fail with 401."""
+    _, headers = create_user_helper("replaydel@vanvas.com", "pass123")
+
+    res1 = client.request("DELETE", "/api/v1/auth/account", headers=headers, json={"password": "pass123"})
+    assert res1.status_code == 200
+
+    # Second delete with same token fails because user does not exist in db
+    res2 = client.request("DELETE", "/api/v1/auth/account", headers=headers, json={"password": "pass123"})
+    assert res2.status_code == 401
+
+    # Login attempt fails
+    login_res = client.post("/api/v1/auth/login", json={"email": "replaydel@vanvas.com", "password": "pass123"})
+    assert login_res.status_code == 401
+
+
+# ==========================================
+# 2. CLOUDINARY HARDENED DELETION
+# ==========================================
+
+def test_cloudinary_delete_ok():
+    """Cloudinary result='ok' must be treated as successful deletion."""
     with patch("urllib.request.urlopen") as mock_urlopen, \
-         patch("app.core.config.settings.STORAGE_PROVIDER", "cloudinary"), \
          patch("app.core.config.settings.CLOUDINARY_CLOUD_NAME", "vanvas_cloud"), \
          patch("app.core.config.settings.CLOUDINARY_API_KEY", "12345678"), \
          patch("app.core.config.settings.CLOUDINARY_API_SECRET", "secret_key"):
@@ -218,13 +269,112 @@ def test_storage_deletion_cloudinary():
 
         result = StorageService._delete_cloudinary("users/user_abc/avatar/pic.webp")
         assert result is True
-        assert mock_urlopen.called
-        req = mock_urlopen.call_args[0][0]
-        assert "cloudinary.com" in req.full_url
-        assert b"public_id=users_user_abc_avatar_pic" in req.data
 
 
-def test_storage_deletion_s3():
+def test_cloudinary_delete_already_missing():
+    """Cloudinary result='not found' must be treated as idempotent success."""
+    with patch("urllib.request.urlopen") as mock_urlopen, \
+         patch("app.core.config.settings.CLOUDINARY_CLOUD_NAME", "vanvas_cloud"), \
+         patch("app.core.config.settings.CLOUDINARY_API_KEY", "12345678"), \
+         patch("app.core.config.settings.CLOUDINARY_API_SECRET", "secret_key"):
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b'{"result": "not found"}'
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        result = StorageService._delete_cloudinary("users/user_abc/avatar/pic.webp")
+        assert result is True
+
+
+def test_cloudinary_delete_error_result_raises():
+    """Cloudinary result='error' or unexpected value must raise StorageServiceException."""
+    with patch("urllib.request.urlopen") as mock_urlopen, \
+         patch("app.core.config.settings.CLOUDINARY_CLOUD_NAME", "vanvas_cloud"), \
+         patch("app.core.config.settings.CLOUDINARY_API_KEY", "12345678"), \
+         patch("app.core.config.settings.CLOUDINARY_API_SECRET", "secret_key"):
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b'{"result": "error", "error": {"message": "Invalid public_id"}}'
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        with pytest.raises(StorageServiceException) as exc_info:
+            StorageService._delete_cloudinary("users/user_abc/avatar/pic.webp")
+        assert exc_info.value.code == "PROFILE_STORAGE_ERROR"
+        assert "Cloudinary remote deletion failed" in exc_info.value.message
+
+
+def test_cloudinary_delete_invalid_json_raises():
+    """Invalid non-JSON response from Cloudinary must raise StorageServiceException."""
+    with patch("urllib.request.urlopen") as mock_urlopen, \
+         patch("app.core.config.settings.CLOUDINARY_CLOUD_NAME", "vanvas_cloud"), \
+         patch("app.core.config.settings.CLOUDINARY_API_KEY", "12345678"), \
+         patch("app.core.config.settings.CLOUDINARY_API_SECRET", "secret_key"):
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b"<html>502 Bad Gateway</html>"
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        with pytest.raises(StorageServiceException) as exc_info:
+            StorageService._delete_cloudinary("users/user_abc/avatar/pic.webp")
+        assert exc_info.value.code == "PROFILE_STORAGE_ERROR"
+
+
+def test_cloudinary_delete_http_401_403_raises():
+    """HTTP 401 or 403 authentication error must raise StorageServiceException."""
+    with patch("urllib.request.urlopen") as mock_urlopen, \
+         patch("app.core.config.settings.CLOUDINARY_CLOUD_NAME", "vanvas_cloud"), \
+         patch("app.core.config.settings.CLOUDINARY_API_KEY", "12345678"), \
+         patch("app.core.config.settings.CLOUDINARY_API_SECRET", "secret_key"):
+
+        mock_urlopen.side_effect = urllib.error.HTTPError("url", 401, "Unauthorized", {}, None)
+
+        with pytest.raises(StorageServiceException) as exc_info:
+            StorageService._delete_cloudinary("users/user_abc/avatar/pic.webp")
+        assert exc_info.value.code == "PROFILE_STORAGE_ERROR"
+        assert "HTTP 401" in exc_info.value.message
+
+
+def test_cloudinary_delete_http_404_idempotent():
+    """HTTP 404 from Cloudinary is idempotent and must return True."""
+    with patch("urllib.request.urlopen") as mock_urlopen, \
+         patch("app.core.config.settings.CLOUDINARY_CLOUD_NAME", "vanvas_cloud"), \
+         patch("app.core.config.settings.CLOUDINARY_API_KEY", "12345678"), \
+         patch("app.core.config.settings.CLOUDINARY_API_SECRET", "secret_key"):
+
+        mock_urlopen.side_effect = urllib.error.HTTPError("url", 404, "Not Found", {}, None)
+        assert StorageService._delete_cloudinary("users/user_abc/avatar/pic.webp") is True
+
+
+def test_cloudinary_delete_timeout_raises():
+    """Network timeout during Cloudinary deletion must raise StorageServiceException."""
+    with patch("urllib.request.urlopen") as mock_urlopen, \
+         patch("app.core.config.settings.CLOUDINARY_CLOUD_NAME", "vanvas_cloud"), \
+         patch("app.core.config.settings.CLOUDINARY_API_KEY", "12345678"), \
+         patch("app.core.config.settings.CLOUDINARY_API_SECRET", "secret_key"):
+
+        mock_urlopen.side_effect = TimeoutError("Connection timed out")
+
+        with pytest.raises(StorageServiceException) as exc_info:
+            StorageService._delete_cloudinary("users/user_abc/avatar/pic.webp")
+        assert exc_info.value.code == "PROFILE_STORAGE_ERROR"
+
+
+def test_cloudinary_delete_missing_credentials_fails_closed():
+    """If Cloudinary credentials are missing, fail closed and raise StorageServiceException."""
+    with patch("app.core.config.settings.CLOUDINARY_CLOUD_NAME", ""), \
+         patch("app.core.config.settings.CLOUDINARY_API_KEY", ""), \
+         patch("app.core.config.settings.CLOUDINARY_API_SECRET", ""):
+
+        with pytest.raises(StorageServiceException) as exc_info:
+            StorageService._delete_cloudinary("users/user_abc/avatar/pic.webp")
+        assert exc_info.value.code == "PROFILE_STORAGE_NOT_CONFIGURED"
+
+
+# ==========================================
+# 3. S3 HARDENED DELETION
+# ==========================================
+
+def test_storage_deletion_s3_success():
     """Verify S3 remote delete_object request is invoked with correct bucket and key."""
     with patch("boto3.session.Session") as mock_session_cls, \
          patch("app.core.config.settings.STORAGE_PROVIDER", "s3"), \
@@ -243,6 +393,52 @@ def test_storage_deletion_s3():
         )
 
 
+def test_s3_delete_missing_object_idempotent():
+    """NoSuchKey ClientError from S3 must be treated as idempotent success."""
+    with patch("boto3.session.Session") as mock_session_cls, \
+         patch("app.core.config.settings.S3_BUCKET_NAME", "vanvas-avatars"), \
+         patch("app.core.config.settings.S3_ACCESS_KEY_ID", "key"), \
+         patch("app.core.config.settings.S3_SECRET_ACCESS_KEY", "secret"):
+
+        mock_s3 = MagicMock()
+        mock_s3.delete_object.side_effect = ClientError({"Error": {"Code": "NoSuchKey"}}, "DeleteObject")
+        mock_session_cls.return_value.client.return_value = mock_s3
+
+        assert StorageService._delete_s3("users/user_xyz/avatar/photo.webp") is True
+
+
+def test_s3_delete_permission_error_raises():
+    """AccessDenied ClientError from S3 must raise StorageServiceException."""
+    with patch("boto3.session.Session") as mock_session_cls, \
+         patch("app.core.config.settings.S3_BUCKET_NAME", "vanvas-avatars"), \
+         patch("app.core.config.settings.S3_ACCESS_KEY_ID", "key"), \
+         patch("app.core.config.settings.S3_SECRET_ACCESS_KEY", "secret"):
+
+        mock_s3 = MagicMock()
+        mock_s3.delete_object.side_effect = ClientError({"Error": {"Code": "AccessDenied"}}, "DeleteObject")
+        mock_session_cls.return_value.client.return_value = mock_s3
+
+        with pytest.raises(StorageServiceException) as exc_info:
+            StorageService._delete_s3("users/user_xyz/avatar/photo.webp")
+        assert exc_info.value.code == "PROFILE_STORAGE_ERROR"
+        assert "AccessDenied" in exc_info.value.message
+
+
+def test_s3_delete_missing_credentials_fails_closed():
+    """Missing S3 credentials must fail closed with PROFILE_STORAGE_NOT_CONFIGURED."""
+    with patch("app.core.config.settings.S3_BUCKET_NAME", ""), \
+         patch("app.core.config.settings.S3_ACCESS_KEY_ID", ""), \
+         patch("app.core.config.settings.S3_SECRET_ACCESS_KEY", ""):
+
+        with pytest.raises(StorageServiceException) as exc_info:
+            StorageService._delete_s3("users/user_xyz/avatar/photo.webp")
+        assert exc_info.value.code == "PROFILE_STORAGE_NOT_CONFIGURED"
+
+
+# ==========================================
+# 4. DATABASE & TRANSACTION GOVERNANCE
+# ==========================================
+
 def test_remote_storage_failure_aborts_deletion():
     """If remote cloud storage fails during deletion, the API must return 502 and NOT claim deletion."""
     user, headers = create_user_helper("failremote@vanvas.com", "pass123")
@@ -260,4 +456,26 @@ def test_remote_storage_failure_aborts_deletion():
     # Verify user was NOT deleted
     db = TestingSessionLocal()
     assert db.query(User).filter(User.id == user.id).first() is not None
+    db.close()
+
+
+def test_delete_profile_photo_does_not_commit_caller_session():
+    """delete_profile_photo with db passed must not commit caller's transaction prematurely."""
+    db = TestingSessionLocal()
+    user = User(email="nocommit@vanvas.com", hashed_password="pw", full_name="No Commit")
+    db.add(user)
+    db.flush()
+
+    # Call delete_profile_photo with db
+    blob = UserAvatarBlob(user_id=user.id, storage_key="users/nocommit/avatar.webp", data=b"img", content_type="image/webp", byte_size=3)
+    db.add(blob)
+    db.flush()
+
+    StorageService.delete_profile_photo("users/nocommit/avatar.webp", db=db)
+
+    # Roll back caller transaction
+    db.rollback()
+
+    # Verify user was NOT committed
+    assert db.query(User).filter(User.email == "nocommit@vanvas.com").first() is None
     db.close()

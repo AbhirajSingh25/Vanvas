@@ -107,15 +107,15 @@ VANVAS/
 
 ## 4. Native Mobile Architecture & Navigation (`mobile/`)
 
-- **Framework:** 100% Native React Native via Expo SDK 52, Expo Router 4, Expo Image, React Native Gesture Handler, React Native Reanimated.
-- **Application ID:** `ai.vanvas.app` (Android v0.4.0, versionCode 4, Target SDK 36).
+- **Framework:** 100% Native React Native via Expo SDK 58 (`expo ~58.0.23`), Expo Router 58, React Native 0.88.1, React 19.3.0, Node.js 22 LTS.
+- **Application ID:** `ai.vanvas.app` (Android v0.4.0, versionCode 4, Target SDK 36, compileSdkVersion 37).
 - **Navigation Structure:**
   - Tab Navigator (`(tabs)/_layout.tsx`):
     - `index.tsx` (Home): Personalized recommendations, active trip summary card, search trigger, offline banner.
-    - `explore.tsx` (Explore): Destination discovery, video reels with AppState background pause and `useIsFocused()` screen focus handling, region filters.
+    - `explore.tsx` (Explore): Destination discovery, video reels with AppState background pause and `usePathname()` screen focus handling, region filters.
     - `plan.tsx` (Plan): Full mobile trip planner with **Motorcycle Expedition Mode**, gateway hubs (Shimla, Chandigarh, Manali with seasonal Kunzum Pass advisory), Kaza commercial rental warning, and estimated daily rates.
     - `trips.tsx` (Trips): Offline-capable trip list, status filters (upcoming, active, completed).
-    - `profile.tsx` (Profile): User profile, avatar management, theme switcher (Auto/Light/Dark), and layout density toggle (Standard/Compact).
+    - `profile.tsx` (Profile): User profile, avatar management, theme switcher (Auto/Light/Dark), layout density toggle (Standard/Compact), Change Password modal, and Google Play compliant in-app Delete Account modal with mandatory password confirmation, irreversible data warning, and local SQLite/SecureStore private data cleanup (`purgeUserAccountData`).
   - Stack Screens:
     - `destination/[slug].tsx`: Native destination detail with authentic WebP artwork, single-row touch carousels for Places, Stays, and Fleet, with absolute URL resolution via `resolveImageUrl()`.
     - `trip/[id].tsx`: Day-by-day itinerary view with dynamic replanning triggers.

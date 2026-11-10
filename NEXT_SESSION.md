@@ -10,11 +10,13 @@
 - **Core Checkpoint:** 
   - Android Native App (`mobile/`) modernized to Expo SDK 58 (`expo ~58.0.23`), React Native 0.88.1, React 19.3.0, Node.js 22 LTS, and Target SDK 36 with compileSdkVersion 37.
   - Automated CI workflow `.github/workflows/android-apk.yml` segregated to build `VANVAS-Android-v0.4.0-code4-debug.apk` and `VANVAS-Android-v0.4.0-code4-validation.aab` by default, and `VANVAS-Android-v0.4.0-code4-production.aab` when release keystore secrets are present. Certificate is strictly verified with `keytool` (`CN!=Android Debug`).
-  - Standalone Account & Data Deletion Portal created at `account-deletion-site/` satisfying Google Play Data Safety requirements with zero cookie/localStorage exposure and in-memory session isolation. Ready for `vercel --prod` deployment.
-  - Backend cascading deletion in `backend/app/api/v1/auth.py` and `backend/app/services/storage_service.py` cleans all related records, cascades expense shares/settlements, anonymizes circle chat messages, and deletes remote avatar assets from Cloudinary and AWS S3 with transactional rollback. 7/7 automated governance tests verified passing.
+  - Standalone Account & Data Deletion Portal created at `account-deletion-site/` satisfying Google Play Data Safety requirements with zero cookie/localStorage exposure, in-memory session isolation, and mandatory password verification. Ready for `vercel --prod` deployment.
+  - Backend cascading deletion in `backend/app/api/v1/auth.py` and `backend/app/services/storage_service.py` cleans all related records, cascades expense shares/settlements, anonymizes circle chat messages, and deletes remote avatar assets from Cloudinary and AWS S3 with transactional rollback and fail-closed security. 22/22 automated governance tests verified passing.
+  - Native in-app Delete Account and Change Password flows implemented in `mobile/app/(tabs)/profile.tsx` with modal confirmation, irreversible data warning, mandatory password re-entry, and local SQLite/SecureStore private data cleanup (`purgeUserAccountData`).
+  - Added `boto3>=1.34.0` to `backend/requirements.txt` ensuring backend CI dependency compliance.
   - Keystores strictly protected from Git commits via `.gitignore` (`*.jks`, `*.keystore`).
   - Frontend (`frontend/`) remains 100% frozen and untouched.
-- **Repository Health:** Mobile TypeScript (0 errors), Backend targeted tests (29/29 passed 100%), Artwork runtime invariants (6/6 passed 100%), Shared package builds cleanly.
+- **Repository Health:** Mobile TypeScript (0 errors), Backend targeted tests (44/44 passed 100%), Artwork runtime invariants (6/6 passed 100%), Shared package builds cleanly.
 
 ---
 

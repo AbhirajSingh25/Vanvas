@@ -216,6 +216,30 @@ export const offlineDb = {
     }
   },
 
+  // --- Permanent Account Erasure: Purge all private user records on account deletion ---
+  async purgeUserAccountData(userId?: string): Promise<void> {
+    const db = await getDb();
+    if (!db) {
+      memoryKv.clear();
+      return;
+    }
+    await db.withTransactionAsync(async () => {
+      if (userId) {
+        await db.runAsync(`DELETE FROM user_trips_cache WHERE user_id = ?`, userId);
+        await db.runAsync(`DELETE FROM trip_details_cache WHERE user_id = ?`, userId);
+      } else {
+        await db.runAsync(`DELETE FROM user_trips_cache`);
+        await db.runAsync(`DELETE FROM trip_details_cache`);
+      }
+      // Clear offline mutation queue to prevent resurrecting deleted user operations
+      await db.runAsync(`DELETE FROM offline_mutation_queue`);
+      // Clear local expenses cache
+      await db.runAsync(`DELETE FROM expenses_cache`);
+    });
+    // Clear in-memory keys
+    memoryKv.clear();
+  },
+
   // --- Offline Expenses & Travel Ledger ---
   async cacheTripExpenses(tripId: string, expenses: Expense[]): Promise<void> {
     const now = Date.now();

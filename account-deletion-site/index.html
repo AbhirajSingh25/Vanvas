@@ -510,6 +510,11 @@
       }
 
       const confirmPass = document.getElementById("confirm-password").value;
+      if (!confirmPass || !confirmPass.trim()) {
+        showError("Please enter your current account password to confirm permanent deletion.");
+        return;
+      }
+
       const deleteBtn = document.getElementById("delete-btn");
 
       deleteBtn.disabled = true;
@@ -517,7 +522,7 @@
       clearAlerts();
 
       try {
-        const payload = confirmPass ? { password: confirmPass } : null;
+        const payload = { password: confirmPass.trim() };
 
         const response = await fetch(`${API_BASE}/api/v1/auth/account`, {
           method: "DELETE",
@@ -525,7 +530,7 @@
             "Authorization": `Bearer ${sessionState.accessToken}`,
             "Content-Type": "application/json"
           },
-          body: payload ? JSON.stringify(payload) : undefined
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();

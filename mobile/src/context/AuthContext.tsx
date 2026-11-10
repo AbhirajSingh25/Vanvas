@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { User } from "@vanvas/shared";
 import { secureStorage } from "../services/storage";
 import { nativeApi } from "../services/api";
+import { offlineDb } from "../services/db";
 
 interface AuthContextValue {
   user: User | null;
@@ -11,6 +12,8 @@ interface AuthContextValue {
   register: (email: string, password: string, fullName: string) => Promise<{ message: string; email: string }>;
   verifyEmail: (email: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   uploadAvatar: (fileUri: string) => Promise<string>;
 }
@@ -74,6 +77,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const deleteAccount = useCallback(async (password: string) => {
+    const current = user;
+    await nativeApi.deleteAccount(password);
+    if (current?.id) {
+      await offlineDb.purgeUserAccountData(current.id);
+    }
+    await secureStorage.clearSession();
+    setToken(null);
+    setUser(null);
+  }, [user]);
+
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string, confirmPassword: string) => {
+    await nativeApi.changePassword(currentPassword, newPassword, confirmPassword);
+  }, []);
+
   const refreshProfile = useCallback(async () => {
     try {
       const fresh = await nativeApi.getMe();
@@ -99,6 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         verifyEmail,
         logout,
+        deleteAccount,
+        changePassword,
         refreshProfile,
         uploadAvatar,
       }}

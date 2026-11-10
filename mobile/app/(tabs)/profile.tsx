@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   Switch,
+  Modal,
+  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
@@ -21,9 +23,24 @@ import { theme } from "../../src/theme";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, uploadAvatar, refreshProfile } = useAuth();
+  const { user, logout, deleteAccount, changePassword, uploadAvatar, refreshProfile } = useAuth();
   const { themeMode, setThemeMode, density, toggleDensity } = useTheme();
   const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
+
+  // Change Password Modal State
+  const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = useState<boolean>(false);
+  const [currentPassword, setCurrentPassword] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
+  const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
+
+  // Delete Account Modal State
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState<boolean>(false);
+  const [deletePassword, setDeletePassword] = useState<string>("");
+  const [isDeleteConfirmed, setIsDeleteConfirmed] = useState<boolean>(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handlePickAndUploadAvatar = async () => {
     try {
@@ -70,6 +87,70 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleExecuteChangePassword = async () => {
+    if (!currentPassword) {
+      setChangePasswordError("Please enter your current password.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setChangePasswordError("New password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError("New password and confirmation do not match.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    setChangePasswordError(null);
+    try {
+      await changePassword(currentPassword, newPassword, confirmPassword);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setIsChangePasswordModalVisible(false);
+      Alert.alert("Success", "Password updated successfully. Please keep your credentials secure.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setChangePasswordError(err.message || "Failed to update password. Please check your current password.");
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleExecuteDeleteAccount = async () => {
+    if (!deletePassword.trim()) {
+      setDeleteError("Please enter your current password to confirm deletion.");
+      return;
+    }
+    if (!isDeleteConfirmed) {
+      setDeleteError("Please check the confirmation box acknowledging permanent data erasure.");
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    setDeleteError(null);
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      await deleteAccount(deletePassword);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setIsDeleteModalVisible(false);
+      setDeletePassword("");
+      setIsDeleteConfirmed(false);
+      Alert.alert(
+        "Account Deleted",
+        "Your VANVAS account and all associated personal travel records have been permanently erased from our servers."
+      );
+      router.replace("/(tabs)/explore");
+    } catch (err: any) {
+      setDeleteError(err.message || "Account deletion failed. Please check your password and try again.");
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   return (
@@ -233,14 +314,59 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Security & Account */}
+      {/* Security & Account Management */}
       {user && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Security</Text>
           <View style={styles.card}>
-            <TouchableOpacity onPress={handleSignOut} style={styles.signOutRow}>
-              <Ionicons name="log-out-outline" size={18} color={theme.colors.error} />
-              <Text style={styles.signOutText}>Sign Out</Text>
+            {/* 1. Change Password */}
+            <TouchableOpacity
+              onPress={() => {
+                setChangePasswordError(null);
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                setIsChangePasswordModalVisible(true);
+              }}
+              style={styles.navRow}
+            >
+              <View style={styles.prefLeft}>
+                <Ionicons name="key-outline" size={18} color={theme.colors.forest} />
+                <Text style={styles.prefLabel}>Change Password</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={theme.colors.foregroundSubtle} />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            {/* 2. Sign Out */}
+            <TouchableOpacity onPress={handleSignOut} style={styles.navRow}>
+              <View style={styles.prefLeft}>
+                <Ionicons name="log-out-outline" size={18} color={theme.colors.foregroundSubtle} />
+                <Text style={styles.prefLabel}>Sign Out</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={theme.colors.foregroundSubtle} />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            {/* 3. Delete Account (Destructive Action) */}
+            <TouchableOpacity
+              onPress={() => {
+                setDeleteError(null);
+                setDeletePassword("");
+                setIsDeleteConfirmed(false);
+                setIsDeleteModalVisible(true);
+              }}
+              style={styles.deleteRow}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Account Permanently"
+            >
+              <View style={styles.prefLeft}>
+                <Ionicons name="trash-outline" size={18} color={theme.colors.error} />
+                <Text style={styles.deleteText}>Delete Account Permanently</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={theme.colors.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -248,9 +374,188 @@ export default function ProfileScreen() {
 
       {/* Version Tag */}
       <View style={styles.footer}>
-        <Text style={styles.versionText}>VANVAS Native v0.2.0 • ai.vanvas.app</Text>
+        <Text style={styles.versionText}>VANVAS Native v0.4.0 • ai.vanvas.app</Text>
         <Text style={styles.copyrightText}>Crafted for Indian slow travel by The Sorted Club</Text>
       </View>
+
+      {/* Change Password Native Modal */}
+      <Modal
+        visible={isChangePasswordModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!isChangingPassword) setIsChangePasswordModalVisible(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Ionicons name="key" size={24} color={theme.colors.forest} />
+              <Text style={styles.modalTitle}>Change Password</Text>
+            </View>
+
+            {changePasswordError ? (
+              <View style={styles.errorBanner}>
+                <Ionicons name="alert-circle" size={16} color={theme.colors.error} />
+                <Text style={styles.errorBannerText}>{changePasswordError}</Text>
+              </View>
+            ) : null}
+
+            <Text style={styles.inputLabel}>Current Password</Text>
+            <TextInput
+              style={styles.textInput}
+              secureTextEntry
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholder="Current password"
+              placeholderTextColor={theme.colors.foregroundSubtle}
+              editable={!isChangingPassword}
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.inputLabel}>New Password (min. 6 characters)</Text>
+            <TextInput
+              style={styles.textInput}
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="New password"
+              placeholderTextColor={theme.colors.foregroundSubtle}
+              editable={!isChangingPassword}
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.inputLabel}>Confirm New Password</Text>
+            <TextInput
+              style={styles.textInput}
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirm new password"
+              placeholderTextColor={theme.colors.foregroundSubtle}
+              editable={!isChangingPassword}
+              autoCapitalize="none"
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setIsChangePasswordModalVisible(false)}
+                disabled={isChangingPassword}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.confirmChangeButton,
+                  (!currentPassword || !newPassword || !confirmPassword || isChangingPassword) && styles.disabledButton,
+                ]}
+                disabled={!currentPassword || !newPassword || !confirmPassword || isChangingPassword}
+                onPress={handleExecuteChangePassword}
+              >
+                {isChangingPassword ? (
+                  <ActivityIndicator size="small" color={theme.colors.parchment} />
+                ) : (
+                  <Text style={styles.confirmChangeButtonText}>Update Password</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Account Native Modal */}
+      <Modal
+        visible={isDeleteModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!isDeletingAccount) setIsDeleteModalVisible(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <View style={styles.destructiveIconBadge}>
+                <Ionicons name="warning" size={24} color={theme.colors.error} />
+              </View>
+              <Text style={styles.modalTitle}>Delete Account Permanently</Text>
+            </View>
+
+            <Text style={styles.modalWarning}>
+              This action is immediate and cannot be undone. Once confirmed, all your personal data will be permanently wiped from the active VANVAS platform:
+            </Text>
+
+            <View style={styles.bulletList}>
+              <Text style={styles.bulletItem}>• Account profile, email and login sessions</Text>
+              <Text style={styles.bulletItem}>• Saved expeditions and personal itineraries</Text>
+              <Text style={styles.bulletItem}>• Travel ledger expenses and settlement history</Text>
+              <Text style={styles.bulletItem}>• Saved sanctuary bookmarks and traveller memories</Text>
+              <Text style={styles.bulletItem}>• Profile avatars and remote cloud storage assets</Text>
+            </View>
+
+            {deleteError ? (
+              <View style={styles.errorBanner}>
+                <Ionicons name="alert-circle" size={16} color={theme.colors.error} />
+                <Text style={styles.errorBannerText}>{deleteError}</Text>
+              </View>
+            ) : null}
+
+            <Text style={styles.inputLabel}>Enter Account Password</Text>
+            <TextInput
+              style={styles.textInput}
+              secureTextEntry
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              placeholder="Your current account password"
+              placeholderTextColor={theme.colors.foregroundSubtle}
+              editable={!isDeletingAccount}
+              autoCapitalize="none"
+            />
+
+            <TouchableOpacity
+              style={styles.checkboxRow}
+              onPress={() => setIsDeleteConfirmed(!isDeleteConfirmed)}
+              disabled={isDeletingAccount}
+            >
+              <Ionicons
+                name={isDeleteConfirmed ? "checkbox" : "square-outline"}
+                size={22}
+                color={isDeleteConfirmed ? theme.colors.error : theme.colors.foregroundSubtle}
+              />
+              <Text style={styles.checkboxLabel}>
+                I understand that this action is permanent, immediate, and irreversible.
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setIsDeleteModalVisible(false)}
+                disabled={isDeletingAccount}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.confirmDeleteButton,
+                  (!deletePassword.trim() || !isDeleteConfirmed || isDeletingAccount) && styles.disabledButton,
+                ]}
+                disabled={!deletePassword.trim() || !isDeleteConfirmed || isDeletingAccount}
+                onPress={handleExecuteDeleteAccount}
+              >
+                {isDeletingAccount ? (
+                  <ActivityIndicator size="small" color={theme.colors.parchment} />
+                ) : (
+                  <Text style={styles.confirmDeleteButtonText}>Delete My Account</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -383,6 +688,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    flex: 1,
   },
   prefLabel: {
     fontSize: 14,
@@ -410,21 +716,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 4,
   },
+  deleteRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  deleteText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: theme.colors.error,
+  },
   divider: {
     height: 1,
     backgroundColor: theme.colors.borderSubtle,
     marginVertical: 12,
-  },
-  signOutRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 4,
-  },
-  signOutText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: theme.colors.error,
   },
   themePillsRow: {
     flexDirection: "row",
@@ -464,5 +770,162 @@ const styles = StyleSheet.create({
   copyrightText: {
     fontSize: 10,
     color: theme.colors.foregroundSubtle,
+  },
+  // Native Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContainer: {
+    width: "100%",
+    maxWidth: 420,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  destructiveIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(220, 38, 38, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: theme.colors.foreground,
+    flex: 1,
+  },
+  modalWarning: {
+    fontSize: 13,
+    color: theme.colors.foregroundMuted,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  bulletList: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: theme.radius.md,
+    padding: 12,
+    marginBottom: 14,
+    gap: 4,
+  },
+  bulletItem: {
+    fontSize: 12,
+    color: theme.colors.foreground,
+    lineHeight: 16,
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(220, 38, 38, 0.1)",
+    padding: 10,
+    borderRadius: theme.radius.md,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.error,
+  },
+  errorBannerText: {
+    fontSize: 12,
+    color: theme.colors.error,
+    flex: 1,
+    fontWeight: "600",
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: theme.colors.foreground,
+    marginBottom: 4,
+    marginTop: 8,
+  },
+  textInput: {
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: theme.colors.foreground,
+    marginBottom: 6,
+  },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  checkboxLabel: {
+    fontSize: 12,
+    color: theme.colors.foregroundMuted,
+    flex: 1,
+    lineHeight: 16,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: theme.colors.surfaceMuted,
+    paddingVertical: 12,
+    borderRadius: theme.radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: theme.colors.foreground,
+  },
+  confirmDeleteButton: {
+    flex: 2,
+    backgroundColor: theme.colors.error,
+    paddingVertical: 12,
+    borderRadius: theme.radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmDeleteButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: theme.colors.parchment,
+  },
+  confirmChangeButton: {
+    flex: 2,
+    backgroundColor: theme.colors.forest,
+    paddingVertical: 12,
+    borderRadius: theme.radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmChangeButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: theme.colors.parchment,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });

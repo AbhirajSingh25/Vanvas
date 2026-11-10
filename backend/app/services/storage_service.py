@@ -276,7 +276,10 @@ class StorageService:
         api_key = settings.CLOUDINARY_API_KEY
         api_secret = settings.CLOUDINARY_API_SECRET
         if not (cloud_name and api_key and api_secret):
-            return True
+            raise StorageServiceException(
+                code="PROFILE_STORAGE_NOT_CONFIGURED",
+                message="Cloudinary storage credentials are not configured in this environment."
+            )
 
         timestamp = int(time.time())
         public_id = storage_key.replace(".webp", "").replace("/", "_")
@@ -299,20 +302,38 @@ class StorageService:
         )
         try:
             with urllib.request.urlopen(req, timeout=15) as res:
-                res_data = json.loads(res.read().decode("utf-8"))
+                raw_body = res.read().decode("utf-8")
+                try:
+                    res_data = json.loads(raw_body)
+                except Exception as json_err:
+                    logger.error(f"Cloudinary destroy returned non-JSON response: {json_err}")
+                    raise StorageServiceException(
+                        code="PROFILE_STORAGE_ERROR",
+                        message=f"Cloudinary returned invalid JSON response: {json_err}"
+                    )
                 result = res_data.get("result")
                 if result in ("ok", "not found"):
                     logger.info(f"Cloudinary asset destroyed for public_id: {public_id}")
                     return True
-                logger.warning(f"Cloudinary returned non-ok result during destroy: {result}")
-                return True
+
+                error_info = res_data.get("error", {})
+                error_msg = error_info.get("message") if isinstance(error_info, dict) else str(error_info)
+                detail = error_msg or f"unexpected result '{result}'"
+                logger.error(f"Cloudinary destroy failed: {detail}")
+                raise StorageServiceException(
+                    code="PROFILE_STORAGE_ERROR",
+                    message=f"Cloudinary remote deletion failed: {detail}"
+                )
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 return True
+            logger.error(f"Cloudinary HTTP error {e.code} during asset destruction")
             raise StorageServiceException(
                 code="PROFILE_STORAGE_ERROR",
                 message=f"Cloudinary remote deletion failed: HTTP {e.code}"
             )
+        except StorageServiceException:
+            raise
         except Exception as e:
             logger.error(f"Cloudinary deletion error: {e}")
             raise StorageServiceException(
@@ -324,10 +345,21 @@ class StorageService:
     def _delete_s3(cls, storage_key: str) -> bool:
         """Deletes object from S3 / R2 / MinIO."""
         if not (settings.S3_BUCKET_NAME and settings.S3_ACCESS_KEY_ID and settings.S3_SECRET_ACCESS_KEY):
-            return True
+            raise StorageServiceException(
+                code="PROFILE_STORAGE_NOT_CONFIGURED",
+                message="AWS S3 storage credentials are not configured in this environment."
+            )
         try:
             import boto3
-            clean_key = Path(storage_key).as_posix().lstrip("/").replace("..", "")
+            from botocore.exceptions import ClientError
+        except ImportError:
+            raise StorageServiceException(
+                code="PROFILE_STORAGE_ERROR",
+                message="boto3 SDK is not installed in the environment."
+            )
+
+        clean_key = Path(storage_key).as_posix().lstrip("/").replace("..", "")
+        try:
             session = boto3.session.Session()
             s3_client = session.client(
                 "s3",
@@ -342,6 +374,18 @@ class StorageService:
             )
             logger.info(f"Deleted S3 object: {clean_key}")
             return True
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "")
+            if code in ("NoSuchKey", "NotFound", "404"):
+                logger.info(f"S3 object already missing (idempotent delete): {clean_key}")
+                return True
+            logger.error(f"S3 ClientError during deletion: {e}")
+            raise StorageServiceException(
+                code="PROFILE_STORAGE_ERROR",
+                message=f"S3 remote deletion failed: {code}"
+            )
+        except StorageServiceException:
+            raise
         except Exception as e:
             err_str = str(e).lower()
             if "nosuchkey" in err_str or "notfound" in err_str or "404" in err_str:
@@ -361,10 +405,13 @@ class StorageService:
 
         # 1. Remote cloud asset deletion if configured
         provider = cls.get_effective_provider()
-        if provider == "cloudinary" and (settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET):
+        if provider == "cloudinary":
             cls._delete_cloudinary(clean_key)
-        elif provider == "s3" and (settings.S3_BUCKET_NAME and settings.S3_ACCESS_KEY_ID and settings.S3_SECRET_ACCESS_KEY):
+        elif provider == "s3":
             cls._delete_s3(clean_key)
+        elif provider == "disabled":
+            # Disabled storage: no cloud asset exists
+            pass
 
         # 2. Local filesystem cache deletion
         try:
@@ -381,21 +428,24 @@ class StorageService:
             from app.models.models import UserAvatarBlob
             from app.database.session import SessionLocal
 
-            def _delete_blob(session):
-                session.query(UserAvatarBlob).filter(
+            if db is not None:
+                # Request handler owns database transaction - stage delete without committing
+                db.query(UserAvatarBlob).filter(
                     (UserAvatarBlob.storage_key == clean_key) |
                     (UserAvatarBlob.storage_key.endswith(clean_key))
                 ).delete(synchronize_session=False)
-                session.commit()
-                logger.info(f"Purged avatar blob from database for key: {clean_key}")
-
-            if db is not None:
-                _delete_blob(db)
+                logger.info(f"Staged avatar blob deletion for key: {clean_key}")
             else:
                 with SessionLocal() as session:
-                    _delete_blob(session)
+                    session.query(UserAvatarBlob).filter(
+                        (UserAvatarBlob.storage_key == clean_key) |
+                        (UserAvatarBlob.storage_key.endswith(clean_key))
+                    ).delete(synchronize_session=False)
+                    session.commit()
+                    logger.info(f"Purged avatar blob from database for key: {clean_key}")
         except Exception as e:
-            logger.warning(f"Could not delete avatar blob from database: {e}")
+            logger.error(f"Failed to delete avatar blob from database: {e}")
+            raise
 
         return True
 

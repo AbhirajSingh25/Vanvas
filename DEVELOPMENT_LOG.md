@@ -5,6 +5,52 @@
 
 ---
 
+### [2026-11-10] Final Privacy, Backend CI, boto3 Dependency & Play Store Compliance Completion
+- **Commit:** Pending
+- **Objective:** Fix backend boto3 dependency failure in GitHub Actions CI, harden remote avatar deletion against false positives and unconfigured storage providers, enforce mandatory password verification on account deletion, build native Profile account deletion and password change UI modals with private SQLite cleanup, and ensure full Play Store compliance.
+- **Changes Made:**
+  - Added `boto3>=1.34.0` to `backend/requirements.txt` to resolve `ModuleNotFoundError: No module named 'boto3'` in GitHub Actions CI.
+  - Hardened `_delete_cloudinary` in `backend/app/services/storage_service.py`: validated response JSON (`result in ("ok", "not found")`), fail closed with `StorageServiceException` if credentials are unconfigured or remote API returns error/non-JSON.
+  - Hardened `_delete_s3` in `backend/app/services/storage_service.py`: handled botocore `ClientError` (404/NoSuchKey treated as idempotent success; AccessDenied and network errors propagated), fail closed on unconfigured AWS credentials.
+  - Hardened `delete_profile_photo`: when `db` session is passed, staged blob deletion without committing, keeping transaction control with the request handler.
+  - Made password confirmation mandatory in `AccountDeleteRequest` and `/api/v1/auth/account`: rejects empty or incorrect passwords with 422 or 400.
+  - Expanded `backend/tests/test_account_deletion_governance.py` from 7 tests to 22 tests (100% passing) covering unauthenticated access, validation errors, bad passwords, successful cascades, message anonymization, replay protection, Cloudinary edge cases, S3 edge cases, and transaction rollback isolation.
+  - Updated `mobile/src/services/api.ts` with `changePassword` and `deleteAccount` methods.
+  - Added `purgeUserAccountData` in `mobile/src/services/db.ts` to wipe user trips, cached expenses, and offline mutation queue from SQLite on deletion without dropping destination catalogs.
+  - Integrated `deleteAccount` and `changePassword` into `mobile/src/context/AuthContext.tsx`.
+  - Built real native UI in `mobile/app/(tabs)/profile.tsx`: added Change Password modal and Delete Account Permanently modal with irreversible data warning, mandatory password re-entry, checkbox confirmation, and local SQLite/SecureStore private data purging.
+  - Updated `account-deletion-site/index.html` with mandatory password validation before deletion.
+  - Synchronized documentation in `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md`, `mobile/docs/MOBILE_QA_REPORT.md`, `mobile/docs/MOBILE_NEXT_STEPS.md`, `CURRENT_STATE.md`, `NEXT_SESSION.md`, `PROJECT_CONTEXT.md`.
+  - Preserved 100% strict freeze on `frontend/` (0 files modified).
+- **Files Affected:**
+  - `backend/requirements.txt`
+  - `backend/app/schemas/schemas.py`
+  - `backend/app/services/storage_service.py`
+  - `backend/app/api/v1/auth.py`
+  - `backend/tests/test_account_deletion_governance.py`
+  - `mobile/src/services/api.ts`
+  - `mobile/src/services/db.ts`
+  - `mobile/src/context/AuthContext.tsx`
+  - `mobile/app/(tabs)/profile.tsx`
+  - `account-deletion-site/index.html`
+  - `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md`
+  - `mobile/docs/MOBILE_QA_REPORT.md`
+  - `mobile/docs/MOBILE_NEXT_STEPS.md`
+  - `CURRENT_STATE.md`
+  - `NEXT_SESSION.md`
+  - `PROJECT_CONTEXT.md`
+  - `DEVELOPMENT_LOG.md`
+- **Tests Executed:**
+  - `backend/tests/test_account_deletion_governance.py`: 22/22 passed (100%).
+  - `backend/tests/test_profile_and_settings.py`: 5/5 passed (100%).
+  - `cd mobile && npm run typecheck`: 0 errors.
+  - `npx expo config --type public`: 0 errors.
+  - `cd packages/shared && npm run build`: 0 errors.
+  - `git diff --name-only frontend/`: 0 files modified (100% frozen).
+- **Remaining Issues:** 10 destination artwork entities await image-generation quota reset on November 13, 2026.
+
+---
+
 ### [2026-11-10] Final Release Gate Closure: Production Signing, Account Erasure Governance & Store Handoff
 - **Commit:** `7d81a79`
 - **Objective:** Complete Play Store production release requirements: implement real remote storage deletion (Cloudinary & S3), comprehensive cascading account erasure, strict release AAB vs validation AAB CI segregation with non-debug certificate verification, keystore git protection, and synchronize release documentation.

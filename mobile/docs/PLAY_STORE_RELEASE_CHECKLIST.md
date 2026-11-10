@@ -20,7 +20,7 @@
 | **New Architecture (TurboModules/Fabric)** | Supported & Tested | **PASSED** (`newArchEnabled=true`) | `app.json` & `gradle.properties` |
 | **Data Safety: Location** | Justify and declare location usage | **PASSED** (Used strictly in foreground for "I'M HERE" and Nearby Radar) | Declared below & in App Manifest |
 | **Data Safety: Photos/Media** | Restricted permission compliance | **PASSED** (Modern Android Photo Picker used via `expo-image-picker`; broad `READ_EXTERNAL_STORAGE` and `CAMERA` permissions completely removed from manifest) | Manifest audit |
-| **Account Deletion Path** | In-app deletion + Web URL | **CODE COMPLETE & BACKEND TESTED** (In-app deletion via profile/auth and dedicated standalone web deletion portal created at `account-deletion-site/`. Backend cascading deletion verified by 7/7 automated governance tests. Pending Vercel production deployment by repository owner) | Automated tests & `account-deletion-site/` |
+| **Account Deletion Path** | In-app deletion + Web URL | **PASSED & IMPLEMENTED** (In-app deletion via Profile screen with native modal, permanent erasure warning, and mandatory password verification; dedicated standalone web deletion portal created at `account-deletion-site/`. Backend cascading deletion verified by 22/22 automated governance tests. Web portal ready for owner Vercel deployment) | Automated tests & `mobile/app/(tabs)/profile.tsx` & `account-deletion-site/` |
 | **Privacy Policy** | Publicly accessible policy URL | **PASSED** (`https://vanvasai.vercel.app/privacy`) | Verified live web route |
 | **App Bundle Size** | < 150MB initial download | **PASSED** (~45MB AAB with Hermes JS engine) | Hermes bytecode enabled |
 | **Production AAB Signing** | Signed with organization upload keystore | **YELLOW / OWNER BLOCKED** (CI produces `VANVAS-Android-v0.4.0-code4-validation.aab` by default. Will automatically sign `VANVAS-Android-v0.4.0-code4-production.aab` upon configuration of the 4 GitHub Secrets) | `.github/workflows/android-apk.yml` step check |
@@ -90,7 +90,8 @@
 - [x] Expo Doctor validation clean.
 - [x] Dual-platform integrity verified (`frontend/` completely untouched).
 - [x] Zero artwork generation calls made (respecting quota window).
-- [x] Account deletion backend erasure & cascading foreign-key cleanup verified (7/7 tests passed).
+- [x] Account deletion backend erasure, boto3 dependency & cascading foreign-key cleanup verified (22/22 tests passed).
+- [x] Native in-app account deletion flow implemented with password confirmation, irreversible data warning, and local SQLite/SecureStore private data cleanup (`purgeUserAccountData`).
 - [x] Standalone account deletion portal authored in `account-deletion-site/`.
 - [x] Standalone Debug APK generated via CI (`VANVAS-Android-v0.4.0-code4-debug.apk`).
 - [x] Validation AAB generated via CI (`VANVAS-Android-v0.4.0-code4-validation.aab`).
