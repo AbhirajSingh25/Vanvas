@@ -6,7 +6,7 @@
 ---
 
 ### [2026-11-10] Final Release Gate Closure: Production Signing, Account Erasure Governance & Store Handoff
-- **Commit:** `Pending / Current HEAD: d6bf4ba`
+- **Commit:** `7d81a79`
 - **Objective:** Complete Play Store production release requirements: implement real remote storage deletion (Cloudinary & S3), comprehensive cascading account erasure, strict release AAB vs validation AAB CI segregation with non-debug certificate verification, keystore git protection, and synchronize release documentation.
 - **Changes Made:**
   - Implemented `_delete_cloudinary` (REST API destroy) and `_delete_s3` (boto3 delete_object) in `backend/app/services/storage_service.py` to eradicate orphaned cloud assets on account deletion.
