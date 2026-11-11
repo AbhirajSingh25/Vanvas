@@ -164,6 +164,15 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
     setShowResetConfirm(false);
   };
 
+  const budgetMembers = useMemo(
+    () =>
+      Array.from({ length: travellersCount }, (_, idx) => ({
+        user_id: `traveller_${idx + 1}`,
+        full_name: `Traveller ${idx + 1}`,
+      })),
+    [travellersCount]
+  );
+
   // Budget Calculations
   const totalAmount = useMemo(() => {
     return expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -680,10 +689,7 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
         isOpen={isAddBudgetItemOpen}
         onClose={() => setIsAddBudgetItemOpen(false)}
         onSubmit={handleAddBudgetItemSubmit}
-        members={Array.from({ length: travellersCount }, (_, idx) => ({
-          user_id: `traveller_${idx + 1}`,
-          full_name: `Traveller ${idx + 1}`,
-        }))}
+        members={budgetMembers}
         isForecastOnly={true}
       />
     </div>

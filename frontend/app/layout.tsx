@@ -12,6 +12,7 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { AskVanvasModal } from "@/components/copilot/AskVanvasModal";
 import { FloatingCopilotTrigger } from "@/components/copilot/FloatingCopilotTrigger";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { NavigationRecoveryProvider } from "@/components/pwa/NavigationRecoveryProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { CapacitorInit } from "@/components/capacitor/CapacitorInit";
 import { AppLifecycleHandler } from "@/components/capacitor/AppLifecycleHandler";
@@ -175,6 +176,7 @@ export default function RootLayout({
                   <AskVanvasProvider>
                     <UpdateNotificationBanner />
                     <ServiceWorkerRegister />
+                    <NavigationRecoveryProvider />
                     <Header />
                     <main className="flex-1 pb-[var(--vanvas-content-bottom-clearance,calc(4.75rem+env(safe-area-inset-bottom,0px)))] xl:pb-0">{children}</main>
                     <Footer />

@@ -2,6 +2,11 @@
 
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { reportError } from "@/lib/monitoring";
+import {
+  attemptChunkErrorRecovery,
+  clearChunkRecoveryBannerAndReload,
+  isChunkLoadError,
+} from "@/lib/navigationRecovery";
 
 interface Props {
   children: ReactNode;
@@ -24,6 +29,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (isChunkLoadError(error?.message)) {
+      attemptChunkErrorRecovery({ message: error.message });
+    }
     reportError(error, {
       feature_name: "react_render_tree",
       extra: { componentStack: errorInfo.componentStack },
@@ -32,9 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleReset = () => {
     this.setState({ hasError: false, error: null });
-    if (typeof window !== "undefined") {
-      window.location.reload();
-    }
+    clearChunkRecoveryBannerAndReload();
   };
 
   public render() {

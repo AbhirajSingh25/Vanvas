@@ -17,12 +17,14 @@ interface ExpenseModalProps {
   currentUserId?: string;
 }
 
+const EMPTY_TRIP_MEMBERS: TripMemberItem[] = [];
+
 export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   tripId,
   isOpen,
   onClose,
   onExpenseAdded,
-  members = [],
+  members = EMPTY_TRIP_MEMBERS,
   currentUserId,
 }) => {
   const [title, setTitle] = useState("");
@@ -57,15 +59,21 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const memberIdsKey = members.map((m) => m.user_id).join("|");
   useEffect(() => {
+    if (!isOpen) return;
     if (members.length > 0) {
       const allIds = members.map((m) => m.user_id);
-      setSelectedUserIds(allIds);
+      setSelectedUserIds((prev) =>
+        prev.length === allIds.length && prev.every((v, i) => v === allIds[i])
+          ? prev
+          : allIds
+      );
       if (!payerId && members[0]) {
         setPayerId(members[0].user_id);
       }
     }
-  }, [members, isOpen]);
+  }, [memberIdsKey, isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

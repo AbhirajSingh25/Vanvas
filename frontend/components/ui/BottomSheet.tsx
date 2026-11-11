@@ -64,7 +64,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end pointer-events-none">
           {/* Backdrop */}
           <motion.div
             variants={backdropVariants}

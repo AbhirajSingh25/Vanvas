@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   X,
   Plus,
@@ -16,6 +16,7 @@ import {
   DollarSign,
   ChevronDown
 } from "lucide-react";
+import { acquireScrollLock, releaseScrollLock } from "@/lib/scrollLock";
 
 export interface BudgetItemMember {
   user_id: string;
@@ -68,12 +69,24 @@ const CATEGORIES = [
   { id: "misc", label: "Misc · अन्य", icon: "🪙" },
 ];
 
+const EMPTY_MEMBERS: BudgetItemMember[] = [];
+const EMPTY_PODS: SplitPodOption[] = [];
+
+function areIdArraysEqual(a: string[], b: string[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 export const AddBudgetItemModal: React.FC<AddBudgetItemModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  members,
-  splitPods = [],
+  members = EMPTY_MEMBERS,
+  splitPods = EMPTY_PODS,
   currentUserId,
   isForecastOnly = false,
 }) => {
@@ -87,7 +100,7 @@ export const AddBudgetItemModal: React.FC<AddBudgetItemModalProps> = ({
 
   const [splitScope, setSplitScope] = useState<SplitScope>("EVERYONE");
   const [selectedPodId, setSelectedPodId] = useState<string>(splitPods[0]?.id || "");
-  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(() =>
     members.map((m) => m.user_id)
   );
 
@@ -97,26 +110,68 @@ export const AddBudgetItemModal: React.FC<AddBudgetItemModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Sync selected members if members prop changes
-  useEffect(() => {
-    if (members.length > 0 && selectedUserIds.length === 0) {
-      setSelectedUserIds(members.map((m) => m.user_id));
-    }
-  }, [members]);
+  const membersRef = useRef(members);
+  membersRef.current = members;
+  const splitPodsRef = useRef(splitPods);
+  splitPodsRef.current = splitPods;
 
-  // When split scope changes, adjust selected members
+  // Stable primitive keys avoid infinite effect loops when callers pass fresh inline array literals
+  const memberIdsKey = members.map((m) => m.user_id).join("|");
+  const podSignatureKey = splitPods
+    .map((p) => `${p.id}:${(p.member_user_ids || []).join(",")}`)
+    .join("|");
+
+  // Lock body scroll and close on Escape only while modal is actually open
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
-    if (splitScope === "EVERYONE") {
-      setSelectedUserIds(members.map((m) => m.user_id));
-    } else if (splitScope === "PERSONAL" && currentUserId) {
-      setSelectedUserIds([currentUserId]);
-    } else if (splitScope === "SPLIT_POD" && selectedPodId) {
-      const pod = splitPods.find((p) => p.id === selectedPodId);
-      if (pod && pod.member_user_ids && pod.member_user_ids.length > 0) {
-        setSelectedUserIds(pod.member_user_ids);
+    if (!isOpen) return;
+    acquireScrollLock();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        onCloseRef.current();
       }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      releaseScrollLock();
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [isOpen]);
+
+  // Sync selected members when scope, pod, or member list identities change
+  useEffect(() => {
+    if (!isOpen) return;
+    const currentMembers = membersRef.current;
+    const currentPods = splitPodsRef.current;
+    let nextIds: string[] | null = null;
+
+    if (splitScope === "EVERYONE") {
+      nextIds = currentMembers.map((m) => m.user_id);
+    } else if (splitScope === "PERSONAL" && currentUserId) {
+      nextIds = [currentUserId];
+    } else if (splitScope === "SPLIT_POD" && selectedPodId) {
+      const pod = currentPods.find((p) => p.id === selectedPodId);
+      if (pod && pod.member_user_ids && pod.member_user_ids.length > 0) {
+        nextIds = pod.member_user_ids;
+      }
+    } else if (currentMembers.length > 0) {
+      setSelectedUserIds((prev) =>
+        prev.length === 0 ? currentMembers.map((m) => m.user_id) : prev
+      );
+      return;
     }
-  }, [splitScope, selectedPodId, members, currentUserId, splitPods]);
+
+    if (nextIds) {
+      const targetIds = nextIds;
+      setSelectedUserIds((prev) =>
+        areIdArraysEqual(prev, targetIds) ? prev : targetIds
+      );
+    }
+  }, [isOpen, splitScope, selectedPodId, memberIdsKey, currentUserId, podSignatureKey]);
 
   // Compute active participant list
   const activeParticipants = useMemo(() => {
@@ -217,8 +272,15 @@ export const AddBudgetItemModal: React.FC<AddBudgetItemModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Add Budget Item"
+        onClick={onClose}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs"
+      >
         <motion.div
+          onClick={(e) => e.stopPropagation()}
           initial={{ opacity: 0, y: 40, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 40, scale: 0.98 }}
@@ -240,6 +302,7 @@ export const AddBudgetItemModal: React.FC<AddBudgetItemModalProps> = ({
 
             <button
               type="button"
+              aria-label="Close modal"
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#FAF7F0] flex items-center justify-center transition-colors cursor-pointer"
             >

@@ -1,7 +1,7 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-11T21:05:00+05:30
+> *Last Verified:* 2026-11-12T00:25:00+05:30
 
 ---
 
@@ -28,7 +28,9 @@
 - **Backend Account Deletion Governance:** `backend/tests/test_account_deletion_governance.py` ➔ **22/22 PASSED (100% green)**.
 - **Combined Backend Regression:** **38/38 PASSED (100% green)**.
 - **Mobile Offline Isolation & Reliability (Real Code):** `scripts/test_offline_isolation_and_account_deletion.mjs` ➔ **31/31 PASSED (100% green)** executing real production `db.ts`, `api.ts`, and `authTeardown.ts`.
-- **Next.js Web Frontend Build:** `cd frontend && npm run build` ➔ **PASSED (0 errors, 100% clean production build)**.
+- **Playwright Live Navigation & SW Recovery Suite:** `scripts/e2e/navigation-runtime-recovery.spec.ts` ➔ **6/6 PASSED (100% green)** (Mobile `390x844`, Desktop `1440x900`, SW v3→v4 migration, Chunk auto-recovery, Offline privacy, iOS standalone).
+- **PWA Acceptance & Integrity Audit:** `scripts/test_pwa_acceptance.mjs` ➔ **64/64 PASSED (100% green)**.
+- **Next.js Web Frontend Build:** `cd frontend && npx tsc --noEmit && npm run build` ➔ **PASSED (0 errors, 100% clean production build)**.
 - **Mobile React Native TypeScript:** `cd mobile && npm run typecheck` ➔ **PASSED (0 errors)**.
 - **Shared Package Build:** `cd packages/shared && npm run build` ➔ **PASSED (0 errors)**.
 
@@ -55,15 +57,11 @@
 ---
 
 ## 6. Last Completed Task
-- **VANVAS — P0 NAVIGATION RECOVERY, CIRCLES ACCESS & CI REGRESSION FIX:**
-  - Diagnosed and resolved Next.js router stale bundle navigation lock caused by `vanvas-v2` service worker cache.
-  - Bumped service worker cache to `vanvas-v3` with cache purging and `SKIP_WAITING` message handling.
-  - Restored full navigation accessibility for Crew Circles & Friends:
-    - Mobile bottom nav tab 5 converted to "Circles" (`/circles`, "मण्डली").
-    - Desktop navigation header and user profile dropdowns updated with direct links to "Circles" and "Friends".
-    - Homepage command center equipped with dedicated "Your Crew · आपका समूह" collaborative cards.
-    - Android native tab layout updated with dedicated `circles` tab and quick-launch button.
-  - Fixed backend CI 422 schema collision in `AskCrewCircleRequest`/`Response`.
+- **VANVAS — P0 LIVE NAVIGATION RECOVERY, SW CONTROLLER TRANSITION & CHUNK AUTO-RECOVERY:**
+  - Identified and fixed root-cause `Maximum update depth exceeded` infinite render loop in `AddBudgetItemModal.tsx` (`splitPods = []` default reference + `TravelDesk.tsx` inline array) that starved React concurrent transitions (`startTransition`) used by Next.js routing.
+  - Upgraded `sw.js` (`vanvas-v4`) with strict RSC/private-route exclusion and `ServiceWorkerRegister.tsx` with in-memory-guarded single-reload `controllerchange` transition.
+  - Added global Next.js chunk error auto-recovery + repeat-failure banner, internal route failure watchdog, scroll-lock reconciliation, and opt-in `?debugNavigation=1` diagnostics overlay (`navigationRecovery.ts` & `NavigationRecoveryProvider.tsx`).
+  - Verified all Mobile (`390x844`), Desktop (`1440x900`), SW migration, chunk recovery, offline fallback, and iOS standalone scenarios via real Playwright tests (`6/6 PASSED`).
 
 ---
 

@@ -5,6 +5,44 @@
 
 ---
 
+### [2026-11-12] P0 Live Navigation Recovery: Render-Loop Root Cause, SW Controller Transition, Chunk Auto-Recovery & Watchdog
+- **Objective:** Diagnose and permanently resolve the live P0 navigation failure where clicking route links (`Explore`, `Trips`, `Circles`, etc.) on `vanvasai.vercel.app` left users stuck on `/`, while the local `Split a Budget` modal still opened.
+- **Root Cause & Diagnosis:**
+  - **Primary Runtime Root Cause (React Transition Starvation):** `AddBudgetItemModal.tsx` (mounted inside `TravelDesk.tsx` on `/`) used an unstable default parameter `splitPods = []` while `TravelDesk.tsx` passed an inline `Array.from(...)` for `members`. `AddBudgetItemModal`'s `useEffect([splitScope, selectedPodId, members, currentUserId, splitPods])` unconditionally called `setSelectedUserIds(members.map(...))`, creating an infinite re-render loop (`Maximum update depth exceeded`). Because Next.js `<Link>` / `router.push()` commits inside a React concurrent transition (`startTransition`), this continuous update loop starved Next.js route transitions on `/` even on fresh browser profiles with zero stale cache, whereas synchronous discrete state updates (`Split a Budget` modal open) bypassed transition scheduling.
+  - **Secondary Lifecycle & Overlay Hardening:** `ServiceWorkerRegister.tsx` lacked `controllerchange` listener + in-memory per-document single-reload handling on existing installs; there was no automatic `ChunkLoadError` recovery or internal link watchdog; exiting `AnimatePresence` dialogs could briefly intercept pointer taps for ~200ms while fading; `AddBudgetItemModal` lacked an `Escape` key handler.
+- **Changes Made:**
+  - **Infinite Loop Fix:** Stabilized `AddBudgetItemModal.tsx` (`EMPTY_MEMBERS`/`EMPTY_PODS`, primitive ID signature keys, array equality guard, `Escape` handler, `role="dialog"`, `motion/react` import), memoized `budgetMembers` in `TravelDesk.tsx`, and hardened `ExpenseModal.tsx`.
+  - **Service Worker v4 & Controller Transition:** Bumped `sw.js` to `vanvas-v4` (`CACHE_VERSION`), excluded RSC/private routes (`/trips`, `/circles`, `/friends`, `/profile`, `/settings`, `/bookings`, `/admin`, `/login`, `/api`) from public HTML caching, ensured zero 404 caching, and added `controllerchange` single-reload controller replacement (preserving first-install zero-reload and auth/URL continuity) in `ServiceWorkerRegister.tsx`.
+  - **Global Chunk Recovery, Watchdog & Diagnostics:** Added `frontend/lib/navigationRecovery.ts` and `frontend/components/pwa/NavigationRecoveryProvider.tsx` (mounted in `app/layout.tsx`, integrated with `ErrorBoundary.tsx`), providing guarded single-reload chunk error recovery, repeatable-failure reload banner, same-origin route watchdog, and opt-in `?debugNavigation=1` diagnostics panel.
+  - **Overlay & Scroll-Lock Integrity:** Updated `scrollLock.ts` (`reconcileOrphanedScrollLocks`) and `motion.ts` (`pointerEvents: "none"` on modal/sheet exit) plus `BottomSheet.tsx` / `VanvasAdaptiveModal.tsx` (`pointer-events-none` wrappers) so closed/closing modals never block navigation taps.
+  - **Defensive Guards:** Added `Array.isArray` response guards on `app/circles/page.tsx` and `app/friends/page.tsx`.
+- **Verification:**
+  - Playwright E2E Suite (`scripts/e2e/navigation-runtime-recovery.spec.ts` against local `next start` production build): **6/6 PASSED (100% green)** covering Mobile `390x844`, Desktop `1440x900`, SW v3→v4 migration & session preservation (Scenarios A/B/F), Chunk recovery & repeat-failure banner (Scenarios C/D), Offline private-route protection (Scenario E), and iOS standalone + `?debugNavigation=1` (Scenario G).
+  - PWA Acceptance Audit (`scripts/test_pwa_acceptance.mjs`): **64/64 PASSED (100% green)**.
+  - Next.js TypeScript & Production Build (`cd frontend && npx tsc --noEmit && npm run build`): **PASSED (0 errors, 25/25 routes)**.
+  - Mobile TypeScript (`cd mobile && npm run typecheck`): **PASSED (0 errors)**.
+- **Files Affected:**
+  - `frontend/components/finance/AddBudgetItemModal.tsx`
+  - `frontend/components/home/TravelDesk.tsx`
+  - `frontend/components/trip/ExpenseModal.tsx`
+  - `frontend/public/sw.js`
+  - `frontend/components/pwa/ServiceWorkerRegister.tsx`
+  - `frontend/lib/navigationRecovery.ts`
+  - `frontend/components/pwa/NavigationRecoveryProvider.tsx`
+  - `frontend/components/monitoring/ErrorBoundary.tsx`
+  - `frontend/app/layout.tsx`
+  - `frontend/lib/scrollLock.ts`
+  - `frontend/lib/motion.ts`
+  - `frontend/components/ui/BottomSheet.tsx`
+  - `frontend/components/ui/VanvasAdaptiveModal.tsx`
+  - `frontend/components/layout/ChaloLauncherModal.tsx`
+  - `frontend/app/circles/page.tsx`
+  - `frontend/app/friends/page.tsx`
+  - `scripts/e2e/playwright.config.ts`
+  - `scripts/e2e/navigation-runtime-recovery.spec.ts`
+
+---
+
 ### [2026-11-11] Navigation Recovery, Crew Circles Access & Backend CI Regression Fix
 - **Objective:** Resolve P0 homepage navigation interception, expose Circles & Friends across desktop and mobile shells, bump service worker caching to eliminate stale client bundles, and fix CI 422 regression in backend travel circles tests.
 - **Root Cause & Diagnosis:**

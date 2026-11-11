@@ -34,9 +34,10 @@ function CirclesListContent() {
     setLoading(true);
     try {
       const data = await api.getCrewCircles();
-      setCircles(data || []);
+      setCircles(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load circles:", err);
+      setCircles([]);
     } finally {
       setLoading(false);
     }
@@ -47,9 +48,10 @@ function CirclesListContent() {
     setCreateError(null);
     try {
       const fList = await api.getFriends();
-      setFriends(fList || []);
+      setFriends(Array.isArray(fList) ? fList : []);
     } catch (err) {
       console.error("Failed to fetch friends:", err);
+      setFriends([]);
     }
   };
 

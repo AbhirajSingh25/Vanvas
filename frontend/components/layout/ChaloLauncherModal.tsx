@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Compass,
@@ -29,6 +29,8 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
   onOpenAskVanvas,
 }) => {
   const router = useRouter();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -36,7 +38,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -44,7 +46,7 @@ export const ChaloLauncherModal: React.FC<ChaloLauncherModalProps> = ({
       releaseScrollLock();
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

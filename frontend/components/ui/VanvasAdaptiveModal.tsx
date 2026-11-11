@@ -27,6 +27,8 @@ export const VanvasAdaptiveModal: React.FC<VanvasAdaptiveModalProps> = ({
   className = "",
 }) => {
   const [isMobile, setIsMobile] = React.useState(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -44,7 +46,7 @@ export const VanvasAdaptiveModal: React.FC<VanvasAdaptiveModalProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -52,7 +54,7 @@ export const VanvasAdaptiveModal: React.FC<VanvasAdaptiveModalProps> = ({
       releaseScrollLock();
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, isMobile, onClose]);
+  }, [isOpen, isMobile]);
 
   if (isMobile) {
     return (
@@ -71,7 +73,7 @@ export const VanvasAdaptiveModal: React.FC<VanvasAdaptiveModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto pointer-events-none">
           {/* Backdrop */}
           <motion.div
             variants={backdropVariants}

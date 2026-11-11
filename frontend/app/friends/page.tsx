@@ -50,9 +50,9 @@ function FriendsContent() {
         api.getIncomingFriendRequests(),
         api.getOutgoingFriendRequests()
       ]);
-      setFriends(fList || []);
-      setIncoming(incList || []);
-      setOutgoing(outList || []);
+      setFriends(Array.isArray(fList) ? fList : []);
+      setIncoming(Array.isArray(incList) ? incList : []);
+      setOutgoing(Array.isArray(outList) ? outList : []);
     } catch (err) {
       console.error("Failed to load friends data:", err);
     } finally {

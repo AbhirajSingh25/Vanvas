@@ -85,11 +85,13 @@ export const sheetVariants: Variants = {
   visible: {
     y: 0,
     opacity: 1,
+    pointerEvents: "auto",
     transition: MOTION_SPRINGS.sheet,
   },
   exit: {
     y: "100%",
     opacity: 0,
+    pointerEvents: "none",
     transition: { duration: MOTION_DURATIONS.fast, ease: [0.4, 0, 1, 1] },
   },
 };
@@ -97,8 +99,8 @@ export const sheetVariants: Variants = {
 // Backdrop Fade
 export const backdropVariants: Variants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: MOTION_DURATIONS.fast } },
-  exit: { opacity: 0, transition: { duration: MOTION_DURATIONS.micro } },
+  visible: { opacity: 1, pointerEvents: "auto", transition: { duration: MOTION_DURATIONS.fast } },
+  exit: { opacity: 0, pointerEvents: "none", transition: { duration: MOTION_DURATIONS.micro } },
 };
 
 // Dialog / Center Modal
@@ -108,11 +110,13 @@ export const dialogVariants: Variants = {
     opacity: 1,
     scale: 1,
     y: 0,
+    pointerEvents: "auto",
     transition: MOTION_SPRINGS.gentle,
   },
   exit: {
     opacity: 0,
     scale: 0.96,
+    pointerEvents: "none",
     transition: { duration: MOTION_DURATIONS.micro },
   },
 };
