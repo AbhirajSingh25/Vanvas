@@ -22,7 +22,7 @@ from app.schemas.schemas import (
     CrewCircleDetailResponse, CrewCircleMemberResponse, CrewCircleTripResponse,
     CrewCircleActivityCreate, CrewCircleActivityResponse,
     CrewCircleSuggestionCreate, CrewCircleSuggestionResponse,
-    AskVanvasCircleRequest, AskVanvasCircleResponse
+    AskCrewCircleRequest, AskCrewCircleResponse
 )
 
 router = APIRouter()
@@ -694,10 +694,10 @@ def vote_on_suggestion(
     }
 
 
-@router.post("/{circle_id}/ask-vanvas", response_model=AskVanvasCircleResponse)
+@router.post("/{circle_id}/ask-vanvas", response_model=AskCrewCircleResponse)
 def ask_vanvas_for_circle(
     circle_id: str,
-    payload: AskVanvasCircleRequest,
+    payload: AskCrewCircleRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -740,7 +740,7 @@ def ask_vanvas_for_circle(
             f"group lunch at authentic local dhabas, and leaving late afternoons open for spontaneous village walks."
         )
 
-    return AskVanvasCircleResponse(
+    return AskCrewCircleResponse(
         reply=reply,
         suggested_places=[],
         suggested_actions=[

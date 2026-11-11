@@ -1,7 +1,7 @@
 // VANVAS Production Service Worker
-// Version: vanvas-pwa-v2.0.0
+// Version: vanvas-pwa-v3.0.0
 
-const CACHE_VERSION = 'vanvas-v2';
+const CACHE_VERSION = 'vanvas-v3';
 const CACHE_STATIC = `vanvas-static-${CACHE_VERSION}`;
 const CACHE_SHELL = `vanvas-shell-${CACHE_VERSION}`;
 
@@ -126,3 +126,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 });
+
+// 4. Message Event: Skip waiting on demand
+self.addEventListener('message', (event) => {
+  if (event.data && (event.data.type === 'SKIP_WAITING' || event.data === 'skipWaiting')) {
+    self.skipWaiting();
+  }
+});
+

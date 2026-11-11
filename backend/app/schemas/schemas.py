@@ -2417,12 +2417,12 @@ class CrewCircleSuggestionResponse(BaseModel):
     created_at: datetime
 
 
-class AskVanvasCircleRequest(BaseModel):
+class AskCrewCircleRequest(BaseModel):
     prompt: str
     trip_id: Optional[str] = None
 
 
-class AskVanvasCircleResponse(BaseModel):
+class AskCrewCircleResponse(BaseModel):
     reply: str
     suggested_places: List[Dict[str, Any]] = []
     suggested_actions: List[Dict[str, Any]] = []

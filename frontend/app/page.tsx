@@ -460,7 +460,7 @@ export default function HomePage() {
       {/* SECTION 3: REAL TRAVEL MOMENTS & SCENARIOS                */}
       {/* ======================================================== */}
       <section className="bg-[#173B32] text-[#EFE5D2] py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#EFE5D2_1px,transparent_0)] bg-[size:16px_16px]" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#EFE5D2_1px,transparent_0)] bg-[size:16px_16px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto space-y-16 relative z-10">
           <div className="text-center max-w-2xl mx-auto space-y-2">

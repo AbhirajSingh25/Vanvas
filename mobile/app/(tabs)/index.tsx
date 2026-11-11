@@ -211,6 +211,18 @@ export default function HomeScreen() {
         <TouchableOpacity
           onPress={() => {
             Haptics.selectionAsync();
+            router.push("/(tabs)/circles");
+          }}
+          style={[styles.quickCard, { backgroundColor: "#152F28" }]}
+        >
+          <Ionicons name="people-outline" size={26} color={theme.colors.brass} />
+          <Text style={styles.quickCardTitle}>Crew Circles</Text>
+          <Text style={styles.quickCardSub}>Collaborative travel &amp; split</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.selectionAsync();
             router.push("/ask-vanvas");
           }}
           style={[styles.quickCard, { backgroundColor: "#11231D" }]}

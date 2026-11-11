@@ -268,3 +268,4 @@ export function VanvasIdentityCard({ user, onUserUpdated }: VanvasIdentityCardPr
     </>
   );
 }
+

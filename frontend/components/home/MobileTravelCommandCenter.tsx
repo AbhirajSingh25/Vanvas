@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Compass, MapPin, Sparkles, ArrowRight, Clock,
   Route, Mountain, ChevronRight, Bookmark, Users,
-  CheckCircle2
+  CheckCircle2, UserPlus
 } from "lucide-react";
 import { DestinationSearchBar } from "@/components/search/DestinationSearchBar";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
@@ -373,6 +373,124 @@ export const MobileTravelCommandCenter: React.FC<MobileTravelCommandCenterProps>
             );
           })()}
         </div>
+      </div>
+
+      {/* 5.5 YOUR CREW & CIRCLES (COLLABORATIVE TRAVEL & FRIENDS) */}
+      <div data-testid="your-crew-section" className={isCompact ? "space-y-1.5" : "space-y-2"}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3
+              className={`font-serif font-bold text-[#173B32] flex items-center gap-1.5 ${
+                isCompact ? "text-xs" : "text-sm"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 text-[#B65E3C]" />
+              <span>Your Crew · आपका समूह</span>
+            </h3>
+            <p
+              className={`text-[#7B4D36] font-mono ${
+                isCompact ? "text-[9.5px]" : "text-[10px]"
+              }`}
+            >
+              Circles, shared itineraries &amp; fair finance
+            </p>
+          </div>
+          <Link
+            href="/circles"
+            className="text-[11px] font-bold text-[#B65E3C] hover:text-[#9E4D2E] flex items-center gap-0.5"
+          >
+            <span>Open Circles</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {user ? (
+          <div className={`grid grid-cols-2 ${isCompact ? "gap-1.5" : "gap-2"}`}>
+            <Link
+              href="/circles"
+              data-testid="home-crew-circles-card"
+              className={`rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-2xs active:scale-98 transition-all flex flex-col justify-between group touch-manipulation ${
+                isCompact ? "p-2.5 min-h-[72px]" : "p-3 min-h-[82px]"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-7 h-7 rounded-xl bg-[#173B32]/10 text-[#173B32] flex items-center justify-center">
+                  <Users className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[9px] font-mono font-bold uppercase text-[#7B4D36] bg-[#EFE5D2] px-1.5 py-0.5 rounded">
+                  Circles
+                </span>
+              </div>
+              <div className="mt-1">
+                <div className="font-serif font-bold text-xs text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
+                  Crew Circles
+                </div>
+                <div className="text-[10px] text-[#7B4D36] truncate">
+                  Group chats &amp; smart split
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/friends"
+              data-testid="home-friends-card"
+              className={`rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] shadow-2xs active:scale-98 transition-all flex flex-col justify-between group touch-manipulation ${
+                isCompact ? "p-2.5 min-h-[72px]" : "p-3 min-h-[82px]"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-7 h-7 rounded-xl bg-[#B49252]/15 text-[#7B4D36] flex items-center justify-center">
+                  <UserPlus className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[9px] font-mono font-bold uppercase text-[#7B4D36] bg-[#EFE5D2] px-1.5 py-0.5 rounded">
+                  Friends
+                </span>
+              </div>
+              <div className="mt-1">
+                <div className="font-serif font-bold text-xs text-[#173B32] group-hover:text-[#B65E3C] transition-colors">
+                  Travel Friends
+                </div>
+                <div className="text-[10px] text-[#7B4D36] truncate">
+                  Find &amp; invite companions
+                </div>
+              </div>
+            </Link>
+          </div>
+        ) : (
+          <div
+            data-testid="home-guest-crew-card"
+            className="rounded-2xl bg-[#FAF7F0] border-2 border-[#D8CBB2] p-3 sm:p-3.5 shadow-2xs space-y-2.5"
+          >
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#173B32]/10 text-[#173B32] flex items-center justify-center shrink-0 mt-0.5">
+                <Users className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-serif font-bold text-xs sm:text-sm text-[#173B32] leading-snug">
+                  Travel Together With Your Circle
+                </h4>
+                <p className="text-[10.5px] text-[#7B4D36] mt-0.5 leading-relaxed">
+                  Collaborate on itineraries, chat in real-time, and split expenses equally or by subgroup pods.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-0.5">
+              <Link
+                href="/login?redirect=/circles"
+                className="flex-1 py-1.5 px-3 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-[#FAF4E8] text-xs font-bold text-center tracking-wide active:scale-98 transition-all shadow-2xs"
+              >
+                Sign In to Join
+              </Link>
+              <Link
+                href="/circles"
+                className="flex-1 py-1.5 px-3 rounded-xl bg-[#FAF7F0] border border-[#173B32] hover:bg-[#EFE5D2] text-[#173B32] text-xs font-bold text-center tracking-wide active:scale-98 transition-all"
+              >
+                Explore Circles
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 6. CURATED DESTINATION SANCTUARIES (HORIZONTAL CAROUSEL WITH PARTIAL NEXT-CARD REVEAL) */}

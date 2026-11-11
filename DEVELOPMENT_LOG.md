@@ -5,6 +5,38 @@
 
 ---
 
+### [2026-11-11] Navigation Recovery, Crew Circles Access & Backend CI Regression Fix
+- **Objective:** Resolve P0 homepage navigation interception, expose Circles & Friends across desktop and mobile shells, bump service worker caching to eliminate stale client bundles, and fix CI 422 regression in backend travel circles tests.
+- **Root Cause & Diagnosis:**
+  - **CI 422 Regression:** Adding `AskVanvasCircleRequest` and `AskVanvasCircleResponse` in `backend/app/schemas/schemas.py` for Crew Circles had shadowed the existing schemas of the same name for public travel circles (`travel_circles.py`), breaking endpoint payload parsing in `test_ask_vanvas_planning_for_circle`.
+  - **Navigation Stale Bundle Regression:** Next.js Turbopack client navigation was blocked due to outdated precached assets from `vanvas-v2` in `sw.js` without an automatic cache bump or `SKIP_WAITING` listener. Additionally, an ornamental backdrop overlay in `app/page.tsx` was missing `pointer-events-none`.
+- **Changes Made:**
+  - **Backend Schema Collision Resolved:** Renamed private crew circle schemas to `AskCrewCircleRequest` and `AskCrewCircleResponse` in `backend/app/schemas/schemas.py` and updated `backend/app/api/v1/crew_circles.py`. Public travel circle schemas remain untouched.
+  - **Web Navigation Overhaul:**
+    - Mobile bottom navigation (`MobileNav.tsx`): Replaced unused 5th tab with "Circles" (`/circles`, `Users` icon, "मण्डली"), active on both `/circles` and `/friends`.
+    - Desktop header (`Header.tsx`): Added "Circles" and "Friends" to main nav links, profile popover dropdown, and mobile menu overlay with localized labels and icons.
+    - Homepage command center (`MobileTravelCommandCenter.tsx`): Added prominent **"Your Crew · आपका समूह"** section displaying active Crew Circles and Friends cards, plus guest CTA ("Sign In to Join" with redirect).
+    - Page overlay (`app/page.tsx`): Added `pointer-events-none` to prevent ambient gradient overlay from intercepting touch/mouse events.
+  - **Service Worker Cache Invalidation:** Bumped `CACHE_VERSION` to `vanvas-v3` in `sw.js`, implemented purge for stale caches, and added `message` event handler for `SKIP_WAITING`.
+  - **Native Android Navigation:** Created `mobile/app/(tabs)/circles.tsx`, wired tab navigation in `mobile/app/(tabs)/_layout.tsx`, and added Crew Circles quick-action in `mobile/app/(tabs)/index.tsx`.
+- **Verification:**
+  - Backend regression: `pytest tests/test_solo_traveler_circles.py tests/test_collaborative_crew_and_finance.py tests/test_account_deletion_governance.py` ➔ **38/38 PASSED (100% green, 0 errors)**.
+  - Frontend production build: `cd frontend && npm run build` ➔ **PASSED (0 errors, 25/25 routes static/prerendered)**.
+  - Mobile TypeScript: `cd mobile && npm run typecheck` ➔ **PASSED (0 errors)**.
+- **Files Affected:**
+  - `backend/app/schemas/schemas.py`
+  - `backend/app/api/v1/crew_circles.py`
+  - `frontend/public/sw.js`
+  - `frontend/components/layout/MobileNav.tsx`
+  - `frontend/components/layout/Header.tsx`
+  - `frontend/components/home/MobileTravelCommandCenter.tsx`
+  - `frontend/app/page.tsx`
+  - `mobile/app/(tabs)/circles.tsx`
+  - `mobile/app/(tabs)/_layout.tsx`
+  - `mobile/app/(tabs)/index.tsx`
+
+---
+
 ### [2026-11-11] Crew Circles, Collaborative Travel & Smart Expense Ecosystem Implementation
 - **Objective:** Complete full-stack end-to-end implementation of Crew Circles (मण्डली), Friend Connections with permanent `vanvas_id`, and the 3-Layer Smart Finance System across Web, Mobile Native (Android API 36), Backend FastAPI, and PostgreSQL/SQLite database with complete offline isolation.
 - **Changes Made:**

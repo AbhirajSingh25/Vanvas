@@ -59,8 +59,8 @@
 Run the following commands to verify complete full-stack health:
 
 ```bash
-# 1. Backend regression & governance tests
-cd backend && python -m pytest tests/test_collaborative_crew_and_finance.py tests/test_account_deletion_governance.py
+# 1. Backend regression & governance tests (38 tests)
+cd backend && python -m pytest tests/test_solo_traveler_circles.py tests/test_collaborative_crew_and_finance.py tests/test_account_deletion_governance.py
 
 # 2. Mobile real SQLite offline isolation & teardown suite
 node scripts/test_offline_isolation_and_account_deletion.mjs
@@ -82,7 +82,7 @@ python scripts/validate_docs.py
 
 ## 5. Acceptance Criteria
 
-- All 27 backend tests must pass with 0 failures and 0 errors.
+- All 38 backend regression and governance tests must pass with 0 failures and 0 errors.
 - All 31 mobile offline isolation tests must pass with 100% success.
 - Next.js Web application must compile with 0 TypeScript or build errors.
 - Mobile React Native application must pass `tsc --noEmit` with 0 errors.

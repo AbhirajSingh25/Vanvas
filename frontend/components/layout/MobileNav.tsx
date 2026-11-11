@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Calendar, User, Sparkles } from "lucide-react";
+import { Home, Compass, Calendar, Users, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useDensity } from "@/context/DensityContext";
 import { useAskVanvas } from "@/context/AskVanvasContext";
@@ -24,14 +24,14 @@ export const MobileNav: React.FC = () => {
     pathname.startsWith("/plan") ||
     pathname.startsWith("/road-trip") ||
     pathname.startsWith("/one-day");
-  const isProfileActive = pathname.startsWith("/profile") || pathname.startsWith("/settings") || pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isCirclesActive = pathname.startsWith("/circles") || pathname.startsWith("/friends");
 
   const navItems = [
     { label: "Home", hindi: "होम", href: "/", icon: Home, isActive: isHomeActive },
     { label: "Explore", hindi: "खोजो", href: "/explore", icon: Compass, isActive: isExploreActive },
     { label: "Chalo", hindi: "चलो", href: "#chalo", icon: Sparkles, isPrimary: true, isActive: chaloLauncherOpen },
     { label: "Trips", hindi: "यात्रा", href: "/trips", icon: Calendar, isActive: isTripsActive },
-    { label: "Journal", hindi: "डायरी", href: "/profile", icon: User, isActive: isProfileActive },
+    { label: "Circles", hindi: "मण्डली", href: "/circles", icon: Users, isActive: isCirclesActive },
   ];
 
   return (

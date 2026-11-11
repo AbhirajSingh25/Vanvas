@@ -59,6 +59,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="circles"
+        options={{
+          title: "Circles",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-outline" size={size || 22} color={typeof color === "string" ? color : undefined} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="trips"
         options={{
           title: "Trips",

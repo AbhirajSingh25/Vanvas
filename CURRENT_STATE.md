@@ -1,7 +1,7 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-11T19:00:00+05:30
+> *Last Verified:* 2026-11-11T21:05:00+05:30
 
 ---
 
@@ -23,19 +23,19 @@
 ---
 
 ## 3. Build & Diagnostics Verification
+- **Backend Solo Traveler Circles Suite:** `backend/tests/test_solo_traveler_circles.py` ➔ **11/11 PASSED (100% green)** (Ask VANVAS Circle schema regression verified resolved).
 - **Backend Collaborative Crew & Finance Suite:** `backend/tests/test_collaborative_crew_and_finance.py` ➔ **5/5 PASSED (100% green)**.
 - **Backend Account Deletion Governance:** `backend/tests/test_account_deletion_governance.py` ➔ **22/22 PASSED (100% green)**.
-- **Combined Backend Regression:** **27/27 PASSED (100% green in 39.8s)**.
+- **Combined Backend Regression:** **38/38 PASSED (100% green)**.
 - **Mobile Offline Isolation & Reliability (Real Code):** `scripts/test_offline_isolation_and_account_deletion.mjs` ➔ **31/31 PASSED (100% green)** executing real production `db.ts`, `api.ts`, and `authTeardown.ts`.
 - **Next.js Web Frontend Build:** `cd frontend && npm run build` ➔ **PASSED (0 errors, 100% clean production build)**.
 - **Mobile React Native TypeScript:** `cd mobile && npm run typecheck` ➔ **PASSED (0 errors)**.
 - **Shared Package Build:** `cd packages/shared && npm run build` ➔ **PASSED (0 errors)**.
-- **Schema Additive Migrations:** Idempotent database schema in `session.py` and `alembic/versions/0003_crew_circles_friends_finance.py`.
 
 ---
 
 ## 4. Test Suite Summary
-- **Backend Regression Suite:** 27/27 tests passed (100%).
+- **Backend Regression Suite:** 38/38 tests passed (100%).
 - **Mobile Real Offline Suite:** 31/31 tests passed (100%).
 - **Web Compilation:** 25/25 static routes and server routes compiled cleanly.
 - **Mobile Compilation:** Clean compilation across Expo 58 with zero TypeScript errors.
@@ -55,13 +55,15 @@
 ---
 
 ## 6. Last Completed Task
-- **VANVAS — CREW CIRCLES, COLLABORATIVE TRAVEL & SMART EXPENSE ECOSYSTEM:**
-  - Ambiguity-resistant permanent `vanvas_id` (`VNV-XXXX-XXXX`) and `allow_friend_requests_via_id` privacy toggle.
-  - Friend Connection System (lookup, requests lifecycle, friend list, remove, block/unblock).
-  - Private Crew Circles (मण्डली): Multi-trip workspaces, member management, suggestions with private consensus voting (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, activity chat feed.
-  - Smart Finance 3-Layer Architecture: Layer 1 Budget Plans (zero debts), Layer 2 Group Ledger (integer paise precision, version locking, audit logging), Layer 3 Split Pods (isolated subgroup ledgers with zero debt leakage).
-  - Add Budget Item bottom sheet / modal with live calculation previews across `FIXED`, `PER_PERSON`, and `QTY_UNIT` bases.
-  - Full React Native parity with SQLite offline tables `user_circles_cache` and `user_friends_cache`.
+- **VANVAS — P0 NAVIGATION RECOVERY, CIRCLES ACCESS & CI REGRESSION FIX:**
+  - Diagnosed and resolved Next.js router stale bundle navigation lock caused by `vanvas-v2` service worker cache.
+  - Bumped service worker cache to `vanvas-v3` with cache purging and `SKIP_WAITING` message handling.
+  - Restored full navigation accessibility for Crew Circles & Friends:
+    - Mobile bottom nav tab 5 converted to "Circles" (`/circles`, "मण्डली").
+    - Desktop navigation header and user profile dropdowns updated with direct links to "Circles" and "Friends".
+    - Homepage command center equipped with dedicated "Your Crew · आपका समूह" collaborative cards.
+    - Android native tab layout updated with dedicated `circles` tab and quick-launch button.
+  - Fixed backend CI 422 schema collision in `AskCrewCircleRequest`/`Response`.
 
 ---
 

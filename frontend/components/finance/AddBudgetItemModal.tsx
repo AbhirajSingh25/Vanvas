@@ -658,3 +658,4 @@ export const AddBudgetItemModal: React.FC<AddBudgetItemModalProps> = ({
     </AnimatePresence>
   );
 };
+

@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   Compass, Calendar, MapPin, Sparkles, ChevronLeft,
   User as UserIcon, Bookmark, Settings, LogOut, LogIn, ChevronDown, Shield, ShieldCheck,
-  SlidersHorizontal, Check
+  SlidersHorizontal, Check, Users, UserPlus
 } from "lucide-react";
 import { useAskVanvas } from "@/context/AskVanvasContext";
 import { Avatar } from "@/components/ui/Avatar";
@@ -112,9 +112,9 @@ export const Header: React.FC = () => {
 
   const navLinks = [
     { name: "Explore", devanagari: "खोज", href: "/explore", icon: Compass },
-    { name: "Plan a Trip", devanagari: "योजना", href: "/plan", icon: Sparkles },
-    { name: "Road Trip", devanagari: "सड़क यात्रा", href: "/road-trip", icon: Compass },
-    { name: "Day Escape", devanagari: "एक दिवसीय", href: "/one-day", icon: Compass },
+    { name: "Plan", devanagari: "योजना", href: "/plan", icon: Sparkles },
+    { name: "Circles", devanagari: "मण्डली", href: "/circles", icon: Users },
+    { name: "Friends", devanagari: "मित्र", href: "/friends", icon: UserPlus },
     { name: "Trips", devanagari: "यात्रा", href: "/trips", icon: Calendar },
     { name: "Nearby", devanagari: "आस-पास", href: "/nearby", icon: MapPin },
   ];
@@ -123,6 +123,8 @@ export const Header: React.FC = () => {
   const getRouteMeta = (path: string) => {
     if (path === "/") return { title: "", hindi: "", isRoot: true, fallback: "/" };
     if (path === "/explore") return { title: "Explore", hindi: "खोज", isRoot: true, fallback: "/" };
+    if (path === "/circles" || path.startsWith("/circles")) return { title: "Crew Circles", hindi: "मण्डली", isRoot: false, fallback: "/" };
+    if (path === "/friends") return { title: "Friends & Travelers", hindi: "मित्र", isRoot: false, fallback: "/" };
     if (path === "/trips") return { title: "My Expeditions", hindi: "यात्रा डायरी", isRoot: true, fallback: "/" };
     if (path === "/nearby") return { title: "Nearby Radar", hindi: "आस-पास", isRoot: true, fallback: "/" };
     if (path === "/plan") return { title: "Plan Expedition", hindi: "योजना", isRoot: false, fallback: "/" };
@@ -280,6 +282,24 @@ export const Header: React.FC = () => {
                       >
                         <Bookmark className="w-3.5 h-3.5 text-[#B49252]" />
                         <span>Saved Places &amp; Gems</span>
+                      </Link>
+
+                      <Link
+                        href="/circles"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
+                      >
+                        <Users className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>Crew Circles &amp; Groups</span>
+                      </Link>
+
+                      <Link
+                        href="/friends"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 hover:text-[#173B32] transition-colors font-medium"
+                      >
+                        <UserPlus className="w-3.5 h-3.5 text-[#B49252]" />
+                        <span>Friends &amp; Travelers</span>
                       </Link>
 
                       <Link
@@ -535,6 +555,24 @@ export const Header: React.FC = () => {
                       >
                         <Bookmark className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
                         <span>Saved Places &amp; Gems</span>
+                      </Link>
+
+                      <Link
+                        href="/circles"
+                        onClick={() => setMobileAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 active:bg-[#E5D5BA]/80 transition-colors font-medium rounded-lg mx-1"
+                      >
+                        <Users className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                        <span>Crew Circles &amp; Groups</span>
+                      </Link>
+
+                      <Link
+                        href="/friends"
+                        onClick={() => setMobileAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-[#20211D] hover:bg-[#E5D5BA]/50 active:bg-[#E5D5BA]/80 transition-colors font-medium rounded-lg mx-1"
+                      >
+                        <UserPlus className="w-3.5 h-3.5 text-[#B49252] shrink-0" />
+                        <span>Friends &amp; Travelers</span>
                       </Link>
 
                       <Link
