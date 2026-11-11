@@ -1,7 +1,7 @@
 # VANVAS — Permanent Project Context & Architecture Master
 
 > **Primary Source of Truth for Architecture, System Contracts, and Feature Status**  
-> *Latest Verified Checkpoint:* Commit `a969a9f` | *Preceding Commits:* `5192108`, `df29183`, `6cebba3`, `7d81a79`, `d6bf4ba`, `bd54384`, `01a74ff`, `a840b75`, `6feee0f`, `e4822c5`, `1fd8f48` | *Branch:* `main` | *Date:* November 10, 2026
+> *Latest Verified Checkpoint:* Commit `3477392` | *Preceding Commits:* `a7cba4e`, `aa49b34`, `51880e9`, `a969a9f`, `5192108`, `df29183`, `6cebba3`, `7d81a79`, `d6bf4ba`, `bd54384`, `01a74ff`, `a840b75`, `6feee0f`, `e4822c5`, `1fd8f48` | *Branch:* `main` | *Date:* November 11, 2026
 
 ---
 
@@ -260,8 +260,8 @@ VANVAS/
 
 - **Current Branch:** `main`
 - **Remote Origin:** `https://github.com/AbhirajSingh25/Vanvas.git`
-- **HEAD Commit:** `aa49b34` (`feat(mobile): sqlite privacy isolation, user-scoped caches, mutation deduplication and 20 real integration tests`)
-- **Preceding Implementation Checkpoint:** `a969a9f` (`feat(mobile): single-owner account deletion teardown and account-scoped offline data isolation`)
+- **HEAD Commit:** `3477392` (`fix(mobile): migrate existing cache keys and harden offline sync idempotency`)
+- **Preceding Implementation Checkpoint:** `aa49b34` (`feat(mobile): sqlite privacy isolation, user-scoped caches, mutation deduplication and 20 real integration tests`)
 - **Status:** Pristine working tree, perfectly synchronized with `origin/main`.
 
 ---
