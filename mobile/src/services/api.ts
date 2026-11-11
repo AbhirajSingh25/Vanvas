@@ -75,6 +75,11 @@ export function setApiStatusListener(listener: ApiStatusListener | null) {
   statusListener = listener;
 }
 
+let customFetch: typeof fetch | null = null;
+export function _setFetchForTesting(fn: typeof fetch | null) {
+  customFetch = fn;
+}
+
 async function fetchWithRetry<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -104,7 +109,8 @@ async function fetchWithRetry<T>(
 
     try {
       const url = `${PRODUCTION_API_URL}${endpoint}`;
-      const res = await fetch(url, {
+      const fetchFn = customFetch || fetch;
+      const res = await fetchFn(url, {
         ...options,
         headers,
         signal: controller.signal,
@@ -561,13 +567,14 @@ export const nativeApi = {
     notes?: string;
   }): Promise<Expense> {
     const user = await secureStorage.getUserData<User>();
-    if (!user?.id) {
+    if (!user?.id || !user.id.trim()) {
       throw new Error("Authentication required to add expenses.");
     }
     const userId = user.id;
 
+    let created: Expense | null = null;
     try {
-      const created = await fetchWithRetry<Expense>(
+      created = await fetchWithRetry<Expense>(
         `/trips/${tripId}/expenses`,
         {
           method: "POST",
@@ -575,10 +582,8 @@ export const nativeApi = {
         },
         false
       );
-      await offlineDb.saveOfflineExpense(userId, tripId, created, false);
-      return created;
     } catch {
-      // When offline in high-altitude zones with no reception, generate local offline expense
+      // Remote creation genuinely failed or timed out: generate local offline expense & queue mutation
       const offlineId = `offline_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const offlineExpense: Expense = {
         id: offlineId,
@@ -600,23 +605,41 @@ export const nativeApi = {
       });
       return offlineExpense;
     }
+
+    // Remote creation succeeded: cache locally without enqueuing another creation if local write fails
+    if (created) {
+      try {
+        await offlineDb.saveOfflineExpense(userId, tripId, created, false);
+      } catch (localErr) {
+        console.warn("[api] Failed to cache newly created expense locally:", localErr);
+      }
+      return created;
+    }
+    throw new Error("Unexpected error creating expense");
   },
 
   async deleteExpense(tripId: string, expenseId: string): Promise<void> {
     const user = await secureStorage.getUserData<User>();
-    if (!user?.id) {
+    if (!user?.id || !user.id.trim()) {
       throw new Error("Authentication required to delete expenses.");
     }
     const userId = user.id;
 
+    if (expenseId.startsWith("offline_")) {
+      // Unsynced offline expense: cancel pending add_expense mutation and remove from local cache.
+      // Never enqueue a server delete for an expense that was never created remotely.
+      await offlineDb.cancelOfflineExpenseMutation(userId, expenseId);
+      await offlineDb.deleteOfflineExpense(userId, tripId, expenseId);
+      return;
+    }
+
+    // Already synced server expense: attempt DELETE remotely
     try {
-      if (!expenseId.startsWith("offline_")) {
-        await fetchWithRetry(
-          `/trips/${tripId}/expenses/${expenseId}`,
-          { method: "DELETE" },
-          false
-        );
-      }
+      await fetchWithRetry(
+        `/trips/${tripId}/expenses/${expenseId}`,
+        { method: "DELETE" },
+        false
+      );
     } catch {
       await offlineDb.queueOfflineMutation(userId, "delete_expense", { tripId, expenseId });
     }
@@ -626,7 +649,7 @@ export const nativeApi = {
   async syncPendingOfflineActions(): Promise<number> {
     const currentUser = await secureStorage.getUserData<User>();
     const currentToken = await secureStorage.getToken();
-    if (!currentUser?.id || !currentToken) {
+    if (!currentUser?.id || !currentUser.id.trim() || !currentToken) {
       // Never replay offline mutations without an authenticated user session
       return 0;
     }
@@ -645,42 +668,46 @@ export const nativeApi = {
       }
 
       // Safety guard: reject mutations not matching the current authenticated user
-      if (item.user_id && item.user_id !== currentUser.id) {
+      if (!item.user_id || item.user_id !== currentUser.id) {
         continue;
       }
+
       try {
         const payload = JSON.parse(item.payload_json);
         if (item.action_type === "add_expense") {
-          // Check for existing server expense matching offline_client_id to prevent duplicates on interrupted sync
-          let serverExpense: Expense | null = null;
-          const offlineId = payload.offlineId;
+          // A successful GET that confirms no matching expense exists may proceed to POST.
+          // A successful GET that finds the matching offline client ID must reuse the existing server expense.
+          // A failed GET must NOT be treated as proof no expense exists - stop to prevent duplicates!
+          let existingExpenses: Expense[];
           try {
-            const existingExpenses = await fetchWithRetry<Expense[]>(
+            existingExpenses = await fetchWithRetry<Expense[]>(
               `/trips/${payload.tripId}/expenses`,
               {},
               true,
               1
             );
-            if (Array.isArray(existingExpenses)) {
-              serverExpense = existingExpenses.find((e: any) => {
-                if (offlineId && e.receipt_data_json) {
-                  try {
-                    const parsed = JSON.parse(e.receipt_data_json);
-                    if (parsed.offline_client_id === offlineId) return true;
-                  } catch {}
-                }
-                return (
-                  e.title === payload.expense.title &&
-                  Number(e.amount) === Number(payload.expense.amount) &&
-                  e.date === payload.expense.date
-                );
-              }) || null;
-            }
           } catch {
-            // If checking fails, proceed to POST
+            // Cannot verify server state; preserve mutation in queue and stop sync to avoid duplicates
+            break;
+          }
+
+          let serverExpense: Expense | null = null;
+          const offlineId = payload.offlineId;
+          if (Array.isArray(existingExpenses) && offlineId) {
+            // Strong identity match: strictly match offline_client_id (never match solely on title/amount/date)
+            serverExpense = existingExpenses.find((e: any) => {
+              if (e.receipt_data_json) {
+                try {
+                  const parsed = JSON.parse(e.receipt_data_json);
+                  if (parsed.offline_client_id === offlineId) return true;
+                } catch {}
+              }
+              return false;
+            }) || null;
           }
 
           if (!serverExpense) {
+            // Safe to POST since GET confirmed no matching offline_client_id exists
             serverExpense = await fetchWithRetry<Expense>(
               `/trips/${payload.tripId}/expenses`,
               {
@@ -708,12 +735,16 @@ export const nativeApi = {
           }
           syncedCount++;
         }
-        await offlineDb.removeMutation(item.id);
+        await offlineDb.removeMutation(currentUser.id, item.id);
       } catch {
         // Stop on first failure to preserve order and retry later
         break;
       }
     }
     return syncedCount;
+  },
+
+  _setFetchForTesting(fn: typeof fetch | null): void {
+    customFetch = fn;
   },
 };

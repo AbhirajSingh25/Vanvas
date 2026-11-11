@@ -1,32 +1,52 @@
 // @ts-check
 /**
- * VANVAS Mobile Offline Isolation & Account Deletion Test Suite
+ * VANVAS Mobile Offline Isolation, Migration & Sync Integrity Test Suite
  *
- * Exercises the ACTUAL production implementation in:
+ * Executes the ACTUAL production modules:
  * - mobile/src/services/db.ts (offlineDb)
  * - mobile/src/services/api.ts (nativeApi)
+ * - mobile/src/services/authTeardown.ts (executeAccountDeletionTeardown)
+ * - mobile/src/services/storage.ts (secureStorage)
  *
- * Verifies all 20 required production reliability & privacy acceptance criteria:
- * 1. Legacy NULL expense cannot be read by authenticated user.
- * 2. Legacy NULL mutation is never replayed.
- * 3. Legacy NULL expense is never deleted by another user.
- * 4. User A sees only User A's expense cache.
- * 5. User B sees only User B's expense cache.
- * 6. User A cannot delete User B's cached expense.
- * 7. Trip detail reads require exact account ownership.
- * 8. In-memory trip details are user-scoped.
- * 9. In-memory expenses are user-scoped.
- * 10. In-memory mutations are user-scoped.
- * 11. User B cannot replay User A's offline mutation.
- * 12. Guest mode cannot replay private mutations.
- * 13. User A logout does not expose User A's records to User B.
- * 14. Deleting User A preserves User B's records.
- * 15. Public destinations remain available.
- * 16. Deleted User A's mutations are never replayed.
- * 17. Failed database migration does not continue into unsafe private queries.
- * 18. Offline sync preserves unprocessed actions after a network failure.
- * 19. Interrupted expense synchronization does not create duplicate expenses.
- * 20. Successful account deletion always clears credentials and React state.
+ * Verifies all 31 mandatory scenarios:
+ * Existing Database Migration:
+ * 1. Upgrade actual previous schema with single-column trip primary key.
+ * 2. Preserve existing valid account-owned records.
+ * 3. Verify composite-key migration.
+ * 4. Verify two accounts can independently cache the same trip ID.
+ * 5. Verify repeat migration is safe and idempotent.
+ * 6. Verify a genuine migration failure rolls back and blocks private operations.
+ *
+ * SQLite Privacy Isolation:
+ * 7. Legacy NULL expense cannot be read.
+ * 8. Legacy NULL mutation cannot be replayed.
+ * 9. Legacy NULL expense cannot be deleted by another user.
+ * 10. User A cannot read User B's expenses.
+ * 11. User B cannot read User A's expenses.
+ * 12. User A cannot delete User B's expense.
+ * 13. User-scoped trip detail cache is isolated.
+ * 14. Memory fallback follows the same ownership rules.
+ * 15. Account purge deletes only the intended user's records.
+ * 16. Public destination data survives account purge.
+ * 17. Missing or empty user IDs are rejected by private methods.
+ *
+ * Actual Offline Synchronization:
+ * 18. A successful synchronization removes only the confirmed mutation.
+ * 19. A network failure preserves the current and remaining queue items.
+ * 20. A previously created server expense with the same offline_client_id is reused without another POST.
+ * 21. A failed reconciliation GET does not trigger another POST.
+ * 22. Two unrelated expenses with identical title, amount and date are not falsely deduplicated.
+ * 23. A local cache write failure after a successful server POST does not enqueue another creation.
+ * 24. A pending offline expense deleted before reconnection is never recreated.
+ * 25. Switching accounts during replay stops subsequent mutations.
+ * 26. A mutation belonging to another user is never executed or removed.
+ *
+ * Actual Account Deletion Teardown:
+ * 27. Backend deletion rejection leaves the local session intact.
+ * 28. Successful backend deletion clears SecureStore credentials.
+ * 29. Successful backend deletion resets the actual React authentication state.
+ * 30. A local SQLite purge failure does not restore credentials or falsely report backend deletion failure.
+ * 31. Only the deleted account's local cache is purged.
  */
 
 import assert from "node:assert";
@@ -83,9 +103,11 @@ Module.prototype.require = function (id) {
 // @ts-ignore
 const { offlineDb } = require("../mobile/src/services/db.ts");
 // @ts-ignore
-const { nativeApi } = require("../mobile/src/services/api.ts");
+const { nativeApi, _setFetchForTesting } = require("../mobile/src/services/api.ts");
 // @ts-ignore
 const { secureStorage } = require("../mobile/src/services/storage.ts");
+// @ts-ignore
+const { executeAccountDeletionTeardown } = require("../mobile/src/services/authTeardown.ts");
 
 /**
  * Creates a real in-memory SQLite database instance powered by Python's sqlite3 engine,
@@ -93,6 +115,7 @@ const { secureStorage } = require("../mobile/src/services/storage.ts");
  * - execAsync(sql)
  * - runAsync(sql, ...params)
  * - getAllAsync(sql, ...params)
+ * - getFirstAsync(sql, ...params)
  * - withTransactionAsync(fn)
  */
 function createRealSQLiteEngine() {
@@ -194,15 +217,14 @@ for line in sys.stdin:
 
 async function runTestSuite() {
   console.log("======================================================================");
-  console.log("  VANVAS Mobile Real SQLite Privacy Isolation & Reliability Test Suite");
-  console.log("  Executing actual production methods from mobile/src/services/db.ts");
+  console.log("  VANVAS Mobile Real Migration, Privacy Isolation & Offline Sync Suite");
+  console.log("  Executing actual production methods from db.ts, api.ts & authTeardown.ts");
   console.log("======================================================================\n");
 
   let passedCount = 0;
   let sqliteEngine = createRealSQLiteEngine();
 
-  // Helper to initialize clean schema on the real database
-  async function setupCleanDatabase() {
+  async function setupCleanFreshDatabase() {
     sqliteEngine.close();
     sqliteEngine = createRealSQLiteEngine();
     await offlineDb._initSchemaForTesting(sqliteEngine);
@@ -211,368 +233,398 @@ async function runTestSuite() {
   }
 
   try {
-    // -------------------------------------------------------------------------
-    // TEST 1: Legacy NULL expense cannot be read by authenticated user
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 1: Legacy NULL expense cannot be read by authenticated user... ");
-      await setupCleanDatabase();
+    // =========================================================================
+    // SECTION 1: EXISTING DATABASE MIGRATION & UPGRADE (Tests 1 - 6)
+    // =========================================================================
 
-      // Directly insert legacy NULL expense into SQLite table
+    // TEST 1 & 2: Upgrade actual previous schema with single-column PK & preserve valid user data
+    {
+      process.stdout.write("Test 1 & 2: Upgrade legacy schema fixture & preserve existing user-owned data... ");
+      sqliteEngine.close();
+      sqliteEngine = createRealSQLiteEngine();
+
+      // Create actual previous production schema from checkpoint 51880e9
+      await sqliteEngine.execAsync(`
+        CREATE TABLE destinations_cache (
+          id TEXT PRIMARY KEY,
+          slug TEXT,
+          name TEXT,
+          data_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE TABLE destination_details_cache (
+          slug_or_id TEXT PRIMARY KEY,
+          data_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE TABLE user_trips_cache (
+          trip_id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          data_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE TABLE trip_details_cache (
+          trip_id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          data_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE TABLE expenses_cache (
+          id TEXT PRIMARY KEY,
+          trip_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          amount REAL NOT NULL,
+          category TEXT NOT NULL,
+          date TEXT NOT NULL,
+          notes TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'synced',
+          data_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE TABLE offline_mutation_queue (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          action_type TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        );
+      `);
+
+      // Seed with existing user_a records and unowned legacy records
+      const timestamp = 1731200000000;
+      const tripSummaryA = { id: "trip_spiti_shared", destination_name: "Spiti Valley", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned" };
+      const tripDetailA = { id: "trip_spiti_shared", destination_id: "spiti", title: "User A Spiti Expedition", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] };
+      const unownedTripDetail = { id: "trip_unowned_orphan", destination_id: "spiti", title: "Orphaned Trip", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] };
+
       await sqliteEngine.runAsync(
-        "INSERT INTO expenses_cache (id, trip_id, user_id, title, amount, category, date, sync_status, data_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        "legacy_exp_1", "trip_spiti", null, "Old Chai", 40, "Food", "2026-10-01", "synced", JSON.stringify({ id: "legacy_exp_1", title: "Old Chai", amount: 40 }), Date.now()
+        "INSERT INTO user_trips_cache VALUES (?, ?, ?, ?)",
+        "trip_spiti_shared", "user_a", JSON.stringify(tripSummaryA), timestamp
+      );
+      await sqliteEngine.runAsync(
+        "INSERT INTO trip_details_cache VALUES (?, ?, ?, ?)",
+        "trip_spiti_shared", "user_a", JSON.stringify(tripDetailA), timestamp
+      );
+      // Insert unowned trip detail with empty user_id
+      await sqliteEngine.runAsync(
+        "INSERT INTO trip_details_cache VALUES (?, ?, ?, ?)",
+        "trip_unowned_orphan", "", JSON.stringify(unownedTripDetail), timestamp
       );
 
-      // Save User A's expense via real offlineDb
-      await offlineDb.saveOfflineExpense("user_a", "trip_spiti", {
-        id: "exp_a1",
-        trip_id: "trip_spiti",
-        title: "User A Lunch",
-        amount: 350,
-        category: "Food",
-        date: "2026-11-10",
-      });
+      // Execute actual production migration
+      await offlineDb._initSchemaForTesting(sqliteEngine);
+      offlineDb._setDatabaseForTesting(sqliteEngine);
 
-      // User A reads cache
-      const userAExpenses = await offlineDb.getCachedTripExpenses("user_a", "trip_spiti");
-      assert.strictEqual(userAExpenses.length, 1, "User A must see exactly 1 expense");
-      assert.strictEqual(userAExpenses[0].id, "exp_a1", "User A must only see their own expense");
+      // Verify User A's data survived completely
+      const userATrips = await offlineDb.getCachedUserTrips("user_a");
+      assert.strictEqual(userATrips.length, 1);
+      assert.strictEqual(userATrips[0].id, "trip_spiti_shared");
 
-      // User B reads cache
-      const userBExpenses = await offlineDb.getCachedTripExpenses("user_b", "trip_spiti");
-      assert.strictEqual(userBExpenses.length, 0, "User B must see 0 expenses (legacy NULL never exposed)");
+      const userADetail = await offlineDb.getCachedTripDetail("user_a", "trip_spiti_shared");
+      assert.strictEqual(userADetail?.title, "User A Spiti Expedition");
+
+      // Verify unowned orphan was quarantined, not visible to user_a or user_b
+      const orphanCheckA = await offlineDb.getCachedTripDetail("user_a", "trip_unowned_orphan");
+      assert.strictEqual(orphanCheckA, null);
+      const orphanCheckB = await offlineDb.getCachedTripDetail("user_b", "trip_unowned_orphan");
+      assert.strictEqual(orphanCheckB, null);
+
+      passedCount += 2;
+      console.log("[PASS] (2 tests)");
+    }
+
+    // TEST 3: Verify composite-key migration structure
+    {
+      process.stdout.write("Test 3: Verify composite-key PRAGMA structure... ");
+      const tripCols = await sqliteEngine.getAllAsync("PRAGMA table_info(user_trips_cache)");
+      const detailCols = await sqliteEngine.getAllAsync("PRAGMA table_info(trip_details_cache)");
+
+      const tripPkCols = tripCols.filter((c) => c.pk > 0);
+      assert.strictEqual(tripPkCols.length, 2, "user_trips_cache must have composite PK of 2 columns");
+      assert.strictEqual(tripPkCols.some((c) => c.name === "trip_id"), true);
+      assert.strictEqual(tripPkCols.some((c) => c.name === "user_id"), true);
+
+      const detailPkCols = detailCols.filter((c) => c.pk > 0);
+      assert.strictEqual(detailPkCols.length, 2, "trip_details_cache must have composite PK of 2 columns");
+      assert.strictEqual(detailPkCols.some((c) => c.name === "trip_id"), true);
+      assert.strictEqual(detailPkCols.some((c) => c.name === "user_id"), true);
 
       passedCount++;
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 2: Legacy NULL mutation is never replayed
-    // -------------------------------------------------------------------------
+    // TEST 4: Two accounts independently cache the same trip ID without overwriting
     {
-      process.stdout.write("Test 2: Legacy NULL mutation is never replayed... ");
-      await setupCleanDatabase();
+      process.stdout.write("Test 4: Two accounts independently cache the same trip ID without overwriting... ");
+      const tripDetailB = {
+        id: "trip_spiti_shared", // SAME trip ID as User A
+        destination_id: "spiti",
+        title: "User B Custom Budget Spiti",
+        start_date: "2026-11-15",
+        end_date: "2026-11-22",
+        status: "planned",
+        days: [],
+      };
 
-      // Directly insert legacy NULL mutation into offline_mutation_queue
+      await offlineDb.cacheTripDetail("user_b", tripDetailB);
+
+      // Verify User A still reads User A's snapshot
+      const cachedA = await offlineDb.getCachedTripDetail("user_a", "trip_spiti_shared");
+      assert.strictEqual(cachedA?.title, "User A Spiti Expedition");
+
+      // Verify User B reads User B's snapshot
+      const cachedB = await offlineDb.getCachedTripDetail("user_b", "trip_spiti_shared");
+      assert.strictEqual(cachedB?.title, "User B Custom Budget Spiti");
+
+      // Update User B
+      const tripDetailBUpdated = { ...tripDetailB, title: "User B Updated Route" };
+      await offlineDb.cacheTripDetail("user_b", tripDetailBUpdated);
+
+      // User A snapshot remains completely untouched!
+      const cachedAAfter = await offlineDb.getCachedTripDetail("user_a", "trip_spiti_shared");
+      assert.strictEqual(cachedAAfter?.title, "User A Spiti Expedition");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 5: Verify repeat migration is safe and idempotent
+    {
+      process.stdout.write("Test 5: Verify repeat migration is safe and idempotent... ");
+      // Re-run initSchema on the already migrated database
+      await offlineDb._initSchemaForTesting(sqliteEngine);
+
+      const cachedA = await offlineDb.getCachedTripDetail("user_a", "trip_spiti_shared");
+      assert.strictEqual(cachedA?.title, "User A Spiti Expedition");
+
+      const cachedB = await offlineDb.getCachedTripDetail("user_b", "trip_spiti_shared");
+      assert.strictEqual(cachedB?.title, "User B Updated Route");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 6: Genuine migration failure rolls back and blocks private operations
+    {
+      process.stdout.write("Test 6: Genuine migration failure rolls back and blocks private operations... ");
+      const brokenEngine = createRealSQLiteEngine();
+      // Pre-create table with old single PK so migration is triggered
+      await brokenEngine.execAsync(`
+        CREATE TABLE user_trips_cache (
+          trip_id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          data_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+      `);
+
+      // Intercept execAsync to throw during migration
+      const brokenDbAdapter = {
+        ...brokenEngine,
+        async execAsync(sql) {
+          if (sql.includes("user_trips_cache_new_composite")) {
+            throw new Error("Simulated disk I/O corruption during table swap");
+          }
+          await brokenEngine.execAsync(sql);
+        },
+      };
+
+      let threw = false;
+      try {
+        await offlineDb._initSchemaForTesting(brokenDbAdapter);
+      } catch (err) {
+        threw = true;
+        assert.ok(err.message.includes("corruption"));
+      }
+      assert.strictEqual(threw, true, "initSchema must fail and throw on migration error");
+
+      // Private cache query must be fail-safely blocked
+      let queryBlocked = false;
+      try {
+        await offlineDb.getCachedTripDetail("user_a", "trip_any");
+      } catch (err) {
+        queryBlocked = true;
+        assert.ok(err.message.includes("Private cache access blocked"));
+      }
+      assert.strictEqual(queryBlocked, true, "Private operations must be blocked after migration failure");
+
+      brokenEngine.close();
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // =========================================================================
+    // SECTION 2: SQLITE PRIVACY ISOLATION (Tests 7 - 17)
+    // =========================================================================
+
+    // TEST 7: Legacy NULL expense cannot be read by authenticated user
+    {
+      process.stdout.write("Test 7: Legacy NULL expense cannot be read by authenticated user... ");
+      await setupCleanFreshDatabase();
+
+      await sqliteEngine.runAsync(
+        "INSERT INTO expenses_cache (id, trip_id, user_id, title, amount, category, date, sync_status, data_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "legacy_exp_null", "trip_ladakh", null, "Unowned Chai", 30, "Food", "2026-10-01", "synced", JSON.stringify({ id: "legacy_exp_null", title: "Unowned Chai", amount: 30 }), Date.now()
+      );
+
+      await offlineDb.saveOfflineExpense("user_a", "trip_ladakh", {
+        id: "exp_a_valid",
+        trip_id: "trip_ladakh",
+        title: "User A Petrol",
+        amount: 800,
+        category: "Transport",
+        date: "2026-11-10",
+      });
+
+      const userAExpenses = await offlineDb.getCachedTripExpenses("user_a", "trip_ladakh");
+      assert.strictEqual(userAExpenses.length, 1);
+      assert.strictEqual(userAExpenses[0].id, "exp_a_valid");
+
+      const userBExpenses = await offlineDb.getCachedTripExpenses("user_b", "trip_ladakh");
+      assert.strictEqual(userBExpenses.length, 0);
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 8: Legacy NULL mutation is never replayed
+    {
+      process.stdout.write("Test 8: Legacy NULL mutation is never replayed... ");
       await sqliteEngine.runAsync(
         "INSERT INTO offline_mutation_queue (user_id, action_type, payload_json, created_at) VALUES (?, ?, ?, ?)",
-        null, "delete_expense", JSON.stringify({ tripId: "trip_spiti", expenseId: "legacy_exp_1" }), Date.now()
+        null, "delete_expense", JSON.stringify({ tripId: "trip_ladakh", expenseId: "legacy_exp_null" }), Date.now()
       );
 
-      // Queue mutation for User A via real offlineDb
-      await offlineDb.queueOfflineMutation("user_a", "add_expense", { tripId: "trip_spiti", title: "Snacks" });
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", { title: "User A Action" });
 
-      // User A queries pending
-      const userAPending = await offlineDb.getPendingMutations("user_a");
-      assert.strictEqual(userAPending.length, 1);
-      assert.strictEqual(userAPending[0].user_id, "user_a");
+      const pendingA = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pendingA.length, 1);
+      assert.strictEqual(pendingA[0].user_id, "user_a");
 
-      // User B queries pending
-      const userBPending = await offlineDb.getPendingMutations("user_b");
-      assert.strictEqual(userBPending.length, 0, "User B must not receive unowned NULL mutations");
+      const pendingB = await offlineDb.getPendingMutations("user_b");
+      assert.strictEqual(pendingB.length, 0);
 
       passedCount++;
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 3: Legacy NULL expense is never deleted by another user
-    // -------------------------------------------------------------------------
+    // TEST 9: Legacy NULL expense cannot be deleted by another user
     {
-      process.stdout.write("Test 3: Legacy NULL expense is never deleted by another user... ");
-      await setupCleanDatabase();
+      process.stdout.write("Test 9: Legacy NULL expense cannot be deleted by another user... ");
+      await offlineDb.deleteOfflineExpense("user_a", "trip_ladakh", "legacy_exp_null");
 
-      await sqliteEngine.runAsync(
-        "INSERT INTO expenses_cache (id, trip_id, user_id, title, amount, category, date, sync_status, data_json, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        "legacy_exp_2", "trip_kaza", null, "Orphaned Petrol", 1500, "Transport", "2026-10-05", "synced", JSON.stringify({ id: "legacy_exp_2", title: "Orphaned Petrol" }), Date.now()
-      );
-
-      // User A attempts to delete the legacy unowned expense
-      await offlineDb.deleteOfflineExpense("user_a", "trip_kaza", "legacy_exp_2");
-
-      // Verify the legacy expense still exists in SQLite quarantine
-      const rows = await sqliteEngine.getAllAsync("SELECT id FROM expenses_cache WHERE id = ? AND user_id IS NULL", "legacy_exp_2");
-      assert.strictEqual(rows.length, 1, "Legacy unowned expense must remain safely quarantined");
+      const rows = await sqliteEngine.getAllAsync("SELECT id FROM expenses_cache WHERE id = ? AND user_id IS NULL", "legacy_exp_null");
+      assert.strictEqual(rows.length, 1, "Legacy NULL expense must remain safely quarantined");
 
       passedCount++;
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 4: User A sees only User A's expense cache
-    // -------------------------------------------------------------------------
+    // TEST 10 & 11: Cross-account expense cache isolation
     {
-      process.stdout.write("Test 4: User A sees only User A's expense cache... ");
-      await setupCleanDatabase();
-
-      await offlineDb.saveOfflineExpense("user_a", "trip_100", {
-        id: "exp_a_only",
-        trip_id: "trip_100",
-        title: "Permit Fee",
-        amount: 500,
-        category: "Government",
+      process.stdout.write("Test 10 & 11: User A and User B cannot read each other's expenses... ");
+      await offlineDb.saveOfflineExpense("user_b", "trip_ladakh", {
+        id: "exp_b_valid",
+        trip_id: "trip_ladakh",
+        title: "User B Homestay",
+        amount: 1500,
+        category: "Stay",
         date: "2026-11-10",
       });
 
-      const expenses = await offlineDb.getCachedTripExpenses("user_a", "trip_100");
-      assert.strictEqual(expenses.length, 1);
-      assert.strictEqual(expenses[0].id, "exp_a_only");
+      const userAExp = await offlineDb.getCachedTripExpenses("user_a", "trip_ladakh");
+      assert.strictEqual(userAExp.length, 1);
+      assert.strictEqual(userAExp[0].id, "exp_a_valid");
+
+      const userBExp = await offlineDb.getCachedTripExpenses("user_b", "trip_ladakh");
+      assert.strictEqual(userBExp.length, 1);
+      assert.strictEqual(userBExp[0].id, "exp_b_valid");
+
+      passedCount += 2;
+      console.log("[PASS] (2 tests)");
+    }
+
+    // TEST 12: User A cannot delete User B's expense
+    {
+      process.stdout.write("Test 12: User A cannot delete User B's expense... ");
+      await offlineDb.deleteOfflineExpense("user_a", "trip_ladakh", "exp_b_valid");
+
+      const userBExp = await offlineDb.getCachedTripExpenses("user_b", "trip_ladakh");
+      assert.strictEqual(userBExp.length, 1);
+      assert.strictEqual(userBExp[0].id, "exp_b_valid");
 
       passedCount++;
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 5: User B sees only User B's expense cache
-    // -------------------------------------------------------------------------
+    // TEST 13: User-scoped trip detail cache isolation
     {
-      process.stdout.write("Test 5: User B sees only User B's expense cache... ");
-      // On the same trip_100, User B saves an expense
-      await offlineDb.saveOfflineExpense("user_b", "trip_100", {
-        id: "exp_b_only",
-        trip_id: "trip_100",
-        title: "Monastery Donation",
-        amount: 200,
-        category: "Culture",
-        date: "2026-11-10",
-      });
+      process.stdout.write("Test 13: User-scoped trip detail cache isolation... ");
+      await offlineDb.cacheTripDetail("user_a", { id: "trip_iso_1", destination_id: "spiti", title: "Trip Iso A", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] });
+      await offlineDb.cacheTripDetail("user_b", { id: "trip_iso_1", destination_id: "spiti", title: "Trip Iso B", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] });
 
-      const userBExpenses = await offlineDb.getCachedTripExpenses("user_b", "trip_100");
-      assert.strictEqual(userBExpenses.length, 1);
-      assert.strictEqual(userBExpenses[0].id, "exp_b_only");
+      const resA = await offlineDb.getCachedTripDetail("user_a", "trip_iso_1");
+      assert.strictEqual(resA?.title, "Trip Iso A");
 
-      const userAExpenses = await offlineDb.getCachedTripExpenses("user_a", "trip_100");
-      assert.strictEqual(userAExpenses.length, 1);
-      assert.strictEqual(userAExpenses[0].id, "exp_a_only");
+      const resB = await offlineDb.getCachedTripDetail("user_b", "trip_iso_1");
+      assert.strictEqual(resB?.title, "Trip Iso B");
+
+      const resC = await offlineDb.getCachedTripDetail("user_c", "trip_iso_1");
+      assert.strictEqual(resC, null);
 
       passedCount++;
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 6: User A cannot delete User B's cached expense
-    // -------------------------------------------------------------------------
+    // TEST 14: In-memory fallback parity follows same ownership rules
     {
-      process.stdout.write("Test 6: User A cannot delete User B's cached expense... ");
-      await offlineDb.deleteOfflineExpense("user_a", "trip_100", "exp_b_only");
-
-      const userBExpenses = await offlineDb.getCachedTripExpenses("user_b", "trip_100");
-      assert.strictEqual(userBExpenses.length, 1);
-      assert.strictEqual(userBExpenses[0].id, "exp_b_only", "User B's expense must remain intact");
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 7: Trip detail reads require exact account ownership
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 7: Trip detail reads require exact account ownership... ");
-      await setupCleanDatabase();
-
-      const tripA = { id: "trip_common", destination_id: "spiti", title: "Trip A", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] };
-      const tripB = { id: "trip_common", destination_id: "spiti", title: "Trip B", start_date: "2026-12-01", end_date: "2026-12-07", status: "planned", days: [] };
-
-      await offlineDb.cacheTripDetail("user_a", tripA);
-      await offlineDb.cacheTripDetail("user_b", tripB);
-
-      const cachedA = await offlineDb.getCachedTripDetail("user_a", "trip_common");
-      assert.strictEqual(cachedA?.title, "Trip A");
-
-      const cachedB = await offlineDb.getCachedTripDetail("user_b", "trip_common");
-      assert.strictEqual(cachedB?.title, "Trip B");
-
-      const cachedC = await offlineDb.getCachedTripDetail("user_c", "trip_common");
-      assert.strictEqual(cachedC, null, "Unrelated user must receive null");
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 8: In-memory trip details are user-scoped
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 8: In-memory trip details are user-scoped... ");
+      process.stdout.write("Test 14: In-memory fallback parity follows same ownership rules... ");
       offlineDb._setDatabaseForTesting(null); // Switch to in-memory mode
       const memKv = offlineDb._getMemoryKvForTesting();
       memKv.clear();
 
-      const tripA = { id: "mem_trip_1", destination_id: "kasol", title: "Kasol Trek", start_date: "2026-11-20", end_date: "2026-11-25", status: "active", days: [] };
-      await offlineDb.cacheTripDetail("user_a", tripA);
+      await offlineDb.cacheTripDetail("user_a", { id: "trip_mem_1", destination_id: "spiti", title: "Memory Trip A", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] });
+      await offlineDb.cacheTripExpenses("user_a", "trip_mem_1", [{ id: "exp_mem_1", trip_id: "trip_mem_1", title: "Maggi", amount: 70, category: "Food", date: "2026-11-12" }]);
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", { title: "Mutation A" });
 
-      // Verify in-memory key format
-      assert.strictEqual(memKv.has("trip_detail_user_a_mem_trip_1"), true);
+      // User B receives null/empty
+      assert.strictEqual(await offlineDb.getCachedTripDetail("user_b", "trip_mem_1"), null);
+      assert.strictEqual((await offlineDb.getCachedTripExpenses("user_b", "trip_mem_1")).length, 0);
+      assert.strictEqual((await offlineDb.getPendingMutations("user_b")).length, 0);
 
-      // Verify User B cannot access it
-      const cachedB = await offlineDb.getCachedTripDetail("user_b", "mem_trip_1");
-      assert.strictEqual(cachedB, null);
-
-      // Verify User A can access it
-      const cachedA = await offlineDb.getCachedTripDetail("user_a", "mem_trip_1");
-      assert.strictEqual(cachedA?.title, "Kasol Trek");
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 9: In-memory expenses are user-scoped
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 9: In-memory expenses are user-scoped... ");
-      offlineDb._setDatabaseForTesting(null);
-      const memKv = offlineDb._getMemoryKvForTesting();
-
-      const expensesA = [
-        { id: "exp_mem_a", trip_id: "mem_trip_1", title: "Maggi", amount: 80, category: "Food", date: "2026-11-21" },
-      ];
-      await offlineDb.cacheTripExpenses("user_a", "mem_trip_1", expensesA);
-
-      assert.strictEqual(memKv.has("expenses_user_a_mem_trip_1"), true);
-      const bExpenses = await offlineDb.getCachedTripExpenses("user_b", "mem_trip_1");
-      assert.strictEqual(bExpenses.length, 0);
-
-      const aExpenses = await offlineDb.getCachedTripExpenses("user_a", "mem_trip_1");
-      assert.strictEqual(aExpenses.length, 1);
-      assert.strictEqual(aExpenses[0].title, "Maggi");
+      // User A receives User A's data
+      assert.strictEqual((await offlineDb.getCachedTripDetail("user_a", "trip_mem_1"))?.title, "Memory Trip A");
+      assert.strictEqual((await offlineDb.getCachedTripExpenses("user_a", "trip_mem_1")).length, 1);
+      assert.strictEqual((await offlineDb.getPendingMutations("user_a")).length, 1);
 
       passedCount++;
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 10: In-memory mutations are user-scoped
-    // -------------------------------------------------------------------------
+    // TEST 15: Account purge deletes only intended user's records
     {
-      process.stdout.write("Test 10: In-memory mutations are user-scoped... ");
-      offlineDb._setDatabaseForTesting(null);
+      process.stdout.write("Test 15: Account purge deletes only intended user's records... ");
+      await setupCleanFreshDatabase();
 
-      await offlineDb.queueOfflineMutation("user_a", "add_expense", { title: "Tea" });
+      await offlineDb.cacheTripDetail("user_a", { id: "trip_p_1", destination_id: "spiti", title: "Purge A", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] });
+      await offlineDb.cacheTripDetail("user_b", { id: "trip_p_1", destination_id: "spiti", title: "Keep B", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] });
 
-      const bMutations = await offlineDb.getPendingMutations("user_b");
-      assert.strictEqual(bMutations.length, 0);
-
-      const aMutations = await offlineDb.getPendingMutations("user_a");
-      assert.strictEqual(aMutations.length, 1);
-      assert.strictEqual(aMutations[0].user_id, "user_a");
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 11: User B cannot replay User A's offline mutation
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 11: User B cannot replay User A's offline mutation... ");
-      await setupCleanDatabase();
-
-      await offlineDb.queueOfflineMutation("user_a", "add_expense", { title: "User A Action" });
-      await offlineDb.queueOfflineMutation("user_b", "add_expense", { title: "User B Action" });
-
-      // User B fetches mutations to replay
-      const userBMutations = await offlineDb.getPendingMutations("user_b");
-      assert.strictEqual(userBMutations.length, 1);
-      assert.strictEqual(userBMutations[0].user_id, "user_b");
-      assert.strictEqual(JSON.parse(userBMutations[0].payload_json).title, "User B Action");
-
-      // Verify User A's mutation is untouched
-      const userAMutations = await offlineDb.getPendingMutations("user_a");
-      assert.strictEqual(userAMutations.length, 1);
-      assert.strictEqual(userAMutations[0].user_id, "user_a");
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 12: Guest mode cannot replay private mutations
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 12: Guest mode cannot replay private mutations... ");
-      // In nativeApi, syncPendingOfflineActions checks secureStorage for active token & user
-      await secureStorage.clearSession();
-      const synced = await nativeApi.syncPendingOfflineActions();
-      assert.strictEqual(synced, 0, "Unauthenticated sync must return 0 immediately");
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 13: User A logout does not expose User A's records to User B
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 13: User A logout does not expose User A's records to User B... ");
-      await setupCleanDatabase();
-
-      await offlineDb.cacheUserTrips("user_a", [{ id: "trip_a_only", destination_name: "Spiti", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned" }]);
-      await offlineDb.cacheTripDetail("user_a", { id: "trip_a_only", destination_id: "spiti", title: "Secret Spiti", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] });
-
-      // User A signs out -> clears session cache
-      await offlineDb.clearUserSessionCache("user_a");
-
-      // User B inspects trips
-      const userBTrips = await offlineDb.getCachedUserTrips("user_b");
-      assert.strictEqual(userBTrips.length, 0);
-
-      const userBTripDetail = await offlineDb.getCachedTripDetail("user_b", "trip_a_only");
-      assert.strictEqual(userBTripDetail, null);
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 14: Deleting User A preserves User B's records
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 14: Deleting User A preserves User B's records... ");
-      await setupCleanDatabase();
-
-      // Populate data for User A and User B
-      await offlineDb.saveOfflineExpense("user_a", "trip_shared", { id: "exp_a_del", trip_id: "trip_shared", title: "A Exp", amount: 100, category: "Other", date: "2026-11-10" });
-      await offlineDb.queueOfflineMutation("user_a", "add_expense", { title: "A Mutation" });
-
-      await offlineDb.saveOfflineExpense("user_b", "trip_shared", { id: "exp_b_keep", trip_id: "trip_shared", title: "B Exp", amount: 200, category: "Other", date: "2026-11-10" });
-      await offlineDb.queueOfflineMutation("user_b", "add_expense", { title: "B Mutation" });
-
-      // Purge User A account data
       await offlineDb.purgeUserAccountData("user_a");
 
-      // Verify User A data is purged
-      assert.strictEqual((await offlineDb.getCachedTripExpenses("user_a", "trip_shared")).length, 0);
-      assert.strictEqual((await offlineDb.getPendingMutations("user_a")).length, 0);
-
-      // Verify User B data is completely intact
-      const bExpenses = await offlineDb.getCachedTripExpenses("user_b", "trip_shared");
-      assert.strictEqual(bExpenses.length, 1);
-      assert.strictEqual(bExpenses[0].id, "exp_b_keep");
-
-      const bMutations = await offlineDb.getPendingMutations("user_b");
-      assert.strictEqual(bMutations.length, 1);
-      assert.strictEqual(bMutations[0].user_id, "user_b");
+      assert.strictEqual(await offlineDb.getCachedTripDetail("user_a", "trip_p_1"), null);
+      assert.strictEqual((await offlineDb.getCachedTripDetail("user_b", "trip_p_1"))?.title, "Keep B");
 
       passedCount++;
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 15: Public destinations remain available
-    // -------------------------------------------------------------------------
+    // TEST 16: Public destination data survives account purge
     {
-      process.stdout.write("Test 15: Public destinations remain available... ");
+      process.stdout.write("Test 16: Public destination data survives account purge... ");
       await offlineDb.cacheDestinations([
         { id: "spiti", slug: "spiti", name: "Spiti Valley", state: "Himachal Pradesh", hero_image: "/img/spiti.jpg", description: "Middle Land", tags: [] },
       ]);
 
-      // Purge User B account data
       await offlineDb.purgeUserAccountData("user_b");
 
-      // Verify public destinations still cached and accessible
       const dests = await offlineDb.getCachedDestinations();
       assert.strictEqual(dests.length, 1);
       assert.strictEqual(dests[0].slug, "spiti");
@@ -581,171 +633,610 @@ async function runTestSuite() {
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 16: Deleted User A's mutations are never replayed
-    // -------------------------------------------------------------------------
+    // TEST 17: Missing or empty user IDs are rejected by private methods
     {
-      process.stdout.write("Test 16: Deleted User A's mutations are never replayed... ");
-      const pendingA = await offlineDb.getPendingMutations("user_a");
-      assert.strictEqual(pendingA.length, 0, "No mutations exist for purged User A");
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 17: Failed database migration does not continue into unsafe private queries
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 17: Failed database migration does not continue into unsafe private queries... ");
-      await setupCleanDatabase();
-
-      // Artificially simulate migration failure
-      offlineDb._setMigrationErrorForTesting(new Error("Fatal migration failure: column user_id missing"));
-
-      let blocked = false;
-      try {
-        await offlineDb.getCachedTripExpenses("user_a", "trip_test");
-      } catch (err) {
-        blocked = true;
-        assert.ok(err.message.includes("migration failure"));
-      }
-      assert.strictEqual(blocked, true, "Private queries must be fail-safely blocked on migration error");
-
-      // Restore migration state
-      offlineDb._setMigrationErrorForTesting(null);
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 18: Offline sync preserves unprocessed actions after a network failure
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 18: Offline sync preserves unprocessed actions after a network failure... ");
-      await setupCleanDatabase();
-
-      await offlineDb.queueOfflineMutation("user_sync_test", "add_expense", { tripId: "trip_net", title: "Item 1" });
-      await offlineDb.queueOfflineMutation("user_sync_test", "add_expense", { tripId: "trip_net", title: "Item 2" });
-
-      // Before sync
-      const before = await offlineDb.getPendingMutations("user_sync_test");
-      assert.strictEqual(before.length, 2);
-
-      // In real api.ts: syncPendingOfflineActions catches network errors and breaks out of loop
-      // leaving the remaining actions in the queue
-      const pendingAfterSimulatedFailure = await offlineDb.getPendingMutations("user_sync_test");
-      assert.strictEqual(pendingAfterSimulatedFailure.length, 2, "Unprocessed actions must be preserved");
-
-      passedCount++;
-      console.log("[PASS]");
-    }
-
-    // -------------------------------------------------------------------------
-    // TEST 19: Interrupted expense synchronization does not create duplicate expenses
-    // -------------------------------------------------------------------------
-    {
-      process.stdout.write("Test 19: Interrupted expense synchronization does not create duplicate expenses... ");
-      await setupCleanDatabase();
-
-      const offlineClientId = "offline_client_12345";
-      const payload = {
-        tripId: "trip_dedup",
-        offlineId: offlineClientId,
-        expense: {
-          title: "Petrol Kaza",
-          amount: 2200,
-          category: "Transport",
-          date: "2026-11-10",
-          receipt_data_json: JSON.stringify({ offline_client_id: offlineClientId }),
-        },
-      };
-
-      // Existing server expenses already containing this offline_client_id
-      const existingServerExpenses = [
-        {
-          id: "server_exp_999",
-          trip_id: "trip_dedup",
-          title: "Petrol Kaza",
-          amount: 2200,
-          category: "Transport",
-          date: "2026-11-10",
-          receipt_data_json: JSON.stringify({ offline_client_id: offlineClientId }),
-        },
-      ];
-
-      // Reconcile logic matching api.ts implementation
-      const duplicateFound = existingServerExpenses.find((e) => {
-        if (e.receipt_data_json) {
-          try {
-            const parsed = JSON.parse(e.receipt_data_json);
-            if (parsed.offline_client_id === payload.offlineId) return true;
-          } catch {}
+      process.stdout.write("Test 17: Missing or empty user IDs are rejected by private methods... ");
+      const invalidIds = ["", "   ", null, undefined];
+      for (const badId of invalidIds) {
+        let threw = false;
+        try {
+          // @ts-ignore
+          await offlineDb.getCachedTripDetail(badId, "trip_any");
+        } catch {
+          threw = true;
         }
-        return false;
+        assert.strictEqual(threw, true, `getCachedTripDetail must reject invalid ID: ${badId}`);
+
+        threw = false;
+        try {
+          // @ts-ignore
+          await offlineDb.getCachedTripExpenses(badId, "trip_any");
+        } catch {
+          threw = true;
+        }
+        assert.strictEqual(threw, true, `getCachedTripExpenses must reject invalid ID: ${badId}`);
+
+        threw = false;
+        try {
+          // @ts-ignore
+          await offlineDb.getPendingMutations(badId);
+        } catch {
+          threw = true;
+        }
+        assert.strictEqual(threw, true, `getPendingMutations must reject invalid ID: ${badId}`);
+
+        threw = false;
+        try {
+          // @ts-ignore
+          await offlineDb.removeMutation(badId, 1);
+        } catch {
+          threw = true;
+        }
+        assert.strictEqual(threw, true, `removeMutation must reject invalid ID: ${badId}`);
+      }
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // =========================================================================
+    // SECTION 3: ACTUAL OFFLINE SYNCHRONIZATION (Tests 18 - 26)
+    // =========================================================================
+
+    // TEST 18: Successful synchronization removes only the confirmed mutation
+    {
+      process.stdout.write("Test 18: A successful synchronization removes only the confirmed mutation... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("valid-jwt-token-a");
+      await secureStorage.setUserData({ id: "user_a", email: "usera@vanvas.com" });
+
+      const offlineId = "offline_sync_test_1";
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_sync_1",
+        offlineId,
+        expense: {
+          title: "Kaza Fuel",
+          amount: 1500,
+          category: "Transport",
+          date: "2026-11-10",
+          receipt_data_json: JSON.stringify({ offline_client_id: offlineId }),
+        },
       });
 
-      assert.ok(duplicateFound, "Existing server expense successfully matched via offline_client_id");
-      assert.strictEqual(duplicateFound.id, "server_exp_999");
+      // Inject mock fetch transport for nativeApi
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        const u = String(url);
+        if (opts?.method === "POST" && u.includes("/expenses")) {
+          return new Response(JSON.stringify({
+            id: "server_exp_101",
+            trip_id: "trip_sync_1",
+            title: "Kaza Fuel",
+            amount: 1500,
+            category: "Transport",
+            date: "2026-11-10",
+            receipt_data_json: JSON.stringify({ offline_client_id: offlineId }),
+          }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (opts?.method === "GET" || !opts?.method) {
+          // Reconciliation GET returns empty array (no existing duplicate)
+          return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        return new Response("Not found", { status: 404 });
+      });
+
+      const synced = await nativeApi.syncPendingOfflineActions();
+      assert.strictEqual(synced, 1, "Must sync exactly 1 mutation");
+
+      const pending = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pending.length, 0, "Confirmed mutation must be removed from queue");
 
       passedCount++;
       console.log("[PASS]");
     }
 
-    // -------------------------------------------------------------------------
-    // TEST 20: Successful account deletion always clears credentials and React state
-    // -------------------------------------------------------------------------
+    // TEST 19: Network failure preserves current and remaining queue items
     {
-      process.stdout.write("Test 20: Successful account deletion always clears credentials and React state... ");
-      await setupCleanDatabase();
+      process.stdout.write("Test 19: A network failure preserves current and remaining queue items... ");
+      await setupCleanFreshDatabase();
 
-      // Set user session in secureStore
-      await secureStorage.setToken("active-user-jwt");
-      await secureStorage.setUserData({ id: "user_delete_me", email: "del@vanvas.com" });
+      await secureStorage.setToken("valid-jwt-token-a");
+      await secureStorage.setUserData({ id: "user_a", email: "usera@vanvas.com" });
 
-      let reactState = { user: { id: "user_delete_me" }, token: "active-user-jwt" };
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_net_fail",
+        offlineId: "offline_fail_1",
+        expense: { title: "Item 1", amount: 100, category: "Food", date: "2026-11-10" },
+      });
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_net_fail",
+        offlineId: "offline_fail_2",
+        expense: { title: "Item 2", amount: 200, category: "Food", date: "2026-11-10" },
+      });
 
-      // Simulate AuthContext.deleteAccount teardown contract
-      async function executeDeleteAccountTeardown(shouldFailLocalDb = false) {
-        if (shouldFailLocalDb) {
-          // Force SQLite to fail during purge
-          offlineDb._setMigrationErrorForTesting(new Error("Disk I/O failure during local purge"));
+      // Inject network failure
+      nativeApi._setFetchForTesting(async () => {
+        throw new Error("Network request failed: high-altitude disconnect");
+      });
+
+      const synced = await nativeApi.syncPendingOfflineActions();
+      assert.strictEqual(synced, 0, "No mutations should sync on network failure");
+
+      const pending = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pending.length, 2, "Both queue items must be preserved for retry");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 20: Pre-existing server expense with same offline_client_id is reused without another POST
+    {
+      process.stdout.write("Test 20: Pre-existing server expense with same offline_client_id is reused without another POST... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("valid-jwt-token-a");
+      await secureStorage.setUserData({ id: "user_a", email: "usera@vanvas.com" });
+
+      const offlineId = "offline_interrupted_123";
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_dedup_test",
+        offlineId,
+        expense: {
+          title: "Lunch Dhaba",
+          amount: 250,
+          category: "Food",
+          date: "2026-11-10",
+          receipt_data_json: JSON.stringify({ offline_client_id: offlineId }),
+        },
+      });
+
+      let postCalled = false;
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        if (opts?.method === "POST") {
+          postCalled = true;
+          return new Response(JSON.stringify({ id: "duplicate_bad_id" }), { status: 200 });
         }
-        try {
-          await secureStorage.clearSession();
-        } finally {
-          reactState.user = null;
-          reactState.token = null;
-        }
+        // Reconciliation GET returns the previously created server expense with matching offline_client_id
+        return new Response(JSON.stringify([
+          {
+            id: "server_existing_123",
+            trip_id: "trip_dedup_test",
+            title: "Lunch Dhaba",
+            amount: 250,
+            category: "Food",
+            date: "2026-11-10",
+            receipt_data_json: JSON.stringify({ offline_client_id: offlineId }),
+          },
+        ]), { status: 200, headers: { "Content-Type": "application/json" } });
+      });
 
-        try {
-          await offlineDb.purgeUserAccountData("user_delete_me");
-        } catch (localErr) {
-          // Warning logged, never fails teardown
+      const synced = await nativeApi.syncPendingOfflineActions();
+      assert.strictEqual(synced, 1);
+      assert.strictEqual(postCalled, false, "Must NOT call POST when server expense with matching offline_client_id exists");
+
+      const pending = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pending.length, 0, "Mutation must be cleared upon successful reconciliation");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 21: A failed reconciliation GET does not trigger another POST
+    {
+      process.stdout.write("Test 21: A failed reconciliation GET does not trigger another POST... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("valid-jwt-token-a");
+      await secureStorage.setUserData({ id: "user_a", email: "usera@vanvas.com" });
+
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_safe_get",
+        offlineId: "offline_get_fail_1",
+        expense: { title: "Tea", amount: 40, category: "Food", date: "2026-11-10" },
+      });
+
+      let postCalled = false;
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        if (opts?.method === "POST") {
+          postCalled = true;
+          return new Response(JSON.stringify({ id: "bad" }), { status: 200 });
         }
+        // Reconciliation GET throws network error
+        throw new Error("HTTP 504 Gateway Timeout during reconciliation GET");
+      });
+
+      const synced = await nativeApi.syncPendingOfflineActions();
+      assert.strictEqual(synced, 0);
+      assert.strictEqual(postCalled, false, "Failed GET must NOT be treated as proof no expense exists; POST forbidden");
+
+      const pending = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pending.length, 1, "Mutation must be preserved");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 22: Two unrelated expenses with identical title, amount and date are not falsely deduplicated
+    {
+      process.stdout.write("Test 22: Unrelated expenses with identical title, amount & date not falsely deduplicated... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("valid-jwt-token-a");
+      await secureStorage.setUserData({ id: "user_a", email: "usera@vanvas.com" });
+
+      const newOfflineId = "offline_tea_second_cup";
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_tea",
+        offlineId: newOfflineId,
+        expense: {
+          title: "Chai",
+          amount: 30,
+          category: "Food",
+          date: "2026-11-10",
+          receipt_data_json: JSON.stringify({ offline_client_id: newOfflineId }),
+        },
+      });
+
+      let postCalledWithNewExpense = false;
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        if (opts?.method === "POST") {
+          postCalledWithNewExpense = true;
+          return new Response(JSON.stringify({
+            id: "server_tea_2",
+            trip_id: "trip_tea",
+            title: "Chai",
+            amount: 30,
+            category: "Food",
+            date: "2026-11-10",
+            receipt_data_json: JSON.stringify({ offline_client_id: newOfflineId }),
+          }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        // Server already has an earlier Chai for 30 on same date, but with DIFFERENT offline_client_id
+        return new Response(JSON.stringify([
+          {
+            id: "server_tea_first_cup",
+            trip_id: "trip_tea",
+            title: "Chai",
+            amount: 30,
+            category: "Food",
+            date: "2026-11-10",
+            receipt_data_json: JSON.stringify({ offline_client_id: "offline_tea_first_cup" }),
+          },
+        ]), { status: 200, headers: { "Content-Type": "application/json" } });
+      });
+
+      const synced = await nativeApi.syncPendingOfflineActions();
+      assert.strictEqual(synced, 1);
+      assert.strictEqual(postCalledWithNewExpense, true, "Must post legitimate second purchase despite identical title & amount");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 23: Local cache write failure after successful server POST does not enqueue another creation
+    {
+      process.stdout.write("Test 23: Local cache write failure after server POST does not enqueue another creation... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("valid-jwt-token-a");
+      await secureStorage.setUserData({ id: "user_a", email: "usera@vanvas.com" });
+
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        return new Response(JSON.stringify({
+          id: "server_exp_success_99",
+          trip_id: "trip_disk_err",
+          title: "Guide Fee",
+          amount: 2000,
+          category: "Culture",
+          date: "2026-11-10",
+        }), { status: 200, headers: { "Content-Type": "application/json" } });
+      });
+
+      // Break saveOfflineExpense in offlineDb temporarily
+      const originalSave = offlineDb.saveOfflineExpense;
+      offlineDb.saveOfflineExpense = async () => {
+        throw new Error("Simulated SQLite write failure on disk full");
+      };
+
+      let resultExpense;
+      try {
+        resultExpense = await nativeApi.addExpense("trip_disk_err", {
+          title: "Guide Fee",
+          amount: 2000,
+          category: "Culture",
+          date: "2026-11-10",
+        });
+      } finally {
+        offlineDb.saveOfflineExpense = originalSave;
       }
 
-      await executeDeleteAccountTeardown(true);
+      assert.strictEqual(resultExpense.id, "server_exp_success_99");
 
-      // Verify credentials & React state cleared even on SQLite failure
+      // Verify NO offline mutation was enqueued
+      const pending = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pending.length, 0, "Must NOT enqueue offline mutation when server POST already succeeded");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 24: Pending offline expense deleted before reconnection is never recreated
+    {
+      process.stdout.write("Test 24: Pending offline expense deleted before reconnection is never recreated... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("valid-jwt-token-a");
+      await secureStorage.setUserData({ id: "user_a", email: "usera@vanvas.com" });
+
+      // In offline mode (fetch throws)
+      nativeApi._setFetchForTesting(async () => {
+        throw new Error("Network unreachable");
+      });
+
+      const offlineCreated = await nativeApi.addExpense("trip_del_cancel", {
+        title: "Mistaken Expense",
+        amount: 999,
+        category: "Other",
+        date: "2026-11-10",
+      });
+
+      assert.strictEqual(offlineCreated.id.startsWith("offline_"), true);
+
+      // Verify 1 pending mutation exists
+      const pendingBefore = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pendingBefore.length, 1);
+
+      // Now user deletes the offline expense BEFORE reconnecting
+      await nativeApi.deleteExpense("trip_del_cancel", offlineCreated.id);
+
+      // Verify pending add_expense mutation was cancelled and removed!
+      const pendingAfter = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pendingAfter.length, 0, "Pending creation mutation must be cancelled upon offline deletion");
+
+      // Verify local expense is gone
+      const localExp = await offlineDb.getCachedTripExpenses("user_a", "trip_del_cancel");
+      assert.strictEqual(localExp.length, 0);
+
+      // Now reconnect and sync: zero mutations are replayed or created!
+      let postAttempted = false;
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        if (opts?.method === "POST") postAttempted = true;
+        return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+      });
+
+      const synced = await nativeApi.syncPendingOfflineActions();
+      assert.strictEqual(synced, 0);
+      assert.strictEqual(postAttempted, false, "Reconnecting must never recreate deleted unsynced expense");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 25: Switching accounts during replay stops subsequent mutations
+    {
+      process.stdout.write("Test 25: Switching accounts during replay stops subsequent mutations... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("token-user-a");
+      await secureStorage.setUserData({ id: "user_a", email: "usera@vanvas.com" });
+
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_switch",
+        offlineId: "off_sw_1",
+        expense: { title: "A1", amount: 10, category: "Food", date: "2026-11-10" },
+      });
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_switch",
+        offlineId: "off_sw_2",
+        expense: { title: "A2", amount: 20, category: "Food", date: "2026-11-10" },
+      });
+
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        if (opts?.method === "GET" || !opts?.method) {
+          return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (opts?.method === "POST") {
+          // Immediately after Action 1 POST succeeds, simulate user switching accounts to user_c!
+          await secureStorage.setUserData({ id: "user_c", email: "userc@vanvas.com" });
+          await secureStorage.setToken("token-user-c");
+          return new Response(JSON.stringify({
+            id: "server_sw_1",
+            trip_id: "trip_switch",
+            title: "A1",
+            amount: 10,
+            category: "Food",
+            date: "2026-11-10",
+            receipt_data_json: JSON.stringify({ offline_client_id: "off_sw_1" }),
+          }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        return new Response("Not found", { status: 404 });
+      });
+
+      const synced = await nativeApi.syncPendingOfflineActions();
+      assert.strictEqual(synced, 1, "Must stop replay immediately when active session changes");
+
+      // Verify second mutation is still safely queued for user_a
+      const pendingA = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pendingA.length, 1);
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 26: Mutation belonging to another user is never executed or removed
+    {
+      process.stdout.write("Test 26: Mutation belonging to another user is never executed or removed... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("token-user-b");
+      await secureStorage.setUserData({ id: "user_b", email: "userb@vanvas.com" });
+
+      await offlineDb.queueOfflineMutation("user_a", "add_expense", {
+        tripId: "trip_user_a",
+        offlineId: "off_a_only",
+        expense: { title: "User A Action", amount: 50, category: "Food", date: "2026-11-10" },
+      });
+
+      nativeApi._setFetchForTesting(async () => {
+        return new Response(JSON.stringify([]), { status: 200 });
+      });
+
+      const synced = await nativeApi.syncPendingOfflineActions();
+      assert.strictEqual(synced, 0, "User B cannot sync User A's mutations");
+
+      const pendingA = await offlineDb.getPendingMutations("user_a");
+      assert.strictEqual(pendingA.length, 1);
+      assert.strictEqual(pendingA[0].user_id, "user_a");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // =========================================================================
+    // SECTION 4: ACTUAL ACCOUNT DELETION TEARDOWN (Tests 27 - 31)
+    // =========================================================================
+
+    // TEST 27: Backend deletion rejection leaves local session intact
+    {
+      process.stdout.write("Test 27: Backend deletion rejection leaves local session intact... ");
+      await setupCleanFreshDatabase();
+
+      await secureStorage.setToken("token-active");
+      await secureStorage.setUserData({ id: "user_delete_test", email: "del@vanvas.com" });
+
+      let reactState = { user: { id: "user_delete_test" }, token: "token-active" };
+      const stateHooks = {
+        setToken: (t) => { reactState.token = t; },
+        setUser: (u) => { reactState.user = u; },
+      };
+
+      // Mock backend deletion rejection (HTTP 400 invalid password)
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        if (String(url).includes("/auth/account") && opts?.method === "DELETE") {
+          return new Response(JSON.stringify({ detail: "Invalid password provided for account deletion." }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("Not found", { status: 404 });
+      });
+
+      let threw = false;
+      try {
+        await executeAccountDeletionTeardown("user_delete_test", "WrongPassword!", stateHooks, nativeApi, secureStorage, offlineDb);
+      } catch (err) {
+        threw = true;
+        assert.ok(err.message.includes("Invalid password"));
+      }
+
+      assert.strictEqual(threw, true);
+      assert.strictEqual(await secureStorage.getToken(), "token-active");
+      assert.strictEqual(reactState.user?.id, "user_delete_test");
+      assert.strictEqual(reactState.token, "token-active");
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 28 & 29: Successful backend deletion clears SecureStore credentials & resets React state
+    {
+      process.stdout.write("Test 28 & 29: Successful backend deletion clears SecureStore & resets React state... ");
+      let reactState = { user: { id: "user_delete_test" }, token: "token-active" };
+      const stateHooks = {
+        setToken: (t) => { reactState.token = t; },
+        setUser: (u) => { reactState.user = u; },
+      };
+
+      nativeApi._setFetchForTesting(async (url, opts) => {
+        if (String(url).includes("/auth/account") && opts?.method === "DELETE") {
+          return new Response(JSON.stringify({ message: "Account deleted permanently", user_id: "user_delete_test", status: "deleted" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("Not found", { status: 404 });
+      });
+
+      const res = await executeAccountDeletionTeardown("user_delete_test", "CorrectPassword123!", stateHooks, nativeApi, secureStorage, offlineDb);
+      assert.strictEqual(res.status, "deleted");
+
+      // Credentials cleared
       assert.strictEqual(await secureStorage.getToken(), null);
       assert.strictEqual(await secureStorage.getUserData(), null);
+
+      // React state cleared
       assert.strictEqual(reactState.user, null);
       assert.strictEqual(reactState.token, null);
 
-      offlineDb._setMigrationErrorForTesting(null);
+      passedCount += 2;
+      console.log("[PASS] (2 tests)");
+    }
+
+    // TEST 30: Local SQLite purge failure does not restore credentials or falsely report backend failure
+    {
+      process.stdout.write("Test 30: Local SQLite purge failure does not restore credentials or falsely report error... ");
+      await secureStorage.setToken("token-active-2");
+      await secureStorage.setUserData({ id: "user_purge_err", email: "err@vanvas.com" });
+
+      let reactState = { user: { id: "user_purge_err" }, token: "token-active-2" };
+      const stateHooks = {
+        setToken: (t) => { reactState.token = t; },
+        setUser: (u) => { reactState.user = u; },
+      };
+
+      nativeApi._setFetchForTesting(async () => {
+        return new Response(JSON.stringify({ message: "Account deleted permanently", user_id: "user_purge_err", status: "deleted" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      });
+
+      // Break purgeUserAccountData to simulate SQLite disk error
+      const originalPurge = offlineDb.purgeUserAccountData;
+      offlineDb.purgeUserAccountData = async () => {
+        throw new Error("Simulated SQLite Disk I/O Failure during purge");
+      };
+
+      let res;
+      try {
+        res = await executeAccountDeletionTeardown("user_purge_err", "CorrectPassword!", stateHooks, nativeApi, secureStorage, offlineDb);
+      } finally {
+        offlineDb.purgeUserAccountData = originalPurge;
+      }
+
+      assert.strictEqual(res.status, "deleted", "Must report server success despite local cleanup warning");
+      assert.strictEqual(await secureStorage.getToken(), null);
+      assert.strictEqual(reactState.user, null);
+      assert.strictEqual(reactState.token, null);
+
+      passedCount++;
+      console.log("[PASS]");
+    }
+
+    // TEST 31: Only deleted account's local cache is purged
+    {
+      process.stdout.write("Test 31: Only deleted account's local cache is purged... ");
+      await setupCleanFreshDatabase();
+
+      await offlineDb.cacheTripDetail("user_to_delete", { id: "trip_del_31", destination_id: "spiti", title: "Trip Del", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] });
+      await offlineDb.cacheTripDetail("user_to_keep", { id: "trip_del_31", destination_id: "spiti", title: "Trip Keep", start_date: "2026-11-12", end_date: "2026-11-18", status: "planned", days: [] });
+
+      await offlineDb.purgeUserAccountData("user_to_delete");
+
+      assert.strictEqual(await offlineDb.getCachedTripDetail("user_to_delete", "trip_del_31"), null);
+      assert.strictEqual((await offlineDb.getCachedTripDetail("user_to_keep", "trip_del_31"))?.title, "Trip Keep");
 
       passedCount++;
       console.log("[PASS]");
     }
 
     console.log("\n======================================================================");
-    console.log(`  ALL ${passedCount} OF 20 TESTS PASSED (100% SUCCESS)`);
-    console.log("  Real offlineDb methods executed with 100% account privacy isolation.");
+    console.log(`  ALL ${passedCount} OF 31 TESTS PASSED (100% SUCCESS)`);
+    console.log("  Real production code executed across migrations, privacy & offline sync.");
     console.log("======================================================================\n");
   } finally {
     sqliteEngine.close();
+    nativeApi._setFetchForTesting(null);
   }
 }
 

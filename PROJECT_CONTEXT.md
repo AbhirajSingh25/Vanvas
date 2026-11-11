@@ -217,9 +217,11 @@ VANVAS/
 - **Web (PWA):** Service worker caching static assets and destination manifests with Capacitor network listeners.
 - **Mobile (React Native):**
   - `mobile/src/services/db.ts`: Local SQLite WAL database caching destinations, places, active trip itineraries, offline expenses, and pending mutation queues.
-  - **Account-Scoped Offline Isolation & Privacy:** Additive schema migration introduces `user_id TEXT NOT NULL` on `expenses_cache` and `offline_mutation_queue`, composite `PRIMARY KEY (trip_id, user_id)` on `user_trips_cache` and `trip_details_cache`, and performance indexes. All private queries require verified `user_id` with zero `OR user_id IS NULL` leakage. Legacy unowned rows are safely quarantined.
-  - **Single-Owner Deletion Teardown:** `AuthContext.deleteAccount` solely manages session teardown, private cache purging, and React state reset in `try/finally` blocks. Local SQLite cleanup failures fail open without reporting false server rejection.
-  - **Mutation Replay Deduplication:** Interrupted expense sync reconciles via `offline_client_id` inside `receipt_data_json` before posting, preventing duplicate expenses on network reconnections.
+  - **Account-Scoped Offline Isolation & Privacy:** Additive schema migration introduces `user_id TEXT NOT NULL` on `expenses_cache` and `offline_mutation_queue`, composite `PRIMARY KEY (trip_id, user_id)` on `user_trips_cache` and `trip_details_cache`, and performance indexes. All private queries require verified `user_id` validated via `validateUserId(userId, methodName)` with zero `OR user_id IS NULL` leakage.
+  - **Existing-Install Composite Key Migration:** Versioned idempotent migration `migrateTableToCompositePrimaryKey(db, tableName)` converts existing databases to composite primary keys, quarantining unowned legacy rows into `legacy_quarantine_*` tables, preserving valid user-owned data, and recording migration in `schema_migrations`.
+  - **Scoped Mutation Removal & Safe Offline Deletions:** `removeMutation(userId, id)` strictly scopes deletion to `WHERE id = ? AND user_id = ?`. `cancelOfflineExpenseMutation(userId, offlineId)` safely removes pending creations when an unsynced expense is deleted.
+  - **Expense Sync Idempotency & Replay Deduplication:** Remote server POST and local SQLite persistence are decoupled. Interrupted expense sync checks existing server expenses via `offline_client_id` inside `receipt_data_json` before re-posting. Reconciliation GET failures safely preserve mutations and halt replay.
+  - **Single-Owner Deletion Teardown:** Centralized `executeAccountDeletionTeardown` in `mobile/src/services/authTeardown.ts` guarantees session and SecureStore clearance even if local disk cleanup encounters an error.
   - **In-Memory Fallback Parity:** In-memory keys are strictly user-scoped (`trip_detail_${userId}_${tripId}`, `expenses_${userId}_${tripId}`, `user_trips_${userId}`) with fail-safe migration blocking on verification errors.
   - `mobile/src/services/storage.ts`: Encrypted storage for authentication tokens and user UI preferences via `expo-secure-store`.
   - `mobile/src/components/ConnectionBanner.tsx`: Top banner alerting users when offline while serving cached itinerary items seamlessly.
@@ -234,9 +236,9 @@ VANVAS/
 2. **Account Deletion Governance Suite:**
    - Command: `python -m pytest backend/tests/test_account_deletion_governance.py`
    - Result: **22 passed, 0 failed (100% pass rate)**.
-3. **Mobile Offline Isolation & Reliability Suite:**
+3. **Mobile Offline Isolation, Migration & Reliability Suite:**
    - Command: `node scripts/test_offline_isolation_and_account_deletion.mjs`
-   - Result: **20 passed, 0 failed (100% pass rate executing actual production `offlineDb` methods)**.
+   - Result: **31 passed, 0 failed (100% pass rate executing actual production `db.ts`, `api.ts`, and `authTeardown.ts` methods)**.
 4. **Artwork Invariants Test Suite:**
    - Command: `python -m pytest backend/tests/test_artwork_runtime_invariants.py`
    - Result: **6 passed, 0 failed (100% pass rate)**.

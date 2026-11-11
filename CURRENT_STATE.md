@@ -1,12 +1,12 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-10T22:10:00+05:30
+> *Last Verified:* 2026-11-11T16:15:00+05:30
 
 ---
 
 ## 1. Git State & Checkpoint
-- **Latest Verified Commit:** Commit `aa49b34` on `main`
+- **Latest Verified Commit:** Checkpoint `aa49b34` on `main`
 - **Current Branch:** `main`
 - **Native Version:** `0.4.0` (`versionCode 4`, package: `ai.vanvas.app`)
 - **Runtime Stack:** Expo SDK 58.0.23, React Native 0.88.1, React 19.3.0, Node.js 22.14 LTS
@@ -28,15 +28,16 @@
 - **Backend Account Deletion Governance:** `backend/tests/test_account_deletion_governance.py` ➔ **PASSED (22/22 tests green, 100%)**.
 - **Backend Targeted Hardening:** 44/44 tests green across account deletion (22), profile (5), artwork governance (7), collision prevention (3), and product completeness (7).
 - **Artwork Invariants:** `backend/tests/test_artwork_runtime_invariants.py` ➔ **PASSED (6/6 tests green, 100%)**.
-- **Mobile Offline Isolation & Reliability (Real Code):** `scripts/test_offline_isolation_and_account_deletion.mjs` ➔ **PASSED (20/20 tests green, 100% executing actual production `offlineDb` methods)**.
+- **Mobile Offline Isolation & Reliability (Real Code):** `scripts/test_offline_isolation_and_account_deletion.mjs` ➔ **PASSED (31/31 tests green, 100% executing actual production `db.ts`, `api.ts`, and `authTeardown.ts` methods)**.
 - **Mobile TypeScript:** `cd mobile && npm run typecheck` ➔ **PASSED (0 errors)**.
 - **Expo Config:** `npx expo config --type public` ➔ **PASSED (Code 0, SDK 58.0.23, targetSdk 36, compileSdk 37)**.
-- **Zero Legacy NULL user_id Leakage:** All private SQLite expense queries and mutation queries require an authenticated `userId` and use exact `WHERE user_id = ?`. Queries never include `OR user_id IS NULL`. Legacy records with unverified ownership are safely quarantined.
+- **Zero Legacy NULL user_id Leakage:** All private SQLite queries require verified `userId: string` validated via `validateUserId(userId, methodName)`. Queries never include `OR user_id IS NULL`. Legacy records with unverified ownership are safely quarantined into `legacy_quarantine_*` tables.
+- **Existing-Install Composite Key Migration:** `migrateTableToCompositePrimaryKey(db, tableName)` inspects `PRAGMA table_info` for composite primary key `(trip_id, user_id)` on `user_trips_cache` and `trip_details_cache`. Valid rows migrate seamlessly, unowned rows quarantine safely, and versioning is recorded in `schema_migrations`.
 - **User-Scoped Trip Detail Cache:** `getCachedTripDetail(userId, tripId)` requires both parameters and queries `WHERE trip_id = ? AND user_id = ?`. Composite `PRIMARY KEY (trip_id, user_id)` on `trip_details_cache` and `user_trips_cache` prevents multi-account cache overwrites.
 - **In-Memory Fallback Parity:** All private in-memory fallback keys are strictly account-scoped (`trip_detail_${userId}_${tripId}`, `expenses_${userId}_${tripId}`, `user_trips_${userId}`). Session clear removes only that user's session cache.
 - **Fail-Safe Migration Verification:** Schema migration checks existing columns transactionally. If verification fails, private operations throw and block access to prevent unauthenticated data leaks.
-- **Mutation Replay Deduplication:** Interrupted expense sync checks existing server expenses via `offline_client_id` inside `receipt_data_json` before re-posting, preventing duplicate creations.
-- **Single-Owner Deletion Teardown:** `AuthContext` solely owns post-deletion session and cache clearing; `nativeApi.deleteAccount` strictly executes backend DELETE and returns response; local SQLite failures fail open without false server rejection.
+- **Mutation Replay Deduplication & Safe Deletion:** Interrupted expense sync checks existing server expenses via `offline_client_id` inside `receipt_data_json` before re-posting. Failed reconciliation GET preserves mutations and halts replay. Local delete of an unsynced expense cancels pending creations without unnecessary server DELETE requests.
+- **Single-Owner Deletion Teardown:** Centralized `executeAccountDeletionTeardown` in `mobile/src/services/authTeardown.ts` guarantees session and SecureStore clearance even if local SQLite purge encounters errors.
 - **Native In-App Deletion & Security UI:** `mobile/app/(tabs)/profile.tsx` with password change modal, permanent account erasure modal, mandatory password confirmation, cancellation state clearing, and duplicate tap prevention.
 - **Backend Storage Erasure Hardening:** `boto3>=1.34.0` in `requirements.txt`; `_delete_cloudinary` validates response and fails closed on unconfigured credentials; `_delete_s3` handles `ClientError` (404 idempotent, AccessDenied propagated); database session commit isolation enforced.
 - **Android Target SDK:** Configured to API 36 via `expo-build-properties` plugin, `build.gradle`, and GitHub Actions workflow.
@@ -55,7 +56,7 @@
 - **Backend Account Deletion Governance:** 22/22 tests green (100%).
 - **Backend Foundation Hardening:** 44/44 focused tests green (100%).
 - **Artwork Invariants:** 6/6 tests green (100%).
-- **Mobile Offline Isolation & Reliability:** 20/20 tests green (100% across real production `offlineDb` methods).
+- **Mobile Offline Isolation & Reliability:** 31/31 tests green (100% across real production `db.ts`, `api.ts`, and `authTeardown.ts` methods).
 - **Mobile Typecheck:** Clean compilation (0 errors).
 - **Shared Contracts:** `@vanvas/shared` builds cleanly (0 errors).
 - **Offline Reliability:** SQLite WAL cache layer with account-scoped `expenses_cache`, `offline_mutation_queue`, composite keys, and performance indexes verified.
@@ -74,15 +75,14 @@
 ---
 
 ## 6. Last Completed Task
-- **Objective:** Final SQLite Privacy Isolation & Native Release Validation.
+- **Objective:** Existing-Install SQLite Migration & Offline Sync Integrity.
 - **Accomplishments:**
-  - Eliminated legacy NULL user_id leakage: all private expense and mutation methods require verified `userId: string` with exact `WHERE user_id = ?` query clauses.
-  - Implemented user-scoped trip detail caching: `getCachedTripDetail(userId, tripId)` requires both parameters, queries `WHERE trip_id = ? AND user_id = ?`, and caches under `trip_detail_${userId}_${tripId}` in memory.
-  - Resolved cache collision risk by establishing composite `PRIMARY KEY (trip_id, user_id)` for `user_trips_cache` and `trip_details_cache`.
-  - Added performance indexes: `idx_expenses_user_trip`, `idx_mutations_user_created`, `idx_trip_details_user_trip`, `idx_user_trips_user_updated`.
-  - Enforced fail-safe migration initialization with post-migration column verification; if verification fails, private cache queries block access with clear descriptive errors.
-  - Implemented deduplication guard in `syncPendingOfflineActions` matching `offline_client_id` inside `receipt_data_json` before re-posting offline expenses.
-  - Upgraded test harness in `scripts/test_offline_isolation_and_account_deletion.mjs` to execute actual production code from `mobile/src/services/db.ts` and `mobile/src/services/api.ts` on a real SQLite in-memory engine, achieving 20/20 passing tests (100%).
+  - Implemented versioned, idempotent composite primary key migration in `mobile/src/services/db.ts` (`migrateTableToCompositePrimaryKey`) converting `user_trips_cache` and `trip_details_cache` to `PRIMARY KEY (trip_id, user_id)`.
+  - Added legacy data quarantine: unowned rows are copied to `legacy_quarantine_*` tables rather than dropped or exposed.
+  - Enforced strict ownership validation (`validateUserId`) across all private database cache and mutation methods.
+  - Hardened offline synchronization idempotency in `mobile/src/services/api.ts`: decoupled remote POST from local caching; handled reconciliation GET failures safely; and added pending mutation cancellation (`cancelOfflineExpenseMutation`) when unsynced expenses are deleted locally.
+  - Centralized single-owner account deletion teardown in `mobile/src/services/authTeardown.ts` shared with `AuthContext.tsx`.
+  - Upgraded test harness in `scripts/test_offline_isolation_and_account_deletion.mjs` to execute 31 production flow tests across real production code with 100% success (31/31 passing).
   - Maintained 100% strict freeze on `frontend/` (0 files modified).
 
 ---

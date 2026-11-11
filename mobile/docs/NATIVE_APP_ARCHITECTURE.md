@@ -67,17 +67,22 @@ mobile/app/
   - `trip_details_cache`: Deep itinerary days, schedule items, and waypoint notes (`PRIMARY KEY (trip_id, user_id)`).
   - `expenses_cache`: Travel ledger receipts, amounts, categories, sync flags, and mandatory `user_id TEXT NOT NULL`.
   - `offline_mutation_queue`: FIFO queue of offline operations strictly tagged with `user_id TEXT NOT NULL`.
+  - `schema_migrations`: Versioned migration journal (`version INTEGER PRIMARY KEY`, `migrated_at TEXT`).
+  - `legacy_quarantine_user_trips_cache` & `legacy_quarantine_trip_details_cache`: Quarantined unowned legacy rows.
 - **Performance Indexes:**
   - `idx_expenses_user_trip`: `expenses_cache(user_id, trip_id)`
   - `idx_mutations_user_created`: `offline_mutation_queue(user_id, created_at)`
   - `idx_trip_details_user_trip`: `trip_details_cache(user_id, trip_id)`
   - `idx_user_trips_user_updated`: `user_trips_cache(user_id, updated_at)`
 - **Privacy & Legacy Data Governance:**
-  - **Zero NULL user_id Leakage:** All private queries use exact `WHERE user_id = ?`. Queries never include `OR user_id IS NULL`.
-  - **Quarantine Policy:** Legacy records with unverified or NULL ownership remain in an isolated quarantine; they are never replayed, never displayed to other users, and never deleted during another user's account purge.
+  - **Zero NULL user_id Leakage:** All private queries use exact `WHERE user_id = ?`. Queries never include `OR user_id IS NULL`. `validateUserId(userId, methodName)` strictly rejects missing, empty, or whitespace-only user IDs.
+  - **Existing-Install Composite Key Migration:** `migrateTableToCompositePrimaryKey(db, tableName)` inspects `PRAGMA table_info` for composite primary key `(trip_id, user_id)`. Unowned legacy rows (`user_id IS NULL OR TRIM(user_id) = ''`) are copied to `legacy_quarantine_*` tables. Valid rows are copied into replacement tables with `PRIMARY KEY (trip_id, user_id)` and indexes are recreated atomically. Version tracked in `schema_migrations`.
   - **Fail-Safe Migration Guard:** Additive schema migrations run on database initialization with post-migration verification. If migration fails, private cache queries fail-safely throw and block access to prevent unauthenticated data leaks.
+  - **Scoped Mutation Removal & Cancellation:** `removeMutation(userId, id)` requires `userId` and deletes strictly with `WHERE id = ? AND user_id = ?`. `cancelOfflineExpenseMutation(userId, offlineId)` safely removes pending `add_expense` mutations for unsynced local expenses.
   - **In-Memory Fallback Parity:** In web or fallback mode, keys are strictly scoped by account (`trip_detail_${userId}_${tripId}`, `expenses_${userId}_${tripId}`, `user_trips_${userId}`).
-  - **Replay Deduplication Guard:** Offline expenses embed `offline_client_id` inside `receipt_data_json`. During reconnection replay, mutations check existing server expenses to prevent duplicate creations on interrupted sync.
+  - **Replay Deduplication Guard:** Offline expenses embed `offline_client_id` inside `receipt_data_json`. During reconnection replay, mutations check existing server expenses before re-POSTing. Failed reconciliation GET preserves mutations and halts replay.
+  - **Decoupled Expense Creation:** Remote server POST and local SQLite persistence are decoupled. Local cache write failure does not enqueue a duplicate offline mutation. Offline expense deletion before sync cancels pending mutations without enqueuing server DELETE.
+  - **Single-Owner Account Deletion Teardown:** Centralized `executeAccountDeletionTeardown` in `mobile/src/services/authTeardown.ts` guarantees session and SecureStore clearance even if local SQLite purge fails.
 
 ---
 

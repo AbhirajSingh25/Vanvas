@@ -15,6 +15,12 @@ function ensureMigrationReady(): void {
   }
 }
 
+function validateUserId(userId: string, methodName: string): void {
+  if (!userId || typeof userId !== "string" || !userId.trim()) {
+    throw new Error(`[offlineDb] ${methodName} requires an authenticated non-empty userId`);
+  }
+}
+
 async function getDb(): Promise<SQLite.SQLiteDatabase | null> {
   if (forceMemoryMode || Platform.OS === "web") return null;
   if (!dbInstance) {
@@ -24,11 +30,104 @@ async function getDb(): Promise<SQLite.SQLiteDatabase | null> {
   return dbInstance;
 }
 
+/**
+ * Versioned, idempotent migration for tables that need composite primary key (trip_id, user_id).
+ * Preserves all valid user-owned records, isolates unowned/NULL records in quarantine tables,
+ * and recreates required indexes within a safe transactional workflow.
+ */
+async function migrateTableToCompositePrimaryKey(
+  db: SQLite.SQLiteDatabase,
+  tableName: "user_trips_cache" | "trip_details_cache"
+): Promise<void> {
+  const cols = await db.getAllAsync<{ name: string; type: string; notnull: number; pk: number }>(
+    `PRAGMA table_info(${tableName})`
+  );
+  if (cols.length === 0) {
+    return;
+  }
+
+  const pkCols = cols.filter((c) => c.pk > 0);
+  const hasTripIdPk = pkCols.some((c) => c.name === "trip_id");
+  const hasUserIdPk = pkCols.some((c) => c.name === "user_id");
+
+  // If already composite primary key (both trip_id and user_id have pk > 0), skip migration
+  if (hasTripIdPk && hasUserIdPk && pkCols.length === 2) {
+    return;
+  }
+
+  // Old table has single PK or missing composite PK: execute safe replacement
+  const tempTable = `${tableName}_new_composite`;
+  const quarantineTable = `legacy_quarantine_${tableName}`;
+  const hasUserIdCol = cols.some((c) => c.name === "user_id");
+
+  // Create quarantine table for unowned records
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS ${quarantineTable} (
+      trip_id TEXT,
+      user_id TEXT,
+      data_json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL,
+      quarantined_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE ${tempTable} (
+      trip_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      data_json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (trip_id, user_id)
+    );
+  `);
+
+  if (hasUserIdCol) {
+    // Quarantine any records where user_id is NULL or empty
+    await db.execAsync(`
+      INSERT INTO ${quarantineTable} (trip_id, user_id, data_json, updated_at, quarantined_at)
+      SELECT trip_id, user_id, data_json, updated_at, ${Date.now()}
+      FROM ${tableName}
+      WHERE user_id IS NULL OR TRIM(user_id) = '';
+    `);
+
+    // Copy valid user-owned records into the replacement table
+    await db.execAsync(`
+      INSERT OR REPLACE INTO ${tempTable} (trip_id, user_id, data_json, updated_at)
+      SELECT trip_id, user_id, data_json, updated_at
+      FROM ${tableName}
+      WHERE user_id IS NOT NULL AND TRIM(user_id) != '';
+    `);
+  } else {
+    // Ancient table without user_id column: quarantine everything
+    await db.execAsync(`
+      INSERT INTO ${quarantineTable} (trip_id, user_id, data_json, updated_at, quarantined_at)
+      SELECT trip_id, NULL, data_json, updated_at, ${Date.now()}
+      FROM ${tableName};
+    `);
+  }
+
+  // Drop old table and rename replacement table
+  await db.execAsync(`
+    DROP TABLE ${tableName};
+    ALTER TABLE ${tempTable} RENAME TO ${tableName};
+  `);
+
+  // Post-migration verification
+  const newCols = await db.getAllAsync<{ name: string; pk: number }>(`PRAGMA table_info(${tableName})`);
+  const newPkCols = newCols.filter((c) => c.pk > 0);
+  if (!newPkCols.some((c) => c.name === "trip_id") || !newPkCols.some((c) => c.name === "user_id")) {
+    throw new Error(`Migration verification failed: ${tableName} does not have composite primary key`);
+  }
+}
+
 async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
   schemaMigrationError = null;
   try {
     await db.execAsync(`
       PRAGMA journal_mode = WAL;
+
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version INTEGER PRIMARY KEY,
+        applied_at INTEGER NOT NULL
+      );
 
       CREATE TABLE IF NOT EXISTS destinations_cache (
         id TEXT PRIMARY KEY,
@@ -94,6 +193,10 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
       await db.execAsync(`ALTER TABLE offline_mutation_queue ADD COLUMN user_id TEXT;`);
     }
 
+    // Composite primary key migrations for existing tables with single PK
+    await migrateTableToCompositePrimaryKey(db, "user_trips_cache");
+    await migrateTableToCompositePrimaryKey(db, "trip_details_cache");
+
     // Performance indexes for user-scoped lookups
     await db.execAsync(`
       CREATE INDEX IF NOT EXISTS idx_expenses_user_trip ON expenses_cache(user_id, trip_id);
@@ -102,12 +205,28 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_user_trips_user_updated ON user_trips_cache(user_id, updated_at);
     `);
 
-    // Migration verification: fail safely if user_id column is missing
+    // Record migration version 2
+    await db.execAsync(`
+      INSERT OR REPLACE INTO schema_migrations (version, applied_at)
+      VALUES (2, ${Date.now()});
+    `);
+
+    // Final verification: fail safely if columns or composite primary keys are missing
     const verifiedExpCols = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(expenses_cache)`);
     const verifiedQueueCols = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(offline_mutation_queue)`);
+    const verifiedTripCols = await db.getAllAsync<{ name: string; pk: number }>(`PRAGMA table_info(user_trips_cache)`);
+    const verifiedDetailCols = await db.getAllAsync<{ name: string; pk: number }>(`PRAGMA table_info(trip_details_cache)`);
 
-    if (!verifiedExpCols.some((col) => col.name === "user_id") || !verifiedQueueCols.some((col) => col.name === "user_id")) {
-      throw new Error("Critical: Migration verification failed - user_id column missing");
+    const tripPkCols = verifiedTripCols.filter((c) => c.pk > 0);
+    const detailPkCols = verifiedDetailCols.filter((c) => c.pk > 0);
+
+    if (
+      !verifiedExpCols.some((col) => col.name === "user_id") ||
+      !verifiedQueueCols.some((col) => col.name === "user_id") ||
+      tripPkCols.length < 2 ||
+      detailPkCols.length < 2
+    ) {
+      throw new Error("Critical: Migration verification failed - required columns or composite PKs missing");
     }
   } catch (err: any) {
     schemaMigrationError = new Error(`Database schema migration failed: ${err.message || String(err)}`);
@@ -117,7 +236,7 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
 }
 
 export const offlineDb = {
-  // --- Destinations Catalogue ---
+  // --- Destinations Catalogue (Public Global) ---
   async cacheDestinations(destinations: Destination[]): Promise<void> {
     const now = Date.now();
     const db = await getDb();
@@ -151,7 +270,7 @@ export const offlineDb = {
     return rows.map((r) => JSON.parse(r.data_json));
   },
 
-  // --- Destination Details ---
+  // --- Destination Details (Public Global) ---
   async cacheDestinationDetail(slugOrId: string, detailData: any): Promise<void> {
     const now = Date.now();
     const db = await getDb();
@@ -180,8 +299,10 @@ export const offlineDb = {
     return row ? JSON.parse(row.data_json) : null;
   },
 
-  // --- User Trips Summaries ---
+  // --- User Trips Summaries (Account Scoped) ---
   async cacheUserTrips(userId: string, trips: TripSummary[]): Promise<void> {
+    validateUserId(userId, "cacheUserTrips");
+    ensureMigrationReady();
     const now = Date.now();
     const db = await getDb();
     if (!db) {
@@ -189,7 +310,7 @@ export const offlineDb = {
       return;
     }
     await db.withTransactionAsync(async () => {
-      // Clear previous trips for this user before caching fresh batch
+      // Clear previous trips strictly for this user before caching fresh batch
       await db.runAsync(`DELETE FROM user_trips_cache WHERE user_id = ?`, userId);
       for (const t of trips) {
         await db.runAsync(
@@ -204,6 +325,8 @@ export const offlineDb = {
   },
 
   async getCachedUserTrips(userId: string): Promise<TripSummary[]> {
+    validateUserId(userId, "getCachedUserTrips");
+    ensureMigrationReady();
     const db = await getDb();
     if (!db) {
       const raw = memoryKv.get(`user_trips_${userId}`);
@@ -216,11 +339,9 @@ export const offlineDb = {
     return rows.map((r) => JSON.parse(r.data_json));
   },
 
-  // --- Trip Details Snapshot ---
+  // --- Trip Details Snapshot (Account Scoped) ---
   async cacheTripDetail(userId: string, trip: Trip): Promise<void> {
-    if (!userId) {
-      throw new Error("[offlineDb] cacheTripDetail requires an authenticated userId");
-    }
+    validateUserId(userId, "cacheTripDetail");
     ensureMigrationReady();
     const now = Date.now();
     const db = await getDb();
@@ -238,9 +359,7 @@ export const offlineDb = {
   },
 
   async getCachedTripDetail(userId: string, tripId: string): Promise<Trip | null> {
-    if (!userId) {
-      throw new Error("[offlineDb] getCachedTripDetail requires an authenticated userId");
-    }
+    validateUserId(userId, "getCachedTripDetail");
     ensureMigrationReady();
     const db = await getDb();
     if (!db) {
@@ -257,7 +376,7 @@ export const offlineDb = {
 
   // --- Session Isolation: Clear user data on sign out ---
   async clearUserSessionCache(userId: string): Promise<void> {
-    if (!userId) return;
+    validateUserId(userId, "clearUserSessionCache");
     ensureMigrationReady();
     const db = await getDb();
     if (!db) {
@@ -275,9 +394,7 @@ export const offlineDb = {
 
   // --- Permanent Account Erasure: Purge all private user records on account deletion ---
   async purgeUserAccountData(userId: string): Promise<void> {
-    if (!userId) {
-      throw new Error("[offlineDb] purgeUserAccountData requires an authenticated userId");
-    }
+    validateUserId(userId, "purgeUserAccountData");
     ensureMigrationReady();
     const db = await getDb();
     if (!db) {
@@ -329,11 +446,9 @@ export const offlineDb = {
     }
   },
 
-  // --- Offline Expenses & Travel Ledger ---
+  // --- Offline Expenses & Travel Ledger (Account Scoped) ---
   async cacheTripExpenses(userId: string, tripId: string, expenses: Expense[]): Promise<void> {
-    if (!userId) {
-      throw new Error("[offlineDb] cacheTripExpenses requires an authenticated userId");
-    }
+    validateUserId(userId, "cacheTripExpenses");
     ensureMigrationReady();
     const now = Date.now();
     const db = await getDb();
@@ -367,9 +482,7 @@ export const offlineDb = {
   },
 
   async getCachedTripExpenses(userId: string, tripId: string): Promise<Expense[]> {
-    if (!userId) {
-      throw new Error("[offlineDb] getCachedTripExpenses requires an authenticated userId");
-    }
+    validateUserId(userId, "getCachedTripExpenses");
     ensureMigrationReady();
     const db = await getDb();
     if (!db) {
@@ -385,9 +498,7 @@ export const offlineDb = {
   },
 
   async saveOfflineExpense(userId: string, tripId: string, expense: Expense, isPendingSync = false): Promise<void> {
-    if (!userId) {
-      throw new Error("[offlineDb] saveOfflineExpense requires an authenticated userId");
-    }
+    validateUserId(userId, "saveOfflineExpense");
     ensureMigrationReady();
     const now = Date.now();
     const db = await getDb();
@@ -415,9 +526,7 @@ export const offlineDb = {
   },
 
   async deleteOfflineExpense(userId: string, tripId: string, expenseId: string): Promise<void> {
-    if (!userId) {
-      throw new Error("[offlineDb] deleteOfflineExpense requires an authenticated userId");
-    }
+    validateUserId(userId, "deleteOfflineExpense");
     ensureMigrationReady();
     const db = await getDb();
     if (!db) {
@@ -437,11 +546,9 @@ export const offlineDb = {
     );
   },
 
-  // --- Offline Mutation Queue ---
+  // --- Offline Mutation Queue (Account Scoped) ---
   async queueOfflineMutation(userId: string, actionType: string, payload: any): Promise<void> {
-    if (!userId) {
-      throw new Error("[offlineDb] queueOfflineMutation requires an authenticated userId");
-    }
+    validateUserId(userId, "queueOfflineMutation");
     ensureMigrationReady();
     const db = await getDb();
     const now = Date.now();
@@ -469,9 +576,7 @@ export const offlineDb = {
   },
 
   async getPendingMutations(userId: string): Promise<Array<{ id: number; user_id: string; action_type: string; payload_json: string; created_at: number }>> {
-    if (!userId) {
-      throw new Error("[offlineDb] getPendingMutations requires an authenticated userId");
-    }
+    validateUserId(userId, "getPendingMutations");
     ensureMigrationReady();
     const db = await getDb();
     if (!db) {
@@ -485,18 +590,63 @@ export const offlineDb = {
     );
   },
 
-  async removeMutation(id: number): Promise<void> {
+  async removeMutation(userId: string, id: number): Promise<void> {
+    validateUserId(userId, "removeMutation");
     ensureMigrationReady();
     const db = await getDb();
     if (!db) {
       const raw = memoryKv.get("offline_mutation_queue");
       if (raw) {
         const list = JSON.parse(raw);
-        memoryKv.set("offline_mutation_queue", JSON.stringify(list.filter((m: any) => m.id !== id)));
+        memoryKv.set(
+          "offline_mutation_queue",
+          JSON.stringify(list.filter((m: any) => !(m.id === id && m.user_id === userId)))
+        );
       }
       return;
     }
-    await db.runAsync(`DELETE FROM offline_mutation_queue WHERE id = ?`, id);
+    await db.runAsync(`DELETE FROM offline_mutation_queue WHERE id = ? AND user_id = ?`, id, userId);
+  },
+
+  async cancelOfflineExpenseMutation(userId: string, offlineId: string): Promise<boolean> {
+    validateUserId(userId, "cancelOfflineExpenseMutation");
+    ensureMigrationReady();
+    const db = await getDb();
+    if (!db) {
+      const raw = memoryKv.get("offline_mutation_queue");
+      if (!raw) return false;
+      const list = JSON.parse(raw);
+      const filtered = list.filter((m: any) => {
+        if (m.user_id !== userId || m.action_type !== "add_expense") return true;
+        try {
+          const payload = JSON.parse(m.payload_json);
+          return payload.offlineId !== offlineId;
+        } catch {
+          return true;
+        }
+      });
+      const removed = filtered.length !== list.length;
+      if (removed) {
+        memoryKv.set("offline_mutation_queue", JSON.stringify(filtered));
+      }
+      return removed;
+    }
+
+    const mutations = await db.getAllAsync<{ id: number; payload_json: string }>(
+      `SELECT id, payload_json FROM offline_mutation_queue WHERE user_id = ? AND action_type = 'add_expense'`,
+      userId
+    );
+    let cancelled = false;
+    for (const m of mutations) {
+      try {
+        const payload = JSON.parse(m.payload_json);
+        if (payload.offlineId === offlineId) {
+          await db.runAsync(`DELETE FROM offline_mutation_queue WHERE id = ? AND user_id = ?`, m.id, userId);
+          cancelled = true;
+        }
+      } catch {}
+    }
+    return cancelled;
   },
 
   // --- Testing Hooks for Real Implementation Verification ---
@@ -528,5 +678,12 @@ export const offlineDb = {
 
   async _initSchemaForTesting(db: any): Promise<void> {
     return initSchema(db);
+  },
+
+  async _migrateTableToCompositePrimaryKeyForTesting(
+    db: any,
+    tableName: "user_trips_cache" | "trip_details_cache"
+  ): Promise<void> {
+    return migrateTableToCompositePrimaryKey(db, tableName);
   },
 };

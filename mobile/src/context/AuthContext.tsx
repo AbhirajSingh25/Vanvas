@@ -3,6 +3,7 @@ import { User } from "@vanvas/shared";
 import { secureStorage } from "../services/storage";
 import { nativeApi } from "../services/api";
 import { offlineDb } from "../services/db";
+import { executeAccountDeletionTeardown } from "../services/authTeardown";
 
 interface AuthContextValue {
   user: User | null;
@@ -78,34 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteAccount = useCallback(async (password: string) => {
-    // 1. Capture user ID before clearing state
     const userIdToPurge = user?.id;
-
-    // 2. Perform authenticated backend deletion request
-    // If backend rejects (e.g. incorrect password, validation error, server error),
-    // this call throws, and local auth state / storage remains untouched.
-    const res = await nativeApi.deleteAccount(password);
-
-    // 3. Backend confirmed deletion. The account is erased on the server.
-    // Ensure SecureStore session and React authentication state are torn down.
-    try {
-      await secureStorage.clearSession();
-    } finally {
-      setToken(null);
-      setUser(null);
-    }
-
-    // 4. Purge user-owned private SQLite data
-    if (userIdToPurge) {
-      try {
-        await offlineDb.purgeUserAccountData(userIdToPurge);
-      } catch (localErr) {
-        // Record non-sensitive local cleanup error.
-        // Server deletion has already succeeded and user is logged out,
-        // so we must never falsely present this as a server failure.
-        console.warn("[AuthContext] Local account cache cleanup error:", localErr);
-      }
-    }
+    await executeAccountDeletionTeardown(userIdToPurge, password, { setToken, setUser });
   }, [user]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string, confirmPassword: string) => {
