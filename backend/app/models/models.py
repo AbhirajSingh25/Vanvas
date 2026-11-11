@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import uuid
+import secrets
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, Text, DateTime, Date, ForeignKey, Enum as SQLEnum, LargeBinary
+    Column, String, Integer, Float, Boolean, Text, DateTime, Date, ForeignKey, Enum as SQLEnum, LargeBinary, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from app.database.session import Base
@@ -13,10 +14,20 @@ from app.database.session import Base
 def generate_uuid():
     return str(uuid.uuid4())
 
+
+VANVAS_ID_CHARSET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"  # 30 chars, no 0, O, 1, I, L
+
+def generate_vanvas_id() -> str:
+    """Generate cryptographically secure ambiguity-resistant VANVAS ID: VNV-XXXX-XXXX"""
+    p1 = "".join(secrets.choice(VANVAS_ID_CHARSET) for _ in range(4))
+    p2 = "".join(secrets.choice(VANVAS_ID_CHARSET) for _ in range(4))
+    return f"VNV-{p1}-{p2}"
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
+    vanvas_id = Column(String(32), unique=True, index=True, nullable=True, default=generate_vanvas_id)
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
@@ -36,7 +47,7 @@ class User(Base):
     trips = relationship("Trip", back_populates="creator", cascade="all, delete-orphan")
     memberships = relationship("TripMember", back_populates="user", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="user", cascade="all, delete-orphan")
-    expenses = relationship("Expense", back_populates="user", cascade="all, delete-orphan")
+    expenses = relationship("Expense", foreign_keys="Expense.user_id", back_populates="user", cascade="all, delete-orphan")
     saved_places = relationship("SavedPlace", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
@@ -50,6 +61,12 @@ class User(Base):
     travel_memories = relationship("TravellerMemory", back_populates="user", cascade="all, delete-orphan")
     memory_observations = relationship("MemoryObservation", back_populates="user", cascade="all, delete-orphan")
     avatar_blobs = relationship("UserAvatarBlob", back_populates="user", cascade="all, delete-orphan")
+    sent_friend_requests = relationship("FriendRequest", foreign_keys="FriendRequest.sender_id", back_populates="sender", cascade="all, delete-orphan")
+    received_friend_requests = relationship("FriendRequest", foreign_keys="FriendRequest.receiver_id", back_populates="receiver", cascade="all, delete-orphan")
+    friendships = relationship("Friendship", foreign_keys="Friendship.user_id", back_populates="user", cascade="all, delete-orphan")
+    crew_circle_memberships = relationship("CrewCircleMember", back_populates="user", cascade="all, delete-orphan")
+    split_pod_memberships = relationship("SplitPodMember", back_populates="user", cascade="all, delete-orphan")
+    budget_plans = relationship("TripBudgetPlan", back_populates="user", cascade="all, delete-orphan")
 
     @property
     def is_verified(self) -> bool:
@@ -119,6 +136,7 @@ class UserPreference(Base):
     
     # Location & Privacy Preferences
     location_mode = Column(String(50), default="ask_every_time")  # ask_every_time, while_using, never
+    allow_friend_requests_via_id = Column(Boolean, default=True)
     
     # Notification Preferences
     notify_trip_reminders = Column(Boolean, default=True)
@@ -388,6 +406,9 @@ class Trip(Base):
     bookings = relationship("Booking", back_populates="trip", cascade="all, delete-orphan")
     revisions = relationship("TripRevision", back_populates="trip", cascade="all, delete-orphan", order_by="TripRevision.revision_number.desc()")
     travel_signals = relationship("TravelSignal", back_populates="trip", cascade="all, delete-orphan", order_by="TravelSignal.observed_at.desc()")
+    crew_circle_links = relationship("CrewCircleTrip", back_populates="trip", cascade="all, delete-orphan")
+    budget_plans = relationship("TripBudgetPlan", back_populates="trip", cascade="all, delete-orphan")
+    split_pods = relationship("SplitPod", back_populates="trip")
     travel_insights = relationship("TravelInsight", back_populates="trip", cascade="all, delete-orphan", order_by="TravelInsight.created_at.desc()")
     travel_actions = relationship("TravelAction", back_populates="trip", cascade="all, delete-orphan", order_by="TravelAction.created_at.desc()")
     replan_proposals = relationship("ReplanProposal", back_populates="trip", cascade="all, delete-orphan", order_by="ReplanProposal.created_at.desc()")
@@ -490,8 +511,12 @@ class Expense(Base):
     __tablename__ = "expenses"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=True, index=True)
+    circle_id = Column(String(36), ForeignKey("crew_circles.id", ondelete="CASCADE"), nullable=True, index=True)
+    split_pod_id = Column(String(36), ForeignKey("split_pods.id", ondelete="CASCADE"), nullable=True, index=True)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    created_by_user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    last_edited_by_user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     title = Column(String(255), nullable=False)
     category = Column(String(100), default="Food")  # Transport, Fuel, Tolls, Stay, Food, Activities, Shopping, Parking, Tickets, Permits, Other
     amount = Column(Float, nullable=False)
@@ -501,16 +526,24 @@ class Expense(Base):
     split_method = Column(String(50), default="EQUAL")  # EQUAL, EXACT, PERCENTAGE, SHARES, CUSTOM, ITEMIZED
     receipt_url = Column(String(500), nullable=True)
     receipt_data_json = Column(Text, nullable=True)
+    payers_json = Column(Text, nullable=True)
     is_recurring = Column(Boolean, default=False)
     recurring_frequency = Column(String(50), nullable=True)  # weekly, fortnightly, monthly
     tax_amount = Column(Float, default=0.0)
     tip_amount = Column(Float, default=0.0)
     discount_amount = Column(Float, default=0.0)
+    version = Column(Integer, default=1)
+    is_deleted = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     trip = relationship("Trip", back_populates="expenses")
-    user = relationship("User", back_populates="expenses")
+    user = relationship("User", foreign_keys=[user_id], back_populates="expenses")
+    created_by = relationship("User", foreign_keys=[created_by_user_id])
+    last_edited_by = relationship("User", foreign_keys=[last_edited_by_user_id])
     shares = relationship("ExpenseShare", back_populates="expense", cascade="all, delete-orphan")
+    circle = relationship("CrewCircle", back_populates="expenses")
+    split_pod = relationship("SplitPod", back_populates="expenses")
+    audit_logs = relationship("ExpenseAuditLog", back_populates="expense", cascade="all, delete-orphan", order_by="ExpenseAuditLog.created_at.desc()")
 
 class ExpenseShare(Base):
     __tablename__ = "expense_shares"
@@ -532,9 +565,12 @@ class SettlementPayment(Base):
     __tablename__ = "settlement_payments"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=False, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id"), nullable=True, index=True)
+    circle_id = Column(String(36), ForeignKey("crew_circles.id", ondelete="CASCADE"), nullable=True, index=True)
+    split_pod_id = Column(String(36), ForeignKey("split_pods.id", ondelete="CASCADE"), nullable=True, index=True)
     payer_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     receiver_user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    recorded_by_user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     amount = Column(Float, nullable=False)
     payment_method = Column(String(50), default="UPI")  # Cash, UPI, Bank Transfer, Other
     notes = Column(String(500), nullable=True)
@@ -542,6 +578,8 @@ class SettlementPayment(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     trip = relationship("Trip", back_populates="settlement_payments")
+    circle = relationship("CrewCircle", back_populates="settlement_payments")
+    split_pod = relationship("SplitPod", back_populates="settlement_payments")
     payer = relationship("User", foreign_keys=[payer_user_id])
     receiver = relationship("User", foreign_keys=[receiver_user_id])
 
@@ -1211,3 +1249,218 @@ class MemoryObservation(Base):
     # Relationships
     user = relationship("User", back_populates="memory_observations")
     trip = relationship("Trip")
+
+
+class FriendRequest(Base):
+    __tablename__ = "friend_requests"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    sender_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    receiver_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(20), default="PENDING", nullable=False)  # PENDING, ACCEPTED, DECLINED, CANCELLED
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("sender_id", "receiver_id", name="uq_friend_requests_sender_receiver"),
+    )
+
+    sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_friend_requests")
+    receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_friend_requests")
+
+
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    friend_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "friend_id", name="uq_friendships_user_friend"),
+    )
+
+    user = relationship("User", foreign_keys=[user_id], back_populates="friendships")
+    friend = relationship("User", foreign_keys=[friend_id])
+
+
+class CrewCircle(Base):
+    __tablename__ = "crew_circles"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    icon_or_cover = Column(String(255), default="mountain-crew")
+    created_by_user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    is_archived = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    creator = relationship("User", foreign_keys=[created_by_user_id])
+    members = relationship("CrewCircleMember", back_populates="circle", cascade="all, delete-orphan")
+    trips = relationship("CrewCircleTrip", back_populates="circle", cascade="all, delete-orphan")
+    activities = relationship("CrewCircleActivity", back_populates="circle", cascade="all, delete-orphan", order_by="CrewCircleActivity.created_at.desc()")
+    suggestions = relationship("CrewCircleSuggestion", back_populates="circle", cascade="all, delete-orphan")
+    split_pods = relationship("SplitPod", back_populates="circle", cascade="all, delete-orphan")
+    expenses = relationship("Expense", back_populates="circle", cascade="all, delete-orphan")
+    settlement_payments = relationship("SettlementPayment", back_populates="circle", cascade="all, delete-orphan")
+    budget_plans = relationship("TripBudgetPlan", back_populates="circle", cascade="all, delete-orphan")
+
+
+class CrewCircleMember(Base):
+    __tablename__ = "crew_circle_members"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    circle_id = Column(String(36), ForeignKey("crew_circles.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(50), default="member")  # owner, admin, member
+    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("circle_id", "user_id", name="uq_crew_circle_members_circle_user"),
+    )
+
+    circle = relationship("CrewCircle", back_populates="members")
+    user = relationship("User", back_populates="crew_circle_memberships")
+
+
+class CrewCircleTrip(Base):
+    __tablename__ = "crew_circle_trips"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    circle_id = Column(String(36), ForeignKey("crew_circles.id", ondelete="CASCADE"), nullable=False, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, index=True)
+    linked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("circle_id", "trip_id", name="uq_crew_circle_trips_circle_trip"),
+    )
+
+    circle = relationship("CrewCircle", back_populates="trips")
+    trip = relationship("Trip", back_populates="crew_circle_links")
+
+
+class CrewCircleActivity(Base):
+    __tablename__ = "crew_circle_activities"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    circle_id = Column(String(36), ForeignKey("crew_circles.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    activity_type = Column(String(50), nullable=False)  # chat, expense_added, trip_created, member_joined, settlement, suggestion, poll
+    content = Column(Text, nullable=False)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    circle = relationship("CrewCircle", back_populates="activities")
+    user = relationship("User")
+
+
+class CrewCircleSuggestion(Base):
+    __tablename__ = "crew_circle_suggestions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    circle_id = Column(String(36), ForeignKey("crew_circles.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    suggestion_type = Column(String(50), default="destination")  # destination, dates, stay, activity
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    data_json = Column(Text, nullable=True)
+    votes_json = Column(Text, default="[]")  # JSON list of user_ids who voted
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    circle = relationship("CrewCircle", back_populates="suggestions")
+    user = relationship("User")
+
+
+class SplitPod(Base):
+    __tablename__ = "split_pods"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    circle_id = Column(String(36), ForeignKey("crew_circles.id", ondelete="CASCADE"), nullable=False, index=True)
+    trip_id = Column(String(36), ForeignKey("trips.id", ondelete="SET NULL"), nullable=True, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    created_by_user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    circle = relationship("CrewCircle", back_populates="split_pods")
+    trip = relationship("Trip", back_populates="split_pods")
+    creator = relationship("User", foreign_keys=[created_by_user_id])
+    members = relationship("SplitPodMember", back_populates="pod", cascade="all, delete-orphan")
+    expenses = relationship("Expense", back_populates="split_pod", cascade="all, delete-orphan")
+    settlement_payments = relationship("SettlementPayment", back_populates="split_pod", cascade="all, delete-orphan")
+
+
+class SplitPodMember(Base):
+    __tablename__ = "split_pod_members"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    pod_id = Column(String(36), ForeignKey("split_pods.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("pod_id", "user_id", name="uq_split_pod_members_pod_user"),
+    )
+
+    pod = relationship("SplitPod", back_populates="members")
+    user = relationship("User", back_populates="split_pod_memberships")
+
+
+class TripBudgetPlan(Base):
+    __tablename__ = "trip_budget_plans"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    trip_id = Column(String(36), ForeignKey("trips.id", ondelete="CASCADE"), nullable=True, index=True)
+    circle_id = Column(String(36), ForeignKey("crew_circles.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), default="Trip Planned Budget")
+    target_budget = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    trip = relationship("Trip", back_populates="budget_plans")
+    circle = relationship("CrewCircle", back_populates="budget_plans")
+    user = relationship("User", back_populates="budget_plans")
+    items = relationship("TripBudgetItem", back_populates="plan", cascade="all, delete-orphan", order_by="TripBudgetItem.created_at.asc()")
+
+
+class TripBudgetItem(Base):
+    __tablename__ = "trip_budget_items"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    plan_id = Column(String(36), ForeignKey("trip_budget_plans.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    category = Column(String(100), default="General")
+    amount = Column(Float, nullable=False)
+    calculation_basis = Column(String(50), default="FIXED")  # FIXED, PER_PERSON, QTY_UNIT
+    unit_price = Column(Float, nullable=True)
+    quantity = Column(Float, nullable=True)
+    split_scope = Column(String(50), default="EVERYONE")  # EVERYONE, SELECTED, SPLIT_POD, PERSONAL
+    split_pod_id = Column(String(36), ForeignKey("split_pods.id", ondelete="SET NULL"), nullable=True)
+    split_method = Column(String(50), default="EQUAL")  # EQUAL, EXACT, PERCENTAGE, SHARES, ITEMIZED
+    participants_json = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    plan = relationship("TripBudgetPlan", back_populates="items")
+    split_pod = relationship("SplitPod")
+
+
+class ExpenseAuditLog(Base):
+    __tablename__ = "expense_audit_logs"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    expense_id = Column(String(36), ForeignKey("expenses.id", ondelete="CASCADE"), nullable=False, index=True)
+    action = Column(String(50), nullable=False)  # CREATE, UPDATE, DELETE
+    actor_user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    previous_snapshot_json = Column(Text, nullable=True)
+    new_snapshot_json = Column(Text, nullable=True)
+    reason = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    expense = relationship("Expense", back_populates="audit_logs")
+    actor = relationship("User")

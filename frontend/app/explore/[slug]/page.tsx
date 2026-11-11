@@ -1326,13 +1326,13 @@ export default function DestinationDetailPage() {
                   id: "trek-mode",
                   title: `Trek Around ${destination.name}`,
                   eyebrow: "HIGH ALTITUDE TRAILS",
-                  tagline: "Top-level Expedition Desk",
+                  tagline: "High-altitude trail circuits",
                   description: `Access dedicated topographic route comparisons, elevation graphs, gear planners, and live trail cockpit for trails around ${destination.name}.`,
                   href: `/treks?destination=${encodeURIComponent(destination.slug || slug)}`,
                   ctaText: "Launch Trek Mode →",
                   iconName: "mountain",
                   theme: "forest",
-                  badge: "EXPEDITION",
+                  badge: "TREK MODE",
                 },
                 {
                   id: "one-day-escape",
@@ -1344,7 +1344,7 @@ export default function DestinationDetailPage() {
                   ctaText: "Plan 1-Day Road Trip →",
                   iconName: "clock",
                   theme: "terracotta",
-                  badge: "ROAD TRIP",
+                  badge: "1-DAY ESCAPE",
                 },
                 {
                   id: "solo-mode",
@@ -1356,7 +1356,7 @@ export default function DestinationDetailPage() {
                   ctaText: "Explore Solo Mode →",
                   iconName: "compass",
                   theme: "amber",
-                  badge: "SOLO READY",
+                  badge: "SOLO TRAVEL",
                 },
                 {
                   id: "custom-planner",
@@ -1368,14 +1368,14 @@ export default function DestinationDetailPage() {
                   ctaText: "Open Trip Planner →",
                   iconName: "shield",
                   theme: "slate",
-                  badge: "AI PLANNER",
+                  badge: "CUSTOM ITINERARY",
                 },
               ];
 
               return (
                 <SingleRowCarousel
                   items={destinationExperiences}
-                  title="Travel Experiences & Expeditions"
+                  title={`Ways to Explore ${destination.name}`}
                   subtitle={`Specialised modes for day trips, mountain treks, and solo explorations in ${destination.name}`}
                   eyebrow="EXPERIENCE DESK"
                   itemWidthClass="w-[84vw] sm:w-[320px] lg:w-[350px]"

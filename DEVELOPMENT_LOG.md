@@ -5,7 +5,62 @@
 
 ---
 
-### [2026-11-10] Final Stabilization & Owner Release Handoff: Single-Owner Deletion Teardown & Account-Scoped Offline Isolation
+### [2026-11-11] Crew Circles, Collaborative Travel & Smart Expense Ecosystem Implementation
+- **Objective:** Complete full-stack end-to-end implementation of Crew Circles (मण्डली), Friend Connections with permanent `vanvas_id`, and the 3-Layer Smart Finance System across Web, Mobile Native (Android API 36), Backend FastAPI, and PostgreSQL/SQLite database with complete offline isolation.
+- **Changes Made:**
+  - **Identity & Friends:** Added permanent `vanvas_id` (`VNV-XXXX-XXXX`) with ambiguity-resistant base32 charset and privacy toggle `allow_friend_requests_via_id`. Implemented lookup, friend requests lifecycle, friend lists, and blocking. Built web and native `VanvasIdentityCard` with copy, native share, and live QR code modal.
+  - **Private Crew Circles:** Implemented multi-trip collaborative circles with member roles, private consensus voting on suggestions (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, and activity chat feeds.
+  - **3-Layer Smart Finance:**
+    - Layer 1: Trip Budget Plan (forecast only, zero debts).
+    - Layer 2: Main Group Ledger with integer paise arithmetic, optimistic version locking, and full audit logging.
+    - Layer 3: Split Pods (subgroup ledgers e.g. Smokers pod) with strict mathematical and query isolation ensuring zero debt leakage into non-pod members.
+    - Add Budget Item bottom sheet / modal with live per-person calculation previews and multiple calculation bases (`FIXED`, `PER_PERSON`, `QTY_UNIT`).
+  - **Native Parity & Offline Isolation:** Added SQLite tables `user_circles_cache` and `user_friends_cache` with authenticated `userId` isolation and purge teardown in `db.ts`, and full mobile screens in `mobile/app/friends/` and `mobile/app/circles/`.
+  - **Automated Verification:** Verified 5/5 collaborative crew & finance tests, 22/22 account deletion governance tests (27/27 total green), 31/31 mobile offline isolation tests, 0 Next.js build errors, and 0 mobile TypeScript errors.
+- **Files Affected:**
+  - `backend/app/models/models.py`
+  - `backend/app/schemas/schemas.py`
+  - `backend/app/api/v1/auth.py`
+  - `backend/app/api/v1/friends.py`
+  - `backend/app/api/v1/crew_circles.py`
+  - `backend/app/api/v1/split_pods.py`
+  - `backend/app/api/v1/collaborative_finance.py`
+  - `backend/app/services/finance_service.py`
+  - `backend/app/database/session.py`
+  - `backend/app/main.py`
+  - `backend/alembic/versions/0003_crew_circles_friends_finance.py`
+  - `backend/tests/test_collaborative_crew_and_finance.py`
+  - `packages/shared/src/types/index.ts`
+  - `frontend/types/index.ts`
+  - `frontend/lib/api.ts`
+  - `frontend/app/friends/page.tsx`
+  - `frontend/app/circles/page.tsx`
+  - `frontend/app/circles/[id]/page.tsx`
+  - `frontend/app/profile/page.tsx`
+  - `frontend/components/profile/VanvasIdentityCard.tsx`
+  - `frontend/components/finance/AddBudgetItemModal.tsx`
+  - `frontend/components/trip/VanvasSplitView.tsx`
+  - `frontend/components/home/TravelDesk.tsx`
+  - `mobile/src/services/api.ts`
+  - `mobile/src/services/db.ts`
+  - `mobile/src/components/VanvasIdentityCard.tsx`
+  - `mobile/src/components/AddBudgetItemBottomSheet.tsx`
+  - `mobile/app/friends/index.tsx`
+  - `mobile/app/circles/index.tsx`
+  - `mobile/app/circles/[id].tsx`
+  - `mobile/app/(tabs)/profile.tsx`
+  - `mobile/app/_layout.tsx`
+  - `CURRENT_STATE.md`
+  - `DEVELOPMENT_LOG.md`
+  - `NEXT_SESSION.md`
+  - `PROJECT_CONTEXT.md`
+  - `DECISIONS.md`
+- **Tests Executed:**
+  - `pytest backend/tests/test_collaborative_crew_and_finance.py backend/tests/test_account_deletion_governance.py` ➔ 27/27 PASSED (100%)
+  - `node scripts/test_offline_isolation_and_account_deletion.mjs` ➔ 31/31 PASSED (100%)
+  - `cd frontend && npm run build` ➔ PASSED (0 errors, 100% clean production build)
+  - `cd mobile && npm run typecheck` ➔ PASSED (0 errors)
+  - `cd packages/shared && npm run build` ➔ PASSED (0 errors)
 - **Commit:** `a969a9f`
 - **Objective:** Eliminate duplicate post-deletion cleanup between `api.ts` and `AuthContext.tsx`, ensure robust fail-safe local error recovery where server success never falsely reports local SQLite errors, introduce additive SQLite schema migration adding `user_id` to `expenses_cache` and `offline_mutation_queue`, prevent cross-account offline mutation replay, ensure user-scoped cache erasure, and add automated regression test suite.
 - **Changes Made:**

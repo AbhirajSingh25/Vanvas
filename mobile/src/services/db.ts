@@ -1,6 +1,6 @@
 import * as SQLite from "expo-sqlite";
 import { Platform } from "react-native";
-import { Destination, TripSummary, Trip, Expense } from "@vanvas/shared";
+import { Destination, TripSummary, Trip, Expense, CrewCircle, Friendship } from "@vanvas/shared";
 
 const DB_NAME = "vanvas_offline.db";
 
@@ -179,6 +179,22 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
         action_type TEXT NOT NULL,
         payload_json TEXT NOT NULL,
         created_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS user_circles_cache (
+        circle_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (circle_id, user_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS user_friends_cache (
+        friend_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (friend_id, user_id)
       );
     `);
 
@@ -374,6 +390,83 @@ export const offlineDb = {
     return row ? JSON.parse(row.data_json) : null;
   },
 
+  // --- Crew Circles & Friends Snapshot (Account Scoped) ---
+  async cacheCrewCircles(userId: string, circles: CrewCircle[]): Promise<void> {
+    validateUserId(userId, "cacheCrewCircles");
+    ensureMigrationReady();
+    const now = Date.now();
+    const db = await getDb();
+    if (!db) {
+      memoryKv.set(`user_circles_${userId}`, JSON.stringify(circles));
+      return;
+    }
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(`DELETE FROM user_circles_cache WHERE user_id = ?`, userId);
+      for (const circle of circles) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO user_circles_cache (circle_id, user_id, data_json, updated_at) VALUES (?, ?, ?, ?)`,
+          circle.id,
+          userId,
+          JSON.stringify(circle),
+          now
+        );
+      }
+    });
+  },
+
+  async getCachedCrewCircles(userId: string): Promise<CrewCircle[]> {
+    validateUserId(userId, "getCachedCrewCircles");
+    ensureMigrationReady();
+    const db = await getDb();
+    if (!db) {
+      const raw = memoryKv.get(`user_circles_${userId}`);
+      return raw ? JSON.parse(raw) : [];
+    }
+    const rows = await db.getAllAsync<{ data_json: string }>(
+      `SELECT data_json FROM user_circles_cache WHERE user_id = ? ORDER BY updated_at DESC`,
+      userId
+    );
+    return rows.map((r) => JSON.parse(r.data_json));
+  },
+
+  async cacheFriends(userId: string, friends: Friendship[]): Promise<void> {
+    validateUserId(userId, "cacheFriends");
+    ensureMigrationReady();
+    const now = Date.now();
+    const db = await getDb();
+    if (!db) {
+      memoryKv.set(`user_friends_${userId}`, JSON.stringify(friends));
+      return;
+    }
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(`DELETE FROM user_friends_cache WHERE user_id = ?`, userId);
+      for (const friend of friends) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO user_friends_cache (friend_id, user_id, data_json, updated_at) VALUES (?, ?, ?, ?)`,
+          friend.id,
+          userId,
+          JSON.stringify(friend),
+          now
+        );
+      }
+    });
+  },
+
+  async getCachedFriends(userId: string): Promise<Friendship[]> {
+    validateUserId(userId, "getCachedFriends");
+    ensureMigrationReady();
+    const db = await getDb();
+    if (!db) {
+      const raw = memoryKv.get(`user_friends_${userId}`);
+      return raw ? JSON.parse(raw) : [];
+    }
+    const rows = await db.getAllAsync<{ data_json: string }>(
+      `SELECT data_json FROM user_friends_cache WHERE user_id = ? ORDER BY updated_at DESC`,
+      userId
+    );
+    return rows.map((r) => JSON.parse(r.data_json));
+  },
+
   // --- Session Isolation: Clear user data on sign out ---
   async clearUserSessionCache(userId: string): Promise<void> {
     validateUserId(userId, "clearUserSessionCache");
@@ -390,6 +483,8 @@ export const offlineDb = {
     }
     await db.runAsync(`DELETE FROM user_trips_cache WHERE user_id = ?`, userId);
     await db.runAsync(`DELETE FROM trip_details_cache WHERE user_id = ?`, userId);
+    await db.runAsync(`DELETE FROM user_circles_cache WHERE user_id = ?`, userId);
+    await db.runAsync(`DELETE FROM user_friends_cache WHERE user_id = ?`, userId);
   },
 
   // --- Permanent Account Erasure: Purge all private user records on account deletion ---
@@ -399,6 +494,8 @@ export const offlineDb = {
     const db = await getDb();
     if (!db) {
       memoryKv.delete(`user_trips_${userId}`);
+      memoryKv.delete(`user_circles_${userId}`);
+      memoryKv.delete(`user_friends_${userId}`);
       for (const key of Array.from(memoryKv.keys())) {
         if (key.startsWith(`trip_detail_${userId}_`) || key.startsWith(`expenses_${userId}_`)) {
           memoryKv.delete(key);
@@ -422,11 +519,15 @@ export const offlineDb = {
     await db.withTransactionAsync(async () => {
       await db.runAsync(`DELETE FROM user_trips_cache WHERE user_id = ?`, userId);
       await db.runAsync(`DELETE FROM trip_details_cache WHERE user_id = ?`, userId);
+      await db.runAsync(`DELETE FROM user_circles_cache WHERE user_id = ?`, userId);
+      await db.runAsync(`DELETE FROM user_friends_cache WHERE user_id = ?`, userId);
       await db.runAsync(`DELETE FROM expenses_cache WHERE user_id = ?`, userId);
       await db.runAsync(`DELETE FROM offline_mutation_queue WHERE user_id = ?`, userId);
     });
 
     memoryKv.delete(`user_trips_${userId}`);
+    memoryKv.delete(`user_circles_${userId}`);
+    memoryKv.delete(`user_friends_${userId}`);
     for (const key of Array.from(memoryKv.keys())) {
       if (key.startsWith(`trip_detail_${userId}_`) || key.startsWith(`expenses_${userId}_`)) {
         memoryKv.delete(key);

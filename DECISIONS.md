@@ -98,3 +98,10 @@
 - **Consequences:**
   - `account-deletion-site/` is hosted independently or statically mapped.
   - Backend cascading deletion in `backend/app/api/v1/auth.py` and `backend/app/models/models.py` cascades to expense shares, settlements, trips, and clears stored avatar photos.
+
+---
+
+## 13. 3-Layer Finance & Subgroup Pod Isolation: Canonical Paise Arithmetic & Zero Debt Leakage
+- **Decision:** All financial splitting mathematics strictly convert currency amounts to integer paise (`round(amount * 100)`) prior to division and settlement graph simplification, with remainder distribution ensuring sum of individual shares equals total cost to the exact paisa. Furthermore, subgroup ledgers (Layer 3: Split Pods e.g. Smokers Pod) are strictly isolated with query filter `split_pod_id.is_(None)` on main circle balances, guaranteeing pod debts never leak into non-pod members.
+- **Reasoning:** Floating-point division creates sub-cent drift (e.g. ₹900 / 3 = 299.99999999999994) which accumulates across group travel ledgers. Segregating pod expenses preserves social harmony and financial truth: members who do not smoke or participate in specific activities owe ₹0.
+- **Consequences:** All expense, share, and balance calculations in `finance_service.py` operate on integer paise. Balances for the circle and for each pod are calculated independently.

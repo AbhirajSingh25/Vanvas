@@ -9,10 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, UploadF
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.models import (
-    User, UserPreference, EmailVerificationToken, EmailVerificationOTP, Trip, SavedPlace, Review, Booking,
+    User, UserPreference, generate_vanvas_id, EmailVerificationToken, EmailVerificationOTP, Trip, SavedPlace, Review, Booking,
     Itinerary, Expense, ExpenseShare, SettlementPayment, ChecklistItem, TravellerMemory, MemoryObservation,
     SoloMatch, SoloDirectMessage, TravelerBlock, TravelerReport, ReviewReport,
-    CircleActivityVote, CircleActivity, CircleMessage, TravelCircle, PaymentTransaction, MobilityProvider
+    CircleActivityVote, CircleActivity, CircleMessage, TravelCircle, PaymentTransaction, MobilityProvider,
+    FriendRequest, Friendship, CrewCircle, CrewCircleMember, CrewCircleActivity, CrewCircleSuggestion, SplitPodMember, ExpenseAuditLog
 )
 from app.schemas.schemas import (
     UserCreate, UserLogin, UserResponse, TokenResponse,
@@ -39,7 +40,7 @@ PREFERENCE_FIELDS = [
     "notify_trip_changes", "notify_booking_updates", "notify_suggestions",
     "notify_copilot_updates", "notify_announcements", "ai_copilot_enabled",
     "ai_personalized_recommendations", "ai_use_travel_preferences",
-    "ai_use_trip_context", "memory_learning_enabled", "memory_learning_paused"
+    "ai_use_trip_context", "memory_learning_enabled", "memory_learning_paused", "allow_friend_requests_via_id"
 ]
 
 @router.post("/register", response_model=RegistrationSuccessResponse)
@@ -377,6 +378,10 @@ def resend_verification_email(payload: ResendVerificationRequest, db: Session = 
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.vanvas_id:
+        current_user.vanvas_id = generate_vanvas_id()
+        db.commit()
+        db.refresh(current_user)
     if not current_user.preferences:
         pref = db.query(UserPreference).filter(UserPreference.user_id == current_user.id).first()
         if not pref:
@@ -940,6 +945,34 @@ def delete_account(
         db.query(MobilityProvider).filter(MobilityProvider.owner_user_id == user_id).update(
             {MobilityProvider.owner_user_id: None}, synchronize_session=False
         )
+
+        # F. Friends, Crew Circles, Split Pods, and Collaborative Finance
+        db.query(FriendRequest).filter(
+            (FriendRequest.sender_id == user_id) | (FriendRequest.receiver_id == user_id)
+        ).delete(synchronize_session=False)
+        db.query(Friendship).filter(
+            (Friendship.user_id == user_id) | (Friendship.friend_id == user_id)
+        ).delete(synchronize_session=False)
+        db.query(SplitPodMember).filter(SplitPodMember.user_id == user_id).delete(synchronize_session=False)
+        db.query(CrewCircleMember).filter(CrewCircleMember.user_id == user_id).delete(synchronize_session=False)
+        db.query(CrewCircleActivity).filter(CrewCircleActivity.user_id == user_id).update(
+            {CrewCircleActivity.user_id: None}, synchronize_session=False
+        )
+        db.query(CrewCircleSuggestion).filter(CrewCircleSuggestion.user_id == user_id).delete(synchronize_session=False)
+        db.query(ExpenseAuditLog).filter(ExpenseAuditLog.actor_user_id == user_id).update(
+            {ExpenseAuditLog.actor_user_id: None}, synchronize_session=False
+        )
+        db.query(Expense).filter(Expense.last_edited_by_user_id == user_id).update(
+            {Expense.last_edited_by_user_id: None}, synchronize_session=False
+        )
+        db.query(Expense).filter(Expense.created_by_user_id == user_id).update(
+            {Expense.created_by_user_id: None}, synchronize_session=False
+        )
+        db.query(SettlementPayment).filter(SettlementPayment.recorded_by_user_id == user_id).update(
+            {SettlementPayment.recorded_by_user_id: None}, synchronize_session=False
+        )
+        # Delete CrewCircles created by this user
+        db.query(CrewCircle).filter(CrewCircle.created_by_user_id == user_id).delete(synchronize_session=False)
 
         # 3. Cascading delete on User model cleans up all owned trips, preferences, saved_places, reviews, bookings, conversations, memories, blobs
         db.delete(current_user)

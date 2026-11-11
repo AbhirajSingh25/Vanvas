@@ -13,6 +13,20 @@ import {
   RoadTripPlanRequest,
   RoadTripPlanResponse,
   RoadTripCorridor,
+  FriendRequest,
+  Friendship,
+  FriendLookupResult,
+  CrewCircle,
+  CrewCircleDetail,
+  CrewCircleMember,
+  CrewCircleSuggestion,
+  CrewCircleActivity,
+  SplitPod,
+  TripBudgetPlan,
+  TripBudgetItem,
+  CollaborativeExpense,
+  ContextBalances,
+  SettlementRecord,
 } from "@vanvas/shared";
 import { secureStorage } from "./storage";
 import { offlineDb } from "./db";
@@ -742,6 +756,272 @@ export const nativeApi = {
       }
     }
     return syncedCount;
+  },
+
+  // ----------------- Friends System -----------------
+  async lookupFriendByVanvasId(vanvasId: string): Promise<FriendLookupResult> {
+    return fetchWithRetry<FriendLookupResult>(`/friends/lookup/${encodeURIComponent(vanvasId.trim().toUpperCase())}`);
+  },
+
+  async getFriends(): Promise<Friendship[]> {
+    return fetchWithRetry<Friendship[]>("/friends");
+  },
+
+  async getFriendRequests(): Promise<{ incoming: FriendRequest[]; outgoing: FriendRequest[] }> {
+    return fetchWithRetry<{ incoming: FriendRequest[]; outgoing: FriendRequest[] }>("/friends/requests");
+  },
+
+  async sendFriendRequest(addresseeVanvasId: string, note?: string): Promise<FriendRequest> {
+    return fetchWithRetry<FriendRequest>(
+      "/friends/requests",
+      {
+        method: "POST",
+        body: JSON.stringify({ addressee_vanvas_id: addresseeVanvasId.trim().toUpperCase(), note }),
+      },
+      false
+    );
+  },
+
+  async respondFriendRequest(requestId: string, action: "accept" | "decline"): Promise<{ message: string; friendship?: Friendship }> {
+    return fetchWithRetry(
+      `/friends/requests/${requestId}/respond`,
+      {
+        method: "POST",
+        body: JSON.stringify({ action }),
+      },
+      false
+    );
+  },
+
+  async cancelFriendRequest(requestId: string): Promise<{ message: string }> {
+    return fetchWithRetry(
+      `/friends/requests/${requestId}`,
+      { method: "DELETE" },
+      false
+    );
+  },
+
+  async removeFriend(friendshipId: string): Promise<{ message: string }> {
+    return fetchWithRetry(
+      `/friends/${friendshipId}`,
+      { method: "DELETE" },
+      false
+    );
+  },
+
+  async blockUser(targetUserId: string): Promise<{ message: string }> {
+    return fetchWithRetry(
+      `/friends/block/${targetUserId}`,
+      { method: "POST" },
+      false
+    );
+  },
+
+  async unblockUser(targetUserId: string): Promise<{ message: string }> {
+    return fetchWithRetry(
+      `/friends/block/${targetUserId}`,
+      { method: "DELETE" },
+      false
+    );
+  },
+
+  // ----------------- Crew Circles -----------------
+  async getCrewCircles(): Promise<CrewCircle[]> {
+    return fetchWithRetry<CrewCircle[]>("/crew-circles");
+  },
+
+  async getCrewCircleDetail(circleId: string): Promise<CrewCircleDetail> {
+    return fetchWithRetry<CrewCircleDetail>(`/crew-circles/${circleId}`);
+  },
+
+  async createCrewCircle(data: {
+    name: string;
+    description?: string;
+    destination_hint?: string;
+    initial_member_ids?: string[];
+  }): Promise<CrewCircle> {
+    return fetchWithRetry<CrewCircle>(
+      "/crew-circles",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      false
+    );
+  },
+
+  async addMemberToCrewCircle(circleId: string, vanvasIdOrUserId: string): Promise<CrewCircleMember> {
+    return fetchWithRetry<CrewCircleMember>(
+      `/crew-circles/${circleId}/members`,
+      {
+        method: "POST",
+        body: JSON.stringify({ vanvas_id_or_user_id: vanvasIdOrUserId }),
+      },
+      false
+    );
+  },
+
+  async removeMemberFromCrewCircle(circleId: string, memberId: string): Promise<{ message: string }> {
+    return fetchWithRetry(
+      `/crew-circles/${circleId}/members/${memberId}`,
+      { method: "DELETE" },
+      false
+    );
+  },
+
+  async createCrewCircleSuggestion(circleId: string, data: {
+    title: string;
+    suggestion_type: string;
+    description?: string;
+    place_id?: string;
+    destination_id?: string;
+  }): Promise<CrewCircleSuggestion> {
+    return fetchWithRetry<CrewCircleSuggestion>(
+      `/crew-circles/${circleId}/suggestions`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      false
+    );
+  },
+
+  async voteCrewCircleSuggestion(
+    circleId: string,
+    suggestionId: string,
+    voteType: "YES" | "NO" | "HELL_YEAH"
+  ): Promise<{ message: string; suggestion: CrewCircleSuggestion }> {
+    return fetchWithRetry(
+      `/crew-circles/${circleId}/suggestions/${suggestionId}/vote`,
+      {
+        method: "POST",
+        body: JSON.stringify({ vote_type: voteType }),
+      },
+      false
+    );
+  },
+
+  async getCrewCircleActivity(circleId: string): Promise<CrewCircleActivity[]> {
+    return fetchWithRetry<CrewCircleActivity[]>(`/crew-circles/${circleId}/activity`);
+  },
+
+  async postCrewCircleActivity(circleId: string, content: string, activityType = "chat"): Promise<CrewCircleActivity> {
+    return fetchWithRetry<CrewCircleActivity>(
+      `/crew-circles/${circleId}/activity`,
+      {
+        method: "POST",
+        body: JSON.stringify({ content, activity_type: activityType }),
+      },
+      false
+    );
+  },
+
+  async askVanvasForCrewCircle(circleId: string, prompt: string, tripId?: string): Promise<{ reply: string; suggested_places: any[]; suggested_actions: any[] }> {
+    return fetchWithRetry(
+      `/crew-circles/${circleId}/ask-vanvas`,
+      {
+        method: "POST",
+        body: JSON.stringify({ prompt, trip_id: tripId }),
+      },
+      false
+    );
+  },
+
+  // ----------------- Split Pods -----------------
+  async getSplitPodsInCircle(circleId: string): Promise<SplitPod[]> {
+    return fetchWithRetry<SplitPod[]>(`/split-pods/circle/${circleId}`);
+  },
+
+  async createSplitPod(data: {
+    circle_id: string;
+    trip_id?: string;
+    name: string;
+    description?: string;
+    member_user_ids: string[];
+  }): Promise<SplitPod> {
+    return fetchWithRetry<SplitPod>(
+      "/split-pods",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      false
+    );
+  },
+
+  // ----------------- 3-Layer Smart Finance -----------------
+  async getBudgetPlanByTrip(tripId: string): Promise<TripBudgetPlan> {
+    return fetchWithRetry<TripBudgetPlan>(`/finance/budget-plans/trip/${tripId}`);
+  },
+
+  async createOrGetBudgetPlan(data: {
+    trip_id?: string;
+    circle_id?: string;
+    name?: string;
+    target_budget?: number;
+  }): Promise<TripBudgetPlan> {
+    return fetchWithRetry<TripBudgetPlan>(
+      "/finance/budget-plans",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      false
+    );
+  },
+
+  async addBudgetItem(planId: string, data: any): Promise<TripBudgetItem> {
+    return fetchWithRetry<TripBudgetItem>(
+      `/finance/budget-plans/${planId}/items`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      false
+    );
+  },
+
+  async deleteBudgetItem(itemId: string): Promise<{ message: string }> {
+    return fetchWithRetry(
+      `/finance/budget-plans/items/${itemId}`,
+      { method: "DELETE" },
+      false
+    );
+  },
+
+  async getCollaborativeBalances(params: {
+    trip_id?: string;
+    circle_id?: string;
+    split_pod_id?: string;
+  }): Promise<ContextBalances> {
+    const q: string[] = [];
+    if (params.trip_id) q.push(`trip_id=${params.trip_id}`);
+    if (params.circle_id) q.push(`circle_id=${params.circle_id}`);
+    if (params.split_pod_id) q.push(`split_pod_id=${params.split_pod_id}`);
+    const qs = q.length ? `?${q.join("&")}` : "";
+    return fetchWithRetry<ContextBalances>(`/finance/balances${qs}`);
+  },
+
+  async createCollaborativeExpense(data: any): Promise<CollaborativeExpense> {
+    return fetchWithRetry<CollaborativeExpense>(
+      "/finance/expenses",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      false
+    );
+  },
+
+  async recordCollaborativeSettlement(data: any): Promise<SettlementRecord> {
+    return fetchWithRetry<SettlementRecord>(
+      "/finance/settlements",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      false
+    );
   },
 
   _setFetchForTesting(fn: typeof fetch | null): void {

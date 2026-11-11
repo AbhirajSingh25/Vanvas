@@ -9,7 +9,8 @@ from app.seed.seed_data import seed_database
 from app.api.v1 import (
     auth, destinations, trips, budget, group, places,
     transport_hotels_rentals, copilot, checklist, admin, search, artwork, reviews, bookings, mobility, circles, road_trip,
-    notifications, app_info, intelligence, memory
+    notifications, app_info, intelligence, memory,
+    friends, crew_circles, split_pods, collaborative_finance
 )
 
 import logging
@@ -82,6 +83,10 @@ app.include_router(intelligence.router, prefix=f"{settings.API_V1_STR}", tags=["
 app.include_router(memory.router, prefix=f"{settings.API_V1_STR}/memory", tags=["Traveller Memory & Personalization"])
 app.include_router(app_info.router, prefix=f"{settings.API_V1_STR}", tags=["App Version & Updates"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Admin & System Health"])
+app.include_router(friends.router, prefix=f"{settings.API_V1_STR}/friends", tags=["Friends & VANVAS ID"])
+app.include_router(crew_circles.router, prefix=f"{settings.API_V1_STR}/crew-circles", tags=["Crew Circles & Collaborative Travel"])
+app.include_router(split_pods.router, prefix=f"{settings.API_V1_STR}/split-pods", tags=["Split Pods"])
+app.include_router(collaborative_finance.router, prefix=f"{settings.API_V1_STR}/finance", tags=["Collaborative Finance & Smart Expense Ecosystem"])
 
 
 @app.get("/")

@@ -12,6 +12,7 @@ import { VanvasAdaptiveModal } from "@/components/ui/VanvasAdaptiveModal";
 import { getRecentDestinations, clearRecentDestinations } from "@/lib/recentDestinations";
 import { CanonicalDestination } from "@/lib/canonicalDestinations";
 import { TripSummary } from "@/types";
+import { AddBudgetItemModal, AddBudgetItemPayload } from "@/components/finance/AddBudgetItemModal";
 
 interface TravelDeskProps {
   activeTrip?: TripSummary | null;
@@ -69,6 +70,7 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
   const [recentDestinations, setRecentDestinations] = useState<CanonicalDestination[]>([]);
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
+  const [isAddBudgetItemOpen, setIsAddBudgetItemOpen] = useState(false);
 
   // 2. CHECKLIST STATE & STORAGE
   const [checklist, setChecklist] = useState<ChecklistItem[]>(DEFAULT_CHECKLIST);
@@ -180,10 +182,14 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
   };
 
   const handleAddExpenseRow = () => {
+    setIsAddBudgetItemOpen(true);
+  };
+
+  const handleAddBudgetItemSubmit = (payload: AddBudgetItemPayload) => {
     const newRow: ExpenseRow = {
       id: `exp_${Date.now()}`,
-      name: "Extra Expense",
-      amount: 1000,
+      name: payload.title,
+      amount: Math.round(payload.amount),
     };
     saveBudget(travellersCount, [...expenses, newRow]);
   };
@@ -669,6 +675,17 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
           </div>
         </div>
       </VanvasAdaptiveModal>
+
+      <AddBudgetItemModal
+        isOpen={isAddBudgetItemOpen}
+        onClose={() => setIsAddBudgetItemOpen(false)}
+        onSubmit={handleAddBudgetItemSubmit}
+        members={Array.from({ length: travellersCount }, (_, idx) => ({
+          user_id: `traveller_${idx + 1}`,
+          full_name: `Traveller ${idx + 1}`,
+        }))}
+        isForecastOnly={true}
+      />
     </div>
   );
 };

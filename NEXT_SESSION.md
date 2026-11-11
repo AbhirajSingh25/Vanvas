@@ -1,25 +1,21 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Checkpoint `3477392` / Mobile Native 0.4.0 (Expo SDK 58 / RN 0.88) / Target SDK 36 / Play Store Ready | *Branch:* `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Crew Circles, Friends System & Smart 3-Layer Finance Completed | *Branch:* `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
-- **Core Checkpoint:** 
-  - Android Native App (`mobile/`) modernized to Expo SDK 58 (`expo ~58.0.23`), React Native 0.88.1, React 19.3.0, Node.js 22 LTS, and Target SDK 36 with compileSdkVersion 37.
-  - Automated CI workflow `.github/workflows/android-apk.yml` segregated to build `VANVAS-Android-v0.4.0-code4-debug.apk` and `VANVAS-Android-v0.4.0-code4-validation.aab` by default, and `VANVAS-Android-v0.4.0-code4-production.aab` when release keystore secrets are present. Certificate is strictly verified with `keytool` (`CN!=Android Debug`).
-  - Standalone Account & Data Deletion Portal created at `account-deletion-site/` satisfying Google Play Data Safety requirements with zero cookie/localStorage exposure, in-memory session isolation, and mandatory password verification. Ready for `vercel --prod` deployment.
-  - Backend cascading deletion in `backend/app/api/v1/auth.py` and `backend/app/services/storage_service.py` cleans all related records, cascades expense shares/settlements, anonymizes circle chat messages, and deletes remote avatar assets from Cloudinary and AWS S3 with transactional rollback and fail-closed security. 22/22 automated governance tests verified passing. Full backend suite: 748 passed, 1 skipped, 0 failed.
-  - Native in-app Delete Account and Change Password flows implemented in `mobile/app/(tabs)/profile.tsx` with modal confirmation, irreversible data warning, cancellation state reset, and duplicate tap protection.
-  - Single-owner deletion teardown established in `AuthContext`: `nativeApi.deleteAccount` strictly executes backend deletion, while `AuthContext` guarantees credentials and React state are wiped in `try/finally` even if local disk operations encounter errors.
-  - **Account-Scoped Offline Isolation, Existing-Install Migration & Offline Sync Integrity:** Zero legacy NULL `user_id` leakage. All private expense and mutation methods require verified `userId: string` with exact `WHERE user_id = ?` query clauses and `validateUserId` validation. Composite `PRIMARY KEY (trip_id, user_id)` on `user_trips_cache` and `trip_details_cache` prevents multi-account overwrites; existing installations migrate seamlessly via versioned table inspection, copying unowned records to `legacy_quarantine_*`. Replay deduplication reconciles `offline_client_id` inside `receipt_data_json`. Remote POST is decoupled from local caching. Unsynced local expense deletion cancels pending mutations without enqueuing remote DELETE.
-  - Automated mobile isolation suite (`scripts/test_offline_isolation_and_account_deletion.mjs`) verified 31/31 tests passing against real production `db.ts`, `api.ts`, and `authTeardown.ts` code (100%).
-  - Added `boto3>=1.34.0` to `backend/requirements.txt` ensuring backend CI dependency compliance.
-  - Keystores strictly protected from Git commits via `.gitignore` (`*.jks`, `*.keystore`).
-  - Frontend (`frontend/`) remains 100% frozen and untouched.
-- **Repository Health:** Mobile TypeScript (0 errors), Backend targeted tests (44/44 passed 100%), Full backend suite (748 passed, 1 skipped, 0 failed), Artwork runtime invariants (6/6 passed 100%), Mobile offline isolation (31/31 passed 100% on real SQLite implementation), Shared package builds cleanly.
+- **Core Checkpoint:**
+  - **Permanent VANVAS Identity & Friends System:** Ambiguity-resistant `VNV-XXXX-XXXX` permanent ID, public profile lookup, request lifecycle (send, accept, decline, cancel), user blocking, privacy toggle `allow_friend_requests_via_id`. Native & Web `VanvasIdentityCard` with QR code modal and native share sheet.
+  - **Private Crew Circles (मण्डली):** Multi-trip workspaces, member management (owner, admin, member), suggestions with private consensus voting (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, and real-time activity feed.
+  - **Smart Finance 3-Layer Architecture:**
+    - Layer 1: Trip Plan Budget (forecast only, zero debts).
+    - Layer 2: Main Group Expense Ledger (collaborative expenses, payers, split methods, integer paise precision, optimistic version locking, audit logging).
+    - Layer 3: Split Pods (independent subgroup ledgers e.g. Smokers pod, zero debt leakage into main group ledger).
+    - Add Budget Item bottom sheet / modal with live per-person calculation previews in ₹ with 2 decimals.
+  - **Mobile Parity & Offline SQLite Isolation:** User-scoped caching for crew circles and friends in `db.ts` (`user_circles_cache`, `user_friends_cache`) ensuring complete privacy isolation and single-owner account deletion purge.
 
 ---
 
@@ -54,57 +50,42 @@
    `python scripts/generate_pending_artwork_batch.py`
 3. Execute generation:
    `python scripts/generate_pending_artwork_batch.py --execute --confirm-free-quota`
-4. Visually inspect all 10 generated images to verify:
-   - Full-frame painterly gouache travel journal style.
-   - Zero embedded letters, words, coordinates, borders, or watermarks.
-5. Register newly generated assets in:
-   - `backend/app/seed/authoritative_artwork_manifest.json`
-   - `frontend/public/entity_art_manifest.json`
-   - `packages/shared/src/constants/artworkManifest.ts`
-6. Remove any pending diagnostic flags from `frontend/lib/placeVisualResolver.ts`.
-7. Run `python -m pytest backend/tests/test_artwork_runtime_invariants.py -v` to ensure 6/6 tests pass.
+4. Visually inspect all 10 generated images.
 
 ---
 
-## 4. Key Files to Inspect
-- `.github/workflows/android-apk.yml` (release packaging & signing pipeline)
-- `backend/app/api/v1/auth.py` (account deletion & cascading logic)
-- `backend/app/services/storage_service.py` (Cloudinary/S3 remote asset deletion)
-- `backend/tests/test_account_deletion_governance.py` (governance test suite)
-- `account-deletion-site/` (standalone public deletion portal)
-- `mobile/docs/ANDROID_RELEASE_GUIDE.md` (release guide & keystore instructions)
-- `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md` (compliance matrix & store checklist)
+## 4. Verification Commands
 
----
+Run the following commands to verify complete full-stack health:
 
-## 5. Verification Commands
+```bash
+# 1. Backend regression & governance tests
+cd backend && python -m pytest tests/test_collaborative_crew_and_finance.py tests/test_account_deletion_governance.py
 
-```powershell
-# 1. Run Account Deletion Governance Tests
-python -c "import sys; sys.path.insert(0, 'backend'); import pytest; sys.exit(pytest.main(['backend/tests/test_account_deletion_governance.py', '-v']))"
+# 2. Mobile real SQLite offline isolation & teardown suite
+node scripts/test_offline_isolation_and_account_deletion.mjs
 
-# 2. Run Backend Invariants Test Suite
-python -c "import sys; sys.path.insert(0, 'backend'); import pytest; sys.exit(pytest.main(['backend/tests/test_artwork_runtime_invariants.py', '-v']))"
+# 3. Next.js Web production compilation
+cd frontend && npm run build
 
-# 3. Verify Mobile TypeScript
-powershell -Command "cd mobile; npm run typecheck"
+# 4. Mobile React Native TypeScript check
+cd mobile && npm run typecheck
 
-# 4. Run Mobile Expo Doctor
-powershell -Command "cd mobile; npx expo-doctor"
+# 5. Dual-platform shared package build
+cd packages/shared && npm run build
 
-# 5. Build Shared Package
-powershell -Command "cd packages/shared; npm run build"
-
-# 6. Validate Project Context Documentation
+# 6. Documentation and context validation
 python scripts/validate_docs.py
 ```
 
 ---
 
-## 6. Acceptance Criteria
-- All 7 tests in `test_account_deletion_governance.py` pass cleanly.
-- Invariant tests continue to pass (6/6).
-- Mobile TypeScript check reports 0 errors.
-- `frontend/` remains 100% untouched.
-- `python scripts/validate_docs.py` passes with 0 errors.
-- Working tree remains clean and properly documented.
+## 5. Acceptance Criteria
+
+- All 27 backend tests must pass with 0 failures and 0 errors.
+- All 31 mobile offline isolation tests must pass with 100% success.
+- Next.js Web application must compile with 0 TypeScript or build errors.
+- Mobile React Native application must pass `tsc --noEmit` with 0 errors.
+- Zero debt leakage: Subgroup expenses inside Split Pods must strictly be excluded from the main circle ledger.
+- Zero floating-point accumulation drift: All finance mathematics must use integer paise arithmetic.
+- Zero secrets or private keys leaked in commits or documentation.

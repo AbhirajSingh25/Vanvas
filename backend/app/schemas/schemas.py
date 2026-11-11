@@ -43,6 +43,7 @@ class UserPreferenceSchema(BaseModel):
     ai_use_trip_context: Optional[bool] = True
     memory_learning_enabled: Optional[bool] = True
     memory_learning_paused: Optional[bool] = False
+    allow_friend_requests_via_id: Optional[bool] = True
 
     class Config:
         from_attributes = True
@@ -117,6 +118,7 @@ class UserDataExportResponse(BaseModel):
 
 class UserResponse(UserBase):
     id: str
+    vanvas_id: Optional[str] = None
     role: str
     avatar_url: Optional[str] = None
     avatar_type: Optional[str] = None
@@ -2266,3 +2268,401 @@ class DestinationCulinaryGuide(BaseModel):
     signature_dishes: List[CulinaryExperience] = []
     dining_spots: List[PlaceResponse] = []
     food_etiquette: Optional[str] = None
+
+
+# =====================================================================
+# FRIEND IDENTITY, CREW CIRCLES & COLLABORATIVE FINANCE SCHEMAS
+# =====================================================================
+
+class VanvasIdResponse(BaseModel):
+    vanvas_id: str
+
+
+class UserPublicProfile(BaseModel):
+    id: str
+    vanvas_id: str
+    full_name: str
+    avatar_url: Optional[str] = None
+    avatar_preset: Optional[str] = None
+    avatar_type: Optional[str] = None
+    bio: Optional[str] = None
+    friendship_status: str = "NONE"  # NONE, PENDING_INCOMING, PENDING_OUTGOING, FRIENDS, BLOCKED
+
+
+class FriendRequestCreate(BaseModel):
+    vanvas_id: Optional[str] = None
+    target_user_id: Optional[str] = None
+
+
+class FriendRequestResponse(BaseModel):
+    id: str
+    sender_id: str
+    sender_name: str
+    sender_vanvas_id: str
+    sender_avatar_url: Optional[str] = None
+    sender_avatar_preset: Optional[str] = None
+    receiver_id: str
+    receiver_name: str
+    receiver_vanvas_id: str
+    receiver_avatar_url: Optional[str] = None
+    status: str
+    created_at: datetime
+
+
+class FriendResponse(BaseModel):
+    id: str
+    user_id: str
+    friend_id: str
+    friend_name: str
+    friend_vanvas_id: str
+    friend_avatar_url: Optional[str] = None
+    friend_avatar_preset: Optional[str] = None
+    created_at: datetime
+
+
+class CrewCircleMemberResponse(BaseModel):
+    id: str
+    user_id: str
+    user_name: str
+    vanvas_id: Optional[str] = None
+    avatar_url: Optional[str] = None
+    avatar_preset: Optional[str] = None
+    role: str = "member"  # owner, admin, member
+    joined_at: datetime
+
+
+class CrewCircleTripResponse(BaseModel):
+    id: str
+    trip_id: str
+    title: str
+    destination_name: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    budget_total: float = 0.0
+    budget_spent: float = 0.0
+    status: str = "active"
+
+
+class CrewCircleCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    icon_or_cover: Optional[str] = "mountain-crew"
+    initial_member_user_ids: List[str] = []
+    initial_trip_id: Optional[str] = None
+
+
+class CrewCircleUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    icon_or_cover: Optional[str] = None
+    is_archived: Optional[bool] = None
+
+
+class CrewCircleResponse(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+    icon_or_cover: Optional[str] = "mountain-crew"
+    created_by_user_id: str
+    is_archived: bool = False
+    created_at: datetime
+    member_count: int = 1
+    my_role: str = "member"
+
+
+class CrewCircleDetailResponse(CrewCircleResponse):
+    members: List[CrewCircleMemberResponse] = []
+    trips: List[CrewCircleTripResponse] = []
+    active_pods_count: int = 0
+    recent_activity_count: int = 0
+
+
+class CrewCircleActivityCreate(BaseModel):
+    activity_type: str = "chat"
+    content: str
+    metadata_json: Optional[str] = None
+
+
+class CrewCircleActivityResponse(BaseModel):
+    id: str
+    circle_id: str
+    user_id: Optional[str] = None
+    user_name: Optional[str] = None
+    user_avatar_url: Optional[str] = None
+    activity_type: str
+    content: str
+    metadata_json: Optional[str] = None
+    created_at: datetime
+
+
+class CrewCircleSuggestionCreate(BaseModel):
+    suggestion_type: str = "destination"  # destination, dates, stay, activity
+    title: str
+    description: Optional[str] = None
+    data_json: Optional[str] = None
+
+
+class CrewCircleSuggestionResponse(BaseModel):
+    id: str
+    circle_id: str
+    user_id: str
+    user_name: str
+    suggestion_type: str
+    title: str
+    description: Optional[str] = None
+    data_json: Optional[str] = None
+    votes: List[str] = []
+    votes_count: int = 0
+    has_voted: bool = False
+    created_at: datetime
+
+
+class AskVanvasCircleRequest(BaseModel):
+    prompt: str
+    trip_id: Optional[str] = None
+
+
+class AskVanvasCircleResponse(BaseModel):
+    reply: str
+    suggested_places: List[Dict[str, Any]] = []
+    suggested_actions: List[Dict[str, Any]] = []
+
+
+class SplitPodMemberResponse(BaseModel):
+    id: str
+    user_id: str
+    user_name: str
+    vanvas_id: Optional[str] = None
+    avatar_url: Optional[str] = None
+    joined_at: datetime
+
+
+class SplitPodCreate(BaseModel):
+    circle_id: str
+    trip_id: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    member_user_ids: List[str] = []
+    initial_member_user_ids: List[str] = []
+
+    def get_all_member_ids(self) -> List[str]:
+        return list(set(self.member_user_ids + self.initial_member_user_ids))
+
+
+class SplitPodUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+class SplitPodResponse(BaseModel):
+    id: str
+    circle_id: str
+    trip_id: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    created_by_user_id: str
+    member_count: int = 0
+    created_at: datetime
+    members: List[SplitPodMemberResponse] = []
+
+
+class TripBudgetItemCreate(BaseModel):
+    name: str
+    category: str = "General"
+    amount: float
+    calculation_basis: str = "FIXED"  # FIXED, PER_PERSON, QTY_UNIT
+    unit_price: Optional[float] = None
+    quantity: Optional[float] = None
+    split_scope: str = "EVERYONE"  # EVERYONE, SELECTED, SPLIT_POD, PERSONAL
+    split_pod_id: Optional[str] = None
+    split_method: str = "EQUAL"  # EQUAL, EXACT, PERCENTAGE, SHARES, ITEMIZED
+    participants_json: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class TripBudgetItemUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    amount: Optional[float] = None
+    calculation_basis: Optional[str] = None
+    unit_price: Optional[float] = None
+    quantity: Optional[float] = None
+    split_scope: Optional[str] = None
+    split_pod_id: Optional[str] = None
+    split_method: Optional[str] = None
+    participants_json: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class TripBudgetItemResponse(BaseModel):
+    id: str
+    plan_id: str
+    name: str
+    category: str
+    amount: float
+    calculation_basis: str
+    unit_price: Optional[float] = None
+    quantity: Optional[float] = None
+    split_scope: str
+    split_pod_id: Optional[str] = None
+    split_method: str
+    participants_json: Optional[str] = None
+    notes: Optional[str] = None
+    estimated_per_person: float = 0.0
+    participant_count: int = 0
+    created_at: datetime
+
+
+class TripBudgetPlanCreate(BaseModel):
+    trip_id: Optional[str] = None
+    circle_id: Optional[str] = None
+    name: str = "Planned Budget"
+    target_budget: float = 0.0
+    items: List[TripBudgetItemCreate] = []
+
+
+class TripBudgetPlanUpdate(BaseModel):
+    name: Optional[str] = None
+    target_budget: Optional[float] = None
+
+
+class TripBudgetPlanResponse(BaseModel):
+    id: str
+    trip_id: Optional[str] = None
+    circle_id: Optional[str] = None
+    user_id: str
+    name: str
+    target_budget: float
+    total_planned_amount: float = 0.0
+    items: List[TripBudgetItemResponse] = []
+    created_at: datetime
+
+
+class CollaborativeExpenseCreate(BaseModel):
+    title: str
+    amount: float
+    category: str = "Food"
+    payment_method: str = "UPI"
+    date: Optional[date] = None
+    notes: Optional[str] = None
+    trip_id: Optional[str] = None
+    circle_id: Optional[str] = None
+    split_pod_id: Optional[str] = None
+    paid_by_user_id: Optional[str] = None
+    payers_json: Optional[str] = None
+    split_method: str = "EQUAL"
+    participant_user_ids: List[str] = []
+    split_data: Optional[Dict[str, Any]] = None
+    receipt_url: Optional[str] = None
+    receipt_data_json: Optional[str] = None
+
+
+class CollaborativeExpenseUpdate(BaseModel):
+    title: Optional[str] = None
+    amount: Optional[float] = None
+    category: Optional[str] = None
+    payment_method: Optional[str] = None
+    date: Optional[date] = None
+    notes: Optional[str] = None
+    paid_by_user_id: Optional[str] = None
+    payers_json: Optional[str] = None
+    split_method: Optional[str] = None
+    participant_user_ids: Optional[List[str]] = None
+    split_data: Optional[Dict[str, Any]] = None
+    receipt_url: Optional[str] = None
+    receipt_data_json: Optional[str] = None
+    version: int = 1
+    change_reason: Optional[str] = None
+
+
+class ExpenseAuditLogResponse(BaseModel):
+    id: str
+    expense_id: str
+    action: str
+    actor_user_id: Optional[str] = None
+    actor_name: Optional[str] = None
+    previous_snapshot_json: Optional[str] = None
+    new_snapshot_json: Optional[str] = None
+    reason: Optional[str] = None
+    created_at: datetime
+
+
+class CollaborativeExpenseResponse(BaseModel):
+    id: str
+    trip_id: Optional[str] = None
+    circle_id: Optional[str] = None
+    split_pod_id: Optional[str] = None
+    user_id: str
+    payer_name: str
+    created_by_user_id: Optional[str] = None
+    created_by_name: Optional[str] = None
+    last_edited_by_user_id: Optional[str] = None
+    last_edited_by_name: Optional[str] = None
+    title: str
+    category: str
+    amount: float
+    payment_method: str
+    date: date
+    notes: Optional[str] = None
+    split_method: str
+    receipt_url: Optional[str] = None
+    receipt_data_json: Optional[str] = None
+    payers_json: Optional[str] = None
+    version: int = 1
+    is_deleted: bool = False
+    shares: List[Dict[str, Any]] = []
+    created_at: datetime
+    audit_logs: List[ExpenseAuditLogResponse] = []
+
+
+class SettlementPaymentCreate(BaseModel):
+    payer_user_id: str
+    receiver_user_id: str
+    amount: float
+    payment_method: str = "UPI"
+    notes: Optional[str] = None
+    trip_id: Optional[str] = None
+    circle_id: Optional[str] = None
+    split_pod_id: Optional[str] = None
+
+
+class SettlementPaymentResponse(BaseModel):
+    id: str
+    trip_id: Optional[str] = None
+    circle_id: Optional[str] = None
+    split_pod_id: Optional[str] = None
+    payer_user_id: str
+    payer_name: str
+    receiver_user_id: str
+    receiver_name: str
+    amount: float
+    payment_method: str
+    notes: Optional[str] = None
+    settled_at: datetime
+    created_at: datetime
+
+
+class DebtorCreditorSummary(BaseModel):
+    debtor_user_id: str
+    debtor_name: str
+    creditor_user_id: str
+    creditor_name: str
+    amount: float
+
+
+class MemberBalanceSummary(BaseModel):
+    user_id: str
+    user_name: str
+    total_paid: float
+    total_share: float
+    settled_paid: float
+    settled_received: float
+    net_balance: float
+    status: str  # settled, owes, owed
+
+
+class ContextBalanceResponse(BaseModel):
+    total_shared_expenses: float
+    total_settled: float
+    members: List[MemberBalanceSummary]
+    simplified_debts: List[DebtorCreditorSummary]

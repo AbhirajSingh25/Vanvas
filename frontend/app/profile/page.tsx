@@ -19,6 +19,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { AVATAR_PRESETS, AvatarPreset } from "@/lib/avatarPresets";
 import { SoloSettingsTab } from "@/components/solo/SoloSettingsTab";
 import { AvatarCropper } from "@/components/profile/AvatarCropper";
+import { VanvasIdentityCard } from "@/components/profile/VanvasIdentityCard";
 import { motion, AnimatePresence } from "motion/react";
 import { tabIndicatorTransition, tabContentVariants } from "@/lib/motion";
 
@@ -370,6 +371,9 @@ function ProfileContent() {
             </div>
           </div>
         </div>
+
+        {/* Permanent VANVAS Identity Card & Explorer Passport */}
+        <VanvasIdentityCard user={user} onUserUpdated={updateProfile} />
 
         {/* Real Travel Snapshot Statistics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

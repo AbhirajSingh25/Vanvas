@@ -100,6 +100,9 @@ VANVAS/
   - `/road-trip`: Curated Indian driving corridors (e.g., Delhi to Spiti, Manali to Leh) with waypoints, fuel checkpoints, and toll estimators.
   - `/treks`: Himalayan trekking routes (Tungnath, Chandrashila, Kheerganga, Triund) with difficulty ratings and trailheads.
   - `/solo`: Solo traveler circle matching and interest-based travel pods.
+  - `/friends`: Friends Hub with permanent `vanvas_id` search, public profile preview, request lifecycle (send, accept, decline, cancel), friend management, and user blocking.
+  - `/circles`: Crew Circles Hub for creating and viewing private travel mandalis.
+  - `/circles/[id]`: Comprehensive Crew Circle workspace with Overview, Plans, Explore Together (private voting on suggestions), Money & Split Pods (Layer 2 & Layer 3 ledgers), Chat, and Ask VANVAS AI.
   - `/bookings`: Direct reservation pass-through and itinerary booking status.
   - `/admin`: Provider health console, latency trackers, and live API fallback toggles.
 
@@ -122,6 +125,9 @@ VANVAS/
     - `trip/[id]/im-here.tsx`: Mobile arrival mode with one-tap directions and luggage logic.
     - `road-trip/index.tsx`: Mobile road trip corridor guide.
     - `treks/index.tsx`: Trailhead guides and elevation profiles.
+    - `friends/index.tsx`: Native Friends Hub with permanent `vanvas_id` search, incoming/outgoing request management, and friend list.
+    - `circles/index.tsx`: Native Crew Circles list with "+ Create Circle" modal and friend multi-selector.
+    - `circles/[id].tsx`: Full native circle workspace (Overview, Suggestions with voting, Money & Split Pods, Activity feed, and Ask VANVAS AI).
     - `ask-vanvas.tsx`: Mobile travel assistant copilot.
     - `auth/login.tsx`, `auth/register.tsx`, `auth/verify-email.tsx`: Authentication flows with SecureStore token persistence.
 
@@ -148,6 +154,10 @@ VANVAS/
   - `checklist.py`: Packing lists and trip preparation checklists.
   - `road_trip.py`: Multi-day driving routes, fuel checkpoints, and scenic waypoints.
   - `group.py` & `circles.py`: Group invite codes, member voting, solo traveler circles.
+  - `friends.py`: Permanent `vanvas_id` lookup, incoming/outgoing requests, friendships, and user blocking.
+  - `crew_circles.py`: Collaborative Crew Circles (मण्डली), member management, multi-trip linking, suggestions & voting, activity chat, and circle-tailored AI recommendations.
+  - `split_pods.py`: Subgroup isolated expense pods with strict membership isolation.
+  - `collaborative_finance.py`: 3-Layer Finance System (Layer 1: Budget Plans, Layer 2: Group Expense Ledger, Layer 3: Split Pods, and Balances/Settlements).
   - `memory.py` & `intelligence.py`: Traveler memories, contextual travel signals, and replan proposals.
   - `admin.py` & `app_info.py`: System health, runtime diagnostics, provider metrics.
 

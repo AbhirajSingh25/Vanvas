@@ -20,6 +20,7 @@ import { useAuth } from "../../src/context/AuthContext";
 import { useTheme } from "../../src/context/ThemeContext";
 import { resolveAvatarUrl } from "../../src/services/api";
 import { theme } from "../../src/theme";
+import { VanvasIdentityCard } from "../../src/components/VanvasIdentityCard";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -215,6 +216,9 @@ export default function ProfileScreen() {
           </View>
         )}
       </View>
+
+      {/* VANVAS Identity Card (VANVAS ID, QR, Friends & Circles shortcuts) */}
+      <VanvasIdentityCard user={user} onProfileUpdated={() => refreshProfile()} />
 
       {/* Travel Preferences */}
       <View style={styles.section}>

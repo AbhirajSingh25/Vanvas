@@ -92,10 +92,10 @@ export const ExperienceCompactCard: React.FC<ExperienceCompactCardProps> = ({ ex
       <div className="pt-2">
         <Link
           href={experience.href}
-          className="w-full px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-98 border border-white/20 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+          className="w-full px-4 py-2.5 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] active:scale-98 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md focus:outline-hidden focus:ring-2 focus:ring-[#FAF4E8]/40"
         >
           <span>{experience.ctaText}</span>
-          <ArrowRight className="w-3.5 h-3.5 text-[#B49252]" />
+          <ArrowRight className="w-3.5 h-3.5 text-white" />
         </Link>
       </div>
     </div>

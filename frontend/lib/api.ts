@@ -17,7 +17,12 @@ import {
   TravelSignal, TravelInsight, ReplanProposal, TripIntelligenceSummary,
   TravellerMemory, MemoryObservation, TravellerMemorySettings,
   MemoryPersonalizationContext, TravellerMemoryExport,
-  MobilityAccessPlan, DestinationCulinaryGuide
+  MobilityAccessPlan, DestinationCulinaryGuide,
+  VanvasIdResponse, UserPublicProfile, FriendRequest, FriendItem,
+  CrewCircleMember, CrewCircleTrip, CrewCircleSuggestion, CrewCircleActivity,
+  CrewCircleItem, CrewCircleDetail, SplitPod, SplitPodMember,
+  TripBudgetItem, TripBudgetPlan, CollaborativeExpense, SettlementRecord,
+  ContextBalances
 } from "@/types";
 import { storageAdapter } from "./storage";
 
@@ -1615,5 +1620,348 @@ export const api = {
 
   async exportTravellerMemories(): Promise<TravellerMemoryExport> {
     return fetchApi("/memory/export");
+  },
+
+  // ----------------- Friends & VANVAS ID -----------------
+  async getMyVanvasId(): Promise<VanvasIdResponse> {
+    return fetchApi("/friends/me/vanvas-id");
+  },
+
+  async regenerateMyVanvasId(): Promise<VanvasIdResponse> {
+    return fetchApi("/friends/me/vanvas-id/regenerate", { method: "POST" });
+  },
+
+  async lookupTravelerByVanvasId(vanvasId: string): Promise<UserPublicProfile> {
+    return fetchApi(`/friends/lookup/${encodeURIComponent(vanvasId)}`);
+  },
+
+  async sendFriendRequest(data: { vanvas_id?: string; target_user_id?: string }): Promise<FriendRequest> {
+    return fetchApi("/friends/requests", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getIncomingFriendRequests(): Promise<FriendRequest[]> {
+    return fetchApi("/friends/requests/incoming");
+  },
+
+  async getOutgoingFriendRequests(): Promise<FriendRequest[]> {
+    return fetchApi("/friends/requests/outgoing");
+  },
+
+  async acceptFriendRequest(requestId: string): Promise<{ message: string }> {
+    return fetchApi(`/friends/requests/${requestId}/accept`, { method: "POST" });
+  },
+
+  async declineFriendRequest(requestId: string): Promise<{ message: string }> {
+    return fetchApi(`/friends/requests/${requestId}/decline`, { method: "POST" });
+  },
+
+  async cancelFriendRequest(requestId: string): Promise<{ message: string }> {
+    return fetchApi(`/friends/requests/${requestId}/cancel`, { method: "DELETE" });
+  },
+
+  async getFriends(): Promise<FriendItem[]> {
+    return fetchApi("/friends");
+  },
+
+  async removeFriend(friendId: string): Promise<{ message: string }> {
+    return fetchApi(`/friends/${friendId}`, { method: "DELETE" });
+  },
+
+  async blockUser(targetUserId: string): Promise<{ message: string }> {
+    return fetchApi(`/friends/block/${targetUserId}`, { method: "POST" });
+  },
+
+  async unblockUser(targetUserId: string): Promise<{ message: string }> {
+    return fetchApi(`/friends/block/${targetUserId}`, { method: "DELETE" });
+  },
+
+  // ----------------- Crew Circles -----------------
+  async getCrewCircles(): Promise<CrewCircleItem[]> {
+    return fetchApi("/crew-circles");
+  },
+
+  async getCrewCircleDetail(circleId: string): Promise<CrewCircleDetail> {
+    return fetchApi(`/crew-circles/${circleId}`);
+  },
+
+  async createCrewCircle(data: {
+    name: string;
+    description?: string;
+    icon_or_cover?: string;
+    initial_member_user_ids?: string[];
+    initial_trip_id?: string;
+  }): Promise<CrewCircleDetail> {
+    return fetchApi("/crew-circles", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateCrewCircle(circleId: string, data: {
+    name?: string;
+    description?: string;
+    icon_or_cover?: string;
+    is_archived?: boolean;
+  }): Promise<CrewCircleItem> {
+    return fetchApi(`/crew-circles/${circleId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteCrewCircle(circleId: string): Promise<{ message: string }> {
+    return fetchApi(`/crew-circles/${circleId}`, { method: "DELETE" });
+  },
+
+  async addCrewCircleMember(circleId: string, data: { user_id: string; role?: string }): Promise<CrewCircleMember> {
+    return fetchApi(`/crew-circles/${circleId}/members`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async removeCrewCircleMember(circleId: string, userId: string): Promise<{ message: string }> {
+    return fetchApi(`/crew-circles/${circleId}/members/${userId}`, { method: "DELETE" });
+  },
+
+  async linkCrewCircleTrip(circleId: string, tripId: string): Promise<CrewCircleTrip> {
+    return fetchApi(`/crew-circles/${circleId}/trips`, {
+      method: "POST",
+      body: JSON.stringify({ trip_id: tripId }),
+    });
+  },
+
+  async getCrewCircleSuggestions(circleId: string): Promise<CrewCircleSuggestion[]> {
+    return fetchApi(`/crew-circles/${circleId}/suggestions`);
+  },
+
+  async createCrewCircleSuggestion(circleId: string, data: {
+    title: string;
+    suggestion_type: string;
+    description?: string;
+    data_json?: string;
+  }): Promise<CrewCircleSuggestion> {
+    return fetchApi(`/crew-circles/${circleId}/suggestions`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async voteCrewCircleSuggestion(suggestionId: string, circleId?: string): Promise<{ suggestion_id: string; action: string; votes_count: number; has_voted: boolean }> {
+    const path = circleId ? `/crew-circles/${circleId}/suggestions/${suggestionId}/vote` : `/crew-circles/suggestions/${suggestionId}/vote`;
+    return fetchApi(path, { method: "POST" });
+  },
+
+  async getCrewCircleActivity(circleId: string): Promise<CrewCircleActivity[]> {
+    return fetchApi(`/crew-circles/${circleId}/activity`);
+  },
+
+  async postCrewCircleActivity(circleId: string, content: string, activity_type = "chat"): Promise<CrewCircleActivity> {
+    return fetchApi(`/crew-circles/${circleId}/activity`, {
+      method: "POST",
+      body: JSON.stringify({ content, activity_type }),
+    });
+  },
+
+  async askVanvasForCrewCircle(circleId: string, prompt: string, tripId?: string): Promise<{ reply: string; suggested_places: any[]; suggested_actions: any[] }> {
+    return fetchApi(`/crew-circles/${circleId}/ask-vanvas`, {
+      method: "POST",
+      body: JSON.stringify({ prompt, trip_id: tripId }),
+    });
+  },
+
+  // ----------------- Split Pods -----------------
+  async getSplitPodsInCircle(circleId: string): Promise<SplitPod[]> {
+    return fetchApi(`/split-pods/circle/${circleId}`);
+  },
+
+  async getSplitPodDetail(podId: string): Promise<SplitPod> {
+    return fetchApi(`/split-pods/${podId}`);
+  },
+
+  async createSplitPod(data: {
+    circle_id: string;
+    trip_id?: string;
+    name: string;
+    description?: string;
+    member_user_ids?: string[];
+    initial_member_user_ids?: string[];
+  }): Promise<SplitPod> {
+    return fetchApi("/split-pods", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteSplitPod(podId: string): Promise<{ message: string }> {
+    return fetchApi(`/split-pods/${podId}`, { method: "DELETE" });
+  },
+
+  // ----------------- 3-Layer Finance & Collaborative Ledger -----------------
+  async getBudgetPlanByTrip(tripId: string): Promise<TripBudgetPlan> {
+    return fetchApi(`/finance/budget-plans/trip/${tripId}`);
+  },
+
+  async getBudgetPlan(planId: string): Promise<TripBudgetPlan> {
+    return fetchApi(`/finance/budget-plans/${planId}`);
+  },
+
+  async createOrGetBudgetPlan(data: {
+    trip_id?: string;
+    circle_id?: string;
+    name?: string;
+    target_budget?: number;
+    items?: any[];
+  }): Promise<TripBudgetPlan> {
+    return fetchApi("/finance/budget-plans", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateBudgetPlan(planId: string, data: { name?: string; target_budget?: number }): Promise<TripBudgetPlan> {
+    return fetchApi(`/finance/budget-plans/${planId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async addBudgetItem(planId: string, data: {
+    name: string;
+    category?: string;
+    amount: number;
+    calculation_basis?: string;
+    unit_price?: number;
+    quantity?: number;
+    split_scope?: string;
+    split_pod_id?: string;
+    split_method?: string;
+    participants_json?: string;
+    notes?: string;
+  }): Promise<TripBudgetItem> {
+    return fetchApi(`/finance/budget-plans/${planId}/items`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateBudgetItem(itemId: string, data: Partial<TripBudgetItem>): Promise<TripBudgetItem> {
+    return fetchApi(`/finance/budget-plans/items/${itemId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteBudgetItem(itemId: string): Promise<{ status: string; message: string }> {
+    return fetchApi(`/finance/budget-plans/items/${itemId}`, { method: "DELETE" });
+  },
+
+  async getCollaborativeExpenses(params: {
+    trip_id?: string;
+    circle_id?: string;
+    split_pod_id?: string;
+    category?: string;
+  }): Promise<CollaborativeExpense[]> {
+    const q = new URLSearchParams();
+    if (params.trip_id) q.append("trip_id", params.trip_id);
+    if (params.circle_id) q.append("circle_id", params.circle_id);
+    if (params.split_pod_id) q.append("split_pod_id", params.split_pod_id);
+    if (params.category) q.append("category", params.category);
+    return fetchApi(`/finance/expenses?${q.toString()}`);
+  },
+
+  async getCollaborativeExpenseDetail(expenseId: string): Promise<CollaborativeExpense> {
+    return fetchApi(`/finance/expenses/${expenseId}`);
+  },
+
+  async createCollaborativeExpense(data: {
+    title: string;
+    amount: number;
+    category?: string;
+    payment_method?: string;
+    date?: string;
+    notes?: string;
+    trip_id?: string;
+    circle_id?: string;
+    split_pod_id?: string;
+    paid_by_user_id?: string;
+    payers_json?: string;
+    split_method?: string;
+    participant_user_ids?: string[];
+    split_data?: any;
+    receipt_url?: string;
+  }): Promise<CollaborativeExpense> {
+    return fetchApi("/finance/expenses", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateCollaborativeExpense(expenseId: string, data: {
+    title?: string;
+    amount?: number;
+    category?: string;
+    payment_method?: string;
+    date?: string;
+    notes?: string;
+    paid_by_user_id?: string;
+    payers_json?: string;
+    split_method?: string;
+    participant_user_ids?: string[];
+    split_data?: any;
+    version: number;
+    change_reason?: string;
+  }): Promise<CollaborativeExpense> {
+    return fetchApi(`/finance/expenses/${expenseId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteCollaborativeExpense(expenseId: string): Promise<{ status: string; message: string }> {
+    return fetchApi(`/finance/expenses/${expenseId}`, { method: "DELETE" });
+  },
+
+  async getContextBalances(params: {
+    trip_id?: string;
+    circle_id?: string;
+    split_pod_id?: string;
+  }): Promise<ContextBalances> {
+    const q = new URLSearchParams();
+    if (params.trip_id) q.append("trip_id", params.trip_id);
+    if (params.circle_id) q.append("circle_id", params.circle_id);
+    if (params.split_pod_id) q.append("split_pod_id", params.split_pod_id);
+    return fetchApi(`/finance/balances?${q.toString()}`);
+  },
+
+  async recordCollaborativeSettlement(data: {
+    payer_user_id: string;
+    receiver_user_id: string;
+    amount: number;
+    payment_method?: string;
+    notes?: string;
+    trip_id?: string;
+    circle_id?: string;
+    split_pod_id?: string;
+  }): Promise<SettlementRecord> {
+    return fetchApi("/finance/settlements", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getSettlementPayments(params: {
+    trip_id?: string;
+    circle_id?: string;
+    split_pod_id?: string;
+  }): Promise<SettlementRecord[]> {
+    const q = new URLSearchParams();
+    if (params.trip_id) q.append("trip_id", params.trip_id);
+    if (params.circle_id) q.append("circle_id", params.circle_id);
+    if (params.split_pod_id) q.append("split_pod_id", params.split_pod_id);
+    return fetchApi(`/finance/settlements?${q.toString()}`);
   },
 };

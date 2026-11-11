@@ -66,6 +66,24 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen
+              name="friends/index"
+              options={{
+                headerTitle: "Friends Hub · मित्र",
+              }}
+            />
+            <Stack.Screen
+              name="circles/index"
+              options={{
+                headerTitle: "Crew Circles · मण्डली",
+              }}
+            />
+            <Stack.Screen
+              name="circles/[id]"
+              options={{
+                headerTitle: "Circle Workspace",
+              }}
+            />
+            <Stack.Screen
               name="ask-vanvas"
               options={{
                 presentation: "modal",

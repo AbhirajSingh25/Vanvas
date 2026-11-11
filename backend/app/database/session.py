@@ -128,12 +128,28 @@ def ensure_database_schema(eng=engine):
                     "avatar_preset": "VARCHAR(100) DEFAULT 'himalayan-explorer'",
                     "avatar_storage_key": "VARCHAR(255) NULL",
                     "role": "VARCHAR(50) DEFAULT 'traveller'",
+                    "vanvas_id": "VARCHAR(32) NULL",
                 }
                 for col_name, col_def in user_additions.items():
                     if col_name not in user_cols:
                         conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}"))
                         conn.commit()
                         logger.info(f"Migrated schema: added {col_name} to users table.")
+
+                # Backfill any users missing vanvas_id
+                try:
+                    unfilled = conn.execute(text("SELECT id FROM users WHERE vanvas_id IS NULL OR vanvas_id = ''")).fetchall()
+                    if unfilled:
+                        from app.models.models import generate_vanvas_id
+                        for (uid,) in unfilled:
+                            new_vid = generate_vanvas_id()
+                            conn.execute(text("UPDATE users SET vanvas_id = :vid WHERE id = :uid"), {"vid": new_vid, "uid": uid})
+                        conn.commit()
+                        logger.info(f"Backfilled vanvas_id for {len(unfilled)} existing user(s).")
+                    conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_vanvas_id ON users(vanvas_id)"))
+                    conn.commit()
+                except Exception as e:
+                    logger.warning(f"vanvas_id backfill/index: {e}")
 
             # Check and create/migrate `user_avatar_blobs` table
             if "user_avatar_blobs" not in existing_tables:
@@ -220,6 +236,13 @@ def ensure_database_schema(eng=engine):
                     "tax_amount": "FLOAT DEFAULT 0.0",
                     "tip_amount": "FLOAT DEFAULT 0.0",
                     "discount_amount": "FLOAT DEFAULT 0.0",
+                    "circle_id": "VARCHAR(36) NULL",
+                    "split_pod_id": "VARCHAR(36) NULL",
+                    "created_by_user_id": "VARCHAR(36) NULL",
+                    "last_edited_by_user_id": "VARCHAR(36) NULL",
+                    "payers_json": "TEXT NULL",
+                    "version": "INTEGER DEFAULT 1",
+                    "is_deleted": "BOOLEAN DEFAULT FALSE",
                 }
                 for col_name, col_def in exp_additions.items():
                     if col_name not in exp_cols:
@@ -227,6 +250,70 @@ def ensure_database_schema(eng=engine):
                         conn.commit()
                         logger.info(f"Migrated schema: added {col_name} to expenses table.")
 
+                # Ensure trip_id is nullable (for circle-only and split-pod expenses)
+                trip_id_col = next((col for col in inspector.get_columns("expenses") if col["name"] == "trip_id"), None)
+                if trip_id_col and not trip_id_col.get("nullable", True):
+                    if eng.url.get_backend_name() == "sqlite":
+                        try:
+                            conn.execute(text("PRAGMA foreign_keys=OFF"))
+                            conn.execute(text("CREATE TABLE expenses_migration_tmp AS SELECT * FROM expenses"))
+                            conn.execute(text("DROP TABLE expenses"))
+                            Base.metadata.tables["expenses"].create(conn)
+                            cols = [c["name"] for c in inspector.get_columns("expenses_migration_tmp")]
+                            cols_str = ", ".join(cols)
+                            conn.execute(text(f"INSERT INTO expenses ({cols_str}) SELECT {cols_str} FROM expenses_migration_tmp"))
+                            conn.execute(text("DROP TABLE expenses_migration_tmp"))
+                            conn.execute(text("PRAGMA foreign_keys=ON"))
+                            conn.commit()
+                            logger.info("Migrated SQLite expenses table to nullable trip_id.")
+                        except Exception as e:
+                            logger.warning(f"SQLite expenses trip_id nullable migration error: {e}")
+                    else:
+                        try:
+                            conn.execute(text("ALTER TABLE expenses ALTER COLUMN trip_id DROP NOT NULL"))
+                            conn.commit()
+                        except Exception as e:
+                            logger.warning(f"Postgres expenses trip_id drop not null: {e}")
+
+
+            # Check and migrate `settlement_payments` table
+            if "settlement_payments" in existing_tables:
+                settle_cols = {col["name"] for col in inspector.get_columns("settlement_payments")}
+                settle_additions = {
+                    "circle_id": "VARCHAR(36) NULL",
+                    "split_pod_id": "VARCHAR(36) NULL",
+                    "recorded_by_user_id": "VARCHAR(36) NULL",
+                }
+                for col_name, col_def in settle_additions.items():
+                    if col_name not in settle_cols:
+                        conn.execute(text(f"ALTER TABLE settlement_payments ADD COLUMN {col_name} {col_def}"))
+                        conn.commit()
+                        logger.info(f"Migrated schema: added {col_name} to settlement_payments table.")
+
+                # Ensure trip_id is nullable for settlement_payments
+                st_trip_id_col = next((col for col in inspector.get_columns("settlement_payments") if col["name"] == "trip_id"), None)
+                if st_trip_id_col and not st_trip_id_col.get("nullable", True):
+                    if eng.url.get_backend_name() == "sqlite":
+                        try:
+                            conn.execute(text("PRAGMA foreign_keys=OFF"))
+                            conn.execute(text("CREATE TABLE settlement_payments_migration_tmp AS SELECT * FROM settlement_payments"))
+                            conn.execute(text("DROP TABLE settlement_payments"))
+                            Base.metadata.tables["settlement_payments"].create(conn)
+                            cols = [c["name"] for c in inspector.get_columns("settlement_payments_migration_tmp")]
+                            cols_str = ", ".join(cols)
+                            conn.execute(text(f"INSERT INTO settlement_payments ({cols_str}) SELECT {cols_str} FROM settlement_payments_migration_tmp"))
+                            conn.execute(text("DROP TABLE settlement_payments_migration_tmp"))
+                            conn.execute(text("PRAGMA foreign_keys=ON"))
+                            conn.commit()
+                            logger.info("Migrated SQLite settlement_payments table to nullable trip_id.")
+                        except Exception as e:
+                            logger.warning(f"SQLite settlement_payments trip_id nullable migration error: {e}")
+                    else:
+                        try:
+                            conn.execute(text("ALTER TABLE settlement_payments ALTER COLUMN trip_id DROP NOT NULL"))
+                            conn.commit()
+                        except Exception as e:
+                            logger.warning(f"Postgres settlement_payments trip_id drop not null: {e}")
             # Check and migrate `mobility_providers` table
             if "mobility_providers" in existing_tables:
                 mob_cols = {col["name"] for col in inspector.get_columns("mobility_providers")}
@@ -246,6 +333,7 @@ def ensure_database_schema(eng=engine):
                     "notification_level": "VARCHAR(50) DEFAULT 'all'",
                     "memory_learning_enabled": "BOOLEAN DEFAULT TRUE",
                     "memory_learning_paused": "BOOLEAN DEFAULT FALSE",
+                    "allow_friend_requests_via_id": "BOOLEAN DEFAULT TRUE",
                 }
                 for col_name, col_def in pref_additions.items():
                     if col_name not in pref_cols:
