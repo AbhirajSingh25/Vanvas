@@ -61,6 +61,7 @@ export function VanvasIdentityCard({
   const [regenerateSuccess, setRegenerateSuccess] = useState<string | null>(null);
   const [privacyUpdating, setPrivacyUpdating] = useState(false);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [optimisticPrivacy, setOptimisticPrivacy] = useState<boolean | null>(null);
   const privacyAllowed = optimisticPrivacy ?? (user?.preferences?.allow_friend_requests_via_id ?? true);
 
@@ -188,7 +189,15 @@ export function VanvasIdentityCard({
           <div className="flex items-start sm:items-center gap-4">
             <div className="relative shrink-0">
               <div className="rounded-full p-0.5 ring-2 ring-[#B49252]/60 bg-[#112B24]">
-                <Avatar user={user} size={compact ? "lg" : "xl"} />
+                <Avatar
+                  user={user}
+                  size={compact ? "lg" : "xl"}
+                  onImageError={() => {
+                    if (user?.avatar_type === "uploaded" && user?.avatar_url) {
+                      setAvatarLoadFailed(true);
+                    }
+                  }}
+                />
               </div>
               {onChangePhoto && (
                 <button
@@ -359,6 +368,21 @@ export function VanvasIdentityCard({
             <p className="text-xs text-[#F6E2B3] bg-[#B49252]/20 border border-[#B49252]/40 rounded-xl px-3 py-2">
               {regenerateSuccess}
             </p>
+          )}
+
+          {avatarLoadFailed && user?.avatar_type === "uploaded" && (
+            <div className="text-xs text-[#F3B098] bg-[#B65E3C]/20 border border-[#B65E3C]/40 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+              <span>Your uploaded profile photo could not be loaded from storage.</span>
+              {onChangePhoto && (
+                <button
+                  type="button"
+                  onClick={onChangePhoto}
+                  className="font-bold text-[#FAF7F0] underline shrink-0 cursor-pointer"
+                >
+                  Re-upload Photo
+                </button>
+              )}
+            </div>
           )}
         </div>
       </motion.section>

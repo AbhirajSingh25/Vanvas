@@ -20,6 +20,7 @@ export interface AvatarProps {
   showBorder?: boolean;
   borderColor?: string;
   onClick?: () => void;
+  onImageError?: () => void;
 }
 
 const SIZE_CLASSES: Record<AvatarSize, { container: string; text: string; px: number }> = {
@@ -40,6 +41,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   showBorder = true,
   borderColor = "border-[#C59B47]/60",
   onClick,
+  onImageError,
 }) => {
   const [imgError, setImgError] = useState(false);
   const [displayedSrc, setDisplayedSrc] = useState<string | null>(null);
@@ -129,6 +131,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     probe.onerror = () => {
       if (!displayedSrc) {
         setImgError(true);
+        onImageError?.();
       }
       setIsLoading(false);
     };

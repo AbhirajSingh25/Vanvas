@@ -105,10 +105,11 @@ async function run() {
 
     // Open Split Budget modal and verify empty state
     await budgetCard.click();
+    await mPage.getByText("Start Your Budget").waitFor({ state: "visible" });
     await mPage.getByText("No budget items yet").waitFor({ state: "visible" });
     await mPage.keyboard.press("Escape");
 
-    // Legacy localStorage migration check
+    // Legacy localStorage migration check (isolated to unassigned namespace until confirmed)
     await mPage.evaluate(() => {
       localStorage.setItem(
         "vanvas_local_budget_split",
@@ -123,13 +124,11 @@ async function run() {
     });
     await mPage.reload({ waitUntil: "domcontentloaded" });
     await mPage.locator('[data-testid="tool-split-budget"]:visible').first().click();
+    await mPage.getByTestId("legacy-import-banner").waitFor({ state: "visible" });
+    await mPage.getByTestId("legacy-import-banner").getByText(/Import/i).click();
     await mPage.getByText("River Rafting").waitFor({ state: "visible" });
     const modalBody = await mPage.locator("body").innerText();
     assert.ok(!modalBody.includes("Fuel & Transport"), "Legacy seeded e1 row should be stripped");
-    assert.ok(
-      modalBody.includes("Old preset sample rows were removed"),
-      "Migration notice should appear when custom rows are preserved"
-    );
 
     await mobileCtx.close();
 

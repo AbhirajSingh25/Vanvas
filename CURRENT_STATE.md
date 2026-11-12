@@ -30,9 +30,9 @@
 - **Mobile Offline Isolation & Reliability (Real Code):** `scripts/test_offline_isolation_and_account_deletion.mjs` ➔ **31/31 PASSED (100% green)** executing real production `db.ts`, `api.ts`, and `authTeardown.ts`.
 - **Playwright Live Navigation & SW Recovery Suite:** `scripts/e2e/navigation-runtime-recovery.spec.ts` ➔ **6/6 PASSED (100% green)** (Mobile `390x844`, Desktop `1440x900`, SW v3→v4 migration, Chunk auto-recovery, Offline privacy, iOS standalone).
 - **PWA Acceptance & Integrity Audit:** `scripts/test_pwa_acceptance.mjs` ➔ **64/64 PASSED (100% green)**.
-- **Backend Authentic User Data & Avatar Durability Suite:** `backend/tests/test_authentic_user_data_and_avatar_durability.py` ➔ **4/4 PASSED (100% green)**.
-- **Backend Profile & Photo Upload Suites:** `test_profile_photo_upload.py` + `test_profile_and_settings.py` ➔ **24/24 PASSED (100% green)**.
-- **Playwright Authentic Passport & Empty Budget E2E:** `frontend/scripts/verify_authentic_passport_e2e.mjs` ➔ **PASSED (100% green)** across Desktop (`1440x900`) and Mobile (`390x844`) with legacy `localStorage` migration and reduced-motion checks.
+- **Backend Authentic User Data & Avatar Durability Suite:** `backend/tests/test_authentic_user_data_and_avatar_durability.py` + `test_auth.py` + `test_profile_photo_upload.py` + `test_profile_and_settings.py` + `test_account_deletion_governance.py` ➔ **54/54 PASSED (100% green)**.
+- **Account Isolation & Explicit Participants Browser Suite:** `frontend/scripts/test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)** across Guest, User A, User B, legacy unassigned isolation, `travellersCount: null` unset state, 5-traveller calculation, and Trip Budget real members.
+- **Playwright Authentic Passport & Empty Budget E2E:** `frontend/scripts/verify_authentic_passport_e2e.mjs` ➔ **PASSED (100% green)** across Desktop (`1440x900`) and Mobile (`390x844`) with reduced-motion checks.
 - **Next.js Web Frontend Build:** `cd frontend && npx tsc --noEmit && npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
 - **Mobile React Native TypeScript & Expo Config:** `cd mobile && npx tsc --noEmit && npx expo config --type public` ➔ **PASSED (0 errors)**.
 - **Shared Package Build:** `cd packages/shared && npm run build` ➔ **PASSED (0 errors)**.

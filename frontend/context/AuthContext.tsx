@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { storageAdapter } from "@/lib/storage";
 import { trackEvent } from "@/lib/analytics";
 import { deactivatePushToken } from "@/lib/pushNotifications";
+import { purgeAccountLocalStorage } from "@/lib/accountStorage";
 
 interface ProfileUpdatePayload {
   full_name?: string;
@@ -310,7 +311,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteAccount = async (password?: string, confirmation?: string): Promise<{ message: string }> => {
+    const deletedUserId = user?.id;
     const res = await api.deleteAccount({ password, confirmation });
+    purgeAccountLocalStorage(deletedUserId);
     logout();
     return res;
   };

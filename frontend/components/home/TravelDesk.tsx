@@ -3,205 +3,138 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
-  CheckSquare, Calculator, Plus, Trash2, Copy, Check,
-  RotateCcw, Sparkles, ArrowRight, Clock, MapPin, X, ChevronRight,
-  ShieldCheck, Info, FileText
+  CheckSquare,
+  Calculator,
+  Plus,
+  Trash2,
+  Copy,
+  Check,
+  RotateCcw,
+  Sparkles,
+  ArrowRight,
+  Clock,
+  MapPin,
+  X,
+  Users,
 } from "lucide-react";
 import { DestinationArtwork } from "@/components/brand/DestinationArtwork";
 import { VanvasAdaptiveModal } from "@/components/ui/VanvasAdaptiveModal";
+import { Avatar } from "@/components/ui/Avatar";
 import { getRecentDestinations, clearRecentDestinations } from "@/lib/recentDestinations";
 import { CanonicalDestination } from "@/lib/canonicalDestinations";
-import { TripSummary } from "@/types";
+import { TripSummary, TripMemberItem } from "@/types";
 import { AddBudgetItemModal, AddBudgetItemPayload } from "@/components/finance/AddBudgetItemModal";
+import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
+import {
+  ChecklistItem,
+  ExpenseRow,
+  BudgetStorageV3,
+  SUGGESTED_CHECKLIST_ESSENTIALS,
+  createEmptyBudgetState,
+  migrateLegacyGlobalDataOnce,
+  loadAccountBudget,
+  saveAccountBudget,
+  loadAccountChecklist,
+  saveAccountChecklist,
+  hasLegacyUnassignedData,
+  importLegacyUnassignedData,
+  dismissLegacyUnassignedData,
+} from "@/lib/accountStorage";
 
 interface TravelDeskProps {
   activeTrip?: TripSummary | null;
   isCompact?: boolean;
 }
 
-interface ChecklistItem {
-  id: string;
-  category: "Essentials" | "Documents" | "Clothing" | "Gear";
-  text: string;
-  isChecked: boolean;
-}
-
-const SUGGESTED_CHECKLIST_ESSENTIALS: ChecklistItem[] = [
-  // Essentials
-  { id: "c1", category: "Essentials", text: "ID / Aadhaar / Passport & copies", isChecked: false },
-  { id: "c2", category: "Essentials", text: "Cash & UPI payment device", isChecked: false },
-  { id: "c3", category: "Essentials", text: "First Aid kit & personal medications", isChecked: false },
-  { id: "c4", category: "Essentials", text: "Water bottle / Hydration bladder", isChecked: false },
-  { id: "c5", category: "Essentials", text: "Powerbank & charging cables", isChecked: false },
-
-  // Documents
-  { id: "c6", category: "Documents", text: "Hotel / Homestay confirmations", isChecked: false },
-  { id: "c7", category: "Documents", text: "Driver's license & vehicle RC/permit", isChecked: false },
-  { id: "c8", category: "Documents", text: "Emergency contacts offline note", isChecked: false },
-
-  // Clothing
-  { id: "c9", category: "Clothing", text: "Quick-dry trekking t-shirts", isChecked: false },
-  { id: "c10", category: "Clothing", text: "Thermal base layer / Warm fleece", isChecked: false },
-  { id: "c11", category: "Clothing", text: "Windproof & rain jacket / Poncho", isChecked: false },
-  { id: "c12", category: "Clothing", text: "Trekking shoes & moisture-wick socks", isChecked: false },
-
-  // Gear
-  { id: "c13", category: "Gear", text: "UV sunglasses & high-SPF sunscreen", isChecked: false },
-  { id: "c14", category: "Gear", text: "Headlamp / High-lumen torch", isChecked: false },
-  { id: "c15", category: "Gear", text: "Daypack (20–30L) with rain cover", isChecked: false },
-  { id: "c16", category: "Gear", text: "Leave No Trace waste bag", isChecked: false },
-];
-
-const LEGACY_CHECKLIST_PRECHECKED_IDS = new Set(["c1", "c2", "c4", "c16"]);
-
-interface ExpenseRow {
-  id: string;
-  name: string;
-  amount: number;
-}
-
-const BUDGET_STORAGE_KEY = "vanvas_local_budget_split";
-const BUDGET_SCHEMA_VERSION = 2;
-const CHECKLIST_STORAGE_KEY = "vanvas_general_checklist";
-const CHECKLIST_SCHEMA_VERSION = 2;
-
-const LEGACY_SEEDED_EXPENSES: Record<string, { name: string; amount: number }> = {
-  e1: { name: "Fuel & Transport", amount: 4500 },
-  e2: { name: "Stays & Camps", amount: 5000 },
-  e3: { name: "Food & Dhabas", amount: 2000 },
-  e4: { name: "Tolls & Permits", amount: 500 },
-};
-
-function isExactLegacySeededExpense(row: ExpenseRow): boolean {
-  const match = LEGACY_SEEDED_EXPENSES[row.id];
-  return Boolean(match && match.name === row.name && Number(row.amount) === match.amount);
-}
-
 export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = false }) => {
+  const { user } = useAuth();
+  const activeUserId = user?.id ?? null;
+
   // 1. RECENT DESTINATIONS STATE
   const [recentDestinations, setRecentDestinations] = useState<CanonicalDestination[]>([]);
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [isAddBudgetItemOpen, setIsAddBudgetItemOpen] = useState(false);
 
-  // 2. CHECKLIST STATE & STORAGE (starts empty — never pre-checked)
+  // 2. ACCOUNT-SCOPED CHECKLIST STATE
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newChecklistText, setNewChecklistText] = useState("");
-  const [newChecklistCategory, setNewChecklistCategory] = useState<ChecklistItem["category"]>("Essentials");
+  const [newChecklistCategory, setNewChecklistCategory] =
+    useState<ChecklistItem["category"]>("Essentials");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // 3. BUDGET SPLIT STATE & STORAGE (starts empty — never pre-seeded with fake amounts)
-  const [budgetMode, setBudgetMode] = useState<"scratch" | "trip">("scratch");
-  const [travellersCount, setTravellersCount] = useState<number>(1);
-  const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
-  const [legacyMigrationNotice, setLegacyMigrationNotice] = useState<string | null>(null);
+  // 3. ACCOUNT-SCOPED BUDGET SPLIT STATE (explicitly unset participant count by default)
+  const [budgetState, setBudgetState] = useState<BudgetStorageV3>(createEmptyBudgetState);
+  const [showParticipantPicker, setShowParticipantPicker] = useState(false);
+  const [legacyAvailable, setLegacyAvailable] = useState<{
+    hasBudget: boolean;
+    hasChecklist: boolean;
+  }>({ hasBudget: false, hasChecklist: false });
   const [copiedToast, setCopiedToast] = useState(false);
 
-  // Load state on client mount with safe legacy migration
+  // 4. REAL TRIP MEMBERS STATE (for Trip Budget mode)
+  const [tripMembers, setTripMembers] = useState<TripMemberItem[]>([]);
+  const [tripMembersLoading, setTripMembersLoading] = useState(false);
+  const [selectedTripMemberIds, setSelectedTripMemberIds] = useState<string[]>([]);
+
+  // Load account-scoped state whenever authenticated account changes
   useEffect(() => {
     setRecentDestinations(getRecentDestinations());
+    migrateLegacyGlobalDataOnce();
 
-    // Checklist from localStorage (supports legacy array format & v2 versioned format)
-    try {
-      const savedChecklist = localStorage.getItem(CHECKLIST_STORAGE_KEY);
-      if (savedChecklist) {
-        const parsed = JSON.parse(savedChecklist);
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && parsed.version >= CHECKLIST_SCHEMA_VERSION) {
-          if (Array.isArray(parsed.items)) {
-            setChecklist(parsed.items);
-          }
-        } else if (Array.isArray(parsed) && parsed.length > 0) {
-          // Legacy unversioned array: if it matches the old auto-seeded 16-item default untouched, clear it safely
-          const isUntouchedLegacySeed =
-            parsed.length === SUGGESTED_CHECKLIST_ESSENTIALS.length &&
-            parsed.every((item: ChecklistItem, idx: number) => {
-              const ref = SUGGESTED_CHECKLIST_ESSENTIALS[idx];
-              return (
-                item.id === ref.id &&
-                item.text === ref.text &&
-                item.isChecked === LEGACY_CHECKLIST_PRECHECKED_IDS.has(ref.id)
-              );
-            });
+    setChecklist(loadAccountChecklist(activeUserId));
+    const loadedBudget = loadAccountBudget(activeUserId);
+    setBudgetState(loadedBudget);
+    setLegacyAvailable(hasLegacyUnassignedData());
+    setShowParticipantPicker(false);
+  }, [activeUserId]);
 
-          const migratedItems = isUntouchedLegacySeed ? [] : parsed;
-          setChecklist(migratedItems);
-          localStorage.setItem(
-            CHECKLIST_STORAGE_KEY,
-            JSON.stringify({ version: CHECKLIST_SCHEMA_VERSION, items: migratedItems })
-          );
-        }
-      }
-    } catch {}
+  // Fetch genuine trip members when Trip Budget mode is selected
+  useEffect(() => {
+    if (!isBudgetOpen || budgetState.mode !== "trip" || !activeTrip?.id) return;
+    let cancelled = false;
+    setTripMembersLoading(true);
+    api
+      .getGroupDetails(activeTrip.id)
+      .then((res: any) => {
+        if (cancelled) return;
+        const membersList: TripMemberItem[] = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.members)
+            ? res.members
+            : [];
+        setTripMembers(membersList);
+        setSelectedTripMemberIds(membersList.map((m) => m.user_id));
+      })
+      .catch(() => {
+        if (!cancelled) setTripMembers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setTripMembersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isBudgetOpen, budgetState.mode, activeTrip?.id]);
 
-    // Budget from localStorage (safe v2 migration: strip exact legacy seeded rows, preserve custom rows)
-    try {
-      const savedBudget = localStorage.getItem(BUDGET_STORAGE_KEY);
-      if (savedBudget) {
-        const parsed = JSON.parse(savedBudget);
-        if (parsed && typeof parsed.version === "number" && parsed.version >= BUDGET_SCHEMA_VERSION) {
-          const safeCount = parsed.travellersCount && parsed.travellersCount > 0 ? parsed.travellersCount : 1;
-          const safeExpenses = Array.isArray(parsed.expenses) ? parsed.expenses : [];
-          setTravellersCount(safeCount);
-          setExpenses(safeExpenses);
-        } else if (parsed && Array.isArray(parsed.expenses)) {
-          const rawExpenses: ExpenseRow[] = parsed.expenses;
-          const keptExpenses = rawExpenses.filter((row) => !isExactLegacySeededExpense(row));
-          const hadSeededRows = keptExpenses.length !== rawExpenses.length;
-          const isLegacyDefaultCount = parsed.travellersCount === 4 && keptExpenses.length === 0;
-          const migratedCount = isLegacyDefaultCount
-            ? 1
-            : parsed.travellersCount && parsed.travellersCount > 0
-              ? parsed.travellersCount
-              : 1;
+  // Sync Checklist to active account namespace
+  const saveChecklist = useCallback(
+    (items: ChecklistItem[]) => {
+      setChecklist(items);
+      saveAccountChecklist(activeUserId, items);
+    },
+    [activeUserId]
+  );
 
-          setTravellersCount(migratedCount);
-          setExpenses(keptExpenses);
-          localStorage.setItem(
-            BUDGET_STORAGE_KEY,
-            JSON.stringify({
-              version: BUDGET_SCHEMA_VERSION,
-              travellersCount: migratedCount,
-              expenses: keptExpenses,
-            })
-          );
-
-          if (hadSeededRows && keptExpenses.length > 0) {
-            setLegacyMigrationNotice(
-              "Old preset sample rows were removed while preserving your custom budget items."
-            );
-          }
-        }
-      }
-    } catch {}
-  }, []);
-
-  // Sync Checklist to localStorage
-  const saveChecklist = useCallback((items: ChecklistItem[]) => {
-    setChecklist(items);
-    try {
-      localStorage.setItem(
-        CHECKLIST_STORAGE_KEY,
-        JSON.stringify({ version: CHECKLIST_SCHEMA_VERSION, items })
-      );
-    } catch {}
-  }, []);
-
-  // Sync Budget to localStorage
-  const saveBudget = useCallback((count: number, exp: ExpenseRow[]) => {
-    const safeCount = Math.max(1, count);
-    setTravellersCount(safeCount);
-    setExpenses(exp);
-    try {
-      localStorage.setItem(
-        BUDGET_STORAGE_KEY,
-        JSON.stringify({
-          version: BUDGET_SCHEMA_VERSION,
-          travellersCount: safeCount,
-          expenses: exp,
-        })
-      );
-    } catch {}
-  }, []);
+  // Sync Budget to active account namespace
+  const persistBudget = useCallback(
+    (next: BudgetStorageV3) => {
+      setBudgetState(next);
+      saveAccountBudget(activeUserId, next);
+    },
+    [activeUserId]
+  );
 
   // Checklist Actions
   const handleToggleItem = (id: string) => {
@@ -241,49 +174,102 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
     setShowResetConfirm(false);
   };
 
+  // Legacy Unassigned Import / Dismiss (explicit user confirmation only)
+  const handleImportLegacyData = () => {
+    const imported = importLegacyUnassignedData(activeUserId);
+    if (imported.budget) setBudgetState(imported.budget);
+    if (imported.checklist) setChecklist(imported.checklist);
+    setLegacyAvailable({ hasBudget: false, hasChecklist: false });
+  };
+
+  const handleDismissLegacyData = () => {
+    dismissLegacyUnassignedData();
+    setLegacyAvailable({ hasBudget: false, hasChecklist: false });
+  };
+
   // Budget Calculations
+  const { expenses, travellersCount, participantsConfigured, allocationType } = budgetState;
+  const hasParticipants = participantsConfigured && travellersCount !== null && travellersCount >= 1;
+
   const totalAmount = useMemo(() => {
     return expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   }, [expenses]);
 
   const perPersonAmount = useMemo(() => {
-    if (expenses.length === 0 || totalAmount <= 0) return 0;
-    const count = Math.max(1, travellersCount);
-    return Math.ceil(totalAmount / count);
-  }, [expenses.length, totalAmount, travellersCount]);
+    if (!hasParticipants || travellersCount === null || expenses.length === 0 || totalAmount <= 0) {
+      return null;
+    }
+    return Math.ceil(totalAmount / travellersCount);
+  }, [hasParticipants, travellersCount, expenses.length, totalAmount]);
+
+  const handleSetTravellersCount = (count: number) => {
+    const safeCount = Math.max(1, count);
+    persistBudget({
+      ...budgetState,
+      travellersCount: safeCount,
+      participantsConfigured: true,
+      participantsAmbiguous: false,
+    });
+  };
+
+  const handleClearParticipants = () => {
+    persistBudget({
+      ...budgetState,
+      travellersCount: null,
+      participantsConfigured: false,
+      participantsAmbiguous: false,
+    });
+  };
 
   const handleExpenseChange = (id: string, amount: number) => {
     const updated = expenses.map((e) =>
       e.id === id ? { ...e, amount: Math.max(0, isNaN(amount) ? 0 : amount) } : e
     );
-    saveBudget(travellersCount, updated);
-  };
-
-  const handleAddExpenseRow = () => {
-    setIsAddBudgetItemOpen(true);
+    persistBudget({ ...budgetState, expenses: updated });
   };
 
   const handleAddBudgetItemSubmit = (payload: AddBudgetItemPayload) => {
+    const rowAllocation: "equal" | "custom" =
+      payload.split_method !== "EQUAL" ? "custom" : "equal";
     const newRow: ExpenseRow = {
       id: `exp_${Date.now()}`,
       name: payload.title,
       amount: Math.round(payload.amount),
+      allocationType: rowAllocation,
     };
-    saveBudget(travellersCount, [...expenses, newRow]);
+    const nextExpenses = [...expenses, newRow];
+    const nextAllocation: "equal" | "custom" =
+      budgetState.allocationType === "custom" || rowAllocation === "custom" ? "custom" : "equal";
+    persistBudget({
+      ...budgetState,
+      allocationType: nextAllocation,
+      expenses: nextExpenses,
+    });
   };
 
   const handleDeleteExpenseRow = (id: string) => {
     const updated = expenses.filter((e) => e.id !== id);
-    saveBudget(travellersCount, updated);
+    const nextAllocation: "equal" | "custom" = updated.some((e) => e.allocationType === "custom")
+      ? "custom"
+      : "equal";
+    persistBudget({
+      ...budgetState,
+      allocationType: nextAllocation,
+      expenses: updated,
+    });
   };
 
   const handleResetBudget = () => {
-    saveBudget(1, []);
-    setLegacyMigrationNotice(null);
+    persistBudget(createEmptyBudgetState());
+    setShowParticipantPicker(false);
   };
 
   const handleCopyBudgetSummary = () => {
-    const text = `VANVAS Expedition Budget Split:\nTotal: ₹${totalAmount.toLocaleString()} · ${travellersCount} Travellers\nPer Person: ₹${perPersonAmount.toLocaleString()}\n\nBreakdown:\n${expenses
+    if (!hasParticipants || perPersonAmount === null || expenses.length === 0) return;
+    const splitDesc = allocationType === "custom" ? "Custom Split" : "Equal Split";
+    const text = `VANVAS Expedition Budget (${splitDesc}):\nTotal: ₹${totalAmount.toLocaleString()} · ${travellersCount} ${
+      travellersCount === 1 ? "Traveller" : "Travellers"
+    }\nEstimated Share: ₹${perPersonAmount.toLocaleString()} / person\n\nBreakdown:\n${expenses
       .map((e) => `• ${e.name}: ₹${e.amount.toLocaleString()}`)
       .join("\n")}`;
 
@@ -301,6 +287,28 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
   };
 
   const packedCount = checklist.filter((c) => c.isChecked).length;
+
+  // Budget Summary Card Badge & Subtitle
+  const budgetCardBadge = useMemo(() => {
+    if (expenses.length === 0) return "Empty";
+    if (!hasParticipants || perPersonAmount === null) {
+      return `₹${totalAmount.toLocaleString()} total`;
+    }
+    return `₹${perPersonAmount.toLocaleString()} ea`;
+  }, [expenses.length, hasParticipants, perPersonAmount, totalAmount]);
+
+  const budgetCardSubtitle = useMemo(() => {
+    if (expenses.length === 0) {
+      return hasParticipants && travellersCount
+        ? `${travellersCount} ${travellersCount === 1 ? "traveller" : "travellers"} · add expenses`
+        : "Start an empty budget split";
+    }
+    if (!hasParticipants || travellersCount === null) {
+      return "Set participants to calculate your share.";
+    }
+    const label = allocationType === "custom" ? "custom split" : "equal split";
+    return `${travellersCount} ${travellersCount === 1 ? "traveller" : "travellers"} · ${label}`;
+  }, [expenses.length, hasParticipants, travellersCount, allocationType]);
 
   return (
     <div data-testid="travel-desk-field-kit" className="space-y-3.5 pt-2 border-t border-[#D8CBB2]/70">
@@ -362,8 +370,11 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             <div className="w-7 h-7 rounded-xl bg-[#B65E3C]/10 text-[#B65E3C] flex items-center justify-center shrink-0">
               <Calculator className="w-3.5 h-3.5" />
             </div>
-            <span className="px-1.5 py-0.5 rounded-full bg-[#B65E3C]/10 text-[9px] font-mono font-bold text-[#B65E3C]">
-              {expenses.length === 0 ? "Empty" : `₹${perPersonAmount.toLocaleString()} ea`}
+            <span
+              data-testid="split-budget-card-badge"
+              className="px-1.5 py-0.5 rounded-full bg-[#B65E3C]/10 text-[9px] font-mono font-bold text-[#B65E3C]"
+            >
+              {budgetCardBadge}
             </span>
           </div>
 
@@ -371,10 +382,11 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             <h4 className="font-serif font-bold text-xs text-[#173B32] group-hover:text-[#B65E3C] transition-colors leading-tight">
               Split a Budget
             </h4>
-            <p className="text-[10px] text-[#7B4D36] truncate mt-0.5">
-              {expenses.length === 0
-                ? "Start an empty budget split"
-                : `${travellersCount} ${travellersCount === 1 ? "traveller" : "travellers"} · equal split`}
+            <p
+              data-testid="split-budget-card-subtitle"
+              className="text-[10px] text-[#7B4D36] truncate mt-0.5"
+            >
+              {budgetCardSubtitle}
             </p>
           </div>
         </button>
@@ -393,63 +405,55 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             <button
               type="button"
               onClick={handleClearHistory}
-              className="text-[10px] font-mono text-[#7B4D36] hover:text-red-700 transition-colors flex items-center gap-0.5 cursor-pointer"
+              className="text-[10px] font-mono text-[#7B4D36] hover:text-[#B65E3C] underline cursor-pointer"
             >
-              <RotateCcw className="w-2.5 h-2.5" />
-              <span>Clear History</span>
+              Clear
             </button>
           )}
         </div>
 
         {recentDestinations.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-3.5 sm:-mx-4 px-3.5 sm:px-4 pb-1 snap-x snap-mandatory touch-manipulation">
+          <div className="flex overflow-x-auto gap-2 pb-1 no-scrollbar -mx-1 px-1">
             {recentDestinations.map((dest) => (
               <Link
-                key={`recent-${dest.slug}`}
+                key={dest.slug}
                 href={`/explore/${dest.slug}`}
-                data-testid={`recent-dest-${dest.slug}`}
-                className={`shrink-0 rounded-xl bg-[#FAF7F0] border border-[#D8CBB2] hover:border-[#173B32] active:scale-98 transition-all flex items-center gap-2.5 snap-start touch-manipulation group ${
-                  isCompact ? "w-48 p-2" : "w-54 p-2.5"
-                }`}
+                className="w-32 shrink-0 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] overflow-hidden shadow-2xs hover:border-[#173B32] transition-all flex flex-col group"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#173B32] overflow-hidden shrink-0 relative border border-[#D8CBB2]/60">
+                <div className="h-14 w-full relative overflow-hidden bg-[#173B32]">
                   <DestinationArtwork
                     slug={dest.slug}
-                    aspectRatio="square"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-serif font-bold text-xs text-[#173B32] truncate group-hover:text-[#B65E3C] transition-colors">
+                <div className="p-2">
+                  <div className="font-serif font-bold text-[11px] text-[#173B32] truncate leading-tight">
                     {dest.name}
                   </div>
-                  <div className="text-[9.5px] text-[#7B4D36] font-mono truncate">
-                    {dest.state} · {dest.altitude_meters ? `${dest.altitude_meters}m` : "Sanctuary"}
-                  </div>
+                  <div className="text-[9px] text-[#7B4D36] truncate mt-0.5">{dest.state}</div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-[#7B4D36] group-hover:translate-x-0.5 transition-transform shrink-0" />
               </Link>
             ))}
           </div>
         ) : (
-          /* FIRST-USE EMPTY STATE (NO FABRICATED HISTORY) */
-          <div className="p-3 rounded-2xl bg-[#FAF7F0]/80 border border-[#D8CBB2]/70 flex items-center justify-between gap-3 text-left">
+          <div className="rounded-2xl bg-[#FAF7F0]/70 border border-dashed border-[#D8CBB2] p-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-[#173B32]/10 text-[#173B32] flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-xl bg-[#EFE5D2] flex items-center justify-center shrink-0">
                 <MapPin className="w-3.5 h-3.5 text-[#B49252]" />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-serif font-bold text-[#173B32]">
+                <p className="text-[11px] font-serif font-bold text-[#173B32] truncate">
                   No recently viewed sanctuaries
-                </div>
-                <p className="text-[10px] text-[#7B4D36] truncate">
-                  Explore valleys &amp; high passes to build your travel log.
+                </p>
+                <p className="text-[9.5px] text-[#7B4D36] truncate">
+                  Explore valleys &amp; high passes to build your travel log
                 </p>
               </div>
             </div>
             <Link
               href="/explore"
-              className="text-[10px] font-bold text-[#B65E3C] hover:text-[#9E4D2E] flex items-center gap-0.5 shrink-0"
+              className="text-[10px] font-bold text-[#B65E3C] hover:underline shrink-0 flex items-center gap-0.5"
             >
               <span>Explore</span>
               <ArrowRight className="w-3 h-3" />
@@ -469,16 +473,35 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
         maxWidth="max-w-lg"
       >
         <div className="space-y-4">
-          {/* Active Trip Banner Link if available */}
+          {legacyAvailable.hasChecklist && (
+            <div className="p-3 rounded-xl bg-[#B49252]/15 border border-[#B49252]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#173B32]">
+              <span>Previous unassociated checklist items found on this device.</span>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleImportLegacyData}
+                  className="px-2.5 py-1 rounded-lg bg-[#173B32] text-[#FAF7F0] text-[11px] font-bold cursor-pointer"
+                >
+                  Import
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDismissLegacyData}
+                  className="text-[#7B4D36] text-[11px] underline cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           {activeTrip && (
             <div className="p-2.5 rounded-xl bg-[#173B32] text-[#EFE5D2] flex items-center justify-between gap-2 shadow-xs">
               <div className="min-w-0">
                 <div className="text-[9px] font-mono text-[#B49252] font-bold uppercase tracking-wider">
                   ACTIVE TRIP DETECTED
                 </div>
-                <div className="text-xs font-serif font-bold truncate">
-                  {activeTrip.title}
-                </div>
+                <div className="text-xs font-serif font-bold truncate">{activeTrip.title}</div>
               </div>
               <Link
                 href={`/trips/${activeTrip.id}?tab=checklist`}
@@ -489,11 +512,10 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             </div>
           )}
 
-          {/* Add custom item form */}
           <form onSubmit={handleAddItem} className="flex items-center gap-2">
             <select
               value={newChecklistCategory}
-              onChange={(e) => setNewChecklistCategory(e.target.value as any)}
+              onChange={(e) => setNewChecklistCategory(e.target.value as ChecklistItem["category"])}
               className="py-2 px-2.5 rounded-xl border border-[#D8CBB2] bg-[#FAF7F0] text-xs font-mono text-[#173B32] focus:outline-none focus:ring-1 focus:ring-[#173B32]"
             >
               <option value="Essentials">Essentials</option>
@@ -518,7 +540,6 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             </button>
           </form>
 
-          {/* Empty State or Categorized Checklist */}
           {checklist.length === 0 ? (
             <div className="p-5 rounded-2xl bg-[#FAF7F0] border border-dashed border-[#D8CBB2] text-center space-y-3">
               <p className="text-xs font-medium text-[#173B32]">
@@ -568,11 +589,7 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
                           >
                             {item.isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
-                          <span
-                            className={`text-xs ${
-                              item.isChecked ? "line-through opacity-65" : "font-medium"
-                            }`}
-                          >
+                          <span className={`text-xs ${item.isChecked ? "line-through opacity-65" : "font-medium"}`}>
                             {item.text}
                           </span>
                         </div>
@@ -596,11 +613,10 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             })
           )}
 
-          {/* Footer Reset & Local notice */}
           <div className="pt-2 border-t border-[#D8CBB2]/60 flex items-center justify-between gap-2 text-[10px] text-[#7B4D36] font-mono">
-            <span>Saved on this device</span>
-            {checklist.length > 0 && (
-              showResetConfirm ? (
+            <span>{activeUserId ? "Saved to this account on this device" : "Saved in guest session"}</span>
+            {checklist.length > 0 &&
+              (showResetConfirm ? (
                 <div className="flex items-center gap-2">
                   <span>Clear all items?</span>
                   <button
@@ -636,8 +652,7 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
                     <span>Clear List</span>
                   </button>
                 </div>
-              )
-            )}
+              ))}
           </div>
         </div>
       </VanvasAdaptiveModal>
@@ -649,18 +664,47 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
         isOpen={isBudgetOpen}
         onClose={() => setIsBudgetOpen(false)}
         title="Split a Budget • खर्च विभाजन"
-        subtitle="Equal expense split calculation for your group"
+        subtitle={
+          budgetState.mode === "trip" && activeTrip
+            ? "Connected to your active trip members"
+            : "Add your expenses and choose who will share them."
+        }
         maxWidth="max-w-lg"
       >
         <div className="space-y-4">
+          {legacyAvailable.hasBudget && (
+            <div
+              data-testid="legacy-import-banner"
+              className="p-3 rounded-xl bg-[#B49252]/15 border border-[#B49252]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#173B32]"
+            >
+              <span>Previous unassociated budget entries found on this device.</span>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleImportLegacyData}
+                  className="px-2.5 py-1 rounded-lg bg-[#173B32] text-[#FAF7F0] text-[11px] font-bold cursor-pointer"
+                >
+                  Import into {activeUserId ? "Account" : "Guest"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDismissLegacyData}
+                  className="text-[#7B4D36] text-[11px] underline cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Explicit Mode Switcher when an active trip is loaded */}
           {activeTrip && (
             <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#EFE5D2]/70 border border-[#D8CBB2]">
               <button
                 type="button"
-                onClick={() => setBudgetMode("scratch")}
+                onClick={() => persistBudget({ ...budgetState, mode: "scratch" })}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                  budgetMode === "scratch"
+                  budgetState.mode === "scratch"
                     ? "bg-[#173B32] text-[#FAF7F0] shadow-2xs"
                     : "text-[#7B4D36] hover:text-[#173B32]"
                 }`}
@@ -669,9 +713,9 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
               </button>
               <button
                 type="button"
-                onClick={() => setBudgetMode("trip")}
+                onClick={() => persistBudget({ ...budgetState, mode: "trip" })}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                  budgetMode === "trip"
+                  budgetState.mode === "trip"
                     ? "bg-[#173B32] text-[#FAF7F0] shadow-2xs"
                     : "text-[#7B4D36] hover:text-[#173B32]"
                 }`}
@@ -681,16 +725,57 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             </div>
           )}
 
-          {budgetMode === "trip" && activeTrip ? (
+          {budgetState.mode === "trip" && activeTrip ? (
             <div className="p-4 rounded-2xl bg-[#173B32] text-[#FAF7F0] space-y-3 border border-[#B49252]/40">
               <div className="flex items-center justify-between text-[10px] font-mono text-[#B49252] uppercase tracking-wider">
                 <span>ACTIVE TRIP BUDGET</span>
                 <span>{activeTrip.status || "planned"}</span>
               </div>
               <div className="font-serif font-bold text-lg text-[#FAF7F0]">{activeTrip.title}</div>
-              <p className="text-xs text-[#EFE5D2]/80">
-                Open your authenticated trip ledger to view and split real backend trip expenses with your crew.
-              </p>
+
+              {tripMembersLoading ? (
+                <p className="text-xs text-[#EFE5D2]/75">Loading trip members…</p>
+              ) : tripMembers.length > 0 ? (
+                <div className="space-y-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#E5D5BA]/80 block">
+                    Trip Members ({selectedTripMemberIds.length}/{tripMembers.length} selected)
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tripMembers.map((m) => {
+                      const active = selectedTripMemberIds.includes(m.user_id);
+                      return (
+                        <button
+                          key={m.user_id}
+                          type="button"
+                          onClick={() =>
+                            setSelectedTripMemberIds((prev) =>
+                              prev.includes(m.user_id)
+                                ? prev.filter((id) => id !== m.user_id)
+                                : [...prev, m.user_id]
+                            )
+                          }
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                            active
+                              ? "bg-[#B65E3C] border-[#D9825E] text-white"
+                              : "bg-[#112B24] border-[#FAF7F0]/20 text-[#EFE5D2]/75"
+                          }`}
+                        >
+                          <Avatar
+                            user={{ full_name: m.full_name, avatar_url: m.avatar_url }}
+                            size="xs"
+                          />
+                          <span>{m.full_name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-[#EFE5D2]/80">
+                  Open your authenticated trip ledger to view and split real backend trip expenses with your crew.
+                </p>
+              )}
+
               <Link
                 href={`/trips/${activeTrip.id}?tab=budget`}
                 onClick={() => setIsBudgetOpen(false)}
@@ -702,64 +787,76 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             </div>
           ) : (
             <>
-              {legacyMigrationNotice && (
+              {budgetState.participantsAmbiguous && !hasParticipants && (
                 <div className="p-3 rounded-xl bg-[#B49252]/15 border border-[#B49252]/40 flex items-center justify-between gap-2 text-xs text-[#173B32]">
-                  <span>{legacyMigrationNotice}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={handleResetBudget}
-                      className="font-bold text-[#B65E3C] underline cursor-pointer"
-                    >
-                      Reset
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLegacyMigrationNotice(null)}
-                      className="text-[#7B4D36] cursor-pointer"
-                      aria-label="Dismiss notice"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <span>Please confirm how many travellers are sharing these expenses.</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowParticipantPicker(true)}
+                    className="font-bold text-[#B65E3C] underline shrink-0 cursor-pointer"
+                  >
+                    Set Travellers
+                  </button>
                 </div>
               )}
 
-              {/* Big Result Card */}
+              {/* Summary Card */}
               <div className="p-4 rounded-2xl bg-[#173B32] text-[#FAF7F0] space-y-2 border border-[#B49252]/40 shadow-sm">
                 <div className="flex items-center justify-between text-[10px] font-mono text-[#B49252] uppercase tracking-wider">
-                  <span>EQUAL PER PERSON SHARE</span>
                   <span>
-                    {travellersCount} {travellersCount === 1 ? "TRAVELLER" : "TRAVELLERS"}
+                    {allocationType === "custom" ? "ESTIMATED SHARE (CUSTOM)" : "EQUAL PER PERSON SHARE"}
+                  </span>
+                  <span>
+                    {hasParticipants && travellersCount !== null
+                      ? `${travellersCount} ${travellersCount === 1 ? "TRAVELLER" : "TRAVELLERS"}`
+                      : "TRAVELLERS NOT CONFIGURED"}
                   </span>
                 </div>
 
-                <div className="flex items-baseline justify-between">
-                  <div>
-                    <span className="font-serif font-black text-3xl sm:text-4xl text-[#FAF7F0]">
-                      {expenses.length === 0 ? "—" : `₹${perPersonAmount.toLocaleString()}`}
-                    </span>
-                    {expenses.length > 0 && (
-                      <span className="text-xs text-[#EFE5D2]/80 ml-1 font-mono">/ person</span>
-                    )}
+                {expenses.length === 0 && !hasParticipants ? (
+                  <div className="py-1 space-y-1">
+                    <div className="font-serif font-bold text-xl text-[#FAF7F0]">Start Your Budget</div>
+                    <p className="text-xs text-[#EFE5D2]/80">
+                      Add your expenses and choose who will share them.
+                    </p>
                   </div>
+                ) : (
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <span
+                        data-testid="budget-per-person-display"
+                        className="font-serif font-black text-3xl sm:text-4xl text-[#FAF7F0]"
+                      >
+                        {!hasParticipants || perPersonAmount === null
+                          ? "Pending"
+                          : `₹${perPersonAmount.toLocaleString()}`}
+                      </span>
+                      {hasParticipants && perPersonAmount !== null && (
+                        <span className="text-xs text-[#EFE5D2]/80 ml-1 font-mono">/ person</span>
+                      )}
+                    </div>
 
-                  <div className="text-right">
-                    <span className="text-[10px] text-[#EFE5D2]/70 font-mono block">Total Expenses</span>
-                    <span className="text-base font-mono font-bold text-[#B49252]">
-                      ₹{totalAmount.toLocaleString()}
-                    </span>
+                    <div className="text-right">
+                      <span className="text-[10px] text-[#EFE5D2]/70 font-mono block">Total Expenses</span>
+                      <span className="text-base font-mono font-bold text-[#B49252]">
+                        ₹{totalAmount.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="pt-2 border-t border-[#EFE5D2]/20 flex items-center justify-between">
+                <div className="pt-2 border-t border-[#EFE5D2]/20 flex items-center justify-between gap-2">
                   <span className="text-[10px] font-mono text-[#D8DED5]/80">
-                    {expenses.length === 0 ? "Empty scratchpad" : "Calculated with ceiling rounding"}
+                    {!hasParticipants
+                      ? "Participant allocation pending"
+                      : allocationType === "custom"
+                        ? "Custom allocation rules present"
+                        : "Calculated with ceiling rounding"}
                   </span>
                   <button
                     type="button"
                     onClick={handleCopyBudgetSummary}
-                    disabled={expenses.length === 0}
+                    disabled={!hasParticipants || expenses.length === 0 || perPersonAmount === null}
                     className="px-3 py-1 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] disabled:opacity-40 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   >
                     {copiedToast ? (
@@ -777,36 +874,80 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
                 </div>
               </div>
 
-              {/* Travellers count stepper */}
-              <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] flex items-center justify-between">
-                <div>
-                  <label className="font-serif font-bold text-xs text-[#173B32] block">
-                    Number of Travellers
-                  </label>
-                  <span className="text-[10px] text-[#7B4D36] font-mono">
-                    Splitting across group members
-                  </span>
+              {/* Explicit Participant Configuration */}
+              <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <label className="font-serif font-bold text-xs text-[#173B32] block">
+                      {hasParticipants ? "Number of Travellers" : "Travellers not configured"}
+                    </label>
+                    <span className="text-[10px] text-[#7B4D36] font-mono">
+                      {hasParticipants
+                        ? "Explicitly configured for this scratch budget"
+                        : "Set participants to calculate your share."}
+                    </span>
+                  </div>
+
+                  {!hasParticipants ? (
+                    <button
+                      type="button"
+                      data-testid="set-travellers-btn"
+                      onClick={() => setShowParticipantPicker((prev) => !prev)}
+                      className="px-3 py-1.5 rounded-xl bg-[#173B32] hover:bg-[#1E4A3F] text-[#FAF7F0] text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+                    >
+                      <Users className="w-3.5 h-3.5 text-[#B49252]" />
+                      <span>Set Number of Travellers</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          travellersCount && travellersCount > 1
+                            ? handleSetTravellersCount(travellersCount - 1)
+                            : handleClearParticipants()
+                        }
+                        className="w-8 h-8 rounded-xl bg-[#EFE5D2] hover:bg-[#D8CBB2] text-[#173B32] font-bold flex items-center justify-center transition-colors cursor-pointer"
+                        aria-label="Decrease travellers"
+                      >
+                        -
+                      </button>
+                      <span
+                        data-testid="travellers-count-value"
+                        className="w-8 text-center font-mono font-bold text-base text-[#173B32]"
+                      >
+                        {travellersCount}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleSetTravellersCount((travellersCount || 1) + 1)}
+                        className="w-8 h-8 rounded-xl bg-[#173B32] text-white font-bold flex items-center justify-center transition-colors cursor-pointer"
+                        aria-label="Increase travellers"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => saveBudget(Math.max(1, travellersCount - 1), expenses)}
-                    className="w-8 h-8 rounded-xl bg-[#EFE5D2] hover:bg-[#D8CBB2] text-[#173B32] font-bold flex items-center justify-center transition-colors cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="w-8 text-center font-mono font-bold text-base text-[#173B32]">
-                    {travellersCount}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => saveBudget(travellersCount + 1, expenses)}
-                    className="w-8 h-8 rounded-xl bg-[#173B32] text-white font-bold flex items-center justify-center transition-colors cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
+                {!hasParticipants && showParticipantPicker && (
+                  <div className="pt-2 border-t border-[#D8CBB2]/60 flex flex-wrap items-center gap-1.5">
+                    {[1, 2, 3, 4, 5, 6].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        data-testid={`choose-travellers-${n}`}
+                        onClick={() => {
+                          handleSetTravellersCount(n);
+                          setShowParticipantPicker(false);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-[#EFE5D2] hover:bg-[#173B32] hover:text-[#FAF7F0] text-[#173B32] text-xs font-mono font-bold transition-colors cursor-pointer"
+                      >
+                        {n} {n === 1 ? "Traveller" : "Travellers"}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Expense Category Breakdown */}
@@ -825,7 +966,8 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
                     )}
                     <button
                       type="button"
-                      onClick={handleAddExpenseRow}
+                      data-testid="budget-add-row-btn"
+                      onClick={() => setIsAddBudgetItemOpen(true)}
                       className="text-[10px] text-[#B65E3C] hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
@@ -837,11 +979,11 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
                 {expenses.length === 0 ? (
                   <div className="p-4 rounded-xl bg-[#FAF7F0] border border-dashed border-[#D8CBB2] text-center space-y-2">
                     <p className="text-xs text-[#7B4D36]">
-                      No budget items yet. Add an expense row to calculate your split.
+                      No budget items yet. Add an expense row to start planning.
                     </p>
                     <button
                       type="button"
-                      onClick={handleAddExpenseRow}
+                      onClick={() => setIsAddBudgetItemOpen(true)}
                       className="px-3 py-1.5 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -855,9 +997,16 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
                         key={exp.id}
                         className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] flex items-center justify-between gap-2"
                       >
-                        <span className="text-xs font-medium text-[#173B32] flex-1 truncate">
-                          {exp.name}
-                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs font-medium text-[#173B32] block truncate">
+                            {exp.name}
+                          </span>
+                          {!hasParticipants && (
+                            <span className="text-[10px] font-mono text-[#7B4D36]">
+                              Participant allocation pending
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="text-xs font-mono font-bold text-[#7B4D36]">₹</span>
                           <input
@@ -884,7 +1033,9 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
               </div>
 
               <div className="text-[10px] text-[#7B4D36] font-mono text-center">
-                Independent local scratchpad · Does not alter saved trip budgets
+                {activeUserId
+                  ? "Scoped to your account on this device · Does not alter saved trip budgets"
+                  : "Guest scratchpad · Does not alter saved trip budgets"}
               </div>
             </>
           )}

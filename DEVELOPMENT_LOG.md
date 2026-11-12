@@ -504,6 +504,19 @@
 
 ---
 
+## November 12, 2026 (Follow-Up) — Account-Scoped Scratch Storage, Explicit Participants & Real Avatar Integration Verification
+
+- **Account-Scoped Scratch Budget & Checklist (`frontend/lib/accountStorage.ts`, `TravelDesk.tsx`, `AuthContext.tsx`):**
+  - Replaced global `vanvas_local_budget_split` and `vanvas_general_checklist` with account-scoped namespaces `vanvas:user:{userId}:budget:v3`, `vanvas:user:{userId}:checklist:v3`, `vanvas:guest:budget:v3`, and `vanvas:guest:checklist:v3`.
+  - Legacy custom rows are isolated into `vanvas:legacy_unassigned:*:v3` with an explicit user-confirmed import banner (never auto-assigned to the next signed-in user).
+  - Permanent account deletion (`deleteAccount`) purges only the deleted user's local namespaces via `purgeAccountLocalStorage(deletedUserId)` while leaving other accounts and public destination history intact.
+- **Explicit Participant Count (`travellersCount: number | null`):**
+  - Scratch Budget now initializes with `travellersCount: null` (`Travellers not configured`), showing `"Start Your Budget"` / `"Set Number of Travellers"` when empty and `"Set participants to calculate your share."` / `Pending` when expenses exist without configured participants.
+  - Trip Budget mode fetches genuine trip members via `api.getGroupDetails(activeTrip.id)` without fabricated `traveller_1..4` placeholders or cross-mode merging.
+- **Verification:** `54/54` backend tests passed (including `test_full_authenticated_session_and_avatar_recovery_integration`), `test_account_isolation_and_participants.mjs` passed, `verify_authentic_passport_e2e.mjs` passed, `next build` (0 errors), `mobile` `tsc --noEmit` & `expo config --type public` (0 errors).
+
+---
+
 ### [2026-11-10] Final SQLite Privacy Isolation & Native Release Validation
 - **Objective:** Eliminate legacy NULL user_id data leakage, enforce user-scoped trip detail caching, achieve in-memory fallback parity, establish migration fail-safe verification, add mutation deduplication guard, and execute 20/20 test cases against real production `offlineDb` methods.
 - **Changes Made:**
@@ -535,6 +548,19 @@
 
 ---
 
+## November 12, 2026 (Follow-Up) — Account-Scoped Scratch Storage, Explicit Participants & Real Avatar Integration Verification
+
+- **Account-Scoped Scratch Budget & Checklist (`frontend/lib/accountStorage.ts`, `TravelDesk.tsx`, `AuthContext.tsx`):**
+  - Replaced global `vanvas_local_budget_split` and `vanvas_general_checklist` with account-scoped namespaces `vanvas:user:{userId}:budget:v3`, `vanvas:user:{userId}:checklist:v3`, `vanvas:guest:budget:v3`, and `vanvas:guest:checklist:v3`.
+  - Legacy custom rows are isolated into `vanvas:legacy_unassigned:*:v3` with an explicit user-confirmed import banner (never auto-assigned to the next signed-in user).
+  - Permanent account deletion (`deleteAccount`) purges only the deleted user's local namespaces via `purgeAccountLocalStorage(deletedUserId)` while leaving other accounts and public destination history intact.
+- **Explicit Participant Count (`travellersCount: number | null`):**
+  - Scratch Budget now initializes with `travellersCount: null` (`Travellers not configured`), showing `"Start Your Budget"` / `"Set Number of Travellers"` when empty and `"Set participants to calculate your share."` / `Pending` when expenses exist without configured participants.
+  - Trip Budget mode fetches genuine trip members via `api.getGroupDetails(activeTrip.id)` without fabricated `traveller_1..4` placeholders or cross-mode merging.
+- **Verification:** `54/54` backend tests passed (including `test_full_authenticated_session_and_avatar_recovery_integration`), `test_account_isolation_and_participants.mjs` passed, `verify_authentic_passport_e2e.mjs` passed, `next build` (0 errors), `mobile` `tsc --noEmit` & `expo config --type public` (0 errors).
+
+---
+
 ### [2026-11-11] Existing-Install SQLite Migration & Offline Sync Integrity
 - **Objective:** Complete idempotent composite-key database migration for existing installations, enforce validated user ownership across all private database methods, harden offline synchronization idempotency against duplicate expenses and unsynced deletions, and execute 31 production flow tests across real production code.
 - **Changes Made:**
@@ -563,3 +589,16 @@
 - **Profile Photo Persistence Durability:**
   - Updated `StorageService._persist_to_database()` to raise `StorageServiceException("PROFILE_STORAGE_ERROR", ...)` on DB failure instead of swallowing exceptions, and moved old avatar cleanup in `upload_avatar()` to run only after `db.commit()` succeeds.
 - **Verification:** `test_authentic_user_data_and_avatar_durability.py` (4/4), `test_profile_photo_upload.py` + `test_profile_and_settings.py` (24/24), `verify_authentic_passport_e2e.mjs` (Web/Mobile E2E), `tsc --noEmit`, `next build`, and `expo config --type public` all passed.
+
+---
+
+## November 12, 2026 (Follow-Up) — Account-Scoped Scratch Storage, Explicit Participants & Real Avatar Integration Verification
+
+- **Account-Scoped Scratch Budget & Checklist (`frontend/lib/accountStorage.ts`, `TravelDesk.tsx`, `AuthContext.tsx`):**
+  - Replaced global `vanvas_local_budget_split` and `vanvas_general_checklist` with account-scoped namespaces `vanvas:user:{userId}:budget:v3`, `vanvas:user:{userId}:checklist:v3`, `vanvas:guest:budget:v3`, and `vanvas:guest:checklist:v3`.
+  - Legacy custom rows are isolated into `vanvas:legacy_unassigned:*:v3` with an explicit user-confirmed import banner (never auto-assigned to the next signed-in user).
+  - Permanent account deletion (`deleteAccount`) purges only the deleted user's local namespaces via `purgeAccountLocalStorage(deletedUserId)` while leaving other accounts and public destination history intact.
+- **Explicit Participant Count (`travellersCount: number | null`):**
+  - Scratch Budget now initializes with `travellersCount: null` (`Travellers not configured`), showing `"Start Your Budget"` / `"Set Number of Travellers"` when empty and `"Set participants to calculate your share."` / `Pending` when expenses exist without configured participants.
+  - Trip Budget mode fetches genuine trip members via `api.getGroupDetails(activeTrip.id)` without fabricated `traveller_1..4` placeholders or cross-mode merging.
+- **Verification:** `54/54` backend tests passed (including `test_full_authenticated_session_and_avatar_recovery_integration`), `test_account_isolation_and_participants.mjs` passed, `verify_authentic_passport_e2e.mjs` passed, `next build` (0 errors), `mobile` `tsc --noEmit` & `expo config --type public` (0 errors).

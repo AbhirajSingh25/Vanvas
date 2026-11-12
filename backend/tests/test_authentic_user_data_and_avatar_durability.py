@@ -241,3 +241,113 @@ def test_friend_request_privacy_syncs_via_profile_and_preferences():
             db.commit()
     finally:
         db.close()
+
+
+def test_full_authenticated_session_and_avatar_recovery_integration(tmp_path, monkeypatch):
+    """
+    Real backend integration test (no mocked auth APIs):
+    Registration -> verification -> login -> /auth/me -> preference persistence ->
+    avatar upload -> DB blob verification -> local file deletion recovery ->
+    fresh login session restoration -> replacement commit ordering.
+    """
+    from datetime import datetime, timezone
+
+    monkeypatch.setattr(settings, "STORAGE_UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr(settings, "STORAGE_PROVIDER", "local")
+
+    email = "full_integration_avatar@vanvas.com"
+    password = "IntegrationPass!2026"
+
+    db = SessionLocal()
+    try:
+        existing = db.query(User).filter(User.email == email).first()
+        if existing:
+            db.query(UserAvatarBlob).filter(UserAvatarBlob.user_id == existing.id).delete()
+            db.delete(existing)
+            db.commit()
+    finally:
+        db.close()
+
+    reg = client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": password, "full_name": "Integration Traveler"},
+    )
+    assert reg.status_code == 200
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        assert user is not None
+        user.email_verified_at = datetime.now(timezone.utc)
+        db.commit()
+        user_id = user.id
+    finally:
+        db.close()
+
+    login1 = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    assert login1.status_code == 200
+    token1 = login1.json()["access_token"]
+    h1 = {"Authorization": f"Bearer {token1}"}
+
+    # Update preferences
+    pref_res = client.put(
+        "/api/v1/auth/preferences",
+        headers=h1,
+        json={"preferred_travel_style": "Slow", "allow_friend_requests_via_id": False},
+    )
+    assert pref_res.status_code == 200
+
+    # Upload avatar
+    up_res = client.post(
+        "/api/v1/auth/profile/avatar",
+        headers=h1,
+        files={"file": ("portrait.png", _make_png_bytes((40, 110, 80)), "image/png")},
+    )
+    assert up_res.status_code == 200
+    avatar_url = up_res.json()["avatar_url"]
+    assert up_res.json()["avatar_type"] == "uploaded"
+
+    # Verify DB UserAvatarBlob exists and decodes cleanly
+    db = SessionLocal()
+    try:
+        u_db = db.query(User).filter(User.id == user_id).first()
+        assert u_db is not None
+        assert u_db.avatar_storage_key and u_db.avatar_storage_key.startswith(f"users/{user_id}/avatar/")
+        blob = db.query(UserAvatarBlob).filter(UserAvatarBlob.storage_key == u_db.avatar_storage_key).first()
+        assert blob is not None
+        assert blob.byte_size > 0
+        decoded = Image.open(io.BytesIO(blob.data))
+        assert decoded.size[0] > 0 and decoded.size[1] > 0
+    finally:
+        db.close()
+
+    # Wipe local disk files and confirm recovery from DB blob
+    for root, _, files in os.walk(tmp_path):
+        for fname in files:
+            os.remove(os.path.join(root, fname))
+
+    fetch_res = client.get(avatar_url)
+    assert fetch_res.status_code == 200
+    recovered_img = Image.open(io.BytesIO(fetch_res.content))
+    assert recovered_img.format == "WEBP"
+
+    # Fresh login restores identical avatar & preferences
+    login2 = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    assert login2.status_code == 200
+    token2 = login2.json()["access_token"]
+    me2 = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token2}"}).json()
+    assert me2["avatar_url"] == avatar_url
+    assert me2["avatar_type"] == "uploaded"
+    assert me2["preferences"]["preferred_travel_style"] == "Slow"
+    assert me2["preferences"]["allow_friend_requests_via_id"] is False
+
+    # Cleanup
+    db = SessionLocal()
+    try:
+        db.query(UserAvatarBlob).filter(UserAvatarBlob.user_id == user_id).delete()
+        u_del = db.query(User).filter(User.id == user_id).first()
+        if u_del:
+            db.delete(u_del)
+        db.commit()
+    finally:
+        db.close()
