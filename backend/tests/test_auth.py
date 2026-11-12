@@ -89,7 +89,7 @@ def test_user_registration_and_profile_preferences():
     login_data = login_resp.json()
     token = login_data["access_token"]
     assert login_data["user"]["full_name"] == "Maya Negi"
-    assert login_data["user"]["preferences"]["wake_up_preference"] == "Normal"
+    assert login_data["user"]["preferences"]["wake_up_preference"] is None
 
     headers = {"Authorization": f"Bearer {token}"}
 

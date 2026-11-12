@@ -69,6 +69,8 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name.strip(),
         role="traveller",
+        avatar_type="none",
+        avatar_preset=None,
         email_verified_at=None  # Explicitly unverified upon creation
     )
     db.add(user)
@@ -555,12 +557,7 @@ async def upload_avatar(
             detail=e.message or str(e)
         )
 
-    # Clean up old avatar if exists
-    if current_user.avatar_storage_key and current_user.avatar_storage_key != storage_key:
-        try:
-            StorageService.delete_profile_photo(current_user.avatar_storage_key, db=db)
-        except Exception:
-            pass
+    old_storage_key = current_user.avatar_storage_key
 
     current_user.avatar_storage_key = storage_key
     current_user.avatar_url = avatar_url
@@ -568,6 +565,13 @@ async def upload_avatar(
     current_user.avatar_preset = None
     db.commit()
     db.refresh(current_user)
+
+    # Clean up old avatar only after the new upload and DB commit succeed
+    if old_storage_key and old_storage_key != storage_key:
+        try:
+            StorageService.delete_profile_photo(old_storage_key, db=db)
+        except Exception:
+            pass
 
     return AvatarUploadResponse(
         avatar_url=current_user.avatar_url,

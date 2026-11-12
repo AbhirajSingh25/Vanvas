@@ -261,7 +261,7 @@ export const Header: React.FC = () => {
                       </div>
                       <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#173B32]/10 text-[10px] font-bold text-[#173B32] uppercase tracking-wider">
                         <Shield className="w-2.5 h-2.5" />
-                        <span>{user.role === "admin" ? "Admin" : "Verified Traveler"}</span>
+                        <span>{user.role === "admin" ? "Admin" : (user.email_verified_at || user.is_verified) ? "Verified Traveler" : "Registered"}</span>
                       </div>
                     </div>
 
@@ -532,7 +532,7 @@ export const Header: React.FC = () => {
                         </div>
                         <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-[#173B32]/10 text-[9px] font-bold text-[#173B32] uppercase">
                           <Shield className="w-2.5 h-2.5" />
-                          <span>{user.role === "admin" ? "Admin" : "Verified Traveler"}</span>
+                          <span>{user.role === "admin" ? "Admin" : (user.email_verified_at || user.is_verified) ? "Verified Traveler" : "Registered"}</span>
                         </div>
                       </div>
                     </div>

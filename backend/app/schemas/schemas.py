@@ -17,14 +17,14 @@ class UserLogin(BaseModel):
     password: str
 
 class UserPreferenceSchema(BaseModel):
-    preferred_travel_style: Optional[str] = "Balanced"
-    wake_up_preference: Optional[str] = "Normal"
-    activity_intensity: Optional[str] = "Balanced"
-    dietary_preference: Optional[str] = "All"
-    interests: Optional[str] = "Nature,Cafés,Adventure,Food"
-    accommodation_preference: Optional[str] = "Riverside & Forest Stays"
-    transport_preference: Optional[str] = "Volvo Bus"
-    companion_style: Optional[str] = "Solo"
+    preferred_travel_style: Optional[str] = None
+    wake_up_preference: Optional[str] = None
+    activity_intensity: Optional[str] = None
+    dietary_preference: Optional[str] = None
+    interests: Optional[str] = None
+    accommodation_preference: Optional[str] = None
+    transport_preference: Optional[str] = None
+    companion_style: Optional[str] = None
     language: Optional[str] = "en"
     region: Optional[str] = "India"
     currency: Optional[str] = "INR"
@@ -77,6 +77,7 @@ class UserProfileUpdateRequest(BaseModel):
     ai_use_trip_context: Optional[bool] = None
     memory_learning_enabled: Optional[bool] = None
     memory_learning_paused: Optional[bool] = None
+    allow_friend_requests_via_id: Optional[bool] = None
 
 class AvatarUploadResponse(BaseModel):
     avatar_url: Optional[str] = None
@@ -2157,6 +2158,7 @@ class TravellerMemoryUpdateRequest(BaseModel):
 class TravellerMemorySettingsRequest(BaseModel):
     memory_learning_enabled: Optional[bool] = None
     memory_learning_paused: Optional[bool] = None
+    allow_friend_requests_via_id: Optional[bool] = None
 
 
 class MemoryObservationRequest(BaseModel):

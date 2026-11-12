@@ -10,6 +10,7 @@ import {
   ImHereResponse,
   CopilotChatResponse,
   User,
+  UserPreferences,
   RoadTripPlanRequest,
   RoadTripPlanResponse,
   RoadTripCorridor,
@@ -278,6 +279,45 @@ export const nativeApi = {
     // Refresh user profile after upload
     await this.getMe();
     return json;
+  },
+
+  async updatePreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
+    const updatedPrefs = await fetchWithRetry<UserPreferences>(
+      "/auth/preferences",
+      {
+        method: "PUT",
+        body: JSON.stringify(preferences),
+      },
+      false
+    );
+    const cachedUser = await secureStorage.getUserData<User>();
+    if (cachedUser) {
+      await secureStorage.setUserData({
+        ...cachedUser,
+        preferences: { ...(cachedUser.preferences || {}), ...updatedPrefs },
+      });
+    }
+    return updatedPrefs;
+  },
+
+  async deleteAvatar(): Promise<{ message: string }> {
+    const res = await fetchWithRetry<{ message: string }>(
+      "/auth/profile/avatar",
+      { method: "DELETE" },
+      false
+    );
+    await this.getMe();
+    return res;
+  },
+
+  async regenerateMyVanvasId(): Promise<{ vanvas_id: string }> {
+    const res = await fetchWithRetry<{ vanvas_id: string }>(
+      "/friends/me/vanvas-id/regenerate",
+      { method: "POST" },
+      false
+    );
+    await this.getMe();
+    return res;
   },
 
   async logout(): Promise<void> {

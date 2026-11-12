@@ -26,12 +26,12 @@ interface ChecklistItem {
   isChecked: boolean;
 }
 
-const DEFAULT_CHECKLIST: ChecklistItem[] = [
+const SUGGESTED_CHECKLIST_ESSENTIALS: ChecklistItem[] = [
   // Essentials
-  { id: "c1", category: "Essentials", text: "ID / Aadhaar / Passport & copies", isChecked: true },
-  { id: "c2", category: "Essentials", text: "Cash & UPI payment device", isChecked: true },
+  { id: "c1", category: "Essentials", text: "ID / Aadhaar / Passport & copies", isChecked: false },
+  { id: "c2", category: "Essentials", text: "Cash & UPI payment device", isChecked: false },
   { id: "c3", category: "Essentials", text: "First Aid kit & personal medications", isChecked: false },
-  { id: "c4", category: "Essentials", text: "Water bottle / Hydration bladder", isChecked: true },
+  { id: "c4", category: "Essentials", text: "Water bottle / Hydration bladder", isChecked: false },
   { id: "c5", category: "Essentials", text: "Powerbank & charging cables", isChecked: false },
 
   // Documents
@@ -49,8 +49,10 @@ const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { id: "c13", category: "Gear", text: "UV sunglasses & high-SPF sunscreen", isChecked: false },
   { id: "c14", category: "Gear", text: "Headlamp / High-lumen torch", isChecked: false },
   { id: "c15", category: "Gear", text: "Daypack (20–30L) with rain cover", isChecked: false },
-  { id: "c16", category: "Gear", text: "Leave No Trace waste bag", isChecked: true },
+  { id: "c16", category: "Gear", text: "Leave No Trace waste bag", isChecked: false },
 ];
+
+const LEGACY_CHECKLIST_PRECHECKED_IDS = new Set(["c1", "c2", "c4", "c16"]);
 
 interface ExpenseRow {
   id: string;
@@ -58,12 +60,22 @@ interface ExpenseRow {
   amount: number;
 }
 
-const DEFAULT_EXPENSES: ExpenseRow[] = [
-  { id: "e1", name: "Fuel & Transport", amount: 4500 },
-  { id: "e2", name: "Stays & Camps", amount: 5000 },
-  { id: "e3", name: "Food & Dhabas", amount: 2000 },
-  { id: "e4", name: "Tolls & Permits", amount: 500 },
-];
+const BUDGET_STORAGE_KEY = "vanvas_local_budget_split";
+const BUDGET_SCHEMA_VERSION = 2;
+const CHECKLIST_STORAGE_KEY = "vanvas_general_checklist";
+const CHECKLIST_SCHEMA_VERSION = 2;
+
+const LEGACY_SEEDED_EXPENSES: Record<string, { name: string; amount: number }> = {
+  e1: { name: "Fuel & Transport", amount: 4500 },
+  e2: { name: "Stays & Camps", amount: 5000 },
+  e3: { name: "Food & Dhabas", amount: 2000 },
+  e4: { name: "Tolls & Permits", amount: 500 },
+};
+
+function isExactLegacySeededExpense(row: ExpenseRow): boolean {
+  const match = LEGACY_SEEDED_EXPENSES[row.id];
+  return Boolean(match && match.name === row.name && Number(row.amount) === match.amount);
+}
 
 export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = false }) => {
   // 1. RECENT DESTINATIONS STATE
@@ -72,43 +84,92 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [isAddBudgetItemOpen, setIsAddBudgetItemOpen] = useState(false);
 
-  // 2. CHECKLIST STATE & STORAGE
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(DEFAULT_CHECKLIST);
+  // 2. CHECKLIST STATE & STORAGE (starts empty — never pre-checked)
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newChecklistText, setNewChecklistText] = useState("");
   const [newChecklistCategory, setNewChecklistCategory] = useState<ChecklistItem["category"]>("Essentials");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // 3. BUDGET SPLIT STATE & STORAGE
-  const [travellersCount, setTravellersCount] = useState<number>(4);
-  const [expenses, setExpenses] = useState<ExpenseRow[]>(DEFAULT_EXPENSES);
+  // 3. BUDGET SPLIT STATE & STORAGE (starts empty — never pre-seeded with fake amounts)
+  const [budgetMode, setBudgetMode] = useState<"scratch" | "trip">("scratch");
+  const [travellersCount, setTravellersCount] = useState<number>(1);
+  const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
+  const [legacyMigrationNotice, setLegacyMigrationNotice] = useState<string | null>(null);
   const [copiedToast, setCopiedToast] = useState(false);
 
-  // Load state on client mount
+  // Load state on client mount with safe legacy migration
   useEffect(() => {
-    // Recents
     setRecentDestinations(getRecentDestinations());
 
-    // Checklist from localStorage
+    // Checklist from localStorage (supports legacy array format & v2 versioned format)
     try {
-      const savedChecklist = localStorage.getItem("vanvas_general_checklist");
+      const savedChecklist = localStorage.getItem(CHECKLIST_STORAGE_KEY);
       if (savedChecklist) {
         const parsed = JSON.parse(savedChecklist);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setChecklist(parsed);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && parsed.version >= CHECKLIST_SCHEMA_VERSION) {
+          if (Array.isArray(parsed.items)) {
+            setChecklist(parsed.items);
+          }
+        } else if (Array.isArray(parsed) && parsed.length > 0) {
+          // Legacy unversioned array: if it matches the old auto-seeded 16-item default untouched, clear it safely
+          const isUntouchedLegacySeed =
+            parsed.length === SUGGESTED_CHECKLIST_ESSENTIALS.length &&
+            parsed.every((item: ChecklistItem, idx: number) => {
+              const ref = SUGGESTED_CHECKLIST_ESSENTIALS[idx];
+              return (
+                item.id === ref.id &&
+                item.text === ref.text &&
+                item.isChecked === LEGACY_CHECKLIST_PRECHECKED_IDS.has(ref.id)
+              );
+            });
+
+          const migratedItems = isUntouchedLegacySeed ? [] : parsed;
+          setChecklist(migratedItems);
+          localStorage.setItem(
+            CHECKLIST_STORAGE_KEY,
+            JSON.stringify({ version: CHECKLIST_SCHEMA_VERSION, items: migratedItems })
+          );
         }
       }
     } catch {}
 
-    // Budget from localStorage
+    // Budget from localStorage (safe v2 migration: strip exact legacy seeded rows, preserve custom rows)
     try {
-      const savedBudget = localStorage.getItem("vanvas_local_budget_split");
+      const savedBudget = localStorage.getItem(BUDGET_STORAGE_KEY);
       if (savedBudget) {
         const parsed = JSON.parse(savedBudget);
-        if (parsed.travellersCount && parsed.travellersCount > 0) {
-          setTravellersCount(parsed.travellersCount);
-        }
-        if (Array.isArray(parsed.expenses) && parsed.expenses.length > 0) {
-          setExpenses(parsed.expenses);
+        if (parsed && typeof parsed.version === "number" && parsed.version >= BUDGET_SCHEMA_VERSION) {
+          const safeCount = parsed.travellersCount && parsed.travellersCount > 0 ? parsed.travellersCount : 1;
+          const safeExpenses = Array.isArray(parsed.expenses) ? parsed.expenses : [];
+          setTravellersCount(safeCount);
+          setExpenses(safeExpenses);
+        } else if (parsed && Array.isArray(parsed.expenses)) {
+          const rawExpenses: ExpenseRow[] = parsed.expenses;
+          const keptExpenses = rawExpenses.filter((row) => !isExactLegacySeededExpense(row));
+          const hadSeededRows = keptExpenses.length !== rawExpenses.length;
+          const isLegacyDefaultCount = parsed.travellersCount === 4 && keptExpenses.length === 0;
+          const migratedCount = isLegacyDefaultCount
+            ? 1
+            : parsed.travellersCount && parsed.travellersCount > 0
+              ? parsed.travellersCount
+              : 1;
+
+          setTravellersCount(migratedCount);
+          setExpenses(keptExpenses);
+          localStorage.setItem(
+            BUDGET_STORAGE_KEY,
+            JSON.stringify({
+              version: BUDGET_SCHEMA_VERSION,
+              travellersCount: migratedCount,
+              expenses: keptExpenses,
+            })
+          );
+
+          if (hadSeededRows && keptExpenses.length > 0) {
+            setLegacyMigrationNotice(
+              "Old preset sample rows were removed while preserving your custom budget items."
+            );
+          }
         }
       }
     } catch {}
@@ -118,18 +179,26 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
   const saveChecklist = useCallback((items: ChecklistItem[]) => {
     setChecklist(items);
     try {
-      localStorage.setItem("vanvas_general_checklist", JSON.stringify(items));
+      localStorage.setItem(
+        CHECKLIST_STORAGE_KEY,
+        JSON.stringify({ version: CHECKLIST_SCHEMA_VERSION, items })
+      );
     } catch {}
   }, []);
 
   // Sync Budget to localStorage
   const saveBudget = useCallback((count: number, exp: ExpenseRow[]) => {
-    setTravellersCount(count);
+    const safeCount = Math.max(1, count);
+    setTravellersCount(safeCount);
     setExpenses(exp);
     try {
       localStorage.setItem(
-        "vanvas_local_budget_split",
-        JSON.stringify({ travellersCount: count, expenses: exp })
+        BUDGET_STORAGE_KEY,
+        JSON.stringify({
+          version: BUDGET_SCHEMA_VERSION,
+          travellersCount: safeCount,
+          expenses: exp,
+        })
       );
     } catch {}
   }, []);
@@ -159,19 +228,18 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
     saveChecklist(checklist.filter((item) => item.id !== id));
   };
 
-  const handleResetChecklist = () => {
-    saveChecklist(DEFAULT_CHECKLIST);
-    setShowResetConfirm(false);
+  const handleAddSuggestedEssentials = () => {
+    const existingTexts = new Set(checklist.map((item) => item.text.toLowerCase()));
+    const additions = SUGGESTED_CHECKLIST_ESSENTIALS.filter(
+      (item) => !existingTexts.has(item.text.toLowerCase())
+    ).map((item) => ({ ...item, id: `${item.id}_${Date.now()}`, isChecked: false }));
+    saveChecklist([...checklist, ...additions]);
   };
 
-  const budgetMembers = useMemo(
-    () =>
-      Array.from({ length: travellersCount }, (_, idx) => ({
-        user_id: `traveller_${idx + 1}`,
-        full_name: `Traveller ${idx + 1}`,
-      })),
-    [travellersCount]
-  );
+  const handleClearChecklist = () => {
+    saveChecklist([]);
+    setShowResetConfirm(false);
+  };
 
   // Budget Calculations
   const totalAmount = useMemo(() => {
@@ -179,9 +247,10 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
   }, [expenses]);
 
   const perPersonAmount = useMemo(() => {
+    if (expenses.length === 0 || totalAmount <= 0) return 0;
     const count = Math.max(1, travellersCount);
     return Math.ceil(totalAmount / count);
-  }, [totalAmount, travellersCount]);
+  }, [expenses.length, totalAmount, travellersCount]);
 
   const handleExpenseChange = (id: string, amount: number) => {
     const updated = expenses.map((e) =>
@@ -204,9 +273,13 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
   };
 
   const handleDeleteExpenseRow = (id: string) => {
-    if (expenses.length <= 1) return;
     const updated = expenses.filter((e) => e.id !== id);
     saveBudget(travellersCount, updated);
+  };
+
+  const handleResetBudget = () => {
+    saveBudget(1, []);
+    setLegacyMigrationNotice(null);
   };
 
   const handleCopyBudgetSummary = () => {
@@ -262,7 +335,7 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
               <CheckSquare className="w-3.5 h-3.5" />
             </div>
             <span className="px-1.5 py-0.5 rounded-full bg-[#173B32]/10 text-[9px] font-mono font-bold text-[#173B32]">
-              {packedCount}/{checklist.length}
+              {checklist.length === 0 ? "0 items" : `${packedCount}/${checklist.length}`}
             </span>
           </div>
 
@@ -271,7 +344,7 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
               Packing Checklist
             </h4>
             <p className="text-[10px] text-[#7B4D36] truncate mt-0.5">
-              Essentials, gear &amp; layers
+              {checklist.length === 0 ? "Tap to build your pack list" : "Essentials, gear & layers"}
             </p>
           </div>
         </button>
@@ -290,7 +363,7 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
               <Calculator className="w-3.5 h-3.5" />
             </div>
             <span className="px-1.5 py-0.5 rounded-full bg-[#B65E3C]/10 text-[9px] font-mono font-bold text-[#B65E3C]">
-              ₹{perPersonAmount.toLocaleString()} ea
+              {expenses.length === 0 ? "Empty" : `₹${perPersonAmount.toLocaleString()} ea`}
             </span>
           </div>
 
@@ -299,7 +372,9 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
               Split a Budget
             </h4>
             <p className="text-[10px] text-[#7B4D36] truncate mt-0.5">
-              {travellersCount} travellers · equal split
+              {expenses.length === 0
+                ? "Start an empty budget split"
+                : `${travellersCount} ${travellersCount === 1 ? "traveller" : "travellers"} · equal split`}
             </p>
           </div>
         </button>
@@ -443,98 +518,125 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
             </button>
           </form>
 
-          {/* Categorized Checklist */}
-          {(["Essentials", "Documents", "Clothing", "Gear"] as const).map((cat) => {
-            const items = checklist.filter((item) => item.category === cat);
-            if (items.length === 0) return null;
-
-            return (
-              <div key={cat} className="space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-[#7B4D36] uppercase tracking-wider border-b border-[#D8CBB2]/60 pb-1">
-                  <span>{cat}</span>
-                  <span className="text-[10px] text-[#536B52]">
-                    {items.filter((i) => i.isChecked).length}/{items.length}
-                  </span>
-                </div>
-
-                <div className="space-y-1">
-                  {items.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => handleToggleItem(item.id)}
-                      className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 text-left touch-manipulation ${
-                        item.isChecked
-                          ? "bg-[#173B32]/6 border-[#173B32]/30 text-[#173B32]"
-                          : "bg-[#FAF7F0] border-[#E5D5BA] hover:bg-white text-[#20211D]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={`w-4 h-4 rounded-md flex items-center justify-center border transition-colors shrink-0 ${
-                            item.isChecked
-                              ? "bg-[#173B32] border-[#173B32] text-white"
-                              : "border-[#D8CBB2] bg-white"
-                          }`}
-                        >
-                          {item.isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                        </div>
-                        <span
-                          className={`text-xs ${
-                            item.isChecked ? "line-through opacity-65" : "font-medium"
-                          }`}
-                        >
-                          {item.text}
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteItem(item.id);
-                        }}
-                        className="text-[#7B4D36]/60 hover:text-red-700 p-1 transition-colors"
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Footer Reset & Local notice */}
-          <div className="pt-2 border-t border-[#D8CBB2]/60 flex items-center justify-between text-[10px] text-[#7B4D36] font-mono">
-            <span>Saved on this device</span>
-            {showResetConfirm ? (
-              <div className="flex items-center gap-2">
-                <span>Reset to defaults?</span>
-                <button
-                  type="button"
-                  onClick={handleResetChecklist}
-                  className="font-bold text-red-700 underline cursor-pointer"
-                >
-                  Yes, Reset
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowResetConfirm(false)}
-                  className="text-[#173B32] cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
+          {/* Empty State or Categorized Checklist */}
+          {checklist.length === 0 ? (
+            <div className="p-5 rounded-2xl bg-[#FAF7F0] border border-dashed border-[#D8CBB2] text-center space-y-3">
+              <p className="text-xs font-medium text-[#173B32]">
+                Your packing checklist is empty. Add your own items above or load suggested essentials.
+              </p>
               <button
                 type="button"
-                onClick={() => setShowResetConfirm(true)}
-                className="hover:text-red-700 underline cursor-pointer flex items-center gap-1"
+                onClick={handleAddSuggestedEssentials}
+                className="px-3.5 py-2 rounded-xl bg-[#173B32] text-[#FAF7F0] text-xs font-bold hover:bg-[#1E4A3F] transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
-                <RotateCcw className="w-2.5 h-2.5" />
-                <span>Reset Checklist</span>
+                <Sparkles className="w-3.5 h-3.5 text-[#B49252]" />
+                <span>Add Suggested Packing Essentials</span>
               </button>
+            </div>
+          ) : (
+            (["Essentials", "Documents", "Clothing", "Gear"] as const).map((cat) => {
+              const items = checklist.filter((item) => item.category === cat);
+              if (items.length === 0) return null;
+
+              return (
+                <div key={cat} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-mono font-bold text-[#7B4D36] uppercase tracking-wider border-b border-[#D8CBB2]/60 pb-1">
+                    <span>{cat}</span>
+                    <span className="text-[10px] text-[#536B52]">
+                      {items.filter((i) => i.isChecked).length}/{items.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    {items.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleToggleItem(item.id)}
+                        className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 text-left touch-manipulation ${
+                          item.isChecked
+                            ? "bg-[#173B32]/6 border-[#173B32]/30 text-[#173B32]"
+                            : "bg-[#FAF7F0] border-[#E5D5BA] hover:bg-white text-[#20211D]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className={`w-4 h-4 rounded-md flex items-center justify-center border transition-colors shrink-0 ${
+                              item.isChecked
+                                ? "bg-[#173B32] border-[#173B32] text-white"
+                                : "border-[#D8CBB2] bg-white"
+                            }`}
+                          >
+                            {item.isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                          <span
+                            className={`text-xs ${
+                              item.isChecked ? "line-through opacity-65" : "font-medium"
+                            }`}
+                          >
+                            {item.text}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteItem(item.id);
+                          }}
+                          className="text-[#7B4D36]/60 hover:text-red-700 p-1 transition-colors"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          {/* Footer Reset & Local notice */}
+          <div className="pt-2 border-t border-[#D8CBB2]/60 flex items-center justify-between gap-2 text-[10px] text-[#7B4D36] font-mono">
+            <span>Saved on this device</span>
+            {checklist.length > 0 && (
+              showResetConfirm ? (
+                <div className="flex items-center gap-2">
+                  <span>Clear all items?</span>
+                  <button
+                    type="button"
+                    onClick={handleClearChecklist}
+                    className="font-bold text-red-700 underline cursor-pointer"
+                  >
+                    Yes, Clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowResetConfirm(false)}
+                    className="text-[#173B32] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleAddSuggestedEssentials}
+                    className="hover:text-[#173B32] underline cursor-pointer"
+                  >
+                    + Suggested
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowResetConfirm(true)}
+                    className="hover:text-red-700 underline cursor-pointer flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-2.5 h-2.5" />
+                    <span>Clear List</span>
+                  </button>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -551,137 +653,241 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
         maxWidth="max-w-lg"
       >
         <div className="space-y-4">
-          {/* Big Result Card */}
-          <div className="p-4 rounded-2xl bg-[#173B32] text-[#FAF7F0] space-y-2 border border-[#B49252]/40 shadow-sm">
-            <div className="flex items-center justify-between text-[10px] font-mono text-[#B49252] uppercase tracking-wider">
-              <span>EQUAL PER PERSON SHARE</span>
-              <span>{travellersCount} TRAVELLERS</span>
+          {/* Explicit Mode Switcher when an active trip is loaded */}
+          {activeTrip && (
+            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#EFE5D2]/70 border border-[#D8CBB2]">
+              <button
+                type="button"
+                onClick={() => setBudgetMode("scratch")}
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  budgetMode === "scratch"
+                    ? "bg-[#173B32] text-[#FAF7F0] shadow-2xs"
+                    : "text-[#7B4D36] hover:text-[#173B32]"
+                }`}
+              >
+                Scratch Budget
+              </button>
+              <button
+                type="button"
+                onClick={() => setBudgetMode("trip")}
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  budgetMode === "trip"
+                    ? "bg-[#173B32] text-[#FAF7F0] shadow-2xs"
+                    : "text-[#7B4D36] hover:text-[#173B32]"
+                }`}
+              >
+                Trip Budget
+              </button>
             </div>
+          )}
 
-            <div className="flex items-baseline justify-between">
-              <div>
-                <span className="font-serif font-black text-3xl sm:text-4xl text-[#FAF7F0]">
-                  ₹{perPersonAmount.toLocaleString()}
-                </span>
-                <span className="text-xs text-[#EFE5D2]/80 ml-1 font-mono">/ person</span>
+          {budgetMode === "trip" && activeTrip ? (
+            <div className="p-4 rounded-2xl bg-[#173B32] text-[#FAF7F0] space-y-3 border border-[#B49252]/40">
+              <div className="flex items-center justify-between text-[10px] font-mono text-[#B49252] uppercase tracking-wider">
+                <span>ACTIVE TRIP BUDGET</span>
+                <span>{activeTrip.status || "planned"}</span>
               </div>
-
-              <div className="text-right">
-                <span className="text-[10px] text-[#EFE5D2]/70 font-mono block">Total Expenses</span>
-                <span className="text-base font-mono font-bold text-[#B49252]">
-                  ₹{totalAmount.toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-[#EFE5D2]/20 flex items-center justify-between">
-              <span className="text-[10px] font-mono text-[#D8DED5]/80">
-                Calculated with ceiling rounding
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyBudgetSummary}
-                className="px-3 py-1 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              <div className="font-serif font-bold text-lg text-[#FAF7F0]">{activeTrip.title}</div>
+              <p className="text-xs text-[#EFE5D2]/80">
+                Open your authenticated trip ledger to view and split real backend trip expenses with your crew.
+              </p>
+              <Link
+                href={`/trips/${activeTrip.id}?tab=budget`}
+                onClick={() => setIsBudgetOpen(false)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-bold transition-colors"
               >
-                {copiedToast ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Summary</span>
-                  </>
-                )}
-              </button>
+                <span>Open Trip Budget Ledger</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-          </div>
-
-          {/* Travellers count stepper */}
-          <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] flex items-center justify-between">
-            <div>
-              <label className="font-serif font-bold text-xs text-[#173B32] block">
-                Number of Travellers
-              </label>
-              <span className="text-[10px] text-[#7B4D36] font-mono">
-                Splitting across group members
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => saveBudget(Math.max(1, travellersCount - 1), expenses)}
-                className="w-8 h-8 rounded-xl bg-[#EFE5D2] hover:bg-[#D8CBB2] text-[#173B32] font-bold flex items-center justify-center transition-colors cursor-pointer"
-              >
-                -
-              </button>
-              <span className="w-8 text-center font-mono font-bold text-base text-[#173B32]">
-                {travellersCount}
-              </span>
-              <button
-                type="button"
-                onClick={() => saveBudget(travellersCount + 1, expenses)}
-                className="w-8 h-8 rounded-xl bg-[#173B32] text-white font-bold flex items-center justify-center transition-colors cursor-pointer"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {/* Expense Category Breakdown */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-mono font-bold text-[#7B4D36] uppercase tracking-wider border-b border-[#D8CBB2]/60 pb-1">
-              <span>Expense Categories</span>
-              <button
-                type="button"
-                onClick={handleAddExpenseRow}
-                className="text-[10px] text-[#B65E3C] hover:underline flex items-center gap-0.5 cursor-pointer"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Add Row</span>
-              </button>
-            </div>
-
-            <div className="space-y-1.5 max-h-[30vh] overflow-y-auto pr-0.5">
-              {expenses.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] flex items-center justify-between gap-2"
-                >
-                  <span className="text-xs font-medium text-[#173B32] flex-1 truncate">
-                    {exp.name}
-                  </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-xs font-mono font-bold text-[#7B4D36]">₹</span>
-                    <input
-                      type="number"
-                      min={0}
-                      step={100}
-                      value={exp.amount}
-                      onChange={(e) => handleExpenseChange(exp.id, parseInt(e.target.value, 10))}
-                      className="w-24 py-1 px-2 rounded-lg border border-[#D8CBB2] bg-white text-xs font-mono font-bold text-right text-[#173B32] focus:outline-none focus:ring-1 focus:ring-[#173B32]"
-                    />
-                    {expenses.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteExpenseRow(exp.id)}
-                        className="text-[#7B4D36]/60 hover:text-red-700 p-1 transition-colors"
-                        aria-label="Remove category"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+          ) : (
+            <>
+              {legacyMigrationNotice && (
+                <div className="p-3 rounded-xl bg-[#B49252]/15 border border-[#B49252]/40 flex items-center justify-between gap-2 text-xs text-[#173B32]">
+                  <span>{legacyMigrationNotice}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleResetBudget}
+                      className="font-bold text-[#B65E3C] underline cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLegacyMigrationNotice(null)}
+                      className="text-[#7B4D36] cursor-pointer"
+                      aria-label="Dismiss notice"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              )}
 
-          <div className="text-[10px] text-[#7B4D36] font-mono text-center">
-            Independent local calculator · Does not alter saved trip budgets
-          </div>
+              {/* Big Result Card */}
+              <div className="p-4 rounded-2xl bg-[#173B32] text-[#FAF7F0] space-y-2 border border-[#B49252]/40 shadow-sm">
+                <div className="flex items-center justify-between text-[10px] font-mono text-[#B49252] uppercase tracking-wider">
+                  <span>EQUAL PER PERSON SHARE</span>
+                  <span>
+                    {travellersCount} {travellersCount === 1 ? "TRAVELLER" : "TRAVELLERS"}
+                  </span>
+                </div>
+
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <span className="font-serif font-black text-3xl sm:text-4xl text-[#FAF7F0]">
+                      {expenses.length === 0 ? "—" : `₹${perPersonAmount.toLocaleString()}`}
+                    </span>
+                    {expenses.length > 0 && (
+                      <span className="text-xs text-[#EFE5D2]/80 ml-1 font-mono">/ person</span>
+                    )}
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] text-[#EFE5D2]/70 font-mono block">Total Expenses</span>
+                    <span className="text-base font-mono font-bold text-[#B49252]">
+                      ₹{totalAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-[#EFE5D2]/20 flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-[#D8DED5]/80">
+                    {expenses.length === 0 ? "Empty scratchpad" : "Calculated with ceiling rounding"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyBudgetSummary}
+                    disabled={expenses.length === 0}
+                    className="px-3 py-1 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] disabled:opacity-40 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    {copiedToast ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Summary</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Travellers count stepper */}
+              <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#D8CBB2] flex items-center justify-between">
+                <div>
+                  <label className="font-serif font-bold text-xs text-[#173B32] block">
+                    Number of Travellers
+                  </label>
+                  <span className="text-[10px] text-[#7B4D36] font-mono">
+                    Splitting across group members
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => saveBudget(Math.max(1, travellersCount - 1), expenses)}
+                    className="w-8 h-8 rounded-xl bg-[#EFE5D2] hover:bg-[#D8CBB2] text-[#173B32] font-bold flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center font-mono font-bold text-base text-[#173B32]">
+                    {travellersCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => saveBudget(travellersCount + 1, expenses)}
+                    className="w-8 h-8 rounded-xl bg-[#173B32] text-white font-bold flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Expense Category Breakdown */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-[#7B4D36] uppercase tracking-wider border-b border-[#D8CBB2]/60 pb-1">
+                  <span>Expense Categories</span>
+                  <div className="flex items-center gap-3">
+                    {expenses.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleResetBudget}
+                        className="text-[10px] text-[#7B4D36] hover:text-red-700 hover:underline cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleAddExpenseRow}
+                      className="text-[10px] text-[#B65E3C] hover:underline flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Row</span>
+                    </button>
+                  </div>
+                </div>
+
+                {expenses.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-[#FAF7F0] border border-dashed border-[#D8CBB2] text-center space-y-2">
+                    <p className="text-xs text-[#7B4D36]">
+                      No budget items yet. Add an expense row to calculate your split.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleAddExpenseRow}
+                      className="px-3 py-1.5 rounded-lg bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add First Expense</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-[30vh] overflow-y-auto pr-0.5">
+                    {expenses.map((exp) => (
+                      <div
+                        key={exp.id}
+                        className="p-2.5 rounded-xl bg-[#FAF7F0] border border-[#E5D5BA] flex items-center justify-between gap-2"
+                      >
+                        <span className="text-xs font-medium text-[#173B32] flex-1 truncate">
+                          {exp.name}
+                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-xs font-mono font-bold text-[#7B4D36]">₹</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={100}
+                            value={exp.amount}
+                            onChange={(e) => handleExpenseChange(exp.id, parseInt(e.target.value, 10))}
+                            className="w-24 py-1 px-2 rounded-lg border border-[#D8CBB2] bg-white text-xs font-mono font-bold text-right text-[#173B32] focus:outline-none focus:ring-1 focus:ring-[#173B32]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExpenseRow(exp.id)}
+                            className="text-[#7B4D36]/60 hover:text-red-700 p-1 transition-colors"
+                            aria-label="Remove category"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="text-[10px] text-[#7B4D36] font-mono text-center">
+                Independent local scratchpad · Does not alter saved trip budgets
+              </div>
+            </>
+          )}
         </div>
       </VanvasAdaptiveModal>
 
@@ -689,7 +895,7 @@ export const TravelDesk: React.FC<TravelDeskProps> = ({ activeTrip, isCompact = 
         isOpen={isAddBudgetItemOpen}
         onClose={() => setIsAddBudgetItemOpen(false)}
         onSubmit={handleAddBudgetItemSubmit}
-        members={budgetMembers}
+        members={[]}
         isForecastOnly={true}
       />
     </div>

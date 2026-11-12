@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { User } from "@vanvas/shared";
+import { User, UserPreferences } from "@vanvas/shared";
 import { secureStorage } from "../services/storage";
 import { nativeApi } from "../services/api";
 import { offlineDb } from "../services/db";
@@ -17,6 +17,9 @@ interface AuthContextValue {
   changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   uploadAvatar: (fileUri: string) => Promise<string>;
+  deleteAvatar: () => Promise<void>;
+  updatePreferences: (preferences: Partial<UserPreferences>) => Promise<UserPreferences>;
+  regenerateVanvasId: () => Promise<string>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -102,6 +105,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return res.avatar_url;
   }, [refreshProfile]);
 
+  const deleteAvatar = useCallback(async () => {
+    await nativeApi.deleteAvatar();
+    await refreshProfile();
+  }, [refreshProfile]);
+
+  const updatePreferences = useCallback(async (preferences: Partial<UserPreferences>) => {
+    const updatedPrefs = await nativeApi.updatePreferences(preferences);
+    setUser((prev) =>
+      prev
+        ? {
+            ...prev,
+            preferences: { ...(prev.preferences || {}), ...updatedPrefs },
+          }
+        : prev
+    );
+    return updatedPrefs;
+  }, []);
+
+  const regenerateVanvasId = useCallback(async () => {
+    const res = await nativeApi.regenerateMyVanvasId();
+    await refreshProfile();
+    return res.vanvas_id;
+  }, [refreshProfile]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -116,6 +143,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         changePassword,
         refreshProfile,
         uploadAvatar,
+        deleteAvatar,
+        updatePreferences,
+        regenerateVanvasId,
       }}
     >
       {children}

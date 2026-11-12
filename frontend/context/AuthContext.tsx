@@ -285,8 +285,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const updatedUser: User = {
         ...user,
         avatar_url: undefined,
-        avatar_type: "preset",
-        avatar_preset: "himalayan-explorer",
+        avatar_type: "none",
+        avatar_preset: undefined,
       };
       setUser(updatedUser);
       storageAdapter.setItem("vanvas_user_profile", JSON.stringify(updatedUser));

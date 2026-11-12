@@ -17,6 +17,7 @@ def setup_test_suite_database():
     are present deterministically across all environments (local & CI).
     """
     ensure_database_schema(engine)
+    os.environ.setdefault("SEED_DEMO_USERS", "true")
     db = SessionLocal()
     try:
         seed_database(engine_to_use=engine, db=db)

@@ -1524,7 +1524,7 @@ function SettingsContent() {
                         {user?.full_name || "Traveler"}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-[#173B32]/10 text-[10px] font-mono font-bold text-[#173B32] uppercase">
-                        {user?.avatar_type === "uploaded" ? "Custom Photo" : (user?.avatar_preset || "himalayan-explorer")}
+                        {user?.avatar_type === "uploaded" ? "Custom Photo" : (user?.avatar_preset || "Initials")}
                       </span>
                     </div>
                     <p className="text-xs text-[#7B4D36] mt-0.5">

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { api, resolveAvatarUrl } from "@/lib/api";
@@ -24,7 +24,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { tabIndicatorTransition, tabContentVariants } from "@/lib/motion";
 
 function ProfileContent() {
-  const { user, logout, updateProfile, uploadAvatar, selectAvatarPreset, deleteAvatar } = useAuth();
+  const router = useRouter();
+  const { user, logout, refreshUser, updateProfile, uploadAvatar, selectAvatarPreset, deleteAvatar } = useAuth();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const initialTab = tabParam === "saved" ? "saved" : tabParam === "avatar" ? "avatar" : tabParam === "trips" ? "trips" : tabParam === "solo" ? "solo" : "overview";
@@ -107,7 +108,7 @@ function ProfileContent() {
     setAvatarSuccess(null);
     try {
       await deleteAvatar();
-      setAvatarSuccess("Custom photo removed; default illustrated avatar restored.");
+      setAvatarSuccess("Profile photo removed; initials avatar restored.");
       setTimeout(() => setAvatarSuccess(null), 3500);
     } catch (err: any) {
       setAvatarError(err.message || "Failed to reset profile photo.");
@@ -284,17 +285,18 @@ function ProfileContent() {
   };
 
   const formatMemberDate = (dateStr?: string) => {
-    if (!dateStr) return "Himalayan Explorer";
+    if (!dateStr) return null;
     try {
       const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return null;
       return `Member since ${d.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`;
     } catch {
-      return "Member since 2026";
+      return null;
     }
   };
 
   const getInitials = (name?: string) => {
-    if (!name) return "V";
+    if (!name) return "T";
     const parts = name.trim().split(" ");
     if (parts.length >= 2) {
       return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
@@ -307,73 +309,17 @@ function ProfileContent() {
   return (
     <div className="min-h-screen bg-[#FAF4E8] py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Profile Header Card */}
-        <div className="bg-[#FAF7F0] border border-[#D8CBB2] rounded-3xl p-6 sm:p-8 shadow-md relative overflow-hidden">
-          {/* Subtle Decorative Background Stamp */}
-          <div className="absolute top-4 right-4 opacity-15 pointer-events-none hidden sm:block">
-            <TravelStamp label="HIMALAYAS" sublabel="SORTED CLUB" variant="forest" rotate={-5} />
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
-              {/* Avatar with gold ring */}
-              <Avatar user={user} size="2xl" showBorder borderColor="border-[#B49252]" />
-
-              {/* User Identity Details */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#173B32]">
-                    {user?.full_name}
-                  </h1>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#173B32]/10 border border-[#173B32]/20 text-[10px] font-bold text-[#173B32] uppercase tracking-wider">
-                    <Shield className="w-3 h-3 text-[#B49252]" />
-                    <span>{user?.role === "admin" ? "Admin" : "Verified Traveler"}</span>
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-[#20211D]/70 font-medium">
-                  {user?.email}
-                </p>
-                <div className="flex items-center gap-3 text-xs text-[#B49252] font-semibold pt-1">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {formatMemberDate(user?.created_at)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Profile Action Buttons */}
-            <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
-              <button
-                type="button"
-                onClick={openEditModal}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-[#D8CBB2] text-xs font-bold text-[#173B32] hover:bg-[#E5D5BA]/50 transition-colors shadow-xs cursor-pointer active:scale-97"
-              >
-                <Edit3 className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Edit Profile</span>
-              </button>
-              <Link
-                href="/settings"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#173B32] text-xs font-bold text-[#EFE5D2] hover:bg-[#20453B] transition-colors shadow-xs active:scale-97"
-              >
-                <SettingsIcon className="w-3.5 h-3.5 text-[#B49252]" />
-                <span>Settings</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => logout()}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#B65E3C]/10 border border-[#B65E3C]/30 text-xs font-bold text-[#B65E3C] hover:bg-[#B65E3C] hover:text-[#FAF7F0] transition-colors shadow-xs cursor-pointer active:scale-97"
-                title="Sign Out of VANVAS"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Permanent VANVAS Identity Card & Explorer Passport */}
-        <VanvasIdentityCard user={user} onUserUpdated={updateProfile} />
+        {/* Single Unified VANVAS Identity Passport & Action Bar */}
+        <VanvasIdentityCard
+          user={user}
+          onUserUpdated={async () => {
+            await refreshUser();
+          }}
+          onEditProfile={openEditModal}
+          onChangePhoto={() => setActiveTab("avatar")}
+          onOpenSettings={() => router.push("/settings")}
+          onSignOut={() => logout()}
+        />
 
         {/* Real Travel Snapshot Statistics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -469,16 +415,22 @@ function ProfileContent() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-serif text-xl font-bold text-[#173B32]">
-                        {user?.avatar_type === "uploaded" ? "Custom Photo Active" : "Illustrated Persona Active"}
+                        {user?.avatar_type === "uploaded"
+                          ? "Custom Photo Active"
+                          : user?.avatar_preset
+                            ? "Illustrated Persona Active"
+                            : "Initials Avatar Active"}
                       </span>
                       <span className="px-2.5 py-0.5 rounded-full bg-[#173B32]/10 border border-[#173B32]/20 text-[10px] font-mono font-bold text-[#173B32] uppercase">
-                        {user?.avatar_type === "uploaded" ? "Custom" : (user?.avatar_preset || "himalayan-explorer")}
+                        {user?.avatar_type === "uploaded" ? "Custom" : (user?.avatar_preset || "Initials")}
                       </span>
                     </div>
                     <p className="text-xs text-[#20211D]/70 max-w-md">
                       {user?.avatar_type === "uploaded"
                         ? "Your real photograph is currently active. You can choose any of the 30 illustrated personas below at any time."
-                        : "Your illustrated persona is displayed across the navigation bar, journey logs, and expedition passports."}
+                        : user?.avatar_preset
+                          ? "Your illustrated persona is displayed across the navigation bar, journey logs, and expedition passports."
+                          : "Upload a real photo or optionally choose an illustrated persona below."}
                     </p>
                   </div>
                 </div>
@@ -580,7 +532,8 @@ function ProfileContent() {
                   {AVATAR_PRESETS.filter((p) => avatarCategory === "all" || p.category === avatarCategory).map((preset) => {
                     const isSelected =
                       user?.avatar_type !== "uploaded" &&
-                      (user?.avatar_preset === preset.id || (!user?.avatar_preset && preset.id === "himalayan-explorer"));
+                      Boolean(user?.avatar_preset) &&
+                      user?.avatar_preset === preset.id;
 
                     return (
                       <button
@@ -658,34 +611,38 @@ function ProfileContent() {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-white rounded-xl border border-[#D8CBB2]/60">
                   <span className="text-[10px] text-[#20211D]/60 uppercase font-bold tracking-wider block mb-1">Travel Style</span>
-                  <span className="font-bold text-[#173B32]">{prefs.preferred_travel_style || "Balanced"}</span>
+                  <span className="font-bold text-[#173B32]">{prefs.preferred_travel_style || "Not set yet"}</span>
                 </div>
                 <div className="p-3 bg-white rounded-xl border border-[#D8CBB2]/60">
                   <span className="text-[10px] text-[#20211D]/60 uppercase font-bold tracking-wider block mb-1">Pace & Intensity</span>
-                  <span className="font-bold text-[#173B32]">{prefs.activity_intensity || "Balanced"}</span>
+                  <span className="font-bold text-[#173B32]">{prefs.activity_intensity || "Not set yet"}</span>
                 </div>
                 <div className="p-3 bg-white rounded-xl border border-[#D8CBB2]/60">
                   <span className="text-[10px] text-[#20211D]/60 uppercase font-bold tracking-wider block mb-1">Dietary Preference</span>
-                  <span className="font-bold text-[#173B32]">{prefs.dietary_preference || "All"}</span>
+                  <span className="font-bold text-[#173B32]">{prefs.dietary_preference || "Not set yet"}</span>
                 </div>
                 <div className="p-3 bg-white rounded-xl border border-[#D8CBB2]/60">
                   <span className="text-[10px] text-[#20211D]/60 uppercase font-bold tracking-wider block mb-1">Transport Style</span>
-                  <span className="font-bold text-[#173B32]">{prefs.transport_preference || "Volvo Bus"}</span>
+                  <span className="font-bold text-[#173B32]">{prefs.transport_preference || "Not set yet"}</span>
                 </div>
               </div>
 
               <div className="pt-2">
                 <span className="text-[10px] text-[#20211D]/60 uppercase font-bold tracking-wider block mb-2">Favorite Interests</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(prefs.interests || "Nature,Cafés,Adventure,Food").split(",").map((tag) => (
-                    <span
-                      key={tag.trim()}
-                      className="px-2.5 py-1 rounded-full bg-[#E5D5BA]/60 text-[11px] font-semibold text-[#173B32] border border-[#D8CBB2]"
-                    >
-                      {tag.trim()}
-                    </span>
-                  ))}
-                </div>
+                {prefs.interests ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {prefs.interests.split(",").filter((t) => t.trim()).map((tag) => (
+                      <span
+                        key={tag.trim()}
+                        className="px-2.5 py-1 rounded-full bg-[#E5D5BA]/60 text-[11px] font-semibold text-[#173B32] border border-[#D8CBB2]"
+                      >
+                        {tag.trim()}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-xs text-[#20211D]/60 italic">No interests selected yet</span>
+                )}
               </div>
             </div>
 

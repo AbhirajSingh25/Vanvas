@@ -24,7 +24,7 @@ import { VanvasIdentityCard } from "../../src/components/VanvasIdentityCard";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, deleteAccount, changePassword, uploadAvatar, refreshProfile } = useAuth();
+  const { user, logout, deleteAccount, changePassword, uploadAvatar, deleteAvatar, refreshProfile } = useAuth();
   const { themeMode, setThemeMode, density, toggleDensity } = useTheme();
   const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
 
@@ -165,43 +165,22 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header Profile Section */}
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <TouchableOpacity
-            onPress={handlePickAndUploadAvatar}
-            disabled={isUploadingPhoto || !user}
-            style={styles.avatarWrapper}
-            accessibilityLabel="Change profile photo"
-          >
-            {user?.avatar_url ? (
-              <Image
-                source={{ uri: resolveAvatarUrl(user.avatar_url) }}
-                style={styles.avatarImage}
-                contentFit="cover"
-              />
-            ) : (
-              <View style={styles.avatarFallback}>
-                <Ionicons name="person" size={40} color={theme.colors.parchment} />
-              </View>
-            )}
-
-            {isUploadingPhoto ? (
-              <View style={styles.uploadOverlay}>
-                <ActivityIndicator size="small" color={theme.colors.parchment} />
-              </View>
-            ) : (
-              <View style={styles.cameraBadge}>
-                <Ionicons name="camera" size={14} color={theme.colors.parchment} />
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.userName}>{user?.full_name || "Mountain Explorer"}</Text>
-        <Text style={styles.userEmail}>{user?.email || "Guest Session"}</Text>
-
-        {!user ? (
+      {/* Single Unified VANVAS Traveler Passport */}
+      {user ? (
+        <VanvasIdentityCard
+          user={user}
+          onProfileUpdated={() => refreshProfile()}
+          onPickAvatar={handlePickAndUploadAvatar}
+          onDeleteAvatar={deleteAvatar}
+          avatarUploading={isUploadingPhoto}
+        />
+      ) : (
+        <View style={styles.header}>
+          <View style={styles.avatarFallback}>
+            <Ionicons name="person" size={40} color={theme.colors.parchment} />
+          </View>
+          <Text style={styles.userName}>Traveler</Text>
+          <Text style={styles.userEmail}>Sign in to access your VANVAS Passport</Text>
           <TouchableOpacity
             onPress={() => router.push("/auth/login")}
             style={styles.signInButton}
@@ -209,16 +188,8 @@ export default function ProfileScreen() {
             <Ionicons name="log-in-outline" size={16} color={theme.colors.forestDark} />
             <Text style={styles.signInText}>Sign In / Register</Text>
           </TouchableOpacity>
-        ) : (
-          <View style={styles.verifiedBadge}>
-            <Ionicons name="shield-checkmark" size={14} color={theme.colors.brass} />
-            <Text style={styles.verifiedText}>VANVAS Verified Account</Text>
-          </View>
-        )}
-      </View>
-
-      {/* VANVAS Identity Card (VANVAS ID, QR, Friends & Circles shortcuts) */}
-      <VanvasIdentityCard user={user} onProfileUpdated={() => refreshProfile()} />
+        </View>
+      )}
 
       {/* Travel Preferences */}
       <View style={styles.section}>
@@ -231,7 +202,7 @@ export default function ProfileScreen() {
               <Text style={styles.prefLabel}>Preferred Style</Text>
             </View>
             <Text style={styles.prefValue}>
-              {user?.preferred_travel_style || "Spontaneous & Slow"}
+              {user?.preferences?.preferred_travel_style || user?.preferred_travel_style || "Not set yet"}
             </Text>
           </View>
 
@@ -243,7 +214,7 @@ export default function ProfileScreen() {
               <Text style={styles.prefLabel}>Wake-up Rhythm</Text>
             </View>
             <Text style={styles.prefValue}>
-              {user?.wake_up_preference || "Moderate (8:00 AM)"}
+              {user?.preferences?.wake_up_preference || user?.wake_up_preference || "Not set yet"}
             </Text>
           </View>
 
@@ -255,7 +226,7 @@ export default function ProfileScreen() {
               <Text style={styles.prefLabel}>Activity Intensity</Text>
             </View>
             <Text style={styles.prefValue}>
-              {user?.activity_intensity || "Moderate"}
+              {user?.preferences?.activity_intensity || user?.activity_intensity || "Not set yet"}
             </Text>
           </View>
         </View>

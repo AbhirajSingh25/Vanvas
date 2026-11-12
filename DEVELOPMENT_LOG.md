@@ -488,6 +488,22 @@
 
 ---
 
+## November 12, 2026 — Authentic User Data, Unified Traveler Passport & Avatar Durability
+
+- **Removed Fake/Seeded Personal & Budget Defaults:**
+  - Removed `DEFAULT_EXPENSES` (₹12,000 / ₹3,500 ea), `travellersCount=4`, fake `traveller_1..4` roster, and pre-checked `DEFAULT_CHECKLIST` from `frontend/components/home/TravelDesk.tsx`. Added `version: 2` schema migration for `vanvas_local_budget_split` and `vanvas_general_checklist` preserving custom rows while stripping legacy sample rows, plus explicit `Scratch Budget` vs `Trip Budget` modes and opt-in suggested packing essentials.
+  - Gated demo user seeding (`admin@vanvas.com`, `traveller@vanvas.com`) in `backend/app/seed/seed_data.py` behind non-production `SEED_DEMO_USERS=true` + `ENVIRONMENT != production`, while preserving canonical destinations, places, hotels, and rentals.
+  - Removed automatic personal preference defaults and `"himalayan-explorer"` auto-preset from `User`, `UserPreference`, `UserPreferenceSchema`, `ensure_database_schema`, and added non-destructive Alembic migration `backend/alembic/versions/0004_remove_fake_personal_defaults.py`.
+- **Unified Single Traveler Passport (Web & Native) & Accurate Identity Badges:**
+  - Removed duplicate Profile Header Cards on `frontend/app/profile/page.tsx` and `mobile/app/(tabs)/profile.tsx` so one unified `VanvasIdentityCard` sits at the top without overlapping badges.
+  - Replaced neon-green privacy pill with an accessible terracotta `role="switch"` synced to `UserPreference.allow_friend_requests_via_id` across Web, Native, and FastAPI (`UserProfileUpdateRequest` + `/preferences`), and added Regenerate ID confirmation modal.
+  - Removed `VNV-VANV-ASAI`, `VNV-XXXX-XXXX`, `Himalayan Explorer`, `Mountain Explorer`, `Member since 2026`, and unconditional `Verified Traveler` claims across Web & Native.
+- **Profile Photo Persistence Durability:**
+  - Updated `StorageService._persist_to_database()` to raise `StorageServiceException("PROFILE_STORAGE_ERROR", ...)` on DB failure instead of swallowing exceptions, and moved old avatar cleanup in `upload_avatar()` to run only after `db.commit()` succeeds.
+- **Verification:** `test_authentic_user_data_and_avatar_durability.py` (4/4), `test_profile_photo_upload.py` + `test_profile_and_settings.py` (24/24), `verify_authentic_passport_e2e.mjs` (Web/Mobile E2E), `tsc --noEmit`, `next build`, and `expo config --type public` all passed.
+
+---
+
 ### [2026-11-10] Final SQLite Privacy Isolation & Native Release Validation
 - **Objective:** Eliminate legacy NULL user_id data leakage, enforce user-scoped trip detail caching, achieve in-memory fallback parity, establish migration fail-safe verification, add mutation deduplication guard, and execute 20/20 test cases against real production `offlineDb` methods.
 - **Changes Made:**
@@ -503,6 +519,22 @@
 
 ---
 
+## November 12, 2026 — Authentic User Data, Unified Traveler Passport & Avatar Durability
+
+- **Removed Fake/Seeded Personal & Budget Defaults:**
+  - Removed `DEFAULT_EXPENSES` (₹12,000 / ₹3,500 ea), `travellersCount=4`, fake `traveller_1..4` roster, and pre-checked `DEFAULT_CHECKLIST` from `frontend/components/home/TravelDesk.tsx`. Added `version: 2` schema migration for `vanvas_local_budget_split` and `vanvas_general_checklist` preserving custom rows while stripping legacy sample rows, plus explicit `Scratch Budget` vs `Trip Budget` modes and opt-in suggested packing essentials.
+  - Gated demo user seeding (`admin@vanvas.com`, `traveller@vanvas.com`) in `backend/app/seed/seed_data.py` behind non-production `SEED_DEMO_USERS=true` + `ENVIRONMENT != production`, while preserving canonical destinations, places, hotels, and rentals.
+  - Removed automatic personal preference defaults and `"himalayan-explorer"` auto-preset from `User`, `UserPreference`, `UserPreferenceSchema`, `ensure_database_schema`, and added non-destructive Alembic migration `backend/alembic/versions/0004_remove_fake_personal_defaults.py`.
+- **Unified Single Traveler Passport (Web & Native) & Accurate Identity Badges:**
+  - Removed duplicate Profile Header Cards on `frontend/app/profile/page.tsx` and `mobile/app/(tabs)/profile.tsx` so one unified `VanvasIdentityCard` sits at the top without overlapping badges.
+  - Replaced neon-green privacy pill with an accessible terracotta `role="switch"` synced to `UserPreference.allow_friend_requests_via_id` across Web, Native, and FastAPI (`UserProfileUpdateRequest` + `/preferences`), and added Regenerate ID confirmation modal.
+  - Removed `VNV-VANV-ASAI`, `VNV-XXXX-XXXX`, `Himalayan Explorer`, `Mountain Explorer`, `Member since 2026`, and unconditional `Verified Traveler` claims across Web & Native.
+- **Profile Photo Persistence Durability:**
+  - Updated `StorageService._persist_to_database()` to raise `StorageServiceException("PROFILE_STORAGE_ERROR", ...)` on DB failure instead of swallowing exceptions, and moved old avatar cleanup in `upload_avatar()` to run only after `db.commit()` succeeds.
+- **Verification:** `test_authentic_user_data_and_avatar_durability.py` (4/4), `test_profile_photo_upload.py` + `test_profile_and_settings.py` (24/24), `verify_authentic_passport_e2e.mjs` (Web/Mobile E2E), `tsc --noEmit`, `next build`, and `expo config --type public` all passed.
+
+---
+
 ### [2026-11-11] Existing-Install SQLite Migration & Offline Sync Integrity
 - **Objective:** Complete idempotent composite-key database migration for existing installations, enforce validated user ownership across all private database methods, harden offline synchronization idempotency against duplicate expenses and unsynced deletions, and execute 31 production flow tests across real production code.
 - **Changes Made:**
@@ -515,3 +547,19 @@
 - **Files Affected:** `mobile/src/services/db.ts`, `mobile/src/services/api.ts`, `mobile/src/services/authTeardown.ts`, `mobile/src/context/AuthContext.tsx`, `scripts/test_offline_isolation_and_account_deletion.mjs`, `CURRENT_STATE.md`, `PROJECT_CONTEXT.md`, `NEXT_SESSION.md`, `DEVELOPMENT_LOG.md`, `mobile/docs/*`.
 - **Tests Executed:** `node scripts/test_offline_isolation_and_account_deletion.mjs` (31/31 passed), `mobile npm run typecheck` (0 errors), `backend pytest test_account_deletion_governance.py` (22/22 passed), `mobile npx expo config --type public` (code 0), `packages/shared npm run build` (0 errors), `git diff --name-only frontend/` (0 files).
 - **Test Outcomes:** 100% Passed.
+
+---
+
+## November 12, 2026 — Authentic User Data, Unified Traveler Passport & Avatar Durability
+
+- **Removed Fake/Seeded Personal & Budget Defaults:**
+  - Removed `DEFAULT_EXPENSES` (₹12,000 / ₹3,500 ea), `travellersCount=4`, fake `traveller_1..4` roster, and pre-checked `DEFAULT_CHECKLIST` from `frontend/components/home/TravelDesk.tsx`. Added `version: 2` schema migration for `vanvas_local_budget_split` and `vanvas_general_checklist` preserving custom rows while stripping legacy sample rows, plus explicit `Scratch Budget` vs `Trip Budget` modes and opt-in suggested packing essentials.
+  - Gated demo user seeding (`admin@vanvas.com`, `traveller@vanvas.com`) in `backend/app/seed/seed_data.py` behind non-production `SEED_DEMO_USERS=true` + `ENVIRONMENT != production`, while preserving canonical destinations, places, hotels, and rentals.
+  - Removed automatic personal preference defaults and `"himalayan-explorer"` auto-preset from `User`, `UserPreference`, `UserPreferenceSchema`, `ensure_database_schema`, and added non-destructive Alembic migration `backend/alembic/versions/0004_remove_fake_personal_defaults.py`.
+- **Unified Single Traveler Passport (Web & Native) & Accurate Identity Badges:**
+  - Removed duplicate Profile Header Cards on `frontend/app/profile/page.tsx` and `mobile/app/(tabs)/profile.tsx` so one unified `VanvasIdentityCard` sits at the top without overlapping badges.
+  - Replaced neon-green privacy pill with an accessible terracotta `role="switch"` synced to `UserPreference.allow_friend_requests_via_id` across Web, Native, and FastAPI (`UserProfileUpdateRequest` + `/preferences`), and added Regenerate ID confirmation modal.
+  - Removed `VNV-VANV-ASAI`, `VNV-XXXX-XXXX`, `Himalayan Explorer`, `Mountain Explorer`, `Member since 2026`, and unconditional `Verified Traveler` claims across Web & Native.
+- **Profile Photo Persistence Durability:**
+  - Updated `StorageService._persist_to_database()` to raise `StorageServiceException("PROFILE_STORAGE_ERROR", ...)` on DB failure instead of swallowing exceptions, and moved old avatar cleanup in `upload_avatar()` to run only after `db.commit()` succeeds.
+- **Verification:** `test_authentic_user_data_and_avatar_durability.py` (4/4), `test_profile_photo_upload.py` + `test_profile_and_settings.py` (24/24), `verify_authentic_passport_e2e.mjs` (Web/Mobile E2E), `tsc --noEmit`, `next build`, and `expo config --type public` all passed.

@@ -33,8 +33,8 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     role = Column(String(50), default="traveller")  # 'traveller' or 'admin'
     avatar_url = Column(String(500), nullable=True)
-    avatar_type = Column(String(50), default="preset", nullable=True)  # 'uploaded', 'preset'
-    avatar_preset = Column(String(100), default="himalayan-explorer", nullable=True)
+    avatar_type = Column(String(50), default="none", nullable=True)  # 'uploaded', 'preset', 'none'
+    avatar_preset = Column(String(100), default=None, nullable=True)
     avatar_storage_key = Column(String(255), nullable=True)
     email_verified_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -116,14 +116,14 @@ class UserPreference(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), unique=True, nullable=False)
-    preferred_travel_style = Column(String(50), default="Balanced")  # Budget, Balanced, Premium / Relaxed, Balanced, Packed
-    wake_up_preference = Column(String(50), default="Normal")  # Early, Normal, Late
-    activity_intensity = Column(String(50), default="Balanced")  # Relaxed, Balanced, Packed / Slow, Moderate, Fast
-    dietary_preference = Column(String(50), default="All")  # All, Veg, Non-Veg, Vegan, Local Dhabas
-    interests = Column(Text, default="Nature,Cafés,Adventure,Food")  # Comma-separated tags
-    accommodation_preference = Column(String(100), default="Riverside & Forest Stays")  # Riverside, Boutique, Homestay, etc.
-    transport_preference = Column(String(100), default="Volvo Bus")  # Walking, Public transport, Cab, Rental, Volvo Bus, Self-Drive 4x4, Train, Flight, Mixed
-    companion_style = Column(String(50), default="Solo")  # Solo, Couple, Friends, Family, Mixed
+    preferred_travel_style = Column(String(50), default=None, nullable=True)  # Budget, Balanced, Premium / Relaxed, Balanced, Packed
+    wake_up_preference = Column(String(50), default=None, nullable=True)  # Early, Normal, Late
+    activity_intensity = Column(String(50), default=None, nullable=True)  # Relaxed, Balanced, Packed / Slow, Moderate, Fast
+    dietary_preference = Column(String(50), default=None, nullable=True)  # All, Veg, Non-Veg, Vegan, Local Dhabas
+    interests = Column(Text, default=None, nullable=True)  # Comma-separated tags
+    accommodation_preference = Column(String(100), default=None, nullable=True)  # Riverside, Boutique, Homestay, etc.
+    transport_preference = Column(String(100), default=None, nullable=True)  # Walking, Public transport, Cab, Rental, Volvo Bus, Self-Drive 4x4, Train, Flight, Mixed
+    companion_style = Column(String(50), default=None, nullable=True)  # Solo, Couple, Friends, Family, Mixed
     
     # Regional & Localization
     language = Column(String(20), default="en")  # en, hi

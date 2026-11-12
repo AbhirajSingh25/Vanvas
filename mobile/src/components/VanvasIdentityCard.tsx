@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,375 +7,652 @@ import {
   Share,
   Modal,
   Switch,
+  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
+import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
 import { User } from "@vanvas/shared";
-import { nativeApi } from "../services/api";
-import { theme } from "../theme";
+import { resolveAvatarUrl } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 interface VanvasIdentityCardProps {
   user: User | null;
-  onProfileUpdated?: (updated: User) => void;
+  onProfileUpdated?: () => void;
+  onPickAvatar?: () => void;
+  onDeleteAvatar?: () => void;
+  avatarUploading?: boolean;
 }
 
-export const VanvasIdentityCard: React.FC<VanvasIdentityCardProps> = ({
+function formatMemberSince(createdAt?: string | null): string | null {
+  if (!createdAt) return null;
+  const d = new Date(createdAt);
+  if (Number.isNaN(d.getTime())) return null;
+  return `Member since ${d.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+}
+
+export function VanvasIdentityCard({
   user,
   onProfileUpdated,
-}) => {
-  const router = useRouter();
+  onPickAvatar,
+  onDeleteAvatar,
+  avatarUploading = false,
+}: VanvasIdentityCardProps) {
+  const reducedMotion = useReducedMotion();
+  const { updatePreferences, regenerateVanvasId } = useAuth();
+  const [copied, setCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
-  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
-  const [allowRequests, setAllowRequests] = useState(
-    user?.allow_friend_requests_via_id ?? true
-  );
+  const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
-  const vanvasId = user?.vanvas_id || "VNV-XXXX-XXXX";
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=VANVAS:${encodeURIComponent(vanvasId)}`;
+  const initialPrivacy =
+    user?.preferences?.allow_friend_requests_via_id ??
+    user?.allow_friend_requests_via_id ??
+    true;
+  const [privacyAllowed, setPrivacyAllowed] = useState<boolean>(initialPrivacy);
+
+  useEffect(() => {
+    setPrivacyAllowed(
+      user?.preferences?.allow_friend_requests_via_id ??
+        user?.allow_friend_requests_via_id ??
+        true
+    );
+  }, [user?.preferences?.allow_friend_requests_via_id, user?.allow_friend_requests_via_id]);
+
+  const vanvasId = user?.vanvas_id?.trim() || null;
+  const avatarUri = user?.avatar_url ? resolveAvatarUrl(user.avatar_url) : undefined;
+  const isVerified = Boolean(user?.email_verified_at || user?.is_verified);
+  const isAdmin = user?.role === "admin";
+  const memberSince = formatMemberSince(user?.created_at);
+
+  const styleParts = [
+    user?.preferred_travel_style,
+    user?.companion_style,
+  ].filter((v): v is string => Boolean(v && v.trim()));
+  const travelStyleLabel =
+    styleParts.length > 0 ? styleParts.join(" · ") : "Travel style not set yet";
+
+  const qrUrl = vanvasId
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+        `https://vanvasai.vercel.app/friends?add=${vanvasId}`
+      )}`
+    : null;
+
+  const handleCopy = async () => {
+    if (!vanvasId) return;
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    await Share.share({ message: vanvasId }).catch(() => {
+      Alert.alert("VANVAS ID", vanvasId);
+    });
+  };
 
   const handleShare = async () => {
+    if (!vanvasId) return;
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await Share.share({
-        message: `Add me on VANVAS! My permanent VANVAS ID is: ${vanvasId}\nhttps://vanvasai.vercel.app/friends?id=${vanvasId}`,
-        title: "My VANVAS ID",
+        message: `Add me on VANVAS! My Traveler ID is ${vanvasId}. https://vanvasai.vercel.app/friends?add=${vanvasId}`,
       });
-    } catch (err) {
-      // User cancelled or error
-    }
-  };
-
-  const handleTogglePrivacy = async (value: boolean) => {
-    setAllowRequests(value);
-    setIsUpdatingPrivacy(true);
-    try {
-      await Haptics.selectionAsync();
-      const updated = await nativeApi.updateProfile({
-        allow_friend_requests_via_id: value,
-      });
-      if (onProfileUpdated) onProfileUpdated(updated);
     } catch {
-      setAllowRequests(!value); // revert
-    } finally {
-      setIsUpdatingPrivacy(false);
+      // Cancelled
     }
   };
 
-  if (!user) return null;
+  const handleTogglePrivacy = async (nextVal: boolean) => {
+    if (updatingPrivacy) return;
+    setPrivacyAllowed(nextVal);
+    setUpdatingPrivacy(true);
+    try {
+      await updatePreferences({ allow_friend_requests_via_id: nextVal });
+      if (onProfileUpdated) onProfileUpdated();
+    } catch (err: any) {
+      setPrivacyAllowed(!nextVal);
+      Alert.alert("Error", err?.message || "Failed to update privacy setting");
+    } finally {
+      setUpdatingPrivacy(false);
+    }
+  };
+
+  const handleRegenerateId = () => {
+    if (!vanvasId || regenerating) return;
+    Alert.alert(
+      "Regenerate VANVAS ID?",
+      `Your previous ID (${vanvasId}) and QR code will stop working immediately. Existing friends remain connected.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Regenerate ID",
+          style: "destructive",
+          onPress: async () => {
+            setRegenerating(true);
+            try {
+              const newId = await regenerateVanvasId();
+              if (onProfileUpdated) onProfileUpdated();
+              Alert.alert("VANVAS ID Updated", `Your new ID is ${newId}`);
+            } catch (err: any) {
+              Alert.alert("Error", err?.message || "Could not regenerate VANVAS ID");
+            } finally {
+              setRegenerating(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const initials = (user?.full_name || user?.email || "T").trim().charAt(0).toUpperCase();
 
   return (
-    <View style={styles.container}>
-      {/* Card Header */}
-      <View style={styles.cardHeader}>
-        <View style={styles.idBadge}>
-          <Ionicons name="finger-print" size={14} color={theme.colors.brass} />
-          <Text style={styles.badgeText}>VANVAS IDENTITY</Text>
+    <Animated.View
+      entering={reducedMotion ? undefined : FadeInDown.duration(260)}
+      style={styles.card}
+    >
+      {/* 1. Top Passport Header Row (no overlapping badges) */}
+      <View style={styles.headerRow}>
+        <Text style={styles.eyebrow}>VANVAS IDENTITY PASSPORT</Text>
+        <View style={styles.officialBadge}>
+          <Ionicons name="shield-checkmark" size={12} color="#B49252" />
+          <Text style={styles.officialBadgeText}>OFFICIAL PASSPORT</Text>
         </View>
-
-        <TouchableOpacity
-          onPress={() => setShowQrModal(true)}
-          style={styles.qrIconBtn}
-          accessibilityLabel="Show QR Code"
-        >
-          <Ionicons name="qr-code-outline" size={20} color={theme.colors.parchment} />
-        </TouchableOpacity>
       </View>
 
-      {/* VANVAS ID Display */}
+      {/* 2. Traveler Identity Row */}
+      <View style={styles.identityRow}>
+        <TouchableOpacity
+          onPress={onPickAvatar}
+          disabled={!onPickAvatar || avatarUploading}
+          style={styles.avatarContainer}
+          accessibilityLabel="Change profile photo"
+        >
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatarImg} contentFit="cover" />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitials}>{initials}</Text>
+            </View>
+          )}
+          {avatarUploading ? (
+            <View style={styles.avatarOverlay}>
+              <ActivityIndicator size="small" color="#FAF7F0" />
+            </View>
+          ) : onPickAvatar ? (
+            <View style={styles.cameraPill}>
+              <Ionicons name="camera" size={12} color="#FAF7F0" />
+            </View>
+          ) : null}
+        </TouchableOpacity>
+
+        <View style={styles.identityInfo}>
+          <View style={styles.nameRow}>
+            <Text style={styles.userName} numberOfLines={1}>
+              {user?.full_name || "Traveler"}
+            </Text>
+            <View
+              style={[
+                styles.statusChip,
+                isAdmin ? styles.statusChipGold : isVerified ? styles.statusChipVerified : styles.statusChipMuted,
+              ]}
+            >
+              <Text style={styles.statusChipText}>
+                {isAdmin ? "Admin" : isVerified ? "Verified" : "Registered"}
+              </Text>
+            </View>
+          </View>
+
+          {user?.email ? (
+            <Text style={styles.userEmail} numberOfLines={1}>
+              {user.email}
+            </Text>
+          ) : null}
+
+          <Text style={styles.metaText} numberOfLines={2}>
+            {travelStyleLabel}
+            {memberSince ? ` · ${memberSince}` : ""}
+          </Text>
+        </View>
+      </View>
+
+      {/* 3. VANVAS ID & Quick Actions */}
       <View style={styles.idBox}>
-        <Text style={styles.idLabel}>Permanent Travel ID</Text>
-        <Text style={styles.idCode}>{vanvasId}</Text>
-      </View>
-
-      {/* Action Buttons: Share & Nav to Friends / Circles */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity
-          onPress={handleShare}
-          style={styles.shareBtn}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="share-social-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.shareBtnText}>Share ID</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => router.push("/friends")}
-          style={styles.navBtn}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="people-outline" size={16} color={theme.colors.forestDark} />
-          <Text style={styles.navBtnText}>Friends Hub</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => router.push("/circles")}
-          style={styles.navBtn}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="bonfire-outline" size={16} color={theme.colors.forestDark} />
-          <Text style={styles.navBtnText}>Crew Circles</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Privacy Switch */}
-      <View style={styles.privacyRow}>
-        <View style={styles.privacyInfo}>
-          <Text style={styles.privacyTitle}>Allow Friend Requests via ID</Text>
-          <Text style={styles.privacySubtitle}>
-            When disabled, others cannot send you requests using your VANVAS ID
+        <View style={styles.idTextWrap}>
+          <Text style={styles.idLabel}>UNIQUE VANVAS ID</Text>
+          <Text style={styles.idText} numberOfLines={1}>
+            {vanvasId || "Assigning VANVAS ID…"}
           </Text>
         </View>
 
-        {isUpdatingPrivacy ? (
-          <ActivityIndicator size="small" color={theme.colors.brass} />
-        ) : (
-          <Switch
-            value={allowRequests}
-            onValueChange={handleTogglePrivacy}
-            trackColor={{ false: "#767577", true: theme.colors.terracotta }}
-            thumbColor={allowRequests ? theme.colors.brass : "#f4f3f4"}
-          />
-        )}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, !vanvasId && styles.disabledBtn]}
+            onPress={handleCopy}
+            disabled={!vanvasId}
+          >
+            <Ionicons name={copied ? "checkmark" : "copy-outline"} size={15} color="#FAF7F0" />
+            <Text style={styles.actionText}>{copied ? "Copied" : "Copy"}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.qrBtn, !vanvasId && styles.disabledBtn]}
+            onPress={() => setShowQrModal(true)}
+            disabled={!vanvasId}
+          >
+            <Ionicons name="qr-code-outline" size={15} color="#F6E2B3" />
+            <Text style={styles.qrText}>QR</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.shareBtn, !vanvasId && styles.disabledBtn]}
+            onPress={handleShare}
+            disabled={!vanvasId}
+            accessibilityLabel="Share VANVAS ID"
+          >
+            <Ionicons name="share-outline" size={16} color="#FAF7F0" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 4. Friend Request Privacy Switch + Regenerate ID */}
+      <View style={styles.privacyRow}>
+        <View style={styles.privacyTextCol}>
+          <Text style={styles.privacyTitle}>Allow friend requests via VANVAS ID</Text>
+          <Text style={styles.privacySubtitle}>
+            {privacyAllowed ? "Discoverable by your VANVAS ID" : "Hidden from ID lookup"}
+          </Text>
+        </View>
+        <Switch
+          value={privacyAllowed}
+          onValueChange={handleTogglePrivacy}
+          disabled={updatingPrivacy}
+          trackColor={{ false: "#3E3A33", true: "#B65E3C" }}
+          thumbColor="#FAF7F0"
+        />
+      </View>
+
+      <View style={styles.footerRow}>
+        <TouchableOpacity
+          onPress={handleRegenerateId}
+          disabled={!vanvasId || regenerating}
+          style={[styles.regenBtn, (!vanvasId || regenerating) && styles.disabledBtn]}
+        >
+          <Ionicons name="refresh-outline" size={14} color="#E5D5BA" />
+          <Text style={styles.regenText}>
+            {regenerating ? "Regenerating…" : "Regenerate ID"}
+          </Text>
+        </TouchableOpacity>
+
+        {avatarUri && onDeleteAvatar ? (
+          <TouchableOpacity onPress={onDeleteAvatar} disabled={avatarUploading} style={styles.removePhotoBtn}>
+            <Text style={styles.removePhotoText}>Remove photo</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {/* QR Code Modal */}
       <Modal
-        visible={showQrModal}
+        visible={showQrModal && Boolean(vanvasId)}
         transparent
-        animationType="fade"
+        animationType={reducedMotion ? "none" : "fade"}
         onRequestClose={() => setShowQrModal(false)}
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Your VANVAS QR Code</Text>
-              <TouchableOpacity
-                onPress={() => setShowQrModal(false)}
-                style={styles.modalCloseBtn}
-              >
-                <Ionicons name="close" size={20} color={theme.colors.forestDark} />
+              <Text style={styles.modalTitle}>Share VANVAS Passport</Text>
+              <TouchableOpacity onPress={() => setShowQrModal(false)}>
+                <Ionicons name="close" size={24} color="#173B32" />
               </TouchableOpacity>
             </View>
-
-            <View style={styles.qrWrapper}>
-              <Image
-                source={{ uri: qrUrl }}
-                style={styles.qrImage}
-                contentFit="contain"
-              />
-            </View>
-
-            <Text style={styles.qrVanvasId}>{vanvasId}</Text>
-            <Text style={styles.qrInstruction}>
-              Let friends scan this QR code to add you instantly on VANVAS.
+            <Text style={styles.modalSubtitle}>
+              Friends can scan this QR code or enter your VANVAS ID
             </Text>
 
-            <TouchableOpacity
-              onPress={handleShare}
-              style={styles.qrShareBtn}
-            >
-              <Ionicons name="share-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.qrShareBtnText}>Share My Travel ID</Text>
+            {qrUrl ? (
+              <View style={styles.qrWrapper}>
+                <Image source={{ uri: qrUrl }} style={styles.qrImage} contentFit="contain" />
+              </View>
+            ) : null}
+
+            <Text style={styles.modalIdText}>{vanvasId}</Text>
+
+            <TouchableOpacity style={styles.modalCopyBtn} onPress={handleCopy}>
+              <Text style={styles.modalCopyText}>{copied ? "Copied!" : "Copy ID"}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </View>
+    </Animated.View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: theme.colors.forestDark,
+  card: {
+    backgroundColor: "#173B32",
     borderRadius: 24,
     padding: 18,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    borderWidth: 1.5,
-    borderColor: `${theme.colors.brass}50`,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: "rgba(180, 146, 82, 0.45)",
+    shadowColor: "#112B24",
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
-  cardHeader: {
+  headerRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-  },
-  idBadge: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
+    paddingBottom: 12,
+    marginBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(250, 247, 240, 0.14)",
+    gap: 8,
   },
-  badgeText: {
-    color: theme.colors.brass,
+  eyebrow: {
     fontSize: 10,
     fontWeight: "700",
-    letterSpacing: 1,
+    color: "rgba(229, 213, 186, 0.85)",
+    letterSpacing: 1.4,
+    flexShrink: 1,
   },
-  qrIconBtn: {
-    padding: 6,
-    backgroundColor: "rgba(255,255,255,0.08)",
+  officialBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(180, 146, 82, 0.18)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(180, 146, 82, 0.45)",
+  },
+  officialBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#E5D5BA",
+    letterSpacing: 0.8,
+  },
+  identityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginBottom: 16,
+  },
+  avatarContainer: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 2,
+    borderColor: "#B49252",
+    backgroundColor: "#112B24",
+    position: "relative",
+    overflow: "visible",
+  },
+  avatarImg: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 32,
+  },
+  avatarPlaceholder: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 32,
+    backgroundColor: "#245347",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitials: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#FAF7F0",
+  },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 32,
+    backgroundColor: "rgba(17, 43, 36, 0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cameraPill: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 24,
+    height: 24,
     borderRadius: 12,
+    backgroundColor: "#B65E3C",
+    borderWidth: 2,
+    borderColor: "#173B32",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  idBox: {
-    marginTop: 14,
-    marginBottom: 14,
+  identityInfo: {
+    flex: 1,
+    minWidth: 0,
   },
-  idLabel: {
-    color: "rgba(239,229,210,0.7)",
-    fontSize: 11,
-    fontFamily: "monospace",
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
   },
-  idCode: {
-    color: theme.colors.parchment,
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: 2,
-    fontFamily: "monospace",
+  userName: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#FAF7F0",
+    flexShrink: 1,
+  },
+  statusChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  statusChipVerified: {
+    backgroundColor: "rgba(250, 247, 240, 0.14)",
+    borderColor: "rgba(180, 146, 82, 0.45)",
+  },
+  statusChipGold: {
+    backgroundColor: "rgba(180, 146, 82, 0.25)",
+    borderColor: "rgba(180, 146, 82, 0.55)",
+  },
+  statusChipMuted: {
+    backgroundColor: "rgba(250, 247, 240, 0.08)",
+    borderColor: "rgba(250, 247, 240, 0.2)",
+  },
+  statusChipText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#F6E2B3",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  userEmail: {
+    fontSize: 13,
+    color: "rgba(229, 213, 186, 0.85)",
     marginTop: 2,
   },
-  actionRow: {
-    flexDirection: "row",
-    gap: 8,
+  metaText: {
+    fontSize: 12,
+    color: "rgba(229, 213, 186, 0.72)",
+    marginTop: 4,
+  },
+  idBox: {
+    backgroundColor: "rgba(17, 43, 36, 0.85)",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(180, 146, 82, 0.3)",
     marginBottom: 14,
+    gap: 10,
+  },
+  idTextWrap: {
+    minWidth: 0,
+  },
+  idLabel: {
+    fontSize: 10,
+    color: "rgba(229, 213, 186, 0.72)",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  idText: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#F6E2B3",
+    letterSpacing: 1.5,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(250, 247, 240, 0.12)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  actionText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#FAF7F0",
+  },
+  qrBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(180, 146, 82, 0.25)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(180, 146, 82, 0.45)",
+  },
+  qrText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#F6E2B3",
   },
   shareBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: theme.colors.terracotta,
-    paddingVertical: 10,
-    borderRadius: 14,
+    backgroundColor: "rgba(250, 247, 240, 0.12)",
+    padding: 8,
+    borderRadius: 10,
   },
-  shareBtnText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  navBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    backgroundColor: theme.colors.parchment,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  navBtnText: {
-    color: theme.colors.forestDark,
-    fontSize: 11,
-    fontWeight: "700",
+  disabledBtn: {
+    opacity: 0.45,
   },
   privacyRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.1)",
     paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(250, 247, 240, 0.12)",
+    gap: 12,
   },
-  privacyInfo: {
+  privacyTextCol: {
     flex: 1,
-    paddingRight: 10,
   },
   privacyTitle: {
-    color: theme.colors.parchment,
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#FAF7F0",
   },
   privacySubtitle: {
-    color: "rgba(239,229,210,0.6)",
-    fontSize: 10,
+    fontSize: 11,
+    color: "rgba(229, 213, 186, 0.72)",
     marginTop: 2,
+  },
+  footerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  regenBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 4,
+  },
+  regenText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(229, 213, 186, 0.85)",
+  },
+  removePhotoBtn: {
+    paddingVertical: 4,
+  },
+  removePhotoText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#F3B098",
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
+    backgroundColor: "rgba(17, 43, 36, 0.75)",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
   modalContent: {
-    backgroundColor: theme.colors.parchment,
-    borderRadius: 28,
-    padding: 24,
     width: "100%",
-    maxWidth: 320,
+    maxWidth: 360,
+    backgroundColor: "#FAF7F0",
+    borderRadius: 24,
+    padding: 24,
     alignItems: "center",
   },
   modalHeader: {
+    width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: "100%",
-    marginBottom: 16,
+    marginBottom: 6,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "800",
-    color: theme.colors.forestDark,
+    color: "#173B32",
   },
-  modalCloseBtn: {
-    padding: 4,
+  modalSubtitle: {
+    fontSize: 12,
+    color: "#7B4D36",
+    textAlign: "center",
+    marginBottom: 20,
   },
   qrWrapper: {
-    width: 200,
-    height: 200,
     backgroundColor: "#FFFFFF",
+    padding: 16,
     borderRadius: 16,
-    padding: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  qrImage: {
-    width: "100%",
-    height: "100%",
-  },
-  qrVanvasId: {
-    marginTop: 14,
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: 2,
-    fontFamily: "monospace",
-    color: theme.colors.forestDark,
-  },
-  qrInstruction: {
-    fontSize: 11,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 6,
+    borderWidth: 1,
+    borderColor: "#E5D5BA",
     marginBottom: 16,
   },
-  qrShareBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: theme.colors.terracotta,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    width: "100%",
+  qrImage: {
+    width: 190,
+    height: 190,
   },
-  qrShareBtnText: {
-    color: "#FFFFFF",
-    fontSize: 12,
+  modalIdText: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#173B32",
+    letterSpacing: 1.5,
+    marginBottom: 18,
+  },
+  modalCopyBtn: {
+    width: "100%",
+    backgroundColor: "#173B32",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalCopyText: {
+    color: "#FAF7F0",
+    fontSize: 15,
     fontWeight: "700",
   },
 });
-

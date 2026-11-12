@@ -1,8 +1,10 @@
 import json
 import logging
+import os
 from typing import Optional, Dict, Any, List, Set
 from datetime import date, datetime, timedelta, timezone
 from sqlalchemy.orm import Session
+from app.core.config import settings
 from app.database.session import SessionLocal, engine, Base
 from app.core.security import get_password_hash
 
@@ -39,47 +41,52 @@ def seed_database(engine_to_use=None, db: Optional[Session] = None) -> bool:
         owns_session = True
 
     try:
-        # 1. Users
-        admin_user = db.query(User).filter(User.email == "admin@vanvas.com").first()
-        if not admin_user:
-            admin_user = User(
-                email="admin@vanvas.com",
-                hashed_password=get_password_hash("vanvas123"),
-                full_name="VANVAS Admin Team",
-                role="admin",
-                avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-                email_verified_at=datetime.now(timezone.utc)
-            )
-            db.add(admin_user)
-        elif admin_user.email_verified_at is None:
-            admin_user.email_verified_at = datetime.now(timezone.utc)
+        # 1. Demo Users (strictly gated behind explicit non-production dev/test flag)
+        seed_demo_users = (
+            not settings.is_production
+            and os.getenv("SEED_DEMO_USERS", "").strip().lower() in ("1", "true", "yes")
+        )
+        if seed_demo_users:
+            admin_user = db.query(User).filter(User.email == "admin@vanvas.com").first()
+            if not admin_user:
+                admin_user = User(
+                    email="admin@vanvas.com",
+                    hashed_password=get_password_hash("vanvas123"),
+                    full_name="VANVAS Admin Team",
+                    role="admin",
+                    avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+                    email_verified_at=datetime.now(timezone.utc)
+                )
+                db.add(admin_user)
+            elif admin_user.email_verified_at is None:
+                admin_user.email_verified_at = datetime.now(timezone.utc)
 
-        demo_user = db.query(User).filter(User.email == "traveller@vanvas.com").first()
-        if not demo_user:
-            demo_user = User(
-                email="traveller@vanvas.com",
-                hashed_password=get_password_hash("vanvas123"),
-                full_name="Aarav Sharma",
-                role="traveller",
-                avatar_url="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
-                email_verified_at=datetime.now(timezone.utc)
-            )
-            db.add(demo_user)
-            db.flush()
+            demo_user = db.query(User).filter(User.email == "traveller@vanvas.com").first()
+            if not demo_user:
+                demo_user = User(
+                    email="traveller@vanvas.com",
+                    hashed_password=get_password_hash("vanvas123"),
+                    full_name="Aarav Sharma",
+                    role="traveller",
+                    avatar_url="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
+                    email_verified_at=datetime.now(timezone.utc)
+                )
+                db.add(demo_user)
+                db.flush()
 
-            # User Preferences
-            user_pref = UserPreference(
-                user_id=demo_user.id,
-                preferred_travel_style="Balanced",
-                wake_up_preference="Normal",
-                activity_intensity="Balanced",
-                dietary_preference="All",
-                interests="Nature,Cafés,Adventure,Food,Hidden places"
-            )
-            db.add(user_pref)
-        elif demo_user.email_verified_at is None:
-            demo_user.email_verified_at = datetime.now(timezone.utc)
-            db.flush()
+                # User Preferences (dev/test fixture only)
+                user_pref = UserPreference(
+                    user_id=demo_user.id,
+                    preferred_travel_style="Balanced",
+                    wake_up_preference="Normal",
+                    activity_intensity="Balanced",
+                    dietary_preference="All",
+                    interests="Nature,Cafés,Adventure,Food,Hidden places"
+                )
+                db.add(user_pref)
+            elif demo_user.email_verified_at is None:
+                demo_user.email_verified_at = datetime.now(timezone.utc)
+                db.flush()
 
         # 2. Categories
         categories_data = [

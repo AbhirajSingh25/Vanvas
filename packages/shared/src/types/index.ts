@@ -3,9 +3,11 @@ export interface User {
   email: string;
   full_name: string;
   avatar_url?: string | null;
+  avatar_type?: string | null;
   avatar_preset?: string | null;
   vanvas_id?: string;
   allow_friend_requests_via_id?: boolean;
+  email_verified_at?: string | null;
   is_verified?: boolean;
   role?: string;
   preferred_travel_style?: string;
@@ -17,6 +19,7 @@ export interface User {
   created_at?: string;
   theme?: string;
   layout_density?: "standard" | "compact";
+  preferences?: UserPreferences;
 }
 
 export interface UserPreferences {

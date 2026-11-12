@@ -326,7 +326,7 @@ export default function FriendsScreen() {
             {friends.map((item) => {
               const friendInfo = item.friend;
               const name = friendInfo?.full_name || "Travel Companion";
-              const vId = friendInfo?.vanvas_id || "VNV-XXXX-XXXX";
+              const vId = friendInfo?.vanvas_id || "VANVAS ID pending";
 
               return (
                 <View key={item.id} style={styles.friendCard}>

@@ -137,12 +137,18 @@ class StorageService:
         user_id: Optional[str] = None,
         db: Optional[Any] = None
     ):
-        """Safely persists image bytes to database table user_avatar_blobs."""
+        """Persists image bytes to database table user_avatar_blobs and raises on failure."""
+        if not file_bytes or len(file_bytes) == 0:
+            raise StorageServiceException(
+                "PROFILE_STORAGE_ERROR",
+                "Cannot persist empty profile photo bytes."
+            )
+
         try:
             from app.models.models import UserAvatarBlob
             from app.database.session import SessionLocal
 
-            def _upsert(session):
+            def _upsert(session, should_commit: bool):
                 blob = session.query(UserAvatarBlob).filter(UserAvatarBlob.storage_key == storage_key).first()
                 if not blob and user_id:
                     blob = session.query(UserAvatarBlob).filter(UserAvatarBlob.user_id == user_id).first()
@@ -166,16 +172,25 @@ class StorageService:
                         updated_at=datetime.now(timezone.utc)
                     )
                     session.add(new_blob)
-                session.commit()
+                if should_commit:
+                    session.commit()
+                else:
+                    session.flush()
                 logger.info(f"Avatar durable blob persisted to database for key: {storage_key}")
 
             if db is not None:
-                _upsert(db)
+                _upsert(db, should_commit=False)
             else:
                 with SessionLocal() as session:
-                    _upsert(session)
+                    _upsert(session, should_commit=True)
+        except StorageServiceException:
+            raise
         except Exception as e:
             logger.error(f"Failed to persist avatar blob to database: {e}")
+            raise StorageServiceException(
+                "PROFILE_STORAGE_ERROR",
+                f"Failed to persist profile photo to durable database storage: {e}"
+            )
 
     @classmethod
     def _upload_cloudinary(cls, file_bytes: bytes, storage_key: str) -> str:

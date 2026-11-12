@@ -124,8 +124,8 @@ def ensure_database_schema(eng=engine):
                 user_additions = {
                     "email_verified_at": "TIMESTAMP NULL",
                     "avatar_url": "VARCHAR(500) NULL",
-                    "avatar_type": "VARCHAR(50) DEFAULT 'preset'",
-                    "avatar_preset": "VARCHAR(100) DEFAULT 'himalayan-explorer'",
+                    "avatar_type": "VARCHAR(50) DEFAULT 'none'",
+                    "avatar_preset": "VARCHAR(100) NULL",
                     "avatar_storage_key": "VARCHAR(255) NULL",
                     "role": "VARCHAR(50) DEFAULT 'traveller'",
                     "vanvas_id": "VARCHAR(32) NULL",
