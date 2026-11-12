@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { api } from "@/lib/api";
@@ -22,17 +22,34 @@ import { motion, AnimatePresence } from "motion/react";
 function CircleWorkspaceContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const circleId = params?.id as string;
   const { user } = useAuth();
 
+  const initialTabParam = searchParams?.get("tab");
+  const validTabs = ["overview", "plans", "explore", "money", "activity", "ai"] as const;
+  const resolvedInitialTab = validTabs.includes(initialTabParam as any)
+    ? (initialTabParam as typeof validTabs[number])
+    : "overview";
+
   const [circle, setCircle] = useState<CrewCircleDetail | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "plans" | "explore" | "money" | "activity" | "ai">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "plans" | "explore" | "money" | "activity" | "ai">(resolvedInitialTab);
   const [loading, setLoading] = useState(true);
 
   // Sub-data states
   const [suggestions, setSuggestions] = useState<CrewCircleSuggestion[]>([]);
   const [activityFeed, setActivityFeed] = useState<CrewCircleActivity[]>([]);
   const [chatMessage, setChatMessage] = useState("");
+  const [sendingChat, setSendingChat] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [failedChatDraft, setFailedChatDraft] = useState<string | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false
+  );
+  const pollingInFlightRef = useRef(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const prevFeedLengthRef = useRef(0);
   const [pods, setPods] = useState<SplitPod[]>([]);
   const [selectedPodId, setSelectedPodId] = useState<string | null>(null);
   const [expenses, setExpenses] = useState<CollaborativeExpense[]>([]);
@@ -133,17 +150,106 @@ function CircleWorkspaceContent() {
     }
   };
 
-  const handlePostChat = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatMessage.trim()) return;
+  const refreshActivityFeed = useCallback(async (showSpinner = false) => {
+    if (!circleId || pollingInFlightRef.current) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setIsOffline(true);
+      return;
+    }
+    pollingInFlightRef.current = true;
+    if (showSpinner) setChatLoading(true);
     try {
-      await api.postCrewCircleActivity(circleId, chatMessage.trim());
-      setChatMessage("");
       const acts = await api.getCrewCircleActivity(circleId);
       setActivityFeed(acts || []);
+      setChatError(null);
+      setIsOffline(false);
     } catch (err: any) {
-      alert(err.message || "Failed to send message");
+      setChatError(err?.message || "Unable to refresh circle conversation.");
+    } finally {
+      pollingInFlightRef.current = false;
+      if (showSpinner) setChatLoading(false);
     }
+  }, [circleId]);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Poll every 4.5s while Chat & Activity tab is active (cleanly separated for future WebSocket push)
+  useEffect(() => {
+    if (!circleId || activeTab !== "activity") return;
+    refreshActivityFeed(activityFeed.length === 0);
+    const timer = window.setInterval(() => {
+      refreshActivityFeed(false);
+    }, 4500);
+    return () => window.clearInterval(timer);
+  }, [circleId, activeTab, refreshActivityFeed]);
+
+  const chronologicalActivity = useMemo(() => {
+    return [...activityFeed].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }, [activityFeed]);
+
+  const chatOnlyMessages = useMemo(
+    () => chronologicalActivity.filter((item) => item.activity_type === "chat"),
+    [chronologicalActivity]
+  );
+
+  useEffect(() => {
+    if (activeTab === "activity" && chronologicalActivity.length > prevFeedLengthRef.current) {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevFeedLengthRef.current = chronologicalActivity.length;
+  }, [activeTab, chronologicalActivity.length]);
+
+  const sendChatContent = async (rawText: string) => {
+    const trimmed = rawText.trim();
+    if (!trimmed || sendingChat) return;
+
+    const optimisticId = `optimistic_${Date.now()}`;
+    const optimisticItem: CrewCircleActivity = {
+      id: optimisticId,
+      circle_id: circleId,
+      user_id: user?.id,
+      user_name: user?.full_name || "You",
+      user_avatar_url: user?.avatar_url,
+      activity_type: "chat",
+      content: trimmed,
+      created_at: new Date().toISOString(),
+    };
+
+    setSendingChat(true);
+    setChatError(null);
+    setFailedChatDraft(null);
+    setChatMessage("");
+    setActivityFeed((prev) => [...prev, optimisticItem]);
+
+    try {
+      const saved = await api.postCrewCircleActivity(circleId, trimmed);
+      setActivityFeed((prev) =>
+        prev.map((item) => (item.id === optimisticId ? saved : item))
+      );
+      await refreshActivityFeed(false);
+    } catch (err: any) {
+      setActivityFeed((prev) => prev.filter((item) => item.id !== optimisticId));
+      setChatError(err?.message || "Failed to send message. Please retry.");
+      setFailedChatDraft(trimmed);
+    } finally {
+      setSendingChat(false);
+    }
+  };
+
+  const handlePostChat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendChatContent(chatMessage);
   };
 
   const handleVote = async (suggId: string) => {
@@ -338,13 +444,13 @@ function CircleWorkspaceContent() {
         </div>
 
         {/* Workspace Tab Navigation */}
-        <div className="flex border-b border-[#D8CBB2] gap-1 overflow-x-auto pb-1">
+        <div className="flex border-b border-[#D8CBB2] gap-1.5 overflow-x-auto no-scrollbar pb-1.5">
           {[
             { id: "overview", label: "Overview", icon: Users },
             { id: "plans", label: `Plans (${circle.trips.length})`, icon: Calendar },
             { id: "explore", label: `Explore Together (${suggestions.length})`, icon: Compass },
             { id: "money", label: "Money & Split Pods", icon: DollarSign },
-            { id: "activity", label: "Chat & Activity", icon: MessageSquare },
+            { id: "activity", label: `Chat & Activity (${chatOnlyMessages.length})`, icon: MessageSquare },
             { id: "ai", label: "Ask VANVAS", icon: Sparkles },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -352,8 +458,9 @@ function CircleWorkspaceContent() {
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
                   isActive
                     ? "bg-[#173B32] text-[#FAF7F0] shadow-xs"
                     : "text-[#20211D]/70 hover:text-[#173B32] hover:bg-[#E5D5BA]/40"
@@ -429,7 +536,7 @@ function CircleWorkspaceContent() {
                     <span>Expeditions ({circle.trips.length})</span>
                   </h3>
                   <Link
-                    href="/plan"
+                    href={`/plan?circleId=${encodeURIComponent(circleId)}&circleName=${encodeURIComponent(circle.name)}&groupSize=${Math.max(1, circle.members.length)}`}
                     className="text-xs font-bold text-[#B65E3C] hover:underline flex items-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -441,7 +548,7 @@ function CircleWorkspaceContent() {
                   <div className="p-8 text-center text-xs text-[#20211D]/60 space-y-2">
                     <p>No trips linked to this circle yet.</p>
                     <Link
-                      href="/plan"
+                      href={`/plan?circleId=${encodeURIComponent(circleId)}&circleName=${encodeURIComponent(circle.name)}&groupSize=${Math.max(1, circle.members.length)}`}
                       className="inline-block px-4 py-2 rounded-xl bg-[#173B32] text-white text-xs font-bold mt-1"
                     >
                       Plan Expedition for {circle.name}
@@ -500,6 +607,51 @@ function CircleWorkspaceContent() {
                 </div>
               </div>
 
+              {/* Crew Chat Preview (discoverable from Overview) */}
+              <div className="bg-[#FAF7F0] border border-[#D8CBB2] rounded-3xl p-6 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-[#D8CBB2]/60 pb-2.5">
+                  <h4 className="font-serif font-bold text-sm text-[#173B32] flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-[#B49252]" />
+                    <span>Crew Conversation</span>
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("activity")}
+                    className="text-xs font-bold text-[#B65E3C] hover:underline cursor-pointer"
+                  >
+                    Open Chat
+                  </button>
+                </div>
+
+                {chatOnlyMessages.length === 0 ? (
+                  <p className="text-xs text-[#20211D]/65">
+                    No messages yet. Start coordinating arrival times or stays with your crew.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {chatOnlyMessages.slice(-2).map((msg) => (
+                      <div key={msg.id} className="bg-white border border-[#D8CBB2]/60 rounded-2xl p-3 text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-[#173B32]">{msg.user_name || "Crew Member"}</span>
+                          <span className="text-[10px] font-mono text-[#7B4D36]">
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        <p className="text-[#20211D]/80 line-clamp-2">{msg.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("activity")}
+                  className="w-full py-2.5 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF7F0] text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Open Chat &amp; Activity ({chronologicalActivity.length})
+                </button>
+              </div>
+
               {/* Split Pods mini summary */}
               <div className="bg-[#FAF7F0] border border-[#D8CBB2] rounded-3xl p-6 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
@@ -555,15 +707,34 @@ function CircleWorkspaceContent() {
                 </p>
               </div>
               <Link
-                href="/plan"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#173B32] text-white text-xs font-bold hover:bg-[#20453B] transition-colors"
+                href={`/plan?circleId=${encodeURIComponent(circleId)}&circleName=${encodeURIComponent(circle.name)}&groupSize=${Math.max(1, circle.members.length)}`}
+                data-testid="circle-plan-together-btn"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#173B32] text-white text-xs font-bold hover:bg-[#20453B] transition-colors shrink-0"
               >
                 <Plus className="w-4 h-4 text-[#B49252]" />
-                <span>+ Plan Together</span>
+                <span>Plan Together</span>
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {circle.trips.length === 0 ? (
+              <div className="bg-[#FAF7F0] border border-dashed border-[#D8CBB2] rounded-3xl p-10 text-center space-y-3">
+                <Calendar className="w-10 h-10 text-[#B49252] mx-auto opacity-65" />
+                <h4 className="font-serif font-bold text-base text-[#173B32]">
+                  No Expeditions Planned Yet
+                </h4>
+                <p className="text-xs text-[#20211D]/70 max-w-md mx-auto">
+                  Launch the full expedition planner with {circle.name} pre-filled so everyone in your crew is automatically added to the itinerary.
+                </p>
+                <Link
+                  href={`/plan?circleId=${encodeURIComponent(circleId)}&circleName=${encodeURIComponent(circle.name)}&groupSize=${Math.max(1, circle.members.length)}`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF7F0] text-xs font-bold transition-colors"
+                >
+                  <Plus className="w-4 h-4 text-[#B49252]" />
+                  <span>Plan Expedition for {circle.name}</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {circle.trips.map((t) => (
                 <Link
                   key={t.id}
@@ -587,7 +758,8 @@ function CircleWorkspaceContent() {
                   </div>
                 </Link>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -604,11 +776,13 @@ function CircleWorkspaceContent() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setNewSuggestionModal(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                data-testid="circle-propose-idea-btn"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] text-white text-xs font-bold transition-all shadow-md cursor-pointer shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Propose Idea</span>
+                <span>Propose Idea</span>
               </button>
             </div>
 
@@ -848,53 +1022,162 @@ function CircleWorkspaceContent() {
 
         {/* TAB 5: CHAT & ACTIVITY FEED */}
         {activeTab === "activity" && (
-          <div className="space-y-6 max-w-3xl mx-auto">
-            <div className="bg-[#FAF7F0] border border-[#D8CBB2] rounded-3xl p-6 shadow-xs space-y-4">
-              <h3 className="font-serif font-bold text-lg text-[#173B32]">
-                Circle Message Board & Log
-              </h3>
+          <div className="space-y-4 max-w-3xl mx-auto">
+            <div className="bg-[#FAF7F0] border border-[#D8CBB2] rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D8CBB2]/60 pb-3">
+                <div>
+                  <h3 className="font-serif font-bold text-lg text-[#173B32]">
+                    Crew Chat &amp; Activity Journal
+                  </h3>
+                  <p className="text-[11px] text-[#7B4D36]">
+                    Chronological crew conversation and expedition updates
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-[#173B32]/8 text-[#173B32]">
+                    {isOffline ? "Offline · paused" : "Auto-syncing (4.5s)"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => refreshActivityFeed(true)}
+                    disabled={chatLoading || isOffline}
+                    className="p-2 rounded-xl bg-white border border-[#D8CBB2] text-[#173B32] hover:bg-[#EFE5D2] disabled:opacity-50 cursor-pointer"
+                    aria-label="Refresh messages"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${chatLoading ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
+              </div>
 
-              <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                {activityFeed.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-[#20211D]/60">
-                    No circle messages yet. Start the conversation!
+              {isOffline && (
+                <div className="p-3 rounded-xl bg-[#B49252]/15 border border-[#B49252]/40 text-xs text-[#173B32]">
+                  You appear offline. New messages will sync once connectivity returns.
+                </div>
+              )}
+
+              {chatError && (
+                <div className="p-3 rounded-xl bg-[#B65E3C]/10 border border-[#B65E3C]/35 text-xs text-[#7B4D36] flex items-center justify-between gap-2">
+                  <span>{chatError}</span>
+                  {failedChatDraft && (
+                    <button
+                      type="button"
+                      onClick={() => sendChatContent(failedChatDraft)}
+                      className="px-3 py-1 rounded-lg bg-[#B65E3C] text-white text-[11px] font-bold shrink-0 cursor-pointer"
+                    >
+                      Retry
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-3 max-h-[26rem] overflow-y-auto pr-1">
+                {chatLoading && chronologicalActivity.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-[#7B4D36]">
+                    Loading crew conversation…
+                  </div>
+                ) : chronologicalActivity.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-[#20211D]/65 border border-dashed border-[#D8CBB2] rounded-2xl bg-white/60">
+                    No messages or activity yet. Say hello to your crew below!
                   </div>
                 ) : (
-                  activityFeed.map((act) => (
-                    <div
-                      key={act.id}
-                      className="bg-white border border-[#D8CBB2]/60 rounded-2xl p-3.5 shadow-2xs space-y-1"
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-[#173B32]">{act.user_name}</span>
-                        <span className="text-[10px] text-[#20211D]/50 font-mono">
-                          {new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                  chronologicalActivity.map((act) => {
+                    const isSystemEvent = act.activity_type !== "chat";
+                    const isOwnMessage = Boolean(user?.id && act.user_id === user.id);
+
+                    if (isSystemEvent) {
+                      return (
+                        <div
+                          key={act.id}
+                          data-testid="circle-system-event"
+                          className="flex items-center justify-center py-1"
+                        >
+                          <div className="px-3 py-1.5 rounded-full bg-[#EFE5D2]/80 border border-[#D8CBB2] text-[11px] text-[#7B4D36] flex items-center gap-2 max-w-full">
+                            <span className="font-mono uppercase text-[9px] font-bold text-[#B49252]">
+                              {act.activity_type.replace(/_/g, " ")}
+                            </span>
+                            <span className="truncate">{act.content}</span>
+                            <span className="text-[10px] font-mono opacity-70 shrink-0">
+                              {new Date(act.created_at).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={act.id}
+                        data-testid="circle-chat-message"
+                        className={`flex items-start gap-2.5 ${isOwnMessage ? "flex-row-reverse" : ""}`}
+                      >
+                        <Avatar
+                          user={{
+                            full_name: act.user_name || "Crew Member",
+                            avatar_url: act.user_avatar_url,
+                          }}
+                          size="sm"
+                        />
+                        <div
+                          className={`max-w-[80%] rounded-2xl p-3 shadow-2xs space-y-1 border ${
+                            isOwnMessage
+                              ? "bg-[#173B32] text-[#FAF7F0] border-[#173B32]"
+                              : "bg-white text-[#20211D] border-[#D8CBB2]/70"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3 text-[11px]">
+                            <span
+                              className={`font-bold ${
+                                isOwnMessage ? "text-[#E5D5BA]" : "text-[#173B32]"
+                              }`}
+                            >
+                              {act.user_name || "Crew Member"}
+                            </span>
+                            <span
+                              className={`text-[10px] font-mono ${
+                                isOwnMessage ? "text-[#FAF7F0]/65" : "text-[#20211D]/50"
+                              }`}
+                            >
+                              {new Date(act.created_at).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-xs leading-relaxed whitespace-pre-wrap break-words">
+                            {act.content}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-[#20211D]/80 leading-relaxed">
-                        {act.content}
-                      </p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
+                <div ref={chatEndRef} />
               </div>
 
               {/* Chat Input */}
-              <form onSubmit={handlePostChat} className="flex gap-2 pt-2">
+              <form onSubmit={handlePostChat} className="flex gap-2 pt-2 border-t border-[#D8CBB2]/60">
                 <input
                   type="text"
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
                   placeholder="Share notes, arrival updates, or plans..."
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-[#D8CBB2] text-xs text-[#173B32] focus:outline-none focus:ring-2 focus:ring-[#173B32]"
+                  disabled={sendingChat || isOffline}
+                  className="flex-1 px-4 py-2.5 min-h-[42px] rounded-xl bg-white border border-[#D8CBB2] text-xs text-[#173B32] focus:outline-none focus:ring-2 focus:ring-[#173B32] disabled:opacity-60"
                 />
                 <button
                   type="submit"
-                  disabled={!chatMessage.trim()}
-                  className="px-4 py-2.5 rounded-xl bg-[#173B32] text-white text-xs font-bold hover:bg-[#20453B] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  disabled={!chatMessage.trim() || sendingChat || isOffline}
+                  className="px-4 py-2.5 min-h-[42px] rounded-xl bg-[#173B32] text-white text-xs font-bold hover:bg-[#20453B] transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Send</span>
+                  {sendingChat ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                  <span>{sendingChat ? "Sending…" : "Send"}</span>
                 </button>
               </form>
             </div>
