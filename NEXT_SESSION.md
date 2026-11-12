@@ -1,7 +1,7 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Full Viewport Loading & Instant Session Restoration Completed on `feat/crew-circles-passport-rebuild` | *Base `main`:* `08dcd1d` | *Working Tree:* Clean
+> *Current Checkpoint:* Transformed Ancestor Fix, Portal Escalation & Full Viewport Hardening Completed on `feat/crew-circles-passport-rebuild` | *Base `main`:* `08dcd1d` | *Working Tree:* Clean
 
 ---
 

@@ -266,7 +266,7 @@ async function run() {
     });
 
     assert.equal(loaderStyles.position, "fixed", "Loader must have position: fixed");
-    assert.equal(loaderStyles.zIndex, "10000", "Loader must have z-index: 10000");
+    assert.ok(parseInt(loaderStyles.zIndex, 10) >= 10000, "Loader must have high z-index (>= 10000)");
     assert.equal(loaderStyles.top, 0, "Loader must cover top inset");
     assert.equal(loaderStyles.left, 0, "Loader must cover left inset");
     assert.equal(loaderStyles.width, 390, "Loader must span full viewport width");

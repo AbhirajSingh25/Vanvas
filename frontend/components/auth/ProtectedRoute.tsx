@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -31,6 +32,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Recovery state when token exists in storage but user profile was not cached
   const [recoveringNoCache, setRecoveringNoCache] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -103,20 +109,29 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   };
 
+  const renderInPortalIfMounted = (element: React.ReactElement) => {
+    if (mounted && typeof document !== "undefined") {
+      return createPortal(element, document.body);
+    }
+    return element;
+  };
+
   // Full Viewport Loading Screen
   if (isLoading || recoveringNoCache || (token && !user && !recoveryError)) {
-    return (
+    return renderInPortalIfMounted(
       <div
         data-testid="protected-route-full-loader"
         style={{
           position: "fixed",
           inset: 0,
           width: "100%",
+          height: "100vh",
           minHeight: "100svh",
-          zIndex: 10000,
+          zIndex: 2147483000,
           backgroundColor: "#FAF4E8",
+          overflow: "hidden",
         }}
-        className="flex flex-col items-center justify-center p-6 text-center select-none pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
+        className="flex flex-col items-center justify-center p-6 text-center select-none pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] h-[100dvh] min-h-[100svh] overflow-hidden"
       >
         <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
           <div className="absolute inset-0 rounded-full border-3 border-[#173B32]/20 border-t-[#B65E3C] animate-spin" />
@@ -134,18 +149,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // No-cache recovery failure: token exists but user could not be fetched
   if (!user && token && recoveryError) {
-    return (
+    return renderInPortalIfMounted(
       <div
         data-testid="protected-route-recovery-screen"
         style={{
           position: "fixed",
           inset: 0,
           width: "100%",
+          height: "100vh",
           minHeight: "100svh",
-          zIndex: 10000,
+          zIndex: 2147483000,
           backgroundColor: "#FAF4E8",
+          overflow: "hidden",
         }}
-        className="flex flex-col items-center justify-center p-6 text-center pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
+        className="flex flex-col items-center justify-center p-6 text-center pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] h-[100dvh] min-h-[100svh] overflow-hidden"
       >
         <div className="max-w-sm w-full bg-[#FAF7F0] p-6 sm:p-8 rounded-3xl border border-[#D8CBB2] shadow-xl space-y-4 text-center">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-[#B65E3C]/10 border border-[#B65E3C]/20 flex items-center justify-center">

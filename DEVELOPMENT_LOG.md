@@ -556,6 +556,32 @@
 
 ---
 
+## November 12, 2026 (P0 Hotfix) — Transformed Ancestor Containment Fix, Hardened Fullscreen Loader & Production Delivery (`feat/crew-circles-passport-rebuild`)
+
+- **Root Cause Resolution (`frontend/app/template.tsx`):**
+  - Confirmed root cause of partial loading screen on iPhone Safari / PWA: `<RootTemplate>` animated with `initial={{ opacity: 0, y: 6 }}` and `animate={{ opacity: 1, y: 0 }}`. Per CSS specifications, any element with a `transform` property creates a new containing block for all its descendants, including `position: fixed` elements. Consequently, `<ProtectedRoute>`'s fixed overlay was trapped inside the `<main>` container bounds below `<Header>` and above `<Footer>` / `<MobileNav>`, exposing split backgrounds and visible controls.
+  - Removed Y-axis transform from `template.tsx`, transitioning solely on opacity (`initial={{ opacity: 0 }} animate={{ opacity: 1 }}`) while preserving route keys, exit behavior, and reduced-motion handling.
+- **Hardened Fullscreen Loader & React Portal Escalation (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Upgraded `<ProtectedRoute>` loading screen styles: `position: fixed`, `inset: 0`, `width: 100%`, `height: 100vh`, `minHeight: 100svh`, `zIndex: 2147483000`, `backgroundColor: "#FAF4E8"`, `overflow: hidden`, with `100dvh` support and iOS safe-area top/bottom padding.
+  - Implemented client-side portal escalation (`createPortal(element, document.body)`) after mount. Rendering directly into `document.body` provides total immunity against any transformed or clipped parent containers anywhere in the application hierarchy.
+  - Preserved SSR compatibility with zero hydration mismatch (mount check guards portal activation).
+- **Automated Regression Suite (`frontend/scripts/test_fullscreen_loading_ancestor_regression.mjs`):**
+  - Authored comprehensive Playwright test covering:
+    - **Scenario A:** Transformed ancestor regression & stacking immunity (portaled to body, bounding box starts at 0,0, covers 390x844, z-index 2147483000, template has no transform matrix, header/nav click-through prevented).
+    - **Scenario B:** Multiple mobile viewports: iPhone 12/13/14 (390x844), iPhone 14/15/16 Pro (393x852), iPhone 14/15/16 Pro Max (430x932), verifying zero horizontal overflow and solid `#FAF4E8` coverage.
+    - **Scenario C:** SWR session restoration (instant render under held network, background verification update, 500 error session retention, explicit 401 purge, and no-cache Connection Paused + Retry recovery).
+    - **Scenario D:** App navigation & route transitions (Header, Explore, Circles, Profile navigate smoothly with opacity-only transitions).
+    - **Scenario E:** PWA manifest standalone mode and Service Worker `vanvas-v4` verification.
+    - **Result:** **All 5 Scenarios PASSED (100% green)**.
+- **Full-Stack Regression Verification:**
+  - `test_fullscreen_loading_ancestor_regression.mjs` ➔ **PASSED (100%)**
+  - `test_instant_session_restoration.mjs` ➔ **PASSED (100%)**
+  - `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100%)**
+  - `test_account_isolation_and_participants.mjs` ➔ **PASSED (100%)**
+  - `npx tsc --noEmit` & `npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
+
+---
+
 ### [2026-11-10] Final SQLite Privacy Isolation & Native Release Validation
 - **Objective:** Eliminate legacy NULL user_id data leakage, enforce user-scoped trip detail caching, achieve in-memory fallback parity, establish migration fail-safe verification, add mutation deduplication guard, and execute 20/20 test cases against real production `offlineDb` methods.
 - **Changes Made:**
@@ -639,6 +665,32 @@
 
 ---
 
+## November 12, 2026 (P0 Hotfix) — Transformed Ancestor Containment Fix, Hardened Fullscreen Loader & Production Delivery (`feat/crew-circles-passport-rebuild`)
+
+- **Root Cause Resolution (`frontend/app/template.tsx`):**
+  - Confirmed root cause of partial loading screen on iPhone Safari / PWA: `<RootTemplate>` animated with `initial={{ opacity: 0, y: 6 }}` and `animate={{ opacity: 1, y: 0 }}`. Per CSS specifications, any element with a `transform` property creates a new containing block for all its descendants, including `position: fixed` elements. Consequently, `<ProtectedRoute>`'s fixed overlay was trapped inside the `<main>` container bounds below `<Header>` and above `<Footer>` / `<MobileNav>`, exposing split backgrounds and visible controls.
+  - Removed Y-axis transform from `template.tsx`, transitioning solely on opacity (`initial={{ opacity: 0 }} animate={{ opacity: 1 }}`) while preserving route keys, exit behavior, and reduced-motion handling.
+- **Hardened Fullscreen Loader & React Portal Escalation (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Upgraded `<ProtectedRoute>` loading screen styles: `position: fixed`, `inset: 0`, `width: 100%`, `height: 100vh`, `minHeight: 100svh`, `zIndex: 2147483000`, `backgroundColor: "#FAF4E8"`, `overflow: hidden`, with `100dvh` support and iOS safe-area top/bottom padding.
+  - Implemented client-side portal escalation (`createPortal(element, document.body)`) after mount. Rendering directly into `document.body` provides total immunity against any transformed or clipped parent containers anywhere in the application hierarchy.
+  - Preserved SSR compatibility with zero hydration mismatch (mount check guards portal activation).
+- **Automated Regression Suite (`frontend/scripts/test_fullscreen_loading_ancestor_regression.mjs`):**
+  - Authored comprehensive Playwright test covering:
+    - **Scenario A:** Transformed ancestor regression & stacking immunity (portaled to body, bounding box starts at 0,0, covers 390x844, z-index 2147483000, template has no transform matrix, header/nav click-through prevented).
+    - **Scenario B:** Multiple mobile viewports: iPhone 12/13/14 (390x844), iPhone 14/15/16 Pro (393x852), iPhone 14/15/16 Pro Max (430x932), verifying zero horizontal overflow and solid `#FAF4E8` coverage.
+    - **Scenario C:** SWR session restoration (instant render under held network, background verification update, 500 error session retention, explicit 401 purge, and no-cache Connection Paused + Retry recovery).
+    - **Scenario D:** App navigation & route transitions (Header, Explore, Circles, Profile navigate smoothly with opacity-only transitions).
+    - **Scenario E:** PWA manifest standalone mode and Service Worker `vanvas-v4` verification.
+    - **Result:** **All 5 Scenarios PASSED (100% green)**.
+- **Full-Stack Regression Verification:**
+  - `test_fullscreen_loading_ancestor_regression.mjs` ➔ **PASSED (100%)**
+  - `test_instant_session_restoration.mjs` ➔ **PASSED (100%)**
+  - `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100%)**
+  - `test_account_isolation_and_participants.mjs` ➔ **PASSED (100%)**
+  - `npx tsc --noEmit` & `npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
+
+---
+
 ### [2026-11-11] Existing-Install SQLite Migration & Offline Sync Integrity
 - **Objective:** Complete idempotent composite-key database migration for existing installations, enforce validated user ownership across all private database methods, harden offline synchronization idempotency against duplicate expenses and unsynced deletions, and execute 31 production flow tests across real production code.
 - **Changes Made:**
@@ -719,3 +771,29 @@
   - Ran `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)**.
   - Ran `test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
   - Next.js production build (`npx tsc --noEmit && npm run build`) compiled 25/25 routes with zero errors.
+
+---
+
+## November 12, 2026 (P0 Hotfix) — Transformed Ancestor Containment Fix, Hardened Fullscreen Loader & Production Delivery (`feat/crew-circles-passport-rebuild`)
+
+- **Root Cause Resolution (`frontend/app/template.tsx`):**
+  - Confirmed root cause of partial loading screen on iPhone Safari / PWA: `<RootTemplate>` animated with `initial={{ opacity: 0, y: 6 }}` and `animate={{ opacity: 1, y: 0 }}`. Per CSS specifications, any element with a `transform` property creates a new containing block for all its descendants, including `position: fixed` elements. Consequently, `<ProtectedRoute>`'s fixed overlay was trapped inside the `<main>` container bounds below `<Header>` and above `<Footer>` / `<MobileNav>`, exposing split backgrounds and visible controls.
+  - Removed Y-axis transform from `template.tsx`, transitioning solely on opacity (`initial={{ opacity: 0 }} animate={{ opacity: 1 }}`) while preserving route keys, exit behavior, and reduced-motion handling.
+- **Hardened Fullscreen Loader & React Portal Escalation (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Upgraded `<ProtectedRoute>` loading screen styles: `position: fixed`, `inset: 0`, `width: 100%`, `height: 100vh`, `minHeight: 100svh`, `zIndex: 2147483000`, `backgroundColor: "#FAF4E8"`, `overflow: hidden`, with `100dvh` support and iOS safe-area top/bottom padding.
+  - Implemented client-side portal escalation (`createPortal(element, document.body)`) after mount. Rendering directly into `document.body` provides total immunity against any transformed or clipped parent containers anywhere in the application hierarchy.
+  - Preserved SSR compatibility with zero hydration mismatch (mount check guards portal activation).
+- **Automated Regression Suite (`frontend/scripts/test_fullscreen_loading_ancestor_regression.mjs`):**
+  - Authored comprehensive Playwright test covering:
+    - **Scenario A:** Transformed ancestor regression & stacking immunity (portaled to body, bounding box starts at 0,0, covers 390x844, z-index 2147483000, template has no transform matrix, header/nav click-through prevented).
+    - **Scenario B:** Multiple mobile viewports: iPhone 12/13/14 (390x844), iPhone 14/15/16 Pro (393x852), iPhone 14/15/16 Pro Max (430x932), verifying zero horizontal overflow and solid `#FAF4E8` coverage.
+    - **Scenario C:** SWR session restoration (instant render under held network, background verification update, 500 error session retention, explicit 401 purge, and no-cache Connection Paused + Retry recovery).
+    - **Scenario D:** App navigation & route transitions (Header, Explore, Circles, Profile navigate smoothly with opacity-only transitions).
+    - **Scenario E:** PWA manifest standalone mode and Service Worker `vanvas-v4` verification.
+    - **Result:** **All 5 Scenarios PASSED (100% green)**.
+- **Full-Stack Regression Verification:**
+  - `test_fullscreen_loading_ancestor_regression.mjs` ➔ **PASSED (100%)**
+  - `test_instant_session_restoration.mjs` ➔ **PASSED (100%)**
+  - `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100%)**
+  - `test_account_isolation_and_participants.mjs` ➔ **PASSED (100%)**
+  - `npx tsc --noEmit` & `npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.

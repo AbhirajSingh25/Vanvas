@@ -16,7 +16,10 @@ CRITICAL SESSION INSTRUCTIONS:
    - `DECISIONS.md` (Architectural philosophies, design rules, and non-negotiables)
    - `NEXT_SESSION.md` (Actionable tasks, key files, and acceptance criteria)
    - `AI_INSTRUCTIONS.md` (Permanent behavioral guidelines and safety rules)
-3. Inspect the actual repository state using Git and file inspection tools before making any assumptions or claims.
+3. Inspect the actual repository state using Git and file inspection tools before making any assumptions or claims:
+   - Check `git status`, `git branch --show-current`, `git log -5 --oneline`, `git remote -v`.
+   - Distinguish Vercel Preview deployments from Production (`vanvasai.vercel.app` maps to base `main` until a PR is merged; feature branch builds deploy to unique preview URLs).
+   - Understand the transformed-ancestor loading regression: route templates (`template.tsx`) must never apply `translateY` transforms, and `<ProtectedRoute>` uses React portal escalation directly to `document.body` at `zIndex: 2147483000` to prevent fixed overlays from being trapped inside transformed layout containers.
 4. Resume development directly from the latest verified checkpoint documented in `CURRENT_STATE.md`.
 5. Preserve all existing product and architecture decisions:
    - Vanvas is an authentic Indian travel companion and Himalayan operating layer, not a generic SaaS dashboard.

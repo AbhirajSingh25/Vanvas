@@ -117,3 +117,13 @@
   - Transient network failures or 5xx server cold-starts preserve cached credentials without logging the user out.
   - Explicit 401 unauthenticated responses cleanly purge stored credentials and redirect to login.
   - Token-only states (missing local profile cache) display the parchment loader with bounded verification, falling back to a graceful connection paused recovery screen with `Retry Connection` and `Sign Out & Return to Login` actions.
+
+---
+
+## 15. Transformed Ancestor Containing Block Immunity & Root Body Portal
+- **Decision:** Page transition wrappers must never apply Y-axis or geometric transforms (`translateY`, `matrix`) at the route template level (`template.tsx`). Furthermore, full-screen authentication loading overlays (`ProtectedRoute.tsx`) must mount directly to `document.body` via React's `createPortal` upon client hydration, with `zIndex: 2147483000` and `overflow: hidden`.
+- **Reasoning:** Per CSS specifications, any element with a `transform`, `filter`, or `perspective` creates a new containing block for all its descendants, including `position: fixed` elements. A route wrapper applying `transform: translateY(...)` traps fixed children inside the page container (`<main>`), leaving headers, footers, mobile navigation docks, and background splits completely exposed on mobile viewports (e.g. iPhone Safari / standalone PWAs).
+- **Consequences:**
+  - `frontend/app/template.tsx` animates purely on opacity (`initial={{ opacity: 0 }} animate={{ opacity: 1 }}`) without modifying the transform matrix.
+  - `ProtectedRoute.tsx` portals directly into `document.body`, completely escaping any parent layout boundaries or stacking contexts.
+  - Full-viewport loading overlays reliably obscure 100% of the screen under all mobile and desktop viewports.
