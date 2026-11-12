@@ -225,7 +225,7 @@ export const AddBudgetItemModal: React.FC<AddBudgetItemModalProps> = ({
       setErrorMsg("Amount must be greater than zero · राशि 0 से अधिक होनी चाहिए");
       return;
     }
-    if (selectedUserIds.length === 0) {
+    if (!isForecastOnly && selectedUserIds.length === 0) {
       setErrorMsg("Select at least one participant · कम से कम 1 सदस्य चुनें");
       return;
     }

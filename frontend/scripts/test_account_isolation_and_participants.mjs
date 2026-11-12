@@ -34,10 +34,21 @@ const USER_B = {
 const REAL_TRIP = {
   id: "trip-real-spiti-01",
   title: "Spiti Winter Expedition",
+  destination_id: "dest-spiti",
+  destination: {
+    id: "dest-spiti",
+    name: "Spiti Valley",
+    slug: "spiti",
+    state: "Himachal Pradesh",
+  },
   destination_name: "Spiti Valley",
   status: "planned",
   start_date: "2026-12-01",
   end_date: "2026-12-07",
+  num_days: 7,
+  budget_total: 25000,
+  budget_spent: 0,
+  travellers_count: 2,
 };
 
 const REAL_TRIP_MEMBERS = {
@@ -134,8 +145,8 @@ async function run() {
       );
     });
     await setSessionUser(page, USER_A);
-    await page.reload({ waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(600);
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForTimeout(300);
 
     // Confirm legacy data was NOT auto-assigned to User A, and User A starts unset
     const budgetCard = page.locator('[data-testid="tool-split-budget"]:visible').first();
@@ -147,7 +158,7 @@ async function run() {
     // Open Split Budget modal: verify Start Your Budget + Travellers not configured + legacy import banner
     await budgetCard.click();
     await page.getByText("Start Your Budget").waitFor({ state: "visible" });
-    await page.getByText("Travellers not configured").waitFor({ state: "visible" });
+    await page.getByText("Travellers not configured").first().waitFor({ state: "visible" });
     await page.getByTestId("legacy-import-banner").waitFor({ state: "visible" });
 
     // Dismiss legacy import so User A starts clean
@@ -155,9 +166,9 @@ async function run() {
 
     // Add an expense BEFORE setting travellers -> must show total ₹2,500 & Pending, NO ₹ ea
     await page.getByTestId("budget-add-row-btn").click();
-    await page.locator('input[placeholder*="Tent"], input[placeholder*="Expense"], input[type="text"]').first().fill("User A Permit");
-    await page.locator('input[type="number"]').first().fill("2500");
-    await page.getByRole("button", { name: /Add to Plan|Save|Add Expense/i }).first().click();
+    await page.getByPlaceholder(/Parvati Valley Riverside Camp/i).fill("User A Permit");
+    await page.getByPlaceholder("600").fill("2500");
+    await page.getByRole("button", { name: /Add to Budget/i }).first().click();
 
     await page.getByText("User A Permit").waitFor({ state: "visible" });
     await page.getByText("Participant allocation pending").first().waitFor({ state: "visible" });
@@ -171,8 +182,8 @@ async function run() {
 
     // Check Trip Budget mode uses real backend members (Aarav One, Bhavna Two), not traveller_1
     await page.getByRole("button", { name: "Trip Budget" }).click();
-    await page.getByText("Aarav One").waitFor({ state: "visible" });
-    await page.getByText("Bhavna Two").waitFor({ state: "visible" });
+    await page.getByRole("button", { name: /Aarav One/i }).waitFor({ state: "visible" });
+    await page.getByRole("button", { name: /Bhavna Two/i }).waitFor({ state: "visible" });
     const tripModalText = await page.locator("body").innerText();
     assert.ok(!tripModalText.includes("Traveller 1"), "Fake Traveller 1 must not appear");
 
@@ -192,7 +203,7 @@ async function run() {
     // 2. Sign out -> Guest must NOT see User A's budget or checklist
     activeMockUser = null;
     await setSessionUser(page, null);
-    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.reload({ waitUntil: "networkidle" });
     await budgetCard.waitFor({ state: "visible" });
     assert.ok((await budgetCard.innerText()).includes("Empty"), "Guest must not see User A budget");
     assert.ok((await checklistCard.innerText()).includes("0 items"), "Guest must not see User A checklist");
@@ -200,7 +211,7 @@ async function run() {
     // 3. User B signs in -> sees empty, adds User B item, never sees User A
     activeMockUser = USER_B;
     await setSessionUser(page, USER_B);
-    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.reload({ waitUntil: "networkidle" });
     await budgetCard.waitFor({ state: "visible" });
     assert.ok((await budgetCard.innerText()).includes("Empty"), "User B must not see User A budget");
 
@@ -213,7 +224,7 @@ async function run() {
     // 4. User A signs back in -> recovers User A's budget & checklist, does NOT see User B
     activeMockUser = USER_A;
     await setSessionUser(page, USER_A);
-    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.reload({ waitUntil: "networkidle" });
     await budgetCard.waitFor({ state: "visible" });
     const recoveredBadge = await page.getByTestId("split-budget-card-badge").innerText();
     assert.ok(recoveredBadge.includes("500"), `User A should recover ₹500 ea, got: ${recoveredBadge}`);
