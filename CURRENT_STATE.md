@@ -1,12 +1,12 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-12T14:40:00+05:30
+> *Last Verified:* 2026-11-12T22:15:00+05:30
 
 ---
 
 ## 1. Git State & Checkpoint
-- **Latest Verified Base:** Branch `main`
+- **Active Branch:** `feat/crew-circles-passport-rebuild`
 - **Application ID:** `ai.vanvas.app`
 - **Native Version:** `0.4.0` (`versionCode 4`)
 - **Runtime Stack:** Next.js 16.3.5 (Turbopack), Expo SDK 58.0.23, React Native 0.88.1, React 19.3.0, FastAPI, PostgreSQL / SQLite
@@ -15,7 +15,8 @@
 ---
 
 ## 2. Production Status
-- **Web Production:** https://vanvasai.vercel.app (Next.js production build: 0 errors, 100% clean).
+- **Production URL:** https://vanvasai.vercel.app (currently mapped to verified base commit on `main`).
+- **Preview Deployment:** Vercel Preview generated per commit on `feat/crew-circles-passport-rebuild`.
 - **Backend API:** https://vanvas-api.onrender.com (FastAPI backend with 261 endpoints mounted).
 - **Native Android App:** Expo SDK 58 React Native app (`mobile/`) with offline SQLite isolation and full feature parity (Typecheck: 0 errors).
 - **Account Deletion Site:** `account-deletion-site/` standalone static portal with token in-memory isolation, Google Play compliant.
@@ -23,16 +24,23 @@
 ---
 
 ## 3. Build & Diagnostics Verification
-- **Backend Solo Traveler Circles Suite:** `backend/tests/test_solo_traveler_circles.py` ➔ **11/11 PASSED (100% green)** (Ask VANVAS Circle schema regression verified resolved).
+- **Playwright Fullscreen Loader & Ancestor Containment Suite:** `frontend/scripts/test_fullscreen_loading_ancestor_regression.mjs` ➔ **5/5 SCENARIOS PASSED (100% green)**:
+  - Scenario A: Transformed ancestor containment immunity (portaled to body, bounding box 0,0,390,844, z-index 2147483000, zero template transform matrix, header/nav click-through prevented).
+  - Scenario B: Modern mobile viewports: iPhone 12/13/14 (390x844), iPhone 14/15/16 Pro (393x852), iPhone 14/15/16 Pro Max (430x932) with solid `#FAF4E8` parchment and zero horizontal overflow.
+  - Scenario C: SWR session restoration (instant render under held network, background verification update, 500 error session retention, explicit 401 purge, and no-cache Connection Paused + Retry recovery).
+  - Scenario D: App navigation & route transitions (Header, Explore, Circles, Profile navigate smoothly with opacity-only transitions).
+  - Scenario E: PWA manifest standalone mode and Service Worker `vanvas-v4` verification.
+- **Playwright Instant Session Restoration & Full Viewport Loader:** `frontend/scripts/test_instant_session_restoration.mjs` ➔ **8/8 PASSED (100% green)**.
+- **Backend Solo Traveler Circles Suite:** `backend/tests/test_solo_traveler_circles.py` ➔ **11/11 PASSED (100% green)**.
 - **Backend Collaborative Crew & Finance Suite:** `backend/tests/test_collaborative_crew_and_finance.py` ➔ **5/5 PASSED (100% green)**.
 - **Backend Account Deletion Governance:** `backend/tests/test_account_deletion_governance.py` ➔ **22/22 PASSED (100% green)**.
 - **Combined Backend Regression:** **38/38 PASSED (100% green)**.
 - **Mobile Offline Isolation & Reliability (Real Code):** `scripts/test_offline_isolation_and_account_deletion.mjs` ➔ **31/31 PASSED (100% green)** executing real production `db.ts`, `api.ts`, and `authTeardown.ts`.
-- **Playwright Live Navigation & SW Recovery Suite:** `scripts/e2e/navigation-runtime-recovery.spec.ts` ➔ **6/6 PASSED (100% green)** (Mobile `390x844`, Desktop `1440x900`, SW v3→v4 migration, Chunk auto-recovery, Offline privacy, iOS standalone).
+- **Playwright Live Navigation & SW Recovery Suite:** `scripts/e2e/navigation-runtime-recovery.spec.ts` ➔ **6/6 PASSED (100% green)**.
 - **PWA Acceptance & Integrity Audit:** `scripts/test_pwa_acceptance.mjs` ➔ **64/64 PASSED (100% green)**.
-- **Backend Authentic User Data & Avatar Durability Suite:** `backend/tests/test_authentic_user_data_and_avatar_durability.py` + `test_auth.py` + `test_profile_photo_upload.py` + `test_profile_and_settings.py` + `test_account_deletion_governance.py` ➔ **54/54 PASSED (100% green)**.
-- **Account Isolation & Explicit Participants Browser Suite:** `frontend/scripts/test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)** across Guest, User A, User B, legacy unassigned isolation, `travellersCount: null` unset state, 5-traveller calculation, and Trip Budget real members.
-- **Playwright Authentic Passport & Empty Budget E2E:** `frontend/scripts/verify_authentic_passport_e2e.mjs` ➔ **PASSED (100% green)** across Desktop (`1440x900`) and Mobile (`390x844`) with reduced-motion checks.
+- **Backend Crew Circles, Passport & Avatar Durability Suites:** `test_crew_circles_and_planner_linking.py` + `test_collaborative_crew_and_finance.py` + `test_authentic_user_data_and_avatar_durability.py` + `test_profile_photo_upload.py` + `test_profile_and_settings.py` + `test_auth.py` + `test_account_deletion_governance.py` ➔ **60/60 PASSED (100% green)**.
+- **Playwright Crew Circles & Passport Rebuild E2E:** `frontend/scripts/test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)**.
+- **Account Isolation & Explicit Participants Browser Suite:** `frontend/scripts/test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
 - **Next.js Web Frontend Build:** `cd frontend && npx tsc --noEmit && npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
 - **Mobile React Native TypeScript & Expo Config:** `cd mobile && npx tsc --noEmit && npx expo config --type public` ➔ **PASSED (0 errors)**.
 - **Shared Package Build:** `cd packages/shared && npm run build` ➔ **PASSED (0 errors)**.

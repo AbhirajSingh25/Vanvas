@@ -28,6 +28,7 @@ interface VanvasIdentityCardProps {
   onUserUpdated?: () => Promise<void> | void;
   onEditProfile?: () => void;
   onChangePhoto?: () => void;
+  avatarUploading?: boolean;
   onOpenSettings?: () => void;
   onSignOut?: () => void;
   compact?: boolean;
@@ -49,6 +50,7 @@ export function VanvasIdentityCard({
   onUserUpdated,
   onEditProfile,
   onChangePhoto,
+  avatarUploading = false,
   onOpenSettings,
   onSignOut,
   compact = false,
@@ -147,7 +149,7 @@ export function VanvasIdentityCard({
     }
   };
 
-  const showActionBar = Boolean(onEditProfile || onChangePhoto || onOpenSettings || onSignOut);
+  const showActionBar = Boolean(onEditProfile || onOpenSettings || onSignOut);
 
   return (
     <>
@@ -188,10 +190,11 @@ export function VanvasIdentityCard({
           {/* 2. Traveler Identity Row */}
           <div className="flex items-start sm:items-center gap-4">
             <div className="relative shrink-0">
-              <div className="rounded-full p-0.5 ring-2 ring-[#B49252]/60 bg-[#112B24]">
+              <div className="rounded-full p-0.5 ring-2 ring-[#B49252]/75 bg-[#112B24]">
                 <Avatar
                   user={user}
                   size={compact ? "lg" : "xl"}
+                  showBorder={false}
                   onImageError={() => {
                     if (user?.avatar_type === "uploaded" && user?.avatar_url) {
                       setAvatarLoadFailed(true);
@@ -203,10 +206,16 @@ export function VanvasIdentityCard({
                 <button
                   type="button"
                   onClick={onChangePhoto}
-                  aria-label="Change profile photo"
-                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#B65E3C] hover:bg-[#9E4D2E] text-white border-2 border-[#173B32] flex items-center justify-center shadow-sm transition-colors cursor-pointer"
+                  disabled={avatarUploading}
+                  data-testid="passport-camera-btn"
+                  aria-label="Upload or change profile photo"
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#B65E3C] hover:bg-[#9E4D2E] disabled:opacity-60 text-white border-2 border-[#173B32] flex items-center justify-center shadow-sm transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F6E2B3]"
                 >
-                  <Camera className="w-3.5 h-3.5" />
+                  {avatarUploading ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Camera className="w-3.5 h-3.5" />
+                  )}
                 </button>
               )}
             </div>
@@ -401,16 +410,6 @@ export function VanvasIdentityCard({
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>Edit Profile</span>
-            </button>
-          )}
-          {onChangePhoto && (
-            <button
-              type="button"
-              onClick={onChangePhoto}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE5D2] text-[#173B32] border border-[#D8CBB2] text-xs font-bold transition-colors cursor-pointer"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              <span>Profile Photo</span>
             </button>
           )}
           {onOpenSettings && (

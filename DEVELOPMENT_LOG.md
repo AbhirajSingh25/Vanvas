@@ -517,6 +517,71 @@
 
 ---
 
+## November 12, 2026 (Rebuild) — Crew Circles & Traveler Passport Functional Rebuild (`feat/crew-circles-passport-rebuild`)
+
+- **Phase 1 — Traveler Passport Camera & Profile Separation (`VanvasIdentityCard.tsx`, `profile/page.tsx`):**
+  - Mounted `directFileInputRef` unconditionally outside the conditional Avatar tab so the passport camera button opens the native file picker from any tab, runs format/5MB validation, opens `AvatarCropper`, uploads via `uploadAvatar`, and calls `refreshUser()` to update both passport and header navigation.
+  - Removed the redundant `Profile Photo` action from the passport action bar, removed duplicate photo upload controls from Edit Profile modal (`handleSaveProfile` only updates identity fields), and fixed the concentric avatar ring (`showBorder={false}` inside single outer gold ring).
+- **Phases 2, 3 & 5 — Crew Circles Workspace & Crew Chat (`frontend/app/circles/[id]/page.tsx`):**
+  - Added Overview `Crew Conversation` preview card, removed duplicate `+ ` prefixes on `Plan Together` and `Propose Idea`, added empty expedition CTA, and improved mobile tab touch targets (`min-h-[40px]`).
+  - Upgraded Crew Chat with chronological ordering, member avatars/timestamps, distinct system event pills (`activity_type !== "chat"`), 4.5s polling with in-flight guard & cleanup, offline/loading/empty/error states, optimistic send with rollback + `Retry`, and auto-scroll.
+- **Phase 4 — Planner <-> Crew Circle Linking (`plan/page.tsx`, `backend/app/api/v1/crew_circles.py`):**
+  - Circle `Plan Together` / `New Trip` links pass `circleId`, `circleName`, and `groupSize` to `/plan`, prefilling `travellersCount` and showing the crew planning banner.
+  - Fixed `link_or_create_circle_trip` in FastAPI to accept JSON body `{"trip_id": ...}` via `Body(default=None)` alongside query params.
+  - Added failure recovery in `/plan` so failed circle linking preserves the created trip and offers `Retry Linking to Circle` / `Open Trip Anyway` without creating duplicate trips.
+- **Verification:** `60/60` backend tests passed, `tsc --noEmit` & `next build` (0 errors), `mobile` `tsc --noEmit` (0 errors), and all 3 Playwright E2E suites (`test_crew_circles_and_passport_rebuild_e2e.mjs`, `test_account_isolation_and_participants.mjs`, `verify_authentic_passport_e2e.mjs`) passed.
+
+---
+
+## November 12, 2026 (P0) — Full Viewport Loading Surface & Instant Session Restoration (`feat/crew-circles-passport-rebuild`)
+
+- **Full-Viewport Opaque Loading Surface (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Replaced partial `min-h-[70vh]` loader with fixed full-screen overlay: `position: fixed`, `inset: 0`, `width: 100%`, `minHeight: 100svh`, `zIndex: 10000`, solid `#FAF4E8` parchment background with zero transparency or backdrop gradients.
+  - Added iOS safe-area inset padding (`env(safe-area-inset-top)` and `env(safe-area-inset-bottom)`) with understated compass spinner, editorial typography, and Hindi subtitle.
+  - Obscures all root-level app shell elements (header, mobile navigation dock, footer, floating copilot) behind the opaque parchment surface, maintaining uniform parchment appearance across system light and dark modes.
+- **Instant Stale-While-Revalidate Session Restoration (`frontend/context/AuthContext.tsx`):**
+  - Stale-While-Revalidate (SWR) session initialization: when `vanvas_token` and a valid cached `vanvas_user_profile` are present in `localStorage`, immediately sets `user`, `token`, and unlocks UI with `setIsLoading(false)` to enable sub-50ms instant render without waiting for backend network response.
+  - Asynchronously fires background revalidation against `/auth/me`; updates profile and cache upon success.
+  - Preserves saved credentials and cached session on transient network timeouts, database cold-starts, or 5xx errors without forcing premature logout.
+  - Explicit 401 unauthenticated / user deleted responses cleanly purge stored credentials and redirect to login.
+- **Bounded Verification Latency (`frontend/lib/api.ts`):**
+  - Added explicit default `timeoutMs: 7000` (7 seconds) to `api.getMe()` while allowing override via options, avoiding the 45-second default timeout during authentication handshakes.
+- **No-Cache Recovery Flow (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - When token exists but profile cache is missing, shows full-viewport parchment loader with bounded verification; on failure, displays dedicated Connection Paused recovery screen with **Retry Connection** and **Sign Out & Return to Login** actions instead of silent redirects.
+- **Verification & Automated Test Suite:**
+  - Authored comprehensive Playwright test `frontend/scripts/test_instant_session_restoration.mjs` verifying 8 production scenarios: instant cached render under delayed network, seamless background update, 500 server error session preservation, explicit 401 purge, no-cache recovery + retry, and fixed `inset: 0`, `zIndex: 10000`, `#FAF4E8` geometry under dark mode on mobile iPhone viewport. **8/8 PASSED (100% green)**.
+  - Ran `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)**.
+  - Ran `test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
+  - Next.js production build (`npx tsc --noEmit && npm run build`) compiled 25/25 routes with zero errors.
+
+---
+
+## November 12, 2026 (P0 Hotfix) — Transformed Ancestor Containment Fix, Hardened Fullscreen Loader & Production Delivery (`feat/crew-circles-passport-rebuild`)
+
+- **Root Cause Resolution (`frontend/app/template.tsx`):**
+  - Confirmed root cause of partial loading screen on iPhone Safari / PWA: `<RootTemplate>` animated with `initial={{ opacity: 0, y: 6 }}` and `animate={{ opacity: 1, y: 0 }}`. Per CSS specifications, any element with a `transform` property creates a new containing block for all its descendants, including `position: fixed` elements. Consequently, `<ProtectedRoute>`'s fixed overlay was trapped inside the `<main>` container bounds below `<Header>` and above `<Footer>` / `<MobileNav>`, exposing split backgrounds and visible controls.
+  - Removed Y-axis transform from `template.tsx`, transitioning solely on opacity (`initial={{ opacity: 0 }} animate={{ opacity: 1 }}`) while preserving route keys, exit behavior, and reduced-motion handling.
+- **Hardened Fullscreen Loader & React Portal Escalation (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Upgraded `<ProtectedRoute>` loading screen styles: `position: fixed`, `inset: 0`, `width: 100%`, `height: 100vh`, `minHeight: 100svh`, `zIndex: 2147483000`, `backgroundColor: "#FAF4E8"`, `overflow: hidden`, with `100dvh` support and iOS safe-area top/bottom padding.
+  - Implemented client-side portal escalation (`createPortal(element, document.body)`) after mount. Rendering directly into `document.body` provides total immunity against any transformed or clipped parent containers anywhere in the application hierarchy.
+  - Preserved SSR compatibility with zero hydration mismatch (mount check guards portal activation).
+- **Automated Regression Suite (`frontend/scripts/test_fullscreen_loading_ancestor_regression.mjs`):**
+  - Authored comprehensive Playwright test covering:
+    - **Scenario A:** Transformed ancestor regression & stacking immunity (portaled to body, bounding box starts at 0,0, covers 390x844, z-index 2147483000, template has no transform matrix, header/nav click-through prevented).
+    - **Scenario B:** Multiple mobile viewports: iPhone 12/13/14 (390x844), iPhone 14/15/16 Pro (393x852), iPhone 14/15/16 Pro Max (430x932), verifying zero horizontal overflow and solid `#FAF4E8` coverage.
+    - **Scenario C:** SWR session restoration (instant render under held network, background verification update, 500 error session retention, explicit 401 purge, and no-cache Connection Paused + Retry recovery).
+    - **Scenario D:** App navigation & route transitions (Header, Explore, Circles, Profile navigate smoothly with opacity-only transitions).
+    - **Scenario E:** PWA manifest standalone mode and Service Worker `vanvas-v4` verification.
+    - **Result:** **All 5 Scenarios PASSED (100% green)**.
+- **Full-Stack Regression Verification:**
+  - `test_fullscreen_loading_ancestor_regression.mjs` ➔ **PASSED (100%)**
+  - `test_instant_session_restoration.mjs` ➔ **PASSED (100%)**
+  - `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100%)**
+  - `test_account_isolation_and_participants.mjs` ➔ **PASSED (100%)**
+  - `npx tsc --noEmit` & `npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
+
+---
+
 ### [2026-11-10] Final SQLite Privacy Isolation & Native Release Validation
 - **Objective:** Eliminate legacy NULL user_id data leakage, enforce user-scoped trip detail caching, achieve in-memory fallback parity, establish migration fail-safe verification, add mutation deduplication guard, and execute 20/20 test cases against real production `offlineDb` methods.
 - **Changes Made:**
@@ -561,6 +626,71 @@
 
 ---
 
+## November 12, 2026 (Rebuild) — Crew Circles & Traveler Passport Functional Rebuild (`feat/crew-circles-passport-rebuild`)
+
+- **Phase 1 — Traveler Passport Camera & Profile Separation (`VanvasIdentityCard.tsx`, `profile/page.tsx`):**
+  - Mounted `directFileInputRef` unconditionally outside the conditional Avatar tab so the passport camera button opens the native file picker from any tab, runs format/5MB validation, opens `AvatarCropper`, uploads via `uploadAvatar`, and calls `refreshUser()` to update both passport and header navigation.
+  - Removed the redundant `Profile Photo` action from the passport action bar, removed duplicate photo upload controls from Edit Profile modal (`handleSaveProfile` only updates identity fields), and fixed the concentric avatar ring (`showBorder={false}` inside single outer gold ring).
+- **Phases 2, 3 & 5 — Crew Circles Workspace & Crew Chat (`frontend/app/circles/[id]/page.tsx`):**
+  - Added Overview `Crew Conversation` preview card, removed duplicate `+ ` prefixes on `Plan Together` and `Propose Idea`, added empty expedition CTA, and improved mobile tab touch targets (`min-h-[40px]`).
+  - Upgraded Crew Chat with chronological ordering, member avatars/timestamps, distinct system event pills (`activity_type !== "chat"`), 4.5s polling with in-flight guard & cleanup, offline/loading/empty/error states, optimistic send with rollback + `Retry`, and auto-scroll.
+- **Phase 4 — Planner <-> Crew Circle Linking (`plan/page.tsx`, `backend/app/api/v1/crew_circles.py`):**
+  - Circle `Plan Together` / `New Trip` links pass `circleId`, `circleName`, and `groupSize` to `/plan`, prefilling `travellersCount` and showing the crew planning banner.
+  - Fixed `link_or_create_circle_trip` in FastAPI to accept JSON body `{"trip_id": ...}` via `Body(default=None)` alongside query params.
+  - Added failure recovery in `/plan` so failed circle linking preserves the created trip and offers `Retry Linking to Circle` / `Open Trip Anyway` without creating duplicate trips.
+- **Verification:** `60/60` backend tests passed, `tsc --noEmit` & `next build` (0 errors), `mobile` `tsc --noEmit` (0 errors), and all 3 Playwright E2E suites (`test_crew_circles_and_passport_rebuild_e2e.mjs`, `test_account_isolation_and_participants.mjs`, `verify_authentic_passport_e2e.mjs`) passed.
+
+---
+
+## November 12, 2026 (P0) — Full Viewport Loading Surface & Instant Session Restoration (`feat/crew-circles-passport-rebuild`)
+
+- **Full-Viewport Opaque Loading Surface (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Replaced partial `min-h-[70vh]` loader with fixed full-screen overlay: `position: fixed`, `inset: 0`, `width: 100%`, `minHeight: 100svh`, `zIndex: 10000`, solid `#FAF4E8` parchment background with zero transparency or backdrop gradients.
+  - Added iOS safe-area inset padding (`env(safe-area-inset-top)` and `env(safe-area-inset-bottom)`) with understated compass spinner, editorial typography, and Hindi subtitle.
+  - Obscures all root-level app shell elements (header, mobile navigation dock, footer, floating copilot) behind the opaque parchment surface, maintaining uniform parchment appearance across system light and dark modes.
+- **Instant Stale-While-Revalidate Session Restoration (`frontend/context/AuthContext.tsx`):**
+  - Stale-While-Revalidate (SWR) session initialization: when `vanvas_token` and a valid cached `vanvas_user_profile` are present in `localStorage`, immediately sets `user`, `token`, and unlocks UI with `setIsLoading(false)` to enable sub-50ms instant render without waiting for backend network response.
+  - Asynchronously fires background revalidation against `/auth/me`; updates profile and cache upon success.
+  - Preserves saved credentials and cached session on transient network timeouts, database cold-starts, or 5xx errors without forcing premature logout.
+  - Explicit 401 unauthenticated / user deleted responses cleanly purge stored credentials and redirect to login.
+- **Bounded Verification Latency (`frontend/lib/api.ts`):**
+  - Added explicit default `timeoutMs: 7000` (7 seconds) to `api.getMe()` while allowing override via options, avoiding the 45-second default timeout during authentication handshakes.
+- **No-Cache Recovery Flow (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - When token exists but profile cache is missing, shows full-viewport parchment loader with bounded verification; on failure, displays dedicated Connection Paused recovery screen with **Retry Connection** and **Sign Out & Return to Login** actions instead of silent redirects.
+- **Verification & Automated Test Suite:**
+  - Authored comprehensive Playwright test `frontend/scripts/test_instant_session_restoration.mjs` verifying 8 production scenarios: instant cached render under delayed network, seamless background update, 500 server error session preservation, explicit 401 purge, no-cache recovery + retry, and fixed `inset: 0`, `zIndex: 10000`, `#FAF4E8` geometry under dark mode on mobile iPhone viewport. **8/8 PASSED (100% green)**.
+  - Ran `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)**.
+  - Ran `test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
+  - Next.js production build (`npx tsc --noEmit && npm run build`) compiled 25/25 routes with zero errors.
+
+---
+
+## November 12, 2026 (P0 Hotfix) — Transformed Ancestor Containment Fix, Hardened Fullscreen Loader & Production Delivery (`feat/crew-circles-passport-rebuild`)
+
+- **Root Cause Resolution (`frontend/app/template.tsx`):**
+  - Confirmed root cause of partial loading screen on iPhone Safari / PWA: `<RootTemplate>` animated with `initial={{ opacity: 0, y: 6 }}` and `animate={{ opacity: 1, y: 0 }}`. Per CSS specifications, any element with a `transform` property creates a new containing block for all its descendants, including `position: fixed` elements. Consequently, `<ProtectedRoute>`'s fixed overlay was trapped inside the `<main>` container bounds below `<Header>` and above `<Footer>` / `<MobileNav>`, exposing split backgrounds and visible controls.
+  - Removed Y-axis transform from `template.tsx`, transitioning solely on opacity (`initial={{ opacity: 0 }} animate={{ opacity: 1 }}`) while preserving route keys, exit behavior, and reduced-motion handling.
+- **Hardened Fullscreen Loader & React Portal Escalation (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Upgraded `<ProtectedRoute>` loading screen styles: `position: fixed`, `inset: 0`, `width: 100%`, `height: 100vh`, `minHeight: 100svh`, `zIndex: 2147483000`, `backgroundColor: "#FAF4E8"`, `overflow: hidden`, with `100dvh` support and iOS safe-area top/bottom padding.
+  - Implemented client-side portal escalation (`createPortal(element, document.body)`) after mount. Rendering directly into `document.body` provides total immunity against any transformed or clipped parent containers anywhere in the application hierarchy.
+  - Preserved SSR compatibility with zero hydration mismatch (mount check guards portal activation).
+- **Automated Regression Suite (`frontend/scripts/test_fullscreen_loading_ancestor_regression.mjs`):**
+  - Authored comprehensive Playwright test covering:
+    - **Scenario A:** Transformed ancestor regression & stacking immunity (portaled to body, bounding box starts at 0,0, covers 390x844, z-index 2147483000, template has no transform matrix, header/nav click-through prevented).
+    - **Scenario B:** Multiple mobile viewports: iPhone 12/13/14 (390x844), iPhone 14/15/16 Pro (393x852), iPhone 14/15/16 Pro Max (430x932), verifying zero horizontal overflow and solid `#FAF4E8` coverage.
+    - **Scenario C:** SWR session restoration (instant render under held network, background verification update, 500 error session retention, explicit 401 purge, and no-cache Connection Paused + Retry recovery).
+    - **Scenario D:** App navigation & route transitions (Header, Explore, Circles, Profile navigate smoothly with opacity-only transitions).
+    - **Scenario E:** PWA manifest standalone mode and Service Worker `vanvas-v4` verification.
+    - **Result:** **All 5 Scenarios PASSED (100% green)**.
+- **Full-Stack Regression Verification:**
+  - `test_fullscreen_loading_ancestor_regression.mjs` ➔ **PASSED (100%)**
+  - `test_instant_session_restoration.mjs` ➔ **PASSED (100%)**
+  - `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100%)**
+  - `test_account_isolation_and_participants.mjs` ➔ **PASSED (100%)**
+  - `npx tsc --noEmit` & `npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
+
+---
+
 ### [2026-11-11] Existing-Install SQLite Migration & Offline Sync Integrity
 - **Objective:** Complete idempotent composite-key database migration for existing installations, enforce validated user ownership across all private database methods, harden offline synchronization idempotency against duplicate expenses and unsynced deletions, and execute 31 production flow tests across real production code.
 - **Changes Made:**
@@ -602,3 +732,68 @@
   - Scratch Budget now initializes with `travellersCount: null` (`Travellers not configured`), showing `"Start Your Budget"` / `"Set Number of Travellers"` when empty and `"Set participants to calculate your share."` / `Pending` when expenses exist without configured participants.
   - Trip Budget mode fetches genuine trip members via `api.getGroupDetails(activeTrip.id)` without fabricated `traveller_1..4` placeholders or cross-mode merging.
 - **Verification:** `54/54` backend tests passed (including `test_full_authenticated_session_and_avatar_recovery_integration`), `test_account_isolation_and_participants.mjs` passed, `verify_authentic_passport_e2e.mjs` passed, `next build` (0 errors), `mobile` `tsc --noEmit` & `expo config --type public` (0 errors).
+
+---
+
+## November 12, 2026 (Rebuild) — Crew Circles & Traveler Passport Functional Rebuild (`feat/crew-circles-passport-rebuild`)
+
+- **Phase 1 — Traveler Passport Camera & Profile Separation (`VanvasIdentityCard.tsx`, `profile/page.tsx`):**
+  - Mounted `directFileInputRef` unconditionally outside the conditional Avatar tab so the passport camera button opens the native file picker from any tab, runs format/5MB validation, opens `AvatarCropper`, uploads via `uploadAvatar`, and calls `refreshUser()` to update both passport and header navigation.
+  - Removed the redundant `Profile Photo` action from the passport action bar, removed duplicate photo upload controls from Edit Profile modal (`handleSaveProfile` only updates identity fields), and fixed the concentric avatar ring (`showBorder={false}` inside single outer gold ring).
+- **Phases 2, 3 & 5 — Crew Circles Workspace & Crew Chat (`frontend/app/circles/[id]/page.tsx`):**
+  - Added Overview `Crew Conversation` preview card, removed duplicate `+ ` prefixes on `Plan Together` and `Propose Idea`, added empty expedition CTA, and improved mobile tab touch targets (`min-h-[40px]`).
+  - Upgraded Crew Chat with chronological ordering, member avatars/timestamps, distinct system event pills (`activity_type !== "chat"`), 4.5s polling with in-flight guard & cleanup, offline/loading/empty/error states, optimistic send with rollback + `Retry`, and auto-scroll.
+- **Phase 4 — Planner <-> Crew Circle Linking (`plan/page.tsx`, `backend/app/api/v1/crew_circles.py`):**
+  - Circle `Plan Together` / `New Trip` links pass `circleId`, `circleName`, and `groupSize` to `/plan`, prefilling `travellersCount` and showing the crew planning banner.
+  - Fixed `link_or_create_circle_trip` in FastAPI to accept JSON body `{"trip_id": ...}` via `Body(default=None)` alongside query params.
+  - Added failure recovery in `/plan` so failed circle linking preserves the created trip and offers `Retry Linking to Circle` / `Open Trip Anyway` without creating duplicate trips.
+- **Verification:** `60/60` backend tests passed, `tsc --noEmit` & `next build` (0 errors), `mobile` `tsc --noEmit` (0 errors), and all 3 Playwright E2E suites (`test_crew_circles_and_passport_rebuild_e2e.mjs`, `test_account_isolation_and_participants.mjs`, `verify_authentic_passport_e2e.mjs`) passed.
+
+---
+
+## November 12, 2026 (P0) — Full Viewport Loading Surface & Instant Session Restoration (`feat/crew-circles-passport-rebuild`)
+
+- **Full-Viewport Opaque Loading Surface (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Replaced partial `min-h-[70vh]` loader with fixed full-screen overlay: `position: fixed`, `inset: 0`, `width: 100%`, `minHeight: 100svh`, `zIndex: 10000`, solid `#FAF4E8` parchment background with zero transparency or backdrop gradients.
+  - Added iOS safe-area inset padding (`env(safe-area-inset-top)` and `env(safe-area-inset-bottom)`) with understated compass spinner, editorial typography, and Hindi subtitle.
+  - Obscures all root-level app shell elements (header, mobile navigation dock, footer, floating copilot) behind the opaque parchment surface, maintaining uniform parchment appearance across system light and dark modes.
+- **Instant Stale-While-Revalidate Session Restoration (`frontend/context/AuthContext.tsx`):**
+  - Stale-While-Revalidate (SWR) session initialization: when `vanvas_token` and a valid cached `vanvas_user_profile` are present in `localStorage`, immediately sets `user`, `token`, and unlocks UI with `setIsLoading(false)` to enable sub-50ms instant render without waiting for backend network response.
+  - Asynchronously fires background revalidation against `/auth/me`; updates profile and cache upon success.
+  - Preserves saved credentials and cached session on transient network timeouts, database cold-starts, or 5xx errors without forcing premature logout.
+  - Explicit 401 unauthenticated / user deleted responses cleanly purge stored credentials and redirect to login.
+- **Bounded Verification Latency (`frontend/lib/api.ts`):**
+  - Added explicit default `timeoutMs: 7000` (7 seconds) to `api.getMe()` while allowing override via options, avoiding the 45-second default timeout during authentication handshakes.
+- **No-Cache Recovery Flow (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - When token exists but profile cache is missing, shows full-viewport parchment loader with bounded verification; on failure, displays dedicated Connection Paused recovery screen with **Retry Connection** and **Sign Out & Return to Login** actions instead of silent redirects.
+- **Verification & Automated Test Suite:**
+  - Authored comprehensive Playwright test `frontend/scripts/test_instant_session_restoration.mjs` verifying 8 production scenarios: instant cached render under delayed network, seamless background update, 500 server error session preservation, explicit 401 purge, no-cache recovery + retry, and fixed `inset: 0`, `zIndex: 10000`, `#FAF4E8` geometry under dark mode on mobile iPhone viewport. **8/8 PASSED (100% green)**.
+  - Ran `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)**.
+  - Ran `test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
+  - Next.js production build (`npx tsc --noEmit && npm run build`) compiled 25/25 routes with zero errors.
+
+---
+
+## November 12, 2026 (P0 Hotfix) — Transformed Ancestor Containment Fix, Hardened Fullscreen Loader & Production Delivery (`feat/crew-circles-passport-rebuild`)
+
+- **Root Cause Resolution (`frontend/app/template.tsx`):**
+  - Confirmed root cause of partial loading screen on iPhone Safari / PWA: `<RootTemplate>` animated with `initial={{ opacity: 0, y: 6 }}` and `animate={{ opacity: 1, y: 0 }}`. Per CSS specifications, any element with a `transform` property creates a new containing block for all its descendants, including `position: fixed` elements. Consequently, `<ProtectedRoute>`'s fixed overlay was trapped inside the `<main>` container bounds below `<Header>` and above `<Footer>` / `<MobileNav>`, exposing split backgrounds and visible controls.
+  - Removed Y-axis transform from `template.tsx`, transitioning solely on opacity (`initial={{ opacity: 0 }} animate={{ opacity: 1 }}`) while preserving route keys, exit behavior, and reduced-motion handling.
+- **Hardened Fullscreen Loader & React Portal Escalation (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Upgraded `<ProtectedRoute>` loading screen styles: `position: fixed`, `inset: 0`, `width: 100%`, `height: 100vh`, `minHeight: 100svh`, `zIndex: 2147483000`, `backgroundColor: "#FAF4E8"`, `overflow: hidden`, with `100dvh` support and iOS safe-area top/bottom padding.
+  - Implemented client-side portal escalation (`createPortal(element, document.body)`) after mount. Rendering directly into `document.body` provides total immunity against any transformed or clipped parent containers anywhere in the application hierarchy.
+  - Preserved SSR compatibility with zero hydration mismatch (mount check guards portal activation).
+- **Automated Regression Suite (`frontend/scripts/test_fullscreen_loading_ancestor_regression.mjs`):**
+  - Authored comprehensive Playwright test covering:
+    - **Scenario A:** Transformed ancestor regression & stacking immunity (portaled to body, bounding box starts at 0,0, covers 390x844, z-index 2147483000, template has no transform matrix, header/nav click-through prevented).
+    - **Scenario B:** Multiple mobile viewports: iPhone 12/13/14 (390x844), iPhone 14/15/16 Pro (393x852), iPhone 14/15/16 Pro Max (430x932), verifying zero horizontal overflow and solid `#FAF4E8` coverage.
+    - **Scenario C:** SWR session restoration (instant render under held network, background verification update, 500 error session retention, explicit 401 purge, and no-cache Connection Paused + Retry recovery).
+    - **Scenario D:** App navigation & route transitions (Header, Explore, Circles, Profile navigate smoothly with opacity-only transitions).
+    - **Scenario E:** PWA manifest standalone mode and Service Worker `vanvas-v4` verification.
+    - **Result:** **All 5 Scenarios PASSED (100% green)**.
+- **Full-Stack Regression Verification:**
+  - `test_fullscreen_loading_ancestor_regression.mjs` ➔ **PASSED (100%)**
+  - `test_instant_session_restoration.mjs` ➔ **PASSED (100%)**
+  - `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100%)**
+  - `test_account_isolation_and_participants.mjs` ➔ **PASSED (100%)**
+  - `npx tsc --noEmit` & `npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.

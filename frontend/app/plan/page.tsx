@@ -63,6 +63,10 @@ function PlanWizard() {
   const urlDays = searchParams?.get("days") || "";
   const urlCompanion = searchParams?.get("companion") || "";
   const urlTransport = searchParams?.get("transport") || "";
+  const urlCircleId = searchParams?.get("circleId")?.trim() || "";
+  const urlCircleName = searchParams?.get("circleName")?.trim() || "";
+  const urlGroupSize = Number.parseInt(searchParams?.get("groupSize") || "", 10);
+  const hasValidGroupSize = Number.isFinite(urlGroupSize) && urlGroupSize >= 1;
 
   const [anchorPlace, setAnchorPlace] = useState<string>(urlPlace);
 
@@ -241,9 +245,13 @@ function PlanWizard() {
       );
       if (match) return match;
     }
+    if (hasValidGroupSize) {
+      return urlGroupSize === 1 ? "Solo" : "Friends";
+    }
     return "Couple";
   });
   const [travellersCount, setTravellersCount] = useState<number>(() => {
+    if (hasValidGroupSize) return urlGroupSize;
     if (urlCompanion?.toLowerCase() === "solo" || urlCompanion?.toLowerCase() === "just me") return 1;
     if (urlCompanion?.toLowerCase() === "friends") return 3;
     if (urlCompanion?.toLowerCase() === "family") return 4;
@@ -315,6 +323,13 @@ function PlanWizard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genMessage, setGenMessage] = useState("Drafting your itinerary...");
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [pendingCircleLink, setPendingCircleLink] = useState<{
+    tripId: string;
+    targetSlug: string;
+    isRoadTrip: boolean;
+    error: string;
+  } | null>(null);
+  const [retryingCircleLink, setRetryingCircleLink] = useState(false);
 
   // Calculate estimated budget when days, travellers, and style change
   useEffect(() => {
@@ -680,14 +695,78 @@ function PlanWizard() {
         } catch {}
       }
 
-      // Navigate immediately when actual result is ready (no artificial delays or confetti)
-      if (selectedTransportMode.toLowerCase().includes("road")) {
-        router.push(`/road-trip?origin=${encodeURIComponent(originCity.trim())}&dest=${encodeURIComponent(cleanTarget)}&tripId=${trip.id}&travellers=${travellersCount}&budget=${budgetEstimate}`);
-      } else {
-        router.push(`/trips/${trip.id}`);
+      const isRoadTrip = selectedTransportMode.toLowerCase().includes("road");
+      const circleQuery = urlCircleId
+        ? `&circleId=${encodeURIComponent(urlCircleId)}${
+            urlCircleName ? `&circleName=${encodeURIComponent(urlCircleName)}` : ""
+          }`
+        : "";
+      const targetRoute = isRoadTrip
+        ? `/road-trip?origin=${encodeURIComponent(originCity.trim())}&dest=${encodeURIComponent(cleanTarget)}&tripId=${trip.id}&travellers=${travellersCount}&budget=${budgetEstimate}${circleQuery}`
+        : urlCircleId
+          ? `/trips/${trip.id}?circleId=${encodeURIComponent(urlCircleId)}${
+              urlCircleName ? `&circleName=${encodeURIComponent(urlCircleName)}` : ""
+            }`
+          : `/trips/${trip.id}`;
+
+      if (urlCircleId) {
+        try {
+          await api.linkCrewCircleTrip(urlCircleId, trip.id);
+        } catch (linkErr: any) {
+          setPendingCircleLink({
+            tripId: trip.id,
+            targetSlug: cleanTarget,
+            isRoadTrip,
+            error:
+              linkErr?.message ||
+              "Your expedition was created, but linking it to the crew circle failed.",
+          });
+          return;
+        }
       }
+
+      // Navigate immediately when actual result is ready (no artificial delays or confetti)
+      router.push(targetRoute);
     } catch (err: any) {
       setGenerationError(err.message || "Failed to generate expedition. Please verify network and retry.");
+    }
+  };
+
+  const getTripDestinationRoute = (tripId: string, targetSlug: string, isRoadTrip: boolean) => {
+    const circleQuery = urlCircleId
+      ? `circleId=${encodeURIComponent(urlCircleId)}${
+          urlCircleName ? `&circleName=${encodeURIComponent(urlCircleName)}` : ""
+        }`
+      : "";
+    if (isRoadTrip) {
+      return `/road-trip?origin=${encodeURIComponent(originCity.trim())}&dest=${encodeURIComponent(targetSlug)}&tripId=${tripId}&travellers=${travellersCount}&budget=${budgetEstimate}${circleQuery ? `&${circleQuery}` : ""}`;
+    }
+    return circleQuery ? `/trips/${tripId}?${circleQuery}` : `/trips/${tripId}`;
+  };
+
+  const handleRetryCircleLink = async () => {
+    if (!pendingCircleLink || !urlCircleId || retryingCircleLink) return;
+    setRetryingCircleLink(true);
+    try {
+      await api.linkCrewCircleTrip(urlCircleId, pendingCircleLink.tripId);
+      const destRoute = getTripDestinationRoute(
+        pendingCircleLink.tripId,
+        pendingCircleLink.targetSlug,
+        pendingCircleLink.isRoadTrip
+      );
+      setPendingCircleLink(null);
+      router.push(destRoute);
+    } catch (err: any) {
+      setPendingCircleLink((prev) =>
+        prev
+          ? {
+              ...prev,
+              error: err?.message || "Still unable to link trip to circle. You can retry or open the trip.",
+            }
+          : prev
+      );
+    } finally {
+      setRetryingCircleLink(false);
     }
   };
 
@@ -882,6 +961,26 @@ function PlanWizard() {
           />
         ) : (
           <div className="bg-[#FAF7F0] border-2 border-[#E5D5BA] rounded-3xl shadow-xl relative overflow-visible transition-all duration-300 p-5 sm:p-8">
+            {urlCircleId && (
+              <div
+                data-testid="plan-circle-context-banner"
+                className="mb-4 px-3.5 py-2.5 rounded-2xl bg-[#173B32]/8 border border-[#B49252]/40 flex items-center justify-between gap-2 text-xs text-[#173B32]"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Users className="w-4 h-4 text-[#B49252] shrink-0" />
+                  <span className="truncate">
+                    Planning for crew: <strong>{urlCircleName || "Crew Circle"}</strong> · {travellersCount}{" "}
+                    {travellersCount === 1 ? "traveller" : "travellers"}
+                  </span>
+                </div>
+                <Link
+                  href={`/circles/${urlCircleId}`}
+                  className="text-[11px] font-bold text-[#B65E3C] hover:underline shrink-0"
+                >
+                  Back to Circle
+                </Link>
+              </div>
+            )}
             {/* Top Progress & Navigation Header */}
           <div className="border-b border-[#E5D5BA] pb-4 mb-5 sm:mb-6 space-y-3">
             <div className="flex items-center justify-between">
@@ -1914,6 +2013,48 @@ function PlanWizard() {
                 </div>
               )}
 
+              {pendingCircleLink && (
+                <div
+                  data-testid="circle-link-recovery-banner"
+                  className="p-4 rounded-2xl bg-[#FAF4E8] border-2 border-[#B65E3C]/50 text-xs text-[#173B32] space-y-3 shadow-sm"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-[#B65E3C] shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold text-[#173B32]">
+                        Expedition created, but linking to {urlCircleName || "circle"} failed
+                      </p>
+                      <p className="text-[#7B4D36]">{pendingCircleLink.error}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleRetryCircleLink}
+                      disabled={retryingCircleLink}
+                      className="px-3.5 py-2 rounded-xl bg-[#173B32] hover:bg-[#20453B] text-[#FAF7F0] text-xs font-bold cursor-pointer disabled:opacity-60"
+                    >
+                      {retryingCircleLink ? "Linking…" : "Retry Linking to Circle"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          getTripDestinationRoute(
+                            pendingCircleLink.tripId,
+                            pendingCircleLink.targetSlug,
+                            pendingCircleLink.isRoadTrip
+                          )
+                        )
+                      }
+                      className="px-3.5 py-2 rounded-xl bg-white border border-[#D8CBB2] text-[#173B32] text-xs font-bold hover:bg-[#EFE5D2] cursor-pointer"
+                    >
+                      Open Trip Anyway
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {generationError && (
                 <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2.5 shadow-sm animate-vanvas-fade">
                   <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
@@ -1929,8 +2070,8 @@ function PlanWizard() {
                 <button
                   type="button"
                   id="vanvas-build-my-trip-btn"
-                  onClick={handleBuildTrip}
-                  disabled={isGenerating || !user}
+                  onClick={pendingCircleLink ? handleRetryCircleLink : handleBuildTrip}
+                  disabled={isGenerating || retryingCircleLink || !user}
                   className="w-full py-4 rounded-2xl bg-[#B65E3C] hover:bg-[#9E4D2E] disabled:opacity-50 interactive-btn text-[#FAF4E8] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl cursor-pointer transition-all"
                 >
                   <Sparkles className="w-4 h-4 text-[#B49252]" />

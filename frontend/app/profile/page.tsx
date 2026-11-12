@@ -47,16 +47,12 @@ function ProfileContent() {
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const directFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Edit Profile Modal State
+  // Edit Profile Modal State (identity fields only; photo upload lives on Passport/Avatar tab)
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [removeAvatarRequested, setRemoveAvatarRequested] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reusable Avatar Cropper State
   const [cropperFile, setCropperFile] = useState<File | null>(null);
@@ -143,70 +139,29 @@ function ProfileContent() {
   const openEditModal = () => {
     if (user) {
       setEditName(user.full_name);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      setRemoveAvatarRequested(false);
       setProfileSaveError(null);
       setProfileSaveSuccess(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
       setEditModalOpen(true);
     }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-    if (!validTypes.includes(file.type.toLowerCase())) {
-      setProfileSaveError("Please select a JPG, PNG, or WebP image.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setProfileSaveError("Selected photo exceeds the 5 MB limit. Please choose a smaller photo.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    setProfileSaveError(null);
-    setCropperFile(file);
-    setCropperOrigin("modal");
-    setIsCropperOpen(true);
   };
 
   const handleCropComplete = async (croppedFile: File) => {
     setIsCropperOpen(false);
     setCropperFile(null);
 
-    if (cropperOrigin === "direct") {
-      setAvatarLoading(true);
-      setAvatarError(null);
-      setAvatarSuccess(null);
-      try {
-        await uploadAvatar(croppedFile);
-        setAvatarSuccess("Custom profile photo cropped, uploaded, and activated!");
-        setTimeout(() => setAvatarSuccess(null), 3500);
-      } catch (err: any) {
-        setAvatarError(err.message || "Failed to upload profile photo.");
-      } finally {
-        setAvatarLoading(false);
-        if (directFileInputRef.current) directFileInputRef.current.value = "";
-      }
-    } else {
-      // Modal origin: stage croppedFile for handleSaveProfile and update preview
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      setSelectedFile(croppedFile);
-      setPreviewUrl(URL.createObjectURL(croppedFile));
-      setRemoveAvatarRequested(false);
-      setProfileSaveError(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    setAvatarLoading(true);
+    setAvatarError(null);
+    setAvatarSuccess(null);
+    try {
+      await uploadAvatar(croppedFile);
+      await refreshUser();
+      setAvatarSuccess("Custom profile photo cropped, uploaded, and activated!");
+      setTimeout(() => setAvatarSuccess(null), 3500);
+    } catch (err: any) {
+      setAvatarError(err.message || "Failed to upload profile photo.");
+    } finally {
+      setAvatarLoading(false);
+      if (directFileInputRef.current) directFileInputRef.current.value = "";
     }
   };
 
@@ -214,18 +169,6 @@ function ProfileContent() {
     setIsCropperOpen(false);
     setCropperFile(null);
     if (directFileInputRef.current) directFileInputRef.current.value = "";
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleRemovePhoto = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setRemoveAvatarRequested(true);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    setProfileSaveError(null);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -239,12 +182,6 @@ function ProfileContent() {
     setProfileSaveError(null);
 
     try {
-      if (selectedFile) {
-        await uploadAvatar(selectedFile);
-      } else if (removeAvatarRequested) {
-        await deleteAvatar();
-      }
-
       if (editName.trim() !== user?.full_name) {
         await updateProfile({
           full_name: editName.trim(),
@@ -255,12 +192,6 @@ function ProfileContent() {
       setTimeout(() => {
         setEditModalOpen(false);
         setProfileSaveSuccess(false);
-        if (previewUrl) {
-          URL.revokeObjectURL(previewUrl);
-          setPreviewUrl(null);
-        }
-        setSelectedFile(null);
-        setRemoveAvatarRequested(false);
       }, 1000);
     } catch (err: any) {
       setProfileSaveError(err.message || "Failed to update profile. Please try again.");
@@ -308,6 +239,15 @@ function ProfileContent() {
 
   return (
     <div className="min-h-screen bg-[#FAF4E8] py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+      {/* Unconditionally mounted file input for passport camera & Avatar tab */}
+      <input
+        type="file"
+        ref={directFileInputRef}
+        onChange={handleDirectFileUpload}
+        accept="image/jpeg,image/png,image/webp,image/jpg"
+        data-testid="passport-photo-input"
+        className="hidden"
+      />
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Single Unified VANVAS Identity Passport & Action Bar */}
         <VanvasIdentityCard
@@ -316,10 +256,42 @@ function ProfileContent() {
             await refreshUser();
           }}
           onEditProfile={openEditModal}
-          onChangePhoto={() => setActiveTab("avatar")}
+          onChangePhoto={() => directFileInputRef.current?.click()}
+          avatarUploading={avatarLoading}
           onOpenSettings={() => router.push("/settings")}
           onSignOut={() => logout()}
         />
+
+        {avatarError && (
+          <div
+            role="alert"
+            data-testid="passport-avatar-error"
+            className="p-3.5 rounded-2xl bg-[#B65E3C]/10 border border-[#B65E3C]/35 text-xs text-[#7B4D36] flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-[#B65E3C] shrink-0" />
+              <span>{avatarError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAvatarError(null)}
+              className="text-[#7B4D36] hover:text-[#173B32] cursor-pointer"
+              aria-label="Dismiss error"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {avatarSuccess && (
+          <div
+            data-testid="passport-avatar-success"
+            className="p-3.5 rounded-2xl bg-[#173B32]/10 border border-[#173B32]/25 text-xs text-[#173B32] flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4 text-[#173B32] shrink-0" />
+            <span>{avatarSuccess}</span>
+          </div>
+        )}
 
         {/* Real Travel Snapshot Statistics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -437,13 +409,6 @@ function ProfileContent() {
 
                 {/* Direct Upload / Remove Actions */}
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <input
-                    type="file"
-                    ref={directFileInputRef}
-                    onChange={handleDirectFileUpload}
-                    accept="image/jpeg,image/png,image/webp,image/jpg"
-                    className="hidden"
-                  />
                   <button
                     type="button"
                     onClick={() => directFileInputRef.current?.click()}
@@ -860,62 +825,6 @@ function ProfileContent() {
                   onChange={(e) => setEditName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#D8CBB2] bg-white text-sm text-[#20211D] focus:ring-2 focus:ring-[#173B32] focus:outline-hidden"
                 />
-              </div>
-
-              {/* Profile Photo Upload Section */}
-              <div>
-                <label className="block text-xs font-bold text-[#173B32] uppercase tracking-wider mb-1.5">
-                  Profile Photo
-                </label>
-                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-[#D8CBB2]/80 shadow-xs">
-                  {/* Circular Avatar Preview */}
-                  {previewUrl ? (
-                    <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#B49252] shrink-0 shadow-inner">
-                      <img src={previewUrl} alt="Selected Preview" className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <Avatar user={removeAvatarRequested ? { ...user, avatar_url: undefined, avatar_preset: undefined } : user} name={editName} size="lg" showBorder borderColor="border-[#B49252]" />
-                  )}
-
-                  {/* Actions & Description */}
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        accept="image/jpeg,image/png,image/webp,image/jpg"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        id="vanvas-profile-photo-input"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF4E8] hover:bg-[#E5D5BA]/70 border border-[#D8CBB2] text-xs font-bold text-[#173B32] transition-colors cursor-pointer"
-                      >
-                        <Camera className="w-3.5 h-3.5 text-[#B49252]" />
-                        <span>{previewUrl || (!removeAvatarRequested && user?.avatar_url) ? "Change Photo" : "Upload Photo"}</span>
-                      </button>
-
-                      {(previewUrl || (!removeAvatarRequested && user?.avatar_url)) && (
-                        <button
-                          type="button"
-                          onClick={handleRemovePhoto}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-xs font-semibold text-red-700 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Remove</span>
-                        </button>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-[#20211D]/60 flex items-center gap-1">
-                      <span>JPG, PNG or WebP · Max 5 MB</span>
-                    </div>
-                    <div className="text-[10px] text-[#20211D]/40">
-                      Auto-cropped square and optimized for Himalayan travel stamps.
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div>

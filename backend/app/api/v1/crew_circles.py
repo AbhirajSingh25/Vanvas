@@ -4,7 +4,7 @@ Handles persistent group travel workspaces, collaborative planning,
 role permissions, suggestions, activity feed, and Ask VANVAS for Circles.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, date
@@ -421,12 +421,20 @@ def link_or_create_circle_trip(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     total_budget: float = 10000.0,
+    payload: Optional[Dict[str, Any]] = Body(default=None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Link an existing trip or create a new collaborative trip inside the circle."""
     require_circle_membership(circle_id, current_user.id, db)
     circle = db.query(CrewCircle).filter(CrewCircle.id == circle_id).first()
+
+    if payload:
+        trip_id = trip_id or payload.get("trip_id")
+        destination_slug = destination_slug or payload.get("destination_slug")
+        title = title or payload.get("title")
+        if payload.get("total_budget") is not None:
+            total_budget = float(payload["total_budget"])
 
     target_trip = None
     if trip_id:

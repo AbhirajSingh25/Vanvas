@@ -1,7 +1,7 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Authentic User Data, Unified Traveler Passport & Avatar Durability Completed | *Branch:* `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Transformed Ancestor Fix, Portal Escalation & Full Viewport Hardening Completed on `feat/crew-circles-passport-rebuild` | *Base `main`:* `08dcd1d` | *Working Tree:* Clean
 
 ---
 

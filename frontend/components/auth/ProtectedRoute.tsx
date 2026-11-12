@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -20,13 +21,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo,
   requireVerified = true,
 }) => {
-  const { user, isLoading, logout } = useAuth();
+  const { user, token, isLoading, logout, refreshUser } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendNotice, setResendNotice] = useState<{ text: string; isError: boolean } | null>(null);
+
+  // Recovery state when token exists in storage but user profile was not cached
+  const [recoveringNoCache, setRecoveringNoCache] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -38,12 +48,50 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // Attempt bounded recovery if token exists but user profile is null
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !user && token && !recoveryError && !recoveringNoCache) {
+      setRecoveringNoCache(true);
+      refreshUser()
+        .then((fresh) => {
+          if (!fresh) {
+            setRecoveryError("Could not verify travel credentials with server.");
+          }
+        })
+        .catch((err: any) => {
+          setRecoveryError(err?.message || "Connection to VANVAS servers timed out.");
+        })
+        .finally(() => {
+          setRecoveringNoCache(false);
+        });
+    }
+  }, [isLoading, user, token, recoveryError, recoveringNoCache, refreshUser]);
+
+  useEffect(() => {
+    // Only redirect to login if loading is done, no user, NO token (not authenticated at all)
+    // or if no-cache recovery was cancelled/logged out
+    if (!isLoading && !user && !token && !recoveringNoCache) {
       const destination = redirectTo || `/login?redirect=${encodeURIComponent(pathname)}`;
       router.push(destination);
     }
-  }, [user, isLoading, router, pathname, redirectTo]);
+  }, [user, token, isLoading, recoveringNoCache, router, pathname, redirectTo]);
+
+  const handleRetryRecovery = () => {
+    setRecoveryError(null);
+    setRecoveringNoCache(true);
+    refreshUser()
+      .then((fresh) => {
+        if (!fresh) {
+          setRecoveryError("Could not verify travel credentials with server.");
+        }
+      })
+      .catch((err: any) => {
+        setRecoveryError(err?.message || "Connection to VANVAS servers timed out.");
+      })
+      .finally(() => {
+        setRecoveringNoCache(false);
+      });
+  };
 
   const handleResend = async () => {
     if (!user?.email || resendCooldown > 0 || resendLoading) return;
@@ -61,18 +109,92 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-[70vh] bg-[#FAF4E8] flex flex-col items-center justify-center p-6 text-center">
+  const renderInPortalIfMounted = (element: React.ReactElement) => {
+    if (mounted && typeof document !== "undefined") {
+      return createPortal(element, document.body);
+    }
+    return element;
+  };
+
+  // Full Viewport Loading Screen
+  if (isLoading || recoveringNoCache || (token && !user && !recoveryError)) {
+    return renderInPortalIfMounted(
+      <div
+        data-testid="protected-route-full-loader"
+        style={{
+          position: "fixed",
+          inset: 0,
+          width: "100%",
+          height: "100vh",
+          minHeight: "100svh",
+          zIndex: 2147483000,
+          backgroundColor: "#FAF4E8",
+          overflow: "hidden",
+        }}
+        className="flex flex-col items-center justify-center p-6 text-center select-none pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] h-[100dvh] min-h-[100svh] overflow-hidden"
+      >
         <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
           <div className="absolute inset-0 rounded-full border-3 border-[#173B32]/20 border-t-[#B65E3C] animate-spin" />
-          <Compass className="w-7 h-7 text-[#173B32] animate-pulse" />
+          <Compass className="w-7 h-7 text-[#173B32]" />
         </div>
-        <div className="font-serif text-lg font-bold text-[#173B32]">
+        <div className="font-serif text-lg font-bold text-[#173B32] tracking-tight">
           Verifying Travel Credentials
         </div>
         <div className="font-devanagari text-xs text-[#B49252] mt-1">
           यात्री सत्यापन हो रहा है...
+        </div>
+      </div>
+    );
+  }
+
+  // No-cache recovery failure: token exists but user could not be fetched
+  if (!user && token && recoveryError) {
+    return renderInPortalIfMounted(
+      <div
+        data-testid="protected-route-recovery-screen"
+        style={{
+          position: "fixed",
+          inset: 0,
+          width: "100%",
+          height: "100vh",
+          minHeight: "100svh",
+          zIndex: 2147483000,
+          backgroundColor: "#FAF4E8",
+          overflow: "hidden",
+        }}
+        className="flex flex-col items-center justify-center p-6 text-center pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] h-[100dvh] min-h-[100svh] overflow-hidden"
+      >
+        <div className="max-w-sm w-full bg-[#FAF7F0] p-6 sm:p-8 rounded-3xl border border-[#D8CBB2] shadow-xl space-y-4 text-center">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#B65E3C]/10 border border-[#B65E3C]/20 flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-[#B65E3C]" />
+          </div>
+          <div>
+            <h3 className="font-serif text-xl font-bold text-[#173B32]">
+              Connection Paused
+            </h3>
+            <p className="text-xs text-[#7B4D36] mt-1">
+              {recoveryError}
+            </p>
+          </div>
+          <div className="space-y-2 pt-2">
+            <button
+              type="button"
+              data-testid="auth-recovery-retry-btn"
+              onClick={handleRetryRecovery}
+              className="w-full py-3 px-4 rounded-2xl text-xs font-bold uppercase tracking-wider text-[#FAF4E8] bg-[#173B32] hover:bg-[#20453B] transition-colors cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry Connection</span>
+            </button>
+            <button
+              type="button"
+              data-testid="auth-recovery-signout-btn"
+              onClick={logout}
+              className="w-full py-2.5 px-4 text-xs font-semibold text-[#B65E3C] hover:underline cursor-pointer"
+            >
+              Sign Out &amp; Return to Login
+            </button>
+          </div>
         </div>
       </div>
     );
