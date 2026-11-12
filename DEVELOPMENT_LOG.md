@@ -533,6 +533,29 @@
 
 ---
 
+## November 12, 2026 (P0) — Full Viewport Loading Surface & Instant Session Restoration (`feat/crew-circles-passport-rebuild`)
+
+- **Full-Viewport Opaque Loading Surface (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Replaced partial `min-h-[70vh]` loader with fixed full-screen overlay: `position: fixed`, `inset: 0`, `width: 100%`, `minHeight: 100svh`, `zIndex: 10000`, solid `#FAF4E8` parchment background with zero transparency or backdrop gradients.
+  - Added iOS safe-area inset padding (`env(safe-area-inset-top)` and `env(safe-area-inset-bottom)`) with understated compass spinner, editorial typography, and Hindi subtitle.
+  - Obscures all root-level app shell elements (header, mobile navigation dock, footer, floating copilot) behind the opaque parchment surface, maintaining uniform parchment appearance across system light and dark modes.
+- **Instant Stale-While-Revalidate Session Restoration (`frontend/context/AuthContext.tsx`):**
+  - Stale-While-Revalidate (SWR) session initialization: when `vanvas_token` and a valid cached `vanvas_user_profile` are present in `localStorage`, immediately sets `user`, `token`, and unlocks UI with `setIsLoading(false)` to enable sub-50ms instant render without waiting for backend network response.
+  - Asynchronously fires background revalidation against `/auth/me`; updates profile and cache upon success.
+  - Preserves saved credentials and cached session on transient network timeouts, database cold-starts, or 5xx errors without forcing premature logout.
+  - Explicit 401 unauthenticated / user deleted responses cleanly purge stored credentials and redirect to login.
+- **Bounded Verification Latency (`frontend/lib/api.ts`):**
+  - Added explicit default `timeoutMs: 7000` (7 seconds) to `api.getMe()` while allowing override via options, avoiding the 45-second default timeout during authentication handshakes.
+- **No-Cache Recovery Flow (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - When token exists but profile cache is missing, shows full-viewport parchment loader with bounded verification; on failure, displays dedicated Connection Paused recovery screen with **Retry Connection** and **Sign Out & Return to Login** actions instead of silent redirects.
+- **Verification & Automated Test Suite:**
+  - Authored comprehensive Playwright test `frontend/scripts/test_instant_session_restoration.mjs` verifying 8 production scenarios: instant cached render under delayed network, seamless background update, 500 server error session preservation, explicit 401 purge, no-cache recovery + retry, and fixed `inset: 0`, `zIndex: 10000`, `#FAF4E8` geometry under dark mode on mobile iPhone viewport. **8/8 PASSED (100% green)**.
+  - Ran `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)**.
+  - Ran `test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
+  - Next.js production build (`npx tsc --noEmit && npm run build`) compiled 25/25 routes with zero errors.
+
+---
+
 ### [2026-11-10] Final SQLite Privacy Isolation & Native Release Validation
 - **Objective:** Eliminate legacy NULL user_id data leakage, enforce user-scoped trip detail caching, achieve in-memory fallback parity, establish migration fail-safe verification, add mutation deduplication guard, and execute 20/20 test cases against real production `offlineDb` methods.
 - **Changes Made:**
@@ -593,6 +616,29 @@
 
 ---
 
+## November 12, 2026 (P0) — Full Viewport Loading Surface & Instant Session Restoration (`feat/crew-circles-passport-rebuild`)
+
+- **Full-Viewport Opaque Loading Surface (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Replaced partial `min-h-[70vh]` loader with fixed full-screen overlay: `position: fixed`, `inset: 0`, `width: 100%`, `minHeight: 100svh`, `zIndex: 10000`, solid `#FAF4E8` parchment background with zero transparency or backdrop gradients.
+  - Added iOS safe-area inset padding (`env(safe-area-inset-top)` and `env(safe-area-inset-bottom)`) with understated compass spinner, editorial typography, and Hindi subtitle.
+  - Obscures all root-level app shell elements (header, mobile navigation dock, footer, floating copilot) behind the opaque parchment surface, maintaining uniform parchment appearance across system light and dark modes.
+- **Instant Stale-While-Revalidate Session Restoration (`frontend/context/AuthContext.tsx`):**
+  - Stale-While-Revalidate (SWR) session initialization: when `vanvas_token` and a valid cached `vanvas_user_profile` are present in `localStorage`, immediately sets `user`, `token`, and unlocks UI with `setIsLoading(false)` to enable sub-50ms instant render without waiting for backend network response.
+  - Asynchronously fires background revalidation against `/auth/me`; updates profile and cache upon success.
+  - Preserves saved credentials and cached session on transient network timeouts, database cold-starts, or 5xx errors without forcing premature logout.
+  - Explicit 401 unauthenticated / user deleted responses cleanly purge stored credentials and redirect to login.
+- **Bounded Verification Latency (`frontend/lib/api.ts`):**
+  - Added explicit default `timeoutMs: 7000` (7 seconds) to `api.getMe()` while allowing override via options, avoiding the 45-second default timeout during authentication handshakes.
+- **No-Cache Recovery Flow (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - When token exists but profile cache is missing, shows full-viewport parchment loader with bounded verification; on failure, displays dedicated Connection Paused recovery screen with **Retry Connection** and **Sign Out & Return to Login** actions instead of silent redirects.
+- **Verification & Automated Test Suite:**
+  - Authored comprehensive Playwright test `frontend/scripts/test_instant_session_restoration.mjs` verifying 8 production scenarios: instant cached render under delayed network, seamless background update, 500 server error session preservation, explicit 401 purge, no-cache recovery + retry, and fixed `inset: 0`, `zIndex: 10000`, `#FAF4E8` geometry under dark mode on mobile iPhone viewport. **8/8 PASSED (100% green)**.
+  - Ran `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)**.
+  - Ran `test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
+  - Next.js production build (`npx tsc --noEmit && npm run build`) compiled 25/25 routes with zero errors.
+
+---
+
 ### [2026-11-11] Existing-Install SQLite Migration & Offline Sync Integrity
 - **Objective:** Complete idempotent composite-key database migration for existing installations, enforce validated user ownership across all private database methods, harden offline synchronization idempotency against duplicate expenses and unsynced deletions, and execute 31 production flow tests across real production code.
 - **Changes Made:**
@@ -650,3 +696,26 @@
   - Fixed `link_or_create_circle_trip` in FastAPI to accept JSON body `{"trip_id": ...}` via `Body(default=None)` alongside query params.
   - Added failure recovery in `/plan` so failed circle linking preserves the created trip and offers `Retry Linking to Circle` / `Open Trip Anyway` without creating duplicate trips.
 - **Verification:** `60/60` backend tests passed, `tsc --noEmit` & `next build` (0 errors), `mobile` `tsc --noEmit` (0 errors), and all 3 Playwright E2E suites (`test_crew_circles_and_passport_rebuild_e2e.mjs`, `test_account_isolation_and_participants.mjs`, `verify_authentic_passport_e2e.mjs`) passed.
+
+---
+
+## November 12, 2026 (P0) — Full Viewport Loading Surface & Instant Session Restoration (`feat/crew-circles-passport-rebuild`)
+
+- **Full-Viewport Opaque Loading Surface (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - Replaced partial `min-h-[70vh]` loader with fixed full-screen overlay: `position: fixed`, `inset: 0`, `width: 100%`, `minHeight: 100svh`, `zIndex: 10000`, solid `#FAF4E8` parchment background with zero transparency or backdrop gradients.
+  - Added iOS safe-area inset padding (`env(safe-area-inset-top)` and `env(safe-area-inset-bottom)`) with understated compass spinner, editorial typography, and Hindi subtitle.
+  - Obscures all root-level app shell elements (header, mobile navigation dock, footer, floating copilot) behind the opaque parchment surface, maintaining uniform parchment appearance across system light and dark modes.
+- **Instant Stale-While-Revalidate Session Restoration (`frontend/context/AuthContext.tsx`):**
+  - Stale-While-Revalidate (SWR) session initialization: when `vanvas_token` and a valid cached `vanvas_user_profile` are present in `localStorage`, immediately sets `user`, `token`, and unlocks UI with `setIsLoading(false)` to enable sub-50ms instant render without waiting for backend network response.
+  - Asynchronously fires background revalidation against `/auth/me`; updates profile and cache upon success.
+  - Preserves saved credentials and cached session on transient network timeouts, database cold-starts, or 5xx errors without forcing premature logout.
+  - Explicit 401 unauthenticated / user deleted responses cleanly purge stored credentials and redirect to login.
+- **Bounded Verification Latency (`frontend/lib/api.ts`):**
+  - Added explicit default `timeoutMs: 7000` (7 seconds) to `api.getMe()` while allowing override via options, avoiding the 45-second default timeout during authentication handshakes.
+- **No-Cache Recovery Flow (`frontend/components/auth/ProtectedRoute.tsx`):**
+  - When token exists but profile cache is missing, shows full-viewport parchment loader with bounded verification; on failure, displays dedicated Connection Paused recovery screen with **Retry Connection** and **Sign Out & Return to Login** actions instead of silent redirects.
+- **Verification & Automated Test Suite:**
+  - Authored comprehensive Playwright test `frontend/scripts/test_instant_session_restoration.mjs` verifying 8 production scenarios: instant cached render under delayed network, seamless background update, 500 server error session preservation, explicit 401 purge, no-cache recovery + retry, and fixed `inset: 0`, `zIndex: 10000`, `#FAF4E8` geometry under dark mode on mobile iPhone viewport. **8/8 PASSED (100% green)**.
+  - Ran `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)**.
+  - Ran `test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
+  - Next.js production build (`npx tsc --noEmit && npm run build`) compiled 25/25 routes with zero errors.

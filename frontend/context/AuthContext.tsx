@@ -116,12 +116,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (savedToken) {
       setToken(savedToken);
+      let hasValidCachedUser = false;
       if (cachedProfile) {
         try {
-          setUser(JSON.parse(cachedProfile));
+          const parsed = JSON.parse(cachedProfile);
+          if (parsed && typeof parsed === "object" && parsed.id) {
+            setUser(parsed);
+            hasValidCachedUser = true;
+          }
         } catch {}
       }
 
+      // Stale-While-Revalidate: If we have a cached user profile, immediately unlock the UI
+      if (hasValidCachedUser) {
+        setIsLoading(false);
+      }
+
+      // Background revalidation / bounded auth check (7s timeout via getMe)
       api.getMe()
         .then((u) => {
           setUser(u);
@@ -144,7 +155,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           // On network errors or cold start timeouts, keep savedToken and cached user
         })
-        .finally(() => setIsLoading(false));
+        .finally(() => {
+          // Ensure loading is cleared even if there was no cached profile
+          setIsLoading(false);
+        });
     } else {
       setUser(null);
       setToken(null);

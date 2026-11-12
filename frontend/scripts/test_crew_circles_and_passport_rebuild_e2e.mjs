@@ -126,7 +126,7 @@ async function run() {
     await fileInput.setInputFiles({ name: "valid.png", mimeType: "image/png", buffer: Buffer.from(ONE_PIXEL_PNG_BASE64, "base64") });
     const cropDialog = page.getByRole("dialog", { name: "Crop Profile Photo" });
     await cropDialog.waitFor({ state: "visible" });
-    await cropDialog.getByRole("button", { name: /Apply|Save|Crop|Confirm|Use Photo/i }).last().click();
+    await cropDialog.getByRole("button", { name: /Crop & Continue|Apply|Save|Confirm/i }).click();
     await page.getByTestId("passport-avatar-success").waitFor({ state: "visible" });
     assert.equal(avatarUploadCalls, 1);
 
@@ -274,4 +274,3 @@ run().catch((err) => {
   console.error("REBUILD_E2E_FAILED:", err);
   process.exit(1);
 });
-

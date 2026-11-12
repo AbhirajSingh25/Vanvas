@@ -105,3 +105,15 @@
 - **Decision:** All financial splitting mathematics strictly convert currency amounts to integer paise (`round(amount * 100)`) prior to division and settlement graph simplification, with remainder distribution ensuring sum of individual shares equals total cost to the exact paisa. Furthermore, subgroup ledgers (Layer 3: Split Pods e.g. Smokers Pod) are strictly isolated with query filter `split_pod_id.is_(None)` on main circle balances, guaranteeing pod debts never leak into non-pod members.
 - **Reasoning:** Floating-point division creates sub-cent drift (e.g. ₹900 / 3 = 299.99999999999994) which accumulates across group travel ledgers. Segregating pod expenses preserves social harmony and financial truth: members who do not smoke or participate in specific activities owe ₹0.
 - **Consequences:** All expense, share, and balance calculations in `finance_service.py` operate on integer paise. Balances for the circle and for each pod are calculated independently.
+
+---
+
+## 14. Full Viewport Loading & Instant Stale-While-Revalidate Session Restoration
+- **Decision:** Protected page loads and app launches must never exhibit partial or jarring viewports (e.g. split backgrounds, visible headers/navbars during authentication checks, or multi-second spinners). Authentication state restoration employs Stale-While-Revalidate (SWR): when a valid cached user profile exists in localStorage alongside a JWT token, `isLoading` is unlocked immediately so cached passport and travel desks render in milliseconds. Verification against `/auth/me` executes in the background with a bounded 7-second timeout.
+- **Reasoning:** In mobile web and PWA standalone modes (especially iOS Safari), layout shells (`<Header>`, `<Footer>`, `<MobileNav>`) mounted at the root layout leak through partial loaders, breaking native immersion. Multi-second network waits on cold-starting backends cause perceived app freezes.
+- **Consequences:**
+  - `ProtectedRoute.tsx` enforces a true viewport-covering overlay: `position: fixed`, `inset: 0`, `min-height: 100svh`, `z-index: 10000`, solid `#FAF4E8` parchment background with safe-area padding (`env(safe-area-inset-top)` / `env(safe-area-inset-bottom)`), completely obscuring underlying app shell elements.
+  - Background `/auth/me` revalidation seamlessly updates user profiles upon success.
+  - Transient network failures or 5xx server cold-starts preserve cached credentials without logging the user out.
+  - Explicit 401 unauthenticated responses cleanly purge stored credentials and redirect to login.
+  - Token-only states (missing local profile cache) display the parchment loader with bounded verification, falling back to a graceful connection paused recovery screen with `Retry Connection` and `Sign Out & Return to Login` actions.

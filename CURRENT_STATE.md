@@ -1,12 +1,12 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-12T14:40:00+05:30
+> *Last Verified:* 2026-11-12T21:30:00+05:30
 
 ---
 
 ## 1. Git State & Checkpoint
-- **Latest Verified Base:** Branch `main`
+- **Active Branch:** `feat/crew-circles-passport-rebuild`
 - **Application ID:** `ai.vanvas.app`
 - **Native Version:** `0.4.0` (`versionCode 4`)
 - **Runtime Stack:** Next.js 16.3.5 (Turbopack), Expo SDK 58.0.23, React Native 0.88.1, React 19.3.0, FastAPI, PostgreSQL / SQLite
@@ -23,6 +23,7 @@
 ---
 
 ## 3. Build & Diagnostics Verification
+- **Playwright Instant Session Restoration & Full Viewport Loader:** `frontend/scripts/test_instant_session_restoration.mjs` ➔ **8/8 PASSED (100% green)** (Instant cached render under delayed network, background profile update, transient 500 error session retention, explicit 401 purge, no-cache recovery + retry, and fixed `inset: 0`, `zIndex: 10000`, solid `#FAF4E8` overlay under mobile dark mode).
 - **Backend Solo Traveler Circles Suite:** `backend/tests/test_solo_traveler_circles.py` ➔ **11/11 PASSED (100% green)** (Ask VANVAS Circle schema regression verified resolved).
 - **Backend Collaborative Crew & Finance Suite:** `backend/tests/test_collaborative_crew_and_finance.py` ➔ **5/5 PASSED (100% green)**.
 - **Backend Account Deletion Governance:** `backend/tests/test_account_deletion_governance.py` ➔ **22/22 PASSED (100% green)**.
@@ -33,7 +34,6 @@
 - **Backend Crew Circles, Passport & Avatar Durability Suites:** `test_crew_circles_and_planner_linking.py` + `test_collaborative_crew_and_finance.py` + `test_authentic_user_data_and_avatar_durability.py` + `test_profile_photo_upload.py` + `test_profile_and_settings.py` + `test_auth.py` + `test_account_deletion_governance.py` ➔ **60/60 PASSED (100% green)**.
 - **Playwright Crew Circles & Passport Rebuild E2E:** `frontend/scripts/test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100% green)** (direct camera upload/crop/validation, Edit Profile separation, Crew Chat polling/retry/system-vs-chat separation, circle-to-planner context & retry recovery).
 - **Account Isolation & Explicit Participants Browser Suite:** `frontend/scripts/test_account_isolation_and_participants.mjs` ➔ **PASSED (100% green)**.
-- **Playwright Authentic Passport & Empty Budget E2E:** `frontend/scripts/verify_authentic_passport_e2e.mjs` ➔ **PASSED (100% green)**.
 - **Next.js Web Frontend Build:** `cd frontend && npx tsc --noEmit && npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
 - **Mobile React Native TypeScript & Expo Config:** `cd mobile && npx tsc --noEmit && npx expo config --type public` ➔ **PASSED (0 errors)**.
 - **Shared Package Build:** `cd packages/shared && npm run build` ➔ **PASSED (0 errors)**.

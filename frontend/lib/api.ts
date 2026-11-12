@@ -212,8 +212,8 @@ export const api = {
     });
   },
 
-  async getMe(): Promise<User> {
-    return fetchApi("/auth/me");
+  async getMe(options: { timeoutMs?: number } = {}): Promise<User> {
+    return fetchApi("/auth/me", { timeoutMs: options.timeoutMs ?? 7000 });
   },
 
   async getProfileStats(): Promise<UserStats> {
