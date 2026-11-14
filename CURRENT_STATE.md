@@ -1,7 +1,7 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-14T22:15:00+05:30
+> *Last Verified:* 2026-11-14T23:25:00+05:30
 
 ---
 
@@ -23,6 +23,11 @@
 ---
 
 ## 3. Build & Diagnostics Verification
+- **Production Visual Cache Lock & Flat Vector Elimination (P0 Fix):**
+  - **Root Cause Permanently Resolved:** In commit `8fcfeb8`, Service Worker `vanvas-v5` deployed with Stale-While-Revalidate caching for images. When initial fallback vector placeholders were fetched, they became locked in the user's browser `vanvas-static-vanvas-v5` cache.
+  - **Service Worker Upgrade (`frontend/public/sw.js`):** Bumped to `vanvas-v6` (`vanvas-pwa-v6.0.0`). Upgraded image caching strategy from Stale-While-Revalidate to **Network-First with cache fallback**. On activation, automatically purges all legacy `vanvas-` caches.
+  - **URL Version Cache Busting (`frontend/components/ui/VanvasImage.tsx`):** Automatically appends `?v=v6` to all `/images/` paths, breaking browser HTTP disk caches and CDN edge locks.
+  - **Category Fallback Elimination:** Physically replaced all legacy flat vector placeholder SVGs/WebPs across `frontend/public/images/places/{kasol,dharamshala}/categories/` with verified high-resolution (1376x768) rich gouache paintings. Zero flat vectors exist in the codebase.
 - **Kasol Complete Visual Rebuild & Runtime Production Fix:**
   - **4 Stays Completely Differentiated (P0 Requirement):**
     - The Himalayan Village (`the-himalayan-village.webp`): Hand-hewn Kathkuni timber-and-stone dry masonry chalets with carved balconies and slate roofs.
@@ -65,20 +70,10 @@
 ---
 
 ## 6. Last Completed Task
-Kasol Complete Visual Rebuild, Hotel Image Uniqueness, Runtime Deduplication & Production Fix on `main`.
+Production Visual Cache Lock Fix (SW vanvas-v6 Network-First + URL Cache Busting + Category Fallback Vector Elimination) and Kasol Complete Visual Rebuild on `main`.
 
 ---
 
 ## 7. Next Recommended Task
 Play Store Production AAB release workflow once GitHub Actions secrets are configured by the repository owner.
-
----
-
-## 6. Last Completed Task
-Dharamshala Editorial Artwork Rebuild, Duplicate Removal & Production Integration on `main`.
-
----
-
-## 7. Next Recommended Task
-Execute Task A: Generate and integrate the 5 remaining Kasol editorial artworks (`pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, `waichin-valley`) and remove them from `PENDING_ARTWORK_SET`.
 

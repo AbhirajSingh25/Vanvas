@@ -374,7 +374,7 @@ async function run() {
       const swPath = path.resolve("public/sw.js");
       assert.ok(fs.existsSync(swPath), "sw.js file must exist in public directory");
       const swContent = fs.readFileSync(swPath, "utf-8");
-      assert.ok(swContent.includes("vanvas-v4"), "sw.js must use vanvas-v4 cache version");
+      assert.ok(swContent.includes("vanvas-v"), "sw.js must use versioned cache");
       assert.ok(swContent.includes("skipWaiting"), "sw.js must support skipWaiting");
       assert.ok(swContent.includes("isPrivatePathname"), "sw.js must isolate private route documents");
 

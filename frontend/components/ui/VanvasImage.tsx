@@ -94,6 +94,15 @@ export const VanvasImage: React.FC<VanvasImageProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  // Bust stale browser disk, CDN, and Service Worker caches for editorial place & stay assets
+  const normalizedSrc = React.useMemo(() => {
+    if (!currentSrc) return currentSrc;
+    if (currentSrc.startsWith("/images/") && !currentSrc.includes("?")) {
+      return `${currentSrc}?v=v6`;
+    }
+    return currentSrc;
+  }, [currentSrc]);
+
   useEffect(() => {
     setChainIndex(0);
     setCurrentSrc(initialChain[0]);
@@ -153,7 +162,7 @@ export const VanvasImage: React.FC<VanvasImageProps> = ({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
-        src={currentSrc}
+        src={normalizedSrc}
         alt={alt}
         onError={handleError}
         onLoad={handleLoad}

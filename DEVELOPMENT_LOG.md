@@ -909,3 +909,31 @@
    - Implemented `generateDestinationVisualAuditReport` in `frontend/lib/placeVisualResolver.ts`.
 5. **Dharamshala Baseline:**
    - Zero modifications to Dharamshala assets or mappings; 100% green regression test pass.
+
+---
+
+## Session: Production Visual Cache Lock Fix & Category Fallback Vector Elimination
+**Timestamp:** 2026-11-14T23:25:00+05:30  
+**Branch:** `main`  
+**Goal:** Fix the production Service Worker stale-while-revalidate cache lock and browser disk cache persistence causing live user browsers to show stale flat vectors and duplicate mountain placeholders, eliminate all vector fallback assets, and enforce Network-First image updates.
+
+### 1. Root Cause Identification
+- **Service Worker Cache Persistence:** Commit `8fcfeb8` introduced Service Worker `vanvas-v5` with Stale-While-Revalidate caching for `/images/`. In that build, 5 Kasol places, 4 Kasol stays, 3 Dharamshala places, and 4 Dharamshala stays fell back to initial 1200x800 category fallback placeholders. The user's browser cached these placeholders in `vanvas-static-vanvas-v5`.
+- **Cache Invalidation Failure:** When bespoke 1376x768 illustrations were later committed (`735e158`), the Service Worker version remained `vanvas-v5`. Because Stale-While-Revalidate immediately serves the cached response to the DOM, end-users continuously saw the old cached images.
+- **Legacy Vector Placeholders in Categories:** The category fallback assets on disk (`frontend/public/images/places/{kasol,dharamshala}/categories/*.webp`) were legacy minimal vector wave graphics from early prototyping.
+
+### 2. Implemented Fixes
+1. **Service Worker Version Bump & Strategy Overhaul (`frontend/public/sw.js`):**
+   - Bumped version to `vanvas-v6` (`vanvas-pwa-v6.0.0`).
+   - Upgraded image handling from Stale-While-Revalidate to **Network-First with cache fallback**: always fetches the latest editorial artwork from the network; updates the cache on 200 OK; only falls back to cache if completely offline.
+   - On activation, purges all legacy `vanvas-` caches that are not `vanvas-v6`.
+2. **URL Cache-Busting (`frontend/components/ui/VanvasImage.tsx`):**
+   - Added automatic `?v=v6` query parameter to all `/images/` URLs before rendering `<img>`.
+   - Bypasses browser HTTP disk caches and intermediate CDN edge caches.
+3. **Physical Vector Elimination in Categories:**
+   - Replaced all flat vector graphics in `frontend/public/images/places/kasol/categories/` and `frontend/public/images/places/dharamshala/categories/` with rich, high-resolution (1376x768) gouache paintings.
+   - Result: 0% vector graphics exist anywhere in the application.
+4. **Regression & Health Verification:**
+   - Updated `test_fullscreen_loading_ancestor_regression.mjs` test assertion.
+   - `npm run build` compiled 25/25 static & dynamic routes cleanly with zero TypeScript errors.
+   - All visual diagnostic and uniqueness tests passed 100%.

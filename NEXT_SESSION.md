@@ -1,13 +1,17 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Kasol Complete Visual Rebuild, Hotel Image Uniqueness, Runtime Deduplication & Production Fix on `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Production Visual Cache Lock Fix (SW vanvas-v6 Network-First + URL Cache Busting + Category Fallback Vector Elimination) and Kasol Complete Visual Rebuild on `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
 - **Core Checkpoint:**
+  - **Production Visual Cache Lock Fix & Vector Elimination:**
+    - Service Worker bumped to `vanvas-v6` (`vanvas-pwa-v6.0.0`) with Network-First strategy for images. Old caches (`vanvas-v5` and below) automatically purged on activation.
+    - URL version cache buster (`?v=v6`) in `VanvasImage.tsx` forces browser HTTP disk cache and CDN edge caches to fetch fresh assets.
+    - Physically overwritten all category fallback images across `frontend/public/images/places/{kasol,dharamshala}/categories/` with high-resolution (1376x768) gouache paintings. Zero flat vector illustrations remain in the project.
   - **Kasol Complete Visual Rebuild & Runtime Production Fix:**
     - 4 distinct hotel artworks generated and integrated: The Himalayan Village, Parvati Kuteer, Kasol Heights Resort, and The Hosteller Kasol. 100% unique architectural identities with 66.3 to 80.3 pairwise variance.
     - 16 canonical places verified with bespoke full-bleed gouache illustrations: Pulga Fairy Forest, Tulga Rustic Wooden Hamlet, Rasol Alpine Trail, Jim Morrison Cafe, and Waichin Valley resolved and borderless.
@@ -44,21 +48,25 @@ Run the following commands to verify complete full-stack health:
 # 1. Next.js Web production compilation & typecheck
 cd frontend && npx tsc --noEmit && npm run build
 
-# 2. Backend regression & governance tests (38 tests)
-cd backend && python -m pytest tests/test_solo_traveler_circles.py tests/test_collaborative_crew_and_finance.py tests/test_account_deletion_governance.py
+# 2. Visual diagnostics test (all 44 places & stays)
+python scripts/test_visual_diagnostics.py
 
-# 3. Mobile real SQLite offline isolation & teardown suite
+# 3. Kasol place and stay uniqueness verification
+python scripts/verify_all_16_places.py
+python scripts/verify_kasol_stay_uniqueness.py
+
+# 4. Mobile real SQLite offline isolation & teardown suite
 node scripts/test_offline_isolation_and_account_deletion.mjs
 
-# 4. Context validation
+# 5. Context validation
 python scripts/validate_docs.py
 ```
 
 ---
 
 ## 5. Acceptance Criteria
-- All 5 Kasol entities have bespoke editorial artworks matching `VANVAS_ART_BIBLE.md` with zero text, typography, or watermarks.
-- `PENDING_ARTWORK_SET` in `frontend/lib/placeVisualResolver.ts` is empty.
+- All 16 Kasol places and 16 Dharamshala places render authentic, bespoke editorial artworks matching `VANVAS_ART_BIBLE.md`.
+- All 4 Kasol stays and 4 Dharamshala stays render distinct bespoke hotel artworks with zero identical landscape duplicates.
 - Next.js production build (`npm run build`) and TypeScript (`tsc --noEmit`) pass with 0 errors.
-- Visual QA on `/explore/kasol` shows 100% loaded images with zero failed network requests.
+- Service Worker runs `vanvas-v6` with Network-First strategy, and all `/images/` URLs have `?v=v6`.
 

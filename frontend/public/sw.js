@@ -1,8 +1,8 @@
 // VANVAS Production Service Worker
-// Version: vanvas-pwa-v5.0.0
+// Version: vanvas-pwa-v6.0.0
 
-const CACHE_VERSION = 'vanvas-v5';
-const SCRIPT_VERSION = 'vanvas-pwa-v5.0.0';
+const CACHE_VERSION = 'vanvas-v6';
+const SCRIPT_VERSION = 'vanvas-pwa-v6.0.0';
 const CACHE_STATIC = `vanvas-static-${CACHE_VERSION}`;
 const CACHE_SHELL = `vanvas-shell-${CACHE_VERSION}`;
 
@@ -135,7 +135,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // A2. Editorial Imagery & Brand Media: Stale-While-Revalidate with immediate network refresh
+  // A2. Editorial Imagery & Brand Media: Network-First with cache fallback
   if (
     url.pathname.startsWith('/icons/') ||
     url.pathname.startsWith('/images/') ||
@@ -145,28 +145,28 @@ self.addEventListener('fetch', (event) => {
   ) {
     event.respondWith(
       caches.open(CACHE_STATIC).then(async (cache) => {
-        const cachedResponse = await cache.match(request);
-        const fetchPromise = fetch(request)
-          .then((networkResponse) => {
-            if (
-              networkResponse &&
-              networkResponse.ok &&
-              networkResponse.status === 200 &&
-              (networkResponse.type === 'basic' || networkResponse.type === 'cors')
-            ) {
-              cache.put(request, networkResponse.clone()).catch(() => {});
-            }
+        try {
+          const networkResponse = await fetch(request);
+          if (
+            networkResponse &&
+            networkResponse.ok &&
+            networkResponse.status === 200 &&
+            (networkResponse.type === 'basic' || networkResponse.type === 'cors')
+          ) {
+            cache.put(request, networkResponse.clone()).catch(() => {});
             return networkResponse;
-          })
-          .catch(() => null);
+          }
+        } catch {
+          // Network failed or offline - fall back to cache below
+        }
 
-        // Return cached immediately if available; revalidate cache in background.
-        // If not in cache, wait for network response.
+        const cachedResponse = await cache.match(request);
         if (cachedResponse && cachedResponse.status === 200) {
           return cachedResponse;
         }
-        const fresh = await fetchPromise;
-        return fresh || cachedResponse;
+
+        // Final safety attempt via direct fetch
+        return fetch(request).catch(() => cachedResponse);
       })
     );
     return;
