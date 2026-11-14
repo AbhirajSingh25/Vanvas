@@ -1,0 +1,15 @@
+{
+  "entity_name": "Chonor House Tibetan Guesthouse",
+  "slug": "chonor-house-tibetan-guesthouse",
+  "type": "stay",
+  "source_dimensions": [
+    1376,
+    768
+  ],
+  "aspect_ratio": "1376:768",
+  "generated_by": "Imagen 3 via Antigravity image-generator",
+  "style": "Contemporary Indian editorial travel illustration, gouache & watercolor on textured parchment",
+  "negative_constraints": "Zero text, no typography, no watermarks, standalone full-bleed illustration",
+  "created_at": "2026-11-14",
+  "source_artifact": "chonor_house_mcleodganj_refined_1794655778920.jpg"
+}

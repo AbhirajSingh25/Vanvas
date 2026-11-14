@@ -5,6 +5,51 @@
 
 ---
 
+### [2026-11-14] Dharamshala Editorial Artwork Rebuild, Duplicate Removal & Production Integration
+- **Objective:** Generate bespoke, semantically accurate editorial travel artwork for Dharamshala, replace all flat vector placeholders in `PENDING_ARTWORK_SET`, eliminate duplicate/similar assets, provide unique property-specific artwork for 4 stays and 2 rentals, and verify rendering across viewports.
+- **Root Cause & Diagnosis:**
+  - 5 seeded Dharamshala places in `frontend/lib/placeVisualResolver.ts` were registered in `PENDING_ARTWORK_SET` awaiting quota (`gyuto-monastery`, `dal-lake-dharamshala`, `tibetan-butter-tea`, `masroor-rock-temples`, `tashi-jong-monastery`), resolving to flat vector SVG placeholders.
+  - Stays in Dharamshala previously utilized generic mountain chalet artwork that did not capture the distinct cultural and architectural qualities of Fortune Park Moksha, Chonor House Tibetan Guesthouse, Clouds End Villa Heritage Estate, and Zostel Dharamkot.
+  - Rentals in Dharamshala lacked property-specific vehicle illustrations matching the exact models (Honda Activa 6G and Royal Enfield Classic 350).
+- **Changes Made:**
+  - **Artwork Synthesis:** Generated 11 high-resolution (1376x768) standalone editorial travel illustrations with Imagen 3 / Antigravity `image-generator` adhering strictly to `VANVAS_ART_BIBLE.md` (rich gouache/watercolor on warm textured parchment, palette `#173B32`, `#B65E3C`, `#B49252`, `#D8DED5`, `#FAF7F0`, and zero text/typography/watermarks/frames).
+  - **Places (5 Replaced Flat Vectors):**
+    - Gyuto Tantric Monastery & Karmapa Seat (`gyuto-monastery.webp` & `.jpg`)
+    - Dal Lake Dharamshala & Sacred Deodar Groves (`dal-lake-dharamshala.webp` & `.jpg`)
+    - Tibetan Butter Tea & Tingmo Bakery Lane (`tibetan-butter-tea.webp` & `.jpg`)
+    - Masroor Monolithic Rock-Cut Temples (`masroor-rock-temples.webp` & `.jpg`)
+    - Tashi Jong Buddhist Craft Community & Stupas (`tashi-jong-monastery.webp` & `.jpg`)
+  - **Stays (4 Unique Property Artworks):**
+    - Fortune Park Moksha (`fortune-park-moksha.webp` & `.jpg`): Upscale contemporary Strawberry Hills mountain resort with infinity pool terrace.
+    - Chonor House Tibetan Guesthouse (`chonor-house-tibetan-guesthouse.webp` & `.jpg`): Authentic Tibetan heritage guesthouse with carved dark deodar balconies and auspicious motifs.
+    - Clouds End Villa Heritage Estate (`clouds-end-villa-heritage-estate.webp` & `.jpg`): 1850s Anglo-Indian colonial stone estate with wrap-around veranda and manicured lawns.
+    - Zostel Dharamkot (`zostel-dharamkot.webp` & `.jpg`): Vibrant bohemian backpacker hostel with rooftop terrace and panoramic Dhauladhar ridge views.
+  - **Rentals (2 Unique Vehicle Artworks):**
+    - Honda Activa 6G Cedar Ridge Edition (`dharamshala_mcleod_scooter.webp` & `.jpg`): Matte graphite scooter on pine-lined mountain road.
+    - Classic 350 Dhauladhar Cruiser (`dharamshala_dhauladhar_bullet.webp` & `.jpg`): Royal Enfield Classic 350 in forest green and chrome on high mountain pass.
+  - **Production Optimization & Sidecars:** Converted all assets to optimized WebP (`quality=90, method=6`) and JPEG fallbacks, with sidecar `.generated.json` metadata for every asset.
+  - **Resolver Promotion:** Removed all 5 Dharamshala entities from `PENDING_ARTWORK_SET` in `frontend/lib/placeVisualResolver.ts`.
+- **Verification:**
+  - **Uniqueness & Collision Audit:** Verified 22 unique assets across 16 places, 4 stays, and 2 rentals with 0 duplicate collisions.
+  - **Visual QA:** Executed automated Puppeteer browser tests against `/explore/dharamshala` on desktop (1440x900) and mobile (390x844), confirming 0 failed network requests and HTTP 200 on all image requests.
+  - **Build & Typecheck:** `cd frontend && npx tsc --noEmit && npm run build` passed with 0 errors (all 25 routes compiled cleanly).
+- **Files Affected:**
+  - `frontend/lib/placeVisualResolver.ts`
+  - `frontend/public/images/places/dharamshala/gyuto-monastery.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/places/dharamshala/dal-lake-dharamshala.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/places/dharamshala/tibetan-butter-tea.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/places/dharamshala/masroor-rock-temples.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/places/dharamshala/tashi-jong-monastery.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/places/dharamshala/stays/fortune-park-moksha.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/places/dharamshala/stays/chonor-house-tibetan-guesthouse.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/places/dharamshala/stays/clouds-end-villa-heritage-estate.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/places/dharamshala/stays/zostel-dharamkot.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/vehicles/dharamshala_mcleod_scooter.webp` + `.jpg` + `.generated.json`
+  - `frontend/public/images/vehicles/dhauladhar_bullet.webp` (maintained for backwards compat) / `dharamshala_dhauladhar_bullet.webp` + `.jpg` + `.generated.json`
+  - `CURRENT_STATE.md`, `NEXT_SESSION.md`, `IMAGE_SEMANTIC_AUDIT.md`, `ARTWORK_GENERATION_GUIDE.md`
+
+---
+
 ### [2026-11-12] P0 Live Navigation Recovery: Render-Loop Root Cause, SW Controller Transition, Chunk Auto-Recovery & Watchdog
 - **Objective:** Diagnose and permanently resolve the live P0 navigation failure where clicking route links (`Explore`, `Trips`, `Circles`, etc.) on `vanvasai.vercel.app` left users stuck on `/`, while the local `Split a Budget` modal still opened.
 - **Root Cause & Diagnosis:**

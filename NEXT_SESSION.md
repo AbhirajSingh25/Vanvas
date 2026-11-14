@@ -1,33 +1,36 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Transformed Ancestor Fix, Portal Escalation & Full Viewport Hardening Completed on `feat/crew-circles-passport-rebuild` | *Base `main`:* `08dcd1d` | *Working Tree:* Clean
+> *Current Checkpoint:* Dharamshala Editorial Artwork Rebuild, Duplicate Removal & Production Integration Completed on `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
 - **Core Checkpoint:**
-  - **Permanent VANVAS Identity & Friends System:** Ambiguity-resistant `VNV-XXXX-XXXX` permanent ID, public profile lookup, request lifecycle (send, accept, decline, cancel), user blocking, privacy toggle `allow_friend_requests_via_id`. Native & Web `VanvasIdentityCard` with QR code modal and native share sheet.
-  - **Private Crew Circles (मण्डली):** Multi-trip workspaces, member management (owner, admin, member), suggestions with private consensus voting (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, and real-time activity feed.
-  - **Smart Finance 3-Layer Architecture:**
-    - Layer 1: Trip Plan Budget (forecast only, zero debts).
-    - Layer 2: Main Group Expense Ledger (collaborative expenses, payers, split methods, integer paise precision, optimistic version locking, audit logging).
-    - Layer 3: Split Pods (independent subgroup ledgers e.g. Smokers pod, zero debt leakage into main group ledger).
-    - Add Budget Item bottom sheet / modal with live per-person calculation previews in ₹ with 2 decimals.
-  - **Mobile Parity & Offline SQLite Isolation:** User-scoped caching for crew circles and friends in `db.ts` (`user_circles_cache`, `user_friends_cache`) ensuring complete privacy isolation and single-owner account deletion purge.
+  - **Dharamshala Editorial Artwork Rebuild:**
+    - 11 new high-resolution (1376x768) editorial travel illustrations generated, converted to WebP (`quality=90, method=6`) and JPEG fallbacks, with sidecar `.generated.json` metadata.
+    - 5 places: Gyuto Monastery, Dal Lake Dharamshala, Tibetan Butter Tea & Tingmo Bakery Lane, Masroor Monolithic Rock-Cut Temples, Tashi Jong Buddhist Craft Community.
+    - 4 stays: Fortune Park Moksha, Chonor House Tibetan Guesthouse, Clouds End Villa Heritage Estate, Zostel Dharamkot.
+    - 2 rentals: Honda Activa 6G Cedar Ridge Edition, Classic 350 Dhauladhar Cruiser.
+    - Removed all 5 Dharamshala flat vectors from `PENDING_ARTWORK_SET` in `frontend/lib/placeVisualResolver.ts`.
+    - Zero duplicate collisions: 22 unique assets across 16 places, 4 stays, and 2 rentals.
+    - Visual QA verified on desktop (1440x900) and mobile (390x844) with 0 network request errors (HTTP 200 on all images).
+  - **Permanent VANVAS Identity & Friends System:** Ambiguity-resistant `VNV-XXXX-XXXX` permanent ID, public profile lookup, request lifecycle, user blocking, privacy toggle. Native & Web `VanvasIdentityCard` with QR code modal and native share sheet.
+  - **Private Crew Circles (मण्डली):** Multi-trip workspaces, member management, private consensus voting (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, and real-time activity feed.
+  - **Smart Finance 3-Layer Architecture:** Trip Plan Budget, Main Group Expense Ledger, and Split Pods with integer paise precision and optimistic version locking.
 
 ---
 
 ## 2. Unresolved Issues & State
-1. **Pending Artwork Batch (10 Entities):**
-   - Free Gemini image-generation quota is exhausted until **November 13, 2026**.
-   - Do **NOT** attempt paid generation or incur cloud credits.
-   - 10 entities are pending:
-     - Dharamshala (5): Gyuto Monastery, Dal Lake Dharamshala, Tibetan Butter Tea & Tingmo Bakery Lane, Masroor Monolithic Rock-Cut Temples, Tashi Jong Buddhist Craft Community.
-     - Kasol (5): Manikaran Sahib Gurudwara, Tosh Village, Moon Dance Café, Evergreen Café, Kheerganga Natural Sulphur Pool & Meadow.
-   - Script ready: `scripts/generate_pending_artwork_batch.py` with strict negative prompts (dry-run verified).
-   - When quota resets on Nov 13, generate clean painterly gouache illustrations with **ZERO embedded text, words, coordinates, or watermarks**.
+1. **Pending Artwork Batch (Kasol 5 Entities):**
+   - 5 Kasol flat vectors remain in `PENDING_ARTWORK_SET`:
+     - `/images/places/kasol/pulga-fairy-forest.webp`
+     - `/images/places/kasol/tulga-hamlet.webp`
+     - `/images/places/kasol/rasol-trail.webp`
+     - `/images/places/kasol/jim-morrison-cafe.webp`
+     - `/images/places/kasol/waichin-valley.webp`
+   - Generate clean painterly gouache illustrations with **ZERO embedded text, words, coordinates, or watermarks** following `VANVAS_ART_BIBLE.md`.
 2. **Release Keystore Secrets Configuration (Owner Gate):**
    - Repository owner must add `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` to GitHub Actions secrets to unlock production AAB signing.
 
@@ -35,22 +38,16 @@
 
 ## 3. Exact Tasks for the Next Session
 
-### Task A: Play Store Production AAB & Physical Device Testing
+### Task A: Kasol Artwork Batch Generation & Integration
+1. Generate bespoke editorial illustrations for the 5 Kasol entities: Pulga Fairy Forest, Tulga Hamlet, Rasol Trail, Jim Morrison Cafe, and Waichin Valley.
+2. Convert to WebP and JPEG, save sidecar `.generated.json` metadata.
+3. Remove Kasol entities from `PENDING_ARTWORK_SET` in `frontend/lib/placeVisualResolver.ts`.
+4. Run visual QA across desktop and mobile on `/explore/kasol`.
+
+### Task B: Play Store Production AAB & Physical Device Testing
 1. Once GitHub Secrets are added, trigger the release workflow to assemble `VANVAS-Android-v0.4.0-code4-production.aab`.
 2. Sideload `VANVAS-Android-v0.4.0-code4-debug.apk` onto a physical Android device to test offline SQLite caching, Nearby Radar GPS permission, and Spiti expedition creation.
 3. Review `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md` before final Play Store submission.
-
-### Task B: Standalone Account Deletion Portal Deployment
-1. Run `cd account-deletion-site && vercel --prod` to deploy to `https://vanvas-account-deletion.vercel.app`.
-2. Verify live submission with test account against production backend.
-
-### Task C: Execute Pending Artwork Generation Batch (Upon Quota Reset on Nov 13, 2026)
-1. Confirm that the image generation quota has reset.
-2. Run dry-run verification:
-   `python scripts/generate_pending_artwork_batch.py`
-3. Execute generation:
-   `python scripts/generate_pending_artwork_batch.py --execute --confirm-free-quota`
-4. Visually inspect all 10 generated images.
 
 ---
 
@@ -59,33 +56,24 @@
 Run the following commands to verify complete full-stack health:
 
 ```bash
-# 1. Backend regression & governance tests (38 tests)
+# 1. Next.js Web production compilation & typecheck
+cd frontend && npx tsc --noEmit && npm run build
+
+# 2. Backend regression & governance tests (38 tests)
 cd backend && python -m pytest tests/test_solo_traveler_circles.py tests/test_collaborative_crew_and_finance.py tests/test_account_deletion_governance.py
 
-# 2. Mobile real SQLite offline isolation & teardown suite
+# 3. Mobile real SQLite offline isolation & teardown suite
 node scripts/test_offline_isolation_and_account_deletion.mjs
 
-# 3. Next.js Web production compilation
-cd frontend && npm run build
-
-# 4. Mobile React Native TypeScript check
-cd mobile && npm run typecheck
-
-# 5. Dual-platform shared package build
-cd packages/shared && npm run build
-
-# 6. Documentation and context validation
+# 4. Context validation
 python scripts/validate_docs.py
 ```
 
 ---
 
 ## 5. Acceptance Criteria
+- All 5 Kasol entities have bespoke editorial artworks matching `VANVAS_ART_BIBLE.md` with zero text, typography, or watermarks.
+- `PENDING_ARTWORK_SET` in `frontend/lib/placeVisualResolver.ts` is empty.
+- Next.js production build (`npm run build`) and TypeScript (`tsc --noEmit`) pass with 0 errors.
+- Visual QA on `/explore/kasol` shows 100% loaded images with zero failed network requests.
 
-- All 38 backend regression and governance tests must pass with 0 failures and 0 errors.
-- All 31 mobile offline isolation tests must pass with 100% success.
-- Next.js Web application must compile with 0 TypeScript or build errors.
-- Mobile React Native application must pass `tsc --noEmit` with 0 errors.
-- Zero debt leakage: Subgroup expenses inside Split Pods must strictly be excluded from the main circle ledger.
-- Zero floating-point accumulation drift: All finance mathematics must use integer paise arithmetic.
-- Zero secrets or private keys leaked in commits or documentation.

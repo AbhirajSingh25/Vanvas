@@ -65,3 +65,28 @@ All mobile components (`PlaceCard`, `DestinationDetailScreen`, hero headers) wra
 - **Integrity Validation:** When users upload profile photos or media, the backend converts formats to optimized WebP, sanitizes filenames to prevent path traversal, and returns absolute durable URLs.
 - **Sidecar Metadata Retention:** For dynamically generated editorial artwork, sidecar `.generated.json` metadata records the exact model, prompt blueprint, terrain type, aspect ratio, and generation timestamp alongside the image asset.
 
+---
+
+## 6. Dharamshala Editorial Artwork Rebuild & Semantic Uniqueness Verification
+
+In November 2026, the complete Dharamshala catalog underwent a comprehensive editorial artwork rebuild:
+- **5 Seeded Places (Replaced Flat Vectors):**
+  - `gyuto-monastery`: Gyuto Tantric Monastery & Karmapa Seat (1376x768 WebP & JPG)
+  - `dal-lake-dharamshala`: Sacred Dal Lake & Deodar Groves (1376x768 WebP & JPG)
+  - `tibetan-butter-tea`: Tibetan Butter Tea & Tingmo Bakery Lane (1376x768 WebP & JPG)
+  - `masroor-rock-temples`: Masroor Monolithic Rock-Cut Temples (1376x768 WebP & JPG)
+  - `tashi-jong-monastery`: Tashi Jong Buddhist Craft Community & Stupas (1376x768 WebP & JPG)
+- **4 Unique Stays:**
+  - `fortune-park-moksha`: Strawberry Hills luxury hillside resort (1376x768 WebP & JPG)
+  - `chonor-house-tibetan-guesthouse`: Traditional Tibetan heritage guesthouse (1376x768 WebP & JPG)
+  - `clouds-end-villa-heritage-estate`: Colonial hillside heritage villa (1376x768 WebP & JPG)
+  - `zostel-dharamkot`: High-altitude backpacker mountain hostel (1376x768 WebP & JPG)
+- **2 Unique Rental Vehicles:**
+  - `dharamshala_mcleod_scooter`: Honda Activa 6G Cedar Ridge Edition (1376x768 WebP & JPG)
+  - `dharamshala_dhauladhar_bullet`: Classic 350 Dhauladhar Cruiser (1376x768 WebP & JPG)
+- **Uniqueness & Integrity Verification:**
+  - Audit across all 16 places, 4 stays, and 2 rentals confirmed 22 unique asset hashes with **0 duplicate collisions**.
+  - All 5 Dharamshala entries removed from `PENDING_ARTWORK_SET` in `frontend/lib/placeVisualResolver.ts`.
+  - Browser visual QA automated via Puppeteer confirmed 100% successful asset delivery (HTTP 200, 0 failed network requests) across both desktop (1440x900) and mobile (390x844).
+
+

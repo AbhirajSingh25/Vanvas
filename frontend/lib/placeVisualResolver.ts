@@ -9590,12 +9590,6 @@ const GENERIC_WORDS_SET = new Set([
 
 // Explicit registry of unreplaced flat-vector or duplicate assets pending authentic generation
 export const PENDING_ARTWORK_SET = new Set([
-  // Dharamshala flat vectors awaiting quota
-  "/images/places/dharamshala/gyuto-monastery.webp",
-  "/images/places/dharamshala/dal-lake-dharamshala.webp",
-  "/images/places/dharamshala/tibetan-butter-tea.webp",
-  "/images/places/dharamshala/masroor-rock-temples.webp",
-  "/images/places/dharamshala/tashi-jong-monastery.webp",
   // Kasol flat vectors awaiting quota
   "/images/places/kasol/pulga-fairy-forest.webp",
   "/images/places/kasol/tulga-hamlet.webp",

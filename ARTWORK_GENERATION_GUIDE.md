@@ -90,3 +90,24 @@ Every asset served through the VANVAS API and UI includes its provenance badge:
 - **Editorial Art:** Category or regional visual backdrop.
 No synthetic or generic image is ever presented as a verified photograph.
 
+---
+
+## 6. Generated Dharamshala Editorial Artworks Catalog
+
+The following 11 editorial travel illustrations were generated with Imagen 3 / Antigravity `image-generator` and installed into production:
+
+| Entity Name | Category | Primary Path | Resolution | Format | Metadata Sidecar |
+| :--- | :--- | :--- | :---: | :---: | :--- |
+| Gyuto Monastery | Place | `/images/places/dharamshala/gyuto-monastery.webp` | 1376x768 | WebP + JPG | `gyuto-monastery.webp.generated.json` |
+| Dal Lake Dharamshala | Place | `/images/places/dharamshala/dal-lake-dharamshala.webp` | 1376x768 | WebP + JPG | `dal-lake-dharamshala.webp.generated.json` |
+| Tibetan Butter Tea & Tingmo | Place | `/images/places/dharamshala/tibetan-butter-tea.webp` | 1376x768 | WebP + JPG | `tibetan-butter-tea.webp.generated.json` |
+| Masroor Rock Temples | Place | `/images/places/dharamshala/masroor-rock-temples.webp` | 1376x768 | WebP + JPG | `masroor-rock-temples.webp.generated.json` |
+| Tashi Jong Monastery | Place | `/images/places/dharamshala/tashi-jong-monastery.webp` | 1376x768 | WebP + JPG | `tashi-jong-monastery.webp.generated.json` |
+| Fortune Park Moksha | Stay | `/images/places/dharamshala/stays/fortune-park-moksha.webp` | 1376x768 | WebP + JPG | `fortune-park-moksha.webp.generated.json` |
+| Chonor House Tibetan Guesthouse | Stay | `/images/places/dharamshala/stays/chonor-house-tibetan-guesthouse.webp` | 1376x768 | WebP + JPG | `chonor-house-tibetan-guesthouse.webp.generated.json` |
+| Clouds End Villa Heritage Estate | Stay | `/images/places/dharamshala/stays/clouds-end-villa-heritage-estate.webp` | 1376x768 | WebP + JPG | `clouds-end-villa-heritage-estate.webp.generated.json` |
+| Zostel Dharamkot | Stay | `/images/places/dharamshala/stays/zostel-dharamkot.webp` | 1376x768 | WebP + JPG | `zostel-dharamkot.webp.generated.json` |
+| Honda Activa 6G (Cedar Ridge) | Rental | `/images/vehicles/dharamshala_mcleod_scooter.webp` | 1376x768 | WebP + JPG | `dharamshala_mcleod_scooter.webp.generated.json` |
+| Classic 350 (Dhauladhar Cruiser) | Rental | `/images/vehicles/dharamshala_dhauladhar_bullet.webp` | 1376x768 | WebP + JPG | `dharamshala_dhauladhar_bullet.webp.generated.json` |
+
+
