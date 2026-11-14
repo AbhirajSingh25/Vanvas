@@ -27,7 +27,7 @@ import { DestinationReelsCarousel } from "@/components/destinations/DestinationR
 import { SingleRowCarousel } from "@/components/ui/SingleRowCarousel";
 import { FeaturedPlaceCard, FeaturedStayCard, FeaturedVehicleCard } from "@/components/destinations/DestinationFeaturedCard";
 import { resolveDestinationVisualProfile } from "@/lib/visualIntelligence";
-import { resolvePlaceArtwork, resolveHotelArtwork } from "@/lib/placeVisualResolver";
+import { resolvePlaceArtwork, resolveHotelArtwork, cleanString } from "@/lib/placeVisualResolver";
 import { getCanonicalHindiName, findCanonicalDestination } from "@/lib/canonicalDestinations";
 import { getCanonicalDestinationData } from "@/lib/canonicalRegistryData";
 import {
@@ -566,13 +566,57 @@ export default function DestinationDetailPage() {
           best_time_to_visit: canon.best_time_to_visit || data.destination.best_time_to_visit,
         } : data.destination;
         setDestination(resolvedDest);
-        if (data.places && data.places.length > 0) setPlaces(data.places);
+        if (data.places && data.places.length > 0) {
+          const canonPkg = getCanonicalDestinationData(slug);
+          if (canonPkg?.places) {
+            const mergedPlaces = data.places.map((p: Place) => {
+              const matchingCanon = canonPkg.places.find(
+                (cp: Place) => cp.slug === p.slug || cleanString(cp.name) === cleanString(p.name)
+              );
+              if (
+                matchingCanon &&
+                matchingCanon.image_url &&
+                matchingCanon.image_url.startsWith("/images/places/") &&
+                !matchingCanon.image_url.includes("/categories/")
+              ) {
+                return { ...p, image_url: matchingCanon.image_url };
+              }
+              return p;
+            });
+            setPlaces(mergedPlaces);
+          } else {
+            setPlaces(data.places);
+          }
+        }
         if (data.weather && data.weather.length > 0) setWeather(data.weather);
         if (data.current_weather) {
           setCurrentWeather(data.current_weather);
         }
         if (data.hotels && data.hotels.length > 0) {
-          setHotels(data.hotels);
+          const canonPkg = getCanonicalDestinationData(slug);
+          if (canonPkg?.hotels) {
+            const uniqueHotels = data.hotels.filter((h: Hotel, idx: number, arr: Hotel[]) => {
+              const hNorm = cleanString(h.name);
+              const firstIdx = arr.findIndex((x: Hotel) => {
+                const xNorm = cleanString(x.name);
+                return xNorm === hNorm || (xNorm.includes("chonor") && hNorm.includes("chonor"));
+              });
+              return firstIdx === idx;
+            }).map((h: Hotel) => {
+              const matchingCanon = canonPkg.hotels.find((c: Hotel) => {
+                const cNorm = cleanString(c.name);
+                const hNorm = cleanString(h.name);
+                return cNorm === hNorm || (cNorm.includes("chonor") && hNorm.includes("chonor")) || (cNorm.includes("himalayan-village") && hNorm.includes("himalayan-village"));
+              });
+              if (matchingCanon && matchingCanon.image_url && matchingCanon.image_url.includes("/stays/")) {
+                return { ...h, image_url: matchingCanon.image_url, name: matchingCanon.name };
+              }
+              return h;
+            });
+            setHotels(uniqueHotels);
+          } else {
+            setHotels(data.hotels);
+          }
         }
         if (data.rentals && data.rentals.length > 0) {
           setRentals(data.rentals);

@@ -1,8 +1,8 @@
 // VANVAS Production Service Worker
-// Version: vanvas-pwa-v4.0.0
+// Version: vanvas-pwa-v5.0.0
 
-const CACHE_VERSION = 'vanvas-v4';
-const SCRIPT_VERSION = 'vanvas-pwa-v4.0.0';
+const CACHE_VERSION = 'vanvas-v5';
+const SCRIPT_VERSION = 'vanvas-pwa-v5.0.0';
 const CACHE_STATIC = `vanvas-static-${CACHE_VERSION}`;
 const CACHE_SHELL = `vanvas-shell-${CACHE_VERSION}`;
 
@@ -112,15 +112,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // A. Hashed Next.js Static Chunks & Public Brand Media: Cache-First on exact URL, strictly status 200
-  if (
-    url.pathname.startsWith('/_next/static/') ||
-    url.pathname.startsWith('/icons/') ||
-    url.pathname.startsWith('/images/') ||
-    url.pathname.startsWith('/artworks/') ||
-    url.pathname.startsWith('/avatars/') ||
-    /\.(png|jpg|jpeg|svg|webp|ico|woff2?|ttf|eot)$/i.test(url.pathname)
-  ) {
+  // A. Hashed Next.js Static Chunks: Cache-First on exact immutable hash URL
+  if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
       caches.open(CACHE_STATIC).then(async (cache) => {
         const cachedResponse = await cache.match(request);
@@ -137,6 +130,43 @@ self.addEventListener('fetch', (event) => {
           cache.put(request, networkResponse.clone()).catch(() => {});
         }
         return networkResponse;
+      })
+    );
+    return;
+  }
+
+  // A2. Editorial Imagery & Brand Media: Stale-While-Revalidate with immediate network refresh
+  if (
+    url.pathname.startsWith('/icons/') ||
+    url.pathname.startsWith('/images/') ||
+    url.pathname.startsWith('/artworks/') ||
+    url.pathname.startsWith('/avatars/') ||
+    /\.(png|jpg|jpeg|svg|webp|ico)$/i.test(url.pathname)
+  ) {
+    event.respondWith(
+      caches.open(CACHE_STATIC).then(async (cache) => {
+        const cachedResponse = await cache.match(request);
+        const fetchPromise = fetch(request)
+          .then((networkResponse) => {
+            if (
+              networkResponse &&
+              networkResponse.ok &&
+              networkResponse.status === 200 &&
+              (networkResponse.type === 'basic' || networkResponse.type === 'cors')
+            ) {
+              cache.put(request, networkResponse.clone()).catch(() => {});
+            }
+            return networkResponse;
+          })
+          .catch(() => null);
+
+        // Return cached immediately if available; revalidate cache in background.
+        // If not in cache, wait for network response.
+        if (cachedResponse && cachedResponse.status === 200) {
+          return cachedResponse;
+        }
+        const fresh = await fetchPromise;
+        return fresh || cachedResponse;
       })
     );
     return;

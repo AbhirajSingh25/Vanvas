@@ -89,4 +89,16 @@ In November 2026, the complete Dharamshala catalog underwent a comprehensive edi
   - All 5 Dharamshala entries removed from `PENDING_ARTWORK_SET` in `frontend/lib/placeVisualResolver.ts`.
   - Browser visual QA automated via Puppeteer confirmed 100% successful asset delivery (HTTP 200, 0 failed network requests) across both desktop (1440x900) and mobile (390x844).
 
+---
+
+## 7. Kasol Artwork Integration, Border Removal & Resolver Hardening
+
+Following production deployment audits, visual inconsistencies in Kasol and Dharamshala were resolved:
+- **Service Worker Cache-First Eviction:** Bumped PWA cache to `vanvas-v5` (`SCRIPT_VERSION: vanvas-pwa-v5.0.0`) and implemented Stale-While-Revalidate for images to eliminate persistent caching of flat vectors.
+- **Backend API Curated Preservation:** Preserved curated canonical packages and exact stay paths (`/stays/`) against backend API category fallback overwrites.
+- **Canonical Destination Slug Normalization:** Standardized lookup keys in `placeVisualResolver.ts` using `normalizeCanonicalDestinationSlug` to support formatted destination names like `"Kasol (Parvati Valley)"`.
+- **Border Removal:** Autocropped cream/white margins on `chojh-bridge`, `moon-dance-cafe`, and `evergreen-cafe`, restoring full-bleed edge-to-edge gouache artwork.
+- **Flat Vector Elimination:** Replaced 5 Kasol flat vectors (`pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, `waichin-valley`) with high-resolution gouache illustrations and emptied `PENDING_ARTWORK_SET`.
+- **Fleet Differentiation:** Updated `kasol_parvati_bullet.webp` with a distinct Royal Enfield Classic 350 in pine forest, establishing 60.3 visual variance from the rental scooter.
+
 

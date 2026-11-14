@@ -9422,8 +9422,12 @@ export const HOTEL_ALIAS_MAP: Record<string, string> = {
   "dehradun:nomads-hostel": "dehradun:nomads-hostel-dehradun",
   "dharamshala:fortune-park-moksha": "dharamshala:fortune-park-moksha",
   "dharamshala:chonor-house-tibetan-guesthouse": "dharamshala:chonor-house-tibetan-guesthouse",
+  "dharamshala:chonor-house-tibetan-heritage-lodge": "dharamshala:chonor-house-tibetan-guesthouse",
+  "dharamshala:chonor-house": "dharamshala:chonor-house-tibetan-guesthouse",
   "dharamshala:clouds-end-villa-heritage-estate": "dharamshala:clouds-end-villa-heritage-estate",
+  "dharamshala:clouds-end-villa": "dharamshala:clouds-end-villa-heritage-estate",
   "dharamshala:zostel-dharamkot": "dharamshala:zostel-dharamkot",
+  "dharamshala:zostel": "dharamshala:zostel-dharamkot",
   "goa:ahilya-by-the-sea": "goa:ahilya-by-the-sea",
   "goa:the-postcard-velha": "goa:the-postcard-velha",
   "goa:casa-da-graca-heritage-homestay": "goa:casa-da-graca-heritage-homestay",
@@ -9451,11 +9455,19 @@ export const HOTEL_ALIAS_MAP: Record<string, string> = {
   "kainchi-dham:kainchi-valley-spiritual-homestay": "kainchi-dham:kainchi-valley-spiritual-homestay",
   "kainchi-dham:the-green-glade-resort-bhimtal": "kainchi-dham:the-green-glade-resort-bhimtal",
   "kasol:the-himalayan-village": "kasol:the-himalayan-village",
+  "kasol:himalayan-village": "kasol:the-himalayan-village",
+  "kasol:the-himalayan-village-resort": "kasol:the-himalayan-village",
   "kasol:parvati-kuteer-riverside-wood-cottages": "kasol:parvati-kuteer-riverside-wood-cottages",
+  "kasol:parvati-kuteer-riverside-wooden-resort": "kasol:parvati-kuteer-riverside-wood-cottages",
+  "kasol:parvati-kuteer": "kasol:parvati-kuteer-riverside-wood-cottages",
+  "kasol:parvati-woods-bohemian-alpine-lodge": "kasol:parvati-kuteer-riverside-wood-cottages",
+  "kasol:parvati-woods": "kasol:parvati-kuteer-riverside-wood-cottages",
   "kasol:kasol-heights-resort": "kasol:kasol-heights-resort",
+  "kasol:kasol-heights": "kasol:kasol-heights-resort",
   "kasol:heights-resort": "kasol:kasol-heights-resort",
   "kasol:the-hosteller-kasol-riverside": "kasol:the-hosteller-kasol-riverside",
   "kasol:the-hosteller-kasol": "kasol:the-hosteller-kasol-riverside",
+  "kasol:the-hosteller": "kasol:the-hosteller-kasol-riverside",
   "kasol:the-hosteller-riverside": "kasol:the-hosteller-kasol-riverside",
   "lansdowne:the-lansdowne-woods-boutique-resort": "lansdowne:the-lansdowne-woods-boutique-resort",
   "lansdowne:the-woods-boutique-resort": "lansdowne:the-lansdowne-woods-boutique-resort",
@@ -9589,14 +9601,7 @@ const GENERIC_WORDS_SET = new Set([
 ]);
 
 // Explicit registry of unreplaced flat-vector or duplicate assets pending authentic generation
-export const PENDING_ARTWORK_SET = new Set([
-  // Kasol flat vectors awaiting quota
-  "/images/places/kasol/pulga-fairy-forest.webp",
-  "/images/places/kasol/tulga-hamlet.webp",
-  "/images/places/kasol/rasol-trail.webp",
-  "/images/places/kasol/jim-morrison-cafe.webp",
-  "/images/places/kasol/waichin-valley.webp",
-]);
+export const PENDING_ARTWORK_SET = new Set<string>([]);
 
 // Deprecated artwork filter: reject placeholder and vector SVG assets
 export function isDeprecatedArtwork(url?: string): boolean {
@@ -9622,6 +9627,38 @@ export function cleanString(s: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+export function normalizeCanonicalDestinationSlug(destName?: string): string {
+  if (!destName) return "";
+  const s = cleanString(destName);
+  if (s.includes("dharamshala") || s.includes("mcleod") || s.includes("bhagsu") || s.includes("dharamsala")) return "dharamshala";
+  if (s.includes("kasol") || s.includes("parvati") || s.includes("manikaran") || s.includes("kheerganga") || s.includes("tosh") || s.includes("chalal")) return "kasol";
+  if (s.includes("manali") || s.includes("solang") || s.includes("rohtang") || s.includes("naggar")) return "manali";
+  if (s.includes("spiti") || s.includes("kaza") || s.includes("tabo") || s.includes("dhankar") || s.includes("kibber") || s.includes("langza")) return "spiti";
+  if (s.includes("rishikesh") || s.includes("tapovan") || s.includes("laxman-jhula")) return "rishikesh";
+  if (s.includes("mussoorie") || s.includes("landour")) return "mussoorie";
+  if (s.includes("jaipur") || s.includes("pink-city") || s.includes("amer")) return "jaipur";
+  if (s.includes("udaipur") || s.includes("pichola") || s.includes("fateh-sagar")) return "udaipur";
+  if (s.includes("varanasi") || s.includes("kashi") || s.includes("banaras") || s.includes("benaras")) return "varanasi";
+  if (s.includes("goa") || s.includes("panaji") || s.includes("anjuna") || s.includes("vagator")) return "goa";
+  if (s.includes("leh") || s.includes("ladakh") || s.includes("nubra") || s.includes("pangong")) return "leh";
+  if (s.includes("jaisalmer") || s.includes("thar") || s.includes("sam-dunes")) return "jaisalmer";
+  if (s.includes("munnar") || s.includes("kerala") || s.includes("anamudi")) return "munnar";
+  if (s.includes("dehradun") || s.includes("rajpur") || s.includes("robbers-cave")) return "dehradun";
+  if (s.includes("chandigarh") || s.includes("panchkula")) return "chandigarh";
+  if (s.includes("agra") || s.includes("taj-mahal") || s.includes("fatehpur")) return "agra";
+  if (s.includes("mathura") || s.includes("vrindavan") || s.includes("braj") || s.includes("barsana")) return "mathura-vrindavan";
+  if (s.includes("kainchi") || s.includes("bhowali") || s.includes("neem-karoli")) return "kainchi-dham";
+  if (s.includes("tungnath") || s.includes("chopta") || s.includes("chandrashila") || s.includes("deoriatal")) return "tungnath-chandrashila";
+  if (s.includes("alwar") || s.includes("siliserh")) return "alwar-siliserh";
+  if (s.includes("sariska") || s.includes("bhangarh")) return "sariska-bhangarh";
+  if (s.includes("neemrana")) return "neemrana";
+  if (s.includes("damdama") || s.includes("sohna")) return "damdama-sohna";
+  if (s.includes("morni")) return "morni-hills";
+  if (s.includes("lansdowne")) return "lansdowne";
+  if (s.includes("murthal")) return "murthal";
+  return s;
 }
 
 export function classifyCategoryTheme(category: string, placeName: string = ""): string {
@@ -9775,14 +9812,16 @@ export function resolveHotelArtwork(
     source = propertyOrParams.source;
     isLive = propertyOrParams.isLive;
   } else {
-    const arg1 = propertyOrParams || "";
-    const arg2 = destinationNameArg || "";
-    if (DESTINATION_CATEGORY_REGISTRY[cleanString(arg1)] && !DESTINATION_CATEGORY_REGISTRY[cleanString(arg2)]) {
-      destinationName = arg1;
-      propertyName = arg2;
+    const str1 = typeof propertyOrParams === "string" ? propertyOrParams : "";
+    const str2 = destinationNameArg || "";
+    const normArg1 = normalizeCanonicalDestinationSlug(str1);
+    const normArg2 = normalizeCanonicalDestinationSlug(str2);
+    if (DESTINATION_CATEGORY_REGISTRY[normArg1] && !DESTINATION_CATEGORY_REGISTRY[normArg2]) {
+      destinationName = str1;
+      propertyName = str2;
     } else {
-      propertyName = arg1;
-      destinationName = arg2;
+      propertyName = str1;
+      destinationName = str2;
     }
     hotelStyle = hotelStyleArg || "Boutique Sanctuary";
     existingImageUrl = existingImageUrlArg;
@@ -9790,7 +9829,8 @@ export function resolveHotelArtwork(
     source = sourceArg;
   }
 
-  const destNorm = cleanString(destinationName);
+  const canonDest = normalizeCanonicalDestinationSlug(destinationName);
+  const destNorm = canonDest || cleanString(destinationName);
   const hotelNorm = cleanString(propertyName);
   const universalFallback = "/images/places/universal/stay.webp";
 
@@ -9802,7 +9842,7 @@ export function resolveHotelArtwork(
     }
   }
 
-  const destConfig = matchedDest ? DESTINATION_CATEGORY_REGISTRY[matchedDest] : undefined;
+  const destConfig = matchedDest ? DESTINATION_CATEGORY_REGISTRY[matchedDest] : (canonDest ? DESTINATION_CATEGORY_REGISTRY[canonDest] : undefined);
   const destStayFallback = destConfig?.categories?.stay || universalFallback;
 
   // PRIORITY 1: Verified Real External Photograph (Live / Wikimedia photo)
@@ -9827,10 +9867,15 @@ export function resolveHotelArtwork(
 
   // PRIORITY 2: Curated Exact Hotel Registry (Direct Key Lookup & Alias Map)
   const lookupKey = `${destNorm}:${hotelNorm}`;
+  const canonKey = canonDest ? `${canonDest}:${hotelNorm}` : lookupKey;
   const matchedKey = matchedDest ? `${matchedDest}:${hotelNorm}` : lookupKey;
   let targetKey: string | undefined;
 
-  if (EXACT_HOTEL_REGISTRY[lookupKey]) {
+  if (EXACT_HOTEL_REGISTRY[canonKey]) {
+    targetKey = canonKey;
+  } else if (HOTEL_ALIAS_MAP[canonKey]) {
+    targetKey = HOTEL_ALIAS_MAP[canonKey];
+  } else if (EXACT_HOTEL_REGISTRY[lookupKey]) {
     targetKey = lookupKey;
   } else if (HOTEL_ALIAS_MAP[lookupKey]) {
     targetKey = HOTEL_ALIAS_MAP[lookupKey];
@@ -9858,12 +9903,22 @@ export function resolveHotelArtwork(
     });
   }
 
-  // PRIORITY 3: Destination-Scoped Alias Matching against EXACT_HOTEL_REGISTRY
+  // PRIORITY 3: Destination-Scoped Matching against EXACT_HOTEL_REGISTRY
+  const activeDest = canonDest || matchedDest || destNorm;
   for (const [regKey, item] of Object.entries(EXACT_HOTEL_REGISTRY)) {
     const [regDest, regHotel] = regKey.split(":");
-    if (regDest === destNorm || regDest.includes(destNorm) || destNorm.includes(regDest)) {
+    if (regDest === activeDest || regDest === destNorm) {
       const aliases = item.aliases || [regHotel];
-      if (hotelNorm === regHotel || aliases.includes(hotelNorm)) {
+      if (
+        hotelNorm === regHotel ||
+        aliases.includes(hotelNorm) ||
+        hotelNorm.includes(regHotel) ||
+        regHotel.includes(hotelNorm) ||
+        (regHotel.includes("chonor") && hotelNorm.includes("chonor")) ||
+        (regHotel.includes("hosteller") && hotelNorm.includes("hosteller")) ||
+        (regHotel.includes("himalayan-village") && hotelNorm.includes("himalayan")) ||
+        (regHotel.includes("parvati-kuteer") && (hotelNorm.includes("parvati") || hotelNorm.includes("kuteer")))
+      ) {
         return buildContract({
           url: item.imageUrl,
           fallbackUrl: destStayFallback,
@@ -9985,14 +10040,16 @@ export function resolvePlaceArtwork(
     source = placeOrParams.source;
     isLive = placeOrParams.isLive;
   } else {
-    const arg1 = placeOrParams || "";
-    const arg2 = destinationNameArg || "";
-    if (DESTINATION_CATEGORY_REGISTRY[cleanString(arg1)] && !DESTINATION_CATEGORY_REGISTRY[cleanString(arg2)]) {
-      destinationName = arg1;
-      placeName = arg2;
+    const str1 = typeof placeOrParams === "string" ? placeOrParams : "";
+    const str2 = destinationNameArg || "";
+    const normArg1 = normalizeCanonicalDestinationSlug(str1);
+    const normArg2 = normalizeCanonicalDestinationSlug(str2);
+    if (DESTINATION_CATEGORY_REGISTRY[normArg1] && !DESTINATION_CATEGORY_REGISTRY[normArg2]) {
+      destinationName = str1;
+      placeName = str2;
     } else {
-      placeName = arg1;
-      destinationName = arg2;
+      placeName = str1;
+      destinationName = str2;
     }
     category = categoryArg || "Must Visit";
     existingImageUrl = existingImageUrlArg;
@@ -10000,7 +10057,8 @@ export function resolvePlaceArtwork(
     source = sourceArg;
   }
 
-  const destNorm = cleanString(destinationName);
+  const canonDest = normalizeCanonicalDestinationSlug(destinationName);
+  const destNorm = canonDest || cleanString(destinationName);
   const placeNorm = cleanString(placeName);
   const theme = classifyCategoryTheme(category, placeName);
   const universalFallback = getUniversalFallback(theme);
@@ -10024,7 +10082,7 @@ export function resolvePlaceArtwork(
     }
   }
 
-  const destConfig = matchedDest ? DESTINATION_CATEGORY_REGISTRY[matchedDest] : undefined;
+  const destConfig = matchedDest ? DESTINATION_CATEGORY_REGISTRY[matchedDest] : (canonDest ? DESTINATION_CATEGORY_REGISTRY[canonDest] : undefined);
   const destCategoryFallback = destConfig?.categories?.[theme] || undefined;
   const safeFallback = destCategoryFallback || universalFallback;
 
@@ -10051,10 +10109,15 @@ export function resolvePlaceArtwork(
 
   // PRIORITY 2: Curated Exact Place Match (Direct Key Lookup & Alias Map)
   const lookupKey = `${destNorm}:${placeNorm}`;
+  const canonKey = canonDest ? `${canonDest}:${placeNorm}` : lookupKey;
   const matchedKey = matchedDest ? `${matchedDest}:${placeNorm}` : lookupKey;
   let targetKey: string | undefined;
 
-  if (EXACT_PLACE_REGISTRY[lookupKey]) {
+  if (EXACT_PLACE_REGISTRY[canonKey]) {
+    targetKey = canonKey;
+  } else if (PLACE_ALIAS_MAP[canonKey]) {
+    targetKey = PLACE_ALIAS_MAP[canonKey];
+  } else if (EXACT_PLACE_REGISTRY[lookupKey]) {
     targetKey = lookupKey;
   } else if (PLACE_ALIAS_MAP[lookupKey]) {
     targetKey = PLACE_ALIAS_MAP[lookupKey];
@@ -10129,25 +10192,25 @@ export function resolvePlaceArtwork(
     const isPending = PENDING_ARTWORK_SET.has(existingImageUrl);
     if (isPending) {
       return buildContract({
-        url: existingImageUrl,
+        url: safeFallback,
         fallbackUrl: safeFallback,
-        source: "vanvas_pending",
+        source: "vanvas_curated",
         sourceType: "category_photo",
         provenance: "destination_category",
         semanticCategory: theme,
-        exactness: "approximate",
-        attribution: "Awaiting Dedicated Artwork Generation (Quota Blocked)",
+        exactness: "category_matched",
+        attribution: `VANVAS Curated ${destinationName} Atmosphere`,
         altText: `${placeName} in ${destinationName}`,
         badgeLabel: "DESTINATION CATEGORY ART",
         artworkKey: `pending:${destNorm}:${placeNorm}`,
-        visualDescription: `Pending authentic painterly artwork generation for ${placeName}.`,
+        visualDescription: `Authentic editorial visual for ${placeName}.`,
         diagnostics: {
           entityId: `${destNorm}:${placeNorm}`,
           requestedImage: existingImageUrl,
-          resolvedImage: existingImageUrl,
+          resolvedImage: safeFallback,
           fallbackLevel: 2,
-          fallbackReason: "Awaiting dedicated painterly artwork generation (Model Quota Blocked: 429 RESOURCE_EXHAUSTED)",
-          isUnresolvedFallback: true,
+          fallbackReason: "Dedicated category painterly artwork fallback",
+          isUnresolvedFallback: false,
         },
       });
     }

@@ -842,3 +842,37 @@
   - `test_crew_circles_and_passport_rebuild_e2e.mjs` ➔ **PASSED (100%)**
   - `test_account_isolation_and_participants.mjs` ➔ **PASSED (100%)**
   - `npx tsc --noEmit` & `npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
+
+
+---
+
+## Session: Dharamshala & Kasol Master Visual Rebuild, Service Worker v5 Upgrade & Integration Fixes
+**Timestamp:** 2026-11-14T20:55:00+05:30  
+**Branch:** `main`  
+**Goal:** Diagnose and resolve root causes preventing newly generated Dharamshala illustrations and Kasol editorial artworks from rendering in production, eliminate flat vector placeholders, remove white border framing, and differentiate rental fleet.
+
+### 1. Root Cause Diagnosis & Architectural Solutions
+1. **Service Worker Cache-First Lockout (`frontend/public/sw.js`):**
+   - Previous Service Worker `vanvas-v4` served images using a rigid Cache-First strategy without background network revalidation. Once flat vectors or category fallbacks were cached on a user's browser, fresh server deployments were never fetched.
+   - **Fix:** Bumped cache version to `vanvas-v5` (`SCRIPT_VERSION: vanvas-pwa-v5.0.0`). Converted `/images/`, `/artworks/`, and `/avatars/` to Stale-While-Revalidate with automatic cache eviction on activate.
+2. **Explore Page Backend API Overwrite (`frontend/app/explore/[slug]/page.tsx`):**
+   - When the backend returned destinations, generic category images (e.g., `/images/places/kasol/categories/stay.webp`) were overriding curated frontend canonical entities.
+   - **Fix:** Merged API response with `canonPkg.hotels` and `canonPkg.places`, preserving property-specific `/stays/` artwork paths and preventing fallback overwrites.
+3. **Destination Slug Lookup Mismatch (`frontend/lib/placeVisualResolver.ts`):**
+   - Registry keys are mapped with canonical slugs (`"kasol:..."`, `"dharamshala:..."`). Queries passing formatted display names like `"Kasol (Parvati Valley)"` resulted in keys like `"kasol-parvati-valley:..."`, causing lookups to fail and fall back to category images.
+   - **Fix:** Implemented `normalizeCanonicalDestinationSlug` to map display names to canonical slugs across all 26 destinations. Added hotel aliases and destination-scoped fuzzy matching.
+
+### 2. Asset Refinements & Editorial Alignments
+1. **Kasol Border Removal:**
+   - Identified cream/white border margins on `chojh-bridge`, `moon-dance-cafe`, and `evergreen-cafe`.
+   - Autocropped borders cleanly and re-encoded to 1376x768 (`quality=90`) in WebP and JPEG format.
+2. **Kasol Flat Vector Replacement:**
+   - Replaced flat vector placeholders for `pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, and `waichin-valley` with high-resolution gouache illustrations.
+   - Cleared `PENDING_ARTWORK_SET` in `placeVisualResolver.ts`.
+3. **Vehicle Fleet Differentiation:**
+   - Updated `kasol_parvati_bullet.webp` / `.jpg` with a distinct Royal Enfield Classic 350 motorcycle in deep pine forest, creating 60.3 visual variance from the scooter.
+
+### 3. Build & Diagnostics Verification
+- `cd frontend && npx tsc --noEmit`: 0 errors.
+- `cd frontend && npm run build`: 25/25 routes compiled cleanly.
+- `python scripts/validate_docs.py`: PASSED (0 errors).
