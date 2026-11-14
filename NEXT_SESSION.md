@@ -1,21 +1,20 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Dharamshala & Kasol Master Visual Rebuild, Service Worker v5 Upgrade & Integration Fixes Completed on `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Kasol Complete Visual Rebuild, Hotel Image Uniqueness, Runtime Deduplication & Production Fix on `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
 - **Core Checkpoint:**
-  - **Dharamshala & Kasol Master Visual Rebuild & Integration:**
-    - Root cause diagnosis and complete fix: PWA Service Worker cache lock, API response entity overwrite, and destination slug lookup normalization.
-    - Upgraded `sw.js` to `vanvas-v5` with Stale-While-Revalidate and background purging.
-    - Preserved exact curated canonical stays and places in `frontend/app/explore/[slug]/page.tsx` against backend fallback overrides.
-    - Kasol border removal: Cropped white paper borders from `chojh-bridge`, `moon-dance-cafe`, and `evergreen-cafe`.
-    - Kasol flat vector replacement: Replaced `pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, and `waichin-valley` with gouache artwork.
-    - Kasol rental vehicle differentiation: Updated `kasol_parvati_bullet.webp` with distinct pine forest Enfield Classic 350.
-    - Cleared `PENDING_ARTWORK_SET` in `placeVisualResolver.ts` (0 pending entities).
+  - **Kasol Complete Visual Rebuild & Runtime Production Fix:**
+    - 4 distinct hotel artworks generated and integrated: The Himalayan Village, Parvati Kuteer, Kasol Heights Resort, and The Hosteller Kasol. 100% unique architectural identities with 66.3 to 80.3 pairwise variance.
+    - 16 canonical places verified with bespoke full-bleed gouache illustrations: Pulga Fairy Forest, Tulga Rustic Wooden Hamlet, Rasol Alpine Trail, Jim Morrison Cafe, and Waichin Valley resolved and borderless.
+    - Runtime deduplication in `frontend/app/explore/[slug]/page.tsx`: Curated canonical package preserved as authoritative order, eliminating backend API duplicates (2 Chalal, 2 Manikaran, 2 Kheerganga, 1 duplicate Classic 350) and filtering out phantom `Parvati Woods` lodge.
+    - Removed erroneous `parvati-woods` alias in `frontend/lib/placeVisualResolver.ts`.
+    - Added `generateDestinationVisualAuditReport` in `frontend/lib/placeVisualResolver.ts`.
+    - Dharamshala protected regression baseline passed 100% without modification.
   - **Permanent VANVAS Identity & Friends System:** Ambiguity-resistant `VNV-XXXX-XXXX` permanent ID, public profile lookup, request lifecycle, user blocking, privacy toggle. Native & Web `VanvasIdentityCard` with QR code modal and native share sheet.
   - **Private Crew Circles (मण्डली):** Multi-trip workspaces, member management, private consensus voting (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, and real-time activity feed.
   - **Smart Finance 3-Layer Architecture:** Trip Plan Budget, Main Group Expense Ledger, and Split Pods with integer paise precision and optimistic version locking.

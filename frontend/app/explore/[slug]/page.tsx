@@ -568,22 +568,37 @@ export default function DestinationDetailPage() {
         setDestination(resolvedDest);
         if (data.places && data.places.length > 0) {
           const canonPkg = getCanonicalDestinationData(slug);
-          if (canonPkg?.places) {
-            const mergedPlaces = data.places.map((p: Place) => {
-              const matchingCanon = canonPkg.places.find(
-                (cp: Place) => cp.slug === p.slug || cleanString(cp.name) === cleanString(p.name)
+          if (canonPkg?.places && canonPkg.places.length > 0) {
+            // Curated canonical places are the authoritative baseline
+            const mergedPlaces = canonPkg.places.map((cp: Place) => {
+              const match = data.places.find(
+                (dp: Place) => dp.slug === cp.slug || cleanString(dp.name) === cleanString(cp.name)
               );
-              if (
-                matchingCanon &&
-                matchingCanon.image_url &&
-                matchingCanon.image_url.startsWith("/images/places/") &&
-                !matchingCanon.image_url.includes("/categories/")
-              ) {
-                return { ...p, image_url: matchingCanon.image_url };
+              if (match) {
+                return {
+                  ...cp,
+                  id: match.id || cp.id,
+                  rating: typeof match.rating === "number" ? match.rating : cp.rating,
+                  review_count: typeof match.review_count === "number" ? match.review_count : cp.review_count,
+                  distance_km: typeof match.distance_km === "number" ? match.distance_km : cp.distance_km,
+                  is_saved: match.is_saved ?? cp.is_saved,
+                  approx_cost: typeof match.approx_cost === "number" ? match.approx_cost : cp.approx_cost,
+                  price_level: match.price_level || cp.price_level,
+                };
               }
-              return p;
+              return cp;
             });
-            setPlaces(mergedPlaces);
+
+            // Append genuine non-duplicate live POIs (e.g. Google Places / OpenStreetMap)
+            const extraLivePlaces = data.places.filter((dp: Place) => {
+              const dpNorm = cleanString(dp.name);
+              const isAlreadyCanon = canonPkg.places.some(
+                (cp: Place) => cp.slug === dp.slug || cleanString(cp.name) === dpNorm
+              );
+              return !isAlreadyCanon && Boolean(dp.is_live);
+            });
+
+            setPlaces([...mergedPlaces, ...extraLivePlaces]);
           } else {
             setPlaces(data.places);
           }
@@ -594,32 +609,82 @@ export default function DestinationDetailPage() {
         }
         if (data.hotels && data.hotels.length > 0) {
           const canonPkg = getCanonicalDestinationData(slug);
-          if (canonPkg?.hotels) {
-            const uniqueHotels = data.hotels.filter((h: Hotel, idx: number, arr: Hotel[]) => {
-              const hNorm = cleanString(h.name);
-              const firstIdx = arr.findIndex((x: Hotel) => {
-                const xNorm = cleanString(x.name);
-                return xNorm === hNorm || (xNorm.includes("chonor") && hNorm.includes("chonor"));
+          if (canonPkg?.hotels && canonPkg.hotels.length > 0) {
+            // Preserve canonical hotels as authoritative base, updating rates/availability from backend
+            const mergedHotels = canonPkg.hotels.map((ch: Hotel) => {
+              const match = data.hotels.find((dh: Hotel) => {
+                const cNorm = cleanString(ch.name);
+                const dNorm = cleanString(dh.name);
+                return cNorm === dNorm || 
+                       (cNorm.includes("chonor") && dNorm.includes("chonor")) ||
+                       (cNorm.includes("himalayan-village") && dNorm.includes("himalayan-village")) ||
+                       (cNorm.includes("parvati-kuteer") && dNorm.includes("parvati-kuteer")) ||
+                       (cNorm.includes("kasol-heights") && dNorm.includes("kasol-heights")) ||
+                       (cNorm.includes("hosteller") && dNorm.includes("hosteller"));
               });
-              return firstIdx === idx;
-            }).map((h: Hotel) => {
-              const matchingCanon = canonPkg.hotels.find((c: Hotel) => {
-                const cNorm = cleanString(c.name);
-                const hNorm = cleanString(h.name);
-                return cNorm === hNorm || (cNorm.includes("chonor") && hNorm.includes("chonor")) || (cNorm.includes("himalayan-village") && hNorm.includes("himalayan-village"));
-              });
-              if (matchingCanon && matchingCanon.image_url && matchingCanon.image_url.includes("/stays/")) {
-                return { ...h, image_url: matchingCanon.image_url, name: matchingCanon.name };
+              if (match) {
+                return {
+                  ...ch,
+                  id: match.id || ch.id,
+                  price_per_night: typeof match.price_per_night === "number" && match.price_per_night > 0 ? match.price_per_night : ch.price_per_night,
+                  price_formatted: match.price_formatted || ch.price_formatted,
+                  availability_state: match.availability_state || ch.availability_state,
+                  booking_url: match.booking_url || ch.booking_url,
+                  rating: typeof match.rating === "number" ? match.rating : ch.rating,
+                };
               }
-              return h;
+              return ch;
             });
-            setHotels(uniqueHotels);
+
+            // Append any genuine non-duplicate live verified stays from external PMS (with is_live)
+            const extraLiveStays = data.hotels.filter((dh: Hotel) => {
+              const dhNorm = cleanString(dh.name);
+              const isAlreadyCanon = canonPkg.hotels.some(
+                (ch: Hotel) => cleanString(ch.name) === dhNorm ||
+                       (dhNorm.includes("chonor") && cleanString(ch.name).includes("chonor")) ||
+                       (dhNorm.includes("himalayan-village") && cleanString(ch.name).includes("himalayan-village")) ||
+                       (dhNorm.includes("parvati-kuteer") && cleanString(ch.name).includes("parvati-kuteer")) ||
+                       (dhNorm.includes("kasol-heights") && cleanString(ch.name).includes("kasol-heights")) ||
+                       (dhNorm.includes("hosteller") && cleanString(ch.name).includes("hosteller"))
+              );
+              return !isAlreadyCanon && Boolean(dh.is_live);
+            });
+
+            setHotels([...mergedHotels, ...extraLiveStays]);
           } else {
             setHotels(data.hotels);
           }
         }
         if (data.rentals && data.rentals.length > 0) {
-          setRentals(data.rentals);
+          const canonPkg = getCanonicalDestinationData(slug);
+          if (canonPkg?.rentals && canonPkg.rentals.length > 0) {
+            const mergedRentals = canonPkg.rentals.map((cr: RentalOption) => {
+              const match = data.rentals.find((dr: RentalOption) => {
+                const cNorm = cleanString(cr.vehicle_name || cr.vehicle_type || "");
+                const dNorm = cleanString(dr.vehicle_name || dr.vehicle_type || "");
+                return cNorm === dNorm || (cNorm.includes("scooter") && dNorm.includes("scooter")) || (cNorm.includes("classic") && dNorm.includes("classic"));
+              });
+              if (match) {
+                return {
+                  ...cr,
+                  id: match.id || cr.id,
+                  price_per_day: typeof match.price_per_day === "number" ? match.price_per_day : cr.price_per_day,
+                  deposit_amount: typeof match.deposit_amount === "number" ? match.deposit_amount : cr.deposit_amount,
+                  rating: typeof match.rating === "number" ? match.rating : cr.rating,
+                  phone: match.phone || cr.phone,
+                  provider_name: match.provider_name || cr.provider_name,
+                };
+              }
+              return cr;
+            });
+            setRentals(mergedRentals);
+          } else {
+            const uniqueRentals = data.rentals.filter((r: RentalOption, idx: number, arr: RentalOption[]) => {
+              const rNorm = cleanString(r.vehicle_name || r.vehicle_type || "");
+              return arr.findIndex((x: RentalOption) => cleanString(x.vehicle_name || x.vehicle_type || "") === rNorm) === idx;
+            });
+            setRentals(uniqueRentals);
+          }
         }
         setDestLoading(false);
         setStaysLoading(false);
@@ -642,7 +707,25 @@ export default function DestinationDetailPage() {
     const destId = destination.id || slug;
     setStaysLoading(true);
     api.getHotels(destId, stayType, travellerProfile)
-      .then((loadedStays) => setHotels(loadedStays || []))
+      .then((loadedStays) => {
+        const canonPkg = getCanonicalDestinationData(slug);
+        if (canonPkg?.hotels && loadedStays && loadedStays.length > 0) {
+          const merged = loadedStays.map((h: Hotel) => {
+            const match = canonPkg.hotels.find((c: Hotel) => {
+              const cNorm = cleanString(c.name);
+              const hNorm = cleanString(h.name);
+              return cNorm === hNorm || (cNorm.includes("chonor") && hNorm.includes("chonor")) || (cNorm.includes("himalayan-village") && hNorm.includes("himalayan-village"));
+            });
+            if (match && match.image_url && match.image_url.includes("/stays/")) {
+              return { ...h, image_url: match.image_url, name: match.name };
+            }
+            return h;
+          });
+          setHotels(merged);
+        } else {
+          setHotels(loadedStays || []);
+        }
+      })
       .catch(() => setHotels([]))
       .finally(() => setStaysLoading(false));
   };

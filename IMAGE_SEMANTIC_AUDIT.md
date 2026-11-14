@@ -91,14 +91,26 @@ In November 2026, the complete Dharamshala catalog underwent a comprehensive edi
 
 ---
 
-## 7. Kasol Artwork Integration, Border Removal & Resolver Hardening
+## 7. Kasol Complete Visual Rebuild, Hotel Image Uniqueness & Runtime Deduplication
 
-Following production deployment audits, visual inconsistencies in Kasol and Dharamshala were resolved:
-- **Service Worker Cache-First Eviction:** Bumped PWA cache to `vanvas-v5` (`SCRIPT_VERSION: vanvas-pwa-v5.0.0`) and implemented Stale-While-Revalidate for images to eliminate persistent caching of flat vectors.
-- **Backend API Curated Preservation:** Preserved curated canonical packages and exact stay paths (`/stays/`) against backend API category fallback overwrites.
-- **Canonical Destination Slug Normalization:** Standardized lookup keys in `placeVisualResolver.ts` using `normalizeCanonicalDestinationSlug` to support formatted destination names like `"Kasol (Parvati Valley)"`.
-- **Border Removal:** Autocropped cream/white margins on `chojh-bridge`, `moon-dance-cafe`, and `evergreen-cafe`, restoring full-bleed edge-to-edge gouache artwork.
-- **Flat Vector Elimination:** Replaced 5 Kasol flat vectors (`pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, `waichin-valley`) with high-resolution gouache illustrations and emptied `PENDING_ARTWORK_SET`.
-- **Fleet Differentiation:** Updated `kasol_parvati_bullet.webp` with a distinct Royal Enfield Classic 350 in pine forest, establishing 60.3 visual variance from the rental scooter.
+Following runtime production audits on `https://vanvasai.vercel.app/explore/kasol`, the complete Kasol visual inventory was overhauled:
+- **Four Distinct Hotel Artworks (P0 Requirement):**
+  - Generated and integrated 4 bespoke full-bleed gouache illustrations (1376x768 WebP & JPG):
+    - `the-himalayan-village`: Kathkuni timber-and-stone dry masonry chalets with carved balconies and slate roofs.
+    - `parvati-kuteer-riverside-wood-cottages`: A-frame log cottages on the Parvati riverbank with lawn, hammocks, and boulders.
+    - `kasol-heights-resort`: High-altitude modern resort on Suma Ropa ridge with panoramic sundeck.
+    - `the-hosteller-kasol-riverside`: Backpacker hostel with fairy-lit wooden riverside cafe deck and twilight mountain atmosphere.
+  - Pairwise visual variance across all 4 stays confirmed at **66.3 to 80.3**, eliminating generic valley repetitions.
+- **16 Canonical Places Resolution:**
+  - Generated bespoke illustrations for `pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, and `waichin-valley`.
+  - All 16 Kasol places verified with unique SHA-256 hashes and minimum pairwise variance of 50.7.
+- **Runtime Deduplication & API Protection (`explore/[slug]/page.tsx`):**
+  - Canonical package preserved as authoritative baseline, eliminating duplicate Chalal, Manikaran, and Kheerganga entries caused by uncurated backend database rows.
+  - Filtered out phantom `Parvati Woods Bohemian Alpine Lodge` and removed its alias in `placeVisualResolver.ts`.
+  - Deduplicated Valley Mobility fleet to ensure the 2 distinct vehicles (TVS Jupiter 125 and Royal Enfield Classic 350) render cleanly.
+- **Diagnostics:**
+  - Added `generateDestinationVisualAuditReport` in `placeVisualResolver.ts`.
+  - 100% of Kasol (22/22) and Dharamshala baseline (22/22) assets verified valid and on disk.
+
 
 

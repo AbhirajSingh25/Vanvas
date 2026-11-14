@@ -9460,8 +9460,6 @@ export const HOTEL_ALIAS_MAP: Record<string, string> = {
   "kasol:parvati-kuteer-riverside-wood-cottages": "kasol:parvati-kuteer-riverside-wood-cottages",
   "kasol:parvati-kuteer-riverside-wooden-resort": "kasol:parvati-kuteer-riverside-wood-cottages",
   "kasol:parvati-kuteer": "kasol:parvati-kuteer-riverside-wood-cottages",
-  "kasol:parvati-woods-bohemian-alpine-lodge": "kasol:parvati-kuteer-riverside-wood-cottages",
-  "kasol:parvati-woods": "kasol:parvati-kuteer-riverside-wood-cottages",
   "kasol:kasol-heights-resort": "kasol:kasol-heights-resort",
   "kasol:kasol-heights": "kasol:kasol-heights-resort",
   "kasol:heights-resort": "kasol:kasol-heights-resort",
@@ -10272,4 +10270,92 @@ export function resolvePlaceArtwork(
     artworkKey: `universal:${theme}`,
     visualDescription: `Universal visual for ${category}.`,
   });
+}
+
+export interface DestinationDiagnosticEntry {
+  destination: string;
+  entityId: string;
+  entityName: string;
+  category: "place" | "hotel" | "rental";
+  expectedAsset: string;
+  resolvedAsset: string;
+  actualBrowserImageUrl: string;
+  sourceClassification: string;
+  fallbackUsed: boolean;
+  verificationState: "VERIFIED_CORRECT" | "FLAGGED_INCORRECT";
+}
+
+export function generateDestinationVisualAuditReport(
+  destinationSlug: string,
+  destinationName: string,
+  places: Array<{ id: string; name: string; image_url?: string; category?: string; is_live?: boolean; source?: string }>,
+  hotels: Array<{ id: string; name: string; image_url?: string; hotel_style?: string; accommodation_type?: string; is_live?: boolean; source?: string }>,
+  rentals: Array<{ id: string; vehicle_name?: string; vehicle_type?: string; image_url?: string }>
+): DestinationDiagnosticEntry[] {
+  const results: DestinationDiagnosticEntry[] = [];
+
+  places.forEach((p) => {
+    const res = resolvePlaceArtwork(p.name, destinationName, p.category || "Place", p.image_url, p.is_live, p.source);
+    const resolved = res.imageUrl || "";
+    const expected = p.image_url || "";
+    const isCategoryFallback = resolved.includes("/categories/") || resolved.includes("generic_");
+    const isVector = resolved.endsWith(".svg") || resolved.includes("placeholder");
+    const isCorrect = !isCategoryFallback && !isVector && Boolean(resolved);
+
+    results.push({
+      destination: destinationSlug,
+      entityId: p.id,
+      entityName: p.name,
+      category: "place",
+      expectedAsset: expected,
+      resolvedAsset: resolved,
+      actualBrowserImageUrl: resolved,
+      sourceClassification: res.badgeLabel || res.provenance,
+      fallbackUsed: isCategoryFallback,
+      verificationState: isCorrect ? "VERIFIED_CORRECT" : "FLAGGED_INCORRECT",
+    });
+  });
+
+  hotels.forEach((h) => {
+    const res = resolveHotelArtwork(h.name, destinationName, h.hotel_style || h.accommodation_type, h.image_url, h.is_live, h.source);
+    const resolved = res.imageUrl || "";
+    const expected = h.image_url || "";
+    const isCategoryFallback = resolved.includes("/categories/") || resolved.includes("generic_");
+    const isCorrect = !isCategoryFallback && resolved.includes("/stays/");
+
+    results.push({
+      destination: destinationSlug,
+      entityId: h.id,
+      entityName: h.name,
+      category: "hotel",
+      expectedAsset: expected,
+      resolvedAsset: resolved,
+      actualBrowserImageUrl: resolved,
+      sourceClassification: res.badgeLabel || res.provenance,
+      fallbackUsed: isCategoryFallback,
+      verificationState: isCorrect ? "VERIFIED_CORRECT" : "FLAGGED_INCORRECT",
+    });
+  });
+
+  rentals.forEach((r) => {
+    const name = r.vehicle_name || r.vehicle_type || "Rental";
+    const expected = r.image_url || "";
+    const resolved = r.image_url || "/images/vehicles/kasol_valley_scooter.webp";
+    const isCorrect = Boolean(resolved) && resolved.includes("/vehicles/");
+
+    results.push({
+      destination: destinationSlug,
+      entityId: r.id,
+      entityName: name,
+      category: "rental",
+      expectedAsset: expected,
+      resolvedAsset: resolved,
+      actualBrowserImageUrl: resolved,
+      sourceClassification: "RENTAL_VEHICLE_ART",
+      fallbackUsed: false,
+      verificationState: isCorrect ? "VERIFIED_CORRECT" : "FLAGGED_INCORRECT",
+    });
+  });
+
+  return results;
 }

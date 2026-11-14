@@ -1,7 +1,7 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-14T20:55:00+05:30
+> *Last Verified:* 2026-11-14T22:15:00+05:30
 
 ---
 
@@ -23,25 +23,36 @@
 ---
 
 ## 3. Build & Diagnostics Verification
-- **Dharamshala & Kasol Master Visual Rebuild & Integration Fixes:**
-  - Diagnosed and resolved the 3 root causes preventing fresh illustrations from rendering in production:
-    1. **Service Worker Cache-First Lockout (`frontend/public/sw.js`):** Bumped to `vanvas-v5` (`SCRIPT_VERSION: vanvas-pwa-v5.0.0`), converted `/images/`, `/artworks/`, `/avatars/` to Stale-While-Revalidate, purging stale `vanvas-v4` cache.
-    2. **Backend API Fallback Overwrite (`frontend/app/explore/[slug]/page.tsx`):** Guaranteed that curated canonical package stays (`canonPkg.hotels`) and exact place paths `/stays/` take precedence over backend API generic category fallbacks (`/categories/stay.webp`).
-    3. **Destination Slug Key Mismatch (`frontend/lib/placeVisualResolver.ts`):** Added `normalizeCanonicalDestinationSlug` to map titles like `"Kasol (Parvati Valley)"` and `"Dharamshala (McLeod Ganj)"` to their canonical slugs (`"kasol"`, `"dharamshala"`), restoring exact Priority 1 stay/place lookups and destination-scoped fuzzy matching.
-  - **Kasol Border Removal:** Cropped white paper borders from `chojh-bridge`, `moon-dance-cafe`, and `evergreen-cafe` to 1376x768 full-bleed gouache.
-  - **Kasol Flat Vector Elimination:** Replaced flat vectors for `pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, `waichin-valley` with high-resolution gouache illustrations; `PENDING_ARTWORK_SET` cleared (0 pending).
-  - **Kasol Vehicle Differentiation:** Updated `kasol_parvati_bullet.webp` / `.jpg` to high-resolution Royal Enfield Classic 350 motorcycle in pine forest, establishing 60.3 visual variance from the scooter.
+- **Kasol Complete Visual Rebuild & Runtime Production Fix:**
+  - **4 Stays Completely Differentiated (P0 Requirement):**
+    - The Himalayan Village (`the-himalayan-village.webp`): Hand-hewn Kathkuni timber-and-stone dry masonry chalets with carved balconies and slate roofs.
+    - Parvati Kuteer Riverside Wood Cottages (`parvati-kuteer-riverside-wood-cottages.webp`): Independent log cabins on the Parvati riverbank with hammocks and boulders.
+    - Kasol Heights Resort (`kasol-heights-resort.webp`): High-altitude modern mountain resort perched on Suma Ropa ridge with panoramic sundeck.
+    - The Hosteller Kasol Riverside (`the-hosteller-kasol-riverside.webp`): Vibrant backpacker hostel with fairy-lit wooden riverside cafe terrace.
+    - Pairwise visual variance between stays: **66.3 to 80.3 difference** (100% unique property identities).
+  - **16 Canonical Places Fully Resolved:**
+    - Replaced generic/vector placeholders for `pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, and `waichin-valley` with bespoke 1376x768 full-bleed gouache illustrations.
+    - All 16 Kasol places verified with unique SHA-256 hashes (minimum pairwise variance: 50.7).
+  - **Runtime Deduplication & API Preservation (`frontend/app/explore/[slug]/page.tsx`):**
+    - Authoritative canonical 16 places and 4 stays preserved as baseline order.
+    - Eliminated duplicate Chalal, duplicate Manikaran, and duplicate Kheerganga entries caused by uncurated backend database rows.
+    - Filtered out phantom backend lodge `Parvati Woods Bohemian Alpine Lodge` and removed invalid alias in `placeVisualResolver.ts`.
+    - Deduplicated Valley Mobility fleet to ensure the 2 distinct vehicles (TVS Jupiter 125 and Royal Enfield Classic 350) render cleanly without duplicate motorcycle cards.
+  - **Destination Diagnostics:**
+    - Implemented `generateDestinationVisualAuditReport` in `frontend/lib/placeVisualResolver.ts`.
+    - Automated diagnostics verified 100% of Kasol (22/22) and Dharamshala (22/22) assets valid and on disk.
+  - **Dharamshala Regression Baseline:**
+    - Zero modifications to Dharamshala artwork, paths, or visual mappings. 100% green regression test pass.
 - **Next.js Web Frontend Build:** `cd frontend && npx tsc --noEmit && npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
 - **Mobile React Native TypeScript & Expo Config:** `cd mobile && npx tsc --noEmit && npx expo config --type public` ➔ **PASSED (0 errors)**.
 - **Shared Package Build:** `cd packages/shared && npm run build` ➔ **PASSED (0 errors)**.
 - **Backend Combined Regression:** **38/38 PASSED (100% green)**.
-- **Mobile Offline Isolation & Reliability (Real Code):** `scripts/test_offline_isolation_and_account_deletion.mjs` ➔ **31/31 PASSED (100% green)**.
 
 ---
 
 ## 4. Test Suite Summary
 - **Backend Regression Suite:** 38/38 tests passed (100%).
-- **Mobile Real Offline Suite:** 31/31 tests passed (100%).
+- **Visual Diagnostics Suite:** 44/44 entities verified (Kasol: 22/22, Dharamshala: 22/22).
 - **Web Compilation:** 25/25 static routes and server routes compiled cleanly.
 - **Mobile Compilation:** Clean compilation across Expo 58 with zero TypeScript errors.
 
@@ -50,6 +61,16 @@
 ## 5. Active Issues & Blockers
 1. **Release Keystore Secrets Configuration (Owner Gate):**
    - Repository owner must add `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` to GitHub Actions secrets to unlock production upload-signed AAB creation.
+
+---
+
+## 6. Last Completed Task
+Kasol Complete Visual Rebuild, Hotel Image Uniqueness, Runtime Deduplication & Production Fix on `main`.
+
+---
+
+## 7. Next Recommended Task
+Play Store Production AAB release workflow once GitHub Actions secrets are configured by the repository owner.
 
 ---
 

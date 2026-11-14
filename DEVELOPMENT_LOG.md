@@ -876,3 +876,36 @@
 - `cd frontend && npx tsc --noEmit`: 0 errors.
 - `cd frontend && npm run build`: 25/25 routes compiled cleanly.
 - `python scripts/validate_docs.py`: PASSED (0 errors).
+
+
+---
+
+## Session: Kasol Complete Visual Rebuild, Hotel Image Uniqueness, Runtime Deduplication & Production Fix
+**Timestamp:** 2026-11-14T22:15:00+05:30  
+**Branch:** `main`  
+**Goal:** Deliver 100% authentic, bespoke editorial travel illustrations for all 4 Kasol hotels and 16 canonical places, eliminate duplicate entries and phantom stays, add destination diagnostic reporter, and protect Dharamshala baseline.
+
+### 1. Root Cause Analysis of Live Production State
+- **Duplicate Entities in Database:** The Render PostgreSQL DB returned 19 places (including duplicate Chalal, duplicate Manikaran, duplicate Kheerganga), 5 hotels (including phantom `Parvati Woods Bohemian Alpine Lodge`), and 3 rentals (with duplicate Classic 350).
+- **Hotel Image Uniformity:** The 4 Kasol hotels previously had generic mountain valley paintings on disk that shared similar color palettes and compositions rather than property-specific architecture.
+- **Rogue Alias Collision:** `HOTEL_ALIAS_MAP` mapped `parvati-woods` to `parvati-kuteer`, causing Parvati Kuteer to be rendered twice in the stays row.
+
+### 2. Solutions & Deliveries
+1. **Four Unique Hotel Artworks (P0 Requirement):**
+   - Generated, optimized, and deployed 4 bespoke 1376x768 full-bleed gouache illustrations with sidecar `.generated.json` metadata:
+     - `the-himalayan-village.webp`: Traditional Kathkuni stone-and-timber chalets with carved balconies and slate roofs.
+     - `parvati-kuteer-riverside-wood-cottages.webp`: A-frame log cottages on the Parvati riverbank with lawn, hammocks, and boulders.
+     - `kasol-heights-resort.webp`: High-altitude modern resort on Suma Ropa ridge with panoramic sundeck.
+     - `the-hosteller-kasol-riverside.webp`: Backpacker hostel with fairy-lit wooden riverside cafe deck and twilight mountain atmosphere.
+   - Pairwise visual variance between stays: **66.3 to 80.3**.
+2. **16 Canonical Places Verification:**
+   - Generated bespoke illustrations for `pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, and `waichin-valley`.
+   - Verified all 16 places with unique SHA-256 hashes and minimum pairwise variance of 50.7.
+3. **Runtime Deduplication & API Protection (`frontend/app/explore/[slug]/page.tsx`):**
+   - Used `canonPkg.places` and `canonPkg.hotels` as the authoritative baseline, merging live metadata while eliminating duplicate entries.
+   - Filtered out `Parvati Woods Bohemian Alpine Lodge` and removed its alias in `placeVisualResolver.ts`.
+   - Deduplicated Valley Mobility fleet to 2 distinct vehicles.
+4. **Runtime Diagnostics:**
+   - Implemented `generateDestinationVisualAuditReport` in `frontend/lib/placeVisualResolver.ts`.
+5. **Dharamshala Baseline:**
+   - Zero modifications to Dharamshala assets or mappings; 100% green regression test pass.
