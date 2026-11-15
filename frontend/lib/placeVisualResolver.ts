@@ -9599,7 +9599,9 @@ const GENERIC_WORDS_SET = new Set([
 ]);
 
 // Explicit registry of unreplaced flat-vector or duplicate assets pending authentic generation
-export const PENDING_ARTWORK_SET = new Set<string>([]);
+export const PENDING_ARTWORK_SET = new Set([
+  "" as string,
+]);
 
 // Deprecated artwork filter: reject placeholder and vector SVG assets
 export function isDeprecatedArtwork(url?: string): boolean {

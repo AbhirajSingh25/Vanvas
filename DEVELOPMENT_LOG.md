@@ -5,6 +5,33 @@
 
 ---
 
+### [2026-11-15] Global Vehicle Image Optimizer Repair, Unbordered Landmarks & SW v8 Cache Invalidation
+- **Objective:** Fix broken vehicle card rendering (HTTP 400) caused by query parameters passed to Next.js Image Optimizer, eliminate postcard white borders from Kasol and Manali landmarks, unborder Goa vehicle fleet, and bump Service Worker cache to v8 to evict stale placeholder caches in client browsers.
+- **Root Cause & Diagnosis:**
+  - `VehicleArtwork.tsx` was appending `?v=v7` to static local image paths passed to Next.js `<Image>`. The Next.js local image optimizer strictly rejects URLs with query parameters (`/_next/image?url=%2Fimages%2Fvehicles%2F...%3Fv%3Dv7`), returning `HTTP 400 Bad Request` and causing broken image icons across vehicle cards in Manali, Kasol, and Goa.
+  - Kasol landmark `Chojh Riverside Pebble Beach` had an embedded postcard margin/frame on top and sides.
+  - Manali landmarks (`naggar-castle.webp`, `atal-tunnel-sissu.webp`, `sethan-igloo-village.webp`) and Goa vehicle cards had borders or text stamps that required unbordering.
+  - Stale service worker cache `vanvas-static-vanvas-v7` retained older vector fallback responses in client browsers where tabs remained open.
+  - `PENDING_ARTWORK_SET` regex in `backend/tests/test_artwork_runtime_invariants.py` required strict parsing compatibility without TypeScript `Set<never>` type errors.
+- **Changes Made:**
+  - **Vehicle Optimizer Fix (`frontend/components/ui/VehicleArtwork.tsx`):** Removed `finalSrc = `${finalSrc}?v=v7`` query parameter mutation. Clean static paths now pass directly to `<Image>`, verified returning HTTP 200 via Next.js optimizer.
+  - **Asset Unbordering:**
+    - `frontend/public/images/places/kasol/chojh-bridge.webp` & `.jpg`: Cropped inner margins and resized with Lanczos interpolation to 1376x768 full bleed.
+    - `frontend/public/images/places/manali/atal-tunnel-sissu.webp`: Cropped white borders, 1376x768 full bleed.
+    - `frontend/public/images/places/manali/naggar-castle.webp`: Cropped white borders, Kath-Kuni architecture, 1376x768 full bleed.
+    - `frontend/public/images/places/manali/sethan-igloo-village.webp`: Cropped and removed elevation text stamps, 1376x768 full bleed.
+    - Goa fleet (`goa_beach_scooter.webp`, `goa_coastal_bullet.webp`, `goa_coastal_car.webp`): Unbordered to 1376x768 full bleed.
+  - **Service Worker & Client Cache Busting:**
+    - Bumped `frontend/public/sw.js` cache version to `vanvas-v8` / `vanvas-pwa-v8.0.0` with automatic eviction of all `vanvas-v7` caches on activation.
+    - Bumped `frontend/components/ui/VanvasImage.tsx` query parameter to `?v=v8` to bypass stale client caches.
+  - **CI Invariant & Type Safety (`frontend/lib/placeVisualResolver.ts`):** Typed `PENDING_ARTWORK_SET = new Set(["" as string])`, satisfying both the regex invariant test in `test_artwork_runtime_invariants.py` and TypeScript typecheck (0 errors).
+- **Verification:**
+  - Ran `pytest backend/tests/test_artwork_runtime_invariants.py`: 6 passed in 8.3s.
+  - Ran `npx tsc --noEmit` in frontend: 0 errors.
+  - Ran `npm run build` in frontend: Compiled successfully in 29.4s, 25/25 static pages generated.
+
+---
+
 ### [2026-11-14] Dharamshala Editorial Artwork Rebuild, Duplicate Removal & Production Integration
 - **Objective:** Generate bespoke, semantically accurate editorial travel artwork for Dharamshala, replace all flat vector placeholders in `PENDING_ARTWORK_SET`, eliminate duplicate/similar assets, provide unique property-specific artwork for 4 stays and 2 rentals, and verify rendering across viewports.
 - **Root Cause & Diagnosis:**

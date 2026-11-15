@@ -1,7 +1,7 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-15T14:45:00+05:30
+> *Last Verified:* 2026-11-15T17:45:00+05:30
 
 ---
 
@@ -17,13 +17,25 @@
 ## 2. Production Status
 - **Production URL:** https://vanvasai.vercel.app (mapped to `main`).
 - **Backend API:** https://vanvas-api.onrender.com (FastAPI backend with 261 endpoints mounted).
+- **Service Worker:** `vanvas-v8` / `vanvas-pwa-v8.0.0` with active eviction of older cache tiers.
 - **Native Android App:** Expo SDK 58 React Native app (`mobile/`) with offline SQLite isolation and full feature parity (Typecheck: 0 errors).
 - **Account Deletion Site:** `account-deletion-site/` standalone static portal with token in-memory isolation, Google Play compliant.
 
 ---
 
 ## 3. Build & Diagnostics Verification
-- **Kasol Complete Visual Integrity Overhaul (100% Bespoke, Borderless & Semantic):**
+- **Global Vehicle Image Optimizer Repair (`VehicleArtwork.tsx`):**
+  - Removed query string mutation `?v=v7` on local static paths, eliminating Next.js Image Optimizer `HTTP 400 Bad Request` across vehicle rental cards in Manali, Kasol, and Goa.
+- **Kasol & Manali Borderless Integrity:**
+  - `Chojh Riverside Pebble Beach` unbordered (inner postcard margin removed, 1376x768 full bleed).
+  - Manali landmarks (`naggar-castle.webp`, `atal-tunnel-sissu.webp`, `sethan-igloo-village.webp`) unbordered, elevation text removed, 1376x768 full bleed.
+  - Goa fleet unbordered (`goa_beach_scooter.webp`, `goa_coastal_bullet.webp`, `goa_coastal_car.webp`).
+- **Cache Eviction (`sw.js` & `VanvasImage.tsx`):**
+  - Upgraded to `vanvas-v8` / `?v=v8` to force browser and PWA service workers to refresh cached vector fallbacks with live high-res paintings.
+- **CI Test Invariants & Build Verification:**
+  - `pytest backend/tests/test_artwork_runtime_invariants.py`: 6 passed, 0 failures.
+  - `npx tsc --noEmit`: 0 errors.
+  - `npm run build`: 25/25 pages successfully built.
   - **Repaired Repetitive Valley Templates:**
     - `Chalal Riverside Pine Trail` (`chalal-pine-trail.webp`): Regenerated as an authentic deodar pine trail right along the churning turquoise Parvati River with wooden footbridge over river boulders.
     - `Kasol Nature Park Pine Walk` (`nature-park-kasol.webp`): Regenerated as an authentic landscaped forest walking path under towering pines with a rustic wooden park bench and mossy stones.
