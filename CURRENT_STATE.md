@@ -1,7 +1,7 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-14T23:25:00+05:30
+> *Last Verified:* 2026-11-15T14:45:00+05:30
 
 ---
 
@@ -23,31 +23,29 @@
 ---
 
 ## 3. Build & Diagnostics Verification
-- **Production Visual Cache Lock & Flat Vector Elimination (P0 Fix):**
-  - **Root Cause Permanently Resolved:** In commit `8fcfeb8`, Service Worker `vanvas-v5` deployed with Stale-While-Revalidate caching for images. When initial fallback vector placeholders were fetched, they became locked in the user's browser `vanvas-static-vanvas-v5` cache.
-  - **Service Worker Upgrade (`frontend/public/sw.js`):** Bumped to `vanvas-v6` (`vanvas-pwa-v6.0.0`). Upgraded image caching strategy from Stale-While-Revalidate to **Network-First with cache fallback**. On activation, automatically purges all legacy `vanvas-` caches.
-  - **URL Version Cache Busting (`frontend/components/ui/VanvasImage.tsx`):** Automatically appends `?v=v6` to all `/images/` paths, breaking browser HTTP disk caches and CDN edge locks.
-  - **Category Fallback Elimination:** Physically replaced all legacy flat vector placeholder SVGs/WebPs across `frontend/public/images/places/{kasol,dharamshala}/categories/` with verified high-resolution (1376x768) rich gouache paintings. Zero flat vectors exist in the codebase.
-- **Kasol Complete Visual Rebuild & Runtime Production Fix:**
-  - **4 Stays Completely Differentiated (P0 Requirement):**
-    - The Himalayan Village (`the-himalayan-village.webp`): Hand-hewn Kathkuni timber-and-stone dry masonry chalets with carved balconies and slate roofs.
-    - Parvati Kuteer Riverside Wood Cottages (`parvati-kuteer-riverside-wood-cottages.webp`): Independent log cabins on the Parvati riverbank with hammocks and boulders.
-    - Kasol Heights Resort (`kasol-heights-resort.webp`): High-altitude modern mountain resort perched on Suma Ropa ridge with panoramic sundeck.
-    - The Hosteller Kasol Riverside (`the-hosteller-kasol-riverside.webp`): Vibrant backpacker hostel with fairy-lit wooden riverside cafe terrace.
-    - Pairwise visual variance between stays: **66.3 to 80.3 difference** (100% unique property identities).
-  - **16 Canonical Places Fully Resolved:**
-    - Replaced generic/vector placeholders for `pulga-fairy-forest`, `tulga-hamlet`, `rasol-trail`, `jim-morrison-cafe`, and `waichin-valley` with bespoke 1376x768 full-bleed gouache illustrations.
-    - All 16 Kasol places verified with unique SHA-256 hashes (minimum pairwise variance: 50.7).
-  - **Runtime Deduplication & API Preservation (`frontend/app/explore/[slug]/page.tsx`):**
-    - Authoritative canonical 16 places and 4 stays preserved as baseline order.
-    - Eliminated duplicate Chalal, duplicate Manikaran, and duplicate Kheerganga entries caused by uncurated backend database rows.
-    - Filtered out phantom backend lodge `Parvati Woods Bohemian Alpine Lodge` and removed invalid alias in `placeVisualResolver.ts`.
-    - Deduplicated Valley Mobility fleet to ensure the 2 distinct vehicles (TVS Jupiter 125 and Royal Enfield Classic 350) render cleanly without duplicate motorcycle cards.
-  - **Destination Diagnostics:**
-    - Implemented `generateDestinationVisualAuditReport` in `frontend/lib/placeVisualResolver.ts`.
-    - Automated diagnostics verified 100% of Kasol (22/22) and Dharamshala (22/22) assets valid and on disk.
-  - **Dharamshala Regression Baseline:**
-    - Zero modifications to Dharamshala artwork, paths, or visual mappings. 100% green regression test pass.
+- **Kasol Complete Visual Integrity Overhaul (100% Bespoke, Borderless & Semantic):**
+  - **Repaired Repetitive Valley Templates:**
+    - `Chalal Riverside Pine Trail` (`chalal-pine-trail.webp`): Regenerated as an authentic deodar pine trail right along the churning turquoise Parvati River with wooden footbridge over river boulders.
+    - `Kasol Nature Park Pine Walk` (`nature-park-kasol.webp`): Regenerated as an authentic landscaped forest walking path under towering pines with a rustic wooden park bench and mossy stones.
+    - `Grahan Village Heritage Trek` (`grahan-village-trek.webp`): Regenerated with a hiker crossing a wooden bridge over a rushing brook, red rhododendrons, and Kathkuni houses on mountain terraces.
+    - `Malana Village Ancient Approach Trail` (`malana-village-gate.webp`): Regenerated with the multi-tiered ancient Kathkuni village perched on the cliff plateau with carved balconies and temples.
+  - **Eliminated Postcard Margins and Embedded Text:**
+    - `Kalga Village & Terraced Apple Orchards` (`kalga-village.webp`): Completely regenerated as a borderless full-bleed painting of red apple orchards and grazing sheep in wildflower meadows.
+    - `Chojh Riverside Pebble Beach & Suspension Bridge` (`chojh-bridge.webp`): Completely regenerated as a borderless full-bleed painting of the granite pebble beach and swaying iron suspension bridge.
+  - **Dedicated Vehicle Artwork Resolution:**
+    - `TVS Jupiter 125 Parvati Edition` (`kasol_valley_scooter.webp`): TVS Jupiter 125 is now the dominant hero subject in 3/4 front view in dusk navy/slate blue with dual-tone seat and alloy wheels overlooking the pine valley.
+    - `Classic 350 Parvati Mountain Cruiser` (`kasol_parvati_bullet.webp`): Replaced the adventure bike with an authentic Royal Enfield Classic 350 cruiser in halcyon green and chrome with round headlamp, teardrop tank, and vintage split saddle.
+  - **4 Unique Kasol Stays:**
+    - All 4 properties (The Himalayan Village, Parvati Kuteer, Kasol Heights Resort, The Hosteller Kasol) confirmed 100% unique, architectural, and borderless.
+- **Kainchi Dham Stays Upgrade:**
+  - Deployed bespoke illustrations for `Bara Bungalow Gethia (1898 Heritage)` and `The Hermitage Bhowali` to break the 4-hotel duplicate temple image collision.
+- **Cache Invalidation & SW Version Bump:**
+  - Bumped Service Worker to `vanvas-v7` (`vanvas-pwa-v7.0.0`) with Network-First strategy.
+  - Updated cache-busting version `?v=v7` in both `VanvasImage.tsx` and `VehicleArtwork.tsx`.
+- **Next.js Web Frontend Build:** `cd frontend && npx tsc --noEmit && npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
+- **Diagnostics Audit:** `python scripts/test_visual_diagnostics.py` passed 100% across all 44 entities.
+- **Kasol Place Uniqueness:** All 16 Kasol places verified with unique SHA-256 hashes (minimum pairwise variance: 50.7).
+- **Rental Uniqueness:** 61.99 pairwise visual difference between Kasol scooter and motorcycle.
 - **Next.js Web Frontend Build:** `cd frontend && npx tsc --noEmit && npm run build` ➔ **PASSED (0 errors, 25/25 routes compiled cleanly)**.
 - **Mobile React Native TypeScript & Expo Config:** `cd mobile && npx tsc --noEmit && npx expo config --type public` ➔ **PASSED (0 errors)**.
 - **Shared Package Build:** `cd packages/shared && npm run build` ➔ **PASSED (0 errors)**.

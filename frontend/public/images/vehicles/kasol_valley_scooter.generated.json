@@ -1,0 +1,14 @@
+{
+  "entity": "TVS Jupiter 125 Parvati Edition",
+  "destination": "kasol",
+  "resolution": [
+    1376,
+    768
+  ],
+  "format": "webp",
+  "aspect_ratio": "16:9",
+  "style": "contemporary_indian_editorial_gouache",
+  "full_bleed": true,
+  "borders": false,
+  "prompt": "TVS Jupiter 125 commuter scooter in dusk navy blue with dual-tone seat as clear primary hero subject in three-quarter front-side view, parked on asphalt mountain road shoulder overlooking pine valley, full-bleed gouache illustration."
+}

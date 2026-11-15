@@ -1,0 +1,14 @@
+{
+  "entity": "Chalal Riverside Pine Trail",
+  "destination": "kasol",
+  "resolution": [
+    1376,
+    768
+  ],
+  "format": "webp",
+  "aspect_ratio": "16:9",
+  "style": "contemporary_indian_editorial_gouache",
+  "full_bleed": true,
+  "borders": false,
+  "prompt": "Narrow walking trail hugging the churning turquoise Parvati River through towering deodar pines, river boulders, wooden footbridge, sunbeams through mountain mist, full-bleed gouache illustration."
+}

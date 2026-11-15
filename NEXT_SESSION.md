@@ -1,24 +1,22 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Production Visual Cache Lock Fix (SW vanvas-v6 Network-First + URL Cache Busting + Category Fallback Vector Elimination) and Kasol Complete Visual Rebuild on `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Master Visual Integrity Overhaul, Kasol 100% Borderless & Rental Repair, Kainchi Dham Initial Stays, SW `vanvas-v7` on `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
 - **Core Checkpoint:**
-  - **Production Visual Cache Lock Fix & Vector Elimination:**
-    - Service Worker bumped to `vanvas-v6` (`vanvas-pwa-v6.0.0`) with Network-First strategy for images. Old caches (`vanvas-v5` and below) automatically purged on activation.
-    - URL version cache buster (`?v=v6`) in `VanvasImage.tsx` forces browser HTTP disk cache and CDN edge caches to fetch fresh assets.
-    - Physically overwritten all category fallback images across `frontend/public/images/places/{kasol,dharamshala}/categories/` with high-resolution (1376x768) gouache paintings. Zero flat vector illustrations remain in the project.
-  - **Kasol Complete Visual Rebuild & Runtime Production Fix:**
-    - 4 distinct hotel artworks generated and integrated: The Himalayan Village, Parvati Kuteer, Kasol Heights Resort, and The Hosteller Kasol. 100% unique architectural identities with 66.3 to 80.3 pairwise variance.
-    - 16 canonical places verified with bespoke full-bleed gouache illustrations: Pulga Fairy Forest, Tulga Rustic Wooden Hamlet, Rasol Alpine Trail, Jim Morrison Cafe, and Waichin Valley resolved and borderless.
-    - Runtime deduplication in `frontend/app/explore/[slug]/page.tsx`: Curated canonical package preserved as authoritative order, eliminating backend API duplicates (2 Chalal, 2 Manikaran, 2 Kheerganga, 1 duplicate Classic 350) and filtering out phantom `Parvati Woods` lodge.
-    - Removed erroneous `parvati-woods` alias in `frontend/lib/placeVisualResolver.ts`.
-    - Added `generateDestinationVisualAuditReport` in `frontend/lib/placeVisualResolver.ts`.
-    - Dharamshala protected regression baseline passed 100% without modification.
+  - **Kasol Complete Visual Integrity Overhaul (100% Bespoke, Borderless & Semantic):**
+    - 16 canonical places are 100% borderless, full-bleed, bespoke gouache paintings with zero repetitive valley templates and zero text annotations.
+    - 4 distinct hotel artworks: The Himalayan Village, Parvati Kuteer, Kasol Heights Resort, and The Hosteller Kasol. 100% unique architectural identities with 66.3 to 80.3 pairwise variance.
+    - 2 distinct rentals: TVS Jupiter 125 Parvati Edition (dominant hero subject in 3/4 front view) and Classic 350 Parvati Mountain Cruiser (authentic Royal Enfield Classic 350 cruiser in halcyon green). Pairwise visual difference: 61.99.
+  - **Kainchi Dham Stays Upgrade:**
+    - Deployed bespoke illustrations for `Bara Bungalow Gethia (1898 Heritage)` and `The Hermitage Bhowali`.
+  - **Cache Architecture:**
+    - Service Worker bumped to `vanvas-v7` (`vanvas-pwa-v7.0.0`) with Network-First strategy for images.
+    - URL cache buster `?v=v7` enforced in both `VanvasImage.tsx` and `VehicleArtwork.tsx`.
   - **Permanent VANVAS Identity & Friends System:** Ambiguity-resistant `VNV-XXXX-XXXX` permanent ID, public profile lookup, request lifecycle, user blocking, privacy toggle. Native & Web `VanvasIdentityCard` with QR code modal and native share sheet.
   - **Private Crew Circles (मण्डली):** Multi-trip workspaces, member management, private consensus voting (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, and real-time activity feed.
   - **Smart Finance 3-Layer Architecture:** Trip Plan Budget, Main Group Expense Ledger, and Split Pods with integer paise precision and optimistic version locking.
@@ -26,7 +24,9 @@
 ---
 
 ## 2. Unresolved Issues & State
-1. **Release Keystore Secrets Configuration (Owner Gate):**
+1. **Model Quota Reset for Remaining Destinations (~4h):**
+   - The image generation model `gemini-3.1-flash-image` hit a 429 quota exhaustion during Kainchi Dham remaining places. Once the quota resets, continue generating the remaining Kainchi Dham places/stays, followed by Manali, Goa, Udaipur, Jaipur, and Neemrana according to the audit contact sheets.
+2. **Release Keystore Secrets Configuration (Owner Gate):**
    - Repository owner must add `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` to GitHub Actions secrets to unlock production AAB signing.
 
 ---

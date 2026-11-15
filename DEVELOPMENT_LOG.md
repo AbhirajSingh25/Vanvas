@@ -937,3 +937,35 @@
    - Updated `test_fullscreen_loading_ancestor_regression.mjs` test assertion.
    - `npm run build` compiled 25/25 static & dynamic routes cleanly with zero TypeScript errors.
    - All visual diagnostic and uniqueness tests passed 100%.
+
+---
+
+## Session: Master Visual Integrity Overhaul, Kasol Artwork Regeneration & Rental Repair
+**Timestamp:** 2026-11-15T14:45:00+05:30  
+**Branch:** `main`  
+**Goal:** Eliminate repetitive valley templates, remove embedded postcard borders and text annotations, deliver authentic hero vehicle artwork for Kasol rentals, break hotel duplicate collisions in Kainchi Dham, and bump SW/image cache buster to `v7`.
+
+### 1. Root Causes & Visual Findings
+- **Repetitive Templates:** In Kasol, `Chalal`, `Grahan`, `Kasol Nature Park`, and `Malana` previously used near-identical generic panoramic valley compositions with a winding river/road and snow peaks.
+- **Embedded Postcard Frames & Text:** `Kalga Village` and `Chojh Bridge` contained embedded white borders, faux-paper margins, and handwritten typography.
+- **Kasol Rental Artwork Errors:** The TVS Jupiter 125 was small and obscured by an oversized cafe and bicycle; the Classic 350 cruiser card depicted a tall adventure Himalayan bike with windscreen and luggage boxes instead of a classic cruiser.
+- **Global Repetition:** Global destination audit revealed 77 assets across the repository with borders/margins, while Kainchi Dham and Goa featured repeated templates across multiple places and hotels.
+
+### 2. Solutions & Deliveries
+1. **Regenerated 6 Kasol Places (100% Bespoke, Full-Bleed & Borderless):**
+   - `chalal-pine-trail.webp`: Narrow pine footpath along the churning turquoise Parvati River with wooden footbridge and boulders.
+   - `nature-park-kasol.webp`: Landscaped riverside pine grove with dirt footpath and rustic wooden bench.
+   - `grahan-village-trek.webp`: Mountain trail crossing a log footbridge with red rhododendrons and multi-tiered Kathkuni houses.
+   - `malana-village-gate.webp`: Ancient cliffside Kathkuni settlement with carved balconies, stone stairs, and dramatic crags.
+   - `kalga-village.webp`: Borderless full-bleed painting of terraced apple orchards laden with red fruit and grazing sheep.
+   - `chojh-bridge.webp`: Borderless full-bleed painting of the granite pebble beach and swaying iron suspension bridge.
+2. **Dedicated Kasol Rental Artworks:**
+   - `kasol_valley_scooter.webp`: TVS Jupiter 125 as dominant hero subject in 3/4 view in dusk navy with dual-tone seat and alloy wheels.
+   - `kasol_parvati_bullet.webp`: Royal Enfield Classic 350 cruiser in halcyon green and chrome with teardrop tank, round headlamp, and vintage split saddle.
+   - Pairwise visual difference: 61.99.
+3. **Kainchi Dham Stays Upgrade:**
+   - Generated and deployed bespoke illustrations for `Bara Bungalow Gethia (1898 Heritage)` and `The Hermitage Bhowali`.
+4. **Cache & Delivery Architecture:**
+   - Bumped Service Worker to `vanvas-v7` (`vanvas-pwa-v7.0.0`) with Network-First strategy.
+   - Appended `?v=v7` cache-busting parameter to all `/images/` paths in both `VanvasImage.tsx` and `VehicleArtwork.tsx`.
+   - Verified clean Next.js build (25/25 routes compiled) and 0 TypeScript errors.

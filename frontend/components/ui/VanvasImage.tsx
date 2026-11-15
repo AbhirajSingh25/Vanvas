@@ -98,7 +98,7 @@ export const VanvasImage: React.FC<VanvasImageProps> = ({
   const normalizedSrc = React.useMemo(() => {
     if (!currentSrc) return currentSrc;
     if (currentSrc.startsWith("/images/") && !currentSrc.includes("?")) {
-      return `${currentSrc}?v=v6`;
+      return `${currentSrc}?v=v7`;
     }
     return currentSrc;
   }, [currentSrc]);

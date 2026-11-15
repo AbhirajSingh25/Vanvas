@@ -933,6 +933,10 @@ export const VehicleArtwork: React.FC<VehicleArtworkProps> = ({
     finalSrc = "/images/vehicles/universal_mobility.jpg";
   }
 
+  if (finalSrc && finalSrc.startsWith("/images/") && !finalSrc.includes("?")) {
+    finalSrc = `${finalSrc}?v=v7`;
+  }
+
   const aspectClass =
     aspectRatio === "video"
       ? "aspect-[16/10]"
