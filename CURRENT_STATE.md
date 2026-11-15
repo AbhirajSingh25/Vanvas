@@ -1,7 +1,7 @@
 # VANVAS — Current Development State
 
 > **Active Snapshot of Working Tree & Operational Readiness**  
-> *Last Verified:* 2026-11-15T17:45:00+05:30
+> *Last Verified:* 2026-11-16T01:10:00+05:30
 
 ---
 
@@ -25,9 +25,34 @@
 
 ## 3. Build & Diagnostics Verification
 - **Global Vehicle Image Optimizer Repair (`VehicleArtwork.tsx`):**
-  - Removed query string mutation `?v=v7` on local static paths, eliminating Next.js Image Optimizer `HTTP 400 Bad Request` across vehicle rental cards in Manali, Kasol, and Goa.
-- **Kasol & Manali Borderless Integrity:**
-  - `Chojh Riverside Pebble Beach` unbordered (inner postcard margin removed, 1376x768 full bleed).
+  - Removed query string mutation `?v=v7` on local static paths, eliminating Next.js Image Optimizer `HTTP 400 Bad Request` across vehicle rental cards globally (confirmed working in production for TVS Jupiter, Classic 350, Himalayan 450).
+- **Manali Artwork Rebuild (100% Unique, Full-Bleed 1376×768):**
+  - Replaced 5 flat vector artworks with authentic editorial illustrations:
+    1. `beas-river-park.webp` (deodar river sanctuary & turquoise boulders)
+    2. `lazy-dog-lounge.webp` (Old Manali timber deck & lantern glow)
+    3. `dylans-cafe.webp` (cozy timber coffee house, copper espresso machine)
+    4. `gulaba-meadows.webp` (alpine wildflower meadow plateau at 3,000m)
+    5. `chopsticks-manali.webp` (traditional Tibetan carved dining room & momos)
+  - Regenerated and differentiated 3 duplicate cafes with distinct architectures:
+    6. `cafe-1947.webp` (stone-and-timber masonry directly over glacier rapids)
+    7. `drifters-cafe.webp` (bohemian acoustic loft with Tibetan rugs & guitar)
+    8. `johnsons-cafe.webp` (British-era stone cottage, apple orchards & trout grill)
+- **Goa Complete Visual Rebuild (100% Unique, Full-Bleed 1376×768):**
+  - Rebuilt all 4 Goa stays as bespoke property-specific illustrations:
+    1. `ahilya-by-the-sea.webp` (Dolphin Bay hand-carved stone villas & oceanfront plunge pool)
+    2. `the-postcard-velha.webp` (modernist architectural pavilions atop Old Goa forest hills)
+    3. `casa-da-graca-heritage-homestay.webp` (19th-century Fontainhas indigo townhouse, oyster-shell windows)
+    4. `jungle-by-the-hosteller.webp` (two-story bamboo & teak jungle lodge with illuminated pool)
+  - Replaced 4 flat vector places with editorial artworks:
+    5. `arambol-sweet-lake.webp` (Sweet Water Lagoon & sacred banyan tree)
+    6. `reis-magos-fort.webp` (16th-century laterite fort & Mandovi estuary)
+    7. `baba-au-rhum-cafe.webp` (Anjuna bamboo grove garden cafe & wood-fired oven)
+    8. `gunpowder-assagao.webp` (heritage Assagao courtyard dining & coastal curries)
+  - Unbordered `chapora-fort.webp` and `dudhsagar-falls.webp` to true 1376×768 full bleed.
+- **Invariants & Build Gate:**
+  - `backend/tests/test_artwork_runtime_invariants.py`: 6/6 tests passing (0 regressions).
+  - Frontend typecheck (`npx tsc --noEmit`): 0 errors.
+  - Frontend production build (`npm run build`): 25/25 static pages generated successfully. margin removed, 1376x768 full bleed).
   - Manali landmarks (`naggar-castle.webp`, `atal-tunnel-sissu.webp`, `sethan-igloo-village.webp`) unbordered, elevation text removed, 1376x768 full bleed.
   - Goa fleet unbordered (`goa_beach_scooter.webp`, `goa_coastal_bullet.webp`, `goa_coastal_car.webp`).
 - **Cache Eviction (`sw.js` & `VanvasImage.tsx`):**

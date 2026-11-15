@@ -996,3 +996,25 @@
    - Bumped Service Worker to `vanvas-v7` (`vanvas-pwa-v7.0.0`) with Network-First strategy.
    - Appended `?v=v7` cache-busting parameter to all `/images/` paths in both `VanvasImage.tsx` and `VehicleArtwork.tsx`.
    - Verified clean Next.js build (25/25 routes compiled) and 0 TypeScript errors.
+
+---
+
+## Session: Manali Complete Artwork Rebuild & Goa Visual Overhaul
+**Timestamp:** 2026-11-16T01:10:00+05:30  
+**Branch:** `main`  
+**Goal:** Fix global Next.js Image Optimizer 400 error on vehicle rental cards, replace all Manali flat vector placeholders and regenerate duplicate cafes, rebuild all 4 Goa stays as bespoke property-specific illustrations, replace 4 Goa flat vector places, unborder Chapora Fort and Dudhsagar Falls, and verify production deployment.
+
+### 1. Root Causes & Fixes
+- **Vehicle Image Optimizer 400s:** Next.js local image optimizer strictly rejects query strings on internal static assets (`/_next/image?url=%2Fimages%2Fvehicles%2F...%3Fv%3Dv7` -> HTTP 400). Removed query string mutation in `frontend/components/ui/VehicleArtwork.tsx`. Verified TVS Jupiter, Classic 350, and Himalayan 450 load with HTTP 200.
+- **Client Cache Eviction:** Bumped Service Worker to `vanvas-v8` / `vanvas-pwa-v8.0.0` and `VanvasImage.tsx` cache buster to `?v=v8` to evict stale vector caches.
+- **Manali Flat Vectors & Duplicates:**
+  - 5 vector replacements: `beas-river-park`, `lazy-dog-lounge`, `dylans-cafe`, `gulaba-meadows`, `chopsticks-manali` (all 1376×768, >100k–200k colors, full bleed, zero text).
+  - 3 duplicate cafes regenerated: `cafe-1947` (riverside stone-and-timber), `drifters-cafe` (acoustic loft with Tibetan rugs), `johnsons-cafe` (stone cottage with apple orchard trout garden).
+- **Goa Complete Visual Rebuild:**
+  - All 4 stays rebuilt: `ahilya-by-the-sea` (Dolphin Bay stone villas & sea plunge pool), `the-postcard-velha` (modernist timber pavilions in forest hills), `casa-da-graca-heritage-homestay` (Fontainhas indigo townhouse), `jungle-by-the-hosteller` (two-story bamboo jungle lodge).
+  - 4 flat vector places replaced: `arambol-sweet-lake` (Sweet Water Lagoon & banyan tree), `reis-magos-fort` (red laterite fort & Mandovi estuary), `baba-au-rhum-cafe` (bamboo garden open-air cafe), `gunpowder-assagao` (heritage Assagao courtyard dining).
+  - Unbordered `chapora-fort.webp` and `dudhsagar-falls.webp` to true full bleed.
+- **Verification:**
+  - `backend/tests/test_artwork_runtime_invariants.py`: 6/6 passed.
+  - Frontend typecheck (`npx tsc --noEmit`): 0 errors.
+  - Frontend production build (`npm run build`): 25/25 static pages compiled successfully.

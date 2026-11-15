@@ -1,22 +1,31 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Master Visual Integrity Overhaul, Kasol 100% Borderless & Rental Repair, Kainchi Dham Initial Stays, SW `vanvas-v7` on `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Manali Artwork Completion & Goa Visual Rebuild Delivered, SW `vanvas-v8` on `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
 - **Core Checkpoint:**
-  - **Kasol Complete Visual Integrity Overhaul (100% Bespoke, Borderless & Semantic):**
-    - 16 canonical places are 100% borderless, full-bleed, bespoke gouache paintings with zero repetitive valley templates and zero text annotations.
-    - 4 distinct hotel artworks: The Himalayan Village, Parvati Kuteer, Kasol Heights Resort, and The Hosteller Kasol. 100% unique architectural identities with 66.3 to 80.3 pairwise variance.
-    - 2 distinct rentals: TVS Jupiter 125 Parvati Edition (dominant hero subject in 3/4 front view) and Classic 350 Parvati Mountain Cruiser (authentic Royal Enfield Classic 350 cruiser in halcyon green). Pairwise visual difference: 61.99.
-  - **Kainchi Dham Stays Upgrade:**
-    - Deployed bespoke illustrations for `Bara Bungalow Gethia (1898 Heritage)` and `The Hermitage Bhowali`.
+  - **Vehicle Rental Optimizer Fix (`VehicleArtwork.tsx`):** Query strings removed from Next.js Image component to prevent HTTP 400 optimizer errors. Confirmed working in production.
+  - **Manali Artwork Rebuild (100% Unique, Full-Bleed 1376×768):**
+    - 5 flat vector replacements (`beas-river-park`, `lazy-dog-lounge`, `dylans-cafe`, `gulaba-meadows`, `chopsticks-manali`).
+    - 3 duplicate cafes regenerated with distinct architectures (`cafe-1947`, `drifters-cafe`, `johnsons-cafe`).
+  - **Goa Complete Visual Rebuild (100% Unique, Full-Bleed 1376×768):**
+    - 4 property-specific stay illustrations (`ahilya-by-the-sea`, `the-postcard-velha`, `casa-da-graca-heritage-homestay`, `jungle-by-the-hosteller`).
+    - 4 flat vector places replaced (`arambol-sweet-lake`, `reis-magos-fort`, `baba-au-rhum-cafe`, `gunpowder-assagao`).
+    - Unbordered `chapora-fort.webp` and `dudhsagar-falls.webp` to true full bleed.
   - **Cache Architecture:**
-    - Service Worker bumped to `vanvas-v7` (`vanvas-pwa-v7.0.0`) with Network-First strategy for images.
-    - URL cache buster `?v=v7` enforced in both `VanvasImage.tsx` and `VehicleArtwork.tsx`.
+    - Service Worker bumped to `vanvas-v8` (`vanvas-pwa-v8.0.0`) with Network-First strategy for images.
+    - URL cache buster `?v=v8` enforced in `VanvasImage.tsx`.
+
+---
+
+## 2. Next Immediate Objectives
+1. Continue visual audits for remaining canonical destinations (Jaipur, Udaipur, Spiti, Leh, Kainchi Dham).
+2. Monitor production deployments and verify edge cache revalidation.
+3. Keep Dharamshala, Kasol, Manali, and Goa as protected regression baselines.leArtwork.tsx`.
   - **Permanent VANVAS Identity & Friends System:** Ambiguity-resistant `VNV-XXXX-XXXX` permanent ID, public profile lookup, request lifecycle, user blocking, privacy toggle. Native & Web `VanvasIdentityCard` with QR code modal and native share sheet.
   - **Private Crew Circles (मण्डली):** Multi-trip workspaces, member management, private consensus voting (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, and real-time activity feed.
   - **Smart Finance 3-Layer Architecture:** Trip Plan Budget, Main Group Expense Ledger, and Split Pods with integer paise precision and optimistic version locking.
