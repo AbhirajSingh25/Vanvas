@@ -5,6 +5,27 @@
 
 ---
 
+### [2026-11-18] Destination Hero Reimagination (Manali, Kasol, Dharamshala, Goa) & Goa Chapora Fort Rebuild
+- **Objective:** Redesign destination hero artworks across all four primary destinations to eliminate identical mountain/valley compositional overlaps, rebuild Goa Chapora Fort artwork, and verify quota status for remaining Goa place assets.
+- **Root Cause & Diagnosis:**
+  - Destination heroes for Manali, Kasol, and Dharamshala previously shared very similar mountain-valley landscape motifs, lacking immediate visual identity at thumbnail size.
+  - Goa destination hero and Chapora Fort place artwork required authentic coastal and Portuguese-Goan architectural compositions.
+  - Image generation model `gemini-3.1-flash-image` encountered HTTP 429 quota exhaustion (reset ~2026-11-21T11:16:07Z), pausing generation of the remaining 7 Goa place assets.
+- **Changes Made:**
+  - **Destination Hero Artworks (1376×768 WebP + JPEG):**
+    - **Manali:** Hadimba Devi wooden pagoda temple nestled in the ancient Dhungri deodar cedar grove with morning crepuscular light rays, mossy forest path, and subtle snowy peaks through the cedar canopy.
+    - **Kasol:** Riverside perspective along the rushing glacial turquoise Parvati River with granite boulders, frothing rapids, suspension footbridge, rustic timber guesthouses, and steep pine slopes.
+    - **Dharamshala:** Layered hillside architectural panorama of Tsuglagkhang Buddhist monastery with gilded pagoda roofs, golden Dharma wheel, prayer wheels, monks in maroon robes, colorful prayer flags, terraced McLeod Ganj settlement, and the sheer snow-clad Dhauladhar wall.
+    - **Goa:** Panoramic overview of coastal Goa with cobalt-blue and ochre Portuguese colonial heritage villas with red Mangalore tile roofs, bougainvillea, palms, and traditional wooden canoa on a calm coastal estuary meeting the sunset sea (inpainted text eliminated).
+  - **Goa Place Artwork Rebuild:**
+    - `chapora-fort.webp` & `.jpg`: Rebuilt with authentic weathered red laterite fort walls on cliff headland overlooking Vagator crescent beach and the Arabian Sea.
+- **Verification:**
+  - Contact sheet visual QA verified 100% distinct compositions, viewpoints, and lighting across all 4 heroes.
+  - Frontend typecheck (`npx tsc --noEmit`): 0 errors.
+  - Backend runtime invariants (`pytest backend/tests/test_artwork_runtime_invariants.py`): 6/6 passed.
+
+---
+
 ### [2026-11-15] Global Vehicle Image Optimizer Repair, Unbordered Landmarks & SW v8 Cache Invalidation
 - **Objective:** Fix broken vehicle card rendering (HTTP 400) caused by query parameters passed to Next.js Image Optimizer, eliminate postcard white borders from Kasol and Manali landmarks, unborder Goa vehicle fleet, and bump Service Worker cache to v8 to evict stale placeholder caches in client browsers.
 - **Root Cause & Diagnosis:**

@@ -1,40 +1,39 @@
 # VANVAS — Next Session Handoff & Action Plan
 
 > **Actionable Briefing for the Next AI Coding Session**  
-> *Current Checkpoint:* Manali Artwork Completion & Goa Visual Rebuild Delivered, SW `vanvas-v8` on `main` | *Working Tree:* Clean
+> *Current Checkpoint:* Destination Hero Reimagination (Manali, Kasol, Dharamshala, Goa) & Chapora Fort Rebuilt, SW `vanvas-v8` on `main` | *Working Tree:* Clean
 
 ---
 
 ## 1. Context at a Glance
 - **What You Are Working On:** VANVAS, a dual-platform Indian travel operating layer (Next.js web + React Native mobile + FastAPI backend).
 - **Core Checkpoint:**
-  - **Vehicle Rental Optimizer Fix (`VehicleArtwork.tsx`):** Query strings removed from Next.js Image component to prevent HTTP 400 optimizer errors. Confirmed working in production.
-  - **Manali Artwork Rebuild (100% Unique, Full-Bleed 1376×768):**
-    - 5 flat vector replacements (`beas-river-park`, `lazy-dog-lounge`, `dylans-cafe`, `gulaba-meadows`, `chopsticks-manali`).
-    - 3 duplicate cafes regenerated with distinct architectures (`cafe-1947`, `drifters-cafe`, `johnsons-cafe`).
-  - **Goa Complete Visual Rebuild (100% Unique, Full-Bleed 1376×768):**
-    - 4 property-specific stay illustrations (`ahilya-by-the-sea`, `the-postcard-velha`, `casa-da-graca-heritage-homestay`, `jungle-by-the-hosteller`).
-    - 4 flat vector places replaced (`arambol-sweet-lake`, `reis-magos-fort`, `baba-au-rhum-cafe`, `gunpowder-assagao`).
-    - Unbordered `chapora-fort.webp` and `dudhsagar-falls.webp` to true full bleed.
+  - **Destination Hero Reimagination (100% Unique, Full-Bleed 1376×768):**
+    - **Manali Hero:** Hadimba Devi wooden pagoda temple nestled in the ancient Dhungri deodar cedar grove with morning crepuscular light rays and mossy forest path.
+    - **Kasol Hero:** Low-angle riverside perspective along the rushing glacial turquoise Parvati River with granite boulders, rapids, suspension footbridge, and rustic timber guesthouses.
+    - **Dharamshala Hero:** Layered hillside architectural panorama of Tsuglagkhang Buddhist monastery with gilded pagoda roofs, golden Dharma wheel, prayer flags, and the sheer snow-clad Dhauladhar wall.
+    - **Goa Hero:** Portuguese colonial heritage villas with red Mangalore tile roofs, bougainvillea, palms, and traditional wooden canoa on a calm coastal estuary meeting the sunset sea.
+  - **Goa Places Update:**
+    - `chapora-fort.webp` & `.jpg`: Rebuilt with authentic weathered red laterite fort walls on cliff headland overlooking Vagator crescent beach and the Arabian Sea.
+  - **Vehicle Rental Optimizer Fix (`VehicleArtwork.tsx`):**
+    - Query strings removed from Next.js Image component to prevent HTTP 400 optimizer errors. Confirmed working in production.
   - **Cache Architecture:**
     - Service Worker bumped to `vanvas-v8` (`vanvas-pwa-v8.0.0`) with Network-First strategy for images.
     - URL cache buster `?v=v8` enforced in `VanvasImage.tsx`.
 
 ---
 
-## 2. Next Immediate Objectives
-1. Continue visual audits for remaining canonical destinations (Jaipur, Udaipur, Spiti, Leh, Kainchi Dham).
-2. Monitor production deployments and verify edge cache revalidation.
-3. Keep Dharamshala, Kasol, Manali, and Goa as protected regression baselines.leArtwork.tsx`.
-  - **Permanent VANVAS Identity & Friends System:** Ambiguity-resistant `VNV-XXXX-XXXX` permanent ID, public profile lookup, request lifecycle, user blocking, privacy toggle. Native & Web `VanvasIdentityCard` with QR code modal and native share sheet.
-  - **Private Crew Circles (मण्डली):** Multi-trip workspaces, member management, private consensus voting (`HELL_YEAH`, `YES`, `NO`), Ask VANVAS AI recommendations, and real-time activity feed.
-  - **Smart Finance 3-Layer Architecture:** Trip Plan Budget, Main Group Expense Ledger, and Split Pods with integer paise precision and optimistic version locking.
-
----
-
 ## 2. Unresolved Issues & State
-1. **Model Quota Reset for Remaining Destinations (~4h):**
-   - The image generation model `gemini-3.1-flash-image` hit a 429 quota exhaustion during Kainchi Dham remaining places. Once the quota resets, continue generating the remaining Kainchi Dham places/stays, followed by Manali, Goa, Udaipur, Jaipur, and Neemrana according to the audit contact sheets.
+1. **Model Quota Reset for Remaining Goa Places (~76h):**
+   - The image generation model `gemini-3.1-flash-image` hit `HTTP 429 RESOURCE_EXHAUSTED` (`QUOTA_EXHAUSTED`, resets `2026-11-21T11:16:07Z`).
+   - The remaining 7 Goa place artworks queued for generation upon quota reset are:
+     1. `divar-island.webp` & `.jpg` (Mandovi River backwaters & Goan passenger ferry)
+     2. `ashwem-beach.webp` & `.jpg` (Broad quiet sandy beach, coastal casuarina pines)
+     3. `anjuna-flea-market.webp` & `.jpg` (Open-air flea market under palm canopy)
+     4. `dudhsagar-falls.webp` & `.jpg` (Multi-tiered waterfall cascading down Western Ghats)
+     5. `artjuna-cafe.webp` & `.jpg` (Open-air bohemian lifestyle garden cafe in Anjuna)
+     6. `vinayak-family-restaurant.webp` & `.jpg` (Goan dining institution overlooking Assagao paddy fields)
+     7. `basilica-bom-jesus.webp` & `.jpg` (Historic UNESCO Baroque church in Old Goa)
 2. **Release Keystore Secrets Configuration (Owner Gate):**
    - Repository owner must add `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` to GitHub Actions secrets to unlock production AAB signing.
 
@@ -42,7 +41,12 @@
 
 ## 3. Exact Tasks for the Next Session
 
-### Task A: Play Store Production AAB & Physical Device Testing
+### Task A: Generate Remaining 7 Goa Place Artworks (Once Quota Resets)
+1. Generate the 7 Goa place artworks according to the prompts documented in `IMAGE_SEMANTIC_AUDIT.md`.
+2. Convert all to 1376×768 WebP + JPEG full-bleed (zero borders, zero text).
+3. Update contact sheets and verify 0 duplicates remain across all 16 Goa place entities.
+
+### Task B: Play Store Production AAB & Physical Device Testing
 1. Once GitHub Secrets are added, trigger the release workflow to assemble `VANVAS-Android-v0.4.0-code4-production.aab`.
 2. Sideload `VANVAS-Android-v0.4.0-code4-debug.apk` onto a physical Android device to test offline SQLite caching, Nearby Radar GPS permission, and Spiti expedition creation.
 3. Review `mobile/docs/PLAY_STORE_RELEASE_CHECKLIST.md` before final Play Store submission.
@@ -57,25 +61,6 @@ Run the following commands to verify complete full-stack health:
 # 1. Next.js Web production compilation & typecheck
 cd frontend && npx tsc --noEmit && npm run build
 
-# 2. Visual diagnostics test (all 44 places & stays)
-python scripts/test_visual_diagnostics.py
-
-# 3. Kasol place and stay uniqueness verification
-python scripts/verify_all_16_places.py
-python scripts/verify_kasol_stay_uniqueness.py
-
-# 4. Mobile real SQLite offline isolation & teardown suite
-node scripts/test_offline_isolation_and_account_deletion.mjs
-
-# 5. Context validation
-python scripts/validate_docs.py
+# 2. Backend runtime invariants test
+$env:PYTHONPATH="backend"; python -m pytest backend/tests/test_artwork_runtime_invariants.py
 ```
-
----
-
-## 5. Acceptance Criteria
-- All 16 Kasol places and 16 Dharamshala places render authentic, bespoke editorial artworks matching `VANVAS_ART_BIBLE.md`.
-- All 4 Kasol stays and 4 Dharamshala stays render distinct bespoke hotel artworks with zero identical landscape duplicates.
-- Next.js production build (`npm run build`) and TypeScript (`tsc --noEmit`) pass with 0 errors.
-- Service Worker runs `vanvas-v6` with Network-First strategy, and all `/images/` URLs have `?v=v6`.
-

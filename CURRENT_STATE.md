@@ -24,6 +24,17 @@
 ---
 
 ## 3. Build & Diagnostics Verification
+- **Destination Hero Artwork Redesign (100% Unique, Full-Bleed 1376×768):**
+  - Completely redesigned destination hero illustrations across all primary destinations to eliminate identical mountain/valley compositional overlaps:
+    1. **Manali Hero** (`hero.jpg`, `hero.webp`, `illustration.jpg`, `illustration.webp`): Hadimba Devi wooden pagoda temple nestled in the ancient Dhungri deodar cedar grove with morning crepuscular light rays, mossy forest path, and subtle snowy peaks through the cedar canopy.
+    2. **Kasol Hero** (`hero.jpg`, `hero.webp`, `illustration.jpg`, `illustration.webp`): Low-angle riverside perspective along the rushing glacial turquoise Parvati River with granite boulders, frothing rapids, suspension footbridge, rustic timber guesthouses with colorful roofs, and steep pine slopes.
+    3. **Dharamshala Hero** (`hero.jpg`, `hero.webp`, `illustration.jpg`, `illustration.webp`): Layered hillside architectural panorama of Tsuglagkhang Buddhist monastery with gilded pagoda roofs, golden Dharma wheel, prayer wheels, monks in maroon robes, colorful prayer flags, terraced McLeod Ganj settlement, and the colossal sheer snow-clad Dhauladhar wall.
+    4. **Goa Hero** (`hero.jpg`, `hero.webp`, `illustration.jpg`, `illustration.webp`): Authentic coastal Goa overview with cobalt-blue and ochre Portuguese colonial heritage villas with red Mangalore tile roofs, bougainvillea, palms, and traditional wooden canoa on a calm coastal estuary meeting the sunset sea (inpainted text completely eliminated).
+- **Goa Places Update:**
+  - `chapora-fort.webp` & `.jpg`: Rebuilt as authentic weathered red laterite fort walls on cliff headland overlooking Vagator crescent beach and the Arabian Sea.
+- **Image Generation Quota Status:**
+  - Upstream model `gemini-3.1-flash-image` returned `HTTP 429 RESOURCE_EXHAUSTED` (Quota resets ~2026-11-21T11:16:07Z).
+  - Remaining 7 Goa place artworks (`divar-island`, `ashwem-beach`, `anjuna-flea-market`, `dudhsagar-falls`, `artjuna-cafe`, `vinayak-family-restaurant`, `basilica-bom-jesus`) queued for generation upon quota reset.
 - **Global Vehicle Image Optimizer Repair (`VehicleArtwork.tsx`):**
   - Removed query string mutation `?v=v7` on local static paths, eliminating Next.js Image Optimizer `HTTP 400 Bad Request` across vehicle rental cards globally (confirmed working in production for TVS Jupiter, Classic 350, Himalayan 450).
 - **Manali Artwork Rebuild (100% Unique, Full-Bleed 1376×768):**
